@@ -1,0 +1,551 @@
+CONST = {}
+CONFIG = {}
+CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = false
+CONFIG.c.mlrs.onMobileUnit.idxStrikePackage = 1
+CONFIG.c.mlrs.onMobileUnit.strikePackage = {
+    {
+        name = '',
+        targetList = {},
+        batteries = {
+            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN0VUJ61V0OE' }
+        },
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }
+    }
+}
+CONFIG.c.mlrs.onMobileUnit.const.contactAge = 30 * 60
+CONFIG.c.mlrs.onMobileUnit.const.weaponDBID = 2123
+
+CONFIG.c.srbm.onFacility.lastReconTime = nil
+CONFIG.c.srbm.onFacility.launcherState = {}
+CONFIG.c.srbm.onFacility.const.magazineWeaponNum = 3
+CONFIG.c.srbm.onFacility.const.reloadTime = 45 * 60
+CONFIG.c.srbm.onFacility.isStrikeActivated = false
+CONFIG.c.srbm.onFacility.isReloadActivated = false
+CONFIG.c.srbm.onFacility.strikeTimes = 0
+CONFIG.c.srbm.onFacility.idxStrikePackage = 1
+CONFIG.c.srbm.onFacility.const.contactAge = 30 * 60
+CONFIG.c.srbm.onFacility.strikePackage = {
+    {
+        name = 'RADAR',
+        targetList = {},
+        batteries = {
+            { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HMSC3K2NOVJC' },
+            { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
+        },
+        num = 2,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+    {
+        name = 'RUNWAY',
+        targetList = {},
+        batteries = {
+            { name = 'SRBM (636th Brigade)', guid = '6Z8LM5-0HMML05RV0N6N' },
+            { name = 'SRBM (617th Brigade)', guid = '6Z8LM5-0HMML05RV30CS' },
+        },
+        num = 4,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+    {
+        name = 'PORT',
+        targetList = {},
+        batteries = {
+            { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
+            { name = 'SRBM (615th Brigade)', guid = '6Z8LM5-0HMML05RUJ786' },
+        },
+        num = 4,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+    {
+        name = 'SHELTER',
+        targetList = {},
+        batteries = {
+            { name = 'SRBM (616th Brigade)', guid = 'X58F5H-0HMTNEA68REQQ' },
+        },
+        num = 2,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+}
+
+CONFIG.c.srbm.onSAM.isStrikeActivated = false
+CONFIG.c.srbm.onSAM.const.tk3SensorDBID1 = 6366
+CONFIG.c.srbm.onSAM.const.tk3SensorDBID2 = 282
+CONFIG.c.srbm.onSAM.const.tk2SensorDBID = 919
+CONFIG.c.srbm.onSAM.const.pac3SensorDBID = 2498
+CONFIG.c.srbm.onSAM.const.h6nBaseGUID = 'X58F5H-0HMRAQFR07T2V'
+CONFIG.c.srbm.onSAM.const.bzk005BaseGUID = '6Z8LM5-0HMIJ3QGCRQC4'
+CONFIG.c.srbm.onSAM.const.h6nDBID = 4969
+CONFIG.c.srbm.onSAM.const.batteries = {
+    { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
+}
+CONFIG.c.srbm.onSAM.const.contactAge = 60
+CONFIG.c.srbm.onSAM.const.wz8Course = {
+    { lat = 'N 25.44.14', lon = 'E 121.36.00', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 24.41.37', lon = 'E 121.34.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+}
+CONFIG.c.srbm.onSAM.const.h6nCourse = {
+    { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
+    { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
+}
+CONFIG.c.srbm.onSAM.h6nTemp = {}
+CONFIG.c.srbm.onSAM.wz8Temp = {}
+
+
+CONFIG.c.aircraft.onMobileUnit.isStrikeActivated = false
+CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes = 5
+CONFIG.c.aircraft.onMobileUnit.lastStrikeTime = nil
+CONFIG.c.aircraft.onMobileUnit.const.periodOfStrike = 70 * 60
+CONFIG.c.aircraft.onMobileUnit.strikePackage = {
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        seadMissionName = 'SEAD - SOUTH',
+        missionName = 'LAND STRIKE - SOUTH',
+        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+        hasLaunched = false
+    },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        seadMissionName = 'SEAD - MIDDLE',
+        missionName = 'LAND STRIKE - MIDDLE',
+        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
+        hasLaunched = false
+    },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        seadMissionName = 'SEAD - NORTH',
+        missionName = 'LAND STRIKE - NORTH',
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+        hasLaunched = false
+    },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        seadMissionName = 'SEAD - NORTH',
+        missionName = 'LAND STRIKE - NORTH - 2',
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+        hasLaunched = false
+    },
+}
+
+CONFIG.c.landingOperation.isLandingShipsStartedMoving = true
+CONFIG.c.landingOperation.isLandingShipsArrived = false
+CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
+CONFIG.c.landingOperation.airlandingMissionStartTime = nil
+CONFIG.c.landingOperation.const.airlandingArea = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
+CONFIG.c.landingOperation.const.contactNumInAirlandingArea = 3
+CONFIG.c.landingOperation.const.cargoList = {
+    type075 = { { type = 2, num = 60, dbid = 3 }, { type = 3, num = 200, dbid = 2039 } },
+    type071 = { { type = 2, num = 20, dbid = 3 }, { type = 3, num = 30, dbid = 2039 } },
+    type072iii = { { type = 2, num = 10, dbid = 3 }, { type = 3, num = 6, dbid = 2039 } },
+    type072a = { { type = 2, num = 10, dbid = 3 }, { type = 3, num = 6, dbid = 2039 } },
+    type073a = { { type = 2, num = 6, dbid = 3 } }
+}
+CONFIG.c.landingOperation.const.cargoListForTransfer1 = { type = 2, num = 2, dbid = 3 }    -- 075/071 726a
+CONFIG.c.landingOperation.const.cargoListForTransfer2 = { type = 3, num = 2, dbid = 2039 } -- 075/071 Z-18
+CONFIG.c.landingOperation.const.shipInfo = {
+    distanceBetweenLSTAndLPDArea = 13,
+    horizontalDistance = 1,
+    verticalDistance = 0.5,
+    transitDistance = 13,
+    shipSpeed = 14,
+    heading = {
+        north = {
+            horizontal = 220 - 90,
+            vertical   = 220,
+        },
+        west = {
+            horizontal = 150 - 90,
+            vertical = 150,
+        },
+        south = {
+            horizontal = 135 - 90,
+            vertical = 135,
+        }
+    },
+    amphibiousVehicleSpeed = 12,
+    amphibiousVehicleTransitDistance = 5,
+    amphibiousVehicleHorizontalDistance = 0.05,
+}
+CONFIG.c.landingOperation.idxShipLocationInfo = 1
+CONFIG.c.landingOperation.const.shipLocationInfo = {
+    {
+        name = 'north',
+        from = {
+            areas = { {
+                startingPoints = { type075 = { side = "China", area = { 'RP-11169' } } },
+                heading = LANDING_OPERATION.SHIP_INFO.heading.north
+            } }
+        },
+        to = {
+            areas = {
+                {
+                    startingPoints = {
+                        type075 = { side = "China", area = { 'RP-4322' } },
+                        type071 = { side = "China", area = { 'RP-3915' } },
+                    },
+                    heading = LANDING_OPERATION.SHIP_INFO.heading.west,
+                    num = {
+                        type075 = 4,
+                        type071 = 2,
+                        type072iii = 4,
+                        type072a = 4,
+                        type073a = 4,
+                        type071InLSTArea = 2,
+                    }
+                },
+                {
+                    startingPoints = {
+                        type075 = { side = "China", area = { 'RP-7827' } },
+                        type071 = { side = "China", area = { 'RP-3916' } },
+                    },
+                    heading = LANDING_OPERATION.SHIP_INFO.heading.west,
+                    num = {
+                        type075 = 1,
+                        type071 = 1,
+                        type072iii = 2,
+                        type072a = 2,
+                        type073a = 2,
+                        type071InLSTArea = 1,
+                    }
+                },
+                {
+                    startingPoints = {
+                        type075 = { side = "China", area = { 'RP-4323' } },
+                        type071 = { side = "China", area = { 'RP-3917' } },
+                    },
+                    heading = LANDING_OPERATION.SHIP_INFO.heading.west,
+                    num = {
+                        type075 = 2,
+                        type071 = 2,
+                        type072iii = 3,
+                        type072a = 3,
+                        type073a = 3,
+                        type071InLSTArea = 2,
+                    }
+                },
+                {
+                    startingPoints = {
+                        type075 = { side = "China", area = { 'RP-4326' } },
+                        type071 = { side = "China", area = { 'RP-3953' } },
+                    },
+                    heading = LANDING_OPERATION.SHIP_INFO.heading.north,
+                    num = {
+                        type075 = 2,
+                        type071 = 2,
+                        type072iii = 3,
+                        type072a = 3,
+                        type073a = 3,
+                        type071InLSTArea = 1,
+                    }
+                },
+            },
+            result = {
+                type075 = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_6, },
+                type071 = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_7, },
+                type072iii = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_8, },
+                type072a = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_9, },
+                type073a = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_10, },
+                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = PLATFORM_DBID_7, }
+            }
+        },
+        airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+        numOfContactsInAirLandingZone = 3
+    },
+}
+CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
+    {
+        anchorageArea = { 'RP-9684', 'RP-9685', 'RP-9686', 'RP-9687' },
+        LSTAnchorageArea = { 'RP-9712', 'RP-9713', 'RP-9714', 'RP-9715' },
+        boat = { dbid = PLATFORM_DBID_1, missions = { 'LANDING ZONE' }, cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_1 },
+        tansportHelicopter = {
+            dbid = PLATFORM_DBID_2,
+            missions = { 'AIRLANDING ZONE', 'AIRLANDING ZONE 2', 'AIRLANDING ZONE 3' },
+            cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_2
+        },
+        attackHelicopter1 = { dbid = PLATFORM_DBID_4, missions = { 'CAS EAST 1' } },
+        attackHelicopter2 = { dbid = PLATFORM_DBID_5, missions = { 'CAS EAST 1' } },
+    },
+    {
+        anchorageArea = { 'RP-9957', 'RP-9958', 'RP-9959', 'RP-9960' },
+        LSTAnchorageArea = { 'RP-9965', 'RP-9966', 'RP-9967', 'RP-9968' },
+        boat = { dbid = PLATFORM_DBID_1, missions = { 'LANDING ZONE ZHUWEI' }, cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_1 },
+        tansportHelicopter = {
+            dbid = PLATFORM_DBID_2,
+            missions = { 'AIRLANDING ZONE TAIPING 1', 'AIRLANDING ZONE TAIPING 2', 'AIRLANDING ZONE TAIPING 3' },
+            cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_2
+        },
+        attackHelicopter1 = { dbid = PLATFORM_DBID_4, missions = { 'CAS EAST 1' } },
+        attackHelicopter2 = { dbid = PLATFORM_DBID_5, missions = { 'CAS EAST 1' } },
+    },
+    {
+        anchorageArea = { 'RP-9969', 'RP-9970', 'RP-9971', 'RP-9972' },
+        LSTAnchorageArea = { 'RP-9977', 'RP-9978', 'RP-9979', 'RP-9980' },
+        boat = { dbid = PLATFORM_DBID_1, missions = { 'LANDING ZONE BAO' }, cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_1 },
+        tansportHelicopter = {
+            dbid = PLATFORM_DBID_2,
+            missions = { 'AIRLANDING ZONE PARK 1', 'AIRLANDING ZONE PARK 2', 'AIRLANDING ZONE PARK 3' },
+            cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_2
+        },
+        attackHelicopter1 = { dbid = PLATFORM_DBID_4, missions = { 'CAS EAST 2' } },
+        attackHelicopter2 = { dbid = PLATFORM_DBID_5, missions = { 'CAS EAST 2' } },
+    },
+    {
+        anchorageArea = { 'RP-9981', 'RP-9982', 'RP-9983', 'RP-9984' },
+        LSTAnchorageArea = { 'RP-9989', 'RP-9990', 'RP-9991', 'RP-9992' },
+        boat = { dbid = PLATFORM_DBID_1, missions = { 'LANDING ZONE NORTH WAY' }, cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_1 },
+        tansportHelicopter = {
+            dbid = PLATFORM_DBID_2,
+            missions = { 'AIRLANDING ZONE NORTH', 'AIRLANDING ZONE NORTH 2', 'AIRLANDING ZONE NORTH 3' },
+            cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_2
+        },
+        attackHelicopter1 = { dbid = PLATFORM_DBID_4, missions = { 'CAS NORTH' } },
+        attackHelicopter2 = { dbid = PLATFORM_DBID_5, missions = { 'CAS NORTH' } },
+    },
+    {
+        anchorageArea = { 'RP-14290', 'RP-14291', 'RP-14292', 'RP-14293' },
+        LSTAnchorageArea = { 'RP-14286', 'RP-14287', 'RP-14288', 'RP-14289' },
+        boat = { dbid = PLATFORM_DBID_1, missions = { 'LANDING ZONE JIALUTANG' }, cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_1 },
+        tansportHelicopter = {
+            dbid = PLATFORM_DBID_2,
+            missions = { 'AIRLANDING ZONE CHANGLONG', 'AIRLANDING ZONE CHANGLONG 2', 'AIRLANDING ZONE CHANGLONG 3' },
+            cargoList = LANDING_OPERATION.CARGOLIST_FOR_TRANSFER_2
+        },
+        attackHelicopter1 = { dbid = PLATFORM_DBID_4, missions = { 'CAS SOUTH' } },
+        attackHelicopter2 = { dbid = PLATFORM_DBID_5, missions = { 'CAS SOUTH' } },
+    },
+}
+CONFIG.c.landingOperation.const.cargoMissionList = {
+    {
+        name = 'AIRLANDING ZONE',
+        zone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE 2',
+        zone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE 3',
+        zone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE CHANGLONG',
+        zone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE CHANGLONG 2',
+        zone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE CHANGLONG 3',
+        zone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE NORTH',
+        zone = { 'RP-3815', 'RP-3816', 'RP-3817', 'RP-3818' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE NORTH 2',
+        zone = { 'RP-3815', 'RP-3816', 'RP-3817', 'RP-3818' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE NORTH 3',
+        zone = { 'RP-3815', 'RP-3816', 'RP-3817', 'RP-3818' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE PARK 1',
+        zone = { 'RP-7718', 'RP-7719', 'RP-7720', 'RP-7721' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE PARK 2',
+        zone = { 'RP-7718', 'RP-7719', 'RP-7720', 'RP-7721' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE PARK 3',
+        zone = { 'RP-7718', 'RP-7719', 'RP-7720', 'RP-7721' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE TAIPING 1',
+        zone = { 'RP-7714', 'RP-7715', 'RP-7716', 'RP-7717' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE TAIPING 2',
+        zone = { 'RP-7714', 'RP-7715', 'RP-7716', 'RP-7717' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'AIRLANDING ZONE TAIPING 3',
+        zone = { 'RP-7714', 'RP-7715', 'RP-7716', 'RP-7717' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleAircraft = 'Military',
+            TransitAltitudeAircraft = 304,
+            StationThrottleAircraft = 'Afterburner',
+            StationAltitudeAircraft = 304,
+        },
+    },
+    {
+        name = 'LANDING ZONE',
+        zone = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+    {
+        name = 'LANDING ZONE BAO',
+        zone = { 'RP-3742', 'RP-3743', 'RP-3744', 'RP-3745' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+    {
+        name = 'LANDING ZONE JIALUTANG',
+        zone = { 'RP-11154', 'RP-11155', 'RP-11156', 'RP-11157' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+    {
+        name = 'LANDING ZONE NORTH LEO',
+        zone = { 'RP-3749', 'RP-3750', 'RP-3751', 'RP-3752' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+    {
+        name = 'LANDING ZONE NORTH WAY',
+        zone = { 'RP-7706', 'RP-7707', 'RP-7708', 'RP-7709' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+    {
+        name = 'LANDING ZONE ZHUWEI',
+        zone = { 'RP-7698', 'RP-7699', 'RP-7700', 'RP-7701' },
+        setting = {
+            Subtype = 'delivery',
+            TransitThrottleShip = 'Flank',
+            StationThrottleShip = 'Flank',
+        },
+    },
+}

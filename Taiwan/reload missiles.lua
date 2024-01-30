@@ -1,0 +1,16 @@
+local ANTI_SHIP = gKH.State.LoadTableFromKey("ANTI_SHIP")
+local GLCM = gKH.State.LoadTableFromKey("GLCM")
+
+
+if ANTI_SHIP.IS_ANTI_SHIP_MISSION_ACTIVATED then
+    reloadMissile(ANTI_SHIP.ASM_LAUNCHER_STATE, ANTI_SHIP.ASM_LAUNCHER_RELOADING_TIME)
+end
+
+if GLCM.IS_GLCM_RELOADING_ACTIVATED then
+    reloadMissile(GLCM.GLCM_LAUNCHER_STATE, GLCM.GLCM_LAUNCHER_RELOADING_TIME)
+end
+
+if ANTI_SHIP ~= nil and GLCM ~= nil then
+    gKH.State.SaveTableToKey(ANTI_SHIP, "ANTI_SHIP")
+    gKH.State.SaveTableToKey(GLCM, "GLCM")
+end

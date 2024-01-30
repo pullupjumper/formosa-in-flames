@@ -1,0 +1,8 @@
+local STRIKE_ON_FACILITY = gKH.State.LoadTableFromKey("STRIKE_ON_FACILITY")
+
+STRIKE_ON_FACILITY.LAST_RECON_TIME = ScenEdit_CurrentTime()
+
+
+if STRIKE_ON_FACILITY ~= nil then
+    gKH.State.SaveTableToKey(STRIKE_ON_FACILITY, "STRIKE_ON_FACILITY")
+end

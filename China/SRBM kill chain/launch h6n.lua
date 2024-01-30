@@ -1,0 +1,21 @@
+-- H6N_WITH_WZ8 = launchAC(H6N_BASE_GUID, H6N_COURSE, 1)
+local STRIKE_ON_SAM = gKH.State.LoadTableFromKey("STRIKE_ON_SAM")
+
+
+STRIKE_ON_SAM.H6N_WITH_WZ8 = launchUnits(
+    STRIKE_ON_SAM.H6N_BASE_GUID,
+    STRIKE_ON_SAM.H6N_COURSE,
+    1,
+    STRIKE_ON_SAM.H6N_DBID,
+    'Aircraft'
+)
+-- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_075.dbid, 'Boats')
+-- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_072III.dbid, 'Boats')
+-- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_072A.dbid, 'Boats')
+-- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_073A.dbid, 'Boats')
+-- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_071.dbid, 'Boats')
+
+
+if STRIKE_ON_SAM ~= nil then
+    gKH.State.SaveTableToKey(STRIKE_ON_SAM, "STRIKE_ON_SAM")
+end
