@@ -42,17 +42,17 @@ function initSAMs()
                     v.heading = unit.heading
                     local length = getCount(v.course)
                     local initialPosition = World_GetPointFromBearing({
-                        LATITUDE = v.course[1].lat,
-                        LONGITUDE = v.course[1].lon,
-                        BEARING = v.heading,
-                        DISTANCE = 0.01
+                        latitude = v.course[1].lat,
+                        longitude = v.course[1].lon,
+                        bearing = v.heading,
+                        distance = 0.01
                     })
 
                     local finalPosition = World_GetPointFromBearing({
-                        LATITUDE = v.course[length].lat,
-                        LONGITUDE = v.course[length].lon,
-                        BEARING = v.heading,
-                        DISTANCE = 0.01
+                        latitude = v.course[length].lat,
+                        longitude = v.course[length].lon,
+                        bearing = v.heading,
+                        distance = 0.01
                     })
 
                     table.insert(
@@ -97,7 +97,9 @@ function initTargetList(side, missionName)
 end
 
 function initASW()
-    if IS_ASW_STARTED then
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+    if IS_ASW_STARTED and CONFIG ~= nil then
         ScenEdit_GetMission('China', 'ASW - CSG').isactive = true
         ScenEdit_GetMission('China', 'AEW - CSG').isactive = true
         ScenEdit_GetMission('China', 'ASW - PATROL AC').isactive = true
@@ -109,7 +111,7 @@ function initASW()
         -- ScenEdit_GetEvent('(China) Strike on SAMs').isActive = false
         -- ScenEdit_GetEvent('(China) Launch H6N').isActive = false
 
-        for index, value in ipairs(SUB_OBJECT) do
+        for index, value in ipairs(CONFIG.c.asw.const.submarine) do
             local sub = SE_GetUnit({ guid = value.guid })
 
             if sub ~= nil then
@@ -132,17 +134,18 @@ function initASW()
 end
 
 function saveData()
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
+    CONFIG.c.srbm.onFacility.strikePackage[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
+    CONFIG.c.srbm.onFacility.strikePackage[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
+    CONFIG.c.srbm.onFacility.strikePackage[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
+    CONFIG.c.srbm.onFacility.strikePackage[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
+    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
+    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
+    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
+
     initLaunchers(
         'China',
-        STRIKE_ON_FACILITY.SRBM_LAUNCHER_STATE,
-        STRIKE_ON_FACILITY.SRBM_MAGAZINE_WEAPON_NUM,
+        CONFIG.c.srbm.onFacility.launcherState,
+        CONFIG.c.srbm.onFacility.const.magazineWeaponNum,
         function(unit, launchers)
             if unit.dbid == 1680 or unit.dbid == 350 or unit.dbid == 2886 or unit.dbid == 1681 then
                 table.insert(launchers, unit)
@@ -152,8 +155,8 @@ function saveData()
 
     initLaunchers(
         'Taiwan',
-        ANTI_SHIP.ASM_LAUNCHER_STATE,
-        ANTI_SHIP.ASM_MAGAZINE_WEAPON_NUM,
+        CONFIG.t.asm.launcherState,
+        CONFIG.t.asm.const.magazineWeaponNum,
         function(unit, launchers)
             if unit.dbid == 3531 then
                 table.insert(launchers, unit)
@@ -162,8 +165,8 @@ function saveData()
     )
     initLaunchers(
         'Taiwan',
-        GLCM.GLCM_LAUNCHER_STATE,
-        GLCM.GLCM_MAGAZINE_WEAPON_NUM,
+        CONFIG.t.glcm.launcherState,
+        CONFIG.t.glcm.const.magazineWeaponNum,
         function(unit, launchers)
             if unit.dbid == 2587 then
                 table.insert(launchers, unit)
@@ -172,29 +175,12 @@ function saveData()
     )
     -- ScenEdit_MsgBox("start", 1)
 
-    gKH.State.SaveTableToKey(LAND_STRIKE, "LAND_STRIKE")
-    -- ScenEdit_MsgBox("LAND_STRIKE", 1)
-    gKH.State.SaveTableToKey(LANDING_OPERATION, "LANDING_OPERATION")
-    -- ScenEdit_MsgBox("LANDING_OPERATION", 1)
-
-    gKH.State.SaveTableToKey(STRIKE_ON_SAM, "STRIKE_ON_SAM")
-    -- ScenEdit_MsgBox("STRIKE_ON_SAM", 1)
-
-    gKH.State.SaveTableToKey(STRIKE_ON_FACILITY, "STRIKE_ON_FACILITY")
-    -- ScenEdit_MsgBox("STRIKE_ON_FACILITY", 1)
-
-    gKH.State.SaveTableToKey(ANTI_SHIP, "ANTI_SHIP")
-    -- ScenEdit_MsgBox("ANTI_SHIP", 1)
-
-    gKH.State.SaveTableToKey(GLCM, "GLCM")
-    -- ScenEdit_MsgBox("GLCM", 1)
-
-    gKH.State.SaveTableToKey(MLRS_ON_MOBILE_TARGETS, "MLRS_ON_MOBILE_TARGETS")
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
 -- initSAMs()
-initASW()
 saveData()
+initASW()
 
 -- the following forces have been placed under your command:
 -- 4. Surface Action Group
