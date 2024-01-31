@@ -1,16 +1,19 @@
 local contacts = ScenEdit_GetContacts('China')
 local units = VP_GetSide({ Side = 'China' }).units
-local LAND_STRIKE = gKH.State.LoadTableFromKey("LAND_STRIKE")
-local STRIKE_ON_FACILITY = gKH.State.LoadTableFromKey("STRIKE_ON_FACILITY")
-local STRIKE_ON_SAM = gKH.State.LoadTableFromKey("STRIKE_ON_SAM")
-local MLRS_ON_MOBILE_TARGETS = gKH.State.LoadTableFromKey("MLRS_ON_MOBILE_TARGETS")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 if contacts == nil then
     return
 end
 
-if LAND_STRIKE.IS_LAND_STRIKE_STARTED then
-    for index, pack in ipairs(LAND_STRIKE.STRIKE_PACKAGE) do
+if CONFIG.c.aircraft.onMobileUnit.isStrikeActivated then
+    for index, pack in ipairs(CONFIG.c.aircraft.onMobileUnit.strikePackage) do
         if pack.striker.units ~= nil and getCount(pack.striker.units) > 0 then
             if hasDestroyedOrRTB(pack.striker.units, 1) then
                 for i, value in ipairs(pack.escort.units) do
@@ -41,37 +44,49 @@ if isMissileHit('DF', units) == false then
     return
 end
 
-if STRIKE_ON_FACILITY.IS_SRBM_RELOADING_ACTIVATED then
-    reloadMissile(STRIKE_ON_FACILITY.SRBM_LAUNCHER_STATE, STRIKE_ON_FACILITY.SRBM_RELOADING_TIME)
+if CONFIG.c.srbm.onFacility.isReloadActivated then
+    reloadMissile(CONFIG.c.srbm.onFacility.launcherState, CONFIG.c.srbm.onFacility.const.reloadTime)
 end
 
-if hasDestroyedOrRTB(STRIKE_ON_SAM.H6N_WITH_WZ8, 1) and hasDestroyedOrRTB(STRIKE_ON_SAM.RECON_WZ8, 1) then
-    STRIKE_ON_SAM.H6N_WITH_WZ8 = launchUnits(STRIKE_ON_SAM.H6N_BASE_GUID, STRIKE_ON_SAM.H6N_COURSE, 1,
-        STRIKE_ON_SAM.H6N_DBID, 'Aircraft')
+if hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.h6nTemp, 1)
+    and hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.wz8Temp, 1) then
+    CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
+        CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
+        CONFIG.c.srbm.onSAM.const.h6nCourse,
+        1,
+        CONFIG.c.srbm.onSAM.const.h6nDBID,
+        'Aircraft'
+    )
 end
 
-if STRIKE_ON_SAM.IS_STRIKE_ON_SAM_ACTIVATED then
+if CONFIG.c.srbm.onSAM.isStrikeActivated then
     local result = { batteryIndex = 1, groupIndex = 1 }
 
     for index, contact in ipairs(contacts) do
         if contact.emissions ~= nil then
             local emission = contact.emissions[1]['sensor_dbid']
-            local isSAM = emission == STRIKE_ON_SAM.SKY_BOW_III_SENSOR_DBID_1
-                or emission == STRIKE_ON_SAM.SKY_BOW_III_SENSOR_DBID_2
-                or emission == STRIKE_ON_SAM.SKY_BOW_II_SENSOR_DBID_1
-            -- or emission == PAC_3_SENSOR_DBID
+            local isSAM = emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
+                or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2
+                or emission == CONFIG.c.srbm.onSAM.const.tk2SensorDBID
+            -- or emission == CONFIG.c.srbm.onSAM.const.pac3SensorDBID
 
-            if isSAM and contact.lastDetections[1].age <= STRIKE_ON_SAM.CONTACT_AGE then
-                result = attackContact(contact, 4, STRIKE_ON_SAM.SRBM_BATTERIES, result.batteryIndex, result.groupIndex)
+            if isSAM and contact.lastDetections[1].age <= CONFIG.c.srbm.onSAM.const.contactAge then
+                result = attackContact(
+                    contact,
+                    4,
+                    CONFIG.c.srbm.onSAM.const.batteries,
+                    result.batteryIndex,
+                    result.groupIndex
+                )
             end
         end
     end
 end
 
-if MLRS_ON_MOBILE_TARGETS.IS_STRIKE_ACTIVATED then
+if CONFIG.c.mlrs.onMobileUnit.isStrikeActivated then
     local result = { batteryIndex = 1, groupIndex = 1 }
 
-    for index, package in ipairs(MLRS_ON_MOBILE_TARGETS.STRIKE_PACKAGE) do
+    for index, package in ipairs(CONFIG.c.mlrs.onMobileUnit.strikePackage) do
         local filteredContacts = filterContacts(contacts, function(value)
             if (value.typed == 8 or value.typed == 21)
             -- and value:inArea(package.area)
@@ -84,75 +99,75 @@ if MLRS_ON_MOBILE_TARGETS.IS_STRIKE_ACTIVATED then
 
         for i, filteredContact in ipairs(filteredContacts) do
             if filteredContact.lastDetections ~= nil
-                and filteredContact.lastDetections[1].age <= MLRS_ON_MOBILE_TARGETS.CONTACT_AGE then
+                and filteredContact.lastDetections[1].age <= CONFIG.c.mlrs.onMobileUnit.const.contactAge then
                 -- ScenEdit_MsgBox(tostring(filteredContact.lastDetections[1].age), 1)
                 result = attackContact(
                     filteredContact,
                     4,
-                    MLRS_ON_MOBILE_TARGETS.STRIKE_PACKAGE[index].batteries,
+                    CONFIG.c.mlrs.onMobileUnit.strikePackage[index].batteries,
                     result.batteryIndex,
                     result.groupIndex,
-                    MLRS_ON_MOBILE_TARGETS.WEAPON_DBID
+                    CONFIG.c.mlrs.onMobileUnit.const.weaponDBID
                 )
             end
         end
     end
 end
 
-if STRIKE_ON_FACILITY.IS_STRIKE_ON_FACILITY_ACTIVATED and contacts ~= nil then
+if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
     local result = { batteryIndex = 1, groupIndex = 1 }
-    local targetListIdx = STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].index
+    local targetListIdx = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
     local diff = 0
 
-    if STRIKE_ON_FACILITY.LAST_RECON_TIME ~= nil then
-        diff = ScenEdit_CurrentTime() - STRIKE_ON_FACILITY.LAST_RECON_TIME
+    if CONFIG.c.srbm.onFacility.lastReconTime ~= nil then
+        diff = ScenEdit_CurrentTime() - CONFIG.c.srbm.onFacility.lastReconTime
     end
 
     -- if diff > 0 then
     --     ScenEdit_MsgBox(
-    --         STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].name ..
+    --         CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name ..
     --         ' Last recon: ' .. tostring(math.floor(diff / 60)) .. ' mins ago', 0)
     -- else
-    --     ScenEdit_MsgBox(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].name, 0)
+    --     ScenEdit_MsgBox(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name, 0)
     -- end
 
     for index, value in ipairs(contacts) do
         local BDA = value.BDA
         local hasReconed = (BDA ~= nil and BDA['STRUCTURAL'] ~= 'Heavy damage')
-            and (STRIKE_ON_FACILITY.LAST_RECON_TIME ~= nil and ScenEdit_CurrentTime() > STRIKE_ON_FACILITY.LAST_RECON_TIME)
-            and diff <= STRIKE_ON_FACILITY.FACILITY_CONTACT_AGE
+            and (CONFIG.c.srbm.onFacility.lastReconTime ~= nil and ScenEdit_CurrentTime() > CONFIG.c.srbm.onFacility.lastReconTime)
+            and diff <= CONFIG.c.srbm.onFacility.const.contactAge
         local isTheFirstStrike = BDA == nil
-            and STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE]
+            and CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage]
             .hasLaunchedTheFirstStrike == false
 
-        for i, v in ipairs(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].targetList[targetListIdx]) do
+        for i, v in ipairs(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList[targetListIdx]) do
             if v.guid == value.guid and (isTheFirstStrike or hasReconed) then
                 result = attackContact(
                     value,
-                    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].num,
-                    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].batteries,
+                    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].num,
+                    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].batteries,
                     result.batteryIndex,
                     result.groupIndex
                 )
             end
         end
     end
-    -- for i, v in ipairs(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].targetList[targetListIdx]) do
+    -- for i, v in ipairs(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList[targetListIdx]) do
     --     local contact = ScenEdit_GetContact({ side = 'China', guid = v.guid })
 
     --     if contact ~= nil then
     --         local BDA = contact.BDA
     --         local hasReconed = (BDA ~= nil and BDA['STRUCTURAL'] ~= 'Heavy damage')
-    --             and (STRIKE_ON_FACILITY.LAST_RECON_TIME ~= nil and ScenEdit_CurrentTime() > STRIKE_ON_FACILITY.LAST_RECON_TIME)
-    --             and diff <= STRIKE_ON_FACILITY.FACILITY_CONTACT_AGE
+    --             and (CONFIG.c.srbm.onFacility.lastReconTime ~= nil and ScenEdit_CurrentTime() > CONFIG.c.srbm.onFacility.lastReconTime)
+    --             and diff <= CONFIG.c.srbm.onFacility.const.contactAge
     --         local isTheFirstStrike = BDA == nil
-    --             and STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].hasLaunchedTheFirstStrike == false
+    --             and CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike == false
 
     --         if isTheFirstStrike or hasReconed then
     --             result = attackContact(
     --                 contact,
-    --                 STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].num,
-    --                 STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].batteries,
+    --                 CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].num,
+    --                 CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].batteries,
     --                 result.batteryIndex,
     --                 result.groupIndex
     --             )
@@ -160,50 +175,51 @@ if STRIKE_ON_FACILITY.IS_STRIKE_ON_FACILITY_ACTIVATED and contacts ~= nil then
     --     end
     -- end
 
-    -- if STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].name ~= 'RADAR' then
-    --     STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].hasLaunchedTheFirstStrike = true
+    -- if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name ~= 'RADAR' then
+    --     CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
     -- end
 
-    STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].index = STRIKE_ON_FACILITY
-        .SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].index + 1
+    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
+    = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index + 1
 
-    if STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].index > getCount(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].targetList) then
-        STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].index = getCount(
-            STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE]
-            .targetList)
-        STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].hasLaunchedTheFirstStrike = true
+    if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
+        > getCount(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList) then
+        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = getCount(
+            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList
+        )
+        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
 
-        if STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].name == 'RADAR' then
-            STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE].hasLaunchedTheFirstStrike = false
+        if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name == 'RADAR' then
+            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = false
         end
     end
 
-    STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE = STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE + 1
+    CONFIG.c.srbm.onFacility.idxStrikePackage = CONFIG.c.srbm.onFacility.idxStrikePackage + 1
 
-    if STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE > getCount(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE) then
-        STRIKE_ON_FACILITY.IDX_SRBM_STRIKE_PACKAGE = 1
+    if CONFIG.c.srbm.onFacility.idxStrikePackage > getCount(CONFIG.c.srbm.onFacility.strikePackage) then
+        CONFIG.c.srbm.onFacility.idxStrikePackage = 1
     end
 
-    STRIKE_ON_FACILITY.SRBM_STRIKE_TIMES = STRIKE_ON_FACILITY.SRBM_STRIKE_TIMES + 1
+    CONFIG.c.srbm.onFacility.strikeTimes = CONFIG.c.srbm.onFacility.strikeTimes + 1
 
-    if STRIKE_ON_FACILITY.SRBM_STRIKE_TIMES >= 10 then
-        LAND_STRIKE.IS_LAND_STRIKE_STARTED = true
+    if CONFIG.c.srbm.onFacility.strikeTimes >= 10 then
+        CONFIG.c.aircraft.onMobileUnit.isStrikeActivated = true
     end
 
-    STRIKE_ON_FACILITY.IS_SRBM_RELOADING_ACTIVATED = true
+    CONFIG.c.srbm.onFacility.isReloadActivated = true
 end
 
-if LAND_STRIKE.IS_LAND_STRIKE_STARTED and LAND_STRIKE.LAND_STRIKE_TIMES > 0 then
+if CONFIG.c.aircraft.onMobileUnit.isStrikeActivated and CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes > 0 then
     local diffTime = 0
 
-    if LAND_STRIKE.SRBM_STRIKE_TIMES ~= nil then
-        diffTime = ScenEdit_CurrentTime() - LAND_STRIKE.SRBM_STRIKE_TIMES
+    if CONFIG.c.aircraft.onMobileUnit.lastStrikeTime ~= nil then
+        diffTime = ScenEdit_CurrentTime() - CONFIG.c.aircraft.onMobileUnit.lastStrikeTime
     end
 
-    local isToStrike = (LAND_STRIKE.SRBM_STRIKE_TIMES == nil
-        or (LAND_STRIKE.SRBM_STRIKE_TIMES ~= nil and diffTime >= LAND_STRIKE.PERIOD_OF_LAND_STRIKE))
+    local isToStrike = (CONFIG.c.aircraft.onMobileUnit.lastStrikeTime == nil
+        or (CONFIG.c.aircraft.onMobileUnit.lastStrikeTime ~= nil and diffTime >= CONFIG.c.aircraft.onMobileUnit.const.periodOfStrike))
 
-    for index, package in ipairs(LAND_STRIKE.STRIKE_PACKAGE) do
+    for index, package in ipairs(CONFIG.c.aircraft.onMobileUnit.strikePackage) do
         if package.hasLaunched == false then
             local filteredContacts = filterContacts(contacts, function(value)
                 if (value.typed == 8 or value.typed == 21)
@@ -263,23 +279,15 @@ if LAND_STRIKE.IS_LAND_STRIKE_STARTED and LAND_STRIKE.LAND_STRIKE_TIMES > 0 then
                 )
                 package.wildWeasel.units = wildWeasels
                 package.hasLaunched = true
-                LAND_STRIKE.SRBM_STRIKE_TIMES = ScenEdit_CurrentTime()
-                LAND_STRIKE.LAND_STRIKE_TIMES = LAND_STRIKE.LAND_STRIKE_TIMES - 1
+                CONFIG.c.aircraft.onMobileUnit.lastStrikeTime = ScenEdit_CurrentTime()
+                CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes = CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes - 1
                 break
             end
         end
     end
 end
 
-if LAND_STRIKE ~= nil
-    and STRIKE_ON_FACILITY ~= nil
-    and STRIKE_ON_SAM ~= nil
-    and MLRS_ON_MOBILE_TARGETS ~= nil then
-    gKH.State.SaveTableToKey(LAND_STRIKE, "LAND_STRIKE")
-    gKH.State.SaveTableToKey(STRIKE_ON_SAM, "STRIKE_ON_SAM")
-    gKH.State.SaveTableToKey(STRIKE_ON_FACILITY, "STRIKE_ON_FACILITY")
-    gKH.State.SaveTableToKey(MLRS_ON_MOBILE_TARGETS, "MLRS_ON_MOBILE_TARGETS")
-end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 
 
 

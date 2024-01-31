@@ -94,6 +94,11 @@ CONFIG.c.srbm.onFacility.strikePackage = {
 CONFIG.c.srbm.onFacility.const.contactAge = 30 * 60
 CONFIG.c.srbm.onFacility.const.magazineWeaponNum = 3
 CONFIG.c.srbm.onFacility.const.reloadTime = 45 * 60
+CONFIG.c.srbm.onFacility.const.contingencyRunways = {
+    { base = { guid = 'X58F5H-0HN0KRS0IJLB4' }, runway = { guid = 'X58F5H-0HMSQ0HJ9MHP8' } },
+    { base = { guid = 'X58F5H-0HN0KRS0IJLB2' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDM' } },
+    { base = { guid = 'X58F5H-0HN0KRS0IJLB0' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
+}
 
 
 
@@ -611,6 +616,22 @@ CONFIG.c.landingOperation.const.helicopterInBase = {
     { guid = 'X58F5H-0HN00TRR0Q1JQ', missionName = 'CAS SOUTH',  num = 24 },
     { guid = '6Z8LM5-0HMIJ3QGCRQ5F', missionName = 'CAS MIDDLE', num = 12 }
 }
+CONFIG.c.landingOperation.const.sag = {
+    {
+        guid = 'X58F5H-0HMT6MQJ08KJR',
+        course = {
+            { lat = 'N 25.16.39', lon = 'E 120.52.56', desiredSpeed = 14, },
+            { lat = 'N 25.15.03', lon = 'E 120.55.14', desiredSpeed = 14, },
+        }
+    },
+    {
+        guid = 'X58F5H-0HMVL9T14L3J4',
+        course = {
+            { lat = 'N 25.32.37', lon = 'E 121.18.44', desiredSpeed = 14, },
+            { lat = 'N 25.30.26', lon = 'E 121.21.04', desiredSpeed = 14, },
+        }
+    },
+}
 
 -- ASW
 CONFIG.c.asw.const.submarine = {
@@ -678,28 +699,3 @@ CONFIG.t.asm.const.nai1 = { 'RP-7760', 'RP-7761', 'RP-7762', 'RP-7763' }
 CONFIG.t.asm.const.nai2 = { 'RP-7787', 'RP-7788', 'RP-7789', 'RP-7790' }
 CONFIG.t.asm.const.shipNumInNai1 = 4
 CONFIG.t.asm.const.helicopterNumInNai2 = 4
-
--- ferry mission
-CONFIG.t.ferry.const.contingencyRunways = {
-    { base = { guid = 'X58F5H-0HN0KRS0IJLB4' }, runway = { guid = 'X58F5H-0HMSQ0HJ9MHP8' } },
-    { base = { guid = 'X58F5H-0HN0KRS0IJLB2' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDM' } },
-    { base = { guid = 'X58F5H-0HN0KRS0IJLB0' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
-}
-
--- ASW
-CONFIG.t.asw.const.sag = {
-    {
-        guid = 'X58F5H-0HMT6MQJ08KJR',
-        course = {
-            { lat = 'N 25.16.39', lon = 'E 120.52.56', desiredSpeed = 14, },
-            { lat = 'N 25.15.03', lon = 'E 120.55.14', desiredSpeed = 14, },
-        }
-    },
-    {
-        guid = 'X58F5H-0HMVL9T14L3J4',
-        course = {
-            { lat = 'N 25.32.37', lon = 'E 121.18.44', desiredSpeed = 14, },
-            { lat = 'N 25.30.26', lon = 'E 121.21.04', desiredSpeed = 14, },
-        }
-    },
-}
