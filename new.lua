@@ -18,7 +18,16 @@ CONFIG.const.loadoutDBID1 = 30568  -- ka-52
 CONFIG.const.loadoutDBID2 = 31490  -- z-10
 CONFIG.const.loadoutDBID3 = 18367  -- z-18
 
+function CONFIG.fn._getCount(list)
+    if list == nil then return 0 end
+    local count = 0
 
+    for k, v in ipairs(list) do
+        count = count + 1
+    end
+
+    return count
+end
 
 -- MLRS on mobile units
 CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = false
@@ -100,9 +109,40 @@ CONFIG.c.srbm.onFacility.const.contingencyRunways = {
     { base = { guid = 'X58F5H-0HN0KRS0IJLB0' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
 }
 
+function CONFIG.c.srbm.onFacility.fn.increaseTargetListIdx()
+    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = CONFIG.c.srbm.onFacility
+        .strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index + 1
+end
 
+function CONFIG.c.srbm.onFacility.fn.resetTargetListIdx()
+    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = CONFIG.fn._getCount(
+        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList
+    )
+end
 
+function CONFIG.c.srbm.onFacility.fn.isTargetListIdxOutOfBounds()
+    return CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
+        > CONFIG.fn._getCount(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage]
+            .targetList)
+end
 
+function CONFIG.c.srbm.onFacility.fn.increaseStrikePackageIdx()
+    CONFIG.c.srbm.onFacility.idxStrikePackage = CONFIG.c.srbm.onFacility.idxStrikePackage + 1
+end
+
+function CONFIG.c.srbm.onFacility.fn.isStrikePackageIdxOutofBounds()
+    return CONFIG.c.srbm.onFacility.idxStrikePackage > CONFIG.fn._getCount(CONFIG.c.srbm.onFacility.strikePackage)
+end
+
+function CONFIG.c.srbm.onFacility.fn.resetStrikePackageIdx()
+    CONFIG.c.srbm.onFacility.idxStrikePackage = 1
+end
+
+--- @param hasLaunched boolean
+function CONFIG.c.srbm.onFacility.fn.hasLaunchedTheFirstStrike(hasLaunched)
+    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike =
+        hasLaunched
+end
 
 -- SRBM on SAM
 CONFIG.c.srbm.onSAM.isStrikeActivated = false

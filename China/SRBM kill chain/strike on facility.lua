@@ -123,14 +123,6 @@ if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
         diff = ScenEdit_CurrentTime() - CONFIG.c.srbm.onFacility.lastReconTime
     end
 
-    -- if diff > 0 then
-    --     ScenEdit_MsgBox(
-    --         CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name ..
-    --         ' Last recon: ' .. tostring(math.floor(diff / 60)) .. ' mins ago', 0)
-    -- else
-    --     ScenEdit_MsgBox(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name, 0)
-    -- end
-
     for index, value in ipairs(contacts) do
         local BDA = value.BDA
         local hasReconed = (BDA ~= nil and BDA['STRUCTURAL'] ~= 'Heavy damage')
@@ -152,52 +144,47 @@ if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
             end
         end
     end
-    -- for i, v in ipairs(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList[targetListIdx]) do
-    --     local contact = ScenEdit_GetContact({ side = 'China', guid = v.guid })
 
-    --     if contact ~= nil then
-    --         local BDA = contact.BDA
-    --         local hasReconed = (BDA ~= nil and BDA['STRUCTURAL'] ~= 'Heavy damage')
-    --             and (CONFIG.c.srbm.onFacility.lastReconTime ~= nil and ScenEdit_CurrentTime() > CONFIG.c.srbm.onFacility.lastReconTime)
-    --             and diff <= CONFIG.c.srbm.onFacility.const.contactAge
-    --         local isTheFirstStrike = BDA == nil
-    --             and CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike == false
+    -- CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = CONFIG.c.srbm.onFacility
+    --     .strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index + 1
 
-    --         if isTheFirstStrike or hasReconed then
-    --             result = attackContact(
-    --                 contact,
-    --                 CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].num,
-    --                 CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].batteries,
-    --                 result.batteryIndex,
-    --                 result.groupIndex
-    --             )
-    --         end
+    -- local isOutofBounds = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
+    --     > getCount(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList)
+
+    -- if isOutofBounds then
+    --     CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = getCount(
+    --         CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList
+    --     )
+    --     CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
+
+    --     if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name == 'RADAR' then
+    --         CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = false
     --     end
     -- end
+    CONFIG.c.srbm.onFacility.fn.increaseTargetListIdx()
 
-    -- if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name ~= 'RADAR' then
-    --     CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
-    -- end
-
-    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
-    = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index + 1
-
-    if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
-        > getCount(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList) then
-        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = getCount(
-            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList
-        )
-        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
+    if CONFIG.c.srbm.onFacility.fn.isTargetListIdxOutOfBounds() then
+        CONFIG.c.srbm.onFacility.fn.resetTargetListIdx()
+        CONFIG.c.srbm.onFacility.fn.hasLaunchedTheFirstStrike(true)
 
         if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name == 'RADAR' then
-            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = false
+            CONFIG.c.srbm.onFacility.fn.hasLaunchedTheFirstStrike(false)
         end
     end
 
-    CONFIG.c.srbm.onFacility.idxStrikePackage = CONFIG.c.srbm.onFacility.idxStrikePackage + 1
 
-    if CONFIG.c.srbm.onFacility.idxStrikePackage > getCount(CONFIG.c.srbm.onFacility.strikePackage) then
-        CONFIG.c.srbm.onFacility.idxStrikePackage = 1
+    -- CONFIG.c.srbm.onFacility.idxStrikePackage = CONFIG.c.srbm.onFacility.idxStrikePackage + 1
+    -- local isStrikePackageOutofBounds = CONFIG.c.srbm.onFacility.idxStrikePackage >
+    --     getCount(CONFIG.c.srbm.onFacility.strikePackage)
+
+    -- if isStrikePackageOutofBounds then
+    --     CONFIG.c.srbm.onFacility.idxStrikePackage = 1
+    -- end
+
+    CONFIG.c.srbm.onFacility.fn.increaseStrikePackageIdx()
+
+    if CONFIG.c.srbm.onFacility.fn.isStrikePackageIdxOutofBounds() then
+        CONFIG.c.srbm.onFacility.fn.resetStrikePackageIdx()
     end
 
     CONFIG.c.srbm.onFacility.strikeTimes = CONFIG.c.srbm.onFacility.strikeTimes + 1

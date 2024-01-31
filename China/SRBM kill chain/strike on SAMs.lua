@@ -1,8 +1,11 @@
 local contact = ScenEdit_UnitC()
-local STRIKE_ON_SAM = gKH.State.LoadTableFromKey("STRIKE_ON_SAM")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
--- local event = ScenEdit_EventX()
--- local event2 = ScenEdit_GetEvent('(China) Evaluate effects of the attack')
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 if contact == nil then
     return
@@ -10,23 +13,21 @@ end
 
 local emission = contact.emissions[1]['sensor_dbid']
 
-if emission == STRIKE_ON_SAM.SKY_BOW_III_SENSOR_DBID_1 or emission == STRIKE_ON_SAM.SKY_BOW_III_SENSOR_DBID_2 then
-    if hasDestroyedOrRTB(STRIKE_ON_SAM.H6N_WITH_WZ8, 1) and hasDestroyedOrRTB(STRIKE_ON_SAM.RECON_WZ8, 1) then
-        STRIKE_ON_SAM.H6N_WITH_WZ8 = launchUnits(
-            STRIKE_ON_SAM.H6N_BASE_GUID,
-            STRIKE_ON_SAM.H6N_COURSE,
+if emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1 or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2 then
+    if hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.h6nTemp, 1)
+        and hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.wz8Temp, 1) then
+        CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
+            CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
+            CONFIG.c.srbm.onSAM.const.h6nCourse,
             1,
-            STRIKE_ON_SAM.H6N_DBID,
+            CONFIG.c.srbm.onSAM.const.h6nDBID,
             'Aircraft'
         )
     end
 
     local result = { batteryIndex = 1, groupIndex = 1 }
-    result = attackContact(contact, 2, STRIKE_ON_SAM.SRBM_BATTERIES, result.batteryIndex, result.groupIndex)
-    STRIKE_ON_SAM.IS_STRIKE_ON_SAM_ACTIVATED = true
+    result = attackContact(contact, 2, CONFIG.c.srbm.onSAM.const.batteries, result.batteryIndex, result.groupIndex)
+    CONFIG.c.srbm.onSAM.isStrikeActivated = true
 end
 
-
-if STRIKE_ON_SAM ~= nil then
-    gKH.State.SaveTableToKey(STRIKE_ON_SAM, "STRIKE_ON_SAM")
-end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
