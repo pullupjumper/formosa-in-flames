@@ -1189,6 +1189,7 @@ function addLandingShips()
 
     if CONFIG == nil then
         print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
         return
     end
 
@@ -1388,6 +1389,7 @@ function calculateDestination()
 
     if CONFIG == nil then
         print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
         return
     end
 
