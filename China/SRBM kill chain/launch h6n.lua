@@ -1,21 +1,19 @@
--- H6N_WITH_WZ8 = launchAC(H6N_BASE_GUID, H6N_COURSE, 1)
-local STRIKE_ON_SAM = gKH.State.LoadTableFromKey("STRIKE_ON_SAM")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 
-STRIKE_ON_SAM.H6N_WITH_WZ8 = launchUnits(
-    STRIKE_ON_SAM.H6N_BASE_GUID,
-    STRIKE_ON_SAM.H6N_COURSE,
+CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
+    CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
+    CONFIG.c.srbm.onSAM.const.h6nCourse,
     1,
-    STRIKE_ON_SAM.H6N_DBID,
+    CONFIG.c.srbm.onSAM.const.h6nDBID,
     'Aircraft'
 )
--- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_075.dbid, 'Boats')
--- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_072III.dbid, 'Boats')
--- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_072A.dbid, 'Boats')
--- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_073A.dbid, 'Boats')
--- launchUnits(PORT_GUID, STAGING_LOCATION, 4, LOCATION_INFO_071.dbid, 'Boats')
 
 
-if STRIKE_ON_SAM ~= nil then
-    gKH.State.SaveTableToKey(STRIKE_ON_SAM, "STRIKE_ON_SAM")
-end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
