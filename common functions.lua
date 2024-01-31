@@ -1092,7 +1092,7 @@ function isAllUnitsUnassigned(units)
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit ~= nil
-            and (unit.dbid == PLATFORM_DBID_1 or unit.dbid == 5856 or unit.dbid == 2930 or unit.dbid == 3708)
+            and (unit.dbid == CONFIG.const.platformBDID1 or unit.dbid == 5856 or unit.dbid == 2930 or unit.dbid == 3708)
             and (unit.unitstate == 'OnPlottedCourse' or unit.unitstate == 'OnFerryMission' or unit.unitstate == 'Tasked') then
             return false
         end
@@ -1185,9 +1185,19 @@ function getPointFromBearing(params)
 end
 
 function addLandingShips()
-    local index = LANDING_OPERATION.IDX_SHIP_LOCATION_INFO
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    for i, area in ipairs(LANDING_OPERATION.SHIP_LOCATION_INFO[index].from.areas) do
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        return
+    end
+
+    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
+    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+    local cargoList = CONFIG.c.landingOperation.const.cargoList
+
+    for i, area in ipairs(shipLocationInfo[idx].from.areas) do
         local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
         local firstRp075_2 = getPointFromBearing({
             initialLocation = firstRp075,
@@ -1197,55 +1207,55 @@ function addLandingShips()
         local firstRp071 = getPointFromBearing({
             initialLocation = firstRp075,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         local firstRp072a = getPointFromBearing({
             initialLocation = firstRp071,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         local firstRp072iii = getPointFromBearing({
             initialLocation = firstRp072a,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         local firstRp073a = getPointFromBearing({
             initialLocation = firstRp072iii,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         addUnitsByRp(
             {
                 initialLocation = firstRp075,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 2
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 075',
-                dbid = PLATFORM_DBID_6,
-                cargo = LANDING_OPERATION.CARGOLIST.type075,
+                dbid = CONFIG.const.platformBDID6,
+                cargo = cargoList.type075,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             {
                 { 12, {
                     side = 'China',
                     type = 'aircraft',
                     name = 'Warhorse',
-                    dbid = PLATFORM_DBID_2,
-                    loadoutid = LOADOUT_DBID_3
+                    dbid = CONFIG.const.platformBDID2,
+                    loadoutid = CONFIG.const.loadoutDBID3
                 } },
                 { 13, {
                     side = 'China',
                     type = 'aircraft',
                     name = 'Wardog',
-                    dbid = PLATFORM_DBID_4,
-                    loadoutid = LOADOUT_DBID_1
+                    dbid = CONFIG.const.platformBDID4,
+                    loadoutid = CONFIG.const.loadoutDBID1
                 } },
-                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
             }
         )
 
@@ -1253,34 +1263,34 @@ function addLandingShips()
             {
                 initialLocation = firstRp075_2,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 2
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 075',
-                dbid = PLATFORM_DBID_6,
-                cargo = LANDING_OPERATION.CARGOLIST.type075,
+                dbid = CONFIG.const.platformBDID6,
+                cargo = cargoList.type075,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             {
                 { 12, {
                     side = 'China',
                     type = 'aircraft',
                     name = 'Warhorse',
-                    dbid = PLATFORM_DBID_2,
-                    loadoutid = LOADOUT_DBID_3
+                    dbid = CONFIG.const.platformBDID2,
+                    loadoutid = CONFIG.const.loadoutDBID3
                 } },
                 { 13, {
                     side = 'China',
                     type = 'aircraft',
                     name = 'Wardog',
-                    dbid = PLATFORM_DBID_5,
-                    loadoutid = LOADOUT_DBID_2
+                    dbid = CONFIG.const.platformBDID5,
+                    loadoutid = CONFIG.const.loadoutDBID2
                 } },
-                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
             }
         )
 
@@ -1288,27 +1298,27 @@ function addLandingShips()
             {
                 initialLocation = firstRp071,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 4
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 071',
-                dbid = PLATFORM_DBID_7,
-                cargo = LANDING_OPERATION.CARGOLIST.type071,
+                dbid = CONFIG.const.platformBDID7,
+                cargo = cargoList.type071,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             {
                 { 4, {
                     side = 'China',
                     type = 'aircraft',
                     name = 'Warhorse',
-                    dbid = PLATFORM_DBID_2,
-                    loadoutid = LOADOUT_DBID_3
+                    dbid = CONFIG.const.platformBDID2,
+                    loadoutid = CONFIG.const.loadoutDBID3
                 } },
-                { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
             }
         )
 
@@ -1316,17 +1326,17 @@ function addLandingShips()
             {
                 initialLocation = firstRp072a,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 4
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 072A',
-                dbid = PLATFORM_DBID_9,
-                cargo = LANDING_OPERATION.CARGOLIST.type072a,
+                dbid = CONFIG.const.platformBDID9,
+                cargo = cargoList.type072a,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             nil
         )
@@ -1335,17 +1345,17 @@ function addLandingShips()
             {
                 initialLocation = firstRp072iii,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 4
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 072III',
-                dbid = PLATFORM_DBID_8,
-                cargo = LANDING_OPERATION.CARGOLIST.type072iii,
+                dbid = CONFIG.const.platformBDID8,
+                cargo = cargoList.type072iii,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             nil
         )
@@ -1354,102 +1364,109 @@ function addLandingShips()
             {
                 initialLocation = firstRp073a,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                distance = shipInfo.horizontalDistance,
                 num = 4
             },
             {
                 side = 'China',
                 type = 'Ship',
                 name = 'Type 073A',
-                dbid = PLATFORM_DBID_10,
-                cargo = LANDING_OPERATION.CARGOLIST.type073a,
+                dbid = CONFIG.const.platformBDID10,
+                cargo = cargoList.type073a,
                 heading = area.heading.vertical,
-                manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                manualSpeed = shipInfo.shipSpeed,
             },
             nil
         )
     end
+
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
 function calculateDestination()
-    local LANDING_OPERATION = gKH.State.LoadTableFromKey("LANDING_OPERATION")
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        return
+    end
 
-    for i, area in ipairs(LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.areas) do
+    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
+    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+
+    for i, area in ipairs(shipLocationInfo[idx].to.areas) do
         local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
         local firstRp071 = ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
         local firstRp072iii = getPointFromBearing({
             initialLocation = firstRp075,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.distanceBetweenLSTAndLPDArea
+            distance = shipInfo.distanceBetweenLSTAndLPDArea
         })
         local firstRp072a = getPointFromBearing({
             initialLocation = firstRp072iii,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         local firstRp073a = getPointFromBearing({
             initialLocation = firstRp072a,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         local firstRp071InLSTArea = getPointFromBearing({
             initialLocation = firstRp073a,
             bearing = area.heading.vertical,
-            distance = LANDING_OPERATION.SHIP_INFO.verticalDistance
+            distance = shipInfo.verticalDistance
         })
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type075.locations,
+            shipLocationInfo[idx].to.result.type075.locations,
             generateLocations({
                 initialLocation = firstRp075,
                 num = area.num.type075,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type071.locations,
+            shipLocationInfo[idx].to.result.type071.locations,
             generateLocations({
                 initialLocation = firstRp071,
                 num = area.num.type071,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072iii
-            .locations,
+            shipLocationInfo[idx].to.result.type072iii.locations,
             generateLocations({
                 initialLocation = firstRp072iii,
                 num = area.num.type072iii,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072a.locations,
+            shipLocationInfo[idx].to.result.type072a.locations,
             generateLocations({
                 initialLocation = firstRp072a,
                 num = area.num.type072a,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type073a.locations,
+            shipLocationInfo[idx].to.result.type073a.locations,
             generateLocations({
                 initialLocation = firstRp073a,
                 num = area.num.type073a,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
         insertList(
-            LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type071InLSTArea
-            .locations, generateLocations({
+            shipLocationInfo[idx].to.result.type071InLSTArea.locations,
+            generateLocations({
                 initialLocation = firstRp071InLSTArea,
                 num = area.num.type071InLSTArea,
                 bearing = area.heading.horizontal,
-                distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance
+                distance = shipInfo.horizontalDistance
             }))
     end
 
-    if LANDING_OPERATION ~= nil then
-        gKH.State.SaveTableToKey(LANDING_OPERATION, "LANDING_OPERATION")
-    end
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
