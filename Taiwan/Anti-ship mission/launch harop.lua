@@ -5,11 +5,17 @@ local temp = {}
 local mission2 = ScenEdit_GetMission('Taiwan', 'RECON3')
 local units = VP_GetSide({ Side = 'Taiwan' }).units
 local radarTrucks = filterUnitsByName(units, 'Radar Truck')
-local ANTI_SHIP = gKH.State.LoadTableFromKey("ANTI_SHIP")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 if contacts ~= nil then
     for index, value in ipairs(contacts) do
-        if value:inArea(ANTI_SHIP.NAI_1) and value.type == 'Surface' then
+        if value:inArea(CONFIG.t.asm.const.nai1) and value.type == 'Surface' then
             table.insert(temp, value)
         end
     end
