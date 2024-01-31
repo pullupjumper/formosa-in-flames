@@ -1,7 +1,11 @@
-local STRIKE_ON_FACILITY = gKH.State.LoadTableFromKey("STRIKE_ON_FACILITY")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
+if CONFIG == nil then
+    print('CONFIG == nil')
+    return
+end
 
-for index, value in ipairs(CONTINGENCY_RUNWAYS) do
+for index, value in ipairs(CONFIG.c.srbm.onFacility.const.contingencyRunways) do
     local contact = ScenEdit_GetContact({ side = "China", guid = value.base.guid })
     local runwayContact = ScenEdit_GetContact({ side = "China", guid = value.runway.guid })
 
@@ -12,16 +16,13 @@ for index, value in ipairs(CONTINGENCY_RUNWAYS) do
             local num = getCount(runway.embarkedUnits['Aircraft'])
 
             if num >= 6 then
-                STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY 4')
-                STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 5')
-                STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 6')
+                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY 4')
+                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 5')
+                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 6')
                 break
             end
         end
     end
 end
 
-
-if STRIKE_ON_FACILITY ~= nil then
-    gKH.State.SaveTableToKey(STRIKE_ON_FACILITY, "STRIKE_ON_FACILITY")
-end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
