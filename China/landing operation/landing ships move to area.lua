@@ -1,99 +1,89 @@
 local units = VP_GetSide({ Side = 'China' }).units
-local LANDING_OPERATION = gKH.State.LoadTableFromKey("LANDING_OPERATION")
-local MLRS_ON_MOBILE_TARGETS = gKH.State.LoadTableFromKey("MLRS_ON_MOBILE_TARGETS")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
-if LANDING_OPERATION.IS_LANDING_SHIPS_STARTED_MOVING then
+local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+local idx = CONFIG.c.landingOperation.idxShipLocationInfo
+local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
+
+if CONFIG.c.landingOperation.isLandingShipsStartedMoving then
     for index, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit ~= nil then
-            unit.manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed
+            unit.manualSpeed = shipInfo.shipSpeed
 
-            if unit.dbid == LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type075.dbid then
-                local locationIndex = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type075.locationIndex
-                local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type075.locations[locationIndex]
+            if unit.dbid == shipLocationInfo[idx].to.result.type075.dbid then
+                local locationIndex = shipLocationInfo[idx].to.result.type075.locationIndex
+                local location = shipLocationInfo[idx].to.result.type075.locations[locationIndex]
                 unit.course = getCourseByPoints({ location })
                 locationIndex = locationIndex + 1
-                LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type075.locationIndex =
-                    locationIndex
-            elseif unit.dbid == LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072iii.dbid then
-                local locationIndex = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type072iii.locationIndex
-                local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type072iii.locations
-                    [locationIndex]
+                shipLocationInfo[idx].to.result.type075.locationIndex = locationIndex
+            elseif unit.dbid == shipLocationInfo[idx].to.result.type072iii.dbid then
+                local locationIndex = shipLocationInfo[idx].to.result.type072iii.locationIndex
+                local location = shipLocationInfo[idx].to.result.type072iii.locations[locationIndex]
                 unit.course = getCourseByPoints({ location })
                 locationIndex = locationIndex + 1
-                LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072iii.locationIndex =
-                    locationIndex
-            elseif unit.dbid == LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072a.dbid then
-                local locationIndex = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type072a.locationIndex
-                local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type072a.locations[locationIndex]
+                shipLocationInfo[idx].to.result.type072iii.locationIndex = locationIndex
+            elseif unit.dbid == shipLocationInfo[idx].to.result.type072a.dbid then
+                local locationIndex = shipLocationInfo[idx].to.result.type072a.locationIndex
+                local location = shipLocationInfo[idx].to.result.type072a.locations[locationIndex]
                 unit.course = getCourseByPoints({ location })
                 locationIndex = locationIndex + 1
-                LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type072a.locationIndex =
-                    locationIndex
-            elseif unit.dbid == LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type073a.dbid then
-                local locationIndex = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type073a.locationIndex
-                local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type073a.locations[locationIndex]
+                shipLocationInfo[idx].to.result.type072a.locationIndex = locationIndex
+            elseif unit.dbid == shipLocationInfo[idx].to.result.type073a.dbid then
+                local locationIndex = shipLocationInfo[idx].to.result.type073a.locationIndex
+                local location = shipLocationInfo[idx].to.result.type073a.locations[locationIndex]
                 unit.course = getCourseByPoints({ location })
                 locationIndex = locationIndex + 1
-                LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type073a.locationIndex =
-                    locationIndex
-            elseif unit.dbid == LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type071.dbid then
-                local locationIndex = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                    .result.type071.locationIndex
+                shipLocationInfo[idx].to.result.type073a.locationIndex = locationIndex
+            elseif unit.dbid == shipLocationInfo[idx].to.result.type071.dbid then
+                local locationIndex = shipLocationInfo[idx].to.result.type071.locationIndex
 
                 if locationIndex > 2 then
-                    local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                        .result.type071InLSTArea.locations
-                        [locationIndex - 2]
+                    local location = shipLocationInfo[idx].to.result.type071InLSTArea.locations[locationIndex - 2]
                     unit.course = getCourseByPoints({ location })
                 else
-                    local location = LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to
-                        .result.type071.locations
-                        [locationIndex]
+                    local location = shipLocationInfo[idx].to.result.type071.locations[locationIndex]
                     unit.course = getCourseByPoints({ location })
                 end
 
                 locationIndex = locationIndex + 1
-                LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].to.result.type071.locationIndex =
-                    locationIndex
+                shipLocationInfo[idx].to.result.type071.locationIndex = locationIndex
             end
         end
     end
 
-    LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED = true
-    LANDING_OPERATION.IS_LANDING_SHIPS_STARTED_MOVING = false
+    CONFIG.c.landingOperation.isLandingShipsArrived = true
+    CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
 end
 
-if LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED then
+if CONFIG.c.landingOperation.isLandingShipsArrived then
     local unitsInAnchorageArea1 = {}
 
     for index, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit ~= nil
-            and (unit.dbid == PLATFORM_DBID_6
-                or unit.dbid == PLATFORM_DBID_7
-                or unit.dbid == PLATFORM_DBID_8
-                or unit.dbid == PLATFORM_DBID_9
-                or unit.dbid == PLATFORM_DBID_10) then
+            and (unit.dbid == CONFIG.const.platformBDID6
+                or unit.dbid == CONFIG.const.platformBDID7
+                or unit.dbid == CONFIG.const.platformBDID8
+                or unit.dbid == CONFIG.const.platformBDID9
+                or unit.dbid == CONFIG.const.platformBDID10) then
             if unit.unitstate ~= 'Unassigned' then
                 break
             end
 
-            -- if unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].anchorageArea) or unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].LSTAnchorageArea) then
+            -- if unit:inArea(cargoInfoForTransfer[1].anchorageArea) or unit:inArea(cargoInfoForTransfer[1].LSTAnchorageArea) then
             --     table.insert(unitsInAnchorageArea1, unit)
             -- end
-            for i, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
+            for i, info in ipairs(cargoInfoForTransfer) do
                 if unit:inArea(info.anchorageArea) or unit:inArea(info.LSTAnchorageArea) then
                     table.insert(unitsInAnchorageArea1, unit)
                 end
@@ -103,81 +93,81 @@ if LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED then
 
     if getCount(unitsInAnchorageArea1) > 15 then
         -- for index, unit in ipairs(unitsInAnchorageArea1) do
-        --     if unit.dbid == PLATFORM_DBID_6 then
+        --     if unit.dbid == CONFIG.const.platformBDID6 then
         --         transferCargo(
         --             unit.guid,
         --             'Boats',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.cargoList
+        --             cargoInfoForTransfer[1].boat.dbid,
+        --             cargoInfoForTransfer[1].boat.cargoList
         --         )
         --         transferCargo(
         --             unit.guid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.cargoList
+        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
+        --             cargoInfoForTransfer[1].tansportHelicopter.cargoList
         --         )
         --         assignEmbarkedUnitsToMission(
         --             unit.guid,
         --             'Boats',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.missions
+        --             cargoInfoForTransfer[1].boat.dbid,
+        --             cargoInfoForTransfer[1].boat.missions
         --         )
         --         assignEmbarkedUnitsToMission(
         --             unit.guid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.missions
+        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
+        --             cargoInfoForTransfer[1].tansportHelicopter.missions
         --         )
         --         assignUnitToFerryMission(
         --             unit.guid,
         --             13,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].attackHelicopter1.dbid,
+        --             cargoInfoForTransfer[1].attackHelicopter1.dbid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].attackHelicopter1.missions[1]
+        --             cargoInfoForTransfer[1].attackHelicopter1.missions[1]
         --         )
         --         assignUnitToFerryMission(
         --             unit.guid,
         --             13,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].attackHelicopter2.dbid,
+        --             cargoInfoForTransfer[1].attackHelicopter2.dbid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].attackHelicopter2.missions[1]
+        --             cargoInfoForTransfer[1].attackHelicopter2.missions[1]
         --         )
         --     end
 
-        --     if unit.dbid == PLATFORM_DBID_7 and unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].anchorageArea) then
+        --     if unit.dbid == CONFIG.const.platformBDID7 and unit:inArea(cargoInfoForTransfer[1].anchorageArea) then
         --         transferCargo(
         --             unit.guid,
         --             'Boats',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.cargoList
+        --             cargoInfoForTransfer[1].boat.dbid,
+        --             cargoInfoForTransfer[1].boat.cargoList
         --         )
         --         transferCargo(
         --             unit.guid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.cargoList
+        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
+        --             cargoInfoForTransfer[1].tansportHelicopter.cargoList
         --         )
         --         assignEmbarkedUnitsToMission(
         --             unit.guid,
         --             'Boats',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.missions
+        --             cargoInfoForTransfer[1].boat.dbid,
+        --             cargoInfoForTransfer[1].boat.missions
         --         )
         --         assignEmbarkedUnitsToMission(
         --             unit.guid,
         --             'Aircraft',
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.dbid,
-        --             LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.missions
+        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
+        --             cargoInfoForTransfer[1].tansportHelicopter.missions
         --         )
         --     end
         -- end
         createCargoMission()
 
-        for index, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
+        for index, info in ipairs(cargoInfoForTransfer) do
             for i, u in ipairs(unitsInAnchorageArea1) do
                 -- local u = SE_GetUnit({ guid = v.guid })
 
-                if u ~= nil and u.dbid == PLATFORM_DBID_6 and u:inArea(info.anchorageArea) then
+                if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(info.anchorageArea) then
                     transferCargo(
                         u.guid,
                         'Boats',
@@ -218,7 +208,7 @@ if LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED then
                     )
                 end
 
-                if u ~= nil and u.dbid == PLATFORM_DBID_7 and u:inArea(info.anchorageArea) then
+                if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(info.anchorageArea) then
                     transferCargo(
                         u.guid,
                         'Boats',
@@ -251,19 +241,19 @@ if LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED then
             assignUnitToFerryMission(
                 value.guid,
                 value.num,
-                PLATFORM_DBID_5,
+                CONFIG.const.platformBDID5,
                 'Aircraft',
                 value.missionName
             )
         end
 
-        LANDING_OPERATION.IS_LANDING_SHIPS_ARRIVED = false
-        LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED = true
-        MLRS_ON_MOBILE_TARGETS.IS_STRIKE_ACTIVATED = true
+        CONFIG.c.landingOperation.isLandingShipsArrived = false
+        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
+        CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = true
     end
 end
 
-if LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED then
+if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
     local contacts = ScenEdit_GetContacts('China')
     local filteredContacts = {}
 
@@ -272,12 +262,12 @@ if LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED then
     end
 
     for index, value in ipairs(contacts) do
-        if value:inArea(LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].airLandingZone) and value.typed == 8 then
+        if value:inArea(shipLocationInfo[idx].airLandingZone) and value.typed == 8 then
             table.insert(filteredContacts, value)
         end
     end
 
-    if getCount(filteredContacts) < LANDING_OPERATION.SHIP_LOCATION_INFO[LANDING_OPERATION.IDX_SHIP_LOCATION_INFO].numOfContactsInAirLandingZone then
+    if getCount(filteredContacts) < shipLocationInfo[idx].numOfContactsInAirLandingZone then
         local unitsInWestLSTAnchorageArea = {}
         local unitsInNorthLSTAnchorageArea = {}
         local unitsInSouthLSTAnchorageArea = {}
@@ -287,82 +277,78 @@ if LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED then
             local unit = SE_GetUnit({ guid = value.guid })
 
             if unit ~= nil
-                and (unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].LSTAnchorageArea)
-                    or unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[2].LSTAnchorageArea)
-                    or unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[3].LSTAnchorageArea)) then
+                and (unit:inArea(cargoInfoForTransfer[1].LSTAnchorageArea)
+                    or unit:inArea(cargoInfoForTransfer[2].LSTAnchorageArea)
+                    or unit:inArea(cargoInfoForTransfer[3].LSTAnchorageArea)) then
                 table.insert(unitsInWestLSTAnchorageArea, unit)
-                unit.manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed
+                unit.manualSpeed = shipInfo.shipSpeed
             end
 
-            if unit ~= nil and unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[4].LSTAnchorageArea) then
+            if unit ~= nil and unit:inArea(cargoInfoForTransfer[4].LSTAnchorageArea) then
                 table.insert(unitsInNorthLSTAnchorageArea, unit)
-                unit.manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed
+                unit.manualSpeed = shipInfo.shipSpeed
             end
 
-            if unit ~= nil and unit:inArea(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[5].LSTAnchorageArea) then
+            if unit ~= nil and unit:inArea(cargoInfoForTransfer[5].LSTAnchorageArea) then
                 table.insert(unitsInSouthLSTAnchorageArea, unit)
-                unit.manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed
+                unit.manualSpeed = shipInfo.shipSpeed
             end
         end
 
         setCourseToUnits(
             {
-                bearing = LANDING_OPERATION.SHIP_INFO.heading.west.vertical,
-                distance = LANDING_OPERATION.SHIP_INFO.transitDistance
+                bearing = shipInfo.heading.west.vertical,
+                distance = shipInfo.transitDistance
             },
             unitsInWestLSTAnchorageArea
         )
         setCourseToUnits(
             {
-                bearing = LANDING_OPERATION.SHIP_INFO.heading.north.vertical,
-                distance = LANDING_OPERATION.SHIP_INFO.transitDistance
+                bearing = shipInfo.heading.north.vertical,
+                distance = shipInfo.transitDistance
             },
             unitsInNorthLSTAnchorageArea
         )
         setCourseToUnits(
             {
-                bearing = LANDING_OPERATION.SHIP_INFO.heading.south.vertical,
-                distance = LANDING_OPERATION.SHIP_INFO.transitDistance
+                bearing = shipInfo.heading.south.vertical,
+                distance = shipInfo.transitDistance
             },
             unitsInSouthLSTAnchorageArea
         )
         ScenEdit_MsgBox('Launch amphibious landing attack', 0)
-        LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED = false
+        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
     end
 end
 
-if LANDING_OPERATION.AIRLANDING_MISSION_STARTTIME ~= nil then
-    local diffTime = ScenEdit_CurrentTime() - LANDING_OPERATION.AIRLANDING_MISSION_STARTTIME
+if CONFIG.c.landingOperation.airlandingMissionStartTime ~= nil then
+    local diffTime = ScenEdit_CurrentTime() - CONFIG.c.landingOperation.airlandingMissionStartTime
 
     if diffTime >= (3600 * 2) then
         for index, value in ipairs(units) do
             local unit = SE_GetUnit({ guid = value.guid })
 
             if unit ~= nil
-                and (unit.dbid == PLATFORM_DBID_6 or unit.dbid == PLATFORM_DBID_7) then
+                and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
                 transferCargo(
                     unit.guid,
                     'Boats',
-                    LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.dbid,
-                    LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].boat.cargoList
+                    cargoInfoForTransfer[1].boat.dbid,
+                    cargoInfoForTransfer[1].boat.cargoList
                 )
                 transferCargo(
                     unit.guid,
                     'Aircraft',
-                    LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.dbid,
-                    LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER[1].tansportHelicopter.cargoList
+                    cargoInfoForTransfer[1].tansportHelicopter.dbid,
+                    cargoInfoForTransfer[1].tansportHelicopter.cargoList
                 )
             end
         end
 
         local currentTime = ScenEdit_CurrentTime()
-        LANDING_OPERATION.AIRLANDING_MISSION_STARTTIME = currentTime
+        CONFIG.c.landingOperation.airlandingMissionStartTime = currentTime
     end
 end
 
-
-if LANDING_OPERATION ~= nil and MLRS_ON_MOBILE_TARGETS ~= nil then
-    gKH.State.SaveTableToKey(LANDING_OPERATION, "LANDING_OPERATION")
-    gKH.State.SaveTableToKey(LANDING_OPERATION, "MLRS_ON_MOBILE_TARGETS")
-end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 --OnPlottedCourse OnFerryMission RTB_Manual Tasked Unassigned
