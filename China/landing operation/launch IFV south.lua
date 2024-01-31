@@ -1,30 +1,36 @@
 local ship = ScenEdit_UnitX()
-local LANDING_OPERATION = gKH.State.LoadTableFromKey("LANDING_OPERATION")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 --launchAmphibiousIFV(ship, transitDistanceIFV, degree3, speedIFV)
 if ship == nil then
     return
 end
 
-if ship.dbid == PLATFORM_DBID_7 then
+if ship.dbid == CONFIG.const.platformBDID7 then
     launchAmphibiousIFV({
         ship = ship,
         num = 40,
-        bearing = LANDING_OPERATION.SHIP_INFO.heading.south.horizontal,
-        distance = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleHorizontalDistance,
-        transitDistance = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleTransitDistance,
-        transitBearing = LANDING_OPERATION.SHIP_INFO.heading.south.vertical,
-        speed = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleSpeed
+        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,
+        distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
+        transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
+        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed
     })
-elseif ship.dbid == PLATFORM_DBID_8 or ship.dbid == PLATFORM_DBID_9 then
+elseif ship.dbid == CONFIG.const.platformBDID8 or ship.dbid == CONFIG.const.platformBDID9 then
     launchAmphibiousIFV({
         ship = ship,
         num = 10,
-        bearing = LANDING_OPERATION.SHIP_INFO.heading.south.horizontal,
-        distance = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleHorizontalDistance,
-        transitDistance = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleTransitDistance,
-        transitBearing = LANDING_OPERATION.SHIP_INFO.heading.south.vertical,
-        speed = LANDING_OPERATION.SHIP_INFO.amphibiousVehicleSpeed
+        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,
+        distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
+        transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
+        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed
     })
 end
 
