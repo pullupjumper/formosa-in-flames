@@ -179,8 +179,17 @@ function saveData()
 end
 
 -- initSAMs()
-saveData()
-initASW()
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG ~= nil and getCount(CONFIG.c.srbm.onFacility.strikePackage[1].targetList) <= 0 then
+    saveData()
+    initASW()
+    calculateDestination()
+    ScenEdit_MsgBox('save data', 1)
+else
+    ScenEdit_MsgBox('not save data', 1)
+end
+
 
 -- the following forces have been placed under your command:
 -- 4. Surface Action Group
