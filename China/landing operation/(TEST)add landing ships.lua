@@ -1,66 +1,74 @@
 function addLandingShipsForTest()
-    for key, shipType in pairs(LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.result) do
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
+        return
+    end
+
+    for key, shipType in pairs(CONFIG.c.landingOperation.const.shipLocationInfo[1].to.result) do
         for index, location in ipairs(shipType.locations) do
             local embarkedUnits = nil
 
-            if shipType.dbid == PLATFORM_DBID_6 then
+            if shipType.dbid == CONFIG.const.platformBDID6 then
                 embarkedUnits = {
                     { 12, {
                         side = 'China',
                         type = 'aircraft',
                         name = 'Warhorse',
-                        dbid = PLATFORM_DBID_2,
-                        loadoutid = LOADOUT_DBID_3
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
                     } },
                     { 13, {
                         side = 'China',
                         type = 'aircraft',
                         name = 'Wardog',
-                        dbid = PLATFORM_DBID_4,
-                        loadoutid = LOADOUT_DBID_1
+                        dbid = CONFIG.const.platformBDID4,
+                        loadoutid = CONFIG.const.loadoutDBID1
                     } },
-                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
                 }
             end
 
-            if shipType.dbid == PLATFORM_DBID_6 and index > 3 then
+            if shipType.dbid == CONFIG.const.platformBDID6 and index > 3 then
                 embarkedUnits = {
                     { 12, {
                         side = 'China',
                         type = 'aircraft',
                         name = 'Warhorse',
-                        dbid = PLATFORM_DBID_2,
-                        loadoutid = LOADOUT_DBID_3
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
                     } },
                     { 13, {
                         side = 'China',
                         type = 'aircraft',
                         name = 'Wardog',
-                        dbid = PLATFORM_DBID_5,
-                        loadoutid = LOADOUT_DBID_2
+                        dbid = CONFIG.const.platformBDID5,
+                        loadoutid = CONFIG.const.loadoutDBID2
                     } },
-                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
                 }
             end
 
-            if shipType.dbid == PLATFORM_DBID_7 then
+            if shipType.dbid == CONFIG.const.platformBDID7 then
                 embarkedUnits = {
                     { 4, {
                         side = 'China',
                         type = 'aircraft',
                         name = 'Warhorse',
-                        dbid = PLATFORM_DBID_2,
-                        loadoutid = LOADOUT_DBID_3
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
                     } },
-                    { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = PLATFORM_DBID_1 } },
+                    { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
                 }
             end
 
             addUnitsByRp(
                 {
                     initialLocation = location,
-                    bearing = LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.areas[1].heading.horizontal,
-                    distance = LANDING_OPERATION.SHIP_INFO.horizontalDistance,
+                    bearing = CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].heading.horizontal,
+                    distance = CONFIG.c.landingOperation.const.shipInfo.horizontalDistance,
                     num = 1
                 },
                 {
@@ -69,8 +77,8 @@ function addLandingShipsForTest()
                     name = key,
                     dbid = shipType.dbid,
                     cargo = LANDING_OPERATION.CARGOLIST[key],
-                    heading = LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.areas[1].heading.vertical,
-                    manualSpeed = LANDING_OPERATION.SHIP_INFO.shipSpeed,
+                    heading = CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].heading.vertical,
+                    manualSpeed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
                 },
                 embarkedUnits
             )
@@ -110,7 +118,7 @@ function addLandingShipsForTest()
             dbid = 2296,
             latitude = type052dLocationsWest[k].latitude,
             longitude = type052dLocationsWest[k].longitude,
-            heading = LANDING_OPERATION.SHIP_INFO.heading.west.vertical
+            heading = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical
         })
         ScenEdit_SetEMCON("Unit", unit.guid, "Radar=Active;OECM=Active")
     end
@@ -124,7 +132,7 @@ function addLandingShipsForTest()
             dbid = 2296,
             latitude = type052dLocationsNorth[k].latitude,
             longitude = type052dLocationsNorth[k].longitude,
-            heading = LANDING_OPERATION.SHIP_INFO.heading.north.vertical
+            heading = CONFIG.c.landingOperation.const.shipInfo.heading.north.vertical
         })
         ScenEdit_SetEMCON("Unit", unit.guid, "Radar=Active;OECM=Active")
     end
@@ -137,7 +145,7 @@ function addLandingShipsForTest()
             dbid = 2834,
             latitude = type055LocationsWest[k].latitude,
             longitude = type055LocationsWest[k].longitude,
-            heading = LANDING_OPERATION.SHIP_INFO.heading.west.vertical
+            heading = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical
         })
         ScenEdit_SetEMCON("Unit", unit.guid, "Radar=Active;OECM=Active")
     end
@@ -150,19 +158,29 @@ function addLandingShipsForTest()
             dbid = 2834,
             latitude = type055LocationsNorth[k].latitude,
             longitude = type055LocationsNorth[k].longitude,
-            heading = LANDING_OPERATION.SHIP_INFO.heading.north.vertical
+            heading = CONFIG.c.landingOperation.const.shipInfo.heading.north.vertical
         })
         ScenEdit_SetEMCON("Unit", unit.guid, "Radar=Active;OECM=Active")
     end
 end
 
 function clearDestination()
-    for key, shipType in pairs(LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.result) do
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
+        return
+    end
+
+    for key, shipType in pairs(CONFIG.c.landingOperation.const.shipLocationInfo[1].to.result) do
         shipType.locations = {}
     end
+
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
-LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.areas[1].num = {
+CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].num = {
     type075 = 3,
     type071 = 2,
     type072iii = 7,
@@ -170,6 +188,7 @@ LANDING_OPERATION.SHIP_LOCATION_INFO[1].to.areas[1].num = {
     type073a = 2,
     type071InLSTArea = 2,
 }
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 clearDestination()
 calculateDestination()
 addLandingShipsForTest()

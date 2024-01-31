@@ -6,7 +6,7 @@ for index, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
     for i, v in ipairs(units) do
         local u = SE_GetUnit({ guid = v.guid })
 
-        if u ~= nil and u.dbid == PLATFORM_DBID_6 and u:inArea(info.anchorageArea) then
+        if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(info.anchorageArea) then
             transferCargo(
                 u.guid,
                 'Boats',
@@ -47,7 +47,7 @@ for index, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
             )
         end
 
-        if u ~= nil and u.dbid == PLATFORM_DBID_7 and u:inArea(info.anchorageArea) then
+        if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(info.anchorageArea) then
             transferCargo(
                 u.guid,
                 'Boats',
