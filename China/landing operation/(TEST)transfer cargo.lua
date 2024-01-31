@@ -1,8 +1,13 @@
 local units = VP_GetSide({ Side = 'China' }).units
-local LANDING_OPERATION = gKH.State.LoadTableFromKey("LANDING_OPERATION")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
-for index, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
+for index, info in ipairs(CONFIG.c.landingOperation.const.cargoInfoForTransfer) do
     for i, v in ipairs(units) do
         local u = SE_GetUnit({ guid = v.guid })
 
@@ -76,8 +81,5 @@ for index, info in ipairs(LANDING_OPERATION.CARGO_INFO_FOR_TRANSFER) do
     end
 end
 
-LANDING_OPERATION.IS_AMPHIBIOUS_LANDING_ATTACK_LAUNCHED = true
-
-if LANDING_OPERATION ~= nil then
-    gKH.State.SaveTableToKey(LANDING_OPERATION, "LANDING_OPERATION")
-end
+CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
