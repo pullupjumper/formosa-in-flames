@@ -1,8 +1,10 @@
-local STRIKE_ON_FACILITY = gKH.State.LoadTableFromKey("STRIKE_ON_FACILITY")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-STRIKE_ON_FACILITY.LAST_RECON_TIME = ScenEdit_CurrentTime()
-
-
-if STRIKE_ON_FACILITY ~= nil then
-    gKH.State.SaveTableToKey(STRIKE_ON_FACILITY, "STRIKE_ON_FACILITY")
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
 end
+
+CONFIG.c.srbm.onFacility.lastReconTime = ScenEdit_CurrentTime()
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
