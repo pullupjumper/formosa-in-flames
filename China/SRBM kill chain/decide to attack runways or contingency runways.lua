@@ -17,9 +17,9 @@ for index, value in ipairs(CONFIG.c.srbm.onFacility.const.contingencyRunways) do
             local num = getCount(runway.embarkedUnits['Aircraft'])
 
             if num >= 6 then
-                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY 4')
-                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 5')
-                CONFIG.c.srbm.onFacility.strikePackage[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 6')
+                CONFIG.c.srbm.onFacility.package[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY 4')
+                CONFIG.c.srbm.onFacility.package[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 5')
+                CONFIG.c.srbm.onFacility.package[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 6')
                 break
             end
         end

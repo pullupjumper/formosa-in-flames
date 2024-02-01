@@ -1,4 +1,5 @@
 CONFIG = {}
+CONFIG.isDevMode = true
 CONFIG.const = {}
 CONFIG.c = {}
 CONFIG.c.mlrs = {}
@@ -44,8 +45,8 @@ CONFIG.const.loadoutDBID3 = 18367  -- z-18
 
 -- MLRS on mobile units
 CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = false
-CONFIG.c.mlrs.onMobileUnit.idxStrikePackage = 1
-CONFIG.c.mlrs.onMobileUnit.strikePackage = {
+CONFIG.c.mlrs.onMobileUnit.idxPackage = 1
+CONFIG.c.mlrs.onMobileUnit.package = {
     {
         name = '',
         targetList = {},
@@ -67,8 +68,8 @@ CONFIG.c.srbm.onFacility.launcherState = {}
 CONFIG.c.srbm.onFacility.isStrikeActivated = false
 CONFIG.c.srbm.onFacility.isReloadActivated = false
 CONFIG.c.srbm.onFacility.strikeTimes = 0
-CONFIG.c.srbm.onFacility.idxStrikePackage = 1
-CONFIG.c.srbm.onFacility.strikePackage = {
+CONFIG.c.srbm.onFacility.idxPackage = 1
+CONFIG.c.srbm.onFacility.package = {
     {
         name = 'RADAR',
         targetList = {},
@@ -158,7 +159,7 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 CONFIG.c.aircraft.onMobileUnit.isStrikeActivated = false
 CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes = 5
 CONFIG.c.aircraft.onMobileUnit.lastStrikeTime = nil
-CONFIG.c.aircraft.onMobileUnit.strikePackage = {
+CONFIG.c.aircraft.onMobileUnit.package = {
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },

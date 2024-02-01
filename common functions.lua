@@ -1185,13 +1185,13 @@ function getPointFromBearing(params)
 end
 
 function addLandingShips()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
-        return
-    end
+    -- if CONFIG == nil then
+    --     print('CONFIG == nil')
+    --     ScenEdit_MsgBox('CONFIG == nil', 1)
+    --     return
+    -- end
 
     local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
@@ -1381,17 +1381,17 @@ function addLandingShips()
         )
     end
 
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+    -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
 function calculateDestination()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
-        return
-    end
+    -- if CONFIG == nil then
+    --     print('CONFIG == nil')
+    --     ScenEdit_MsgBox('CONFIG == nil', 1)
+    --     return
+    -- end
 
     local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
@@ -1470,5 +1470,5 @@ function calculateDestination()
             }))
     end
 
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+    -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end

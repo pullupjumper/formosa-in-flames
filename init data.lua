@@ -96,10 +96,10 @@ function initTargetList(side, missionName)
     return temp
 end
 
-function initASW()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+function initUnitsForASW()
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    if IS_ASW_STARTED and CONFIG ~= nil then
+    if CONFIG ~= nil then
         ScenEdit_GetMission('China', 'ASW - CSG').isactive = true
         ScenEdit_GetMission('China', 'AEW - CSG').isactive = true
         ScenEdit_GetMission('China', 'ASW - PATROL AC').isactive = true
@@ -133,14 +133,14 @@ function initASW()
     end
 end
 
-function saveData()
-    CONFIG.c.srbm.onFacility.strikePackage[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
-    CONFIG.c.srbm.onFacility.strikePackage[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
-    CONFIG.c.srbm.onFacility.strikePackage[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
-    CONFIG.c.srbm.onFacility.strikePackage[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
-    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
-    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
-    CONFIG.c.srbm.onFacility.strikePackage[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
+function initUnitsAndTargetList()
+    CONFIG.c.srbm.onFacility.package[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
+    CONFIG.c.srbm.onFacility.package[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
+    CONFIG.c.srbm.onFacility.package[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
+    CONFIG.c.srbm.onFacility.package[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
+    CONFIG.c.srbm.onFacility.package[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
+    CONFIG.c.srbm.onFacility.package[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
+    CONFIG.c.srbm.onFacility.package[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
 
     initLaunchers(
         'China',
@@ -178,18 +178,22 @@ function saveData()
     gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
--- initSAMs()
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if CONFIG ~= nil and getCount(CONFIG.c.srbm.onFacility.strikePackage[1].targetList) <= 0 then
-    saveData()
-    initASW()
+if CONFIG ~= nil and getCount(CONFIG.c.srbm.onFacility.package[1].targetList) <= 0 then
+    initUnitsAndTargetList()
+    initUnitsForASW()
     calculateDestination()
-    ScenEdit_MsgBox('save data', 1)
-else
-    ScenEdit_MsgBox('not save data', 1)
-end
 
+    if CONFIG.isDevMode then
+        ScenEdit_MsgBox('Init data and save', 1)
+    end
+else
+    if CONFIG.isDevMode then
+        ScenEdit_MsgBox('Not init data', 1)
+    end
+end
 
 -- the following forces have been placed under your command:
 -- 4. Surface Action Group

@@ -13,7 +13,7 @@ if contacts == nil then
 end
 
 if CONFIG.c.aircraft.onMobileUnit.isStrikeActivated then
-    for index, pack in ipairs(CONFIG.c.aircraft.onMobileUnit.strikePackage) do
+    for index, pack in ipairs(CONFIG.c.aircraft.onMobileUnit.package) do
         if pack.striker.units ~= nil and getCount(pack.striker.units) > 0 then
             if hasDestroyedOrRTB(pack.striker.units, 1) then
                 for i, value in ipairs(pack.escort.units) do
@@ -86,7 +86,7 @@ end
 if CONFIG.c.mlrs.onMobileUnit.isStrikeActivated then
     local result = { batteryIndex = 1, groupIndex = 1 }
 
-    for index, package in ipairs(CONFIG.c.mlrs.onMobileUnit.strikePackage) do
+    for index, package in ipairs(CONFIG.c.mlrs.onMobileUnit.package) do
         local filteredContacts = filterContacts(contacts, function(value)
             if (value.typed == 8 or value.typed == 21)
             -- and value:inArea(package.area)
@@ -104,7 +104,7 @@ if CONFIG.c.mlrs.onMobileUnit.isStrikeActivated then
                 result = attackContact(
                     filteredContact,
                     4,
-                    CONFIG.c.mlrs.onMobileUnit.strikePackage[index].batteries,
+                    CONFIG.c.mlrs.onMobileUnit.package[index].batteries,
                     result.batteryIndex,
                     result.groupIndex,
                     CONFIG.c.mlrs.onMobileUnit.const.weaponDBID
@@ -116,7 +116,8 @@ end
 
 if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
     local result = { batteryIndex = 1, groupIndex = 1 }
-    local targetListIdx = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index
+    local packageIdx = CONFIG.c.srbm.onFacility.idxPackage
+    local targetListIdx = CONFIG.c.srbm.onFacility.package[packageIdx].index
     local diff = 0
 
     if CONFIG.c.srbm.onFacility.lastReconTime ~= nil then
@@ -129,15 +130,14 @@ if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
             and (CONFIG.c.srbm.onFacility.lastReconTime ~= nil and ScenEdit_CurrentTime() > CONFIG.c.srbm.onFacility.lastReconTime)
             and diff <= CONFIG.c.srbm.onFacility.const.contactAge
         local isTheFirstStrike = BDA == nil
-            and CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage]
-            .hasLaunchedTheFirstStrike == false
+            and CONFIG.c.srbm.onFacility.package[packageIdx].hasLaunchedTheFirstStrike == false
 
-        for i, v in ipairs(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList[targetListIdx]) do
+        for i, v in ipairs(CONFIG.c.srbm.onFacility.package[packageIdx].targetList[targetListIdx]) do
             if v.guid == value.guid and (isTheFirstStrike or hasReconed) then
                 result = attackContact(
                     value,
-                    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].num,
-                    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].batteries,
+                    CONFIG.c.srbm.onFacility.package[packageIdx].num,
+                    CONFIG.c.srbm.onFacility.package[packageIdx].batteries,
                     result.batteryIndex,
                     result.groupIndex
                 )
@@ -145,50 +145,28 @@ if CONFIG.c.srbm.onFacility.isStrikeActivated and contacts ~= nil then
         end
     end
 
-    CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = CONFIG.c.srbm.onFacility
-        .strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index + 1
-
-    local isTargetListIdxOutofBounds = CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage]
-        .index
-        > getCount(CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList)
+    CONFIG.c.srbm.onFacility.package[packageIdx].index = CONFIG.c.srbm.onFacility.package[packageIdx].index + 1
+    local targetListLength = getCount(CONFIG.c.srbm.onFacility.package[packageIdx].targetList)
+    local nextTargetListIdx = CONFIG.c.srbm.onFacility.package[packageIdx].index
+    local isTargetListIdxOutofBounds = nextTargetListIdx > targetListLength
 
     if isTargetListIdxOutofBounds then
-        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].index = getCount(
-            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].targetList
-        )
-        CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = true
+        CONFIG.c.srbm.onFacility.package[packageIdx].index = targetListLength
+        CONFIG.c.srbm.onFacility.package[packageIdx].hasLaunchedTheFirstStrike = true
 
-        if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name == 'RADAR' then
-            CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].hasLaunchedTheFirstStrike = false
+        if CONFIG.c.srbm.onFacility.package[packageIdx].name == 'RADAR' then
+            CONFIG.c.srbm.onFacility.package[packageIdx].hasLaunchedTheFirstStrike = false
         end
     end
 
+    CONFIG.c.srbm.onFacility.idxPackage = CONFIG.c.srbm.onFacility.idxPackage + 1
+    local packageLength = getCount(CONFIG.c.srbm.onFacility.package)
+    local nextpackageIdx = CONFIG.c.srbm.onFacility.idxPackage
+    local ispPackageIdxOutofBounds = nextpackageIdx > packageLength
 
-    -- CONFIG.c.srbm.onFacility.fn.increaseTargetListIdx()
-
-    -- if CONFIG.c.srbm.onFacility.fn.isTargetListIdxOutOfBounds() then
-    --     CONFIG.c.srbm.onFacility.fn.resetTargetListIdx()
-    --     CONFIG.c.srbm.onFacility.fn.hasLaunchedTheFirstStrike(true)
-
-    --     if CONFIG.c.srbm.onFacility.strikePackage[CONFIG.c.srbm.onFacility.idxStrikePackage].name == 'RADAR' then
-    --         CONFIG.c.srbm.onFacility.fn.hasLaunchedTheFirstStrike(false)
-    --     end
-    -- end
-
-
-    CONFIG.c.srbm.onFacility.idxStrikePackage = CONFIG.c.srbm.onFacility.idxStrikePackage + 1
-    local isStrikePackageIdxOutofBounds = CONFIG.c.srbm.onFacility.idxStrikePackage >
-        getCount(CONFIG.c.srbm.onFacility.strikePackage)
-
-    if isStrikePackageIdxOutofBounds then
-        CONFIG.c.srbm.onFacility.idxStrikePackage = 1
+    if ispPackageIdxOutofBounds then
+        CONFIG.c.srbm.onFacility.idxPackage = 1
     end
-
-    -- CONFIG.c.srbm.onFacility.fn.increaseStrikePackageIdx()
-
-    -- if CONFIG.c.srbm.onFacility.fn.isStrikePackageIdxOutofBounds() then
-    --     CONFIG.c.srbm.onFacility.fn.resetStrikePackageIdx()
-    -- end
 
     CONFIG.c.srbm.onFacility.strikeTimes = CONFIG.c.srbm.onFacility.strikeTimes + 1
 
@@ -209,7 +187,7 @@ if CONFIG.c.aircraft.onMobileUnit.isStrikeActivated and CONFIG.c.aircraft.onMobi
     local isToStrike = (CONFIG.c.aircraft.onMobileUnit.lastStrikeTime == nil
         or (CONFIG.c.aircraft.onMobileUnit.lastStrikeTime ~= nil and diffTime >= CONFIG.c.aircraft.onMobileUnit.const.periodOfStrike))
 
-    for index, package in ipairs(CONFIG.c.aircraft.onMobileUnit.strikePackage) do
+    for index, package in ipairs(CONFIG.c.aircraft.onMobileUnit.package) do
         if package.hasLaunched == false then
             local filteredContacts = filterContacts(contacts, function(value)
                 if (value.typed == 8 or value.typed == 21)
