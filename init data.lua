@@ -175,13 +175,13 @@ function initUnitsAndTargetList()
     )
     -- ScenEdit_MsgBox("start", 1)
 
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+    -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if CONFIG ~= nil and getCount(CONFIG.c.srbm.onFacility.package[1].targetList) <= 0 then
+if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.onFacility.package[1].targetList) <= 0 then
     initUnitsAndTargetList()
     initUnitsForASW()
     calculateDestination()
@@ -189,6 +189,8 @@ if CONFIG ~= nil and getCount(CONFIG.c.srbm.onFacility.package[1].targetList) <=
     if CONFIG.isDevMode then
         ScenEdit_MsgBox('Init data and save', 1)
     end
+
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 else
     if CONFIG.isDevMode then
         ScenEdit_MsgBox('Not init data', 1)

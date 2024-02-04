@@ -205,9 +205,11 @@ CONFIG.c.aircraft.onMobileUnit.const.periodOfStrike = 70 * 60
 -- landing operation
 CONFIG.c.landingOperation.isLandingShipsStartedMoving = true
 CONFIG.c.landingOperation.isLandingShipsArrived = false
+CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = nil
 CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
 CONFIG.c.landingOperation.airlandingMissionStartTime = nil
 CONFIG.c.landingOperation.idxShipLocationInfo = 1
+CONFIG.c.landingOperation.const.periodOfTime = 30 * 60
 CONFIG.c.landingOperation.const.airlandingArea = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
 CONFIG.c.landingOperation.const.contactNumInAirlandingArea = 3
 CONFIG.c.landingOperation.const.cargoList = {

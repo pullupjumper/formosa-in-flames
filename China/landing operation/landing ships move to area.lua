@@ -237,7 +237,7 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
             end
         end
 
-        for index, value in ipairs(HELICOPTER_BASE) do
+        for index, value in ipairs(CONFIG.c.landingOperation.const.helicopterInBase) do
             assignUnitToFerryMission(
                 value.guid,
                 value.num,
@@ -249,6 +249,7 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
 
         CONFIG.c.landingOperation.isLandingShipsArrived = false
         CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
+        CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = ScenEdit_CurrentTime()
         CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = true
     end
 end
@@ -256,6 +257,12 @@ end
 if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
     local contacts = ScenEdit_GetContacts('China')
     local filteredContacts = {}
+    local diff = 0
+    local landingAttackStartTime = CONFIG.c.landingOperation.amphibiousLandingAttackStartTime
+
+    if landingAttackStartTime ~= nil then
+        diff = ScenEdit_CurrentTime() - landingAttackStartTime
+    end
 
     if contacts == nil then
         return
@@ -267,7 +274,8 @@ if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
         end
     end
 
-    if getCount(filteredContacts) < shipLocationInfo[idx].numOfContactsInAirLandingZone then
+    if getCount(filteredContacts) < shipLocationInfo[idx].numOfContactsInAirLandingZone
+        or (landingAttackStartTime ~= nil and diff >= CONFIG.c.landingOperation.const.periodOfTime) then
         local unitsInWestLSTAnchorageArea = {}
         local unitsInNorthLSTAnchorageArea = {}
         local unitsInSouthLSTAnchorageArea = {}

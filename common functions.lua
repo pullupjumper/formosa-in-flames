@@ -234,14 +234,16 @@ function deleteCargos(fromUnit, cargoList)
     local cargoGuidList = {}
     local count = 0
 
-    for k, v in ipairs(fromUnit.cargo[1].cargo) do
-        if v.dbid == cargoList.dbid then
-            table.insert(cargoGuidList, v.guid)
-            count = count + 1
-        end
+    if fromUnit.cargo[1].cargo ~= nil then
+        for k, v in ipairs(fromUnit.cargo[1].cargo) do
+            if v.dbid == cargoList.dbid then
+                table.insert(cargoGuidList, v.guid)
+                count = count + 1
+            end
 
-        if count == cargoList.num then
-            break
+            if count == cargoList.num then
+                break
+            end
         end
     end
 
@@ -485,7 +487,7 @@ function setCourseToUnits(course, units)
 end
 
 function createCargoMission()
-    for index, m in ipairs(LANDING_OPERATION.CARGO_MISSION_LIST) do
+    for index, m in ipairs(CONFIG.c.landingOperation.const.cargoMissionList) do
         local mission = ScenEdit_AddMission('China', m.name, 'Cargo', { zone = m.zone })
         mission.isactive = false
         ScenEdit_SetMission('China', m.name, m.setting)
@@ -493,8 +495,16 @@ function createCargoMission()
 end
 
 function setMissionStartTime()
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
+        return
+    end
+
     local currentTime = ScenEdit_CurrentTime()
-    AIRLANDING_MISSION_STARTTIME = currentTime
+    CONFIG.c.landingOperation.airlandingMissionStartTime = currentTime
     local airlandingMissionStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime))
     local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
     local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 20 * 60))
@@ -523,6 +533,7 @@ function setMissionStartTime()
     ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 3').starttime = airlandingMissionStartTime3
     -- ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 4').starttime = airlandingMissionStartTime4
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
 function setAntiShipMissionStartTime()
@@ -543,7 +554,7 @@ function isMissileHit(name, units)
     for index, value in ipairs(units) do
         local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-        if string.find(unit.name, name) and unit.type == 'Weapon' then
+        if unit ~= nil and string.find(unit.name, name) and unit.type == 'Weapon' then
             return false
         end
     end
