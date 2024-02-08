@@ -16,13 +16,13 @@ for index, info in ipairs(CONFIG.c.landingOperation.const.cargoInfoForTransfer) 
                 u.guid,
                 'Boats',
                 info.boat.dbid,
-                info.boat.cargoList
+                info.boat.cargoItem
             )
             transferCargo(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
-                info.tansportHelicopter.cargoList
+                info.tansportHelicopter.cargoItem
             )
             assignEmbarkedUnitsToMission(
                 u.guid,
@@ -57,13 +57,13 @@ for index, info in ipairs(CONFIG.c.landingOperation.const.cargoInfoForTransfer) 
                 u.guid,
                 'Boats',
                 info.boat.dbid,
-                info.boat.cargoList
+                info.boat.cargoItem
             )
             transferCargo(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
-                info.tansportHelicopter.cargoList
+                info.tansportHelicopter.cargoItem
             )
             assignEmbarkedUnitsToMission(
                 u.guid,

@@ -88,8 +88,7 @@ if CONFIG.c.mlrs.onMobileUnit.isStrikeActivated then
 
     for index, package in ipairs(CONFIG.c.mlrs.onMobileUnit.package) do
         local filteredContacts = filterContacts(contacts, function(value)
-            if (value.typed == 8 or value.typed == 21)
-            -- and value:inArea(package.area)
+            if (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
             then
                 return true
             end

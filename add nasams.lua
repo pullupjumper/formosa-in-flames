@@ -8,7 +8,7 @@ for index, value in ipairs(NASAMS_POSITIONS) do
     local unit = ScenEdit_AddUnit({
         side = 'Taiwan',
         type = 'Facility',
-        name = 'NASAMS #'..index,
+        name = 'NASAMS #' .. index,
         dbid = 2261,
         LATITUDE = value.lat,
         LONGITUDE = value.lon,
@@ -21,6 +21,6 @@ for index, value in ipairs(NASAMS_POSITIONS) do
             EmissionInterval = 120,
             WakeWhenDetectingThreat = 1,
             SleepModeDelay = 30
-        })
-    
+        }
+    )
 end

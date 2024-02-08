@@ -80,9 +80,6 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
                 break
             end
 
-            -- if unit:inArea(cargoInfoForTransfer[1].anchorageArea) or unit:inArea(cargoInfoForTransfer[1].LSTAnchorageArea) then
-            --     table.insert(unitsInAnchorageArea1, unit)
-            -- end
             for i, info in ipairs(cargoInfoForTransfer) do
                 if unit:inArea(info.anchorageArea) or unit:inArea(info.LSTAnchorageArea) then
                     table.insert(unitsInAnchorageArea1, unit)
@@ -92,75 +89,6 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
     end
 
     if getCount(unitsInAnchorageArea1) > 15 then
-        -- for index, unit in ipairs(unitsInAnchorageArea1) do
-        --     if unit.dbid == CONFIG.const.platformBDID6 then
-        --         transferCargo(
-        --             unit.guid,
-        --             'Boats',
-        --             cargoInfoForTransfer[1].boat.dbid,
-        --             cargoInfoForTransfer[1].boat.cargoList
-        --         )
-        --         transferCargo(
-        --             unit.guid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
-        --             cargoInfoForTransfer[1].tansportHelicopter.cargoList
-        --         )
-        --         assignEmbarkedUnitsToMission(
-        --             unit.guid,
-        --             'Boats',
-        --             cargoInfoForTransfer[1].boat.dbid,
-        --             cargoInfoForTransfer[1].boat.missions
-        --         )
-        --         assignEmbarkedUnitsToMission(
-        --             unit.guid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
-        --             cargoInfoForTransfer[1].tansportHelicopter.missions
-        --         )
-        --         assignUnitToFerryMission(
-        --             unit.guid,
-        --             13,
-        --             cargoInfoForTransfer[1].attackHelicopter1.dbid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].attackHelicopter1.missions[1]
-        --         )
-        --         assignUnitToFerryMission(
-        --             unit.guid,
-        --             13,
-        --             cargoInfoForTransfer[1].attackHelicopter2.dbid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].attackHelicopter2.missions[1]
-        --         )
-        --     end
-
-        --     if unit.dbid == CONFIG.const.platformBDID7 and unit:inArea(cargoInfoForTransfer[1].anchorageArea) then
-        --         transferCargo(
-        --             unit.guid,
-        --             'Boats',
-        --             cargoInfoForTransfer[1].boat.dbid,
-        --             cargoInfoForTransfer[1].boat.cargoList
-        --         )
-        --         transferCargo(
-        --             unit.guid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
-        --             cargoInfoForTransfer[1].tansportHelicopter.cargoList
-        --         )
-        --         assignEmbarkedUnitsToMission(
-        --             unit.guid,
-        --             'Boats',
-        --             cargoInfoForTransfer[1].boat.dbid,
-        --             cargoInfoForTransfer[1].boat.missions
-        --         )
-        --         assignEmbarkedUnitsToMission(
-        --             unit.guid,
-        --             'Aircraft',
-        --             cargoInfoForTransfer[1].tansportHelicopter.dbid,
-        --             cargoInfoForTransfer[1].tansportHelicopter.missions
-        --         )
-        --     end
-        -- end
         createCargoMission()
 
         for index, info in ipairs(cargoInfoForTransfer) do
@@ -172,13 +100,13 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
                         u.guid,
                         'Boats',
                         info.boat.dbid,
-                        info.boat.cargoList
+                        info.boat.cargoItem
                     )
                     transferCargo(
                         u.guid,
                         'Aircraft',
                         info.tansportHelicopter.dbid,
-                        info.tansportHelicopter.cargoList
+                        info.tansportHelicopter.cargoItem
                     )
                     assignEmbarkedUnitsToMission(
                         u.guid,
@@ -213,13 +141,13 @@ if CONFIG.c.landingOperation.isLandingShipsArrived then
                         u.guid,
                         'Boats',
                         info.boat.dbid,
-                        info.boat.cargoList
+                        info.boat.cargoItem
                     )
                     transferCargo(
                         u.guid,
                         'Aircraft',
                         info.tansportHelicopter.dbid,
-                        info.tansportHelicopter.cargoList
+                        info.tansportHelicopter.cargoItem
                     )
                     assignEmbarkedUnitsToMission(
                         u.guid,
@@ -279,7 +207,7 @@ if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
         local unitsInWestLSTAnchorageArea = {}
         local unitsInNorthLSTAnchorageArea = {}
         local unitsInSouthLSTAnchorageArea = {}
-        setMissionStartTime()
+        setLandingMissionStartTime()
 
         for index, value in ipairs(units) do
             local unit = SE_GetUnit({ guid = value.guid })
@@ -342,13 +270,13 @@ if CONFIG.c.landingOperation.airlandingMissionStartTime ~= nil then
                     unit.guid,
                     'Boats',
                     cargoInfoForTransfer[1].boat.dbid,
-                    cargoInfoForTransfer[1].boat.cargoList
+                    cargoInfoForTransfer[1].boat.cargoItem
                 )
                 transferCargo(
                     unit.guid,
                     'Aircraft',
                     cargoInfoForTransfer[1].tansportHelicopter.dbid,
-                    cargoInfoForTransfer[1].tansportHelicopter.cargoList
+                    cargoInfoForTransfer[1].tansportHelicopter.cargoItem
                 )
             end
         end

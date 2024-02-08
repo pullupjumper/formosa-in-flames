@@ -76,7 +76,7 @@ function addLandingShipsForTest()
                     type = 'Ship',
                     name = key,
                     dbid = shipType.dbid,
-                    cargo = LANDING_OPERATION.CARGOLIST[key],
+                    cargo = CONFIG.c.landingOperation.const.cargoList[key],
                     heading = CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].heading.vertical,
                     manualSpeed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
                 },

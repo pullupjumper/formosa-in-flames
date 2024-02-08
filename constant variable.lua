@@ -22,7 +22,6 @@ CONFIG.t.glcm = {}
 CONFIG.t.glcm.const = {}
 CONFIG.t.asm = {}
 CONFIG.t.asm.const = {}
-
 CONFIG.const.platformBDID1 = 2149  -- 726a
 CONFIG.const.platformBDID2 = 3708  -- Z-18
 CONFIG.const.platformBDID3 = 2511  -- 724
@@ -43,6 +42,7 @@ CONFIG.const.loadoutDBID2 = 31490  -- z-10
 CONFIG.const.loadoutDBID3 = 18367  -- z-18
 
 
+
 -- MLRS on mobile units
 CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = false
 CONFIG.c.mlrs.onMobileUnit.idxPackage = 1
@@ -58,7 +58,6 @@ CONFIG.c.mlrs.onMobileUnit.package = {
 }
 CONFIG.c.mlrs.onMobileUnit.const.contactAge = 30 * 60
 CONFIG.c.mlrs.onMobileUnit.const.weaponDBID = 2123
-
 
 
 
@@ -212,15 +211,28 @@ CONFIG.c.landingOperation.idxShipLocationInfo = 1
 CONFIG.c.landingOperation.const.periodOfTime = 30 * 60
 CONFIG.c.landingOperation.const.airlandingArea = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
 CONFIG.c.landingOperation.const.contactNumInAirlandingArea = 3
+
+---@class CargoItem
+---@field type number
+---@field num number
+---@field dbid number
+
 CONFIG.c.landingOperation.const.cargoList = {
+    ---@type table<number, CargoItem>
     type075 = { { type = 2, num = 60, dbid = 3 }, { type = 3, num = 200, dbid = 2039 } },
+    ---@type table<number, CargoItem>
     type071 = { { type = 2, num = 20, dbid = 3 }, { type = 3, num = 30, dbid = 2039 } },
+    ---@type table<number, CargoItem>
     type072iii = { { type = 2, num = 10, dbid = 3 }, { type = 3, num = 6, dbid = 2039 } },
+    ---@type table<number, CargoItem>
     type072a = { { type = 2, num = 10, dbid = 3 }, { type = 3, num = 6, dbid = 2039 } },
+    ---@type table<number, CargoItem>
     type073a = { { type = 2, num = 6, dbid = 3 } }
 }
-CONFIG.c.landingOperation.const.cargoListForTransfer1 = { type = 2, num = 2, dbid = 3 }    -- 075/071 726a
-CONFIG.c.landingOperation.const.cargoListForTransfer2 = { type = 3, num = 2, dbid = 2039 } -- 075/071 Z-18
+---@type CargoItem
+CONFIG.c.landingOperation.const.cargoItemForTransferForBoat = { type = 2, num = 2, dbid = 3 }          -- 075/071 726a
+---@type CargoItem
+CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter = { type = 3, num = 2, dbid = 2039 } -- 075/071 Z-18
 CONFIG.c.landingOperation.const.shipInfo = {
     distanceBetweenLSTAndLPDArea = 13,
     horizontalDistance = 1,
@@ -337,12 +349,12 @@ CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = { 'LANDING ZONE' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer1
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
         tansportHelicopter = {
             dbid = CONFIG.const.platformBDID2,
             missions = { 'AIRLANDING ZONE', 'AIRLANDING ZONE 2', 'AIRLANDING ZONE 3' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer2
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
@@ -353,12 +365,12 @@ CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = { 'LANDING ZONE ZHUWEI' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer1
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
         tansportHelicopter = {
             dbid = CONFIG.const.platformBDID2,
             missions = { 'AIRLANDING ZONE TAIPING 1', 'AIRLANDING ZONE TAIPING 2', 'AIRLANDING ZONE TAIPING 3' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer2
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
@@ -369,12 +381,12 @@ CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = { 'LANDING ZONE BAO' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer1
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
         tansportHelicopter = {
             dbid = CONFIG.const.platformBDID2,
             missions = { 'AIRLANDING ZONE PARK 1', 'AIRLANDING ZONE PARK 2', 'AIRLANDING ZONE PARK 3' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer2
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 2' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 2' } },
@@ -385,12 +397,12 @@ CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = { 'LANDING ZONE NORTH WAY' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer1
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
         tansportHelicopter = {
             dbid = CONFIG.const.platformBDID2,
             missions = { 'AIRLANDING ZONE NORTH', 'AIRLANDING ZONE NORTH 2', 'AIRLANDING ZONE NORTH 3' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer2
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS NORTH' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS NORTH' } },
@@ -401,12 +413,12 @@ CONFIG.c.landingOperation.const.cargoInfoForTransfer = {
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = { 'LANDING ZONE JIALUTANG' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer1
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
         tansportHelicopter = {
             dbid = CONFIG.const.platformBDID2,
             missions = { 'AIRLANDING ZONE CHANGLONG', 'AIRLANDING ZONE CHANGLONG 2', 'AIRLANDING ZONE CHANGLONG 3' },
-            cargoList = CONFIG.c.landingOperation.const.cargoListForTransfer2
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS SOUTH' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS SOUTH' } },
