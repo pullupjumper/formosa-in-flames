@@ -37,9 +37,28 @@ CONFIG.const.platformBDID12 = 6642 -- WZ-8
 CONFIG.const.platformBDID13 = 3309 -- BZK-005
 CONFIG.const.platformBDID14 = 123  -- customed sky bow 3
 CONFIG.const.platformBDID15 = 2227 -- pac-3
+CONFIG.const.platformBDID16 = 2537 -- JY-26
+CONFIG.const.platformBDID17 = 2538 -- YLC-8B
+CONFIG.const.platformBDID18 = 3281 -- HQ-22
+CONFIG.const.platformBDID19 = 386  -- S-300
+CONFIG.const.platformBDID20 = 2442 -- S-400
+CONFIG.const.platformBDID21 = 1277 -- HQ-12
+
+CONFIG.const.sensorBDID1 = 2788    -- S-300 Tombstone
+CONFIG.const.sensorBDID2 = 4155    -- S-400 Grave Stone
+CONFIG.const.sensorBDID3 = 3396    -- HQ-12 China H-200
+CONFIG.const.sensorBDID4 = 6123    -- HQ-22 China H-200 Improved
+CONFIG.const.sensorBDID5 = 3204    -- S-300 Cheese Board
+CONFIG.const.sensorBDID6 = 5054    -- S-400 Cheese Board
+
 CONFIG.const.loadoutDBID1 = 30568  -- ka-52
 CONFIG.const.loadoutDBID2 = 31490  -- z-10
 CONFIG.const.loadoutDBID3 = 18367  -- z-18
+CONFIG.const.radarDistance = 70
+CONFIG.const.batteryState = {}
+CONFIG.const.batteryState.STATIC = 0
+CONFIG.const.batteryState.REPOSITIONING = 1
+CONFIG.const.batteryState.RESUPPLY = 2
 
 
 
@@ -51,13 +70,52 @@ CONFIG.c.mlrs.onMobileUnit.package = {
         name = '',
         targetList = {},
         batteries = {
-            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN0VUJ61V0OE' }
+            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN1E390V61VB' }
         },
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }
     }
 }
+CONFIG.c.mlrs.onMobileUnit.const.position = {
+    north = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44256', 'RP-44257', 'RP-44258', 'RP-44259' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44264', 'RP-44265', 'RP-44266', 'RP-44267' }
+            },
+            {
+                course = {
+                    { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44260', 'RP-44261', 'RP-44262', 'RP-44263' }
+            },
+        },
+        magazineWeapenNum = 80
+    }
+}
+CONFIG.c.mlrs.onMobileUnit.batteries = {
+    {
+        guid = 'X58F5H-0HN1E390V61VB',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.mlrs.onMobileUnit.const.position.north
+    }
+}
 CONFIG.c.mlrs.onMobileUnit.const.contactAge = 30 * 60
 CONFIG.c.mlrs.onMobileUnit.const.weaponDBID = 2123
+CONFIG.c.mlrs.onMobileUnit.const.reloadTime = 5 * 60
 
 
 
@@ -923,3 +981,5 @@ SCORE_INFANTRY = -3
 SCORE_SAM_IS_DESTROYED = -20
 SCORE_SUB = 15
 SCORE_UAV = 20
+
+--{ [1] = { mag_weapons = { [1] = { wpn_dbid = 3021, wpn_maxcap = 5, wpn_current = 0, wpn_default = 5, wpn_guid = 'X58F5H-0HN1BN6784FTC', wpn_name = 'BP-12A' }, [2] = { wpn_dbid = 2123, wpn_maxcap = 20, wpn_current = 0, wpn_default = 20, wpn_guid = 'X58F5H-0HN1BN6784FTD', wpn_name = 'SY-400 MLRS [Unitary]' } }, mag_dbid = 1795, mag_guid = 'X58F5H-0HN1BN6784FTB', mag_capacity = 25, mag_name = 'SY-400' } }

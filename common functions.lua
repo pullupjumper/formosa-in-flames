@@ -1,3 +1,19 @@
+---@param val any @ nil
+function checkIfNil(val)
+    if val == nil then
+        ScenEdit_MsgBox(tostring('Val is nil'), 1)
+        return
+    end
+end
+
+---@param list table
+---@param fn function
+function forEach(list, fn)
+    for index, item in ipairs(list) do
+        fn(item)
+    end
+end
+
 ---@param list table
 ---@return number
 function getCount(list)
@@ -63,26 +79,30 @@ function assignEmbarkedUnitsToMission(fromUnit, platformType, platformDBID, miss
     local count = getCount(missionList)
     local index = 1
 
-    if platforms ~= nil then
-        for k, v in ipairs(platforms) do
-            local unit = SE_GetUnit({ guid = v })
+    if platforms == nil then
+        return
+    end
 
-            if unit ~= nil and unit.dbid == platformDBID then
-                table.insert(filteredPlatforms, unit)
-            end
+    for k, v in ipairs(platforms) do
+        local unit = SE_GetUnit({ guid = v })
+
+        if unit ~= nil and unit.dbid == platformDBID then
+            table.insert(filteredPlatforms, unit)
         end
     end
 
-    if filteredPlatforms ~= nil then
-        local platformNum = getCount(filteredPlatforms) // count
+    if filteredPlatforms == nil then
+        return
+    end
 
-        for k, v in ipairs(filteredPlatforms) do
-            -- local unit = SE_GetUnit({ guid = v })
-            ScenEdit_AssignUnitToMission(v.guid, missionList[index])
+    local platformNum = getCount(filteredPlatforms) // count
 
-            if k % platformNum == 0 and platformNum > 1 then
-                index = index + 1
-            end
+    for k, v in ipairs(filteredPlatforms) do
+        -- local unit = SE_GetUnit({ guid = v })
+        ScenEdit_AssignUnitToMission(v.guid, missionList[index])
+
+        if k % platformNum == 0 and platformNum > 1 then
+            index = index + 1
         end
     end
 end
@@ -94,16 +114,18 @@ function updateCargo(fromUnit, toUnit, cargoItem)
     local cargoGuidList = {}
     local count = 0
 
-    if fromUnit ~= nil and fromUnit.cargo[1].cargo ~= nil then
-        for k, v in ipairs(fromUnit.cargo[1].cargo) do
-            if v.dbid == cargoItem.dbid then
-                table.insert(cargoGuidList, v.guid)
-                count = count + 1
-            end
+    if fromUnit == nil or fromUnit.cargo[1].cargo == nil then
+        return
+    end
 
-            if count == cargoItem.num then
-                break
-            end
+    for k, v in ipairs(fromUnit.cargo[1].cargo) do
+        if v.dbid == cargoItem.dbid then
+            table.insert(cargoGuidList, v.guid)
+            count = count + 1
+        end
+
+        if count == cargoItem.num then
+            break
         end
     end
 
@@ -122,16 +144,18 @@ function deleteCargos(fromUnit, cargoItem)
     local cargoGuidList = {}
     local count = 0
 
-    if fromUnit ~= nil and fromUnit.cargo[1].cargo ~= nil then
-        for k, v in ipairs(fromUnit.cargo[1].cargo) do
-            if v.dbid == cargoItem.dbid then
-                table.insert(cargoGuidList, v.guid)
-                count = count + 1
-            end
+    if fromUnit == nil or fromUnit.cargo[1].cargo == nil then
+        return
+    end
 
-            if count == cargoItem.num then
-                break
-            end
+    for k, v in ipairs(fromUnit.cargo[1].cargo) do
+        if v.dbid == cargoItem.dbid then
+            table.insert(cargoGuidList, v.guid)
+            count = count + 1
+        end
+
+        if count == cargoItem.num then
+            break
         end
     end
 
@@ -160,6 +184,62 @@ function transferCargo(fromUnit, platformType, platformDBid, cargoItem)
     end
 end
 
+function isRunOutOfAmmunition(mounts, weaponDBID, magazines)
+    local isRunOutOfAmmo = true
+
+    if mounts == nil then
+        return
+    end
+
+    for mountIndex, mount in ipairs(mounts) do
+        local weaponCurrentNum = 0
+        local wpnIndex = 1
+
+        if weaponDBID ~= nil and type(weaponDBID) == "number" then
+            for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
+                if wpn['wpn_dbid'] == weaponDBID then
+                    wpnIndex = wpnIdx
+                    break
+                end
+            end
+        end
+
+        weaponCurrentNum = mount['mount_weapons'][wpnIndex]['wpn_current']
+
+        if weaponCurrentNum > 0 then
+            isRunOutOfAmmo = false
+            break
+        end
+    end
+
+    if magazines == nil then
+        return isRunOutOfAmmo
+    end
+
+    for magazineIndex, magazine in ipairs(magazines) do
+        local weaponCurrentNum = 0
+        local wpnIndex = 1
+
+        if weaponDBID ~= nil and type(weaponDBID) == "number" then
+            for wpnIdx, wpn in ipairs(magazine['mag_weapons']) do
+                if wpn['wpn_dbid'] == weaponDBID then
+                    wpnIndex = wpnIdx
+                    break
+                end
+            end
+        end
+
+        weaponCurrentNum = magazine['mag_weapons'][wpnIndex]['wpn_current']
+
+        if weaponCurrentNum > 0 then
+            isRunOutOfAmmo = false
+            break
+        end
+    end
+
+    return isRunOutOfAmmo
+end
+
 function isRunOutOfAmmo(mount)
     for weaponIndex, weapon in ipairs(mount['mount_weapons']) do
         if weapon['wpn_name'] ~= nil and weapon['wpn_current'] == 0 then
@@ -168,7 +248,10 @@ function isRunOutOfAmmo(mount)
     end
 end
 
----@param points table
+---@class Point
+---@field latitude string
+---@field longitude string
+---@param points table<number, Point>
 function getCourseByPoints(points)
     local course = {}
     for k, v in pairs(points) do
@@ -276,122 +359,63 @@ function launchAmphibiousIFV(params)
     local courseTemp = {}
     -- local unitTemp = {}
 
-    if ship ~= nil and ship.IsDestroyed ~= true then
-        deleteCargos(ship, { type = 2, num = params.num, dbid = 3 })
+    if ship == nil or ship.IsDestroyed then
+        return
+    end
 
-        for k, v in ipairs(IFVlocations) do
-            destinationTemp = World_GetPointFromBearing({
-                LATITUDE = v.latitude,
-                LONGITUDE = v.longitude,
-                BEARING = transitBearing,
-                DISTANCE = transitDistance
-            })
+    deleteCargos(ship, { type = 2, num = params.num, dbid = 3 })
 
-            courseTemp = getCourseByPoints({ destinationTemp })
+    for k, v in ipairs(IFVlocations) do
+        destinationTemp = World_GetPointFromBearing({
+            LATITUDE = v.latitude,
+            LONGITUDE = v.longitude,
+            BEARING = transitBearing,
+            DISTANCE = transitDistance
+        })
 
-            local addedUnit = ScenEdit_AddUnit({
-                side = 'China',
-                type = 'Vehicle',
-                name = 'AAV7',
-                dbid = 3,
-                LATITUDE = v.latitude,
-                LONGITUDE = v.longitude,
-            })
+        courseTemp = getCourseByPoints({ destinationTemp })
 
-            -- unitTemp = SE_GetUnit({ guid = unitTemp.guid })
-            if addedUnit ~= nil then
-                ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
-                addedUnit.throttle = 'Full'
-                addedUnit.course = courseTemp
-                addedUnit.manualSpeed = speed
-                addedUnit.manualAltitude = -2
-            end
+        local addedUnit = ScenEdit_AddUnit({
+            side = 'China',
+            type = 'Vehicle',
+            name = 'AAV7',
+            dbid = 3,
+            LATITUDE = v.latitude,
+            LONGITUDE = v.longitude,
+        })
+
+        if addedUnit == nil then
+            return
         end
+
+        ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+        addedUnit.throttle = 'Full'
+        addedUnit.course = courseTemp
+        addedUnit.manualSpeed = speed
+        addedUnit.manualAltitude = -2
     end
 end
 
----@param units table
----@param course table
+---@param units table<number, CMO_Unit>
+---@param course CMO__TableOfWaypoints
 function setCourseToUnits(course, units)
     for k, v in ipairs(units) do
         local unit = ScenEdit_GetUnit({ guid = v.guid })
 
         -- unit.course = course
-        if unit ~= nil then
-            local destinationTemp = World_GetPointFromBearing({
-                LATITUDE = unit.latitude,
-                LONGITUDE = unit.longitude,
-                BEARING = course.bearing,
-                DISTANCE = course.distance
-            })
-
-            unit.course = getCourseByPoints({ destinationTemp })
+        if unit == nil then
+            return
         end
+
+        local destinationTemp = World_GetPointFromBearing({
+            LATITUDE = unit.latitude,
+            LONGITUDE = unit.longitude,
+            BEARING = course.bearing,
+            DISTANCE = course.distance
+        })
+
+        unit.course = getCourseByPoints({ destinationTemp })
     end
-end
-
-function createCargoMission()
-    for index, m in ipairs(CONFIG.c.landingOperation.const.cargoMissionList) do
-        local mission = ScenEdit_AddMission('China', m.name, 'Cargo', { zone = m.zone })
-        mission.isactive = false
-        ScenEdit_SetMission('China', m.name, m.setting)
-    end
-end
-
-function setLandingMissionStartTime()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-    if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
-        return
-    end
-
-    local currentTime = ScenEdit_CurrentTime()
-    CONFIG.c.landingOperation.airlandingMissionStartTime = currentTime
-    local airlandingMissionStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime))
-    local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
-    local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 20 * 60))
-    local airlandingMissionStartTime4 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 38 * 60))
-    local landingMissionStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 4 * 60))
-
-    ScenEdit_GetMission('China', 'LANDING ZONE').starttime = landingMissionStartTime
-    ScenEdit_GetMission('China', 'LANDING ZONE BAO').starttime = landingMissionStartTime
-    ScenEdit_GetMission('China', 'LANDING ZONE ZHUWEI').starttime = landingMissionStartTime
-    ScenEdit_GetMission('China', 'LANDING ZONE NORTH WAY').starttime = landingMissionStartTime
-    ScenEdit_GetMission('China', 'LANDING ZONE NORTH LEO').starttime = landingMissionStartTime
-
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE').starttime = airlandingMissionStartTime1
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE 2').starttime = airlandingMissionStartTime2
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE 4').starttime = airlandingMissionStartTime4
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH').starttime = airlandingMissionStartTime1
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 2').starttime = airlandingMissionStartTime2
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 4').starttime = airlandingMissionStartTime4
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 1').starttime = airlandingMissionStartTime1
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 2').starttime = airlandingMissionStartTime2
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 4').starttime = airlandingMissionStartTime4
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 1').starttime = airlandingMissionStartTime1
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 2').starttime = airlandingMissionStartTime2
-    ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 4').starttime = airlandingMissionStartTime4
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
-end
-
-function setAntiShipMissionStartTime()
-    local currentTime = ScenEdit_CurrentTime()
-    local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
-    -- local reconStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime))
-    -- local reconStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
-    local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
-    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP WEST').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP NORTH').starttime = antiShipStartTime
-    -- ScenEdit_GetMission('Taiwan', 'RECON1').starttime = reconStartTime1
-    -- ScenEdit_GetMission('Taiwan', 'RECON2').starttime = reconStartTime2
-    -- ScenEdit_GetMission('Taiwan', 'RECON3').starttime = reconStartTime3
-    ScenEdit_GetMission('Taiwan', 'RECON4').starttime = reconStartTime3
 end
 
 ---@param name string
@@ -433,19 +457,21 @@ function assignUnitToFerryMission(baseGUID, num, unitDBID, unitType, missionName
     local count = 0
     local temp = {}
 
-    if base ~= nil and base.embarkedUnits[unitType] ~= nil then
-        for index, v in ipairs(base.embarkedUnits[unitType]) do
-            local unit = ScenEdit_GetUnit({ guid = v })
+    if base == nil or base.embarkedUnits[unitType] == nil then
+        return
+    end
 
-            if unit ~= nil and unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
-                ScenEdit_AssignUnitToMission(unit.guid, missionName)
-                table.insert(temp, unit)
-                count = count + 1
-            end
+    for index, v in ipairs(base.embarkedUnits[unitType]) do
+        local unit = ScenEdit_GetUnit({ guid = v })
 
-            if count >= num then
-                break
-            end
+        if unit ~= nil and unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
+            ScenEdit_AssignUnitToMission(unit.guid, missionName)
+            table.insert(temp, unit)
+            count = count + 1
+        end
+
+        if count >= num then
+            break
         end
     end
 
@@ -454,45 +480,57 @@ end
 
 function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEscort)
     local airbase = ScenEdit_GetUnit({ guid = baseGUID })
+
+    if airbase == nil or airbase.embarkedUnits['Aircraft'] == nil then
+        return
+    end
+
     local m = ScenEdit_GetMission(airbase.side, missionName)
+
+    if m == nil then
+        return
+    end
+
     m.isactive = false
     local temp = {}
     local count = 0
 
-    if airbase ~= nil and airbase.embarkedUnits.Aircraft ~= nil then
-        for k, v in ipairs(airbase.embarkedUnits.Aircraft) do
-            local unit = ScenEdit_GetUnit({ guid = v })
-            local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
-            local weaponNum = 0
+    for k, v in ipairs(airbase.embarkedUnits.Aircraft) do
+        local unit = ScenEdit_GetUnit({ guid = v })
 
-            if weapons ~= nil then
-                for i, w in ipairs(weapons) do
-                    if w["wpn_dbid"] == weaponDBID then
-                        weaponNum = w["wpn_current"]
-                    end
-                end
-            end
+        if unit == nil then
+            return
+        end
 
-            if unit.readytime_v == 0 and unit.mission == nil and count < num and weaponNum > 0 then
-                if isEscort then
-                    ScenEdit_AssignUnitToMission(unit.guid, missionName, true)
-                else
-                    ScenEdit_AssignUnitToMission(unit.guid, missionName)
-                end
+        local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
+        local weaponNum = 0
 
-                count = count + 1
-                table.insert(temp, { unit = unit.guid })
-
-                if count >= num then
-                    break
+        if weapons ~= nil then
+            for i, w in ipairs(weapons) do
+                if w["wpn_dbid"] == weaponDBID then
+                    weaponNum = w["wpn_current"]
                 end
             end
         end
 
+        if unit.readytime_v == 0 and unit.mission == nil and count < num and weaponNum > 0 then
+            if isEscort then
+                ScenEdit_AssignUnitToMission(unit.guid, missionName, true)
+            else
+                ScenEdit_AssignUnitToMission(unit.guid, missionName)
+            end
 
-        if m.isactive == false then
-            m.isactive = true
+            count = count + 1
+            table.insert(temp, { unit = unit.guid })
+
+            if count >= num then
+                break
+            end
         end
+    end
+
+    if m.isactive == false then
+        m.isactive = true
     end
 
     return temp
@@ -508,21 +546,27 @@ function launchUnits(baseGUID, course, num, unitDBID, unitType)
     local count = 0
     local temp = {}
 
-    if base ~= nil and base.embarkedUnits[unitType] ~= nil then
-        for k, v in ipairs(base.embarkedUnits[unitType]) do
-            local unit = ScenEdit_GetUnit({ guid = v })
+    if base == nil or base.embarkedUnits[unitType] == nil then
+        return
+    end
 
-            if unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
-                unit:Launch(true)
-                unit.course = course
-                -- ScenEdit_SetUnit({ guid = unit.guid, course = course })
-                count = count + 1
-                table.insert(temp, { unit = unit.guid, hasLaunched = false })
-            end
+    for k, v in ipairs(base.embarkedUnits[unitType]) do
+        local unit = ScenEdit_GetUnit({ guid = v })
 
-            if count >= num then
-                break
-            end
+        if unit == nil then
+            return
+        end
+
+        if unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
+            unit:Launch(true)
+            unit.course = course
+            -- ScenEdit_SetUnit({ guid = unit.guid, course = course })
+            count = count + 1
+            table.insert(temp, { unit = unit.guid, hasLaunched = false })
+        end
+
+        if count >= num then
+            break
         end
     end
 
@@ -543,6 +587,12 @@ function launchWZ8(h6n, course, contact)
         loadoutid = 32885,
         altitude = h6n.altitude
     })
+
+    if wz8 == nil then
+        ScenEdit_MsgBox('wz8 is nil', 1)
+        return
+    end
+
     local arcT = { 'PB1', 'PB2', 'SB1', 'SB2', 'SMF1', 'PMF2' };
     ScenEdit_UpdateUnit({ guid = wz8.guid, mode = 'add_sensor', dbid = 6073, arc_detect = arcT, arc_track = arcT })
     ScenEdit_SetEMCON('Unit', wz8.guid, 'Radar=Active')
@@ -599,56 +649,67 @@ function attackContact(contact, qty, batteries, batteryIndex, groupIndex, weapon
     for i = batteryIndex, getCount(batteries) do
         local group = ScenEdit_GetUnit({ guid = batteries[i].guid })
 
-        if group ~= nil then
-            for j = groupIndex, getCount(group.group.unitlist) do
-                local guid = group.group.unitlist[j]
-                local unit = ScenEdit_GetUnit({ guid = guid })
-                local _weaponDBID = 0
-                local weaponCurrentNum = 0
-                local defaultNum = 1
-                local mountDBID = unit.mounts[1]['mount_dbid']
-                local wpnIndex = 1
+        if group == nil then
+            ScenEdit_MsgBox('group is nil', 1)
+            return
+        end
 
-                for mountIndex, mount in ipairs(unit.mounts) do
-                    if weaponDBID ~= nil and type(weaponDBID) == "number" then
-                        for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-                            if wpn['wpn_dbid'] == weaponDBID then
-                                wpnIndex = wpnIdx
-                                break
-                            end
+        for j = groupIndex, getCount(group.group.unitlist) do
+            local guid = group.group.unitlist[j]
+            local unit = ScenEdit_GetUnit({ guid = guid })
+
+            if unit == nil then
+                ScenEdit_MsgBox('unit is nil', 1)
+                return
+            end
+
+            local _weaponDBID = 0
+            local weaponCurrentNum = 0
+            local defaultNum = 1
+            local mountDBID = unit.mounts[1]['mount_dbid']
+            local wpnIndex = 1
+            local isHold = ScenEdit_GetDoctrine({ guid = guid }).weapon_control_status_land == 2
+                or ScenEdit_GetDoctrine({ guid = guid }).weapon_control_status_land == '2'
+
+            for mountIndex, mount in ipairs(unit.mounts) do
+                if weaponDBID ~= nil and type(weaponDBID) == "number" then
+                    for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
+                        if wpn['wpn_dbid'] == weaponDBID then
+                            wpnIndex = wpnIdx
+                            break
                         end
                     end
-
-                    weaponCurrentNum = weaponCurrentNum + mount['mount_weapons'][wpnIndex]['wpn_current']
                 end
 
-                _weaponDBID = unit.mounts[1]['mount_weapons'][wpnIndex]['wpn_dbid']
+                weaponCurrentNum = weaponCurrentNum + mount['mount_weapons'][wpnIndex]['wpn_current']
+            end
 
-                if weaponCurrentNum > 0 then
-                    local result = ScenEdit_AttackContact(guid, contact.guid,
-                        { mode = '1', qty = defaultNum, mount = mountDBID, weapon = _weaponDBID })
+            _weaponDBID = unit.mounts[1]['mount_weapons'][wpnIndex]['wpn_dbid']
 
-                    if result then
-                        launchedNum = launchedNum + defaultNum
-                    end
+            if weaponCurrentNum > 0 and not isHold then
+                local result = ScenEdit_AttackContact(guid, contact.guid,
+                    { mode = '1', qty = defaultNum, mount = mountDBID, weapon = _weaponDBID })
+
+                if result then
+                    launchedNum = launchedNum + defaultNum
                 end
+            end
 
-                if (j + 1) > getCount(group.group.unitlist) then
-                    groupIndex = 1
-                    batteryIndex = i + 1
-                else
-                    groupIndex = j + 1
-                    batteryIndex = i
-                end
+            if (j + 1) > getCount(group.group.unitlist) then
+                groupIndex = 1
+                batteryIndex = i + 1
+            else
+                groupIndex = j + 1
+                batteryIndex = i
+            end
 
-                if batteryIndex > getCount(batteries) then
-                    batteryIndex = 1
-                end
+            if batteryIndex > getCount(batteries) then
+                batteryIndex = 1
+            end
 
-                if launchedNum >= qty then
-                    -- ScenEdit_MsgBox('batteryIndex=' .. tostring(batteryIndex) .. ' groupIndex=' .. tostring(groupIndex), 0)
-                    return { batteryIndex = batteryIndex, groupIndex = groupIndex }
-                end
+            if launchedNum >= qty then
+                -- ScenEdit_MsgBox('batteryIndex=' .. tostring(batteryIndex) .. ' groupIndex=' .. tostring(groupIndex), 0)
+                return { batteryIndex = batteryIndex, groupIndex = groupIndex }
             end
         end
     end
@@ -656,53 +717,147 @@ function attackContact(contact, qty, batteries, batteryIndex, groupIndex, weapon
     return { batteryIndex = batteryIndex, groupIndex = groupIndex }
 end
 
+function resupply(battery, weaponDBID)
+    local group = SE_GetUnit({ guid = battery.guid })
+
+    if group == nil then
+        return
+    end
+
+    for index, guid in ipairs(group.group.unitlist) do
+        local unit = SE_GetUnit({ guid = guid })
+
+        if unit == nil or unit.mounts == nil then
+            return
+        end
+
+        for mountIndex, mount in ipairs(unit.mounts) do
+            local _weaponDBID = 0
+            local weaponDefaultNum = 0
+            local wpnIndex = 1
+
+            if weaponDBID ~= nil and type(weaponDBID) == "number" then
+                for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
+                    if wpn['wpn_dbid'] == weaponDBID then
+                        wpnIndex = wpnIdx
+                        break
+                    end
+                end
+            end
+
+            _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
+            weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
+
+            if battery.position.magazineWeapenNum >= weaponDefaultNum then
+                ScenEdit_AddReloadsToUnit({
+                    guid = unit.guid,
+                    wpn_dbid = _weaponDBID,
+                    number = weaponDefaultNum
+                })
+                battery.position.magazineWeapenNum = battery.position.magazineWeapenNum -
+                    weaponDefaultNum
+            end
+        end
+
+        if unit.magazines == nil then
+            return
+        end
+
+        -- for magazineIndex, magazine in ipairs(unit.magazines) do
+        --     local _weaponDBID = 0
+        --     local weaponDefaultNum = 0
+        --     local wpnIndex = 1
+
+        --     if weaponDBID ~= nil and type(weaponDBID) == "number" then
+        --         for magaWeaponIdx, magaWeapon in ipairs(magazine['mag_weapons']) do
+        --             if magaWeapon['wpn_dbid'] == weaponDBID then
+        --                 wpnIndex = magaWeaponIdx
+        --             end
+        --         end
+        --     end
+
+        --     _weaponDBID = magazine['mag_weapons'][wpnIndex]['wpn_dbid']
+        --     weaponDefaultNum = magazine['mag_weapons'][wpnIndex]['wpn_default']
+        --     ScenEdit_AddWeaponToUnitMagazine({
+        --         guid = unit.guid,
+        --         wpn_dbid = _weaponDBID,
+        --         number = weaponDefaultNum
+        --     })
+        --     battery.position.magazineWeapenNum = battery.position.magazineWeapenNum -
+        --         weaponDefaultNum
+        -- end
+    end
+end
+
 function reloadMissile(launcherState, reloadTime, weaponDBID)
     for index, state in ipairs(launcherState) do
         local unit = SE_GetUnit({ guid = state.unit })
 
-        if unit ~= nil then
-            for mountIndex, mount in ipairs(unit.mounts) do
-                if state.mounts[mountIndex].reloadStartTime == nil and isRunOutOfAmmo(mount) then
-                    state.mounts[mountIndex].reloadStartTime = ScenEdit_CurrentTime()
-                end
+        if unit == nil then
+            return
+        end
 
-                if state.mounts[mountIndex].reloadStartTime ~= nil then
-                    local currentTime = ScenEdit_CurrentTime()
-                    local diffTime = currentTime - state.mounts[mountIndex].reloadStartTime
-                    local magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum
-                    local _weaponDBID = 0
-                    local weaponCurrentNum = 0
-                    local weaponDefaultNum = 0
-                    local wpnIndex = 1
+        for mountIndex, mount in ipairs(unit.mounts) do
+            if state.mounts[mountIndex].reloadStartTime == nil and isRunOutOfAmmo(mount) then
+                state.mounts[mountIndex].reloadStartTime = ScenEdit_CurrentTime()
+            end
 
-                    if weaponDBID ~= nil and type(weaponDBID) == "number" then
-                        for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-                            if wpn['wpn_dbid'] == weaponDBID then
-                                wpnIndex = wpnIdx
-                                break
-                            end
+            if state.mounts[mountIndex].reloadStartTime ~= nil then
+                local currentTime = ScenEdit_CurrentTime()
+                local diffTime = currentTime - state.mounts[mountIndex].reloadStartTime
+                local magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum
+                local _weaponDBID = 0
+                local weaponCurrentNum = 0
+                local weaponDefaultNum = 0
+                local wpnIndex = 1
+
+                if weaponDBID ~= nil and type(weaponDBID) == "number" then
+                    for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
+                        if wpn['wpn_dbid'] == weaponDBID then
+                            wpnIndex = wpnIdx
+                            break
                         end
                     end
+                end
 
-                    _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
-                    weaponCurrentNum = mount['mount_weapons'][wpnIndex]['wpn_current']
-                    weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
+                _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
+                weaponCurrentNum = mount['mount_weapons'][wpnIndex]['wpn_current']
+                weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
 
-                    if diffTime >= reloadTime and magazineWeaponNum > 0 and weaponCurrentNum == 0 then
-                        ScenEdit_AddReloadsToUnit({
-                            guid = unit.guid,
-                            wpn_dbid = _weaponDBID,
-                            number = weaponDefaultNum
-                        })
-                        state.mounts[mountIndex].magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum -
-                            weaponDefaultNum
-                    end
+                if diffTime >= reloadTime and magazineWeaponNum > 0 and weaponCurrentNum == 0 then
+                    ScenEdit_AddReloadsToUnit({
+                        guid = unit.guid,
+                        wpn_dbid = _weaponDBID,
+                        number = weaponDefaultNum
+                    })
+                    state.mounts[mountIndex].magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum -
+                        weaponDefaultNum
                 end
             end
         end
     end
 end
 
+---@param list table
+---@param fn function
+function filter(list, fn)
+    local temp = {}
+
+    if list ~= nil then
+        for index, item in ipairs(list) do
+            local result = fn(item)
+
+            if result then
+                table.insert(temp, item)
+            end
+        end
+    end
+
+    return temp
+end
+
+---@param contacts CMO__Contact
+---@param handler function
 function filterContacts(contacts, handler)
     local temp = {}
 
@@ -719,22 +874,23 @@ function filterContacts(contacts, handler)
     return temp
 end
 
+---@class EmbarkedUnit
+---@field num number
+---@field unit CMO__Unit
+---@param shipId string
+---@param units table<number, EmbarkedUnit>
 function addUnitsToShip(shipId, units)
     for k, unit in ipairs(units) do
-        local missionName = unit[3]
-
         for j = 1, unit[1], 1 do
             unit[2].base = shipId
-            local returnedUnit = ScenEdit_AddUnit(unit[2])
-
-            if missionName ~= nil then
-                ScenEdit_AssignUnitToMission(returnedUnit.guid, missionName)
-            end
+            ScenEdit_AddUnit(unit[2])
         end
     end
 end
 
--- @params {initialLocation, bearing, distance, num}
+---@param params LocationParam
+---@param unit CMO__Unit
+---@param embarkedUnits table<number, EmbarkedUnit>|nil
 function addUnitsByRp(params, unit, embarkedUnits)
     local locations = generateLocations(params)
     local unitTemp = nil
@@ -743,19 +899,22 @@ function addUnitsByRp(params, unit, embarkedUnits)
         unit.latitude = v.latitude
         unit.longitude = v.longitude
         unitTemp = ScenEdit_AddUnit(unit)
-        -- unitTemp = ScenEdit_UpdateUnitCargo({ guid = unitTemp.guid, mode = 'add_cargo', cargo = unit.cargo })
 
-        if unit.cargo ~= nil then
-            for k, v in ipairs(unit.cargo) do
-                for i = 1, v.num, 1 do
-                    unitTemp:createUnitCargo(v.type, v.dbid)
-                end
+        if unitTemp == nil or unit.cargo == nil then
+            return
+        end
+
+        for key, cargoItem in ipairs(unit.cargo) do
+            for i = 1, cargoItem.num, 1 do
+                unitTemp:createUnitCargo(cargoItem.type, cargoItem.dbid)
             end
         end
 
-        if embarkedUnits ~= nil then
-            addUnitsToShip(unitTemp.guid, embarkedUnits)
+        if embarkedUnits == nil then
+            return
         end
+
+        addUnitsToShip(unitTemp.guid, embarkedUnits)
     end
 end
 

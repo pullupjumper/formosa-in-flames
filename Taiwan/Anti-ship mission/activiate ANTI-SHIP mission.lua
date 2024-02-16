@@ -4,6 +4,15 @@ local event = ScenEdit_EventX()
 local temp = {}
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
+local function setAntiShipMissionStartTime()
+    local currentTime = ScenEdit_CurrentTime()
+    local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
+    local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
+    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP WEST').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP NORTH').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'RECON4').starttime = reconStartTime3
+end
+
 if CONFIG == nil then
     print('CONFIG == nil')
     ScenEdit_MsgBox('CONFIG == nil', 1)
