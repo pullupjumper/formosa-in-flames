@@ -134,24 +134,24 @@ function initUnitsForASW()
 end
 
 function initUnitsAndTargetList()
-    CONFIG.c.srbm.onFacility.package[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
-    CONFIG.c.srbm.onFacility.package[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
-    CONFIG.c.srbm.onFacility.package[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
-    CONFIG.c.srbm.onFacility.package[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
-    CONFIG.c.srbm.onFacility.package[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
-    CONFIG.c.srbm.onFacility.package[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
-    CONFIG.c.srbm.onFacility.package[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
+    CONFIG.c.srbm.package[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
+    CONFIG.c.srbm.package[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
+    CONFIG.c.srbm.package[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
+    CONFIG.c.srbm.package[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
+    CONFIG.c.srbm.package[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
+    CONFIG.c.srbm.package[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
+    CONFIG.c.srbm.package[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
 
-    initLaunchers(
-        'China',
-        CONFIG.c.srbm.onFacility.launcherState,
-        CONFIG.c.srbm.onFacility.const.magazineWeaponNum,
-        function(unit, launchers)
-            if unit.dbid == 1680 or unit.dbid == 350 or unit.dbid == 2886 or unit.dbid == 1681 then
-                table.insert(launchers, unit)
-            end
-        end
-    )
+    -- initLaunchers(
+    --     'China',
+    --     CONFIG.c.srbm.launcherState,
+    --     CONFIG.c.srbm.const.magazineWeaponNum,
+    --     function(unit, launchers)
+    --         if unit.dbid == 1680 or unit.dbid == 350 or unit.dbid == 2886 or unit.dbid == 1681 then
+    --             table.insert(launchers, unit)
+    --         end
+    --     end
+    -- )
 
     initLaunchers(
         'Taiwan',
@@ -163,22 +163,22 @@ function initUnitsAndTargetList()
             end
         end
     )
-    initLaunchers(
-        'Taiwan',
-        CONFIG.t.glcm.launcherState,
-        CONFIG.t.glcm.const.magazineWeaponNum,
-        function(unit, launchers)
-            if unit.dbid == 2587 then
-                table.insert(launchers, unit)
-            end
-        end
-    )
+    -- initLaunchers(
+    --     'Taiwan',
+    --     CONFIG.t.glcm.launcherState,
+    --     CONFIG.t.glcm.const.magazineWeaponNum,
+    --     function(unit, launchers)
+    --         if unit.dbid == 2587 then
+    --             table.insert(launchers, unit)
+    --         end
+    --     end
+    -- )
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.onFacility.package[1].targetList) <= 0 then
+if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.package[1].targetList) <= 0 then
     initUnitsAndTargetList()
     initUnitsForASW()
     calculateDestination()

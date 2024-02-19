@@ -7,20 +7,15 @@ if CONFIG == nil then
     return
 end
 
-if not CONFIG.c.mlrs.isStrikeActivated then
-    return
-end
+--------------------------------------------------------------------------------------------------------
 
-for _, battery in ipairs(CONFIG.c.mlrs.batteries) do
+for _, battery in ipairs(CONFIG.t.glcm.batteries) do
     if unit == nil then
         ScenEdit_MsgBox('Is nil', 1)
         return
     end
 
-    if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
-        setReloadStartTime(battery, unit)
-    end
+    battery.reloadStartTime = ScenEdit_CurrentTime()
 end
-
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

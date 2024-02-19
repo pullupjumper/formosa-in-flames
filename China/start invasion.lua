@@ -6,7 +6,7 @@ if CONFIG == nil then
     return
 end
 
-CONFIG.c.srbm.onFacility.isStrikeActivated = true
+CONFIG.c.srbm.isStrikeActivated = true
 ScenEdit_GetEvent('(China) (Landing operation) Landing ships move to area').isActive = true
 ScenEdit_GetEvent('(China) (SRBM kill chain) Strike on SAMs').isActive = true
 ScenEdit_GetEvent('(China) (SRBM kill chain) Launch H6N').isActive = true

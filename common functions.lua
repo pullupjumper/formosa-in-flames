@@ -432,6 +432,24 @@ function isMissileHit(name, units)
     return true
 end
 
+function isMissileMoreThan(name, units, num)
+    local count = 0
+
+    for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit ~= nil and string.find(unit.name, name) and unit.type == 'Weapon' then
+            count = count + 1
+        end
+
+        if count >= num then
+            return true
+        end
+    end
+
+    return false
+end
+
 ---@param num number
 ---@param list table<number, CMO__Unit>
 function hasDestroyedOrRTB(list, num)
@@ -505,11 +523,13 @@ function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEsc
         local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
         local weaponNum = 0
 
-        if weapons ~= nil then
-            for i, w in ipairs(weapons) do
-                if w["wpn_dbid"] == weaponDBID then
-                    weaponNum = w["wpn_current"]
-                end
+        if weapons == nil then
+            return
+        end
+
+        for i, w in ipairs(weapons) do
+            if w["wpn_dbid"] == weaponDBID then
+                weaponNum = w["wpn_current"]
             end
         end
 
@@ -597,9 +617,13 @@ function launchWZ8(h6n, course, contact)
     ScenEdit_UpdateUnit({ guid = wz8.guid, mode = 'add_sensor', dbid = 6073, arc_detect = arcT, arc_track = arcT })
     ScenEdit_SetEMCON('Unit', wz8.guid, 'Radar=Active')
 
-    wz8 = SE_GetUnit({ guid = wz8.guid })
+    -- wz8 = SE_GetUnit({ guid = wz8.guid })
     wz8.manualSpeed = h6n.speed
     wz8.manualAltitude = h6n.altitude
+
+    -- if wz8 == nil then
+    --     return
+    -- end
 
     if course == nil and contact ~= nil then
         ScenEdit_SetDoctrine({ guid = wz8.guid }, { fuel_state_rtb = 0, withdraw_on_fuel = 0 })
@@ -631,7 +655,6 @@ function launchWZ8(h6n, course, contact)
 
     wz8.course = course
     h6n:RTB(true)
-    -- ScenEdit_MsgBox('Launch WZ-8 (' .. tostring(wz8.name), 1)
     return wz8
 end
 
@@ -709,27 +732,21 @@ function attackContact(contact, qty, batteries, batteryIndex, groupIndex, weapon
 
             if launchedNum >= qty then
                 -- ScenEdit_MsgBox('batteryIndex=' .. tostring(batteryIndex) .. ' groupIndex=' .. tostring(groupIndex), 0)
-                return { batteryIndex = batteryIndex, groupIndex = groupIndex }
+                return { batteryIndex = batteryIndex, groupIndex = groupIndex, isLaunched = true }
             end
         end
     end
 
-    return { batteryIndex = batteryIndex, groupIndex = groupIndex }
+    return { batteryIndex = batteryIndex, groupIndex = groupIndex, isLaunched = false }
 end
 
 function resupply(battery, weaponDBID)
     local group = SE_GetUnit({ guid = battery.guid })
-
-    if group == nil then
-        return
-    end
+    if group == nil then return end
 
     for index, guid in ipairs(group.group.unitlist) do
         local unit = SE_GetUnit({ guid = guid })
-
-        if unit == nil or unit.mounts == nil then
-            return
-        end
+        if unit == nil or unit.mounts == nil then return end
 
         for mountIndex, mount in ipairs(unit.mounts) do
             local _weaponDBID = 0
@@ -759,9 +776,7 @@ function resupply(battery, weaponDBID)
             end
         end
 
-        if unit.magazines == nil then
-            return
-        end
+        if unit.magazines == nil then return end
 
         -- for magazineIndex, magazine in ipairs(unit.magazines) do
         --     local _weaponDBID = 0
@@ -792,10 +807,7 @@ end
 function reloadMissile(launcherState, reloadTime, weaponDBID)
     for index, state in ipairs(launcherState) do
         local unit = SE_GetUnit({ guid = state.unit })
-
-        if unit == nil then
-            return
-        end
+        if unit == nil then return end
 
         for mountIndex, mount in ipairs(unit.mounts) do
             if state.mounts[mountIndex].reloadStartTime == nil and isRunOutOfAmmo(mount) then

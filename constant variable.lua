@@ -3,11 +3,11 @@ CONFIG.isDevMode = true
 CONFIG.const = {}
 CONFIG.c = {}
 CONFIG.c.mlrs = {}
-CONFIG.c.mlrs.onMobileUnit = {}
-CONFIG.c.mlrs.onMobileUnit.const = {}
+-- CONFIG.c.mlrs.onMobileUnit = {}
+CONFIG.c.mlrs.const = {}
 CONFIG.c.srbm = {}
 CONFIG.c.srbm.onFacility = {}
-CONFIG.c.srbm.onFacility.const = {}
+CONFIG.c.srbm.const = {}
 CONFIG.c.srbm.onSAM = {}
 CONFIG.c.srbm.onSAM.const = {}
 CONFIG.c.aircraft = {}
@@ -63,9 +63,9 @@ CONFIG.const.batteryState.RESUPPLY = 2
 
 
 -- MLRS on mobile units
-CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = false
-CONFIG.c.mlrs.onMobileUnit.idxPackage = 1
-CONFIG.c.mlrs.onMobileUnit.package = {
+CONFIG.c.mlrs.isStrikeActivated = false
+CONFIG.c.mlrs.idxPackage = 1
+CONFIG.c.mlrs.package = {
     {
         name = '',
         targetList = {},
@@ -75,7 +75,7 @@ CONFIG.c.mlrs.onMobileUnit.package = {
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }
     }
 }
-CONFIG.c.mlrs.onMobileUnit.const.position = {
+CONFIG.c.mlrs.const.position = {
     north = {
         assemblyArea = {
             course = {
@@ -87,7 +87,7 @@ CONFIG.c.mlrs.onMobileUnit.const.position = {
         firingpositions = {
             {
                 course = {
-                    { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    -- { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
                     { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
                     { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
                 },
@@ -95,7 +95,7 @@ CONFIG.c.mlrs.onMobileUnit.const.position = {
             },
             {
                 course = {
-                    { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    -- { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
                     { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
                     { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
                 },
@@ -105,34 +105,206 @@ CONFIG.c.mlrs.onMobileUnit.const.position = {
         magazineWeapenNum = 80
     }
 }
-CONFIG.c.mlrs.onMobileUnit.batteries = {
+CONFIG.c.mlrs.batteries = {
     {
+        name = 'MLRS (73th Artillery Brigade 5th Battalion)',
         guid = 'X58F5H-0HN1E390V61VB',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
-        position = CONFIG.c.mlrs.onMobileUnit.const.position.north
+        position = CONFIG.c.mlrs.const.position.north,
+        weaponDBID = 2123
     }
 }
-CONFIG.c.mlrs.onMobileUnit.const.contactAge = 30 * 60
-CONFIG.c.mlrs.onMobileUnit.const.weaponDBID = 2123
-CONFIG.c.mlrs.onMobileUnit.const.reloadTime = 5 * 60
+CONFIG.c.mlrs.const.contactAge = 30 * 60
+-- CONFIG.c.mlrs.const.weaponDBID = 2123
+CONFIG.c.mlrs.const.reloadTime = 40 * 60
 
 
 
 -- SRBM on facility
-CONFIG.c.srbm.onFacility.lastReconTime = nil
-CONFIG.c.srbm.onFacility.launcherState = {}
-CONFIG.c.srbm.onFacility.isStrikeActivated = false
-CONFIG.c.srbm.onFacility.isReloadActivated = false
-CONFIG.c.srbm.onFacility.strikeTimes = 0
-CONFIG.c.srbm.onFacility.idxPackage = 1
-CONFIG.c.srbm.onFacility.package = {
+CONFIG.c.srbm.lastReconTime = nil
+-- CONFIG.c.srbm.launcherState = {}
+CONFIG.c.srbm.isStrikeActivated = false
+-- CONFIG.c.srbm.isReloadActivated = false
+CONFIG.c.srbm.strikeTimes = 0
+CONFIG.c.srbm.idxPackage = 1
+CONFIG.c.srbm.const.position = {
+    brigade615 = {
+        assemblyArea = {
+            course = {
+                -- { lat = 'N 24.17.02', lon = 'E 115.57.23', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.17.05', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44316', 'RP-44317', 'RP-44318', 'RP-44319' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    -- { lat = 'N 24.17.02', lon = 'E 115.57.23', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44322', 'RP-44323', 'RP-44324', 'RP-44325' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+    brigade614 = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 26.03.47', lon = 'E 117.19.12', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44330', 'RP-44331', 'RP-44332', 'RP-44333' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44335', 'RP-44336', 'RP-44337', 'RP-44338' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+    brigade636 = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.45.34', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44342', 'RP-44343', 'RP-44344', 'RP-44345' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44357', 'RP-44358', 'RP-44359', 'RP-44360' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+    brigade616 = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 25.54.38', lon = 'E 114.57.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44364', 'RP-44365', 'RP-44366', 'RP-44367' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 25.55.32', lon = 'E 114.58.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44369', 'RP-44370', 'RP-44371', 'RP-44372' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+    brigade613 = {
+        assemblyArea = {
+            course = {
+                { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 28.27.12',    lon = 'E 117.51.17',   desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44386', 'RP-44387', 'RP-44388', 'RP-44389' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44391', 'RP-44392', 'RP-44393', 'RP-44394' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+    brigade617 = {
+        assemblyArea = {
+            course = {
+                { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 29.09.01',    lon = 'E 119.36.44',   desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-44408', 'RP-44409', 'RP-44410', 'RP-44411' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-44413', 'RP-44414', 'RP-44415', 'RP-44416' }
+            },
+        },
+        magazineWeapenNum = 36
+    },
+}
+CONFIG.c.srbm.batteries = {
+    {
+        guid = 'X58F5H-0HN1G2IFLNKG9',
+        name = 'SRBM (615th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade615,
+        weaponDBID = 2142
+    },
+    {
+        guid = 'X58F5H-0HN1G2IFMBN7B',
+        name = 'SRBM (614th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade614,
+        weaponDBID = 2142
+    },
+    {
+        guid = 'X58F5H-0HN1FI7IOAS9J',
+        name = 'SRBM (636th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade636,
+        weaponDBID = 3381
+    },
+    {
+        guid = 'X58F5H-0HN1G2IFLF6QE',
+        name = 'SRBM (616th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade616,
+        weaponDBID = 2145
+    },
+    {
+        guid = 'X58F5H-0HN1G2DEBC7O8',
+        name = 'SRBM (613th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade613,
+        weaponDBID = 40
+    },
+    {
+        guid = 'X58F5H-0HN1G2IFMBPJD',
+        name = 'SRBM (617th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.srbm.const.position.brigade617,
+        weaponDBID = 3381
+    },
+}
+CONFIG.c.srbm.package = {
     {
         name = 'RADAR',
         targetList = {},
         batteries = {
-            { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HMSC3K2NOVJC' },
-            { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
+            { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HN1G2IFMBN7B', batteryIdx = 2 },
+            { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', batteryIdx = 5 }
+            -- CONFIG.c.srbm.batteries[2],
+            -- CONFIG.c.srbm.batteries[5]
         },
         num = 2,
         index = 1,
@@ -142,8 +314,10 @@ CONFIG.c.srbm.onFacility.package = {
         name = 'RUNWAY',
         targetList = {},
         batteries = {
-            { name = 'SRBM (636th Brigade)', guid = '6Z8LM5-0HMML05RV0N6N' },
-            { name = 'SRBM (617th Brigade)', guid = '6Z8LM5-0HMML05RV30CS' },
+            { name = 'SRBM (636th Brigade)', guid = 'X58F5H-0HN1FI7IOAS9J', batteryIdx = 3 },
+            { name = 'SRBM (617th Brigade)', guid = 'X58F5H-0HN1G2IFMBPJD', batteryIdx = 6 }
+            -- CONFIG.c.srbm.batteries[3],
+            -- CONFIG.c.srbm.batteries[6],
         },
         num = 4,
         index = 1,
@@ -153,8 +327,10 @@ CONFIG.c.srbm.onFacility.package = {
         name = 'PORT',
         targetList = {},
         batteries = {
-            { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
-            { name = 'SRBM (615th Brigade)', guid = '6Z8LM5-0HMML05RUJ786' },
+            { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', batteryIdx = 5 },
+            { name = 'SRBM (615th Brigade)', guid = 'X58F5H-0HN1G2IFLNKG9', batteryIdx = 1 }
+            -- CONFIG.c.srbm.batteries[1],
+            -- CONFIG.c.srbm.batteries[5],
         },
         num = 4,
         index = 1,
@@ -164,17 +340,18 @@ CONFIG.c.srbm.onFacility.package = {
         name = 'SHELTER',
         targetList = {},
         batteries = {
-            { name = 'SRBM (616th Brigade)', guid = 'X58F5H-0HMTNEA68REQQ' },
+            { name = 'SRBM (616th Brigade)', guid = 'X58F5H-0HN1G2IFLF6QE', batteryIdx = 4 }
+            -- CONFIG.c.srbm.batteries[4],
         },
         num = 2,
         index = 1,
         hasLaunchedTheFirstStrike = false
     },
 }
-CONFIG.c.srbm.onFacility.const.contactAge = 30 * 60
-CONFIG.c.srbm.onFacility.const.magazineWeaponNum = 3
-CONFIG.c.srbm.onFacility.const.reloadTime = 45 * 60
-CONFIG.c.srbm.onFacility.const.contingencyRunways = {
+CONFIG.c.srbm.const.contactAge = 30 * 60
+-- CONFIG.c.srbm.const.magazineWeaponNum = 3
+CONFIG.c.srbm.const.reloadTime = 40 * 60
+CONFIG.c.srbm.const.contingencyRunways = {
     { base = { guid = 'X58F5H-0HN0KRS0IJLB4' }, runway = { guid = 'X58F5H-0HMSQ0HJ9MHP8' } },
     { base = { guid = 'X58F5H-0HN0KRS0IJLB2' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDM' } },
     { base = { guid = 'X58F5H-0HN0KRS0IJLB0' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
@@ -193,7 +370,7 @@ CONFIG.c.srbm.onSAM.const.h6nBaseGUID = 'X58F5H-0HMRAQFR07T2V'
 CONFIG.c.srbm.onSAM.const.bzk005BaseGUID = '6Z8LM5-0HMIJ3QGCRQC4'
 CONFIG.c.srbm.onSAM.const.h6nDBID = 4969
 CONFIG.c.srbm.onSAM.const.batteries = {
-    { name = 'SRBM (613th Brigade)', guid = '6Z8LM5-0HMML05RV29L0' },
+    { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', },
 }
 CONFIG.c.srbm.onSAM.const.contactAge = 60
 CONFIG.c.srbm.onSAM.const.wz8Course = {
@@ -777,9 +954,50 @@ CONFIG.c.asw.const.submarine = {
 
 -- GLCM
 CONFIG.t.glcm.isReloadActivated = true
-CONFIG.t.glcm.launcherState = {}
+-- CONFIG.t.glcm.launcherState = {}
+CONFIG.t.glcm.const.position = {
+    north = {
+        assemblyArea = {
+            area = { 'RP-44294', 'RP-44295', 'RP-44296', 'RP-44297' }
+        },
+        firingpositions = {
+            {
+                area = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' }
+            },
+        },
+        magazineWeapenNum = 48
+    },
+    south = {
+        assemblyArea = {
+            area = { 'RP-44278', 'RP-44279', 'RP-44280', 'RP-44281' }
+        },
+        firingpositions = {
+            {
+                area = { 'RP-44288', 'RP-44289', 'RP-44290', 'RP-44291' }
+            },
+        },
+        magazineWeapenNum = 48
+    }
+}
+CONFIG.t.glcm.batteries = {
+    {
+        guid = 'X58F5H-0HN1ESDRTUULO',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.t.glcm.const.position.north,
+        weaponDBID = 3228
+    },
+    {
+        guid = 'X58F5H-0HN1ESDRTLGU7',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.t.glcm.const.position.south,
+        weaponDBID = 3228
+    }
+}
+-- CONFIG.t.glcm.const.weaponDBID = 3228
 CONFIG.t.glcm.const.reloadTime = 40 * 60
-CONFIG.t.glcm.const.magazineWeaponNum = 8
+-- CONFIG.t.glcm.const.magazineWeaponNum = 8
 
 
 -- ASM

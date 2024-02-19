@@ -6,10 +6,10 @@ if CONFIG == nil then
     return
 end
 
-if not CONFIG.c.mlrs.isStrikeActivated then
+if not CONFIG.c.srbm.isStrikeActivated then
     return
 end
 
-checkBatteryState(CONFIG, 'mlrs', CONFIG.c.mlrs.batteries)
+checkBatteryState(CONFIG, 'srbm', CONFIG.c.srbm.batteries)
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

@@ -7,18 +7,20 @@ if CONFIG == nil then
     return
 end
 
-if not CONFIG.c.mlrs.isStrikeActivated then
+
+if not CONFIG.c.srbm.isStrikeActivated then
     return
 end
 
-for _, battery in ipairs(CONFIG.c.mlrs.batteries) do
+
+for _, battery in ipairs(CONFIG.c.srbm.batteries) do
     if unit == nil then
         ScenEdit_MsgBox('Is nil', 1)
         return
     end
 
     if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
-        setReloadStartTime(battery, unit)
+        setWCSToFree(battery, unit)
     end
 end
 
