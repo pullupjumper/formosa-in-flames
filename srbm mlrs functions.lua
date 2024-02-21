@@ -16,7 +16,7 @@ end
 
 function setWCSToFree(battery, group)
     battery.state = CONFIG.const.batteryState.STATIC
-    ScenEdit_MsgBox(battery.name .. ' enters into firing position', 1)
+    -- ScenEdit_MsgBox(battery.name .. ' enters into firing position', 1)
 
     for index, guid in ipairs(group.group.unitlist) do
         local u = SE_GetUnit({ guid = guid })

@@ -6,13 +6,13 @@ CONFIG.c.mlrs = {}
 -- CONFIG.c.mlrs.onMobileUnit = {}
 CONFIG.c.mlrs.const = {}
 CONFIG.c.srbm = {}
-CONFIG.c.srbm.onFacility = {}
+-- CONFIG.c.srbm.onFacility = {}
 CONFIG.c.srbm.const = {}
 CONFIG.c.srbm.onSAM = {}
 CONFIG.c.srbm.onSAM.const = {}
 CONFIG.c.aircraft = {}
-CONFIG.c.aircraft.onMobileUnit = {}
-CONFIG.c.aircraft.onMobileUnit.const = {}
+-- CONFIG.c.aircraft.onMobileUnit = {}
+CONFIG.c.aircraft.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
 CONFIG.c.asw = {}
@@ -390,10 +390,10 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 
 
 -- ac on mobile units
-CONFIG.c.aircraft.onMobileUnit.isStrikeActivated = false
-CONFIG.c.aircraft.onMobileUnit.maxStrikeTimes = 5
-CONFIG.c.aircraft.onMobileUnit.lastStrikeTime = nil
-CONFIG.c.aircraft.onMobileUnit.package = {
+CONFIG.c.aircraft.isStrikeActivated = false
+CONFIG.c.aircraft.maxStrikeTimes = 5
+CONFIG.c.aircraft.lastStrikeTime = nil
+CONFIG.c.aircraft.package = {
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
@@ -431,7 +431,7 @@ CONFIG.c.aircraft.onMobileUnit.package = {
         hasLaunched = false
     },
 }
-CONFIG.c.aircraft.onMobileUnit.const.periodOfStrike = 70 * 60
+CONFIG.c.aircraft.const.periodOfStrike = 70 * 60
 
 
 

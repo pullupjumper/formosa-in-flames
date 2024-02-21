@@ -7,16 +7,15 @@ if CONFIG == nil then
     return
 end
 
-local shipInfo = CONFIG.c.landingOperation.const.shipInfo
-local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
-local idx = CONFIG.c.landingOperation.idxShipLocationInfo
-local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
+local function setCoursesForAllShips(CONFIG)
+    local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
 
-local function setCoursesToAllShips()
-    for index, value in ipairs(units) do
+    for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        if unit ~= nil then
+        if unit then
             unit.manualSpeed = shipInfo.shipSpeed
 
             if unit.dbid == shipLocationInfo[idx].to.result.type075.dbid then
@@ -59,12 +58,16 @@ local function setCoursesToAllShips()
             end
         end
     end
+
+    CONFIG.c.landingOperation.isLandingShipsArrived = true
+    CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
 end
 
-local function getUnitsInAnchorageArea()
+local function getUnitsInAnchorageArea(CONFIG)
+    local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
     local unitsInAnchorageArea1 = {}
 
-    for index, value in ipairs(units) do
+    for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit ~= nil
@@ -77,7 +80,7 @@ local function getUnitsInAnchorageArea()
                 break
             end
 
-            for i, info in ipairs(cargoInfoForTransfer) do
+            for _, info in ipairs(cargoInfoForTransfer) do
                 if unit:inArea(info.anchorageArea) or unit:inArea(info.LSTAnchorageArea) then
                     table.insert(unitsInAnchorageArea1, unit)
                 end
@@ -89,16 +92,18 @@ local function getUnitsInAnchorageArea()
 end
 
 local function createCargoMissions()
-    for index, m in ipairs(CONFIG.c.landingOperation.const.cargoMissionList) do
+    for _, m in ipairs(CONFIG.c.landingOperation.const.cargoMissionList) do
         local mission = ScenEdit_AddMission('China', m.name, 'Cargo', { zone = m.zone })
         mission.isactive = false
         ScenEdit_SetMission('China', m.name, m.setting)
     end
 end
 
-local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1)
-    for index, info in ipairs(cargoInfoForTransfer) do
-        for i, u in ipairs(unitsInAnchorageArea1) do
+local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1, CONFIG)
+    local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
+
+    for _, info in ipairs(cargoInfoForTransfer) do
+        for _, u in ipairs(unitsInAnchorageArea1) do
             -- local u = SE_GetUnit({ guid = v.guid })
 
             if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(info.anchorageArea) then
@@ -182,22 +187,26 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
     end
 end
 
-local function setLandingMissionStartTime()
-    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local function startAmphibiousLandingAttack(CONFIG)
+    local unitsInAnchorageArea1 = getUnitsInAnchorageArea(CONFIG)
 
-    -- if CONFIG == nil then
-    --     print('CONFIG == nil')
-    --     ScenEdit_MsgBox('CONFIG == nil', 1)
-    --     return
-    -- end
+    if getCount(unitsInAnchorageArea1) > 15 then
+        createCargoMissions()
+        transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1, CONFIG)
+        CONFIG.c.landingOperation.isLandingShipsArrived = false
+        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
+        CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = ScenEdit_CurrentTime()
+        -- CONFIG.c.mlrs.isStrikeActivated = true
+    end
+end
 
-    local currentTime = ScenEdit_CurrentTime()
-    CONFIG.c.landingOperation.airlandingMissionStartTime = currentTime
-    local airlandingMissionStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime))
-    local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
-    local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 20 * 60))
-    local airlandingMissionStartTime4 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 38 * 60))
-    local landingMissionStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 4 * 60))
+local function setLandingMissionStartTime(CONFIG)
+    CONFIG.c.landingOperation.airlandingMissionStartTime = ScenEdit_CurrentTime()
+    local airlandingMissionStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime()))
+    local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 10 * 60))
+    local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 20 * 60))
+    -- local airlandingMissionStartTime4 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 38 * 60))
+    local landingMissionStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 4 * 60))
 
     ScenEdit_GetMission('China', 'LANDING ZONE').starttime = landingMissionStartTime
     ScenEdit_GetMission('China', 'LANDING ZONE BAO').starttime = landingMissionStartTime
@@ -208,28 +217,25 @@ local function setLandingMissionStartTime()
     ScenEdit_GetMission('China', 'AIRLANDING ZONE').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE 4').starttime = airlandingMissionStartTime4
     ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE NORTH 4').starttime = airlandingMissionStartTime4
     ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 1').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE PARK 4').starttime = airlandingMissionStartTime4
     ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 1').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 3').starttime = airlandingMissionStartTime3
-    -- ScenEdit_GetMission('China', 'AIRLANDING ZONE TAIPING 4').starttime = airlandingMissionStartTime4
-    -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
-local function setupCoursesToLSTs()
+local function setCoursesForLSTs(CONFIG)
+    local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+    local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
     local unitsInWestLSTAnchorageArea = {}
     local unitsInNorthLSTAnchorageArea = {}
     local unitsInSouthLSTAnchorageArea = {}
 
-    for index, value in ipairs(units) do
+    for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit ~= nil
@@ -274,54 +280,26 @@ local function setupCoursesToLSTs()
     )
 end
 
-local function retransferCargos()
-    for index, value in ipairs(units) do
-        local unit = SE_GetUnit({ guid = value.guid })
+local function getContactNumInArea(contacts, area)
+    local filteredContacts = {}
 
-        if unit ~= nil
-            and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
-            transferCargo(
-                unit.guid,
-                'Boats',
-                cargoInfoForTransfer[1].boat.dbid,
-                cargoInfoForTransfer[1].boat.cargoItem
-            )
-            transferCargo(
-                unit.guid,
-                'Aircraft',
-                cargoInfoForTransfer[1].tansportHelicopter.dbid,
-                cargoInfoForTransfer[1].tansportHelicopter.cargoItem
-            )
+    for _, contact in ipairs(contacts) do
+        if contact:inArea(area) and contact.typed == 8 then
+            table.insert(filteredContacts, contact)
         end
     end
+
+    return getCount(filteredContacts)
 end
 
-if CONFIG.c.landingOperation.isLandingShipsStartedMoving then
-    setCoursesToAllShips()
-    CONFIG.c.landingOperation.isLandingShipsArrived = true
-    CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
-end
-
-if CONFIG.c.landingOperation.isLandingShipsArrived then
-    local unitsInAnchorageArea1 = getUnitsInAnchorageArea()
-
-    if getCount(unitsInAnchorageArea1) > 15 then
-        createCargoMissions()
-        transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1)
-        CONFIG.c.landingOperation.isLandingShipsArrived = false
-        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
-        CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = ScenEdit_CurrentTime()
-        CONFIG.c.mlrs.onMobileUnit.isStrikeActivated = true
-    end
-end
-
-if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
+local function startAirLanding(CONFIG)
+    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local contacts = ScenEdit_GetContacts('China')
-    local filteredContacts = {}
     local diff = 0
     local landingAttackStartTime = CONFIG.c.landingOperation.amphibiousLandingAttackStartTime
 
-    if landingAttackStartTime ~= nil then
+    if landingAttackStartTime then
         diff = ScenEdit_CurrentTime() - landingAttackStartTime
     end
 
@@ -329,29 +307,60 @@ if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
         return
     end
 
-    for index, value in ipairs(contacts) do
-        if value:inArea(shipLocationInfo[idx].airLandingZone) and value.typed == 8 then
-            table.insert(filteredContacts, value)
-        end
-    end
+    local contactNum = getContactNumInArea(contacts, shipLocationInfo[idx].airLandingZone)
+    local isContactNumLessThan = contactNum < shipLocationInfo[idx].numOfContactsInAirLandingZone
+    local isTimeExceeded = landingAttackStartTime and diff >= CONFIG.c.landingOperation.const.periodOfTime
 
-    if getCount(filteredContacts) < shipLocationInfo[idx].numOfContactsInAirLandingZone
-        or (landingAttackStartTime ~= nil and diff >= CONFIG.c.landingOperation.const.periodOfTime) then
-        setLandingMissionStartTime()
-        setupCoursesToLSTs()
-        ScenEdit_MsgBox('Launch amphibious landing attack', 0)
+    if isContactNumLessThan or isTimeExceeded then
+        setLandingMissionStartTime(CONFIG)
+        setCoursesForLSTs(CONFIG)
+        ScenEdit_MsgBox('Start air landing', 0)
         CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
     end
 end
 
-if CONFIG.c.landingOperation.airlandingMissionStartTime ~= nil then
+local function retransferCargos(CONFIG)
+    local cargoInfoForTransfer = CONFIG.c.landingOperation.const.cargoInfoForTransfer
     local diffTime = ScenEdit_CurrentTime() - CONFIG.c.landingOperation.airlandingMissionStartTime
 
     if diffTime >= (3600 * 2) then
-        retransferCargos()
-        local currentTime = ScenEdit_CurrentTime()
-        CONFIG.c.landingOperation.airlandingMissionStartTime = currentTime
+        for _, value in ipairs(units) do
+            local unit = SE_GetUnit({ guid = value.guid })
+
+            if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
+                transferCargo(
+                    unit.guid,
+                    'Boats',
+                    cargoInfoForTransfer[1].boat.dbid,
+                    cargoInfoForTransfer[1].boat.cargoItem
+                )
+                transferCargo(
+                    unit.guid,
+                    'Aircraft',
+                    cargoInfoForTransfer[1].tansportHelicopter.dbid,
+                    cargoInfoForTransfer[1].tansportHelicopter.cargoItem
+                )
+            end
+        end
+
+        CONFIG.c.landingOperation.airlandingMissionStartTime = ScenEdit_CurrentTime()
     end
+end
+
+if CONFIG.c.landingOperation.isLandingShipsStartedMoving then
+    setCoursesForAllShips(CONFIG)
+end
+
+if CONFIG.c.landingOperation.isLandingShipsArrived then
+    startAmphibiousLandingAttack(CONFIG)
+end
+
+if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
+    startAirLanding(CONFIG)
+end
+
+if CONFIG.c.landingOperation.airlandingMissionStartTime ~= nil then
+    retransferCargos(CONFIG)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

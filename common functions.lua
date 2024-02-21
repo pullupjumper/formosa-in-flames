@@ -658,6 +658,7 @@ function launchWZ8(h6n, course, contact)
     return wz8
 end
 
+---@return table
 function attackContact(contact, qty, batteries, batteryIndex, groupIndex, weaponDBID)
     local launchedNum = 0
 
