@@ -1,16 +1,18 @@
-local function aircraftReturnToBase(aircraftPackage)
-    for _, pack in ipairs(aircraftPackage) do
+local function aircraftReturnToBase(aircraftPackages)
+    for _, pack in ipairs(aircraftPackages) do
         if pack.striker.units ~= nil and getCount(pack.striker.units) > 0 and hasDestroyedOrRTB(pack.striker.units, 1) then
             for i, value in ipairs(pack.escort.units) do
                 local unit = SE_GetUnit({ guid = value.unit })
-                if unit == nil then return end
-                unit:RTB(true)
+                if unit then
+                    unit:RTB(true)
+                end
             end
 
             for i, value in ipairs(pack.wildWeasel.units) do
                 local unit = SE_GetUnit({ guid = value.unit })
-                if unit == nil then return end
-                unit:RTB(true)
+                if unit then
+                    unit:RTB(true)
+                end
             end
 
             pack.striker.units = {}
@@ -58,7 +60,7 @@ end
 local function attackMLRSContacts(contacts, mlrsConfig)
     local result = { batteryIndex = 1, groupIndex = 1 }
 
-    for _, package in ipairs(mlrsConfig.package) do
+    for _, package in ipairs(mlrsConfig.packages) do
         local filteredContacts = filterContacts(contacts, function(value)
             return (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
         end)
@@ -81,9 +83,9 @@ end
 
 local function attackSRBMContacts(contacts, CONFIG)
     local srbmConfig = CONFIG.c.srbm
-    local result = { batteryIndex = 1, groupIndex = 1 }
+    local result = { batteryIndex = 1, groupIndex = 1, isLaunched = false }
     local packageIdx = srbmConfig.idxPackage
-    local targetListIdx = srbmConfig.package[packageIdx].index
+    local targetListIdx = srbmConfig.packages[packageIdx].index
     local diff = 0
 
     if srbmConfig.lastReconTime then
@@ -96,14 +98,14 @@ local function attackSRBMContacts(contacts, CONFIG)
             and srbmConfig.lastReconTime and ScenEdit_CurrentTime() > srbmConfig.lastReconTime
             and diff <= srbmConfig.const.contactAge
         local isTheFirstStrike = not BDA
-            and not srbmConfig.package[packageIdx].hasLaunchedTheFirstStrike
+            and not srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike
 
-        for _, v in ipairs(srbmConfig.package[packageIdx].targetList[targetListIdx]) do
+        for _, v in ipairs(srbmConfig.packages[packageIdx].targetList[targetListIdx]) do
             if v.guid == value.guid and (isTheFirstStrike or hasReconed) then
                 result = attackContact(
                     value,
-                    srbmConfig.package[packageIdx].num,
-                    srbmConfig.package[packageIdx].batteries,
+                    srbmConfig.packages[packageIdx].num,
+                    srbmConfig.packages[packageIdx].batteries,
                     result.batteryIndex,
                     result.groupIndex
                 )
@@ -111,22 +113,25 @@ local function attackSRBMContacts(contacts, CONFIG)
         end
     end
 
-    srbmConfig.package[packageIdx].index = srbmConfig.package[packageIdx].index + 1
-    local targetListLength = getCount(srbmConfig.package[packageIdx].targetList)
-    local nextTargetListIdx = srbmConfig.package[packageIdx].index
+    if result.isLaunched then
+        srbmConfig.packages[packageIdx].index = srbmConfig.packages[packageIdx].index + 1
+    end
+
+    local targetListLength = getCount(srbmConfig.packages[packageIdx].targetList)
+    local nextTargetListIdx = srbmConfig.packages[packageIdx].index
     local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
 
     if isTargetListIdxOutOfBounds then
-        srbmConfig.package[packageIdx].index = targetListLength
-        srbmConfig.package[packageIdx].hasLaunchedTheFirstStrike = true
+        srbmConfig.packages[packageIdx].index = targetListLength
+        srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike = true
 
-        if srbmConfig.package[packageIdx].name == 'RADAR' then
-            srbmConfig.package[packageIdx].hasLaunchedTheFirstStrike = false
+        if srbmConfig.packages[packageIdx].name == 'RADAR' then
+            srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike = false
         end
     end
 
     srbmConfig.idxPackage = srbmConfig.idxPackage + 1
-    local packageLength = getCount(srbmConfig.package)
+    local packageLength = getCount(srbmConfig.packages)
     local nextPackageIdx = srbmConfig.idxPackage
     local isPackageIdxOutOfBounds = nextPackageIdx > packageLength
 
@@ -151,7 +156,7 @@ local function launchAircraftStrike(contacts, aircraftConfig)
     local isToStrike = not aircraftConfig.lastStrikeTime
         or (aircraftConfig.lastStrikeTime and diffTime >= aircraftConfig.const.periodOfStrike)
 
-    for _, package in ipairs(aircraftConfig.package) do
+    for _, package in ipairs(aircraftConfig.packages) do
         if not package.hasLaunched then
             local filteredContacts = filterContacts(contacts, function(value)
                 return (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
@@ -213,7 +218,7 @@ if contacts == nil then
 end
 
 if CONFIG.c.aircraft.isStrikeActivated then
-    aircraftReturnToBase(CONFIG.c.aircraft.package)
+    aircraftReturnToBase(CONFIG.c.aircraft.packages)
 end
 
 if isMissileMoreThan('DF', units, 30) then

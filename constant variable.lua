@@ -65,7 +65,7 @@ CONFIG.const.batteryState.RESUPPLY = 2
 -- MLRS on mobile units
 CONFIG.c.mlrs.isStrikeActivated = false
 CONFIG.c.mlrs.idxPackage = 1
-CONFIG.c.mlrs.package = {
+CONFIG.c.mlrs.packages = {
     {
         name = '',
         targetList = {},
@@ -148,7 +148,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44322', 'RP-44323', 'RP-44324', 'RP-44325' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
     brigade614 = {
         assemblyArea = {
@@ -167,7 +167,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44335', 'RP-44336', 'RP-44337', 'RP-44338' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
     brigade636 = {
         assemblyArea = {
@@ -186,7 +186,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44357', 'RP-44358', 'RP-44359', 'RP-44360' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
     brigade616 = {
         assemblyArea = {
@@ -203,7 +203,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44369', 'RP-44370', 'RP-44371', 'RP-44372' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
     brigade613 = {
         assemblyArea = {
@@ -224,7 +224,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44391', 'RP-44392', 'RP-44393', 'RP-44394' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
     brigade617 = {
         assemblyArea = {
@@ -243,7 +243,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44413', 'RP-44414', 'RP-44415', 'RP-44416' }
             },
         },
-        magazineWeapenNum = 36
+        magazineWeapenNum = 72
     },
 }
 CONFIG.c.srbm.batteries = {
@@ -256,7 +256,7 @@ CONFIG.c.srbm.batteries = {
         weaponDBID = 2142
     },
     {
-        guid = 'X58F5H-0HN1G2IFMBN7B',
+        guid = 'X58F5H-0HN1LQGRV8HNQ',
         name = 'SRBM (614th Brigade)',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
@@ -296,12 +296,12 @@ CONFIG.c.srbm.batteries = {
         weaponDBID = 3381
     },
 }
-CONFIG.c.srbm.package = {
+CONFIG.c.srbm.packages = {
     {
         name = 'RADAR',
         targetList = {},
         batteries = {
-            { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HN1G2IFMBN7B', batteryIdx = 2 },
+            { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HN1LQGRV8HNQ', batteryIdx = 2 },
             { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', batteryIdx = 5 }
             -- CONFIG.c.srbm.batteries[2],
             -- CONFIG.c.srbm.batteries[5]
@@ -393,7 +393,7 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 CONFIG.c.aircraft.isStrikeActivated = false
 CONFIG.c.aircraft.maxStrikeTimes = 5
 CONFIG.c.aircraft.lastStrikeTime = nil
-CONFIG.c.aircraft.package = {
+CONFIG.c.aircraft.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },

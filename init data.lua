@@ -29,58 +29,6 @@ function initLaunchers(side, launcherState, magazineWeaponNum, handler)
     end
 end
 
-function initSAMs()
-    local units = VP_GetSide({ Side = 'Taiwan' }).units
-    local SAMs = filterUnitsByName(units, 'Mobile Sky Bow III')
-
-    if SAMs ~= nil then
-        for index, value in ipairs(SAMs) do
-            local unit = SE_GetUnit({ guid = value.guid })
-
-            for i, v in ipairs(SAMs_STATE) do
-                if unit.guid == v.guid then
-                    v.heading = unit.heading
-                    local length = getCount(v.course)
-                    local initialPosition = World_GetPointFromBearing({
-                        latitude = v.course[1].lat,
-                        longitude = v.course[1].lon,
-                        bearing = v.heading,
-                        distance = 0.01
-                    })
-
-                    local finalPosition = World_GetPointFromBearing({
-                        latitude = v.course[length].lat,
-                        longitude = v.course[length].lon,
-                        bearing = v.heading,
-                        distance = 0.01
-                    })
-
-                    table.insert(
-                        v.course,
-                        1,
-                        {
-                            lat = initialPosition.latitude,
-                            lon = initialPosition.longitude,
-                            desiredSpeed = 0,
-                            presetThrottle = 'Stop'
-                        }
-                    )
-
-                    table.insert(
-                        v.course,
-                        {
-                            lat = finalPosition.latitude,
-                            lon = finalPosition.longitude,
-                            desiredSpeed = 0,
-                            presetThrottle = 'Stop'
-                        }
-                    )
-                end
-            end
-        end
-    end
-end
-
 function initTargetList(side, missionName)
     local m = ScenEdit_GetMission(side, missionName)
     local temp = {}
@@ -100,12 +48,12 @@ function initUnitsForASW()
     -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
     if CONFIG ~= nil then
-        ScenEdit_GetMission('China', 'ASW - CSG').isactive = true
-        ScenEdit_GetMission('China', 'AEW - CSG').isactive = true
-        ScenEdit_GetMission('China', 'ASW - PATROL AC').isactive = true
-        ScenEdit_GetMission('China', 'ASW - BASHI').isactive = true
-        ScenEdit_GetMission('China', 'ASW - EAST').isactive = true
-        ScenEdit_GetMission('Taiwan', 'ASW - EAST').isactive = true
+        ScenEdit_GetMission('China', 'ASW CSG').isactive = true
+        ScenEdit_GetMission('China', 'AEW CSG').isactive = true
+        ScenEdit_GetMission('China', 'ASW PATROL AC').isactive = true
+        ScenEdit_GetMission('China', 'ASW BASHI').isactive = true
+        ScenEdit_GetMission('China', 'ASW EAST').isactive = true
+        ScenEdit_GetMission('Taiwan', 'ASW EAST').isactive = true
 
         -- ScenEdit_GetEvent('(China) Landing ships move to area').isActive = false
         -- ScenEdit_GetEvent('(China) Strike on SAMs').isActive = false
@@ -120,12 +68,12 @@ function initUnitsForASW()
             end
         end
     else
-        ScenEdit_GetMission('China', 'ASW - CSG').isactive = false
-        ScenEdit_GetMission('China', 'AEW - CSG').isactive = false
-        ScenEdit_GetMission('China', 'ASW - PATROL AC').isactive = false
-        ScenEdit_GetMission('China', 'ASW - BASHI').isactive = false
-        ScenEdit_GetMission('China', 'ASW - EAST').isactive = false
-        ScenEdit_GetMission('Taiwan', 'ASW - EAST').isactive = false
+        ScenEdit_GetMission('China', 'ASW CSG').isactive = false
+        ScenEdit_GetMission('China', 'AEW CSG').isactive = false
+        ScenEdit_GetMission('China', 'ASW PATROL AC').isactive = false
+        ScenEdit_GetMission('China', 'ASW BASHI').isactive = false
+        ScenEdit_GetMission('China', 'ASW EAST').isactive = false
+        ScenEdit_GetMission('Taiwan', 'ASW EAST').isactive = false
 
         -- ScenEdit_GetEvent('(China) Landing ships move to area').isActive = true
         -- ScenEdit_GetEvent('(China) Strike on SAMs').isActive = true
@@ -134,24 +82,13 @@ function initUnitsForASW()
 end
 
 function initUnitsAndTargetList()
-    CONFIG.c.srbm.package[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
-    CONFIG.c.srbm.package[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
-    CONFIG.c.srbm.package[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
-    CONFIG.c.srbm.package[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
-    CONFIG.c.srbm.package[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
-    CONFIG.c.srbm.package[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
-    CONFIG.c.srbm.package[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
-
-    -- initLaunchers(
-    --     'China',
-    --     CONFIG.c.srbm.launcherState,
-    --     CONFIG.c.srbm.const.magazineWeaponNum,
-    --     function(unit, launchers)
-    --         if unit.dbid == 1680 or unit.dbid == 350 or unit.dbid == 2886 or unit.dbid == 1681 then
-    --             table.insert(launchers, unit)
-    --         end
-    --     end
-    -- )
+    CONFIG.c.srbm.packages[1].targetList[1] = initTargetList('China', 'STRIKE ON RADAR')
+    CONFIG.c.srbm.packages[2].targetList[1] = initTargetList('China', 'STRIKE ON RUNWAY')
+    CONFIG.c.srbm.packages[2].targetList[2] = initTargetList('China', 'STRIKE ON RUNWAY 2')
+    CONFIG.c.srbm.packages[2].targetList[3] = initTargetList('China', 'STRIKE ON RUNWAY 3')
+    CONFIG.c.srbm.packages[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
+    CONFIG.c.srbm.packages[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
+    CONFIG.c.srbm.packages[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
 
     initLaunchers(
         'Taiwan',
@@ -163,22 +100,12 @@ function initUnitsAndTargetList()
             end
         end
     )
-    -- initLaunchers(
-    --     'Taiwan',
-    --     CONFIG.t.glcm.launcherState,
-    --     CONFIG.t.glcm.const.magazineWeaponNum,
-    --     function(unit, launchers)
-    --         if unit.dbid == 2587 then
-    --             table.insert(launchers, unit)
-    --         end
-    --     end
-    -- )
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.package[1].targetList) <= 0 then
+if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
     initUnitsAndTargetList()
     initUnitsForASW()
     calculateDestination()

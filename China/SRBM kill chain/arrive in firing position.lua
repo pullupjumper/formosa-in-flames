@@ -14,13 +14,10 @@ end
 
 
 for _, battery in ipairs(CONFIG.c.srbm.batteries) do
-    if unit == nil then
-        ScenEdit_MsgBox('Is nil', 1)
-        return
-    end
-
-    if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
-        setWCSToFree(battery, unit)
+    if unit then
+        if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
+            setWCSToFree(battery, unit)
+        end
     end
 end
 
