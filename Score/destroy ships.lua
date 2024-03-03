@@ -1,15 +1,28 @@
 local unit = ScenEdit_UnitX()
 local score = ScenEdit_GetScore("Taiwan")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if unit.dbid == PLATFORM_DBID_7
-    or unit.dbid == PLATFORM_DBID_8
-    or unit.dbid == PLATFORM_DBID_9
-    or unit.dbid == PLATFORM_DBID_10 then
-    ScenEdit_SetScore("Taiwan", (score + SCORE_LST), "Destroy a LST")
-elseif unit.dbid == PLATFORM_DBID_6 then
-    ScenEdit_SetScore("Taiwan", (score + SCORE_LHD), "Destroy a LHD")
-elseif unit.dbid == PLATFORM_DBID_11 then
-    ScenEdit_SetScore("Taiwan", (score + SCORE_CV), "Destroy a carrier")
-else
-    ScenEdit_SetScore("Taiwan", (score + SCORE_DDG), "Destroy other ships")
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
 end
+
+if not unit then
+    return
+end
+
+if unit.dbid == CONFIG.const.platformBDID7
+    or unit.dbid == CONFIG.const.platformBDID8
+    or unit.dbid == CONFIG.const.platformBDID9
+    or unit.dbid == CONFIG.const.platformBDID10 then
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lst), "Destroy a LST")
+elseif unit.dbid == CONFIG.const.platformBDID6 then
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lhd), "Destroy a LHD")
+elseif unit.dbid == CONFIG.const.platformBDID11 then
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.cv), "Destroy a carrier")
+else
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.ddg), "Destroy other ships")
+end
+
+-- gKH.State.SaveTableToKey(CONFIG, "CONFIG")

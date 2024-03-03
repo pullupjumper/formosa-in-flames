@@ -1,6 +1,17 @@
 local unit = ScenEdit_UnitX()
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if unit.dbid == PLATFORM_DBID_14 or unit.dbid == PLATFORM_DBID_15 then
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
+
+if not unit then
+    return
+end
+
+if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
     local score = ScenEdit_GetScore("Taiwan")
-    ScenEdit_SetScore("Taiwan", (score + SCORE_SAM_IS_DESTROYED), "A SAM battery is destoryed")
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.samIsDestroyed), "A SAM battery is destoryed")
 end

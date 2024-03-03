@@ -3,15 +3,12 @@ CONFIG.isDevMode = true
 CONFIG.const = {}
 CONFIG.c = {}
 CONFIG.c.mlrs = {}
--- CONFIG.c.mlrs.onMobileUnit = {}
 CONFIG.c.mlrs.const = {}
 CONFIG.c.srbm = {}
--- CONFIG.c.srbm.onFacility = {}
 CONFIG.c.srbm.const = {}
 CONFIG.c.srbm.onSAM = {}
 CONFIG.c.srbm.onSAM.const = {}
 CONFIG.c.aircraft = {}
--- CONFIG.c.aircraft.onMobileUnit = {}
 CONFIG.c.aircraft.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
@@ -22,6 +19,8 @@ CONFIG.t.glcm = {}
 CONFIG.t.glcm.const = {}
 CONFIG.t.asm = {}
 CONFIG.t.asm.const = {}
+CONFIG.s = {}
+CONFIG.s.const = {}
 CONFIG.const.platformBDID1 = 2149  -- 726a
 CONFIG.const.platformBDID2 = 3708  -- Z-18
 CONFIG.const.platformBDID3 = 2511  -- 724
@@ -116,16 +115,13 @@ CONFIG.c.mlrs.batteries = {
     }
 }
 CONFIG.c.mlrs.const.contactAge = 30 * 60
--- CONFIG.c.mlrs.const.weaponDBID = 2123
 CONFIG.c.mlrs.const.reloadTime = 40 * 60
 
 
 
 -- SRBM on facility
 CONFIG.c.srbm.lastReconTime = nil
--- CONFIG.c.srbm.launcherState = {}
 CONFIG.c.srbm.isStrikeActivated = false
--- CONFIG.c.srbm.isReloadActivated = false
 CONFIG.c.srbm.strikeTimes = 0
 CONFIG.c.srbm.idxPackage = 1
 CONFIG.c.srbm.const.position = {
@@ -954,7 +950,6 @@ CONFIG.c.asw.const.submarine = {
 
 -- GLCM
 CONFIG.t.glcm.isReloadActivated = true
--- CONFIG.t.glcm.launcherState = {}
 CONFIG.t.glcm.const.position = {
     north = {
         assemblyArea = {
@@ -995,9 +990,7 @@ CONFIG.t.glcm.batteries = {
         weaponDBID = 3228
     }
 }
--- CONFIG.t.glcm.const.weaponDBID = 3228
 CONFIG.t.glcm.const.reloadTime = 40 * 60
--- CONFIG.t.glcm.const.magazineWeaponNum = 8
 
 
 -- ASM
@@ -1020,184 +1013,19 @@ CONFIG.t.asm.const.helicopterNumInNai2 = 4
 
 
 
----Old variables-----------------------------------------------------------------------------------
-IS_ASW_STARTED = true
-
-
-IS_SKY_BOW_III_ACTIVATED = false
-SKY_BOW_III_RELOADING_TIME = 40 * 60
-MIN_WEAPON_QTY = 12
-INTERCEPTING_MAX_ALTITUDE = 24384
-SAMs_TO_INTERCEPT_UAV = { { guid = 'X58F5H-0HMQV7R60HMLL' } }
-SAMs_TO_INTERCEPT_HELICOPTER = { { guid = 'X58F5H-0HMQSS6CKIB8L' }, { guid = 'X58F5H-0HMQVAE9S0A12' } }
-
--- local u=ScenEdit_GetUnit({guid = 'X58F5H-0HMQSS6CKIB8L'})
--- u.course={
---     { lat = 'N 25.03.35', lon = 'E 121.20.52', desiredSpeed = 30, presetThrottle = 'Flank' },
---     -- { lat = 'N 25.03.14', lon = 'E 121.21.31', desiredSpeed = 30, presetThrottle = 'Flank' },
---     -- { lat = 'N 25.02.26', lon = 'E 121.21.14', desiredSpeed = 30, presetThrottle = 'Flank' },
---     -- { lat = 'N 25.01.55', lon = 'E 121.21.22', desiredSpeed = 30, presetThrottle = 'Flank' },
---     { lat = 'N 24.59.50', lon = 'E 121.20.28', desiredSpeed = 30, presetThrottle = 'Flank' },
--- }
-SAMs_STATE = {
-    {
-        guid = 'X58F5H-0HMQSS6CKIB8L',
-        course = {
-            { lat = 'N 25.03.35', lon = 'E 121.20.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 25.03.14', lon = 'E 121.21.31', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 25.02.26', lon = 'E 121.21.14', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 25.01.55', lon = 'E 121.21.22', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 24.59.50', lon = 'E 121.20.28', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        state = 'static',
-        firingPosition = { 'RP-7798', 'RP-7799', 'RP-7800', 'RP-7801' },
-        hidingPosition = { 'RP-7802', 'RP-7803', 'RP-7804', 'RP-7805' },
-        reloadStartTime = nil,
-        heading = 0,
-        hasReloaded = false
-    },
-    {
-        guid = 'X58F5H-0HMQV7R60HMLL',
-        course = {
-            { lat = 'N 25.09.09', lon = 'E 121.28.11', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 25.08.51', lon = 'E 121.29.38', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        state = 'static',
-        firingPosition = { 'RP-7806', 'RP-7807', 'RP-7808', 'RP-7809' },
-        hidingPosition = { 'RP-7810', 'RP-7811', 'RP-7812', 'RP-7813' },
-        reloadStartTime = nil,
-        heading = 0,
-        hasReloaded = false
-    },
-    {
-        guid = 'X58F5H-0HMQVAE9S0A12',
-        course = {
-            { lat = 'N 25.15.31', lon = 'E 121.37.15', desiredSpeed = 30, presetThrottle = 'Flank' },
-            { lat = 'N 25.14.28', lon = 'E 121.37.02', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        state = 'static',
-        firingPosition = { 'RP-7814', 'RP-7815', 'RP-7816', 'RP-7817' },
-        hidingPosition = { 'RP-7821', 'RP-7822', 'RP-7823', 'RP-7824' },
-        reloadStartTime = nil,
-        heading = 0,
-        hasReloaded = false
-    }
-}
-HAROP_STATE = {
-    {
-        guid = 'X58F5H-0HN0PGJQMCENE',
-        courseList = {
-            {
-                {
-                    lat = 'N 25.02.23',
-                    lon = 'E 121.13.06'
-                },
-                {
-                    lat = 'N 25.11.09',
-                    lon = 'E 121.14.25'
-                },
-                {
-                    lat = 'N 25.22.05',
-                    lon = 'E 120.45.21'
-                }
-            },
-            {
-                {
-                    lat = 'N 25.08.33',
-                    lon = 'E 121.26.40'
-                },
-                {
-                    lat = 'N 25.11.09',
-                    lon = 'E 121.14.25'
-                },
-                {
-                    lat = 'N 25.22.05',
-                    lon = 'E 120.45.21'
-                }
-            },
-        }
-    },
-    {
-        guid = 'X58F5H-0HN0PGJQMCF1C',
-        courseList = {
-            {
-                {
-                    lat = 'N 25.12.10',
-                    lon = 'E 121.18.22'
-                },
-                {
-                    lat = 'N 25.24.38',
-                    lon = 'E 121.26.33'
-                },
-                {
-                    lat = 'N 25.32.48',
-                    lon = 'E 121.15.43'
-                }
-            },
-            {
-                {
-                    lat = 'N 25.21.49',
-                    lon = 'E 121.30.20'
-                },
-                {
-                    lat = 'N 25.24.38',
-                    lon = 'E 121.26.33'
-                },
-                {
-                    lat = 'N 25.32.48',
-                    lon = 'E 121.15.43'
-                }
-            },
-        }
-    },
-    {
-        guid = 'X58F5H-0HN0PGJQMCESU',
-        courseList = {
-            {
-                {
-                    lat = 'N 25.12.10',
-                    lon = 'E 121.18.22'
-                },
-                {
-                    lat = 'N 25.24.38',
-                    lon = 'E 121.26.33'
-                },
-                {
-                    lat = 'N 25.32.48',
-                    lon = 'E 121.15.43'
-                }
-            },
-            {
-                {
-                    lat = 'N 25.21.49',
-                    lon = 'E 121.30.20'
-                },
-                {
-                    lat = 'N 25.24.38',
-                    lon = 'E 121.26.33'
-                },
-                {
-                    lat = 'N 25.32.48',
-                    lon = 'E 121.15.43'
-                }
-            },
-        }
-    },
-}
 
 WCS = { wcsFree = 0, wcsTight = 1, wcsHold = 2 }
 
-
-SCORE_AC_IS_DESTROYED_ON_THE_GROUND = -10
-SCORE_DESTROY_AC_ON_THE_GROUND = 5
-SCORE_LHD = 10
-SCORE_LST = 10
-SCORE_DDG = 10
-SCORE_CV = 100
-SCORE_IFV = -5
-SCORE_INFANTRY = -3
-SCORE_SAM_IS_DESTROYED = -20
-SCORE_SUB = 15
-SCORE_UAV = 20
+CONFIG.s.const.aircraftIsDestroyedOnTheGround = -10
+CONFIG.s.const.destroyingAircraftOnTheGround = 5
+CONFIG.s.const.lhd = 10
+CONFIG.s.const.lst = 10
+CONFIG.s.const.ddg = 10
+CONFIG.s.const.cv = 100
+CONFIG.s.const.ifv = -5
+CONFIG.s.const.infantry = -3
+CONFIG.s.const.samIsDestroyed = -20
+CONFIG.s.const.sub = 15
+CONFIG.s.const.uav = 20
 
 --{ [1] = { mag_weapons = { [1] = { wpn_dbid = 3021, wpn_maxcap = 5, wpn_current = 0, wpn_default = 5, wpn_guid = 'X58F5H-0HN1BN6784FTC', wpn_name = 'BP-12A' }, [2] = { wpn_dbid = 2123, wpn_maxcap = 20, wpn_current = 0, wpn_default = 20, wpn_guid = 'X58F5H-0HN1BN6784FTD', wpn_name = 'SY-400 MLRS [Unitary]' } }, mag_dbid = 1795, mag_guid = 'X58F5H-0HN1BN6784FTB', mag_capacity = 25, mag_name = 'SY-400' } }

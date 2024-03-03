@@ -1,8 +1,25 @@
 local unit = ScenEdit_UnitX()
 local score = ScenEdit_GetScore("Taiwan")
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if unit.condition == 'Parked' then
-    ScenEdit_SetScore("Taiwan", (score + SCORE_DESTROY_AC_ON_THE_GROUND), "Destory an aircraft on the ground")
-elseif unit.dbid == PLATFORM_DBID_12 or unit.dbid == PLATFORM_DBID_13 then
-    ScenEdit_SetScore("Taiwan", (score + SCORE_UAV), "Destory a recon UAV")
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
 end
+
+if not unit then
+    return
+end
+
+if unit.condition == 'Parked' and unit.dbid == CONFIG.const.platformBDID5 then
+    ScenEdit_SetScore(
+        "Taiwan",
+        (score + CONFIG.s.const.destroyingAircraftOnTheGround),
+        "Destory a helicopter on the ground"
+    )
+elseif unit.dbid == CONFIG.const.platformBDID12 or unit.dbid == CONFIG.const.platformBDID13 then
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.uav), "Destory a recon UAV")
+end
+
+-- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
