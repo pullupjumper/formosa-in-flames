@@ -10,6 +10,10 @@ CONFIG.c.srbm.onSAM = {}
 CONFIG.c.srbm.onSAM.const = {}
 CONFIG.c.aircraft = {}
 CONFIG.c.aircraft.const = {}
+CONFIG.c.antiShip = {}
+CONFIG.c.antiShip.const = {}
+CONFIG.c.airIntercept = {}
+CONFIG.c.airIntercept.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
 CONFIG.c.asw = {}
@@ -42,6 +46,7 @@ CONFIG.const.platformBDID18 = 3281 -- HQ-22
 CONFIG.const.platformBDID19 = 386  -- S-300
 CONFIG.const.platformBDID20 = 2442 -- S-400
 CONFIG.const.platformBDID21 = 1277 -- HQ-12
+CONFIG.const.platformBDID22 = 1679 -- SY-400
 
 CONFIG.const.sensorBDID1 = 2788    -- S-300 Tombstone
 CONFIG.const.sensorBDID2 = 4155    -- S-400 Grave Stone
@@ -345,7 +350,6 @@ CONFIG.c.srbm.packages = {
     },
 }
 CONFIG.c.srbm.const.contactAge = 30 * 60
--- CONFIG.c.srbm.const.magazineWeaponNum = 3
 CONFIG.c.srbm.const.reloadTime = 40 * 60
 CONFIG.c.srbm.const.contingencyRunways = {
     { base = { guid = 'X58F5H-0HN0KRS0IJLB4' }, runway = { guid = 'X58F5H-0HMSQ0HJ9MHP8' } },
@@ -430,6 +434,42 @@ CONFIG.c.aircraft.packages = {
 CONFIG.c.aircraft.const.periodOfStrike = 70 * 60
 
 
+-- anti-ship
+CONFIG.c.antiShip.isStrikeActivated = false
+CONFIG.c.antiShip.packages = {
+    {
+        striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 6, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 6, units = {} },
+        seadMissionName = 'SEAD - SOUTH',
+        missionName = 'NAVAL STRIKE - NORTH',
+        area = { 'RP-44505', 'RP-44506', 'RP-44507', 'RP-44508' },
+        hasLaunched = false
+    }
+}
+
+-- air intercept
+CONFIG.c.airIntercept.isStrikeActivated = false
+CONFIG.c.airIntercept.packages = {
+    {
+        striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
+        escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 0, units = {} },
+        wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 0, units = {} },
+        seadMissionName = 'SEAD - SOUTH',
+        missionName = 'AIR INTERCEPT - NORTH',
+        area = { 'RP-44505', 'RP-44506', 'RP-44507', 'RP-44508' },
+        hasLaunched = false,
+        course = {
+            { lat = 'N 25.44.14', lon = 'E 121.36.00', desiredAltitude = 30480, desiredSpeed = 3300 },
+            { lat = 'N 24.41.37', lon = 'E 121.34.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+            { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
+            { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
+            { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
+            { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+        },
+        tanker = { baseGUID = '', num = 3, units = {}, missionName = '' }
+    }
+}
 
 
 -- landing operation
@@ -1027,5 +1067,25 @@ CONFIG.s.const.infantry = -3
 CONFIG.s.const.samIsDestroyed = -20
 CONFIG.s.const.sub = 15
 CONFIG.s.const.uav = 20
+CONFIG.s.const.mlrs = 20
+CONFIG.s.const.weaponDBID = 905
+CONFIG.s.const.attackBeforeTheHHour = -1000
+CONFIG.s.const.msg = {
+    tipForStart =
+    '<p style="font-family:Microsoft JhengHei;">距離共軍對台發動總攻擊還有兩個小時，請在這段時間利用UAV如MQ-9A等，對中國沿海基地、防空陣地實施偵查，以便後續打擊計畫規劃。在這段時間內不要對共軍攻擊，以避免局勢升級。</p>',
+    tipForASWInNortheasternWaterOfTaiwan =
+    '<p style="font-family:Microsoft JhengHei;">台灣國防部已經公告，要在台灣東北水域實施海空聯合反潛演習，所以請在這區域實施反潛任務，擊殺任何潛艦。</p>',
+    tipForHuntingCarrier =
+    '<p style="font-family:Microsoft JhengHei;">為了阻止山東艦戰鬥群進入台灣東南水域對台灣實施封鎖，你接下任務，利用海鯤艦在巴士海峽實施伏擊、獵殺山東艦，只能使用魚雷，避免局勢升級。</p>',
+    attackBeforeTheHHour = '<p style="font-family:Microsoft JhengHei;">由於違反命令，在共軍對台灣發動總攻擊前攻擊共軍，造成了局勢升級。(扣1000分)</p>',
+    tipForMlrs = '<p style="font-family:Microsoft JhengHei;">共軍位於平潭島上的遠火部隊火力相當危險，請找出發射車位置並且摧毀。',
+    tipForRelocatingAircraft =
+    '<p style="font-family:Microsoft JhengHei;">火箭軍大量的彈道飛彈即將來襲，請將戰機轉移至戰備道，分別是民雄、麻豆以及仁德戰備道，將船艦駛離軍港，以減少損失。</p>',
+    tipForHelicopterBase =
+    '<p style="font-family:Microsoft JhengHei;">在中國沿海有三個陸航基地，分別是龍田、惠安、漳浦基地，裡面部署了攻擊直升機，在兩棲登陸階段用於岸對岸對台壓制，請摧毀基地裡的直升機以減輕反登陸作戰壓力。</p>',
+    tipForReload =
+    '<p style="font-family:Microsoft JhengHei;">雄二E發射車架上飛彈用完時，可以離開發射陣地進入整備區(黃色區域)並且待40分鐘以上就可以自動重新裝填飛彈。</p>',
+
+}
 
 --{ [1] = { mag_weapons = { [1] = { wpn_dbid = 3021, wpn_maxcap = 5, wpn_current = 0, wpn_default = 5, wpn_guid = 'X58F5H-0HN1BN6784FTC', wpn_name = 'BP-12A' }, [2] = { wpn_dbid = 2123, wpn_maxcap = 20, wpn_current = 0, wpn_default = 20, wpn_guid = 'X58F5H-0HN1BN6784FTD', wpn_name = 'SY-400 MLRS [Unitary]' } }, mag_dbid = 1795, mag_guid = 'X58F5H-0HN1BN6784FTB', mag_capacity = 25, mag_name = 'SY-400' } }

@@ -141,12 +141,16 @@ local function attackSRBMContacts(contacts, CONFIG)
 
     srbmConfig.strikeTimes = srbmConfig.strikeTimes + 1
 
+    if srbmConfig.strikeTimes >= 4 then
+        CONFIG.c.antiShip.isStrikeActivated = true
+    end
+
     if srbmConfig.strikeTimes >= 10 then
         CONFIG.c.aircraft.isStrikeActivated = true
     end
 end
 
-local function launchAircraftStrike(contacts, aircraftConfig)
+local function launchLandStrike(contacts, aircraftConfig)
     local diffTime = 0
 
     if aircraftConfig.lastStrikeTime then
@@ -203,6 +207,52 @@ local function launchAircraftStrike(contacts, aircraftConfig)
     end
 end
 
+local function launchNavalStrike(contacts, antishipConfig)
+    for _, package in ipairs(antishipConfig.packages) do
+        if not package.hasLaunched then
+            local filteredContacts = filterContacts(contacts, function(value)
+                return value.typed == 2 and value:inArea(package.area)
+            end)
+
+            if getCount(filteredContacts) >= 4 then
+                for _, value in ipairs(filteredContacts) do
+                    value.posture = 'H'
+                    ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
+                end
+
+                local strikers = assingUnitToStrikeMission(
+                    package.striker.baseGUID,
+                    package.striker.num,
+                    package.striker.weaponDBID,
+                    package.missionName,
+                    false
+                )
+                package.striker.units = strikers
+
+                local escorts = assingUnitToStrikeMission(
+                    package.escort.baseGUID,
+                    package.escort.num,
+                    package.escort.weaponDBID,
+                    package.missionName,
+                    true
+                )
+                package.escort.units = escorts
+
+                local wildWeasels = assingUnitToStrikeMission(
+                    package.wildWeasel.baseGUID,
+                    package.wildWeasel.num,
+                    package.wildWeasel.weaponDBID,
+                    package.missionName,
+                    true
+                )
+                package.wildWeasel.units = wildWeasels
+                package.hasLaunched = true
+                break
+            end
+        end
+    end
+end
+
 local contacts = ScenEdit_GetContacts('China')
 local units = VP_GetSide({ Side = 'China' }).units
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
@@ -219,6 +269,10 @@ end
 
 if CONFIG.c.aircraft.isStrikeActivated then
     aircraftReturnToBase(CONFIG.c.aircraft.packages)
+end
+
+if CONFIG.c.antiShip.isStrikeActivated then
+    aircraftReturnToBase(CONFIG.c.antiShip.packages)
 end
 
 if isMissileMoreThan('DF', units, 30) then
@@ -240,7 +294,11 @@ if CONFIG.c.srbm.isStrikeActivated then
 end
 
 if CONFIG.c.aircraft.isStrikeActivated and CONFIG.c.aircraft.maxStrikeTimes > 0 then
-    launchAircraftStrike(contacts, CONFIG.c.aircraft)
+    launchLandStrike(contacts, CONFIG.c.aircraft)
+end
+
+if CONFIG.c.antiShip.isStrikeActivated then
+    launchNavalStrike(contacts, CONFIG.c.antiShip)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

@@ -20,6 +20,8 @@ if unit.condition == 'Parked' and unit.dbid == CONFIG.const.platformBDID5 then
     )
 elseif unit.dbid == CONFIG.const.platformBDID12 or unit.dbid == CONFIG.const.platformBDID13 then
     ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.uav), "Destory a recon UAV")
+elseif unit.dbid == CONFIG.const.platformBDID22 then
+    ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.mlrs), "Destory a MLRS launcher")
 end
 
 -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")

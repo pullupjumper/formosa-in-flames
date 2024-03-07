@@ -102,7 +102,12 @@ function initUnitsAndTargetList()
     )
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+-- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+if CONFIG.isDevMode then
+    -- ScenEdit_MsgBox('Save config.', 1)
+    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+end
+
 local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
@@ -111,14 +116,11 @@ if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
     calculateDestination()
 
     if CONFIG.isDevMode then
-        ScenEdit_MsgBox('Init data and save', 1)
+        ScenEdit_MsgBox('Init data and save.', 1)
+        gKH.State.SaveTableToKey(CONFIG, "CONFIG")
     end
-
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 else
-    if CONFIG.isDevMode then
-        ScenEdit_MsgBox('Not init data', 1)
-    end
+    ScenEdit_MsgBox('Not init data', 1)
 end
 
 -- the following forces have been placed under your command:
