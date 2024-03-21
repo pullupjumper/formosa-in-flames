@@ -4,7 +4,7 @@ local temp = { unit = nil, distance = CONFIG.const.radarDistance }
 local latitude = unit.latitude
 local longitude = unit.longitude
 local isDestroyed = false
-ScenEdit_MsgBox(tostring(unit.name .. ' is damaged'), 1)
+-- ScenEdit_MsgBox(tostring(unit.name .. ' is damaged'), 1)
 
 for index, component in ipairs(unit.components) do
     if (component['comp_dbid'] == CONFIG.const.sensorBDID1
@@ -14,6 +14,7 @@ for index, component in ipairs(unit.components) do
             or component['comp_dbid'] == CONFIG.const.sensorBDID5
             or component['comp_dbid'] == CONFIG.const.sensorBDID6)
         and component['comp_status'] == 'Destroyed' then
+        ScenEdit_MsgBox(tostring(unit.name .. ' is damaged'), 1)
         ScenEdit_MsgBox(tostring(component['comp_dbid']), 1)
         ScenEdit_MsgBox(tostring(component['comp_status']), 1)
         isDestroyed = true
@@ -52,6 +53,6 @@ end
 
 if temp.unit ~= nil then
     local result = ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    ScenEdit_MsgBox(tostring(result), 1)
-    ScenEdit_MsgBox(tostring(temp.unit.name), 1)
+    -- ScenEdit_MsgBox(tostring(result), 1)
+    -- ScenEdit_MsgBox(tostring(temp.unit.name), 1)
 end

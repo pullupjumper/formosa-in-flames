@@ -6,18 +6,8 @@ if CONFIG == nil then
     return
 end
 
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForStart,
-    { latitude = 'N 24.47.50', longitude = 'E 112.23.56' }
-)
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForASWInNortheasternWaterOfTaiwan,
-    { latitude = 'N 24.47.50', longitude = 'E 112.23.56' }
-)
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForHuntingCarrier,
-    { latitude = 'N 21.30.53', longitude = 'E 121.46.06' }
-)
+-- ScenEdit_SpecialMessage(
+--     'Taiwan',
+--     CONFIG.s.const.msg.tipForStart,
+--     { latitude = 'N 24.47.50', longitude = 'E 112.23.56' }
+-- )

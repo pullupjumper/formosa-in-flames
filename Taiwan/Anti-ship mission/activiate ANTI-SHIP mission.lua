@@ -10,7 +10,7 @@ local function setAntiShipMissionStartTime()
     local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
     ScenEdit_GetMission('Taiwan', 'ANTI-SHIP WEST').starttime = antiShipStartTime
     ScenEdit_GetMission('Taiwan', 'ANTI-SHIP NORTH').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'RECON4').starttime = reconStartTime3
+    ScenEdit_GetMission('Taiwan', 'RECON3').starttime = reconStartTime3
 end
 
 if CONFIG == nil then

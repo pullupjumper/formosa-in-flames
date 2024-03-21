@@ -15,26 +15,11 @@ ScenEdit_GetEvent('(Score) Unit is damaged').isActive = false
 ScenEdit_SetSidePosture("China", "Taiwan", "H")
 ScenEdit_SetSidePosture("Taiwan", "China", "H")
 
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForMlrs,
-    { latitude = 'N 25.28.28', longitude = 'E 119.45.23' }
-)
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForRelocatingAircraft,
-    { latitude = 'N 21.30.53', longitude = 'E 121.46.06' }
-)
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForHelicopterBase,
-    { latitude = 'N 21.30.53', longitude = 'E 121.46.06' }
-)
-ScenEdit_SpecialMessage(
-    'Taiwan',
-    CONFIG.s.const.msg.tipForReload,
-    { latitude = 'N 21.30.53', longitude = 'E 121.46.06' }
-)
+-- ScenEdit_SpecialMessage(
+--     'Taiwan',
+--     CONFIG.s.const.msg.tipForStartOfInvasion,
+--     { latitude = 'N 25.28.28', longitude = 'E 119.45.23' }
+-- )
 
 for index, group in ipairs(CONFIG.c.landingOperation.const.sag) do
     local unit = SE_GetUnit({ guid = group.guid })

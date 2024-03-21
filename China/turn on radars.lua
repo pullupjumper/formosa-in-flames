@@ -3,7 +3,7 @@ local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.const.radarDistance }
 local latitude = unit.latitude
 local longitude = unit.longitude
-ScenEdit_MsgBox(tostring(unit.name .. ' is destroyed'), 1)
+-- ScenEdit_MsgBox(tostring(unit.name .. ' is destroyed'), 1)
 
 
 for index, value in ipairs(units) do
@@ -43,6 +43,6 @@ end
 
 if temp.unit ~= nil then
     local result = ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    ScenEdit_MsgBox(tostring(result), 1)
-    ScenEdit_MsgBox(tostring(temp.unit.name), 1)
+    -- ScenEdit_MsgBox(tostring(result), 1)
+    -- ScenEdit_MsgBox(tostring(temp.unit.name), 1)
 end

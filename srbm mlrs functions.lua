@@ -52,7 +52,8 @@ function toFringPosition(battery, group)
                 guid = unit.guid,
                 manualthrottle = 'Flank',
                 manualSpeed = 30,
-                course = battery.position.firingpositions[courseIdx].course
+                course = battery.position.firingpositions[courseIdx].course,
+                holdposition = false
             })
         end
     end
@@ -69,7 +70,8 @@ function toAssemblyArea(battery, group)
                 guid = unit.guid,
                 manualthrottle = 'Flank',
                 manualSpeed = 30,
-                course = battery.position.assemblyArea.course
+                course = battery.position.assemblyArea.course,
+                holdposition = false
             })
             ScenEdit_SetDoctrine({ side = 'China', guid = unit.guid }, { weapon_control_status_land = 2 })
         end
@@ -97,7 +99,7 @@ function checkBatteryState(CONFIG, platform, batteries)
 
                 if isMoreThanReloadTime then
                     resupply(battery, battery.weaponDBID)
-                    if CONFIG.isDevMode then ScenEdit_MsgBox('After resupply', 1) end
+                    -- if CONFIG.isDevMode then ScenEdit_MsgBox('After resupply', 1) end
                 end
 
                 if not isRunOutOfAmmon(group, battery.weaponDBID) then toFringPosition(battery, group) end

@@ -494,7 +494,7 @@ function assignUnitToFerryMission(baseGUID, num, unitDBID, unitType, missionName
     return temp
 end
 
-function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEscort)
+function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEscort, course)
     local airbase = ScenEdit_GetUnit({ guid = baseGUID })
 
     if airbase == nil or airbase.embarkedUnits['Aircraft'] == nil then
@@ -511,7 +511,7 @@ function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEsc
     local temp = {}
     local count = 0
 
-    for k, v in ipairs(airbase.embarkedUnits.Aircraft) do
+    for _, v in ipairs(airbase.embarkedUnits.Aircraft) do
         local unit = ScenEdit_GetUnit({ guid = v })
 
         if unit then
@@ -519,7 +519,7 @@ function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEsc
             local weaponNum = 0
 
             if weapons then
-                for i, w in ipairs(weapons) do
+                for _, w in ipairs(weapons) do
                     if w["wpn_dbid"] == weaponDBID then
                         weaponNum = w["wpn_current"]
                     end
@@ -531,6 +531,11 @@ function assingUnitToStrikeMission(baseGUID, num, weaponDBID, missionName, isEsc
                     ScenEdit_AssignUnitToMission(unit.guid, missionName, true)
                 else
                     ScenEdit_AssignUnitToMission(unit.guid, missionName)
+                end
+
+                if course then
+                    -- unit:Launch(true)
+                    unit.course = course
                 end
 
                 count = count + 1

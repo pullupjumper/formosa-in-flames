@@ -89,6 +89,7 @@ function initUnitsAndTargetList()
     CONFIG.c.srbm.packages[3].targetList[1] = initTargetList('China', 'STRIKE ON PORT')
     CONFIG.c.srbm.packages[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
     CONFIG.c.srbm.packages[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
+    CONFIG.c.srbm.packages[4].targetList[3] = initTargetList('China', 'STRIKE ON SHELTER 3')
 
     initLaunchers(
         'Taiwan',
@@ -103,8 +104,7 @@ function initUnitsAndTargetList()
 end
 
 -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
-if CONFIG.isDevMode then
-    -- ScenEdit_MsgBox('Save config.', 1)
+if CONFIG.isSaved then
     gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 

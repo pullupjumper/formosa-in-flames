@@ -2,7 +2,7 @@ local event = ScenEdit_EventX()
 local contacts = ScenEdit_GetContacts('Taiwan')
 local temp = {}
 -- local mission1 = ScenEdit_GetMission('Taiwan', 'RECON1')
-local mission2 = ScenEdit_GetMission('Taiwan', 'RECON3')
+-- local mission2 = ScenEdit_GetMission('Taiwan', 'RECON3')
 local units = VP_GetSide({ Side = 'Taiwan' }).units
 local radarTrucks = filterUnitsByName(units, 'Radar Truck')
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
@@ -66,6 +66,6 @@ if getCount(temp) >= 1 and radarTrucks ~= nil then
     end
 
     -- mission1.isactive = true
-    mission2.isactive = true
+    -- mission2.isactive = true
     event.isActive = false
 end

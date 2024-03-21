@@ -38,7 +38,7 @@ for _, battery in ipairs(CONFIG.t.glcm.batteries) do
 
         if isMoreThanReloadTime then
             resupply(battery, battery.weaponDBID)
-            if CONFIG.isDevMode then ScenEdit_MsgBox('After resupply', 1) end
+            if CONFIG.isDevMode then ScenEdit_MsgBox('Missile reload is finished', 1) end
         end
     end
 end

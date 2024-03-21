@@ -1,5 +1,7 @@
 CONFIG = {}
 CONFIG.isDevMode = true
+CONFIG.isSaved = false
+CONFIG.difficulty = 'normal'
 CONFIG.const = {}
 CONFIG.c = {}
 CONFIG.c.mlrs = {}
@@ -54,6 +56,8 @@ CONFIG.const.sensorBDID3 = 3396    -- HQ-12 China H-200
 CONFIG.const.sensorBDID4 = 6123    -- HQ-22 China H-200 Improved
 CONFIG.const.sensorBDID5 = 3204    -- S-300 Cheese Board
 CONFIG.const.sensorBDID6 = 5054    -- S-400 Cheese Board
+CONFIG.const.sensorBDID7 = 6847    -- P-3C SeaVue
+CONFIG.const.sensorBDID8 = 2938    -- E-2K
 
 CONFIG.const.loadoutDBID1 = 30568  -- ka-52
 CONFIG.const.loadoutDBID2 = 31490  -- z-10
@@ -63,6 +67,13 @@ CONFIG.const.batteryState = {}
 CONFIG.const.batteryState.STATIC = 0
 CONFIG.const.batteryState.REPOSITIONING = 1
 CONFIG.const.batteryState.RESUPPLY = 2
+CONFIG.const.amountOfWeaponsInMagazinesForSRBM = 36
+CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 120
+
+if CONFIG.difficulty == 'normal' then
+    CONFIG.const.amountOfWeaponsInMagazinesForSRBM = 72
+    CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 240
+end
 
 
 
@@ -74,7 +85,7 @@ CONFIG.c.mlrs.packages = {
         name = '',
         targetList = {},
         batteries = {
-            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN1E390V61VB' }
+            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN20R8KSKH7A' }
         },
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }
     }
@@ -106,13 +117,13 @@ CONFIG.c.mlrs.const.position = {
                 area = { 'RP-44260', 'RP-44261', 'RP-44262', 'RP-44263' }
             },
         },
-        magazineWeapenNum = 80
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForMLRS
     }
 }
 CONFIG.c.mlrs.batteries = {
     {
         name = 'MLRS (73th Artillery Brigade 5th Battalion)',
-        guid = 'X58F5H-0HN1E390V61VB',
+        guid = 'X58F5H-0HN20R8KSKH7A',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.c.mlrs.const.position.north,
@@ -149,7 +160,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44322', 'RP-44323', 'RP-44324', 'RP-44325' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
     brigade614 = {
         assemblyArea = {
@@ -168,7 +179,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44335', 'RP-44336', 'RP-44337', 'RP-44338' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
     brigade636 = {
         assemblyArea = {
@@ -187,7 +198,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44357', 'RP-44358', 'RP-44359', 'RP-44360' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
     brigade616 = {
         assemblyArea = {
@@ -204,7 +215,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44369', 'RP-44370', 'RP-44371', 'RP-44372' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
     brigade613 = {
         assemblyArea = {
@@ -225,7 +236,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44391', 'RP-44392', 'RP-44393', 'RP-44394' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
     brigade617 = {
         assemblyArea = {
@@ -244,7 +255,7 @@ CONFIG.c.srbm.const.position = {
                 area = { 'RP-44413', 'RP-44414', 'RP-44415', 'RP-44416' }
             },
         },
-        magazineWeapenNum = 72
+        magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForSRBM
     },
 }
 CONFIG.c.srbm.batteries = {
@@ -396,42 +407,73 @@ CONFIG.c.aircraft.lastStrikeTime = nil
 CONFIG.c.aircraft.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        seadMissionName = 'SEAD - SOUTH',
         missionName = 'LAND STRIKE - SOUTH',
         area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-        hasLaunched = false
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
     },
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
+        escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        seadMissionName = 'SEAD - MIDDLE',
         missionName = 'LAND STRIKE - MIDDLE',
         area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
-        hasLaunched = false
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
     },
     {
-        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
-        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        seadMissionName = 'SEAD - NORTH',
+        striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 6, units = {} },
         missionName = 'LAND STRIKE - NORTH',
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-        hasLaunched = false
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
     },
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 3413, num = 6, units = {} },
-        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        seadMissionName = 'SEAD - NORTH',
+        escort = nil,
+        wildWeasel = nil,
         missionName = 'LAND STRIKE - NORTH - 2',
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-        hasLaunched = false
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+    -- {
+    --     -- striker = { baseGUID = '6Z8LM5-0HMITKFQH25Q8', weaponDBID = 2876, num = 6, units = {} },
+    --     striker = { baseGUID = 'X58F5H-0HN201E9DHM1C', weaponDBID = 2876, num = 6, units = {} },
+    --     escort = nil,
+    --     -- wildWeasel = { baseGUID = '6Z8LM5-0HMITKFQH25Q8', weaponDBID = 276, num = 6, units = {} },
+    --     wildWeasel = { baseGUID = 'X58F5H-0HN201E9DHM1C', weaponDBID = 276, num = 6, units = {} },
+
+    --     missionName = 'LAND STRIKE - NORTH - 3',
+    --     area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+    --     hasLaunched = false,
+    --     course = nil,
+    --     tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
+    -- },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'LAND STRIKE - NORTH - 4',
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+        hasLaunched = true,
+        course = nil,
+        tanker = nil
     },
 }
 CONFIG.c.aircraft.const.periodOfStrike = 70 * 60
+
+if CONFIG.difficulty == 'normal' then
+    CONFIG.c.aircraft.packages[5].hasLaunched = false
+end
 
 
 -- anti-ship
@@ -439,12 +481,14 @@ CONFIG.c.antiShip.isStrikeActivated = false
 CONFIG.c.antiShip.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 6, units = {} },
+        -- escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 6, units = {} },
+        escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 6, units = {} },
-        seadMissionName = 'SEAD - SOUTH',
         missionName = 'NAVAL STRIKE - NORTH',
         area = { 'RP-44505', 'RP-44506', 'RP-44507', 'RP-44508' },
-        hasLaunched = false
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
     }
 }
 
@@ -452,22 +496,18 @@ CONFIG.c.antiShip.packages = {
 CONFIG.c.airIntercept.isStrikeActivated = false
 CONFIG.c.airIntercept.packages = {
     {
-        striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
-        escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 0, units = {} },
-        wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 0, units = {} },
-        seadMissionName = 'SEAD - SOUTH',
-        missionName = 'AIR INTERCEPT - NORTH',
-        area = { 'RP-44505', 'RP-44506', 'RP-44507', 'RP-44508' },
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, units = {} },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'AIR INTERCEPT - EAST',
+        area = { 'RP-8008', 'RP-42688', 'RP-42687', 'RP-8011' },
         hasLaunched = false,
-        course = {
-            { lat = 'N 25.44.14', lon = 'E 121.36.00', desiredAltitude = 30480, desiredSpeed = 3300 },
-            { lat = 'N 24.41.37', lon = 'E 121.34.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-            { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
-            { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
-            { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
-            { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-        },
-        tanker = { baseGUID = '', num = 3, units = {}, missionName = '' }
+        -- course = {
+        --     { lat = 'N 26.35.39', lon = 'E 119.51.22', desiredAltitude = 10668, desiredSpeed = 480 },
+        --     { lat = 'N 25.36.59', lon = 'E 123.33.36', desiredAltitude = 200,   desiredSpeed = 480 },
+        --     { lat = 'N 23.29.11', lon = 'E 123.11.14', desiredAltitude = 200,   desiredSpeed = 480 },
+        -- },
+        tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
     }
 }
 
@@ -1000,7 +1040,7 @@ CONFIG.t.glcm.const.position = {
                 area = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' }
             },
         },
-        magazineWeapenNum = 48
+        magazineWeapenNum = 72
     },
     south = {
         assemblyArea = {
@@ -1011,7 +1051,7 @@ CONFIG.t.glcm.const.position = {
                 area = { 'RP-44288', 'RP-44289', 'RP-44290', 'RP-44291' }
             },
         },
-        magazineWeapenNum = 48
+        magazineWeapenNum = 72
     }
 }
 CONFIG.t.glcm.batteries = {
@@ -1072,20 +1112,10 @@ CONFIG.s.const.weaponDBID = 905
 CONFIG.s.const.attackBeforeTheHHour = -1000
 CONFIG.s.const.msg = {
     tipForStart =
-    '<p style="font-family:Microsoft JhengHei;">距離共軍對台發動總攻擊還有兩個小時，請在這段時間利用UAV如MQ-9A等，對中國沿海基地、防空陣地實施偵查，以便後續打擊計畫規劃。在這段時間內不要對共軍攻擊，以避免局勢升級。</p>',
-    tipForASWInNortheasternWaterOfTaiwan =
-    '<p style="font-family:Microsoft JhengHei;">台灣國防部已經公告，要在台灣東北水域實施海空聯合反潛演習，所以請在這區域實施反潛任務，擊殺任何潛艦。</p>',
-    tipForHuntingCarrier =
-    '<p style="font-family:Microsoft JhengHei;">為了阻止山東艦戰鬥群進入台灣東南水域對台灣實施封鎖，你接下任務，利用海鯤艦在巴士海峽實施伏擊、獵殺山東艦，只能使用魚雷，避免局勢升級。</p>',
+    '<h3>The initial blockade phase:</h3><ul><li>Use a submarine equipped with MK48s to sink the Chinese CSG entering Bachi Channel in order to break theblockade of the eastern waters of Taiwan.</li><li>Conduct an ASW mission in the northeastern waters of Taiwan.</li></ul><h3>ROE in this phase:</h3><ul><li>Any attacks on Chinese assets are not allowed.</li><li> Only submarines with MK-48s are allowed to attack Chinese surface ships or submarines, or ASW assets are allowed to attack Chinese submarines.</li></ul><p>(Victory Points will be subtracted if breaking the ROE.)</p>',
     attackBeforeTheHHour = '<p style="font-family:Microsoft JhengHei;">由於違反命令，在共軍對台灣發動總攻擊前攻擊共軍，造成了局勢升級。(扣1000分)</p>',
-    tipForMlrs = '<p style="font-family:Microsoft JhengHei;">共軍位於平潭島上的遠火部隊火力相當危險，請找出發射車位置並且摧毀。',
-    tipForRelocatingAircraft =
-    '<p style="font-family:Microsoft JhengHei;">火箭軍大量的彈道飛彈即將來襲，請將戰機轉移至戰備道，分別是民雄、麻豆以及仁德戰備道，將船艦駛離軍港，以減少損失。</p>',
-    tipForHelicopterBase =
-    '<p style="font-family:Microsoft JhengHei;">在中國沿海有三個陸航基地，分別是龍田、惠安、漳浦基地，裡面部署了攻擊直升機，在兩棲登陸階段用於岸對岸對台壓制，請摧毀基地裡的直升機以減輕反登陸作戰壓力。</p>',
-    tipForReload =
-    '<p style="font-family:Microsoft JhengHei;">雄二E發射車架上飛彈用完時，可以離開發射陣地進入整備區(黃色區域)並且待40分鐘以上就可以自動重新裝填飛彈。</p>',
-
+    tipForStartOfInvasion =
+    '<h3>The Chinese air and land strike phase:</h3><ul><li>Disperse some air assets from airbases to contingency runways.</li><li>Break the kill chain of the Chinese ballistic missile strike by destroying UAVs such as WZ-8s or BZK-005s.</li><li>Find and destroy MLRS launchers on Pingtang Island.</li><li>Destroy helicopters such as Z-10s at army air bases.</li><li>Conserve SAMs and anti-ship missile launchers as much as possible to counter the subsequent Chinese amphibious landing.</li><li>Attempt to attack SAMs along the Chinese coast for further cruise missile attacks against enemy’s air assets at airfields.</li><li>Ground-launched cruise missile launchers can move into the assembly area and wait 40 minutes for reloading missiles if running out of munitions.</li></ul><h3>The Chinese amphibious landing phase:</h3><ul><li>Execute an anti-ship missile strike against Chinese amphibious ships.</li><li>Use LT-2000, HIMARS and AH-64 to destroy amphibious vehicles.</li><li>Use SAM and SHORAD systems to deal with air assault.</li></ul>'
 }
 
 --{ [1] = { mag_weapons = { [1] = { wpn_dbid = 3021, wpn_maxcap = 5, wpn_current = 0, wpn_default = 5, wpn_guid = 'X58F5H-0HN1BN6784FTC', wpn_name = 'BP-12A' }, [2] = { wpn_dbid = 2123, wpn_maxcap = 20, wpn_current = 0, wpn_default = 20, wpn_guid = 'X58F5H-0HN1BN6784FTD', wpn_name = 'SY-400 MLRS [Unitary]' } }, mag_dbid = 1795, mag_guid = 'X58F5H-0HN1BN6784FTB', mag_capacity = 25, mag_name = 'SY-400' } }
