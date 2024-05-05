@@ -9,8 +9,11 @@ end
 
 if unit then
     local targets = unit.targetedBy
+    -- ScenEdit_MsgBox(tostring(targets[1]), 1)
+    -- ScenEdit_MsgBox(tostring(unit.pickedUpBy), 1)
 
-    for _, guid in pairs(targets) do
+
+    for _, guid in ipairs(targets) do
         local target = SE_GetUnit({ guid = guid })
 
         if target then

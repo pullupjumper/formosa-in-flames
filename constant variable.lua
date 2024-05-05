@@ -1,11 +1,13 @@
 CONFIG = {}
 CONFIG.isDevMode = true
-CONFIG.isSaved = false
+CONFIG.isSaved = true
 CONFIG.difficulty = 'normal'
 CONFIG.const = {}
 CONFIG.c = {}
 CONFIG.c.mlrs = {}
 CONFIG.c.mlrs.const = {}
+CONFIG.c.glcm = {}
+CONFIG.c.glcm.const = {}
 CONFIG.c.srbm = {}
 CONFIG.c.srbm.const = {}
 CONFIG.c.srbm.onSAM = {}
@@ -18,11 +20,13 @@ CONFIG.c.airIntercept = {}
 CONFIG.c.airIntercept.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
-CONFIG.c.asw = {}
-CONFIG.c.asw.const = {}
+CONFIG.c.slcm = {}
+CONFIG.c.slcm.const = {}
 CONFIG.t = {}
 CONFIG.t.glcm = {}
 CONFIG.t.glcm.const = {}
+CONFIG.t.srbm = {}
+CONFIG.t.srbm.const = {}
 CONFIG.t.asm = {}
 CONFIG.t.asm.const = {}
 CONFIG.s = {}
@@ -34,8 +38,8 @@ CONFIG.const.platformBDID4 = 2930  -- Ka-52k
 CONFIG.const.platformBDID5 = 5856  -- Z-10
 CONFIG.const.platformBDID6 = 3153  -- 075
 CONFIG.const.platformBDID7 = 2006  -- 071
-CONFIG.const.platformBDID8 = 735   -- 072III
-CONFIG.const.platformBDID9 = 1823  -- 072A
+CONFIG.const.platformBDID8 = 4683  -- 072III
+CONFIG.const.platformBDID9 = 4602  -- 072A
 CONFIG.const.platformBDID10 = 2925 -- 073A
 CONFIG.const.platformBDID11 = 3187 -- 002
 CONFIG.const.platformBDID12 = 6642 -- WZ-8
@@ -49,19 +53,22 @@ CONFIG.const.platformBDID19 = 386  -- S-300
 CONFIG.const.platformBDID20 = 2442 -- S-400
 CONFIG.const.platformBDID21 = 1277 -- HQ-12
 CONFIG.const.platformBDID22 = 1679 -- SY-400
+CONFIG.const.platformBDID23 = 624  -- supply
+CONFIG.const.platformBDID24 = 3126 -- PHL-03
 
-CONFIG.const.sensorBDID1 = 2788    -- S-300 Tombstone
-CONFIG.const.sensorBDID2 = 4155    -- S-400 Grave Stone
-CONFIG.const.sensorBDID3 = 3396    -- HQ-12 China H-200
-CONFIG.const.sensorBDID4 = 6123    -- HQ-22 China H-200 Improved
-CONFIG.const.sensorBDID5 = 3204    -- S-300 Cheese Board
-CONFIG.const.sensorBDID6 = 5054    -- S-400 Cheese Board
-CONFIG.const.sensorBDID7 = 6847    -- P-3C SeaVue
-CONFIG.const.sensorBDID8 = 2938    -- E-2K
 
-CONFIG.const.loadoutDBID1 = 30568  -- ka-52
-CONFIG.const.loadoutDBID2 = 31490  -- z-10
-CONFIG.const.loadoutDBID3 = 18367  -- z-18
+CONFIG.const.sensorBDID1 = 2788   -- S-300 Tombstone
+CONFIG.const.sensorBDID2 = 4155   -- S-400 Grave Stone
+CONFIG.const.sensorBDID3 = 3396   -- HQ-12 China H-200
+CONFIG.const.sensorBDID4 = 6123   -- HQ-22 China H-200 Improved
+CONFIG.const.sensorBDID5 = 3204   -- S-300 Cheese Board
+CONFIG.const.sensorBDID6 = 5054   -- S-400 Cheese Board
+CONFIG.const.sensorBDID7 = 6847   -- P-3C SeaVue
+CONFIG.const.sensorBDID8 = 2938   -- E-2K
+
+CONFIG.const.loadoutDBID1 = 30568 -- ka-52
+CONFIG.const.loadoutDBID2 = 31490 -- z-10
+CONFIG.const.loadoutDBID3 = 18367 -- z-18
 CONFIG.const.radarDistance = 70
 CONFIG.const.batteryState = {}
 CONFIG.const.batteryState.STATIC = 0
@@ -118,7 +125,24 @@ CONFIG.c.mlrs.const.position = {
             },
         },
         magazineWeapenNum = CONFIG.const.amountOfWeaponsInMagazinesForMLRS
-    }
+    },
+    penghu = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 23.30.52', lon = 'E 119.34.10', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 23.30.58', lon = 'E 119.34.33', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-46296', 'RP-46297', 'RP-46298', 'RP-46299' }
+            },
+        },
+        magazineWeapenNum = 0
+    },
 }
 CONFIG.c.mlrs.batteries = {
     {
@@ -133,6 +157,67 @@ CONFIG.c.mlrs.batteries = {
 CONFIG.c.mlrs.const.contactAge = 30 * 60
 CONFIG.c.mlrs.const.reloadTime = 40 * 60
 
+-- GLCM
+CONFIG.c.glcm.lastReconTime = nil
+CONFIG.c.glcm.isStrikeActivated = false
+CONFIG.c.glcm.strikeTimes = 0
+CONFIG.c.glcm.idxPackage = 1
+CONFIG.c.glcm.const.position = {
+    brigade635 = {
+        assemblyArea = {
+            course = {
+                { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.46.34', lon = 'E 118.41.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+            },
+            area = { 'RP-46386', 'RP-46387', 'RP-46388', 'RP-46389' }
+        },
+        firingpositions = {
+            {
+                course = {
+                    { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+                },
+                area = { 'RP-46390', 'RP-46391', 'RP-46392', 'RP-46393' }
+            },
+        },
+        magazineWeapenNum = 48
+    },
+
+}
+CONFIG.c.glcm.batteries = {
+    {
+        guid = '6Z8LM5-0HMN97ERAUODK',
+        name = 'GLCM (635th Brigade)',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.c.glcm.const.position.brigade635,
+        weaponDBID = 2122
+    },
+}
+CONFIG.c.glcm.packages = {
+    {
+        name = 'HELIPAD',
+        targetList = {},
+        batteries = {
+            { name = 'GLCM (635th Brigade)', guid = '6Z8LM5-0HMN97ERAUODK', batteryIdx = 2 },
+        },
+        num = 2,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+    {
+        name = 'CONTINGENCY RUNWAY',
+        targetList = {},
+        batteries = {
+            { name = 'GLCM (635th Brigade)', guid = '6Z8LM5-0HMN97ERAUODK', batteryIdx = 2 },
+        },
+        num = 4,
+        index = 1,
+        hasLaunchedTheFirstStrike = false
+    },
+}
+CONFIG.c.glcm.const.contactAge = 30 * 60
+CONFIG.c.glcm.const.reloadTime = 40 * 60
 
 
 -- SRBM on facility
@@ -383,14 +468,16 @@ CONFIG.c.srbm.onSAM.const.h6nDBID = 4969
 CONFIG.c.srbm.onSAM.const.batteries = {
     { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', },
 }
-CONFIG.c.srbm.onSAM.const.contactAge = 60
+CONFIG.c.srbm.onSAM.const.contactAge = 2 * 60
 CONFIG.c.srbm.onSAM.const.wz8Course = {
-    { lat = 'N 25.44.14', lon = 'E 121.36.00', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.41.37', lon = 'E 121.34.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 24.58.57', lon = 'E 121.29.47', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 24.41.37', lon = 'E 121.34.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 22.15.14', lon = 'E 120.54.52', },
+    { lat = 'N 23.44.15', lon = 'E 120.09.50', },
 }
 CONFIG.c.srbm.onSAM.const.h6nCourse = {
     { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
@@ -436,6 +523,26 @@ CONFIG.c.aircraft.packages = {
         tanker = nil
     },
     {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        missionName = 'LAND STRIKE - SOUTH - 2',
+        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        missionName = 'LAND STRIKE - MIDDLE - 2',
+        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+    {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
         escort = nil,
         wildWeasel = nil,
@@ -469,7 +576,7 @@ CONFIG.c.aircraft.packages = {
         tanker = nil
     },
 }
-CONFIG.c.aircraft.const.periodOfStrike = 70 * 60
+CONFIG.c.aircraft.const.periodOfStrike = 40 * 60
 
 if CONFIG.difficulty == 'normal' then
     CONFIG.c.aircraft.packages[5].hasLaunched = false
@@ -562,6 +669,10 @@ CONFIG.c.landingOperation.const.shipInfo = {
         south = {
             horizontal = 135 - 90,
             vertical = 135,
+        },
+        penghu = {
+            horizontal = 80 - 90,
+            vertical = 80,
         }
     },
     amphibiousVehicleSpeed = 12,
@@ -978,8 +1089,9 @@ CONFIG.c.landingOperation.const.sag = {
     },
 }
 
--- ASW
-CONFIG.c.asw.const.submarine = {
+-- SLCM
+CONFIG.c.slcm.isStrikeActivated = false
+CONFIG.c.slcm.const.submarines = {
     {
         guid = 'X58F5H-0HMVKL9MNVV3K',
         course = {
@@ -1003,30 +1115,63 @@ CONFIG.c.asw.const.submarine = {
         missionName = 'ASW - EAST'
     },
     {
-        guid = 'X58F5H-0HMVKGABDLDR9',
-        course = {
-            { lat = 'N 21.45.32', lon = 'E 121.33.54', },
-            { lat = 'N 21.49.32', lon = 'E 121.49.21', },
-            { lat = 'N 21.14.09', lon = 'E 121.44.26', },
-            { lat = 'N 21.20.35', lon = 'E 122.03.05', },
-        },
-        side = 'China',
-        missionName = 'ASW - BASHI'
+        guid = 'IC8B0X-0HN2SEQ1UMG1U',
     },
     {
-        guid = 'X58F5H-0HMVKL9MO16Q6',
-        course = {
-            { lat = 'N 24.38.48', lon = 'E 122.06.01', },
-            { lat = 'N 25.04.38', lon = 'E 122.08.21', },
-            { lat = 'N 24.25.01', lon = 'E 122.45.13', },
-            { lat = 'N 25.04.20', lon = 'E 122.44.05', },
+        guid = 'IC8B0X-0HN2SEQ1UMGC5',
+    },
+    -- {
+    --     guid = 'X58F5H-0HMVKGABDLDR9',
+    --     course = {
+    --         { lat = 'N 21.45.32', lon = 'E 121.33.54', },
+    --         { lat = 'N 21.49.32', lon = 'E 121.49.21', },
+    --         { lat = 'N 21.14.09', lon = 'E 121.44.26', },
+    --         { lat = 'N 21.20.35', lon = 'E 122.03.05', },
+    --     },
+    --     side = 'China',
+    --     missionName = 'ASW - BASHI'
+    -- },
+    -- {
+    --     guid = 'X58F5H-0HMVKL9MO16Q6',
+    --     course = {
+    --         { lat = 'N 24.38.48', lon = 'E 122.06.01', },
+    --         { lat = 'N 25.04.38', lon = 'E 122.08.21', },
+    --         { lat = 'N 24.25.01', lon = 'E 122.45.13', },
+    --         { lat = 'N 25.04.20', lon = 'E 122.44.05', },
+    --     },
+    --     side = 'Taiwan',
+    --     missionName = 'ASW - EAST'
+    -- },
+}
+CONFIG.c.slcm.const.weaponDBID = 3716
+CONFIG.c.slcm.const.baseGUID = '6Z8LM5-0HMIJ3QGCI783'
+CONFIG.c.slcm.const.targetGUID = '6Z8LM5-0HMIJ7B89BCF3'
+
+-- SRBM
+CONFIG.t.srbm.isReloadActivated = true
+CONFIG.t.srbm.const.position = {
+    north = {
+        assemblyArea = {
+            area = { 'RP-44718', 'RP-44719', 'RP-44720', 'RP-44721' }
         },
-        side = 'Taiwan',
-        missionName = 'ASW - EAST'
+        firingpositions = {
+            {
+                area = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' }
+            },
+        },
+        magazineWeapenNum = 18
     },
 }
-
-
+CONFIG.t.srbm.batteries = {
+    {
+        guid = 'X58F5H-0HMU9T3M6UVMN',
+        reloadStartTime = nil,
+        state = CONFIG.const.batteryState.RESUPPLY,
+        position = CONFIG.t.srbm.const.position.north,
+        weaponDBID = 779
+    },
+}
+CONFIG.t.srbm.const.reloadTime = 40 * 60
 
 -- GLCM
 CONFIG.t.glcm.isReloadActivated = true
@@ -1098,6 +1243,8 @@ WCS = { wcsFree = 0, wcsTight = 1, wcsHold = 2 }
 
 CONFIG.s.const.aircraftIsDestroyedOnTheGround = -10
 CONFIG.s.const.destroyingAircraftOnTheGround = 5
+CONFIG.s.const.aircraftIsDestroyedInHangar = -50
+CONFIG.s.const.destroyingSupply = 100
 CONFIG.s.const.lhd = 10
 CONFIG.s.const.lst = 10
 CONFIG.s.const.ddg = 10

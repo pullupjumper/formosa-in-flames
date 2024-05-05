@@ -5,10 +5,10 @@ if CONFIG == nil then
     return
 end
 
-if not CONFIG.c.srbm.isStrikeActivated then
+if not CONFIG.c.glcm.isStrikeActivated then
     return
 end
 
-checkBatteryState(CONFIG, 'srbm', CONFIG.c.srbm.batteries)
+checkBatteryState(CONFIG, 'glcm', CONFIG.c.glcm.batteries)
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

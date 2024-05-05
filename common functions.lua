@@ -602,7 +602,9 @@ function launchWZ8(h6n, course, contact)
         LATITUDE = h6n.latitude,
         LONGITUDE = h6n.longitude,
         loadoutid = 32885,
-        altitude = h6n.altitude
+        altitude = 20574,
+        heading = 180,
+        speed = 3300
     })
 
     if wz8 == nil then
@@ -615,15 +617,19 @@ function launchWZ8(h6n, course, contact)
     ScenEdit_SetEMCON('Unit', wz8.guid, 'Radar=Active')
 
     -- wz8 = SE_GetUnit({ guid = wz8.guid })
-    wz8.manualSpeed = h6n.speed
-    wz8.manualAltitude = h6n.altitude
+    -- wz8.manualSpeed = h6n.speed
+    -- wz8.manualAltitude = h6n.altitude
 
     -- if wz8 == nil then
     --     return
     -- end
 
     if course == nil and contact ~= nil then
-        ScenEdit_SetDoctrine({ guid = wz8.guid }, { fuel_state_rtb = 0, withdraw_on_fuel = 0 })
+        ScenEdit_SetDoctrine(
+            { guid = wz8.guid },
+            { weapon_control_status_air = 1, fuel_state_rtb = 0, withdraw_on_fuel = 0, automatic_evasion = 0 }
+        )
+
         local distance = Tool_Range(h6n.guid, contact.guid)
         local shortDistance = distance / 2
         local bearing = Tool_Bearing(h6n.guid, contact.guid)
@@ -745,7 +751,7 @@ function resupply(battery, weaponDBID)
         if unit and unit.mounts then
             for mountIndex, mount in ipairs(unit.mounts) do
                 local _weaponDBID = 0
-                local weaponDefaultNum = 0
+                local weaponDefaultNum = 1
                 local wpnIndex = 1
 
                 if weaponDBID ~= nil and type(weaponDBID) == "number" then
@@ -758,7 +764,10 @@ function resupply(battery, weaponDBID)
                 end
 
                 _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
-                weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
+
+                if mount['mount_weapons'][wpnIndex]['wpn_default'] > weaponDefaultNum then
+                    weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
+                end
 
                 if battery.position.magazineWeapenNum >= weaponDefaultNum then
                     ScenEdit_AddReloadsToUnit({
@@ -936,13 +945,13 @@ function getPointFromBearing(params)
 end
 
 function addLandingShips()
-    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    -- if CONFIG == nil then
-    --     print('CONFIG == nil')
-    --     ScenEdit_MsgBox('CONFIG == nil', 1)
-    --     return
-    -- end
+    if CONFIG == nil then
+        print('CONFIG == nil')
+        ScenEdit_MsgBox('CONFIG == nil', 1)
+        return
+    end
 
     local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo

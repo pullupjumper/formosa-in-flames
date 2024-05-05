@@ -2,8 +2,7 @@ local contact = ScenEdit_UnitC()
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
     return
 end
 
@@ -13,7 +12,12 @@ end
 
 local emission = contact.emissions[1]['sensor_dbid']
 
-if emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1 or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2 then
+local isSAM = emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
+    or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2
+    or emission == CONFIG.c.srbm.onSAM.const.tk2SensorDBID
+-- or emission == CONFIG.c.srbm.onSAM.const.pac3SensorDBID
+
+if isSAM then
     if hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.h6nTemp, 1)
         and hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.wz8Temp, 1) then
         CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
@@ -28,6 +32,7 @@ if emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1 or emission == CONFIG.c.
     local result = { batteryIndex = 1, groupIndex = 1 }
     result = attackContact(contact, 2, CONFIG.c.srbm.onSAM.const.batteries, result.batteryIndex, result.groupIndex)
     CONFIG.c.srbm.onSAM.isStrikeActivated = true
+    ScenEdit_MsgBox('emission: ' .. tostring(contact.name), 1)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

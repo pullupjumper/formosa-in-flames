@@ -7,9 +7,12 @@ if CONFIG == nil then
     return
 end
 
-if not unit then
+if unit == nil then
     return
 end
+
+-- ScenEdit_MsgBox(unit.base.guid, 1)
+
 
 if unit.condition == 'Parked' then
     local score = ScenEdit_GetScore("Taiwan")
@@ -17,5 +20,14 @@ if unit.condition == 'Parked' then
         "Taiwan",
         (score + CONFIG.s.const.aircraftIsDestroyedOnTheGround),
         "An aircraft is destoryed on the ground"
+    )
+end
+
+if unit.base.guid == CONFIG.c.slcm.const.baseGUID then
+    local score = ScenEdit_GetScore("Taiwan")
+    ScenEdit_SetScore(
+        "Taiwan",
+        (score + CONFIG.s.const.aircraftIsDestroyedInHangar),
+        "An aircraft is destoryed in hangar."
     )
 end

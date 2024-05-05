@@ -38,7 +38,7 @@ function initTargetList(side, missionName)
     end
 
     for index, value in ipairs(m.targetlist) do
-        table.insert(temp, { guid = value, strikeTime = nil })
+        table.insert(temp, { guid = value, strikeTimes = 0 })
     end
 
     return temp
@@ -90,6 +90,8 @@ function initUnitsAndTargetList()
     CONFIG.c.srbm.packages[4].targetList[1] = initTargetList('China', 'STRIKE ON SHELTER')
     CONFIG.c.srbm.packages[4].targetList[2] = initTargetList('China', 'STRIKE ON SHELTER 2')
     CONFIG.c.srbm.packages[4].targetList[3] = initTargetList('China', 'STRIKE ON SHELTER 3')
+    CONFIG.c.glcm.packages[1].targetList[1] = initTargetList('China', 'STRIKE ON HELIPAD')
+    CONFIG.c.glcm.packages[2].targetList[1] = initTargetList('China', 'STRIKE ON CONTINGENCY RUNWAY')
 
     initLaunchers(
         'Taiwan',
@@ -112,7 +114,7 @@ local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
     initUnitsAndTargetList()
-    initUnitsForASW()
+    -- initUnitsForASW()
     calculateDestination()
 
     if CONFIG.isDevMode then

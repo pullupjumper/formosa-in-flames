@@ -2,8 +2,7 @@ local units = VP_GetSide({ Side = 'China' }).units
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
     return
 end
 

@@ -6,14 +6,15 @@ if CONFIG == nil then
     return
 end
 
-if not CONFIG.c.srbm.isStrikeActivated then
+
+if not CONFIG.c.glcm.isStrikeActivated then
     return
 end
 
-for _, battery in ipairs(CONFIG.c.srbm.batteries) do
+for _, battery in ipairs(CONFIG.c.glcm.batteries) do
     if unit then
         if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
-            setReloadStartTime(battery, unit)
+            setWCSToFree(battery, unit)
         end
     end
 end

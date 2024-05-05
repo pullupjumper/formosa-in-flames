@@ -53,7 +53,7 @@ local function attackSAMContacts(contacts, onSAMConfig)
             local isSAM = emission == onSAMConfig.const.tk3SensorDBID1
                 or emission == onSAMConfig.const.tk3SensorDBID2
                 or emission == onSAMConfig.const.tk2SensorDBID
-                or emission == onSAMConfig.const.pac3SensorDBID
+            -- or emission == onSAMConfig.const.pac3SensorDBID
 
             if isSAM and contact.lastDetections and contact.lastDetections[1].age <= onSAMConfig.const.contactAge then
                 result = attackContact(
@@ -76,7 +76,7 @@ local function attackMLRSContacts(contacts, mlrsConfig)
             return (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
         end)
 
-        for _, filteredContact in ipairs(filteredContacts) do
+        for __, filteredContact in ipairs(filteredContacts) do
             if filteredContact.lastDetections
                 and filteredContact.lastDetections[1].age <= mlrsConfig.const.contactAge then
                 result = attackContact(
@@ -85,14 +85,72 @@ local function attackMLRSContacts(contacts, mlrsConfig)
                     package.batteries,
                     result.batteryIndex,
                     result.groupIndex,
-                    mlrsConfig.batteries[1].weaponDBID
+                    mlrsConfig.batteries[_].weaponDBID
                 )
             end
         end
     end
 end
 
-local function attackSRBMContacts(contacts, CONFIG)
+local function attackGLCMContacts(CONFIG)
+    local glcmConfig = CONFIG.c.glcm
+    local result = { batteryIndex = 1, groupIndex = 1, isLaunched = false }
+    local packageIdx = glcmConfig.idxPackage
+    local targetListIdx = glcmConfig.packages[packageIdx].index
+    local diff = 0
+
+    if glcmConfig.lastReconTime then
+        diff = ScenEdit_CurrentTime() - glcmConfig.lastReconTime
+    end
+
+    for _, v in ipairs(glcmConfig.packages[packageIdx].targetList[targetListIdx]) do
+        local contact = ScenEdit_GetContact({ side = 'China', guid = v.guid })
+
+        if contact then
+            local BDA = contact.BDA
+            local hasReconed = (BDA and not (BDA['STRUCTURAL'] == 'Heavy damage'))
+                and (glcmConfig.lastReconTime and ScenEdit_CurrentTime() > glcmConfig.lastReconTime)
+                and diff <= glcmConfig.const.contactAge
+            local isTheFirstStrike = BDA == nil and not (glcmConfig.packages[packageIdx].hasLaunchedTheFirstStrike)
+
+            if (isTheFirstStrike or hasReconed) then
+                result = attackContact(
+                    contact,
+                    glcmConfig.packages[packageIdx].num,
+                    glcmConfig.packages[packageIdx].batteries,
+                    result.batteryIndex,
+                    result.groupIndex
+                )
+            end
+        end
+    end
+
+    if result.isLaunched then
+        glcmConfig.packages[packageIdx].index = glcmConfig.packages[packageIdx].index + 1
+    end
+
+    local targetListLength = getCount(glcmConfig.packages[packageIdx].targetList)
+    local nextTargetListIdx = glcmConfig.packages[packageIdx].index
+    local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
+
+    if isTargetListIdxOutOfBounds then
+        glcmConfig.packages[packageIdx].index = targetListLength
+        glcmConfig.packages[packageIdx].hasLaunchedTheFirstStrike = true
+    end
+
+    glcmConfig.idxPackage = glcmConfig.idxPackage + 1
+    local packageLength = getCount(glcmConfig.packages)
+    local nextPackageIdx = glcmConfig.idxPackage
+    local isPackageIdxOutOfBounds = nextPackageIdx > packageLength
+
+    if isPackageIdxOutOfBounds then
+        glcmConfig.idxPackage = 1
+    end
+
+    glcmConfig.strikeTimes = glcmConfig.strikeTimes + 1
+end
+
+local function attackSRBMContacts(CONFIG)
     local srbmConfig = CONFIG.c.srbm
     local result = { batteryIndex = 1, groupIndex = 1, isLaunched = false }
     local packageIdx = srbmConfig.idxPackage
@@ -103,20 +161,20 @@ local function attackSRBMContacts(contacts, CONFIG)
         diff = ScenEdit_CurrentTime() - srbmConfig.lastReconTime
     end
 
-    for _, value in ipairs(contacts) do
-        local BDA = value.BDA
-        local hasReconed = BDA and not BDA['STRUCTURAL'] == 'Heavy damage'
-            and srbmConfig.lastReconTime and ScenEdit_CurrentTime() > srbmConfig.lastReconTime
-            and diff <= srbmConfig.const.contactAge
-        -- local isTheFirstStrike = not BDA
-        --     and not srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike
-        local isTheFirstStrike =
-            not srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike
+    for _, v in ipairs(srbmConfig.packages[packageIdx].targetList[targetListIdx]) do
+        local contact = ScenEdit_GetContact({ side = 'China', guid = v.guid })
 
-        for _, v in ipairs(srbmConfig.packages[packageIdx].targetList[targetListIdx]) do
-            if v.guid == value.guid and (isTheFirstStrike or hasReconed) then
+        if contact then
+            local BDA = contact.BDA
+            local hasReconed = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage')
+                and srbmConfig.lastReconTime and ScenEdit_CurrentTime() > srbmConfig.lastReconTime
+                and diff <= srbmConfig.const.contactAge
+            local isTheFirstStrike = BDA == nil and not srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike
+            local strikeIfRadar = packageIdx == 1
+
+            if (isTheFirstStrike or hasReconed or strikeIfRadar) then
                 result = attackContact(
-                    value,
+                    contact,
                     srbmConfig.packages[packageIdx].num,
                     srbmConfig.packages[packageIdx].batteries,
                     result.batteryIndex,
@@ -155,11 +213,19 @@ local function attackSRBMContacts(contacts, CONFIG)
     srbmConfig.strikeTimes = srbmConfig.strikeTimes + 1
 
     if srbmConfig.strikeTimes >= 4 then
+        CONFIG.c.slcm.isStrikeActivated = true
+    end
+
+    if srbmConfig.strikeTimes >= 5 then
         CONFIG.c.antiShip.isStrikeActivated = true
     end
 
+    if srbmConfig.strikeTimes >= 6 then
+        CONFIG.c.glcm.isStrikeActivated = true
+    end
+
     if srbmConfig.strikeTimes >= 8 and CONFIG.difficulty == 'normal' then
-        -- CONFIG.c.airIntercept.isStrikeActivated = true
+        CONFIG.c.airIntercept.isStrikeActivated = true
     end
 
     if srbmConfig.strikeTimes >= 10 then
@@ -355,13 +421,26 @@ local function launchAirIntercept(contacts, airInterceptConfig)
     end
 end
 
+local function launchSLCM(slcmConfig)
+    for _, sub in ipairs(slcmConfig.const.submarines) do
+        local unit = SE_GetUnit({ guid = sub.guid })
+
+        if unit ~= nil then
+            ScenEdit_AttackContact(
+                sub.guid,
+                slcmConfig.const.targetGUID,
+                { mode = '1', qty = 8, weapon = slcmConfig.const.weaponDBID }
+            )
+        end
+    end
+end
+
 local contacts = ScenEdit_GetContacts('China')
 local units = VP_GetSide({ Side = 'China' }).units
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
     return
 end
 
@@ -387,16 +466,16 @@ end
 
 launchH6NIfRequired(CONFIG.c.srbm.onSAM)
 
-if CONFIG.c.srbm.onSAM.isStrikeActivated then
-    attackSAMContacts(contacts, CONFIG.c.srbm.onSAM)
-end
-
 if CONFIG.c.mlrs.isStrikeActivated then
     attackMLRSContacts(contacts, CONFIG.c.mlrs)
 end
 
 if CONFIG.c.srbm.isStrikeActivated then
-    attackSRBMContacts(contacts, CONFIG)
+    attackSRBMContacts(CONFIG)
+end
+
+if CONFIG.c.srbm.onSAM.isStrikeActivated then
+    attackSAMContacts(contacts, CONFIG.c.srbm.onSAM)
 end
 
 if CONFIG.c.aircraft.isStrikeActivated and CONFIG.c.aircraft.maxStrikeTimes > 0 then
@@ -409,6 +488,14 @@ end
 
 if CONFIG.c.airIntercept.isStrikeActivated then
     launchAirIntercept(contacts, CONFIG.c.airIntercept)
+end
+
+if CONFIG.c.slcm.isStrikeActivated then
+    launchSLCM(CONFIG.c.slcm)
+end
+
+if CONFIG.c.glcm.isStrikeActivated then
+    attackGLCMContacts(CONFIG)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
