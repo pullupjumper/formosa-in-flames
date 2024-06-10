@@ -20,7 +20,8 @@ if unit then
             reloadStartTime = nil,
             state = CONFIG.const.batteryState.RESUPPLY,
             position = CONFIG.c.mlrs.const.position.penghu,
-            weaponDBID = 3471
+            weaponDBID = 3471,
+            wpnStorageFacility = ''
         }
     end
 

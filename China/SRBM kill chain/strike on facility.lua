@@ -156,10 +156,25 @@ local function attackSRBMContacts(CONFIG)
     local packageIdx = srbmConfig.idxPackage
     local targetListIdx = srbmConfig.packages[packageIdx].index
     local diff = 0
+    local _diff = 0
 
     if srbmConfig.lastReconTime then
         diff = ScenEdit_CurrentTime() - srbmConfig.lastReconTime
     end
+
+    -- Strike at a fixed time.
+    if srbmConfig.strikeAtFixedTime.lastStrikeTime then
+        _diff = ScenEdit_CurrentTime() - srbmConfig.strikeAtFixedTime.lastStrikeTime
+    end
+
+    local isTimeExceeded = srbmConfig.strikeAtFixedTime.lastStrikeTime
+        and _diff >= srbmConfig.strikeAtFixedTime.strikeTimeSpan
+
+    if isTimeExceeded then
+        srbmConfig.strikeAtFixedTime.isTimeExceeded = true
+        ScenEdit_SpecialMessage('China', 'Time is exceeded.')
+    end
+    -- Strike at a fixed time.
 
     for _, v in ipairs(srbmConfig.packages[packageIdx].targetList[targetListIdx]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = v.guid })
@@ -172,7 +187,7 @@ local function attackSRBMContacts(CONFIG)
             local isTheFirstStrike = BDA == nil and not srbmConfig.packages[packageIdx].hasLaunchedTheFirstStrike
             local strikeIfRadar = packageIdx == 1
 
-            if (isTheFirstStrike or hasReconed or strikeIfRadar) then
+            if (isTheFirstStrike or hasReconed or strikeIfRadar or isTimeExceeded) then
                 result = attackContact(
                     contact,
                     srbmConfig.packages[packageIdx].num,
@@ -186,7 +201,21 @@ local function attackSRBMContacts(CONFIG)
 
     if result.isLaunched then
         srbmConfig.packages[packageIdx].index = srbmConfig.packages[packageIdx].index + 1
+        srbmConfig.strikeAtFixedTime.lastStrikeTime = ScenEdit_CurrentTime()
     end
+
+    -- To do when the time is exceeded.
+    if srbmConfig.strikeAtFixedTime.isTimeExceeded then
+        if result.isLaunched then
+            srbmConfig.strikeAtFixedTime.strikeTimes = srbmConfig.strikeAtFixedTime.strikeTimes - 1
+        end
+
+        if srbmConfig.strikeAtFixedTime.strikeTimes == 0 then
+            srbmConfig.strikeAtFixedTime.strikeTimes = 4
+            srbmConfig.strikeAtFixedTime.isTimeExceeded = false
+        end
+    end
+    -- To do when the time is exceeded.
 
     local targetListLength = getCount(srbmConfig.packages[packageIdx].targetList)
     local nextTargetListIdx = srbmConfig.packages[packageIdx].index
@@ -212,32 +241,44 @@ local function attackSRBMContacts(CONFIG)
 
     srbmConfig.strikeTimes = srbmConfig.strikeTimes + 1
 
-    if srbmConfig.strikeTimes >= 4 then
-        CONFIG.c.slcm.isStrikeActivated = true
-    end
-
     if srbmConfig.strikeTimes >= 5 then
-        CONFIG.c.antiShip.isStrikeActivated = true
-    end
-
-    if srbmConfig.strikeTimes >= 6 then
-        CONFIG.c.glcm.isStrikeActivated = true
-    end
-
-    if srbmConfig.strikeTimes >= 8 and CONFIG.difficulty == 'normal' then
-        CONFIG.c.airIntercept.isStrikeActivated = true
+        CONFIG.c.aircraft.antiShip.isStrikeActivated = true
     end
 
     if srbmConfig.strikeTimes >= 10 then
         CONFIG.c.aircraft.isStrikeActivated = true
     end
+end
 
-    if srbmConfig.strikeTimes >= 9 then
-        CONFIG.c.mlrs.isStrikeActivated = true
+local function attackFacilityContacts(landStrikeConfig)
+    local diffTime = 0
+
+    if landStrikeConfig.lastStrikeTime then
+        diffTime = ScenEdit_CurrentTime() - landStrikeConfig.lastStrikeTime
+    end
+
+    local isToStrike = not landStrikeConfig.lastStrikeTime
+        or (landStrikeConfig.lastStrikeTime and diffTime >= landStrikeConfig.const.periodOfStrike)
+
+    for _, package in ipairs(landStrikeConfig.packages) do
+        if not package.hasLaunched and isToStrike then
+            launchLandStrike(
+                package.fromUnit,
+                package.num,
+                package.weaponDBID,
+                package.allocation,
+                package.course,
+                package.targetList
+            )
+
+            package.hasLaunched = true
+            landStrikeConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            break
+        end
     end
 end
 
-local function launchLandStrike(contacts, aircraftConfig)
+local function attackMobileContacts(contacts, aircraftConfig)
     local diffTime = 0
 
     if aircraftConfig.lastStrikeTime then
@@ -304,7 +345,7 @@ local function launchLandStrike(contacts, aircraftConfig)
     end
 end
 
-local function launchNavalStrike(contacts, antishipConfig)
+local function attackShipContacts(contacts, antishipConfig)
     for _, package in ipairs(antishipConfig.packages) do
         if not package.hasLaunched then
             local filteredContacts = filterContacts(contacts, function(value)
@@ -421,18 +462,13 @@ local function launchAirIntercept(contacts, airInterceptConfig)
     end
 end
 
-local function launchSLCM(slcmConfig)
-    for _, sub in ipairs(slcmConfig.const.submarines) do
-        local unit = SE_GetUnit({ guid = sub.guid })
-
-        if unit ~= nil then
-            ScenEdit_AttackContact(
-                sub.guid,
-                slcmConfig.const.targetGUID,
-                { mode = '1', qty = 8, weapon = slcmConfig.const.weaponDBID }
-            )
-        end
-    end
+local function attackSLCMContacts(slcmConfig)
+    launchSLCM(
+        slcmConfig.const.submarines,
+        slcmConfig.const.weaponDBID,
+        8,
+        CONFIG.c.slcm.const.targetList
+    )
 end
 
 local contacts = ScenEdit_GetContacts('China')
@@ -452,12 +488,12 @@ if CONFIG.c.aircraft.isStrikeActivated then
     aircraftReturnToBase(CONFIG.c.aircraft.packages)
 end
 
-if CONFIG.c.antiShip.isStrikeActivated then
-    aircraftReturnToBase(CONFIG.c.antiShip.packages)
+if CONFIG.c.aircraft.antiShip.isStrikeActivated then
+    aircraftReturnToBase(CONFIG.c.aircraft.antiShip.packages)
 end
 
-if CONFIG.c.airIntercept.isStrikeActivated then
-    aircraftReturnToBase(CONFIG.c.airIntercept.packages)
+if CONFIG.c.aircraft.airIntercept.isStrikeActivated then
+    aircraftReturnToBase(CONFIG.c.aircraft.airIntercept.packages)
 end
 
 if isMissileMoreThan('DF', units, 30) then
@@ -479,23 +515,27 @@ if CONFIG.c.srbm.onSAM.isStrikeActivated then
 end
 
 if CONFIG.c.aircraft.isStrikeActivated and CONFIG.c.aircraft.maxStrikeTimes > 0 then
-    launchLandStrike(contacts, CONFIG.c.aircraft)
+    attackMobileContacts(contacts, CONFIG.c.aircraft)
 end
 
-if CONFIG.c.antiShip.isStrikeActivated then
-    launchNavalStrike(contacts, CONFIG.c.antiShip)
+if CONFIG.c.aircraft.antiShip.isStrikeActivated then
+    attackShipContacts(contacts, CONFIG.c.aircraft.antiShip)
 end
 
-if CONFIG.c.airIntercept.isStrikeActivated then
-    launchAirIntercept(contacts, CONFIG.c.airIntercept)
+if CONFIG.c.aircraft.airIntercept.isStrikeActivated then
+    launchAirIntercept(contacts, CONFIG.c.aircraft.airIntercept)
 end
 
 if CONFIG.c.slcm.isStrikeActivated then
-    launchSLCM(CONFIG.c.slcm)
+    attackSLCMContacts(CONFIG.c.slcm)
 end
 
 if CONFIG.c.glcm.isStrikeActivated then
     attackGLCMContacts(CONFIG)
+end
+
+if CONFIG.c.aircraft.landStrike.isStrikeActivated then
+    attackFacilityContacts(CONFIG.c.aircraft.landStrike)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

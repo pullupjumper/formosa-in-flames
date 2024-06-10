@@ -11,6 +11,11 @@ end
 
 for _, battery in ipairs(CONFIG.t.srbm.batteries) do
     if unit then
+        -- if battery.reloadStartTime == nil then
+        --     -- battery.reloadStartTime = ScenEdit_CurrentTime() - CONFIG[field][platform].const.reloadTime
+        --     battery.reloadStartTime = ScenEdit_CurrentTime()
+        -- end
+
         battery.reloadStartTime = ScenEdit_CurrentTime()
     end
 end

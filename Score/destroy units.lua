@@ -31,9 +31,9 @@ if unit then
             or unit.dbid == CONFIG.const.platformBDID8
             or unit.dbid == CONFIG.const.platformBDID9
             or unit.dbid == CONFIG.const.platformBDID10 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lst), "A LST is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lst), "A ship (LST) is destroyed.")
         elseif unit.dbid == CONFIG.const.platformBDID6 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lhd), "A LHD is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lhd), "A ship (LHD) is destroyed.")
         elseif unit.dbid == CONFIG.const.platformBDID11 then
             ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.cv), "A carrier is destroyed.")
         else
@@ -67,8 +67,37 @@ if unit then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.mlrs),
-                "A MLRS launcher is destroyed."
+                "A MLRS is destroyed."
             )
+        elseif unit.dbid == CONFIG.const.platformBDID25 then
+            for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
+                if unit.guid == value.guid then
+                    local event = ScenEdit_GetEvent(value.eventName)
+
+                    if event then
+                        event.isActive = false
+                        ScenEdit_SetScore(
+                            "Taiwan",
+                            (score + CONFIG.s.const.mlrs),
+                            "A GPS jammer is destroyed."
+                        )
+                    end
+                end
+            end
+        elseif unit.dbid == CONFIG.const.platformBDID27 then
+            for _, battery in ipairs(CONFIG.c.glcm.batteries) do
+                if unit.guid == battery.wpnStorageFacility then
+                    battery.position.magazineWeapenNum = 0
+                end
+            end
+
+            for _, battery in ipairs(CONFIG.c.mlrs.batteries) do
+                if unit.guid == battery.wpnStorageFacility then
+                    battery.position.magazineWeapenNum = 0
+                end
+            end
+
+            ScenEdit_SpecialMessage('Taiwan', "Destroyed a weapon storage facility.")
         end
     end
 

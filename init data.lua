@@ -93,6 +93,24 @@ function initUnitsAndTargetList()
     CONFIG.c.glcm.packages[1].targetList[1] = initTargetList('China', 'STRIKE ON HELIPAD')
     CONFIG.c.glcm.packages[2].targetList[1] = initTargetList('China', 'STRIKE ON CONTINGENCY RUNWAY')
 
+    for _, value in ipairs(CONFIG.c.srbm.packages[2].targetList[3]) do
+        local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
+
+        if contact then
+            table.insert(CONFIG.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+        end
+    end
+
+    local units = VP_GetSide({ Side = 'China' }).units
+
+    for _, v in ipairs(units) do
+        local unit = SE_GetUnit({ guid = v.guid })
+
+        if unit and (unit.dbid == 55 or 43 or 757 or 1422 or 1424 or 1423 or 1421) then
+            table.insert(CONFIG.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
+        end
+    end
+
     initLaunchers(
         'Taiwan',
         CONFIG.t.asm.launcherState,
@@ -103,6 +121,25 @@ function initUnitsAndTargetList()
             end
         end
     )
+end
+
+function initGPSJammers()
+    for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
+        local jammer = SE_GetUnit({ guid = value.guid })
+        local eventName = value.eventName
+        local event = ScenEdit_GetEvent(eventName)
+
+        if jammer and event == nil then
+            if jammer.dbid == CONFIG.const.platformBDID25 then
+                local jammingArea = NewArea(
+                    { latitude = jammer.latitude, longitude = jammer.longitude },
+                    { side = 'China', distance = '15', shape = 'circle' }
+                )
+                local FilterType = { TargetSide = 'Taiwan', TargetType = 6 }
+                UnitEntersAreaEvent(eventName, FilterType, jammingArea, 'GPSJamming()', 'add', false, true, true)
+            end
+        end
+    end
 end
 
 -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
@@ -117,12 +154,16 @@ if _CONFIG ~= nil and getCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
     -- initUnitsForASW()
     calculateDestination()
 
+    if CONFIG.c.GPSJamming.isStrikeActivated then
+        initGPSJammers()
+    end
+
     if CONFIG.isDevMode then
-        ScenEdit_MsgBox('Init data and save.', 1)
+        ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
         gKH.State.SaveTableToKey(CONFIG, "CONFIG")
     end
 else
-    ScenEdit_MsgBox('Not init data', 1)
+    ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')
 end
 
 -- the following forces have been placed under your command:

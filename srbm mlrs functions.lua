@@ -107,3 +107,56 @@ function checkBatteryState(CONFIG, platform, batteries)
         end
     end
 end
+
+function CheckBatteryState(CONFIG, platform, batteries, side, isRepositioningAutomatically)
+    local field = 't'
+
+    if side == 'China' then
+        field = 'c'
+    end
+
+    for _, battery in ipairs(batteries) do
+        local group = SE_GetUnit({ guid = battery.guid })
+
+        if group then
+            if isRepositioningAutomatically then
+                if battery.state == CONFIG.const.batteryState.STATIC then
+                    if isRunOutOfAmmon(group, battery.weaponDBID) then toAssemblyArea(battery, group) end
+                end
+
+                if battery.state == CONFIG.const.batteryState.RESUPPLY then
+                    if battery.reloadStartTime == nil then
+                        battery.reloadStartTime = ScenEdit_CurrentTime() - CONFIG.c[platform].const.reloadTime
+                    end
+
+                    local diff = ScenEdit_CurrentTime() - battery.reloadStartTime
+                    local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and diff >= CONFIG.c[platform].const.reloadTime)
+                        and group:inArea(battery.position.assemblyArea.area)
+                        and isRunOutOfAmmon(group, battery.weaponDBID)
+
+                    if isMoreThanReloadTime then
+                        resupply(battery, battery.weaponDBID)
+                        -- if CONFIG.isDevMode then ScenEdit_MsgBox('After resupply', 1) end
+                    end
+
+                    if not isRunOutOfAmmon(group, battery.weaponDBID) then toFringPosition(battery, group) end
+                end
+            else
+                if battery.reloadStartTime == nil then
+                    battery.reloadStartTime = ScenEdit_CurrentTime() + CONFIG[field][platform].const.reloadTime * 100
+                    -- battery.reloadStartTime = nil
+                end
+
+                local diff = ScenEdit_CurrentTime() - battery.reloadStartTime
+                local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and diff >= CONFIG[field][platform].const.reloadTime)
+                    and group:inArea(battery.position.assemblyArea.area)
+                    and isRunOutOfAmmon(group, battery.weaponDBID)
+
+                if isMoreThanReloadTime then
+                    resupply(battery, battery.weaponDBID)
+                    if CONFIG.isDevMode then ScenEdit_MsgBox('Missile reload is finished', 1) end
+                end
+            end
+        end
+    end
+end

@@ -14,14 +14,20 @@ CONFIG.c.srbm.onSAM = {}
 CONFIG.c.srbm.onSAM.const = {}
 CONFIG.c.aircraft = {}
 CONFIG.c.aircraft.const = {}
-CONFIG.c.antiShip = {}
-CONFIG.c.antiShip.const = {}
-CONFIG.c.airIntercept = {}
-CONFIG.c.airIntercept.const = {}
+CONFIG.c.aircraft.antiShip = {}
+CONFIG.c.aircraft.antiShip.const = {}
+CONFIG.c.aircraft.airIntercept = {}
+CONFIG.c.aircraft.airIntercept.const = {}
+CONFIG.c.aircraft.landStrike = {}
+CONFIG.c.aircraft.landStrike.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
 CONFIG.c.slcm = {}
 CONFIG.c.slcm.const = {}
+CONFIG.c.GPSJamming = {}
+CONFIG.c.GPSJamming.const = {}
+CONFIG.c.repairRunway = {}
+CONFIG.c.repairRunway.const = {}
 CONFIG.t = {}
 CONFIG.t.glcm = {}
 CONFIG.t.glcm.const = {}
@@ -29,6 +35,8 @@ CONFIG.t.srbm = {}
 CONFIG.t.srbm.const = {}
 CONFIG.t.asm = {}
 CONFIG.t.asm.const = {}
+CONFIG.t.repairRunway = {}
+CONFIG.t.repairRunway.const = {}
 CONFIG.s = {}
 CONFIG.s.const = {}
 CONFIG.const.platformBDID1 = 2149  -- 726a
@@ -55,6 +63,9 @@ CONFIG.const.platformBDID21 = 1277 -- HQ-12
 CONFIG.const.platformBDID22 = 1679 -- SY-400
 CONFIG.const.platformBDID23 = 624  -- supply
 CONFIG.const.platformBDID24 = 3126 -- PHL-03
+CONFIG.const.platformBDID25 = 764  -- Jammer
+CONFIG.const.platformBDID26 = 1376 -- underground shelter
+CONFIG.const.platformBDID27 = 322  -- weapon storage facility
 
 
 CONFIG.const.sensorBDID1 = 2788   -- S-300 Tombstone
@@ -70,6 +81,7 @@ CONFIG.const.loadoutDBID1 = 30568 -- ka-52
 CONFIG.const.loadoutDBID2 = 31490 -- z-10
 CONFIG.const.loadoutDBID3 = 18367 -- z-18
 CONFIG.const.radarDistance = 70
+CONFIG.const.readytime = 3600 * 1.5
 CONFIG.const.batteryState = {}
 CONFIG.const.batteryState.STATIC = 0
 CONFIG.const.batteryState.REPOSITIONING = 1
@@ -82,6 +94,29 @@ if CONFIG.difficulty == 'normal' then
     CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 240
 end
 
+
+-- GPS Jamming
+CONFIG.c.GPSJamming.isStrikeActivated = true
+CONFIG.c.GPSJamming.const.GPSGuidedWeapons = {
+    { dbid = 779,  jammingResistance = 33 }, -- ATACMS
+    { dbid = 452,  jammingResistance = 33 }, -- SLAM-ER
+    { dbid = 826,  jammingResistance = 33 }, -- JSOW
+    { dbid = 870,  jammingResistance = 33 }, -- JDAM BLU-109
+    { dbid = 554,  jammingResistance = 33 }, -- JDAM
+    { dbid = 3026, jammingResistance = 66 }, -- WC
+}
+CONFIG.c.GPSJamming.jammers = {
+    {
+        guid = 'IC8B0X-0HN3VIK603IHV',
+        eventName = 'GPS JAMMING_1',
+        area = {}
+    },
+    {
+        guid = 'IC8B0X-0HN3VIK603IN0',
+        eventName = 'GPS JAMMING_2',
+        area = {}
+    },
+}
 
 
 -- MLRS on mobile units
@@ -151,7 +186,8 @@ CONFIG.c.mlrs.batteries = {
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.c.mlrs.const.position.north,
-        weaponDBID = 2123
+        weaponDBID = 2123,
+        wpnStorageFacility = 'IC8B0X-0HN41ROC6C5U6'
     }
 }
 CONFIG.c.mlrs.const.contactAge = 30 * 60
@@ -191,7 +227,8 @@ CONFIG.c.glcm.batteries = {
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.c.glcm.const.position.brigade635,
-        weaponDBID = 2122
+        weaponDBID = 2122,
+        wpnStorageFacility = 'IC8B0X-0HN41ROC6C6DO'
     },
 }
 CONFIG.c.glcm.packages = {
@@ -222,6 +259,18 @@ CONFIG.c.glcm.const.reloadTime = 40 * 60
 
 -- SRBM on facility
 CONFIG.c.srbm.lastReconTime = nil
+
+CONFIG.c.srbm.strikeAtFixedTime = {
+    isTimeExceeded = false,
+    lastStrikeTime = nil,
+    numOfPackages = 4,
+    strikeTimeSpan = 60 * 60
+}
+CONFIG.c.srbm.isTimeExceeded = false
+CONFIG.c.srbm.lastStrikeTime = nil
+CONFIG.c.srbm.numOfPackages = 4
+CONFIG.c.srbm.strikeSpan = 60 * 60
+
 CONFIG.c.srbm.isStrikeActivated = false
 CONFIG.c.srbm.strikeTimes = 0
 CONFIG.c.srbm.idxPackage = 1
@@ -489,7 +538,7 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 
 -- ac on mobile units
 CONFIG.c.aircraft.isStrikeActivated = false
-CONFIG.c.aircraft.maxStrikeTimes = 5
+CONFIG.c.aircraft.maxStrikeTimes = 6
 CONFIG.c.aircraft.lastStrikeTime = nil
 CONFIG.c.aircraft.packages = {
     {
@@ -522,16 +571,16 @@ CONFIG.c.aircraft.packages = {
         course = nil,
         tanker = nil
     },
-    {
-        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
-        escort = nil,
-        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        missionName = 'LAND STRIKE - SOUTH - 2',
-        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-        hasLaunched = false,
-        course = nil,
-        tanker = nil
-    },
+    -- {
+    --     striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
+    --     escort = nil,
+    --     wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+    --     missionName = 'LAND STRIKE - SOUTH - 2',
+    --     area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+    --     hasLaunched = false,
+    --     course = nil,
+    --     tanker = nil
+    -- },
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = nil,
@@ -571,21 +620,17 @@ CONFIG.c.aircraft.packages = {
         wildWeasel = nil,
         missionName = 'LAND STRIKE - NORTH - 4',
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-        hasLaunched = true,
+        hasLaunched = false,
         course = nil,
         tanker = nil
     },
 }
-CONFIG.c.aircraft.const.periodOfStrike = 40 * 60
-
-if CONFIG.difficulty == 'normal' then
-    CONFIG.c.aircraft.packages[5].hasLaunched = false
-end
+CONFIG.c.aircraft.const.periodOfStrike = 50 * 60
 
 
 -- anti-ship
-CONFIG.c.antiShip.isStrikeActivated = false
-CONFIG.c.antiShip.packages = {
+CONFIG.c.aircraft.antiShip.isStrikeActivated = false
+CONFIG.c.aircraft.antiShip.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
         -- escort = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3413, num = 6, units = {} },
@@ -600,8 +645,8 @@ CONFIG.c.antiShip.packages = {
 }
 
 -- air intercept
-CONFIG.c.airIntercept.isStrikeActivated = false
-CONFIG.c.airIntercept.packages = {
+CONFIG.c.aircraft.airIntercept.isStrikeActivated = false
+CONFIG.c.aircraft.airIntercept.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, units = {} },
         escort = nil,
@@ -616,6 +661,44 @@ CONFIG.c.airIntercept.packages = {
         -- },
         tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
     }
+}
+
+CONFIG.c.aircraft.landStrike.isStrikeActivated = false
+CONFIG.c.aircraft.landStrike.lastStrikeTime = nil
+CONFIG.c.aircraft.landStrike.const.periodOfStrike = 50 * 60
+CONFIG.c.aircraft.landStrike.packages = {
+    {
+        fromUnit = 'X58F5H-0HMVJS6DS6QC3',
+        num = 12,
+        allocation = 2,
+        weaponDBID = 2866,
+        hasLaunched = false,
+        targetList = {
+            { guid = '6Z8LM5-0HMIJ7B89BCF3' },
+            { guid = '6Z8LM5-0HMIJ7B89BCF4' },
+            { guid = '6Z8LM5-0HMIJ7B89BCF5' },
+        },
+        course = {
+            { lat = 'N 22.11.12', lon = 'E 122.06.47', desiredAltitude = 3500, },
+            { lat = 'N 23.11.42', lon = 'E 121.43.18', desiredAltitude = 3500, },
+        }
+    },
+    {
+        fromUnit = 'X58F5H-0HMVJS6DS6QC3',
+        num = 12,
+        allocation = 2,
+        weaponDBID = 2866,
+        hasLaunched = false,
+        targetList = {
+            { guid = '6Z8LM5-0HMIJ7B89BCF3' },
+            { guid = '6Z8LM5-0HMIJ7B89BCF4' },
+            { guid = '6Z8LM5-0HMIJ7B89BCF5' },
+        },
+        course = {
+            { lat = 'N 22.11.12', lon = 'E 122.06.47', desiredAltitude = 3500, },
+            { lat = 'N 23.11.42', lon = 'E 121.43.18', desiredAltitude = 3500, },
+        }
+    },
 }
 
 
@@ -1120,32 +1203,13 @@ CONFIG.c.slcm.const.submarines = {
     {
         guid = 'IC8B0X-0HN2SEQ1UMGC5',
     },
-    -- {
-    --     guid = 'X58F5H-0HMVKGABDLDR9',
-    --     course = {
-    --         { lat = 'N 21.45.32', lon = 'E 121.33.54', },
-    --         { lat = 'N 21.49.32', lon = 'E 121.49.21', },
-    --         { lat = 'N 21.14.09', lon = 'E 121.44.26', },
-    --         { lat = 'N 21.20.35', lon = 'E 122.03.05', },
-    --     },
-    --     side = 'China',
-    --     missionName = 'ASW - BASHI'
-    -- },
-    -- {
-    --     guid = 'X58F5H-0HMVKL9MO16Q6',
-    --     course = {
-    --         { lat = 'N 24.38.48', lon = 'E 122.06.01', },
-    --         { lat = 'N 25.04.38', lon = 'E 122.08.21', },
-    --         { lat = 'N 24.25.01', lon = 'E 122.45.13', },
-    --         { lat = 'N 25.04.20', lon = 'E 122.44.05', },
-    --     },
-    --     side = 'Taiwan',
-    --     missionName = 'ASW - EAST'
-    -- },
 }
 CONFIG.c.slcm.const.weaponDBID = 3716
-CONFIG.c.slcm.const.baseGUID = '6Z8LM5-0HMIJ3QGCI783'
-CONFIG.c.slcm.const.targetGUID = '6Z8LM5-0HMIJ7B89BCF3'
+CONFIG.c.slcm.const.targetList = {
+    { guid = '6Z8LM5-0HMIJ7B89BCF3' },
+    { guid = '6Z8LM5-0HMIJ7B89BCF4' },
+    { guid = '6Z8LM5-0HMIJ7B89BCF5' },
+}
 
 -- SRBM
 CONFIG.t.srbm.isReloadActivated = true
@@ -1168,7 +1232,8 @@ CONFIG.t.srbm.batteries = {
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.t.srbm.const.position.north,
-        weaponDBID = 779
+        weaponDBID = 779,
+        wpnStorageFacility = 'IC8B0X-0HN41D1QKTU21'
     },
 }
 CONFIG.t.srbm.const.reloadTime = 40 * 60
@@ -1205,17 +1270,27 @@ CONFIG.t.glcm.batteries = {
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.t.glcm.const.position.north,
-        weaponDBID = 3228
+        weaponDBID = 3228,
+        wpnStorageFacility = 'IC8B0X-0HN41D1QKTUA0'
     },
     {
         guid = 'X58F5H-0HN1ESDRTLGU7',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.t.glcm.const.position.south,
-        weaponDBID = 3228
+        weaponDBID = 3228,
+        wpnStorageFacility = 'IC8B0X-0HN41D1QKTV6B'
     }
 }
 CONFIG.t.glcm.const.reloadTime = 40 * 60
+
+
+-- repair runways
+CONFIG.c.repairRunway.isActivated = false
+CONFIG.c.repairRunway.runways = {
+    -- { guid = '', startTime = nil }
+}
+CONFIG.c.repairRunway.const.percentagePerHour = 3
 
 
 -- ASM
@@ -1228,14 +1303,12 @@ CONFIG.t.asm.const.nai2 = { 'RP-7787', 'RP-7788', 'RP-7789', 'RP-7790' }
 CONFIG.t.asm.const.shipNumInNai1 = 4
 CONFIG.t.asm.const.helicopterNumInNai2 = 4
 
--- LST 47分鐘到達泛水區
--- airlandingMissionStartTime1 = '06/09/2022 11:35 AM'
--- airlandingMissionStartTime2 = '06/09/2022 11:45 AM'
--- airlandingMissionStartTime3 = '06/09/2022 11:55 AM'
--- airlandingMissionStartTime4 = '06/09/2022 11:47 AM'
--- landingMissionStartTime = '06/09/2022 11:14 AM'
-
-
+-- repair runways
+CONFIG.t.repairRunway.isActivated = false
+CONFIG.t.repairRunway.runways = {
+    -- { guid = '', startTime = nil }
+}
+CONFIG.t.repairRunway.const.percentagePerHour = 3
 
 
 
@@ -1243,7 +1316,7 @@ WCS = { wcsFree = 0, wcsTight = 1, wcsHold = 2 }
 
 CONFIG.s.const.aircraftIsDestroyedOnTheGround = -10
 CONFIG.s.const.destroyingAircraftOnTheGround = 5
-CONFIG.s.const.aircraftIsDestroyedInHangar = -50
+-- CONFIG.s.const.aircraftIsDestroyedInHangar = -50
 CONFIG.s.const.destroyingSupply = 100
 CONFIG.s.const.lhd = 10
 CONFIG.s.const.lst = 10
@@ -1257,12 +1330,4 @@ CONFIG.s.const.uav = 20
 CONFIG.s.const.mlrs = 20
 CONFIG.s.const.weaponDBID = 905
 CONFIG.s.const.attackBeforeTheHHour = -1000
-CONFIG.s.const.msg = {
-    tipForStart =
-    '<h3>The initial blockade phase:</h3><ul><li>Use a submarine equipped with MK48s to sink the Chinese CSG entering Bachi Channel in order to break theblockade of the eastern waters of Taiwan.</li><li>Conduct an ASW mission in the northeastern waters of Taiwan.</li></ul><h3>ROE in this phase:</h3><ul><li>Any attacks on Chinese assets are not allowed.</li><li> Only submarines with MK-48s are allowed to attack Chinese surface ships or submarines, or ASW assets are allowed to attack Chinese submarines.</li></ul><p>(Victory Points will be subtracted if breaking the ROE.)</p>',
-    attackBeforeTheHHour = '<p style="font-family:Microsoft JhengHei;">由於違反命令，在共軍對台灣發動總攻擊前攻擊共軍，造成了局勢升級。(扣1000分)</p>',
-    tipForStartOfInvasion =
-    '<h3>The Chinese air and land strike phase:</h3><ul><li>Disperse some air assets from airbases to contingency runways.</li><li>Break the kill chain of the Chinese ballistic missile strike by destroying UAVs such as WZ-8s or BZK-005s.</li><li>Find and destroy MLRS launchers on Pingtang Island.</li><li>Destroy helicopters such as Z-10s at army air bases.</li><li>Conserve SAMs and anti-ship missile launchers as much as possible to counter the subsequent Chinese amphibious landing.</li><li>Attempt to attack SAMs along the Chinese coast for further cruise missile attacks against enemy’s air assets at airfields.</li><li>Ground-launched cruise missile launchers can move into the assembly area and wait 40 minutes for reloading missiles if running out of munitions.</li></ul><h3>The Chinese amphibious landing phase:</h3><ul><li>Execute an anti-ship missile strike against Chinese amphibious ships.</li><li>Use LT-2000, HIMARS and AH-64 to destroy amphibious vehicles.</li><li>Use SAM and SHORAD systems to deal with air assault.</li></ul>'
-}
-
---{ [1] = { mag_weapons = { [1] = { wpn_dbid = 3021, wpn_maxcap = 5, wpn_current = 0, wpn_default = 5, wpn_guid = 'X58F5H-0HN1BN6784FTC', wpn_name = 'BP-12A' }, [2] = { wpn_dbid = 2123, wpn_maxcap = 20, wpn_current = 0, wpn_default = 20, wpn_guid = 'X58F5H-0HN1BN6784FTD', wpn_name = 'SY-400 MLRS [Unitary]' } }, mag_dbid = 1795, mag_guid = 'X58F5H-0HN1BN6784FTB', mag_capacity = 25, mag_name = 'SY-400' } }
+CONFIG.s.const.undergroundShelterIsDestroyed = -200
