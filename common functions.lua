@@ -104,7 +104,6 @@ function renameUnitsFromBase(fromUnit, num, weaponDBID, name)
     end
 
     -- local aircraftNumPerTarget = num // getCount(targetList)
-    local index = 1
     local filteredPlatforms = {}
 
     for _, v in ipairs(platforms) do
@@ -132,7 +131,14 @@ function renameUnitsFromBase(fromUnit, num, weaponDBID, name)
     end
 end
 
-function launchLandStrike(fromUnit, num, weaponDBID, allocation, course, targetList)
+function handleStrikePackagesWithoutMission(package)
+    local fromUnit = package.fromUnit
+    local num = package.num
+    local weaponDBID = package.weaponDBID
+    local allocation = package.allocation
+    local course = package.course
+    local targetList = package.targetList
+
     local base = ScenEdit_GetUnit({ guid = fromUnit })
     if base == nil then return end
 
@@ -294,6 +300,8 @@ function transferCargo(fromUnit, platformType, platformDBid, cargoItem)
     local platforms = base.embarkedUnits[platformType]
 
     if platforms ~= nil then
+        ScenEdit_SpecialMessage('China', tostring(platforms.name))
+
         for k, v in ipairs(platforms) do
             local unit = SE_GetUnit({ guid = v })
 
@@ -924,52 +932,6 @@ function resupply(battery, weaponDBID)
                 --     battery.position.magazineWeapenNum = battery.position.magazineWeapenNum -
                 --         weaponDefaultNum
                 -- end
-            end
-        end
-    end
-end
-
-function reloadMissile(launcherState, reloadTime, weaponDBID)
-    for index, state in ipairs(launcherState) do
-        local unit = SE_GetUnit({ guid = state.unit })
-        if unit then
-            for mountIndex, mount in ipairs(unit.mounts) do
-                if state.mounts[mountIndex].reloadStartTime == nil and isRunOutOfAmmo(mount) then
-                    state.mounts[mountIndex].reloadStartTime = ScenEdit_CurrentTime()
-                end
-
-                if state.mounts[mountIndex].reloadStartTime ~= nil then
-                    local currentTime = ScenEdit_CurrentTime()
-                    local diffTime = currentTime - state.mounts[mountIndex].reloadStartTime
-                    local magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum
-                    local _weaponDBID = 0
-                    local weaponCurrentNum = 0
-                    local weaponDefaultNum = 0
-                    local wpnIndex = 1
-
-                    if weaponDBID ~= nil and type(weaponDBID) == "number" then
-                        for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-                            if wpn['wpn_dbid'] == weaponDBID then
-                                wpnIndex = wpnIdx
-                                break
-                            end
-                        end
-                    end
-
-                    _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
-                    weaponCurrentNum = mount['mount_weapons'][wpnIndex]['wpn_current']
-                    weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
-
-                    if diffTime >= reloadTime and magazineWeaponNum > 0 and weaponCurrentNum == 0 then
-                        ScenEdit_AddReloadsToUnit({
-                            guid = unit.guid,
-                            wpn_dbid = _weaponDBID,
-                            number = weaponDefaultNum
-                        })
-                        state.mounts[mountIndex].magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum -
-                            weaponDefaultNum
-                    end
-                end
             end
         end
     end

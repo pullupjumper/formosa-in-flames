@@ -320,3 +320,49 @@ function reposition(state, weaponNum, reloadingTime, handler)
         end
     end
 end
+
+function reloadMissile(launcherState, reloadTime, weaponDBID)
+    for index, state in ipairs(launcherState) do
+        local unit = SE_GetUnit({ guid = state.unit })
+        if unit then
+            for mountIndex, mount in ipairs(unit.mounts) do
+                if state.mounts[mountIndex].reloadStartTime == nil and isRunOutOfAmmo(mount) then
+                    state.mounts[mountIndex].reloadStartTime = ScenEdit_CurrentTime()
+                end
+
+                if state.mounts[mountIndex].reloadStartTime ~= nil then
+                    local currentTime = ScenEdit_CurrentTime()
+                    local diffTime = currentTime - state.mounts[mountIndex].reloadStartTime
+                    local magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum
+                    local _weaponDBID = 0
+                    local weaponCurrentNum = 0
+                    local weaponDefaultNum = 0
+                    local wpnIndex = 1
+
+                    if weaponDBID ~= nil and type(weaponDBID) == "number" then
+                        for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
+                            if wpn['wpn_dbid'] == weaponDBID then
+                                wpnIndex = wpnIdx
+                                break
+                            end
+                        end
+                    end
+
+                    _weaponDBID = mount['mount_weapons'][wpnIndex]['wpn_dbid']
+                    weaponCurrentNum = mount['mount_weapons'][wpnIndex]['wpn_current']
+                    weaponDefaultNum = mount['mount_weapons'][wpnIndex]['wpn_default']
+
+                    if diffTime >= reloadTime and magazineWeaponNum > 0 and weaponCurrentNum == 0 then
+                        ScenEdit_AddReloadsToUnit({
+                            guid = unit.guid,
+                            wpn_dbid = _weaponDBID,
+                            number = weaponDefaultNum
+                        })
+                        state.mounts[mountIndex].magazineWeaponNum = state.mounts[mountIndex].magazineWeaponNum -
+                            weaponDefaultNum
+                    end
+                end
+            end
+        end
+    end
+end

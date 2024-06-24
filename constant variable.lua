@@ -20,6 +20,8 @@ CONFIG.c.aircraft.airIntercept = {}
 CONFIG.c.aircraft.airIntercept.const = {}
 CONFIG.c.aircraft.landStrike = {}
 CONFIG.c.aircraft.landStrike.const = {}
+CONFIG.c.aircraft.landStrikeWithoutMission = {}
+CONFIG.c.aircraft.landStrikeWithoutMission.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
 CONFIG.c.slcm = {}
@@ -66,6 +68,10 @@ CONFIG.const.platformBDID24 = 3126 -- PHL-03
 CONFIG.const.platformBDID25 = 764  -- Jammer
 CONFIG.const.platformBDID26 = 1376 -- underground shelter
 CONFIG.const.platformBDID27 = 322  -- weapon storage facility
+CONFIG.const.platformBDID28 = 5014 -- J-20
+CONFIG.const.platformBDID29 = 4926 -- J-16
+CONFIG.const.platformBDID30 = 4652 -- Su-30
+CONFIG.const.platformBDID31 = 1731 -- H-6K
 
 
 CONFIG.const.sensorBDID1 = 2788   -- S-300 Tombstone
@@ -537,10 +543,9 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 
 
 -- ac on mobile units
-CONFIG.c.aircraft.isStrikeActivated = false
-CONFIG.c.aircraft.maxStrikeTimes = 6
-CONFIG.c.aircraft.lastStrikeTime = nil
-CONFIG.c.aircraft.packages = {
+CONFIG.c.aircraft.landStrike.isStrikeActivated = false
+CONFIG.c.aircraft.landStrike.lastStrikeTime = nil
+CONFIG.c.aircraft.landStrike.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = nil,
@@ -571,26 +576,6 @@ CONFIG.c.aircraft.packages = {
         course = nil,
         tanker = nil
     },
-    -- {
-    --     striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
-    --     escort = nil,
-    --     wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-    --     missionName = 'LAND STRIKE - SOUTH - 2',
-    --     area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-    --     hasLaunched = false,
-    --     course = nil,
-    --     tanker = nil
-    -- },
-    {
-        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
-        escort = nil,
-        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
-        missionName = 'LAND STRIKE - MIDDLE - 2',
-        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
-        hasLaunched = false,
-        course = nil,
-        tanker = nil
-    },
     {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
         escort = nil,
@@ -601,19 +586,6 @@ CONFIG.c.aircraft.packages = {
         course = nil,
         tanker = nil
     },
-    -- {
-    --     -- striker = { baseGUID = '6Z8LM5-0HMITKFQH25Q8', weaponDBID = 2876, num = 6, units = {} },
-    --     striker = { baseGUID = 'X58F5H-0HN201E9DHM1C', weaponDBID = 2876, num = 6, units = {} },
-    --     escort = nil,
-    --     -- wildWeasel = { baseGUID = '6Z8LM5-0HMITKFQH25Q8', weaponDBID = 276, num = 6, units = {} },
-    --     wildWeasel = { baseGUID = 'X58F5H-0HN201E9DHM1C', weaponDBID = 276, num = 6, units = {} },
-
-    --     missionName = 'LAND STRIKE - NORTH - 3',
-    --     area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    --     hasLaunched = false,
-    --     course = nil,
-    --     tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
-    -- },
     {
         striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, units = {} },
         escort = nil,
@@ -625,11 +597,12 @@ CONFIG.c.aircraft.packages = {
         tanker = nil
     },
 }
-CONFIG.c.aircraft.const.periodOfStrike = 50 * 60
+CONFIG.c.aircraft.landStrike.const.timeSpan = 50 * 60
 
 
 -- anti-ship
 CONFIG.c.aircraft.antiShip.isStrikeActivated = false
+CONFIG.c.aircraft.antiShip.lastStrikeTime = nil
 CONFIG.c.aircraft.antiShip.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 6, units = {} },
@@ -643,9 +616,12 @@ CONFIG.c.aircraft.antiShip.packages = {
         tanker = nil
     }
 }
+CONFIG.c.aircraft.antiShip.const.timeSpan = 0
+
 
 -- air intercept
 CONFIG.c.aircraft.airIntercept.isStrikeActivated = false
+CONFIG.c.aircraft.airIntercept.lastStrikeTime = nil
 CONFIG.c.aircraft.airIntercept.packages = {
     {
         striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, units = {} },
@@ -662,11 +638,13 @@ CONFIG.c.aircraft.airIntercept.packages = {
         tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
     }
 }
+CONFIG.c.aircraft.airIntercept.const.timeSpan = 0
 
-CONFIG.c.aircraft.landStrike.isStrikeActivated = false
-CONFIG.c.aircraft.landStrike.lastStrikeTime = nil
-CONFIG.c.aircraft.landStrike.const.periodOfStrike = 50 * 60
-CONFIG.c.aircraft.landStrike.packages = {
+
+CONFIG.c.aircraft.landStrikeWithoutMission.isStrikeActivated = false
+CONFIG.c.aircraft.landStrikeWithoutMission.lastStrikeTime = nil
+CONFIG.c.aircraft.landStrikeWithoutMission.const.timeSpan = 50 * 60
+CONFIG.c.aircraft.landStrikeWithoutMission.packages = {
     {
         fromUnit = 'X58F5H-0HMVJS6DS6QC3',
         num = 12,

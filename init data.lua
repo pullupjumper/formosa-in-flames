@@ -106,21 +106,16 @@ function initUnitsAndTargetList()
     for _, v in ipairs(units) do
         local unit = SE_GetUnit({ guid = v.guid })
 
-        if unit and (unit.dbid == 55 or 43 or 757 or 1422 or 1424 or 1423 or 1421) then
+        if unit and (unit.dbid == 55
+                or unit.dbid == 43
+                or unit.dbid == 757
+                or unit.dbid == 1422
+                or unit.dbid == 1424
+                or unit.dbid == 1423
+                or unit.dbid == 1421) then
             table.insert(CONFIG.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
         end
     end
-
-    initLaunchers(
-        'Taiwan',
-        CONFIG.t.asm.launcherState,
-        CONFIG.t.asm.const.magazineWeaponNum,
-        function(unit, launchers)
-            if unit.dbid == 3531 then
-                table.insert(launchers, unit)
-            end
-        end
-    )
 end
 
 function initGPSJammers()

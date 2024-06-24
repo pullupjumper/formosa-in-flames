@@ -44,8 +44,9 @@ local function launchH6NIfRequired(onSAMConfig)
     end
 end
 
-local function attackSAMContacts(contacts, onSAMConfig)
+local function attackSAMContacts(contacts, CONFIG)
     local result = { batteryIndex = 1, groupIndex = 1 }
+    local onSAMConfig = CONFIG.c.srbm.onSAM
 
     for _, contact in ipairs(contacts) do
         if contact.emissions and contact.emissions[1] then
@@ -68,8 +69,9 @@ local function attackSAMContacts(contacts, onSAMConfig)
     end
 end
 
-local function attackMLRSContacts(contacts, mlrsConfig)
+local function attackMLRSContacts(contacts, CONFIG)
     local result = { batteryIndex = 1, groupIndex = 1 }
+    local mlrsConfig = CONFIG.c.mlrs
 
     for _, package in ipairs(mlrsConfig.packages) do
         local filteredContacts = filterContacts(contacts, function(value)
@@ -241,16 +243,17 @@ local function attackSRBMContacts(CONFIG)
 
     srbmConfig.strikeTimes = srbmConfig.strikeTimes + 1
 
-    if srbmConfig.strikeTimes >= 5 then
+    if srbmConfig.strikeTimes >= 1 then
         CONFIG.c.aircraft.antiShip.isStrikeActivated = true
     end
 
     if srbmConfig.strikeTimes >= 10 then
-        CONFIG.c.aircraft.isStrikeActivated = true
+        CONFIG.c.aircraft.landStrike.isStrikeActivated = true
     end
 end
 
-local function attackFacilityContacts(landStrikeConfig)
+local function attackFacilityContacts(CONFIG)
+    local landStrikeConfig = CONFIG.c.aircraft.landStrikeWithoutMission
     local diffTime = 0
 
     if landStrikeConfig.lastStrikeTime then
@@ -258,19 +261,11 @@ local function attackFacilityContacts(landStrikeConfig)
     end
 
     local isToStrike = not landStrikeConfig.lastStrikeTime
-        or (landStrikeConfig.lastStrikeTime and diffTime >= landStrikeConfig.const.periodOfStrike)
+        or (landStrikeConfig.lastStrikeTime and diffTime >= landStrikeConfig.const.timeSpan)
 
     for _, package in ipairs(landStrikeConfig.packages) do
         if not package.hasLaunched and isToStrike then
-            launchLandStrike(
-                package.fromUnit,
-                package.num,
-                package.weaponDBID,
-                package.allocation,
-                package.course,
-                package.targetList
-            )
-
+            handleStrikePackagesWithoutMission(package)
             package.hasLaunched = true
             landStrikeConfig.lastStrikeTime = ScenEdit_CurrentTime()
             break
@@ -278,7 +273,64 @@ local function attackFacilityContacts(landStrikeConfig)
     end
 end
 
-local function attackMobileContacts(contacts, aircraftConfig)
+local function handleStrikePackagesWithMission(package, contacts, filterFn, contactNum)
+    local function assignAllUnitsToStrikeMission(package)
+        local strikers = assingUnitToStrikeMission(
+            package.striker.baseGUID,
+            package.striker.num,
+            package.striker.weaponDBID,
+            package.missionName,
+            false
+        )
+        package.striker.units = strikers
+
+        if package.escort then
+            local escorts = assingUnitToStrikeMission(
+                package.escort.baseGUID,
+                package.escort.num,
+                package.escort.weaponDBID,
+                package.missionName,
+                true
+            )
+            package.escort.units = escorts
+        end
+
+        if package.wildWeasel then
+            local wildWeasels = assingUnitToStrikeMission(
+                package.wildWeasel.baseGUID,
+                package.wildWeasel.num,
+                package.wildWeasel.weaponDBID,
+                package.missionName,
+                true
+            )
+            package.wildWeasel.units = wildWeasels
+        end
+
+        if package.tanker then
+            local mission = ScenEdit_GetMission('China', package.tanker.missionName)
+            mission.isactive = true
+        end
+    end
+
+    if contacts and filterFn and contactNum then
+        local fn = filterFn(package)
+        local filteredContacts = filterContacts(contacts, fn)
+
+        if getCount(filteredContacts) >= contactNum then
+            for _, value in ipairs(filteredContacts) do
+                value.posture = 'H'
+                ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
+            end
+
+            assignAllUnitsToStrikeMission(package)
+        end
+    else
+        assignAllUnitsToStrikeMission(package)
+    end
+end
+
+local function attackStorageAndC2Contacts(CONFIG)
+    local aircraftConfig = CONFIG.c.aircraft.landStrike
     local diffTime = 0
 
     if aircraftConfig.lastStrikeTime then
@@ -286,183 +338,81 @@ local function attackMobileContacts(contacts, aircraftConfig)
     end
 
     local isToStrike = not aircraftConfig.lastStrikeTime
-        or (aircraftConfig.lastStrikeTime and diffTime >= aircraftConfig.const.periodOfStrike)
+        or (aircraftConfig.lastStrikeTime and diffTime >= aircraftConfig.const.timeSpan)
 
     for _, package in ipairs(aircraftConfig.packages) do
-        if not package.hasLaunched then
-            local filteredContacts = filterContacts(contacts, function(value)
-                return (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
-            end)
-
-            if getCount(filteredContacts) >= 8 and isToStrike then
-                for _, value in ipairs(filteredContacts) do
-                    value.posture = 'H'
-                    ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
-                end
-
-                local strikers = assingUnitToStrikeMission(
-                    package.striker.baseGUID,
-                    package.striker.num,
-                    package.striker.weaponDBID,
-                    package.missionName,
-                    false
-                )
-                package.striker.units = strikers
-
-                if package.escort then
-                    local escorts = assingUnitToStrikeMission(
-                        package.escort.baseGUID,
-                        package.escort.num,
-                        package.escort.weaponDBID,
-                        package.missionName,
-                        true
-                    )
-                    package.escort.units = escorts
-                end
-
-                if package.wildWeasel then
-                    local wildWeasels = assingUnitToStrikeMission(
-                        package.wildWeasel.baseGUID,
-                        package.wildWeasel.num,
-                        package.wildWeasel.weaponDBID,
-                        package.missionName,
-                        true
-                    )
-                    package.wildWeasel.units = wildWeasels
-                end
-
-                if package.tanker then
-                    local mission = ScenEdit_GetMission('China', package.tanker.missionName)
-                    mission.isactive = true
-                end
-
-                package.hasLaunched = true
-                aircraftConfig.lastStrikeTime = ScenEdit_CurrentTime()
-                aircraftConfig.maxStrikeTimes = aircraftConfig.maxStrikeTimes - 1
-                break
-            end
+        if not package.hasLaunched and isToStrike then
+            handleStrikePackagesWithMission(package)
+            package.hasLaunched = true
+            aircraftConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            break
         end
     end
 end
 
-local function attackShipContacts(contacts, antishipConfig)
+local function attackShipContacts(contacts, CONFIG)
+    local antishipConfig = CONFIG.c.aircraft.antiShip
+    local fn = function(package)
+        local _package = package
+        return function(value)
+            return value.typed == 2 and value:inArea(_package.area)
+        end
+    end
+
+    local diffTime = 0
+
+    if antishipConfig.lastStrikeTime then
+        diffTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
+    end
+
+    local isToStrike = not antishipConfig.lastStrikeTime
+        or (antishipConfig.lastStrikeTime and diffTime >= antishipConfig.const.timeSpan)
+
     for _, package in ipairs(antishipConfig.packages) do
-        if not package.hasLaunched then
-            local filteredContacts = filterContacts(contacts, function(value)
-                return value.typed == 2 and value:inArea(package.area)
-            end)
-
-            if getCount(filteredContacts) >= 4 then
-                for _, value in ipairs(filteredContacts) do
-                    value.posture = 'H'
-                    ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
-                end
-
-                local strikers = assingUnitToStrikeMission(
-                    package.striker.baseGUID,
-                    package.striker.num,
-                    package.striker.weaponDBID,
-                    package.missionName,
-                    false
-                )
-                package.striker.units = strikers
-
-                if package.escort then
-                    local escorts = assingUnitToStrikeMission(
-                        package.escort.baseGUID,
-                        package.escort.num,
-                        package.escort.weaponDBID,
-                        package.missionName,
-                        true
-                    )
-                    package.escort.units = escorts
-                end
-
-                if package.wildWeasel then
-                    local wildWeasels = assingUnitToStrikeMission(
-                        package.wildWeasel.baseGUID,
-                        package.wildWeasel.num,
-                        package.wildWeasel.weaponDBID,
-                        package.missionName,
-                        true
-                    )
-                    package.wildWeasel.units = wildWeasels
-                end
-
-                package.hasLaunched = true
-                break
-            end
+        if not package.hasLaunched and isToStrike then
+            handleStrikePackagesWithMission(package, contacts, fn, 4)
+            package.hasLaunched = true
+            antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            break
         end
     end
 end
 
-local function launchAirIntercept(contacts, airInterceptConfig)
+local function launchAirIntercept(contacts, CONFIG)
+    local airInterceptConfig = CONFIG.c.aircraft.airIntercept
+    local fn = function(package)
+        return function(value)
+            if value.emissions and value.emissions[1] then
+                local emission = value.emissions[1]['sensor_dbid']
+                return value.typed == 0
+                    and (emission == CONFIG.const.sensorBDID7 or emission == CONFIG.const.sensorBDID8)
+                    and value:inArea(package.area)
+            end
+
+            return false
+        end
+    end
+    local diffTime = 0
+
+    if airInterceptConfig.lastStrikeTime then
+        diffTime = ScenEdit_CurrentTime() - airInterceptConfig.lastStrikeTime
+    end
+
+    local isToStrike = not airInterceptConfig.lastStrikeTime
+        or (airInterceptConfig.lastStrikeTime and diffTime >= airInterceptConfig.const.timeSpan)
+
     for _, package in ipairs(airInterceptConfig.packages) do
-        if not package.hasLaunched then
-            local filteredContacts = filterContacts(contacts, function(value)
-                if value.emissions and value.emissions[1] then
-                    local emission = value.emissions[1]['sensor_dbid']
-                    return value.typed == 0
-                        and (emission == CONFIG.const.sensorBDID7 or emission == CONFIG.const.sensorBDID8)
-                        and value:inArea(package.area)
-                end
-
-                return false
-            end)
-
-            if getCount(filteredContacts) >= 1 then
-                for _, value in ipairs(filteredContacts) do
-                    value.posture = 'H'
-                    ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
-                end
-
-                local strikers = assingUnitToStrikeMission(
-                    package.striker.baseGUID,
-                    package.striker.num,
-                    package.striker.weaponDBID,
-                    package.missionName,
-                    false,
-                    package.course
-                )
-                package.striker.units = strikers
-
-                if package.escort then
-                    local escorts = assingUnitToStrikeMission(
-                        package.escort.baseGUID,
-                        package.escort.num,
-                        package.escort.weaponDBID,
-                        package.missionName,
-                        true,
-                        package.course
-                    )
-                    package.escort.units = escorts
-                end
-
-                if package.wildWeasel then
-                    local wildWeasels = assingUnitToStrikeMission(
-                        package.wildWeasel.baseGUID,
-                        package.wildWeasel.num,
-                        package.wildWeasel.weaponDBID,
-                        package.missionName,
-                        true,
-                        package.course
-                    )
-                    package.wildWeasel.units = wildWeasels
-                end
-
-                if package.tanker then
-                    local mission = ScenEdit_GetMission('China', package.tanker.missionName)
-                    mission.isactive = true
-                end
-
-                package.hasLaunched = true
-                break
-            end
+        if not package.hasLaunched and isToStrike then
+            handleStrikePackagesWithMission(package, contacts, fn, 1)
+            package.hasLaunched = true
+            airInterceptConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            break
         end
     end
 end
 
-local function attackSLCMContacts(slcmConfig)
+local function attackSLCMContacts(CONFIG)
+    local slcmConfig = CONFIG.c.slcm
     launchSLCM(
         slcmConfig.const.submarines,
         slcmConfig.const.weaponDBID,
@@ -485,7 +435,7 @@ if contacts == nil then
 end
 
 if CONFIG.c.aircraft.isStrikeActivated then
-    aircraftReturnToBase(CONFIG.c.aircraft.packages)
+    aircraftReturnToBase(CONFIG.c.aircraft.landStrike.packages)
 end
 
 if CONFIG.c.aircraft.antiShip.isStrikeActivated then
@@ -503,7 +453,7 @@ end
 launchH6NIfRequired(CONFIG.c.srbm.onSAM)
 
 if CONFIG.c.mlrs.isStrikeActivated then
-    attackMLRSContacts(contacts, CONFIG.c.mlrs)
+    attackMLRSContacts(contacts, CONFIG)
 end
 
 if CONFIG.c.srbm.isStrikeActivated then
@@ -511,31 +461,31 @@ if CONFIG.c.srbm.isStrikeActivated then
 end
 
 if CONFIG.c.srbm.onSAM.isStrikeActivated then
-    attackSAMContacts(contacts, CONFIG.c.srbm.onSAM)
+    attackSAMContacts(contacts, CONFIG)
 end
 
-if CONFIG.c.aircraft.isStrikeActivated and CONFIG.c.aircraft.maxStrikeTimes > 0 then
-    attackMobileContacts(contacts, CONFIG.c.aircraft)
+if CONFIG.c.aircraft.landStrike.isStrikeActivated then
+    attackStorageAndC2Contacts(CONFIG)
 end
 
 if CONFIG.c.aircraft.antiShip.isStrikeActivated then
-    attackShipContacts(contacts, CONFIG.c.aircraft.antiShip)
+    attackShipContacts(contacts, CONFIG)
 end
 
 if CONFIG.c.aircraft.airIntercept.isStrikeActivated then
-    launchAirIntercept(contacts, CONFIG.c.aircraft.airIntercept)
+    launchAirIntercept(contacts, CONFIG)
 end
 
 if CONFIG.c.slcm.isStrikeActivated then
-    attackSLCMContacts(CONFIG.c.slcm)
+    attackSLCMContacts(CONFIG)
 end
 
 if CONFIG.c.glcm.isStrikeActivated then
     attackGLCMContacts(CONFIG)
 end
 
-if CONFIG.c.aircraft.landStrike.isStrikeActivated then
-    attackFacilityContacts(CONFIG.c.aircraft.landStrike)
+if CONFIG.c.aircraft.landStrikeWithoutMission.isStrikeActivated then
+    attackFacilityContacts(CONFIG)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
