@@ -18,9 +18,9 @@ local isSAM = emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
 -- or emission == CONFIG.c.srbm.onSAM.const.pac3SensorDBID
 
 if isSAM then
-    if hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.h6nTemp, 1)
-        and hasDestroyedOrRTB(CONFIG.c.srbm.onSAM.wz8Temp, 1) then
-        CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
+    if IsDestroyedOrRTB(CONFIG.c.srbm.onSAM.h6nTemp, 1)
+        and IsDestroyedOrRTB(CONFIG.c.srbm.onSAM.wz8Temp, 1) then
+        CONFIG.c.srbm.onSAM.h6nTemp = LaunchUnits(
             CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
             CONFIG.c.srbm.onSAM.const.h6nCourse,
             1,
@@ -30,9 +30,9 @@ if isSAM then
     end
 
     local result = { batteryIndex = 1, groupIndex = 1 }
-    result = attackContact(contact, 2, CONFIG.c.srbm.onSAM.const.batteries, result.batteryIndex, result.groupIndex)
+    result = AttackContact(contact, 2, CONFIG.c.srbm.onSAM.const.batteries, result.batteryIndex, result.groupIndex)
     CONFIG.c.srbm.onSAM.isStrikeActivated = true
-    ScenEdit_MsgBox('emission: ' .. tostring(contact.name), 1)
+    ScenEdit_SpecialMessage('China', 'Emissions from ' .. tostring(contact.name))
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

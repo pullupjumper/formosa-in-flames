@@ -20,25 +20,25 @@ local function setCoursesForAllShips(CONFIG)
             if unit.dbid == shipLocationInfo[idx].to.result.type075.dbid then
                 local locationIndex = shipLocationInfo[idx].to.result.type075.locationIndex
                 local location = shipLocationInfo[idx].to.result.type075.locations[locationIndex]
-                unit.course = getCourseByPoints({ location })
+                unit.course = GetCourseByPoints({ location })
                 locationIndex = locationIndex + 1
                 shipLocationInfo[idx].to.result.type075.locationIndex = locationIndex
             elseif unit.dbid == shipLocationInfo[idx].to.result.type072iii.dbid then
                 local locationIndex = shipLocationInfo[idx].to.result.type072iii.locationIndex
                 local location = shipLocationInfo[idx].to.result.type072iii.locations[locationIndex]
-                unit.course = getCourseByPoints({ location })
+                unit.course = GetCourseByPoints({ location })
                 locationIndex = locationIndex + 1
                 shipLocationInfo[idx].to.result.type072iii.locationIndex = locationIndex
             elseif unit.dbid == shipLocationInfo[idx].to.result.type072a.dbid then
                 local locationIndex = shipLocationInfo[idx].to.result.type072a.locationIndex
                 local location = shipLocationInfo[idx].to.result.type072a.locations[locationIndex]
-                unit.course = getCourseByPoints({ location })
+                unit.course = GetCourseByPoints({ location })
                 locationIndex = locationIndex + 1
                 shipLocationInfo[idx].to.result.type072a.locationIndex = locationIndex
             elseif unit.dbid == shipLocationInfo[idx].to.result.type073a.dbid then
                 local locationIndex = shipLocationInfo[idx].to.result.type073a.locationIndex
                 local location = shipLocationInfo[idx].to.result.type073a.locations[locationIndex]
-                unit.course = getCourseByPoints({ location })
+                unit.course = GetCourseByPoints({ location })
                 locationIndex = locationIndex + 1
                 shipLocationInfo[idx].to.result.type073a.locationIndex = locationIndex
             elseif unit.dbid == shipLocationInfo[idx].to.result.type071.dbid then
@@ -46,10 +46,10 @@ local function setCoursesForAllShips(CONFIG)
 
                 if locationIndex > 2 then
                     local location = shipLocationInfo[idx].to.result.type071InLSTArea.locations[locationIndex - 2]
-                    unit.course = getCourseByPoints({ location })
+                    unit.course = GetCourseByPoints({ location })
                 else
                     local location = shipLocationInfo[idx].to.result.type071.locations[locationIndex]
-                    unit.course = getCourseByPoints({ location })
+                    unit.course = GetCourseByPoints({ location })
                 end
 
                 locationIndex = locationIndex + 1
@@ -106,38 +106,38 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
             -- local u = SE_GetUnit({ guid = v.guid })
 
             if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(info.anchorageArea) then
-                transferCargo(
+                TransferCargo(
                     u.guid,
                     'Boats',
                     info.boat.dbid,
                     info.boat.cargoItem
                 )
-                transferCargo(
+                TransferCargo(
                     u.guid,
                     'Aircraft',
                     info.tansportHelicopter.dbid,
                     info.tansportHelicopter.cargoItem
                 )
-                assignEmbarkedUnitsToMission(
+                AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
                     'Boats',
                     info.boat.dbid,
                     info.boat.missions
                 )
-                assignEmbarkedUnitsToMission(
+                AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
                     'Aircraft',
                     info.tansportHelicopter.dbid,
                     info.tansportHelicopter.missions
                 )
-                assignUnitToFerryMission(
+                AssignEmbarkedUnitToMissionByUnitNum(
                     u.guid,
                     13,
                     info.attackHelicopter1.dbid,
                     'Aircraft',
                     info.attackHelicopter1.missions[1]
                 )
-                assignUnitToFerryMission(
+                AssignEmbarkedUnitToMissionByUnitNum(
                     u.guid,
                     13,
                     info.attackHelicopter2.dbid,
@@ -147,25 +147,25 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
             end
 
             if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(info.anchorageArea) then
-                transferCargo(
+                TransferCargo(
                     u.guid,
                     'Boats',
                     info.boat.dbid,
                     info.boat.cargoItem
                 )
-                transferCargo(
+                TransferCargo(
                     u.guid,
                     'Aircraft',
                     info.tansportHelicopter.dbid,
                     info.tansportHelicopter.cargoItem
                 )
-                assignEmbarkedUnitsToMission(
+                AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
                     'Boats',
                     info.boat.dbid,
                     info.boat.missions
                 )
-                assignEmbarkedUnitsToMission(
+                AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
                     'Aircraft',
                     info.tansportHelicopter.dbid,
@@ -176,7 +176,7 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
     end
 
     for index, value in ipairs(CONFIG.c.landingOperation.const.helicopterInBase) do
-        assignUnitToFerryMission(
+        AssignEmbarkedUnitToMissionByUnitNum(
             value.guid,
             value.num,
             CONFIG.const.platformBDID5,
@@ -189,7 +189,7 @@ end
 local function startAmphibiousLandingAttack(CONFIG)
     local unitsInAnchorageArea1 = getUnitsInAnchorageArea(CONFIG)
 
-    if getCount(unitsInAnchorageArea1) > 15 then
+    if GetCount(unitsInAnchorageArea1) > 15 then
         createCargoMissions()
         transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1, CONFIG)
         CONFIG.c.landingOperation.isLandingShipsArrived = false
@@ -256,21 +256,21 @@ local function setCoursesForLSTs(CONFIG)
         end
     end
 
-    setCourseToUnits(
+    SetCourseToUnits(
         {
             bearing = shipInfo.heading.west.vertical,
             distance = shipInfo.transitDistance
         },
         unitsInWestLSTAnchorageArea
     )
-    setCourseToUnits(
+    SetCourseToUnits(
         {
             bearing = shipInfo.heading.north.vertical,
             distance = shipInfo.transitDistance
         },
         unitsInNorthLSTAnchorageArea
     )
-    setCourseToUnits(
+    SetCourseToUnits(
         {
             bearing = shipInfo.heading.south.vertical,
             distance = shipInfo.transitDistance
@@ -288,7 +288,7 @@ local function getContactNumInArea(contacts, area)
         end
     end
 
-    return getCount(filteredContacts)
+    return GetCount(filteredContacts)
 end
 
 local function startAirLanding(CONFIG)
@@ -327,13 +327,13 @@ local function retransferCargos(CONFIG)
             local unit = SE_GetUnit({ guid = value.guid })
 
             if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
-                transferCargo(
+                TransferCargo(
                     unit.guid,
                     'Boats',
                     cargoInfoForTransfer[1].boat.dbid,
                     cargoInfoForTransfer[1].boat.cargoItem
                 )
-                transferCargo(
+                TransferCargo(
                     unit.guid,
                     'Aircraft',
                     cargoInfoForTransfer[1].tansportHelicopter.dbid,

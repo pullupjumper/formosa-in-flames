@@ -12,7 +12,7 @@ if ship == nil then
 end
 
 if ship.dbid == CONFIG.const.platformBDID7 then
-    launchAmphibiousIFV({
+    LaunchAmphibiousIFV({
         ship = ship,
         num = 40,
         bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,
@@ -22,7 +22,7 @@ if ship.dbid == CONFIG.const.platformBDID7 then
         speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed
     })
 elseif ship.dbid == CONFIG.const.platformBDID8 or ship.dbid == CONFIG.const.platformBDID9 then
-    launchAmphibiousIFV({
+    LaunchAmphibiousIFV({
         ship = ship,
         num = 10,
         bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,

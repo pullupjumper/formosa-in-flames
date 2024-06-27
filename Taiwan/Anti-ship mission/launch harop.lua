@@ -4,7 +4,7 @@ local temp = {}
 -- local mission1 = ScenEdit_GetMission('Taiwan', 'RECON1')
 -- local mission2 = ScenEdit_GetMission('Taiwan', 'RECON3')
 local units = VP_GetSide({ Side = 'Taiwan' }).units
-local radarTrucks = filterUnitsByName(units, 'Radar Truck')
+local radarTrucks = FilterUnitsByName(units, 'Radar Truck')
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
 if CONFIG == nil then
@@ -24,7 +24,7 @@ end
 
 -- ScenEdit_MsgBox(tostring(getCount(temp)),0)
 
-if getCount(temp) >= 1 and radarTrucks ~= nil then
+if GetCount(temp) >= 1 and radarTrucks ~= nil then
     -- for index, value in ipairs(HAROP_STATE) do
 
     --     ScenEdit_AttackContact(value.guid, 'BOL',

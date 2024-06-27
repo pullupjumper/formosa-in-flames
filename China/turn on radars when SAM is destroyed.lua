@@ -1,12 +1,17 @@
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.const.radarDistance }
+
+if unit == nil then
+    ScenEdit_SpecialMessage('China', 'unit == nil')
+    return
+end
+
 local latitude = unit.latitude
 local longitude = unit.longitude
 local isDestroyed = false
--- ScenEdit_MsgBox(tostring(unit.name .. ' is damaged'), 1)
 
-for index, component in ipairs(unit.components) do
+for _, component in ipairs(unit.components) do
     if (component['comp_dbid'] == CONFIG.const.sensorBDID1
             or component['comp_dbid'] == CONFIG.const.sensorBDID2
             or component['comp_dbid'] == CONFIG.const.sensorBDID3
@@ -14,7 +19,7 @@ for index, component in ipairs(unit.components) do
             or component['comp_dbid'] == CONFIG.const.sensorBDID5
             or component['comp_dbid'] == CONFIG.const.sensorBDID6)
         and component['comp_status'] == 'Destroyed' then
-        ScenEdit_MsgBox(tostring(unit.name .. ' is damaged'), 1)
+        ScenEdit_SpecialMessage('China', tostring(unit.name .. ' is damaged'))
         ScenEdit_MsgBox(tostring(component['comp_dbid']), 1)
         ScenEdit_MsgBox(tostring(component['comp_status']), 1)
         isDestroyed = true
@@ -22,7 +27,7 @@ for index, component in ipairs(unit.components) do
 end
 
 if isDestroyed then
-    for index, value in ipairs(units) do
+    for _, value in ipairs(units) do
         local u = ScenEdit_GetUnit({ guid = value.guid })
 
         if u ~= nil then
@@ -52,7 +57,6 @@ if isDestroyed then
 end
 
 if temp.unit ~= nil then
-    local result = ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    -- ScenEdit_MsgBox(tostring(result), 1)
-    -- ScenEdit_MsgBox(tostring(temp.unit.name), 1)
+    ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
+    ScenEdit_SpecialMessage('China', tostring(temp.unit.name) .. '\'s radar is activated.')
 end

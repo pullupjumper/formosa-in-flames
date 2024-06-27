@@ -64,7 +64,7 @@ function addLandingShipsForTest()
                 }
             end
 
-            addUnitsByRp(
+            AddUnitsByRP(
                 {
                     initialLocation = location,
                     bearing = CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].heading.horizontal,
@@ -190,5 +190,5 @@ CONFIG.c.landingOperation.const.shipLocationInfo[1].to.areas[1].num = {
 }
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 clearDestination()
-calculateDestination()
+CalculateDestination()
 addLandingShipsForTest()

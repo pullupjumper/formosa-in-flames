@@ -26,7 +26,7 @@ if CONFIG.t.asm.isAntishipMissionActivated == false and contacts ~= nil then
         end
     end
 
-    if getCount(temp) > CONFIG.t.asm.const.shipNumInNai1 then
+    if GetCount(temp) > CONFIG.t.asm.const.shipNumInNai1 then
         setAntiShipMissionStartTime()
         CONFIG.t.asm.isAntishipMissionActivated = true
         event.isActive = false

@@ -1,6 +1,6 @@
 local function aircraftReturnToBase(aircraftPackages)
     for _, pack in ipairs(aircraftPackages) do
-        if pack.striker.units ~= nil and getCount(pack.striker.units) > 0 and hasDestroyedOrRTB(pack.striker.units, 1) then
+        if pack.striker.units ~= nil and GetCount(pack.striker.units) > 0 and IsDestroyedOrRTB(pack.striker.units, 1) then
             if pack.escort then
                 for i, value in ipairs(pack.escort.units) do
                     local unit = SE_GetUnit({ guid = value.unit })
@@ -32,9 +32,27 @@ local function aircraftReturnToBase(aircraftPackages)
     end
 end
 
+local function isMissileMoreThan(name, units, num)
+    local count = 0
+
+    for _, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit ~= nil and string.find(unit.name, name) and unit.type == 'Weapon' then
+            count = count + 1
+        end
+
+        if count >= num then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function launchH6NIfRequired(onSAMConfig)
-    if hasDestroyedOrRTB(onSAMConfig.h6nTemp, 1) and hasDestroyedOrRTB(onSAMConfig.wz8Temp, 1) then
-        onSAMConfig.h6nTemp = launchUnits(
+    if IsDestroyedOrRTB(onSAMConfig.h6nTemp, 1) and IsDestroyedOrRTB(onSAMConfig.wz8Temp, 1) then
+        onSAMConfig.h6nTemp = LaunchUnits(
             onSAMConfig.const.h6nBaseGUID,
             onSAMConfig.const.h6nCourse,
             1,
@@ -57,7 +75,7 @@ local function attackSAMContacts(contacts, CONFIG)
             -- or emission == onSAMConfig.const.pac3SensorDBID
 
             if isSAM and contact.lastDetections and contact.lastDetections[1].age <= onSAMConfig.const.contactAge then
-                result = attackContact(
+                result = AttackContact(
                     contact,
                     4,
                     onSAMConfig.const.batteries,
@@ -74,14 +92,14 @@ local function attackMLRSContacts(contacts, CONFIG)
     local mlrsConfig = CONFIG.c.mlrs
 
     for _, package in ipairs(mlrsConfig.packages) do
-        local filteredContacts = filterContacts(contacts, function(value)
+        local filteredContacts = FilterContacts(contacts, function(value)
             return (value.typed == 8 or value.typed == 21) and value:inArea(package.area)
         end)
 
         for __, filteredContact in ipairs(filteredContacts) do
             if filteredContact.lastDetections
                 and filteredContact.lastDetections[1].age <= mlrsConfig.const.contactAge then
-                result = attackContact(
+                result = AttackContact(
                     filteredContact,
                     4,
                     package.batteries,
@@ -116,7 +134,7 @@ local function attackGLCMContacts(CONFIG)
             local isTheFirstStrike = BDA == nil and not (glcmConfig.packages[packageIdx].hasLaunchedTheFirstStrike)
 
             if (isTheFirstStrike or hasReconed) then
-                result = attackContact(
+                result = AttackContact(
                     contact,
                     glcmConfig.packages[packageIdx].num,
                     glcmConfig.packages[packageIdx].batteries,
@@ -131,7 +149,7 @@ local function attackGLCMContacts(CONFIG)
         glcmConfig.packages[packageIdx].index = glcmConfig.packages[packageIdx].index + 1
     end
 
-    local targetListLength = getCount(glcmConfig.packages[packageIdx].targetList)
+    local targetListLength = GetCount(glcmConfig.packages[packageIdx].targetList)
     local nextTargetListIdx = glcmConfig.packages[packageIdx].index
     local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
 
@@ -141,7 +159,7 @@ local function attackGLCMContacts(CONFIG)
     end
 
     glcmConfig.idxPackage = glcmConfig.idxPackage + 1
-    local packageLength = getCount(glcmConfig.packages)
+    local packageLength = GetCount(glcmConfig.packages)
     local nextPackageIdx = glcmConfig.idxPackage
     local isPackageIdxOutOfBounds = nextPackageIdx > packageLength
 
@@ -190,7 +208,7 @@ local function attackSRBMContacts(CONFIG)
             local strikeIfRadar = packageIdx == 1
 
             if (isTheFirstStrike or hasReconed or strikeIfRadar or isTimeExceeded) then
-                result = attackContact(
+                result = AttackContact(
                     contact,
                     srbmConfig.packages[packageIdx].num,
                     srbmConfig.packages[packageIdx].batteries,
@@ -219,7 +237,7 @@ local function attackSRBMContacts(CONFIG)
     end
     -- To do when the time is exceeded.
 
-    local targetListLength = getCount(srbmConfig.packages[packageIdx].targetList)
+    local targetListLength = GetCount(srbmConfig.packages[packageIdx].targetList)
     local nextTargetListIdx = srbmConfig.packages[packageIdx].index
     local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
 
@@ -233,7 +251,7 @@ local function attackSRBMContacts(CONFIG)
     end
 
     srbmConfig.idxPackage = srbmConfig.idxPackage + 1
-    local packageLength = getCount(srbmConfig.packages)
+    local packageLength = GetCount(srbmConfig.packages)
     local nextPackageIdx = srbmConfig.idxPackage
     local isPackageIdxOutOfBounds = nextPackageIdx > packageLength
 
@@ -254,18 +272,18 @@ end
 
 local function attackFacilityContacts(CONFIG)
     local landStrikeConfig = CONFIG.c.aircraft.landStrikeWithoutMission
-    local diffTime = 0
+    local elapsedTime = 0
 
     if landStrikeConfig.lastStrikeTime then
-        diffTime = ScenEdit_CurrentTime() - landStrikeConfig.lastStrikeTime
+        elapsedTime = ScenEdit_CurrentTime() - landStrikeConfig.lastStrikeTime
     end
 
-    local isToStrike = not landStrikeConfig.lastStrikeTime
-        or (landStrikeConfig.lastStrikeTime and diffTime >= landStrikeConfig.const.timeSpan)
+    local isAllowedToAttack = not landStrikeConfig.lastStrikeTime
+        or (landStrikeConfig.lastStrikeTime and elapsedTime >= landStrikeConfig.const.timeSpan)
 
     for _, package in ipairs(landStrikeConfig.packages) do
-        if not package.hasLaunched and isToStrike then
-            handleStrikePackagesWithoutMission(package)
+        if not package.hasLaunched and isAllowedToAttack then
+            HandleStrikePackagesWithoutMission(package)
             package.hasLaunched = true
             landStrikeConfig.lastStrikeTime = ScenEdit_CurrentTime()
             break
@@ -274,8 +292,8 @@ local function attackFacilityContacts(CONFIG)
 end
 
 local function handleStrikePackagesWithMission(package, contacts, filterFn, contactNum)
-    local function assignAllUnitsToStrikeMission(package)
-        local strikers = assingUnitToStrikeMission(
+    local assignAllUnitsToStrikeMission = function(package)
+        local strikers = AssignEmbarkedUnitToStrikeMission(
             package.striker.baseGUID,
             package.striker.num,
             package.striker.weaponDBID,
@@ -285,7 +303,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
         package.striker.units = strikers
 
         if package.escort then
-            local escorts = assingUnitToStrikeMission(
+            local escorts = AssignEmbarkedUnitToStrikeMission(
                 package.escort.baseGUID,
                 package.escort.num,
                 package.escort.weaponDBID,
@@ -296,7 +314,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
         end
 
         if package.wildWeasel then
-            local wildWeasels = assingUnitToStrikeMission(
+            local wildWeasels = AssignEmbarkedUnitToStrikeMission(
                 package.wildWeasel.baseGUID,
                 package.wildWeasel.num,
                 package.wildWeasel.weaponDBID,
@@ -314,14 +332,13 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
 
     if contacts and filterFn and contactNum then
         local fn = filterFn(package)
-        local filteredContacts = filterContacts(contacts, fn)
+        local filteredContacts = FilterContacts(contacts, fn)
 
-        if getCount(filteredContacts) >= contactNum then
+        if GetCount(filteredContacts) >= contactNum then
             for _, value in ipairs(filteredContacts) do
                 value.posture = 'H'
                 ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
             end
-
             assignAllUnitsToStrikeMission(package)
         end
     else
@@ -331,17 +348,17 @@ end
 
 local function attackStorageAndC2Contacts(CONFIG)
     local aircraftConfig = CONFIG.c.aircraft.landStrike
-    local diffTime = 0
+    local elapsedTime = 0
 
     if aircraftConfig.lastStrikeTime then
-        diffTime = ScenEdit_CurrentTime() - aircraftConfig.lastStrikeTime
+        elapsedTime = ScenEdit_CurrentTime() - aircraftConfig.lastStrikeTime
     end
 
-    local isToStrike = not aircraftConfig.lastStrikeTime
-        or (aircraftConfig.lastStrikeTime and diffTime >= aircraftConfig.const.timeSpan)
+    local isAllowedToAttack = not aircraftConfig.lastStrikeTime
+        or (aircraftConfig.lastStrikeTime and elapsedTime >= aircraftConfig.const.timeSpan)
 
     for _, package in ipairs(aircraftConfig.packages) do
-        if not package.hasLaunched and isToStrike then
+        if not package.hasLaunched and isAllowedToAttack then
             handleStrikePackagesWithMission(package)
             package.hasLaunched = true
             aircraftConfig.lastStrikeTime = ScenEdit_CurrentTime()
@@ -353,23 +370,21 @@ end
 local function attackShipContacts(contacts, CONFIG)
     local antishipConfig = CONFIG.c.aircraft.antiShip
     local fn = function(package)
-        local _package = package
         return function(value)
-            return value.typed == 2 and value:inArea(_package.area)
+            return value.typed == 2 and value:inArea(package.area)
         end
     end
-
-    local diffTime = 0
+    local elapsedTime = 0
 
     if antishipConfig.lastStrikeTime then
-        diffTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
+        elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
     end
 
-    local isToStrike = not antishipConfig.lastStrikeTime
-        or (antishipConfig.lastStrikeTime and diffTime >= antishipConfig.const.timeSpan)
+    local isAllowedToAttack = not antishipConfig.lastStrikeTime
+        or (antishipConfig.lastStrikeTime and elapsedTime >= antishipConfig.const.timeSpan)
 
     for _, package in ipairs(antishipConfig.packages) do
-        if not package.hasLaunched and isToStrike then
+        if not package.hasLaunched and isAllowedToAttack then
             handleStrikePackagesWithMission(package, contacts, fn, 4)
             package.hasLaunched = true
             antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
@@ -392,17 +407,17 @@ local function launchAirIntercept(contacts, CONFIG)
             return false
         end
     end
-    local diffTime = 0
+    local elapsedTime = 0
 
     if airInterceptConfig.lastStrikeTime then
-        diffTime = ScenEdit_CurrentTime() - airInterceptConfig.lastStrikeTime
+        elapsedTime = ScenEdit_CurrentTime() - airInterceptConfig.lastStrikeTime
     end
 
-    local isToStrike = not airInterceptConfig.lastStrikeTime
-        or (airInterceptConfig.lastStrikeTime and diffTime >= airInterceptConfig.const.timeSpan)
+    local isAllowedToAttack = not airInterceptConfig.lastStrikeTime
+        or (airInterceptConfig.lastStrikeTime and elapsedTime >= airInterceptConfig.const.timeSpan)
 
     for _, package in ipairs(airInterceptConfig.packages) do
-        if not package.hasLaunched and isToStrike then
+        if not package.hasLaunched and isAllowedToAttack then
             handleStrikePackagesWithMission(package, contacts, fn, 1)
             package.hasLaunched = true
             airInterceptConfig.lastStrikeTime = ScenEdit_CurrentTime()
@@ -413,7 +428,7 @@ end
 
 local function attackSLCMContacts(CONFIG)
     local slcmConfig = CONFIG.c.slcm
-    launchSLCM(
+    LaunchSLCM(
         slcmConfig.const.submarines,
         slcmConfig.const.weaponDBID,
         8,
@@ -493,5 +508,3 @@ gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 
 
 -- { FLOOD = 'No Flooding', FIRES = 'Major Fire', STRUCTURAL = 'Heavy damage' }
---print(STRIKE_ON_FACILITY.SRBM_STRIKE_PACKAGE[4].targetList[2])
---print(ScenEdit_GetMission('China', 'STRIKE ON SHELTER 2').targetlist)

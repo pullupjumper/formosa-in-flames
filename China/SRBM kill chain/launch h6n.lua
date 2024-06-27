@@ -6,7 +6,7 @@ if CONFIG == nil then
 end
 
 
-CONFIG.c.srbm.onSAM.h6nTemp = launchUnits(
+CONFIG.c.srbm.onSAM.h6nTemp = LaunchUnits(
     CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
     CONFIG.c.srbm.onSAM.const.h6nCourse,
     1,

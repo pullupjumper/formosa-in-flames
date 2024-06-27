@@ -88,6 +88,10 @@ CONFIG.const.loadoutDBID2 = 31490 -- z-10
 CONFIG.const.loadoutDBID3 = 18367 -- z-18
 CONFIG.const.radarDistance = 70
 CONFIG.const.readytime = 3600 * 1.5
+---@class BatteryState
+---@field STATIC number
+---@field REPOSITIONING number
+---@field RESUPPLY number
 CONFIG.const.batteryState = {}
 CONFIG.const.batteryState.STATIC = 0
 CONFIG.const.batteryState.REPOSITIONING = 1
@@ -226,7 +230,16 @@ CONFIG.c.glcm.const.position = {
     },
 
 }
+---@class CONFIG__Battery:table
+---@field name string
+---@field guid string
+---@field reloadStartTime? number @in seconds or nil
+---@field state? BatteryState @ STATIC = 0, REPOSITIONING = 1, RESUPPLY = 2
+---@field position table
+---@field weaponDBID number
+---@field wpnStorageFacility string
 CONFIG.c.glcm.batteries = {
+    ---@type CONFIG__Battery
     {
         guid = '6Z8LM5-0HMN97ERAUODK',
         name = 'GLCM (635th Brigade)',
@@ -455,8 +468,6 @@ CONFIG.c.srbm.packages = {
         batteries = {
             { name = 'SRBM (614th Brigade)', guid = 'X58F5H-0HN1LQGRV8HNQ', batteryIdx = 2 },
             { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', batteryIdx = 5 }
-            -- CONFIG.c.srbm.batteries[2],
-            -- CONFIG.c.srbm.batteries[5]
         },
         num = 2,
         index = 1,
@@ -468,8 +479,6 @@ CONFIG.c.srbm.packages = {
         batteries = {
             { name = 'SRBM (636th Brigade)', guid = 'X58F5H-0HN1FI7IOAS9J', batteryIdx = 3 },
             { name = 'SRBM (617th Brigade)', guid = 'X58F5H-0HN1G2IFMBPJD', batteryIdx = 6 }
-            -- CONFIG.c.srbm.batteries[3],
-            -- CONFIG.c.srbm.batteries[6],
         },
         num = 4,
         index = 1,
@@ -481,8 +490,6 @@ CONFIG.c.srbm.packages = {
         batteries = {
             { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', batteryIdx = 5 },
             { name = 'SRBM (615th Brigade)', guid = 'X58F5H-0HN1G2IFLNKG9', batteryIdx = 1 }
-            -- CONFIG.c.srbm.batteries[1],
-            -- CONFIG.c.srbm.batteries[5],
         },
         num = 4,
         index = 1,
@@ -493,7 +500,6 @@ CONFIG.c.srbm.packages = {
         targetList = {},
         batteries = {
             { name = 'SRBM (616th Brigade)', guid = 'X58F5H-0HN1G2IFLF6QE', batteryIdx = 4 }
-            -- CONFIG.c.srbm.batteries[4],
         },
         num = 2,
         index = 1,

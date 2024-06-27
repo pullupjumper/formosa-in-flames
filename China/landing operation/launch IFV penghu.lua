@@ -17,7 +17,7 @@ if ship.cargo[1] then
 end
 
 if ship.dbid == 4601 and cargoDBID and cargoDBID == 3 then
-    launchAmphibiousIFV({
+    LaunchAmphibiousIFV({
         ship = ship,
         num = 10,
         bearing = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.horizontal,

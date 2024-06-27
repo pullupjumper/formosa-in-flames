@@ -1,11 +1,15 @@
 local contact = ScenEdit_UnitC()
 local units = VP_GetSide({ Side = 'China' }).units
+
+if contact == nil then
+    ScenEdit_SpecialMessage('China', 'contact == nil')
+    return
+end
+
 local latitude = contact.latitude
 local longitude = contact.longitude
 local temp = { unit = nil, distance = CONFIG.const.radarDistance }
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-ScenEdit_SpecialMessage('China', 'event is activated.')
-
 
 if CONFIG == nil then
     ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
@@ -29,6 +33,6 @@ for _, value in ipairs(units) do
 end
 
 if temp.unit ~= nil then
-    local result = ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    ScenEdit_SpecialMessage('China', tostring(temp.unit.name))
+    ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
+    ScenEdit_SpecialMessage('China', tostring(temp.unit.name) .. '\'s radar is activated.')
 end

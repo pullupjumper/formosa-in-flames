@@ -283,7 +283,7 @@ function isAllUnitsUnassigned(units)
     return true
 end
 
-function filter(list, handler)
+function Filter(list, handler)
     local temp = {}
 
     for index, value in ipairs(list) do
@@ -307,7 +307,7 @@ function reposition(state, weaponNum, reloadingTime, handler)
             if stateValue.state == 'hidingPosition'
                 and unit:inArea(stateValue.hidingPosition)
                 and diffTime >= reloadingTime then
-                unit.course = reverse(stateValue.course)
+                unit.course = Reverse(stateValue.course)
                 ScenEdit_SetUnit({ guid = stateValue.guid, manualthrottle = 'Flank', manualSpeed = 30 })
                 stateValue.state = 'repositioning'
                 stateValue.hasReloaded = true
@@ -365,4 +365,94 @@ function reloadMissile(launcherState, reloadTime, weaponDBID)
             end
         end
     end
+end
+
+function refuelUnits(groupName, refuelingMission, area, side)
+    local group = ScenEdit_GetUnit({ side = side, name = groupName })
+    local mission = ScenEdit_GetMission(side, refuelingMission)
+    if group == nil or mission == nil then return end
+
+    if group:inArea(area) then
+        ScenEdit_RefuelUnit({ side = side, name = groupName, missions = { mission.guid } })
+    end
+end
+
+function initLaunchers(side, launcherState, magazineWeaponNum, handler)
+    local units = VP_GetSide({ Side = side }).units
+    local launchers = {}
+
+    for index, value in ipairs(units) do
+        local unit = SE_GetUnit({ guid = value.guid })
+        handler(unit, launchers)
+    end
+
+    for index, unit in ipairs(launchers) do
+        local state = { unit = unit.guid, mounts = {} }
+
+        for mountIndex, mount in ipairs(unit.mounts) do
+            local mountTemp = { reloadStartTime = nil, magazineWeaponNum = magazineWeaponNum }
+            state.mounts[mountIndex] = mountTemp
+        end
+
+        table.insert(launcherState, state)
+    end
+end
+
+function initUnitsForASW()
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+    if CONFIG ~= nil then
+        ScenEdit_GetMission('China', 'ASW CSG').isactive = true
+        ScenEdit_GetMission('China', 'AEW CSG').isactive = true
+        ScenEdit_GetMission('China', 'ASW PATROL AC').isactive = true
+        ScenEdit_GetMission('China', 'ASW BASHI').isactive = true
+        ScenEdit_GetMission('China', 'ASW EAST').isactive = true
+        ScenEdit_GetMission('Taiwan', 'ASW EAST').isactive = true
+
+        -- ScenEdit_GetEvent('(China) Landing ships move to area').isActive = false
+        -- ScenEdit_GetEvent('(China) Strike on SAMs').isActive = false
+        -- ScenEdit_GetEvent('(China) Launch H6N').isActive = false
+
+        for index, value in ipairs(CONFIG.c.asw.const.submarine) do
+            local sub = SE_GetUnit({ guid = value.guid })
+
+            if sub ~= nil then
+                ScenEdit_AssignUnitToMission(value.guid, value.missionName)
+                sub.course = value.course
+            end
+        end
+    else
+        ScenEdit_GetMission('China', 'ASW CSG').isactive = false
+        ScenEdit_GetMission('China', 'AEW CSG').isactive = false
+        ScenEdit_GetMission('China', 'ASW PATROL AC').isactive = false
+        ScenEdit_GetMission('China', 'ASW BASHI').isactive = false
+        ScenEdit_GetMission('China', 'ASW EAST').isactive = false
+        ScenEdit_GetMission('Taiwan', 'ASW EAST').isactive = false
+
+        -- ScenEdit_GetEvent('(China) Landing ships move to area').isActive = true
+        -- ScenEdit_GetEvent('(China) Strike on SAMs').isActive = true
+        -- ScenEdit_GetEvent('(China) Launch H6N').isActive = true
+    end
+end
+
+function isRunOutOfAmmo(mount)
+    for weaponIndex, weapon in ipairs(mount['mount_weapons']) do
+        if weapon['wpn_name'] ~= nil and weapon['wpn_current'] == 0 then
+            return true
+        end
+    end
+end
+
+---@param name string
+---@param units table<number, CMO__Unit>
+function isMissileHit(name, units)
+    for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit ~= nil and string.find(unit.name, name) and unit.type == 'Weapon' then
+            return false
+        end
+    end
+
+    return true
 end

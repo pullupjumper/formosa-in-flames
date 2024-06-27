@@ -12,38 +12,38 @@ for index, info in ipairs(CONFIG.c.landingOperation.const.cargoInfoForTransfer) 
         local u = SE_GetUnit({ guid = v.guid })
 
         if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(info.anchorageArea) then
-            transferCargo(
+            TransferCargo(
                 u.guid,
                 'Boats',
                 info.boat.dbid,
                 info.boat.cargoItem
             )
-            transferCargo(
+            TransferCargo(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
                 info.tansportHelicopter.cargoItem
             )
-            assignEmbarkedUnitsToMission(
+            AssignEmbarkedUnitsToEachMissionByMissionNum(
                 u.guid,
                 'Boats',
                 info.boat.dbid,
                 info.boat.missions
             )
-            assignEmbarkedUnitsToMission(
+            AssignEmbarkedUnitsToEachMissionByMissionNum(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
                 info.tansportHelicopter.missions
             )
-            assignUnitToFerryMission(
+            AssignEmbarkedUnitToMissionByUnitNum(
                 u.guid,
                 13,
                 info.attackHelicopter1.dbid,
                 'Aircraft',
                 info.attackHelicopter1.missions[1]
             )
-            assignUnitToFerryMission(
+            AssignEmbarkedUnitToMissionByUnitNum(
                 u.guid,
                 13,
                 info.attackHelicopter2.dbid,
@@ -53,25 +53,25 @@ for index, info in ipairs(CONFIG.c.landingOperation.const.cargoInfoForTransfer) 
         end
 
         if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(info.anchorageArea) then
-            transferCargo(
+            TransferCargo(
                 u.guid,
                 'Boats',
                 info.boat.dbid,
                 info.boat.cargoItem
             )
-            transferCargo(
+            TransferCargo(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
                 info.tansportHelicopter.cargoItem
             )
-            assignEmbarkedUnitsToMission(
+            AssignEmbarkedUnitsToEachMissionByMissionNum(
                 u.guid,
                 'Boats',
                 info.boat.dbid,
                 info.boat.missions
             )
-            assignEmbarkedUnitsToMission(
+            AssignEmbarkedUnitsToEachMissionByMissionNum(
                 u.guid,
                 'Aircraft',
                 info.tansportHelicopter.dbid,
