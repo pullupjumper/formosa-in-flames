@@ -14,7 +14,7 @@ if CONFIG == nil then
 end
 
 if contacts ~= nil then
-    for index, value in ipairs(contacts) do
+    for _, value in ipairs(contacts) do
         if value:inArea(CONFIG.t.asm.const.nai1) and value.type == 'Surface' then
             table.insert(temp, value)
         end
@@ -61,7 +61,7 @@ if GetCount(temp) >= 1 and radarTrucks ~= nil then
     --         })
     -- end
 
-    for index, value in ipairs(radarTrucks) do
+    for _, value in ipairs(radarTrucks) do
         ScenEdit_SetEMCON('Unit', value.guid, 'Radar=Active')
     end
 

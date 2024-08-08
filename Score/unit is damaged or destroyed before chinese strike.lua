@@ -8,27 +8,37 @@ if CONFIG == nil then
 end
 
 if unit then
-    local targets = unit.targetedBy
-    -- ScenEdit_MsgBox(tostring(targets[1]), 1)
-    -- ScenEdit_MsgBox(tostring(unit.pickedUpBy), 1)
-
-
-    for _, guid in ipairs(targets) do
-        local target = SE_GetUnit({ guid = guid })
-
-        if target then
-            if (target.type ~= 'Submarine') and (target.dbid ~= CONFIG.s.const.weaponDBID) then
-                local score = ScenEdit_GetScore("Taiwan")
-                ScenEdit_SetScore(
-                    "Taiwan", (score + CONFIG.s.const.attackBeforeTheHHour),
-                    "Attack before the H hour."
-                )
-                ScenEdit_SpecialMessage(
-                    'Taiwan',
-                    CONFIG.s.const.msg.attackBeforeTheHHour,
-                    { latitude = unit.latitude, longitude = unit.longitude }
-                )
-            end
-        end
-    end
+    local score = ScenEdit_GetScore("Taiwan")
+    ScenEdit_SetScore(
+        "Taiwan", (score + CONFIG.s.const.attackBeforeTheHHour),
+        "Attacked before the Chinese missile strike."
+    )
+    ScenEdit_SpecialMessage(
+        'Taiwan',
+        'You have attacked first and caused a military esclaion.',
+        { latitude = unit.latitude, longitude = unit.longitude }
+    )
 end
+
+-- if unit then
+--     local targets = unit.targetedBy
+
+--     for _, guid in ipairs(targets) do
+--         local target = SE_GetUnit({ guid = guid })
+
+--         if target then
+--             if (target.type ~= 'Submarine') and (target.dbid ~= CONFIG.s.const.weaponDBID) then
+--                 local score = ScenEdit_GetScore("Taiwan")
+--                 ScenEdit_SetScore(
+--                     "Taiwan", (score + CONFIG.s.const.attackBeforeTheHHour),
+--                     "Attack before the H hour."
+--                 )
+--                 ScenEdit_SpecialMessage(
+--                     'Taiwan',
+--                     CONFIG.s.const.msg.attackBeforeTheHHour,
+--                     { latitude = unit.latitude, longitude = unit.longitude }
+--                 )
+--             end
+--         end
+--     end
+-- end

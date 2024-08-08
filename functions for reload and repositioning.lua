@@ -54,7 +54,7 @@ function IsRunOutOfAmmunition(mounts, weaponDBID, magazines)
     return isRunOutOfAmmo
 end
 
-function Resupply(battery, weaponDBID)
+function Reload(battery, weaponDBID)
     local group = SE_GetUnit({ guid = battery.guid })
     if group == nil then return end
 
@@ -229,8 +229,7 @@ function CheckBatteryState(CONFIG, platform, batteries, side, isRepositioningAut
                         and isGroupRunOutOfAmmunition(group, battery.weaponDBID)
 
                     if isMoreThanReloadTime then
-                        Resupply(battery, battery.weaponDBID)
-                        -- if CONFIG.isDevMode then ScenEdit_MsgBox('After resupply', 1) end
+                        Reload(battery, battery.weaponDBID)
                     end
 
                     if not isGroupRunOutOfAmmunition(group, battery.weaponDBID) then toFringPosition(battery, group) end
@@ -247,7 +246,7 @@ function CheckBatteryState(CONFIG, platform, batteries, side, isRepositioningAut
                     and isGroupRunOutOfAmmunition(group, battery.weaponDBID)
 
                 if isMoreThanReloadTime then
-                    Resupply(battery, battery.weaponDBID)
+                    Reload(battery, battery.weaponDBID)
                     if CONFIG.isDevMode then ScenEdit_MsgBox('Missile reload is finished', 1) end
                 end
             end

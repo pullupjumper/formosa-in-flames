@@ -65,12 +65,67 @@ function RenameUnitsFromBase(fromUnit, num, weaponDBID, name)
     end
 end
 
+function LaunchAircraftToStrike(fromUnit, num, weaponDBID, allocation, targetList, course)
+    local base = ScenEdit_GetUnit({ guid = fromUnit })
+    if base == nil then return end
+    local platforms = base.embarkedUnits['Aircraft']
+    if platforms == nil then return end
+    local aircraftNumPerTarget = num // GetCount(targetList)
+    local index = 1
+    local filteredPlatforms = {}
+
+    for _, v in ipairs(platforms) do
+        local unit = SE_GetUnit({ guid = v })
+
+        if unit then
+            local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
+
+            if weapons then
+                for _, w in ipairs(weapons) do
+                    if w["wpn_dbid"] == weaponDBID and w["wpn_current"] > 0 then
+                        table.insert(filteredPlatforms, unit)
+                    end
+                end
+            end
+        end
+
+        if GetCount(filteredPlatforms) >= num then
+            break
+        end
+    end
+
+    for k, unit in ipairs(filteredPlatforms) do
+        local contact = ScenEdit_GetContact({ side = 'China', guid = targetList[index].guid })
+        unit:Launch(true)
+
+        if course ~= nil then
+            unit.course = course
+        end
+
+        if contact then
+            ScenEdit_AttackContact(
+                unit.guid,
+                targetList[index].guid,
+                { mode = '1', weapon = weaponDBID, qty = allocation }
+            )
+        end
+
+        unit:RTB(true)
+
+        if k % aircraftNumPerTarget == 0 and aircraftNumPerTarget > 1 then
+            index = index + 1
+        end
+    end
+
+    return filteredPlatforms
+end
+
 ---@class Package:table
 ---@field fromUnit string
 ---@field num number
 ---@field weaponDBID number
 ---@field allocation number
----@field course CMO__TableOfWaypoints
+---@field course CMO__TableOfWaypoints|nil
 ---@field targetList table<number, string>
 ---@param package Package
 function HandleStrikePackagesWithoutMission(package)
@@ -111,7 +166,10 @@ function HandleStrikePackagesWithoutMission(package)
     for k, unit in ipairs(filteredPlatforms) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = targetList[index].guid })
         unit:Launch(true)
-        unit.course = course
+
+        if course ~= nil then
+            unit.course = course
+        end
 
         if contact then
             ScenEdit_AttackContact(
@@ -139,14 +197,16 @@ function AssignEmbarkedUnitsToEachMissionByMissionNum(fromUnit, platformType, pl
     local platforms = base.embarkedUnits[platformType]
     local count = GetCount(missionList)
     local index = 1
-    local filterHandler = function(idx, item)
-        local unit = SE_GetUnit({ guid = item })
+    local filteredPlatforms = {}
+
+    for _, value in ipairs(platforms) do
+        local unit = SE_GetUnit({ guid = value })
         if unit ~= nil and unit.dbid == platformDBID then
-            return true
+            unit.manualSpeed = 'OFF'
+            table.insert(filteredPlatforms, unit)
         end
-        return false
     end
-    local filteredPlatforms = Filter(platforms, filterHandler)
+
     local platformNum = GetCount(filteredPlatforms) // count
     for idx, item in ipairs(filteredPlatforms) do
         ScenEdit_AssignUnitToMission(item.guid, missionList[index])
@@ -156,14 +216,56 @@ function AssignEmbarkedUnitsToEachMissionByMissionNum(fromUnit, platformType, pl
     end
 end
 
+function AssignEmbarkedUnitToMissionByWeapon(fromUnit, num, weaponDBID, platformType, missionName, course)
+    local base = ScenEdit_GetUnit({ guid = fromUnit })
+    local count = 0
+    local temp = {}
+    if base == nil or base.embarkedUnits[platformType] == nil then return end
+
+    for _, item in ipairs(base.embarkedUnits[platformType]) do
+        local unit = ScenEdit_GetUnit({ guid = item })
+
+        if unit then
+            local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
+            local weaponNum = 0
+
+            if weapons then
+                for _, w in ipairs(weapons) do
+                    if w["wpn_dbid"] == weaponDBID then
+                        weaponNum = w["wpn_current"]
+                    end
+                end
+            end
+
+            if weaponNum > 0 and unit.readytime_v == 0 and count < num then
+                ScenEdit_AssignUnitToMission(unit.guid, missionName)
+
+                if course ~= nil then
+                    unit.course = course
+                end
+
+                count = count + 1
+                table.insert(temp, unit)
+            end
+        end
+
+        if count >= num then
+            break
+        end
+    end
+    return temp
+end
+
 ---@param fromUnit string
 ---@param num number
 ---@param platformDBID number
 ---@param platformType string
 ---@param missionName string
+---@return table
 function AssignEmbarkedUnitToMissionByUnitNum(fromUnit, num, platformDBID, platformType, missionName)
     local base = ScenEdit_GetUnit({ guid = fromUnit })
     local count = 0
+    local temp = {}
     if base == nil or base.embarkedUnits[platformType] == nil then return end
     for _, item in ipairs(base.embarkedUnits[platformType]) do
         local unit = ScenEdit_GetUnit({ guid = item })
@@ -171,12 +273,14 @@ function AssignEmbarkedUnitToMissionByUnitNum(fromUnit, num, platformDBID, platf
         if unit ~= nil and unit.dbid == platformDBID and unit.readytime_v == 0 and count < num then
             ScenEdit_AssignUnitToMission(unit.guid, missionName)
             count = count + 1
+            table.insert(temp, unit)
         end
 
         if count >= num then
             break
         end
     end
+    return temp
 end
 
 ---@param fromUnit string

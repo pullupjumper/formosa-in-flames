@@ -19,9 +19,9 @@ for _, component in ipairs(unit.components) do
             or component['comp_dbid'] == CONFIG.const.sensorBDID5
             or component['comp_dbid'] == CONFIG.const.sensorBDID6)
         and component['comp_status'] == 'Destroyed' then
-        ScenEdit_SpecialMessage('China', tostring(unit.name .. ' is damaged'))
-        ScenEdit_MsgBox(tostring(component['comp_dbid']), 1)
-        ScenEdit_MsgBox(tostring(component['comp_status']), 1)
+        ScenEdit_SpecialMessage('China', tostring(unit.name .. '\'s radar is damaged'))
+        ScenEdit_SpecialMessage('China', tostring(component['comp_dbid']))
+        ScenEdit_SpecialMessage('China', tostring(component['comp_status']))
         isDestroyed = true
     end
 end

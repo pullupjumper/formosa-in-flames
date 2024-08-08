@@ -12,9 +12,9 @@ end
 
 local emission = contact.emissions[1]['sensor_dbid']
 
-local isSAM = emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
+local isSAM = emission ~= nil and (emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
     or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2
-    or emission == CONFIG.c.srbm.onSAM.const.tk2SensorDBID
+    or emission == CONFIG.c.srbm.onSAM.const.tk2SensorDBID)
 -- or emission == CONFIG.c.srbm.onSAM.const.pac3SensorDBID
 
 if isSAM then

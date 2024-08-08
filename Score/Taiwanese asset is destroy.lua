@@ -9,33 +9,30 @@ end
 
 if unit then
     local score = ScenEdit_GetScore("Taiwan")
-
-    if unit.type == 'Aircraft' then
-        if unit.condition == 'Parked' then
-            ScenEdit_SetScore(
-                "Taiwan",
-                (score + CONFIG.s.const.aircraftIsDestroyedOnTheGround),
-                "An aircraft is destoryed on the ground"
-            )
-        end
-    end
+    -- if unit.type == 'Aircraft' then
+    --     if unit.condition == 'Parked' then
+    --         ScenEdit_SetScore(
+    --             "Taiwan",
+    --             (score + CONFIG.s.const.aircraftIsDestroyedOnTheGround),
+    --             "An aircraft is destoryed on the ground"
+    --         )
+    --     end
+    -- end
 
     if unit.type == 'Facility' then
-        if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.samIsDestroyed), "A SAM battery is destoryed")
-        end
+        -- if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
+        --     ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.samIsDestroyed), "A SAM battery is destoryed")
+        -- end
 
         if unit.dbid == CONFIG.const.platformBDID26 then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.undergroundShelterIsDestroyed),
-                "An underground shelter is destoryed"
+                "Underground shelter has been destoryed"
             )
         end
 
         if unit.dbid == CONFIG.const.platformBDID27 then
-            -- ScenEdit_MsgBox(unit.guid, 1)
-
             for _, battery in ipairs(CONFIG.t.srbm.batteries) do
                 if unit.guid == battery.wpnStorageFacility then
                     battery.position.magazineWeapenNum = 0
@@ -48,7 +45,7 @@ if unit then
                 end
             end
 
-            ScenEdit_SpecialMessage('Taiwan', "A weapon storage facility is destoryed")
+            ScenEdit_SpecialMessage('Taiwan', "Weapon storage facility has been destoryed")
         end
     end
 end

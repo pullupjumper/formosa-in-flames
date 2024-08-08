@@ -283,7 +283,33 @@ local function attackFacilityContacts(CONFIG)
 
     for _, package in ipairs(landStrikeConfig.packages) do
         if not package.hasLaunched and isAllowedToAttack then
-            HandleStrikePackagesWithoutMission(package)
+            -- HandleStrikePackagesWithoutMission(package)
+            if package.striker then
+                local strikers = LaunchAircraftToStrike(
+                    package.striker.baseGUID,
+                    package.striker.num,
+                    package.striker.weaponDBID,
+                    package.allocation,
+                    package.targetList,
+                    package.course
+                )
+
+                package.striker.units = strikers
+            end
+
+            -- if package.wildWeasel then
+            --     local wildWeasels = AssignEmbarkedUnitToMissionByWeapon(
+            --         package.wildWeasel.baseGUID,
+            --         package.wildWeasel.num,
+            --         package.wildWeasel.weaponDBID,
+            --         'Aircraft',
+            --         package.wildWeasel.missionName,
+            --         package.course
+            --     )
+
+            --     package.wildWeasel.units = wildWeasels
+            -- end
+
             package.hasLaunched = true
             landStrikeConfig.lastStrikeTime = ScenEdit_CurrentTime()
             break

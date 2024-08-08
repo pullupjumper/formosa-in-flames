@@ -102,6 +102,10 @@ function GenerateLocations(params)
     local locations = {}
     local locationTemp = params.initialLocation
 
+    if numTemp == 0 then
+        return {}
+    end
+
     for i = 1, numTemp, 1 do
         if i > 1 then
             distanceTemp = params.distance
@@ -307,192 +311,154 @@ function AddLandingShips()
         return
     end
 
-    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
     local shipInfo = CONFIG.c.landingOperation.const.shipInfo
     local cargoList = CONFIG.c.landingOperation.const.cargoList
 
-    for i, area in ipairs(shipLocationInfo[idx].from.areas) do
-        local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-        local firstRp075_2 = GetPointFromBearing({
-            initialLocation = firstRp075,
-            bearing = area.heading.horizontal,
-            distance = 1.5
-        })
-        local firstRp071 = GetPointFromBearing({
-            initialLocation = firstRp075,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        local firstRp072a = GetPointFromBearing({
-            initialLocation = firstRp071,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        local firstRp072iii = GetPointFromBearing({
-            initialLocation = firstRp072a,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        local firstRp073a = GetPointFromBearing({
-            initialLocation = firstRp072iii,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        AddUnitsByRP(
-            {
+    for _, infoItem in ipairs(shipLocationInfo) do
+        for _, area in ipairs(infoItem.from.areas) do
+            local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
+            local firstRp071 = GetPointFromBearing({
                 initialLocation = firstRp075,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 2
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 075',
-                dbid = CONFIG.const.platformBDID6,
-                cargo = cargoList.type075,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            {
-                { 12, {
-                    side = 'China',
-                    type = 'aircraft',
-                    name = 'Warhorse',
-                    dbid = CONFIG.const.platformBDID2,
-                    loadoutid = CONFIG.const.loadoutDBID3
-                } },
-                { 13, {
-                    side = 'China',
-                    type = 'aircraft',
-                    name = 'Wardog',
-                    dbid = CONFIG.const.platformBDID4,
-                    loadoutid = CONFIG.const.loadoutDBID1
-                } },
-                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
-            }
-        )
-
-        AddUnitsByRP(
-            {
-                initialLocation = firstRp075_2,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 2
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 075',
-                dbid = CONFIG.const.platformBDID6,
-                cargo = cargoList.type075,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            {
-                { 12, {
-                    side = 'China',
-                    type = 'aircraft',
-                    name = 'Warhorse',
-                    dbid = CONFIG.const.platformBDID2,
-                    loadoutid = CONFIG.const.loadoutDBID3
-                } },
-                { 13, {
-                    side = 'China',
-                    type = 'aircraft',
-                    name = 'Wardog',
-                    dbid = CONFIG.const.platformBDID5,
-                    loadoutid = CONFIG.const.loadoutDBID2
-                } },
-                { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
-            }
-        )
-
-        AddUnitsByRP(
-            {
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp072a = GetPointFromBearing({
                 initialLocation = firstRp071,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 4
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 071',
-                dbid = CONFIG.const.platformBDID7,
-                cargo = cargoList.type071,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            {
-                { 4, {
-                    side = 'China',
-                    type = 'aircraft',
-                    name = 'Warhorse',
-                    dbid = CONFIG.const.platformBDID2,
-                    loadoutid = CONFIG.const.loadoutDBID3
-                } },
-                { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
-            }
-        )
-
-        AddUnitsByRP(
-            {
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp072iii = GetPointFromBearing({
                 initialLocation = firstRp072a,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 4
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 072A',
-                dbid = CONFIG.const.platformBDID9,
-                cargo = cargoList.type072a,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            nil
-        )
-
-        AddUnitsByRP(
-            {
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp073a = GetPointFromBearing({
                 initialLocation = firstRp072iii,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 4
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 072III',
-                dbid = CONFIG.const.platformBDID8,
-                cargo = cargoList.type072iii,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            nil
-        )
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
 
-        AddUnitsByRP(
-            {
-                initialLocation = firstRp073a,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance,
-                num = 4
-            },
-            {
-                side = 'China',
-                type = 'Ship',
-                name = 'Type 073A',
-                dbid = CONFIG.const.platformBDID10,
-                cargo = cargoList.type073a,
-                heading = area.heading.vertical,
-                manualSpeed = shipInfo.shipSpeed,
-            },
-            nil
-        )
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp075,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type075
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 075',
+                    dbid = CONFIG.const.platformBDID6,
+                    cargo = cargoList.type075,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                {
+                    { 12, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = 'Warhorse',
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
+                    } },
+                    { 13, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = 'Wardog',
+                        dbid = CONFIG.const.platformBDID5,
+                        loadoutid = CONFIG.const.loadoutDBID2
+                    } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                }
+            )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp071,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type071
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 071',
+                    dbid = CONFIG.const.platformBDID7,
+                    cargo = cargoList.type071,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                {
+                    { 4, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = 'Warhorse',
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
+                    } },
+                    { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                }
+            )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp072a,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type072a
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 072A',
+                    dbid = CONFIG.const.platformBDID9,
+                    cargo = cargoList.type072a,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                nil
+            )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp072iii,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type072iii
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 072III',
+                    dbid = CONFIG.const.platformBDID8,
+                    cargo = cargoList.type072iii,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                nil
+            )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp073a,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type073a
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 073A',
+                    dbid = CONFIG.const.platformBDID10,
+                    cargo = cargoList.type073a,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                nil
+            )
+        end
     end
 
     -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
@@ -507,81 +473,82 @@ function CalculateDestination()
     --     return
     -- end
 
-    local idx = CONFIG.c.landingOperation.idxShipLocationInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
     local shipInfo = CONFIG.c.landingOperation.const.shipInfo
 
-    for i, area in ipairs(shipLocationInfo[idx].to.areas) do
-        local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-        local firstRp071 = ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
-        local firstRp072iii = GetPointFromBearing({
-            initialLocation = firstRp075,
-            bearing = area.heading.vertical,
-            distance = shipInfo.distanceBetweenLSTAndLPDArea
-        })
-        local firstRp072a = GetPointFromBearing({
-            initialLocation = firstRp072iii,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        local firstRp073a = GetPointFromBearing({
-            initialLocation = firstRp072a,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        local firstRp071InLSTArea = GetPointFromBearing({
-            initialLocation = firstRp073a,
-            bearing = area.heading.vertical,
-            distance = shipInfo.verticalDistance
-        })
-        InsertList(
-            shipLocationInfo[idx].to.result.type075.locations,
-            GenerateLocations({
+    for _, infoItem in ipairs(shipLocationInfo) do
+        for _, area in ipairs(infoItem.to.areas) do
+            local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
+            local firstRp071 = ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
+            local firstRp072iii = GetPointFromBearing({
                 initialLocation = firstRp075,
-                num = area.num.type075,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
-        InsertList(
-            shipLocationInfo[idx].to.result.type071.locations,
-            GenerateLocations({
-                initialLocation = firstRp071,
-                num = area.num.type071,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
-        InsertList(
-            shipLocationInfo[idx].to.result.type072iii.locations,
-            GenerateLocations({
+                bearing = area.heading.vertical,
+                distance = shipInfo.distanceBetweenLSTAndLPDArea
+            })
+            local firstRp072a = GetPointFromBearing({
                 initialLocation = firstRp072iii,
-                num = area.num.type072iii,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
-        InsertList(
-            shipLocationInfo[idx].to.result.type072a.locations,
-            GenerateLocations({
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp073a = GetPointFromBearing({
                 initialLocation = firstRp072a,
-                num = area.num.type072a,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
-        InsertList(
-            shipLocationInfo[idx].to.result.type073a.locations,
-            GenerateLocations({
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp071InLSTArea = GetPointFromBearing({
                 initialLocation = firstRp073a,
-                num = area.num.type073a,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
-        InsertList(
-            shipLocationInfo[idx].to.result.type071InLSTArea.locations,
-            GenerateLocations({
-                initialLocation = firstRp071InLSTArea,
-                num = area.num.type071InLSTArea,
-                bearing = area.heading.horizontal,
-                distance = shipInfo.horizontalDistance
-            }))
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            InsertList(
+                infoItem.to.result.type075.locations,
+                GenerateLocations({
+                    initialLocation = firstRp075,
+                    num = area.num.type075,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type071.locations,
+                GenerateLocations({
+                    initialLocation = firstRp071,
+                    num = area.num.type071,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type072iii.locations,
+                GenerateLocations({
+                    initialLocation = firstRp072iii,
+                    num = area.num.type072iii,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type072a.locations,
+                GenerateLocations({
+                    initialLocation = firstRp072a,
+                    num = area.num.type072a,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type073a.locations,
+                GenerateLocations({
+                    initialLocation = firstRp073a,
+                    num = area.num.type073a,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type071InLSTArea.locations,
+                GenerateLocations({
+                    initialLocation = firstRp071InLSTArea,
+                    num = area.num.type071InLSTArea,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+        end
     end
 
     -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")

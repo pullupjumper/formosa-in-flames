@@ -15,13 +15,13 @@ if unit then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.destroyingAircraftOnTheGround),
-                "A helicopter is destroyed on the ground."
+                "Destroyed an helicopter on the ground."
             )
         elseif unit.dbid == CONFIG.const.platformBDID12 or unit.dbid == CONFIG.const.platformBDID13 then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.uav),
-                "A recon UAV is destroyed."
+                "Destroyed a recon UAV."
             )
         end
     end
@@ -31,13 +31,13 @@ if unit then
             or unit.dbid == CONFIG.const.platformBDID8
             or unit.dbid == CONFIG.const.platformBDID9
             or unit.dbid == CONFIG.const.platformBDID10 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lst), "A ship (LST) is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lst), "You have destroyed a ship (LST).")
         elseif unit.dbid == CONFIG.const.platformBDID6 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lhd), "A ship (LHD) is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.lhd), "You have destroyed a ship (LHD).")
         elseif unit.dbid == CONFIG.const.platformBDID11 then
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.cv), "A carrier is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.cv), "You have destroyed a carrier.")
         else
-            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.ddg), "A ship is destroyed.")
+            ScenEdit_SetScore("Taiwan", (score + CONFIG.s.const.ddg), "You have destroyed a ship.")
         end
     end
 
@@ -45,7 +45,7 @@ if unit then
         ScenEdit_SetScore(
             "Taiwan",
             (score + CONFIG.s.const.sub),
-            "A submarine is destroyed."
+            "You have destroyed a submarine."
         )
     end
 
@@ -54,7 +54,7 @@ if unit then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.destroyingSupply),
-                "A landed supply is destroyed."
+                "You have destroyed a landed supply."
             )
 
             CONFIG.c.mlrs.batteries[2].position.magazineWeapenNum = CONFIG.c.mlrs.batteries[2].position
@@ -67,7 +67,7 @@ if unit then
             ScenEdit_SetScore(
                 "Taiwan",
                 (score + CONFIG.s.const.mlrs),
-                "A MLRS is destroyed."
+                "You have destroyed a MLRS."
             )
         elseif unit.dbid == CONFIG.const.platformBDID25 then
             for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
@@ -79,7 +79,7 @@ if unit then
                         ScenEdit_SetScore(
                             "Taiwan",
                             (score + CONFIG.s.const.mlrs),
-                            "A GPS jammer is destroyed."
+                            "You have destroyed a GPS jammer."
                         )
                     end
                 end
@@ -97,7 +97,7 @@ if unit then
                 end
             end
 
-            ScenEdit_SpecialMessage('Taiwan', "Destroyed a weapon storage facility.")
+            ScenEdit_SpecialMessage('Taiwan', "You have destroyed a weapon storage facility.")
         end
     end
 
