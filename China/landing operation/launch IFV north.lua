@@ -19,7 +19,8 @@ if ship.dbid == CONFIG.const.platformBDID7 then
         distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
         transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
         transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.north.vertical,
-        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed
+        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed,
+        destination = CONFIG.c.landingOperation.const.shipInfo.heading.north.destination
     })
 elseif ship.dbid == CONFIG.const.platformBDID8 or ship.dbid == CONFIG.const.platformBDID9 then
     LaunchAmphibiousIFV({
@@ -29,7 +30,8 @@ elseif ship.dbid == CONFIG.const.platformBDID8 or ship.dbid == CONFIG.const.plat
         distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
         transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
         transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.north.vertical,
-        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed
+        speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed,
+        destination = CONFIG.c.landingOperation.const.shipInfo.heading.north.destination
     })
 end
 

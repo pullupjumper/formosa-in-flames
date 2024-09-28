@@ -29,6 +29,83 @@ function LaunchSLCM(submarines, weaponDBID, allocation, targetList)
     end
 end
 
+local function getCurrentWeaponNum(guid, weaponDBID)
+    local unit = SE_GetUnit({ guid = guid })
+
+    if unit then
+        for _, mount in ipairs(unit.mounts) do
+            for _, w in ipairs(mount['mount_weapons']) do
+                if w["wpn_dbid"] == weaponDBID and w["wpn_current"] > 0 then
+                    return w["wpn_current"]
+                end
+            end
+        end
+    end
+
+    return 0
+end
+
+function LandStrikeFromNavalPlatform(platforms, wpnDefaultNum, weaponDBID, targetList)
+    local units = {}
+
+    for _, v in ipairs(platforms) do
+        local unit = SE_GetUnit({ guid = v.guid })
+
+        if unit then
+            table.insert(units, unit)
+        end
+    end
+
+    local wpnNumPerTarget = GetCount(units) * wpnDefaultNum // GetCount(targetList)
+    local numTemp = 0
+    local allocationTemp = 0
+    local index = 1
+    local targetListIdx = 1
+    local continue = true
+
+    while continue do
+        local currentWeaponNum = getCurrentWeaponNum(units[index].guid, weaponDBID)
+
+        if currentWeaponNum <= wpnNumPerTarget then
+            allocationTemp = currentWeaponNum
+            numTemp = wpnNumPerTarget - currentWeaponNum
+        elseif numTemp > 0 then
+            allocationTemp = numTemp
+            -- numTemp = 0
+        else
+            allocationTemp = wpnNumPerTarget
+        end
+
+        local result = ScenEdit_AttackContact(
+            units[index].guid,
+            targetList[targetListIdx].guid,
+            { mode = '1', weapon = weaponDBID, qty = allocationTemp }
+        )
+        -- ScenEdit_MsgBox(tostring(allocationTemp), 0)
+
+        -- ScenEdit_MsgBox(tostring(result), 0)
+
+        if allocationTemp == wpnNumPerTarget or numTemp > 0 then
+            numTemp = 0
+            targetListIdx = targetListIdx + 1
+        end
+
+        if currentWeaponNum == 0 then
+            index = index + 1
+        end
+
+        if index > GetCount(units) then
+            index = 1
+        end
+
+        if targetListIdx > GetCount(targetList) then
+            targetListIdx = 1
+            continue = false
+        end
+    end
+end
+
+-- RenameUnitsFromBase('6Z8LM5-0HMIJ3QGCRQ5F', 12, 3413, '41st Air Brigade')
 ---@param fromUnit string
 ---@param num number
 ---@param weaponDBID number
@@ -63,61 +140,6 @@ function RenameUnitsFromBase(fromUnit, num, weaponDBID, name)
     for k, unit in ipairs(filteredPlatforms) do
         unit.name = name .. ' #' .. tostring(k)
     end
-end
-
-function LaunchAircraftToStrike(fromUnit, num, weaponDBID, allocation, targetList, course)
-    local base = ScenEdit_GetUnit({ guid = fromUnit })
-    if base == nil then return end
-    local platforms = base.embarkedUnits['Aircraft']
-    if platforms == nil then return end
-    local aircraftNumPerTarget = num // GetCount(targetList)
-    local index = 1
-    local filteredPlatforms = {}
-
-    for _, v in ipairs(platforms) do
-        local unit = SE_GetUnit({ guid = v })
-
-        if unit then
-            local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
-
-            if weapons then
-                for _, w in ipairs(weapons) do
-                    if w["wpn_dbid"] == weaponDBID and w["wpn_current"] > 0 then
-                        table.insert(filteredPlatforms, unit)
-                    end
-                end
-            end
-        end
-
-        if GetCount(filteredPlatforms) >= num then
-            break
-        end
-    end
-
-    for k, unit in ipairs(filteredPlatforms) do
-        local contact = ScenEdit_GetContact({ side = 'China', guid = targetList[index].guid })
-        unit:Launch(true)
-
-        if course ~= nil then
-            unit.course = course
-        end
-
-        if contact then
-            ScenEdit_AttackContact(
-                unit.guid,
-                targetList[index].guid,
-                { mode = '1', weapon = weaponDBID, qty = allocation }
-            )
-        end
-
-        unit:RTB(true)
-
-        if k % aircraftNumPerTarget == 0 and aircraftNumPerTarget > 1 then
-            index = index + 1
-        end
-    end
-
-    return filteredPlatforms
 end
 
 ---@class Package:table
@@ -285,11 +307,12 @@ end
 
 ---@param fromUnit string
 ---@param num number
----@param weaponDBID number
+---@param weaponDBID number | 0
+---@param unitDBID number | nil
 ---@param missionName string
 ---@param isEscort boolean
 ---@param course? CMO__TableOfWaypoints|nil
-function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, missionName, isEscort, course)
+function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort, course)
     local airbase = ScenEdit_GetUnit({ guid = fromUnit })
     if airbase == nil or airbase.embarkedUnits['Aircraft'] == nil then return end
     local m = ScenEdit_GetMission(airbase.side, missionName)
@@ -305,7 +328,7 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, missionNam
             local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
             local weaponNum = 0
 
-            if weapons then
+            if weapons and GetCount(weapons) > 0 then
                 for _, w in ipairs(weapons) do
                     if w["wpn_dbid"] == weaponDBID then
                         weaponNum = w["wpn_current"]
@@ -313,7 +336,9 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, missionNam
                 end
             end
 
-            if unit.readytime_v == 0 and unit.mission == nil and count < num and weaponNum > 0 then
+
+            if unit.readytime_v == 0 and unit.mission == nil and count < num and (weaponNum > 0 or unit.dbid == unitDBID) then
+                -- if unit.readytime_v == 0 and count < num and (weaponNum > 0 or unit.dbid == unitDBID) then
                 if isEscort then
                     ScenEdit_AssignUnitToMission(unit.guid, missionName, true)
                 else
@@ -441,4 +466,12 @@ function InitTargetList(side, missionName)
     end
 
     return temp
+end
+
+function GetOODA(d)
+    return {
+        detection = math.random(10 * d, 30 * d),
+        targeting = math.random(20 * d, 20 * d),
+        evasion = math.random(90 * d, 120 * d)
+    }
 end

@@ -6,6 +6,69 @@ if CONFIG == nil then
     return
 end
 
+-- local function setCoursesForAllShips(CONFIG)
+--     local shipInfo = CONFIG.c.landingOperation.const.shipInfo
+--     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+
+--     for _, value in ipairs(units) do
+--         local unit = SE_GetUnit({ guid = value.guid })
+
+--         for _, infoItem in ipairs(shipLocationInfo) do
+--             if unit and unit:inArea(infoItem.from.stagingArea) then
+--                 unit.manualSpeed = shipInfo.shipSpeed
+
+--                 if unit.dbid == infoItem.to.result.type075.dbid then
+--                     local locationIndex = infoItem.to.result.type075.locationIndex
+--                     local location = infoItem.to.result.type075.locations[locationIndex]
+--                     unit.course = GetCourseByPoints({ location })
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type075.locationIndex = locationIndex
+--                 elseif unit.dbid == infoItem.to.result.type072iii.dbid then
+--                     local locationIndex = infoItem.to.result.type072iii.locationIndex
+--                     local location = infoItem.to.result.type072iii.locations[locationIndex]
+--                     unit.course = GetCourseByPoints({ location })
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type072iii.locationIndex = locationIndex
+--                 elseif unit.dbid == infoItem.to.result.type072a.dbid then
+--                     local locationIndex = infoItem.to.result.type072a.locationIndex
+--                     local location = infoItem.to.result.type072a.locations[locationIndex]
+--                     unit.course = GetCourseByPoints({ location })
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type072a.locationIndex = locationIndex
+--                 elseif unit.dbid == infoItem.to.result.type073a.dbid then
+--                     local locationIndex = infoItem.to.result.type073a.locationIndex
+--                     local location = infoItem.to.result.type073a.locations[locationIndex]
+--                     unit.course = GetCourseByPoints({ location })
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type073a.locationIndex = locationIndex
+--                 elseif unit.dbid == infoItem.to.result.type072a2.dbid then
+--                     local locationIndex = infoItem.to.result.type072a2.locationIndex
+--                     local location = infoItem.to.result.type072a2.locations[locationIndex]
+--                     unit.course = GetCourseByPoints({ location })
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type072a2.locationIndex = locationIndex
+--                 elseif unit.dbid == infoItem.to.result.type071.dbid then
+--                     local locationIndex = infoItem.to.result.type071.locationIndex
+
+--                     if locationIndex > 2 then
+--                         local location = infoItem.to.result.type071InLSTArea.locations[locationIndex - 2]
+--                         unit.course = GetCourseByPoints({ location })
+--                     else
+--                         local location = infoItem.to.result.type071.locations[locationIndex]
+--                         unit.course = GetCourseByPoints({ location })
+--                     end
+
+--                     locationIndex = locationIndex + 1
+--                     infoItem.to.result.type071.locationIndex = locationIndex
+--                 end
+--             end
+--         end
+
+--         CONFIG.c.landingOperation.isLandingShipsArrived = true
+--         CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
+--     end
+-- end
+
 local function setCoursesForAllShips(CONFIG)
     local shipInfo = CONFIG.c.landingOperation.const.shipInfo
     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
@@ -15,41 +78,85 @@ local function setCoursesForAllShips(CONFIG)
 
         for _, infoItem in ipairs(shipLocationInfo) do
             if unit and unit:inArea(infoItem.from.stagingArea) then
-                unit.manualSpeed = shipInfo.shipSpeed
+                local groupNameForLHD = infoItem.name .. ' LHD/LPD Landing Ship Group'
+                local groupNameForLST = infoItem.name .. ' LST Landing Ship Group'
+                local groupForLHD = ScenEdit_GetUnit({ unitname = groupNameForLHD })
+                local groupForLST = ScenEdit_GetUnit({ unitname = groupNameForLST })
+                local locationFor075 = infoItem.to.result.type075.locations[1]
+                local locationFor072a = infoItem.to.result.type072a.locations[1]
 
                 if unit.dbid == infoItem.to.result.type075.dbid then
                     local locationIndex = infoItem.to.result.type075.locationIndex
-                    local location = infoItem.to.result.type075.locations[locationIndex]
-                    unit.course = GetCourseByPoints({ location })
+
+                    if groupForLHD and GetCount(groupForLHD.course) == 0 then
+                        groupForLHD.course = GetCourseByPoints({ locationFor075 })
+                        groupForLHD.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    unit.group = groupNameForLHD
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type075.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type072iii.dbid then
                     local locationIndex = infoItem.to.result.type072iii.locationIndex
-                    local location = infoItem.to.result.type072iii.locations[locationIndex]
-                    unit.course = GetCourseByPoints({ location })
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    unit.group = groupNameForLST
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type072iii.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type072a.dbid then
                     local locationIndex = infoItem.to.result.type072a.locationIndex
-                    local location = infoItem.to.result.type072a.locations[locationIndex]
-                    unit.course = GetCourseByPoints({ location })
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    unit.group = groupNameForLST
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type072a.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type073a.dbid then
                     local locationIndex = infoItem.to.result.type073a.locationIndex
-                    local location = infoItem.to.result.type073a.locations[locationIndex]
-                    unit.course = GetCourseByPoints({ location })
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    unit.group = groupNameForLST
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type073a.locationIndex = locationIndex
+                elseif unit.dbid == infoItem.to.result.type072a2.dbid then
+                    local locationIndex = infoItem.to.result.type072a2.locationIndex
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    unit.group = groupNameForLST
+                    locationIndex = locationIndex + 1
+                    infoItem.to.result.type072a2.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type071.dbid then
                     local locationIndex = infoItem.to.result.type071.locationIndex
 
                     if locationIndex > 2 then
-                        local location = infoItem.to.result.type071InLSTArea.locations[locationIndex - 2]
-                        unit.course = GetCourseByPoints({ location })
+                        if groupForLST and GetCount(groupForLST.course) == 0 then
+                            groupForLST.course = GetCourseByPoints({ locationFor072a })
+                            groupForLST.manualSpeed = shipInfo.shipSpeed
+                        end
+
+                        unit.group = groupNameForLST
                     else
-                        local location = infoItem.to.result.type071.locations[locationIndex]
-                        unit.course = GetCourseByPoints({ location })
+                        if groupForLHD and GetCount(groupForLHD.course) == 0 then
+                            groupForLHD.course = GetCourseByPoints({ locationFor075 })
+                            groupForLHD.manualSpeed = shipInfo.shipSpeed
+                        end
+
+                        unit.group = groupNameForLHD
                     end
 
                     locationIndex = locationIndex + 1
@@ -76,7 +183,8 @@ local function getUnitsInAnchorageArea(CONFIG)
                 or unit.dbid == CONFIG.const.platformBDID7
                 or unit.dbid == CONFIG.const.platformBDID8
                 or unit.dbid == CONFIG.const.platformBDID9
-                or unit.dbid == CONFIG.const.platformBDID10) then
+                or unit.dbid == CONFIG.const.platformBDID10
+                or unit.dbid == CONFIG.const.platformBDID32) then
             if unit.unitstate ~= 'Unassigned' then
                 isUnitMoving = true
                 break
@@ -99,14 +207,14 @@ local function createCargoMissions()
     for _, zone in ipairs(operationalZones) do
         for _, missionName in ipairs(zone.boat.missions) do
             local mission = ScenEdit_AddMission('China', missionName, 'Cargo', { zone = zone.boat.zone })
-            mission.isactive = false
+            -- mission.isactive = false
             ScenEdit_SetMission('China', missionName, zone.boat.settings)
             ScenEdit_SetDoctrine({ side = 'China', mission = missionName }, { automatic_evasion = false })
         end
 
         for _, missionName in ipairs(zone.tansportHelicopter.missions) do
             local mission = ScenEdit_AddMission('China', missionName, 'Cargo', { zone = zone.tansportHelicopter.zone })
-            mission.isactive = false
+            -- mission.isactive = false
             ScenEdit_SetMission('China', missionName, zone.tansportHelicopter.settings)
             ScenEdit_SetDoctrine({ side = 'China', mission = missionName }, { automatic_evasion = false })
         end
@@ -119,17 +227,38 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
     for _, zone in ipairs(operationalZones) do
         for _, u in ipairs(unitsInAnchorageArea1) do
             if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(zone.anchorageArea) then
+                -- TransferCargo(
+                --     u.guid,
+                --     'Boats',
+                --     zone.boat.dbid,
+                --     zone.boat.cargoItem
+                -- )
+                -- TransferCargo(
+                --     u.guid,
+                --     'Aircraft',
+                --     zone.tansportHelicopter.dbid,
+                --     zone.tansportHelicopter.cargoItem
+                -- )
                 TransferCargo(
                     u.guid,
                     'Boats',
                     zone.boat.dbid,
+                    0,
                     zone.boat.cargoItem
                 )
                 TransferCargo(
                     u.guid,
                     'Aircraft',
                     zone.tansportHelicopter.dbid,
-                    zone.tansportHelicopter.cargoItem
+                    zone.tansportHelicopter.cargoItems[1].loadoutId,
+                    zone.tansportHelicopter.cargoItems[1].cargoItem
+                )
+                TransferCargo(
+                    u.guid,
+                    'Aircraft',
+                    zone.tansportHelicopter.dbid,
+                    zone.tansportHelicopter.cargoItems[2].loadoutId,
+                    zone.tansportHelicopter.cargoItems[2].cargoItem
                 )
                 AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
@@ -160,17 +289,31 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
             end
 
             if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(zone.anchorageArea) then
+                -- TransferCargo(
+                --     u.guid,
+                --     'Boats',
+                --     zone.boat.dbid,
+                --     zone.boat.cargoItem
+                -- )
+                -- TransferCargo(
+                --     u.guid,
+                --     'Aircraft',
+                --     zone.tansportHelicopter.dbid,
+                --     zone.tansportHelicopter.cargoItem
+                -- )
                 TransferCargo(
                     u.guid,
                     'Boats',
                     zone.boat.dbid,
+                    0,
                     zone.boat.cargoItem
                 )
                 TransferCargo(
                     u.guid,
                     'Aircraft',
                     zone.tansportHelicopter.dbid,
-                    zone.tansportHelicopter.cargoItem
+                    zone.tansportHelicopter.cargoItems[1].loadoutId,
+                    zone.tansportHelicopter.cargoItems[1].cargoItem
                 )
                 AssignEmbarkedUnitsToEachMissionByMissionNum(
                     u.guid,
@@ -188,11 +331,28 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
         end
     end
 
-    for _, value in ipairs(CONFIG.c.landingOperation.const.helicopterAtBase) do
+    -- for _, value in ipairs(CONFIG.c.landingOperation.const.helicopterAtBase) do
+    --     AssignEmbarkedUnitToMissionByUnitNum(
+    --         value.guid,
+    --         value.num,
+    --         CONFIG.const.platformBDID5,
+    --         'Aircraft',
+    --         value.missionName
+    --     )
+    -- end
+
+    for _, value in ipairs(CONFIG.c.landingOperation.const.transportAircraft) do
+        TransferCargo(
+            value.guid,
+            'Aircraft',
+            value.dbid,
+            value.cargoItems[1].loadoutId,
+            value.cargoItems[1].cargoItem
+        )
         AssignEmbarkedUnitToMissionByUnitNum(
             value.guid,
             value.num,
-            CONFIG.const.platformBDID5,
+            CONFIG.const.platformBDID40,
             'Aircraft',
             value.missionName
         )
@@ -214,8 +374,8 @@ end
 local function setLandingMissionStartTime(CONFIG)
     CONFIG.c.landingOperation.airlandingMissionStartTime = ScenEdit_CurrentTime()
     local airlandingMissionStartTime1 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime()))
-    local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 20 * 60))
-    local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 40 * 60))
+    local airlandingMissionStartTime2 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 30 * 60))
+    local airlandingMissionStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 60 * 60))
     local landingMissionStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (ScenEdit_CurrentTime() + 4 * 60))
 
     ScenEdit_GetMission('China', 'LANDING ZONE').starttime = landingMissionStartTime
@@ -223,7 +383,9 @@ local function setLandingMissionStartTime(CONFIG)
     -- ScenEdit_GetMission('China', 'LANDING ZONE ZHUWEI').starttime = landingMissionStartTime
     -- ScenEdit_GetMission('China', 'LANDING ZONE NORTH WAY').starttime = landingMissionStartTime
     -- ScenEdit_GetMission('China', 'LANDING ZONE NORTH LEO').starttime = landingMissionStartTime
-    ScenEdit_GetMission('China', 'LANDING ZONE JIALUTANG').starttime = landingMissionStartTime
+    -- ScenEdit_GetMission('China', 'LANDING ZONE JIALUTANG').starttime = landingMissionStartTime
+    ScenEdit_GetMission('China', 'LANDING ZONE PENGHU').starttime = landingMissionStartTime
+    ScenEdit_GetMission('China', 'LANDING ZONE SISHU').starttime = landingMissionStartTime
 
     ScenEdit_GetMission('China', 'AIRLANDING ZONE 1').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE 2').starttime = airlandingMissionStartTime2
@@ -240,6 +402,9 @@ local function setLandingMissionStartTime(CONFIG)
     ScenEdit_GetMission('China', 'AIRLANDING ZONE CHANGLONG 1').starttime = airlandingMissionStartTime1
     ScenEdit_GetMission('China', 'AIRLANDING ZONE CHANGLONG 2').starttime = airlandingMissionStartTime2
     ScenEdit_GetMission('China', 'AIRLANDING ZONE CHANGLONG 3').starttime = airlandingMissionStartTime3
+    ScenEdit_GetMission('China', 'AIRLANDING ZONE PENGHU 1').starttime = airlandingMissionStartTime1
+    ScenEdit_GetMission('China', 'AIRLANDING ZONE PENGHU 2').starttime = airlandingMissionStartTime2
+    ScenEdit_GetMission('China', 'AIRLANDING ZONE PENGHU 3').starttime = airlandingMissionStartTime3
 end
 
 local function setCoursesForLSTs(CONFIG)
@@ -250,7 +415,7 @@ local function setCoursesForLSTs(CONFIG)
 
         for _, zone in ipairs(operationalZones) do
             if unit and unit:inArea(zone.LSTAnchorageArea) then
-                if unit.dbid == CONFIG.const.platformBDID10 then
+                if unit.dbid == CONFIG.const.platformBDID10 or unit.dbid == CONFIG.const.platformBDID32 then
                     unit.course = nil
                     unit.manualSpeed = zone.LSTSettings.speed
                     ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1])
@@ -316,18 +481,58 @@ local function retransferCargos(CONFIG)
             for _, value in ipairs(units) do
                 local unit = SE_GetUnit({ guid = value.guid })
 
-                if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
+                -- if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID7) then
+                --     TransferCargo(
+                --         unit.guid,
+                --         'Boats',
+                --         zone.boat.dbid,
+                --         zone.boat.cargoItem
+                --     )
+                --     TransferCargo(
+                --         unit.guid,
+                --         'Aircraft',
+                --         zone.tansportHelicopter.dbid,
+                --         zone.tansportHelicopter.cargoItem
+                --     )
+                -- end
+                if unit and unit.dbid == CONFIG.const.platformBDID6 then
                     TransferCargo(
                         unit.guid,
                         'Boats',
                         zone.boat.dbid,
+                        0,
                         zone.boat.cargoItem
                     )
                     TransferCargo(
                         unit.guid,
                         'Aircraft',
                         zone.tansportHelicopter.dbid,
-                        zone.tansportHelicopter.cargoItem
+                        zone.tansportHelicopter.cargoItems[1].loadoutId,
+                        zone.tansportHelicopter.cargoItems[1].cargoItem
+                    )
+                    TransferCargo(
+                        unit.guid,
+                        'Aircraft',
+                        zone.tansportHelicopter.dbid,
+                        zone.tansportHelicopter.cargoItems[2].loadoutId,
+                        zone.tansportHelicopter.cargoItems[2].cargoItem
+                    )
+                end
+
+                if unit and unit.dbid == CONFIG.const.platformBDID7 then
+                    TransferCargo(
+                        unit.guid,
+                        'Boats',
+                        zone.boat.dbid,
+                        0,
+                        zone.boat.cargoItem
+                    )
+                    TransferCargo(
+                        unit.guid,
+                        'Aircraft',
+                        zone.tansportHelicopter.dbid,
+                        zone.tansportHelicopter.cargoItems[1].loadoutId,
+                        zone.tansportHelicopter.cargoItems[1].cargoItem
                     )
                 end
             end

@@ -15,7 +15,7 @@ if unit then
 
     if CONFIG.c.mlrs.batteries[2] == nil then
         CONFIG.c.mlrs.batteries[2] = {
-            name = 'MLRS (73th Artillery Brigade 6th Battalion)',
+            name = '5th Battalion, 73rd Artillery Brigade',
             guid = unit.group.guid,
             reloadStartTime = nil,
             state = CONFIG.const.batteryState.RESUPPLY,

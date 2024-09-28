@@ -261,97 +261,65 @@ local function attackSRBMContacts(CONFIG)
 
     srbmConfig.strikeTimes = srbmConfig.strikeTimes + 1
 
-    if srbmConfig.strikeTimes >= 1 then
-        CONFIG.c.aircraft.antiShip.isStrikeActivated = true
-    end
+    -- if srbmConfig.strikeTimes >= 1 then
+    --     CONFIG.c.aircraft.antiShip.isStrikeActivated = true
+    -- end
 
-    if srbmConfig.strikeTimes >= 10 then
-        CONFIG.c.aircraft.landStrike.isStrikeActivated = true
-    end
-end
-
-local function attackFacilityContacts(CONFIG)
-    local landStrikeConfig = CONFIG.c.aircraft.landStrikeWithoutMission
-    local elapsedTime = 0
-
-    if landStrikeConfig.lastStrikeTime then
-        elapsedTime = ScenEdit_CurrentTime() - landStrikeConfig.lastStrikeTime
-    end
-
-    local isAllowedToAttack = not landStrikeConfig.lastStrikeTime
-        or (landStrikeConfig.lastStrikeTime and elapsedTime >= landStrikeConfig.const.timeSpan)
-
-    for _, package in ipairs(landStrikeConfig.packages) do
-        if not package.hasLaunched and isAllowedToAttack then
-            -- HandleStrikePackagesWithoutMission(package)
-            if package.striker then
-                local strikers = LaunchAircraftToStrike(
-                    package.striker.baseGUID,
-                    package.striker.num,
-                    package.striker.weaponDBID,
-                    package.allocation,
-                    package.targetList,
-                    package.course
-                )
-
-                package.striker.units = strikers
-            end
-
-            -- if package.wildWeasel then
-            --     local wildWeasels = AssignEmbarkedUnitToMissionByWeapon(
-            --         package.wildWeasel.baseGUID,
-            --         package.wildWeasel.num,
-            --         package.wildWeasel.weaponDBID,
-            --         'Aircraft',
-            --         package.wildWeasel.missionName,
-            --         package.course
-            --     )
-
-            --     package.wildWeasel.units = wildWeasels
-            -- end
-
-            package.hasLaunched = true
-            landStrikeConfig.lastStrikeTime = ScenEdit_CurrentTime()
-            break
-        end
-    end
+    -- if srbmConfig.strikeTimes >= 10 then
+    --     CONFIG.c.aircraft.landStrike.isStrikeActivated = true
+    -- end
 end
 
 local function handleStrikePackagesWithMission(package, contacts, filterFn, contactNum)
-    local assignAllUnitsToStrikeMission = function(package)
+    local assignAllUnitsToStrikeMission = function(pkg)
         local strikers = AssignEmbarkedUnitToStrikeMission(
-            package.striker.baseGUID,
-            package.striker.num,
-            package.striker.weaponDBID,
-            package.missionName,
+            pkg.striker.baseGUID,
+            pkg.striker.num,
+            pkg.striker.weaponDBID,
+            nil,
+            pkg.missionName,
             false
         )
-        package.striker.units = strikers
+        pkg.striker.units = strikers
 
-        if package.escort then
+        if pkg.escort then
             local escorts = AssignEmbarkedUnitToStrikeMission(
-                package.escort.baseGUID,
-                package.escort.num,
-                package.escort.weaponDBID,
-                package.missionName,
+                pkg.escort.baseGUID,
+                pkg.escort.num,
+                pkg.escort.weaponDBID,
+                nil,
+                pkg.missionName,
                 true
             )
-            package.escort.units = escorts
+            pkg.escort.units = escorts
         end
 
-        if package.wildWeasel then
+        if pkg.wildWeasel then
             local wildWeasels = AssignEmbarkedUnitToStrikeMission(
-                package.wildWeasel.baseGUID,
-                package.wildWeasel.num,
-                package.wildWeasel.weaponDBID,
-                package.missionName,
+                pkg.wildWeasel.baseGUID,
+                pkg.wildWeasel.num,
+                pkg.wildWeasel.weaponDBID,
+                nil,
+                pkg.missionName,
                 true
             )
-            package.wildWeasel.units = wildWeasels
+            pkg.wildWeasel.units = wildWeasels
         end
 
-        if package.tanker then
-            local mission = ScenEdit_GetMission('China', package.tanker.missionName)
+        if pkg.jammer then
+            local jammers = AssignEmbarkedUnitToStrikeMission(
+                pkg.jammer.baseGUID,
+                pkg.jammer.num,
+                0,
+                pkg.jammer.unitDBID,
+                pkg.missionName,
+                true
+            )
+            pkg.jammer.units = jammers
+        end
+
+        if pkg.tanker then
+            local mission = ScenEdit_GetMission('China', pkg.tanker.missionName)
             mission.isactive = true
         end
     end
@@ -369,6 +337,27 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
         end
     else
         assignAllUnitsToStrikeMission(package)
+    end
+end
+
+local function attackGroundShelterAndC2Contacts(CONFIG)
+    local aircraftConfig = CONFIG.c.aircraft.landStrikeFromCarrier
+    local elapsedTime = 0
+
+    if aircraftConfig.lastStrikeTime then
+        elapsedTime = ScenEdit_CurrentTime() - aircraftConfig.lastStrikeTime
+    end
+
+    local isAllowedToAttack = not aircraftConfig.lastStrikeTime
+        or (aircraftConfig.lastStrikeTime and elapsedTime >= aircraftConfig.const.timeSpan)
+
+    for _, package in ipairs(aircraftConfig.packages) do
+        if not package.hasLaunched and isAllowedToAttack then
+            handleStrikePackagesWithMission(package)
+            package.hasLaunched = true
+            aircraftConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            break
+        end
     end
 end
 
@@ -462,6 +451,15 @@ local function attackSLCMContacts(CONFIG)
     )
 end
 
+local function attackGroundShelterContacts(CONFIG)
+    LandStrikeFromNavalPlatform(
+        CONFIG.c.landStrikeFromDDG.const.ships,
+        8,
+        CONFIG.c.landStrikeFromDDG.const.weaponDBID,
+        CONFIG.c.landStrikeFromDDG.const.targetList
+    )
+end
+
 local contacts = ScenEdit_GetContacts('China')
 local units = VP_GetSide({ Side = 'China' }).units
 local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
@@ -509,6 +507,14 @@ if CONFIG.c.aircraft.landStrike.isStrikeActivated then
     attackStorageAndC2Contacts(CONFIG)
 end
 
+if CONFIG.c.aircraft.landStrikeFromCarrier.isStrikeActivated then
+    attackGroundShelterAndC2Contacts(CONFIG)
+end
+
+if CONFIG.c.landStrikeFromDDG.isStrikeActivated then
+    attackGroundShelterContacts(CONFIG)
+end
+
 if CONFIG.c.aircraft.antiShip.isStrikeActivated then
     attackShipContacts(contacts, CONFIG)
 end
@@ -523,10 +529,6 @@ end
 
 if CONFIG.c.glcm.isStrikeActivated then
     attackGLCMContacts(CONFIG)
-end
-
-if CONFIG.c.aircraft.landStrikeWithoutMission.isStrikeActivated then
-    attackFacilityContacts(CONFIG)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

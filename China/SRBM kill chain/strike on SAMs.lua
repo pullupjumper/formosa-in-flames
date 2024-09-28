@@ -10,7 +10,11 @@ if contact == nil then
     return
 end
 
-local emission = contact.emissions[1]['sensor_dbid']
+local emission = nil
+
+if contact.emissions ~= nil then
+    emission = contact.emissions[1]['sensor_dbid']
+end
 
 local isSAM = emission ~= nil and (emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID1
     or emission == CONFIG.c.srbm.onSAM.const.tk3SensorDBID2

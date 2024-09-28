@@ -20,16 +20,22 @@ CONFIG.c.aircraft.airIntercept = {}
 CONFIG.c.aircraft.airIntercept.const = {}
 CONFIG.c.aircraft.landStrike = {}
 CONFIG.c.aircraft.landStrike.const = {}
-CONFIG.c.aircraft.landStrikeWithoutMission = {}
-CONFIG.c.aircraft.landStrikeWithoutMission.const = {}
+CONFIG.c.aircraft.landStrikeFromCarrier = {}
+CONFIG.c.aircraft.landStrikeFromCarrier.const = {}
+CONFIG.c.landStrikeFromDDG = {}
+CONFIG.c.landStrikeFromDDG.const = {}
 CONFIG.c.landingOperation = {}
 CONFIG.c.landingOperation.const = {}
 CONFIG.c.slcm = {}
 CONFIG.c.slcm.const = {}
 CONFIG.c.GPSJamming = {}
 CONFIG.c.GPSJamming.const = {}
+CONFIG.c.commsJamming = {}
+CONFIG.c.commsJamming.const = {}
 CONFIG.c.repairRunway = {}
 CONFIG.c.repairRunway.const = {}
+CONFIG.c.C2 = {}
+CONFIG.c.C2.const = {}
 CONFIG.t = {}
 CONFIG.t.glcm = {}
 CONFIG.t.glcm.const = {}
@@ -39,6 +45,10 @@ CONFIG.t.asm = {}
 CONFIG.t.asm.const = {}
 CONFIG.t.repairRunway = {}
 CONFIG.t.repairRunway.const = {}
+CONFIG.t.C2 = {}
+CONFIG.t.C2.const = {}
+CONFIG.t.aircraft = {}
+CONFIG.t.aircraft.const = {}
 CONFIG.s = {}
 CONFIG.s.const = {}
 CONFIG.const.platformBDID1 = 2149  -- 726a
@@ -62,7 +72,7 @@ CONFIG.const.platformBDID18 = 3281 -- HQ-22
 CONFIG.const.platformBDID19 = 386  -- S-300
 CONFIG.const.platformBDID20 = 2442 -- S-400
 CONFIG.const.platformBDID21 = 1277 -- HQ-12
-CONFIG.const.platformBDID22 = 1679 -- SY-400
+CONFIG.const.platformBDID22 = 4324 -- PHL-16
 CONFIG.const.platformBDID23 = 624  -- supply
 CONFIG.const.platformBDID24 = 3126 -- PHL-03
 CONFIG.const.platformBDID25 = 764  -- Jammer
@@ -72,6 +82,19 @@ CONFIG.const.platformBDID28 = 5014 -- J-20
 CONFIG.const.platformBDID29 = 4926 -- J-16
 CONFIG.const.platformBDID30 = 4652 -- Su-30
 CONFIG.const.platformBDID31 = 1731 -- H-6K
+CONFIG.const.platformBDID32 = 4601 -- 072a
+CONFIG.const.platformBDID33 = 4141 -- 劍二
+CONFIG.const.platformBDID34 = 1092 -- skyguard
+CONFIG.const.platformBDID35 = 4203 -- Y-9
+CONFIG.const.platformBDID36 = 4454 -- J-35
+CONFIG.const.platformBDID37 = 4817 -- J-15D
+CONFIG.const.platformBDID38 = 2095 -- E-2K
+CONFIG.const.platformBDID39 = 317  -- ZBD-03
+CONFIG.const.platformBDID40 = 2503 -- II-76
+-- CONFIG.const.platformBDID38 = 3796 -- F-CK-1
+-- CONFIG.const.platformBDID39 = 3795 -- F-CK-1
+-- CONFIG.const.platformBDID40 = 6889 -- F-16V BLK70
+-- CONFIG.const.platformBDID41 = 4817 -- J-15D
 
 
 CONFIG.const.sensorBDID1 = 2788   -- S-300 Tombstone
@@ -86,6 +109,9 @@ CONFIG.const.sensorBDID8 = 2938   -- E-2K
 CONFIG.const.loadoutDBID1 = 30568 -- ka-52
 CONFIG.const.loadoutDBID2 = 31490 -- z-10
 CONFIG.const.loadoutDBID3 = 18367 -- z-18
+CONFIG.const.loadoutDBID4 = 18365 -- z-18
+CONFIG.const.loadoutDBID5 = 25504 -- II-76
+
 CONFIG.const.radarDistance = 70
 CONFIG.const.readytime = 3600 * 1.5
 ---@class BatteryState
@@ -101,9 +127,70 @@ CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 120
 
 if CONFIG.difficulty == 'normal' then
     CONFIG.const.amountOfWeaponsInMagazinesForSRBM = 72
-    CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 240
+    -- CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 240
+    CONFIG.const.amountOfWeaponsInMagazinesForMLRS = 96 * 3
 end
 
+-- C2
+CONFIG.c.C2.isActivated = true
+CONFIG.c.C2.operationalZones = {
+    {
+        name = 'A',
+        area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
+        C2 = {
+            guid = 'IC8B0X-0HN6RCVPC3OAD',
+            units = {
+                -- {
+                --     guid = '',
+                --     OODA = {},
+                --     isOutOfComms=false,
+                --     outofcomms=0,
+                -- },
+            }
+        },
+    },
+    {
+        name = 'B',
+        area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
+        C2 = {
+            guid = 'IC8B0X-0HN6RCVPC3NMI',
+            units = {
+                -- {
+                --     guid = '',
+                --     OODA = {},
+                --     isOutOfComms=false,
+                --     outofcomms=0,
+                -- },
+            }
+        },
+    },
+    {
+        name = 'C',
+        area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
+        C2 = {
+            guid = 'IC8B0X-0HN6RCVPC3O1U',
+            units = {
+                -- {
+                --     guid = '',
+                --     OODA = {},
+                --     isOutOfComms=false,
+                --     outofcomms=0,
+                -- },
+            }
+        },
+    },
+}
+CONFIG.c.C2.const.values = {
+    C2 = 1.5,
+}
+
+-- comms jamming
+CONFIG.c.commsJamming.isActivated = true
+CONFIG.c.commsJamming.const.jammingLimit = 12
+CONFIG.c.commsJamming.jammers = {
+    -- { guid = '' },
+
+}
 
 -- GPS Jamming
 CONFIG.c.GPSJamming.isStrikeActivated = true
@@ -137,7 +224,8 @@ CONFIG.c.mlrs.packages = {
         name = '',
         targetList = {},
         batteries = {
-            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN20R8KSKH7A' }
+            -- { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'X58F5H-0HN20R8KSKH7A' }
+            { name = 'MLRS (73th Artillery Brigade 5th Battalion)', guid = 'IC8B0X-0HN5UJRVS1JEK', }
         },
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }
     }
@@ -191,12 +279,14 @@ CONFIG.c.mlrs.const.position = {
 }
 CONFIG.c.mlrs.batteries = {
     {
-        name = 'MLRS (73th Artillery Brigade 5th Battalion)',
-        guid = 'X58F5H-0HN20R8KSKH7A',
+        name = '6th Battalion, 73rd Artillery Brigade',
+        -- guid = 'X58F5H-0HN20R8KSKH7A',
+        guid = 'IC8B0X-0HN5UJRVS1JEK',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.RESUPPLY,
         position = CONFIG.c.mlrs.const.position.north,
-        weaponDBID = 2123,
+        -- weaponDBID = 2123,
+        weaponDBID = 4471,
         wpnStorageFacility = 'IC8B0X-0HN41ROC6C5U6'
     }
 }
@@ -533,7 +623,9 @@ CONFIG.c.srbm.onSAM.const.tk2SensorDBID = 919
 CONFIG.c.srbm.onSAM.const.pac3SensorDBID = 2498
 CONFIG.c.srbm.onSAM.const.h6nBaseGUID = 'X58F5H-0HMRAQFR07T2V'
 CONFIG.c.srbm.onSAM.const.bzk005BaseGUID = '6Z8LM5-0HMIJ3QGCRQC4'
-CONFIG.c.srbm.onSAM.const.h6nDBID = 4969
+-- CONFIG.c.srbm.onSAM.const.h6nDBID = 4969
+CONFIG.c.srbm.onSAM.const.h6nDBID = 7136
+
 CONFIG.c.srbm.onSAM.const.batteries = {
     { name = 'SRBM (613th Brigade)', guid = 'X58F5H-0HN1G2DEBC7O8', },
 }
@@ -556,7 +648,7 @@ CONFIG.c.srbm.onSAM.const.h6nCourse = {
 
 
 
--- ac on mobile units
+-- Strike on C2s and storages
 CONFIG.c.aircraft.landStrike.isStrikeActivated = false
 CONFIG.c.aircraft.landStrike.lastStrikeTime = nil
 CONFIG.c.aircraft.landStrike.packages = {
@@ -564,6 +656,7 @@ CONFIG.c.aircraft.landStrike.packages = {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, units = {} },
         missionName = 'LAND STRIKE - SOUTH',
         area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
         hasLaunched = false,
@@ -574,6 +667,7 @@ CONFIG.c.aircraft.landStrike.packages = {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, units = {} },
         escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 6, units = {} },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, units = {} },
         missionName = 'LAND STRIKE - MIDDLE',
         area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
         hasLaunched = false,
@@ -584,34 +678,63 @@ CONFIG.c.aircraft.landStrike.packages = {
         striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, units = {} },
         escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 6, units = {} },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, units = {} },
         missionName = 'LAND STRIKE - NORTH',
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
         hasLaunched = false,
         course = nil,
         tanker = nil
     },
-    -- {
-    --     striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
-    --     escort = nil,
-    --     wildWeasel = nil,
-    --     missionName = 'LAND STRIKE - NORTH - 2',
-    --     area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    --     hasLaunched = false,
-    --     course = nil,
-    --     tanker = nil
-    -- },
-    -- {
-    --     striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, units = {} },
-    --     escort = nil,
-    --     wildWeasel = nil,
-    --     missionName = 'LAND STRIKE - NORTH - 4',
-    --     area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    --     hasLaunched = false,
-    --     course = nil,
-    --     tanker = nil
-    -- },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'LAND STRIKE - NORTH - 2',
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+    {
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'LAND STRIKE - NORTH - 4',
+        area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
 }
 CONFIG.c.aircraft.landStrike.const.timeSpan = 50 * 60
+
+-- Strike on the ground shelters at the Jiashan airbase
+CONFIG.c.aircraft.landStrikeFromCarrier.isStrikeActivated = false
+CONFIG.c.aircraft.landStrikeFromCarrier.lastStrikeTime = nil
+CONFIG.c.aircraft.landStrikeFromCarrier.packages = {
+    {
+        striker = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2110, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2875, num = 6, units = {} },
+        jammer = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', unitDBID = 4817, num = 1, units = {} },
+        missionName = 'LAND STRIKE - EAST',
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+    {
+        striker = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2110, num = 12, units = {} },
+        escort = nil,
+        wildWeasel = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2875, num = 6, units = {} },
+        jammer = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', unitDBID = 4817, num = 1, units = {} },
+        missionName = 'LAND STRIKE - JHI',
+        hasLaunched = false,
+        course = nil,
+        tanker = nil
+    },
+}
+CONFIG.c.aircraft.landStrikeFromCarrier.const.timeSpan = 80 * 60
+
 
 
 -- anti-ship
@@ -655,74 +778,6 @@ CONFIG.c.aircraft.airIntercept.packages = {
 CONFIG.c.aircraft.airIntercept.const.timeSpan = 0
 
 
-CONFIG.c.aircraft.landStrikeWithoutMission.isStrikeActivated = false
-CONFIG.c.aircraft.landStrikeWithoutMission.lastStrikeTime = nil
-CONFIG.c.aircraft.landStrikeWithoutMission.const.timeSpan = 50 * 60
-CONFIG.c.aircraft.landStrikeWithoutMission.packages = {
-    -- {
-    --     striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, units = {} },
-    --     escort = nil,
-    --     wildWeasel = nil,
-    --     tanker = nil,
-    --     allocation = 4,
-    --     hasLaunched = false,
-    --     targetList = {
-    --         { guid = 'IC8B0X-0HN4J2CVTRI74' },
-    --         { guid = 'IC8B0X-0HN4J2CVTRI76' },
-    --     },
-    --     course = nil
-    -- },
-    -- {
-    --     striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, units = {} },
-    --     escort = nil,
-    --     wildWeasel = nil,
-    --     tanker = nil,
-    --     allocation = 4,
-    --     hasLaunched = false,
-    --     targetList = {
-    --         { guid = 'IC8B0X-0HN4J2CVTRI72' },
-    --         { guid = 'IC8B0X-0HN4J2CVTRI73' },
-    --         { guid = 'IC8B0X-0HN4J2CVTRI75' },
-    --     },
-    --     course = nil
-    -- },
-    {
-        striker = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2866, num = 12, units = {} },
-        escort = nil,
-        wildWeasel = nil,
-        tanker = nil,
-        allocation = 2,
-        hasLaunched = false,
-        targetList = {
-            { guid = '6Z8LM5-0HMIJ7B89BCF3' },
-            { guid = '6Z8LM5-0HMIJ7B89BCF4' },
-            { guid = '6Z8LM5-0HMIJ7B89BCF5' },
-        },
-        course = {
-            { lat = 'N 22.11.12', lon = 'E 122.06.47', desiredAltitude = 3500, },
-            { lat = 'N 23.11.42', lon = 'E 121.43.18', desiredAltitude = 3500, },
-        }
-    },
-    {
-        striker = { baseGUID = 'X58F5H-0HMVJS6DS6QC3', weaponDBID = 2866, num = 12, units = {} },
-        escort = nil,
-        wildWeasel = nil,
-        tanker = nil,
-        allocation = 2,
-        hasLaunched = false,
-        targetList = {
-            { guid = '6Z8LM5-0HMIJ7B89BCF3' },
-            { guid = '6Z8LM5-0HMIJ7B89BCF4' },
-            { guid = '6Z8LM5-0HMIJ7B89BCF5' },
-        },
-        course = {
-            { lat = 'N 22.11.12', lon = 'E 122.06.47', desiredAltitude = 3500, },
-            { lat = 'N 23.11.42', lon = 'E 121.43.18', desiredAltitude = 3500, },
-        }
-    },
-}
-
-
 -- landing operation
 CONFIG.c.landingOperation.isLandingShipsStartedMoving = true
 CONFIG.c.landingOperation.isLandingShipsArrived = false
@@ -741,7 +796,12 @@ CONFIG.c.landingOperation.const.contactNumInAirlandingArea = 3
 
 CONFIG.c.landingOperation.const.cargoList = {
     ---@type table<number, CargoItem>
-    type075 = { { type = 2, num = 60, dbid = 3 }, { type = 3, num = 200, dbid = 2039 } },
+    -- type075 = { { type = 2, num = 60, dbid = 3 }, { type = 3, num = 200, dbid = 2039 },},
+    type075 = {
+        { type = 2, num = 10, dbid = 3 },
+        { type = 3, num = 75, dbid = 2039 },
+        { type = 3, num = 30, dbid = 2034 }
+    },
     ---@type table<number, CargoItem>
     type071 = { { type = 2, num = 20, dbid = 3 }, { type = 3, num = 30, dbid = 2039 } },
     ---@type table<number, CargoItem>
@@ -749,12 +809,15 @@ CONFIG.c.landingOperation.const.cargoList = {
     ---@type table<number, CargoItem>
     type072a = { { type = 2, num = 10, dbid = 3 }, { type = 3, num = 6, dbid = 2039 } },
     ---@type table<number, CargoItem>
-    type073a = { { type = 2, num = 6, dbid = 3 } }
+    type073a = { { type = 2, num = 6, dbid = 3 } },
+    type072a2 = { { type = 3, num = 1, dbid = 624 }, { type = 3, num = 1, dbid = 3126 } },
 }
 ---@type CargoItem
-CONFIG.c.landingOperation.const.cargoItemForTransferForBoat = { type = 2, num = 2, dbid = 3 }          -- 075/071 726a
+CONFIG.c.landingOperation.const.cargoItemForTransferForBoat = { type = 2, num = 2, dbid = 3 }                -- 075/071 726a
 ---@type CargoItem
-CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter = { type = 3, num = 2, dbid = 2039 } -- 075/071 Z-18
+CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter = { type = 3, num = 2, dbid = 2039 }       -- 075/071 Z-18
+CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2 = { type = 3, num = 1, dbid = 2034 }
+CONFIG.c.landingOperation.const.cargoItemForTransferForTransportAircraft = { type = 2, num = 3, dbid = 317 } -- II-76
 CONFIG.c.landingOperation.const.shipInfo = {
     distanceBetweenLSTAndLPDArea = 13,
     horizontalDistance = 1,
@@ -763,21 +826,41 @@ CONFIG.c.landingOperation.const.shipInfo = {
     shipSpeed = 14,
     heading = {
         north = {
-            horizontal = 220 - 90,
-            vertical   = 220,
+            horizontal  = 220 - 90,
+            vertical    = 220,
+            destination = {
+                { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+            }
         },
         west = {
             horizontal = 150 - 90,
             vertical = 150,
+            destination = {
+                { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+            }
         },
         south = {
             horizontal = 45 - 90,
             vertical = 45,
+            destination = {
+                { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+            }
         },
         penghu = {
             horizontal = 80 - 90,
             vertical = 80,
-        }
+            destination = {
+                { lat = 'N 23.31.35', lon = 'E 119.35.36', },
+                { lat = 'N 23.34.09', lon = 'E 119.37.41', },
+            }
+        },
+        sishu = {
+            horizontal = 73 - 90,
+            vertical = 73,
+            destination = {
+                { lat = 'N 22.57.14', lon = 'E 120.12.09', },
+            }
+        },
     },
     amphibiousVehicleSpeed = 12,
     amphibiousVehicleTransitDistance = 5,
@@ -785,7 +868,12 @@ CONFIG.c.landingOperation.const.shipInfo = {
 }
 CONFIG.c.landingOperation.const.shipLocationInfo = {
     {
-        name = 'north',
+        name = 'North',
+        names = {
+            'Air Assault Battalion',
+            'Combined Arms Battalion',
+            '5th Landing Ship Division'
+        },
         from = {
             areas = { {
                 startingPoints = { type075 = { side = "China", area = { 'RP-11169' } } },
@@ -798,6 +886,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072iii = 4,
                 type072a = 4,
                 type073a = 4,
+                type072a2 = 0,
             }
         },
         to = {
@@ -815,6 +904,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type072a = 4,
                         type073a = 4,
                         type071InLSTArea = 2,
+                        type072a2 = 0,
                     }
                 },
                 -- {
@@ -830,6 +920,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 --         type072a = 2,
                 --         type073a = 2,
                 --         type071InLSTArea = 1,
+                -- type072a2 = 0,
                 --     }
                 -- },
                 -- {
@@ -845,6 +936,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 --         type072a = 3,
                 --         type073a = 3,
                 --         type071InLSTArea = 2,
+                -- type072a2 = 0,
                 --     }
                 -- },
                 -- {
@@ -860,6 +952,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 --         type072a = 3,
                 --         type073a = 3,
                 --         type071InLSTArea = 1,
+                -- type072a2 = 0,
                 --     }
                 -- },
             },
@@ -869,18 +962,24 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
                 type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
                 type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
-                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, }
+                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, }
             }
         },
         airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
         numOfContactsInAirLandingZone = 3
     },
     {
-        name = 'south',
+        name = 'Sishu',
+        names = {
+            'Air Assault Battalion',
+            'Combined Arms Battalion',
+            '5th Landing Ship Division'
+        },
         from = {
             areas = { {
                 startingPoints = { type075 = { side = "China", area = { 'RP-56195' } } },
-                heading = CONFIG.c.landingOperation.const.shipInfo.heading.south
+                heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu
             } },
             stagingArea = { 'RP-46584', 'RP-46585', 'RP-46586', 'RP-46587' },
             num = {
@@ -890,16 +989,17 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072a = 1,
                 type073a = 1,
                 type071InLSTArea = 0,
+                type072a2 = 0,
             }
         },
         to = {
             areas = {
                 {
                     startingPoints = {
-                        type075 = { side = "China", area = { 'RP-14294' } },
-                        type071 = { side = "China", area = { 'RP-14295' } },
+                        type075 = { side = "China", area = { 'RP-69332' } },
+                        type071 = { side = "China", area = { 'RP-69333' } },
                     },
-                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.south,
+                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu,
                     num = {
                         type075 = 1,
                         type071 = 1,
@@ -907,6 +1007,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type072a = 1,
                         type073a = 1,
                         type071InLSTArea = 0,
+                        type072a2 = 0,
                     }
                 },
             },
@@ -916,7 +1017,63 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
                 type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
                 type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
-                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, }
+                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, }
+            }
+        },
+        airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+        numOfContactsInAirLandingZone = 3
+    },
+    {
+        name = 'Penghu',
+        names = {
+            'Air Assault Battalion',
+            'Combined Arms Battalion',
+            '5th Landing Ship Division'
+        },
+        from = {
+            areas = { {
+                startingPoints = { type075 = { side = "China", area = { 'RP-59972' } } },
+                heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu
+            } },
+            stagingArea = { 'RP-59975', 'RP-59976', 'RP-59977', 'RP-59978' },
+            num = {
+                type075 = 1,
+                type071 = 1,
+                type072iii = 1,
+                type072a = 1,
+                type073a = 0,
+                type071InLSTArea = 0,
+                type072a2 = 2,
+            }
+        },
+        to = {
+            areas = {
+                {
+                    startingPoints = {
+                        type075 = { side = "China", area = { 'RP-59973' } },
+                        type071 = { side = "China", area = { 'RP-59974' } },
+                    },
+                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu,
+                    num = {
+                        type075 = 1,
+                        type071 = 1,
+                        type072iii = 1,
+                        type072a = 1,
+                        type073a = 0,
+                        type071InLSTArea = 0,
+                        type072a2 = 2,
+                    }
+                },
+            },
+            result = {
+                type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
+                type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+                type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
+                type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
+                type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
+                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, }
             }
         },
         airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
@@ -926,6 +1083,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
 
 CONFIG.c.landingOperation.const.operationalZones = {
     {
+        name = 'west',
         anchorageArea = { 'RP-9684', 'RP-9685', 'RP-9686', 'RP-9687' },
         LSTAnchorageArea = { 'RP-9712', 'RP-9713', 'RP-9714', 'RP-9715' },
         boat = {
@@ -936,6 +1094,7 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 Subtype = 'delivery',
                 TransitThrottleShip = 'Full',
                 StationThrottleShip = 'Full',
+                isactive = false
             },
             cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
@@ -949,8 +1108,18 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 TransitAltitudeAircraft = 304,
                 StationThrottleAircraft = 'Afterburner',
                 StationAltitudeAircraft = 304,
+                isactive = false
             },
-            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+            cargoItems = {
+                {
+                    loadoutId = CONFIG.const.loadoutDBID3,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+                },
+                {
+                    loadoutId = CONFIG.const.loadoutDBID4,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+                },
+            }
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
@@ -987,7 +1156,16 @@ CONFIG.c.landingOperation.const.operationalZones = {
     --             StationThrottleAircraft = 'Afterburner',
     --             StationAltitudeAircraft = 304,
     --         },
+    -- cargoItems = {
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID3,
     --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+    --     },
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID4,
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+    --     },
+    -- }
     --     },
     --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
     --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
@@ -1024,10 +1202,19 @@ CONFIG.c.landingOperation.const.operationalZones = {
     --             StationThrottleAircraft = 'Afterburner',
     --             StationAltitudeAircraft = 304,
     --         },
+    -- cargoItems = {
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID3,
     --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
     --     },
-    --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 2' } },
-    --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 2' } },
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID4,
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+    --     },
+    -- }
+    --     },
+    --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
+    --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
     --     LSTSettings = {
     --         speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
     --         course = {
@@ -1061,10 +1248,19 @@ CONFIG.c.landingOperation.const.operationalZones = {
     --             StationThrottleAircraft = 'Afterburner',
     --             StationAltitudeAircraft = 304,
     --         },
+    -- cargoItems = {
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID3,
     --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
     --     },
-    --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS NORTH' } },
-    --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS NORTH' } },
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID4,
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+    --     },
+    -- }
+    --     },
+    --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS EAST 1' } },
+    --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS EAST 1' } },
     --     LSTSettings = {
     --         speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
     --         course = {
@@ -1073,17 +1269,65 @@ CONFIG.c.landingOperation.const.operationalZones = {
     --         }
     --     }
     -- },
+    -- {
+    --     anchorageArea = { 'RP-14290', 'RP-14291', 'RP-14292', 'RP-14293' },
+    --     LSTAnchorageArea = { 'RP-14286', 'RP-14287', 'RP-14288', 'RP-14289' },
+    --     boat = {
+    --         dbid = CONFIG.const.platformBDID1,
+    --         missions = { 'LANDING ZONE JIALUTANG' },
+    --         zone = { 'RP-11154', 'RP-11155', 'RP-11156', 'RP-11157' },
+    --         settings = {
+    --             Subtype = 'delivery',
+    --             TransitThrottleShip = 'Full',
+    --             StationThrottleShip = 'Full',
+    --         },
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
+    --     },
+    --     tansportHelicopter = {
+    --         dbid = CONFIG.const.platformBDID2,
+    --         missions = { 'AIRLANDING ZONE CHANGLONG 1', 'AIRLANDING ZONE CHANGLONG 2', 'AIRLANDING ZONE CHANGLONG 3' },
+    --         zone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
+    --         settings = {
+    --             Subtype = 'delivery',
+    --             TransitThrottleAircraft = 'Military',
+    --             TransitAltitudeAircraft = 304,
+    --             StationThrottleAircraft = 'Afterburner',
+    --             StationAltitudeAircraft = 304,
+    --         },
+    -- cargoItems = {
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID3,
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+    --     },
+    --     {
+    --         loadoutId = CONFIG.const.loadoutDBID4,
+    --         cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+    --     },
+    -- }
+    --     },
+    --     attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS SOUTH' } },
+    --     attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS SOUTH' } },
+    --     LSTSettings = {
+    --         speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
+    --         course = {
+    --             bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+    --             distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
+    --         }
+    --     }
+    -- },
     {
-        anchorageArea = { 'RP-14290', 'RP-14291', 'RP-14292', 'RP-14293' },
-        LSTAnchorageArea = { 'RP-14286', 'RP-14287', 'RP-14288', 'RP-14289' },
+        name = "sishu",
+        anchorageArea = { 'RP-69328', 'RP-69329', 'RP-69330', 'RP-69331' },
+        LSTAnchorageArea = { 'RP-69324', 'RP-69325', 'RP-69326', 'RP-69327' },
         boat = {
             dbid = CONFIG.const.platformBDID1,
-            missions = { 'LANDING ZONE JIALUTANG' },
-            zone = { 'RP-11154', 'RP-11155', 'RP-11156', 'RP-11157' },
+            missions = { 'LANDING ZONE SISHU' },
+            zone = { 'RP-69316', 'RP-69317', 'RP-69318', 'RP-69319' },
             settings = {
                 Subtype = 'delivery',
                 TransitThrottleShip = 'Full',
                 StationThrottleShip = 'Full',
+                isactive = false
             },
             cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
         },
@@ -1097,15 +1341,74 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 TransitAltitudeAircraft = 304,
                 StationThrottleAircraft = 'Afterburner',
                 StationAltitudeAircraft = 304,
+                isactive = false
             },
-            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+            cargoItems = {
+                {
+                    loadoutId = CONFIG.const.loadoutDBID3,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+                },
+                {
+                    loadoutId = CONFIG.const.loadoutDBID4,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+                },
+            }
         },
         attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS SOUTH' } },
         attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS SOUTH' } },
         LSTSettings = {
             speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
             course = {
-                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
+                distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
+            }
+        }
+    },
+    {
+        name = "penghu",
+        anchorageArea = { 'RP-46576', 'RP-46577', 'RP-46578', 'RP-46579' },
+        LSTAnchorageArea = { 'RP-46572', 'RP-46573', 'RP-46574', 'RP-46575' },
+        boat = {
+            dbid = CONFIG.const.platformBDID1,
+            missions = { 'LANDING ZONE PENGHU' },
+            zone = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' },
+            settings = {
+                Subtype = 'delivery',
+                TransitThrottleShip = 'Full',
+                StationThrottleShip = 'Full',
+                isactive = false
+            },
+            cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForBoat
+        },
+        tansportHelicopter = {
+            dbid = CONFIG.const.platformBDID2,
+            missions = { 'AIRLANDING ZONE PENGHU 1', 'AIRLANDING ZONE PENGHU 2', 'AIRLANDING ZONE PENGHU 3' },
+            zone = { 'RP-59968', 'RP-59969', 'RP-59970', 'RP-59971' },
+            settings = {
+                Subtype = 'delivery',
+                TransitThrottleAircraft = 'Military',
+                TransitAltitudeAircraft = 304,
+                StationThrottleAircraft = 'Afterburner',
+                StationAltitudeAircraft = 304,
+                isactive = false
+            },
+            cargoItems = {
+                {
+                    loadoutId = CONFIG.const.loadoutDBID3,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+                },
+                {
+                    loadoutId = CONFIG.const.loadoutDBID4,
+                    cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter2
+                },
+            }
+        },
+        attackHelicopter1 = { dbid = CONFIG.const.platformBDID4, missions = { 'CAS PENGHU' } },
+        attackHelicopter2 = { dbid = CONFIG.const.platformBDID5, missions = { 'CAS PENGHU' } },
+        LSTSettings = {
+            speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
+            course = {
+                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.vertical,
                 distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
             }
         }
@@ -1115,6 +1418,22 @@ CONFIG.c.landingOperation.const.helicopterAtBase = {
     -- { guid = '6Z8LM5-0HMIJ3QGCRQC4', missionName = 'CAS EAST 2', num = 12 },
     -- { guid = 'X58F5H-0HN00TRR0Q1JQ', missionName = 'CAS SOUTH',  num = 24 },
     { guid = '6Z8LM5-0HMIJ3QGCRQ5F', missionName = 'CAS MIDDLE', num = 12 }
+}
+CONFIG.c.landingOperation.const.transportAircraft = {
+    {
+        name = 'Zhangpu AAB',
+        guid = 'X58F5H-0HN00TRR0Q1JQ',
+        num = 3,
+        dbid = 2503,
+        missionName = 'AIRLANDING ZONE PENGHU 3',
+        cargoItems = {
+            {
+                loadoutId = CONFIG.const.loadoutDBID5,
+                cargoItem = CONFIG.c.landingOperation.const.cargoItemForTransferForTransportAircraft
+            },
+        }
+    },
+
 }
 CONFIG.c.landingOperation.const.sag = {
     {
@@ -1131,6 +1450,19 @@ CONFIG.c.landingOperation.const.sag = {
             { lat = 'N 25.30.26', lon = 'E 121.21.04', desiredSpeed = 14, },
         }
     },
+}
+
+-- land strike from DDG
+CONFIG.c.landStrikeFromDDG.isStrikeActivated = false
+CONFIG.c.landStrikeFromDDG.const.ships = {
+    { name = 'Type 055 Renhai [101 Nanchang]', guid = 'IC8B0X-0HN6064GMMADB' },
+    { name = 'Type 055 Renhai [101 Nanchang]', guid = 'IC8B0X-0HN6064GMMB78' },
+}
+CONFIG.c.landStrikeFromDDG.const.weaponDBID = 4058
+CONFIG.c.landStrikeFromDDG.const.targetList = {
+    { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC71' },
+    { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC73' },
+    { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC6V' }
 }
 
 -- SLCM
@@ -1271,7 +1603,66 @@ CONFIG.t.repairRunway.runways = {
 }
 CONFIG.t.repairRunway.const.percentagePerHour = 3
 
+-- C2
+CONFIG.t.C2.isActivated = true
+CONFIG.t.C2.operationalZones = {
+    {
+        name = 'north',
+        area = { 'RP-83642', 'RP-83643', 'RP-83644', 'RP-83645' },
+        ROCC = {
+            guid = 'IC8B0X-0HN6F67JSFPAF',
+            units = {
+                -- {
+                --     guid = '',
+                --     OODA = {},
+                --     isOutOfComms=false,
+                --     outofcomms=0,
+                -- },
+            }
+        },
+        TAAOC = {
+            guid = 'IC8B0X-0HN41D1QKTVU7',
+            units = {}
+        }
+    },
+    {
+        name = 'east',
+        area = { 'RP-83646', 'RP-83647', 'RP-83648', 'RP-83649' },
+        ROCC = {
+            guid = 'IC8B0X-0HN6F67JSFOLD',
+            units = {}
+        },
+        TAAOC = {
+            guid = 'IC8B0X-0HN41D1QKU1ED',
+            units = {}
+        }
+    },
+    {
+        name = 'south',
+        area = { 'RP-83650', 'RP-83651', 'RP-83652', 'RP-83653' },
+        ROCC = {
+            guid = 'IC8B0X-0HN6F67JSFQ0D',
+            units = {}
+        },
+        TAAOC = {
+            guid = 'IC8B0X-0HN41D1QKU0JP',
+            units = {}
+        }
+    },
+}
+CONFIG.t.C2.const.values = {
+    ROCC = 1.5,
+    TAAOC = 1.5
+}
 
+-- aircraft
+CONFIG.t.aircraft.isActivated = true
+CONFIG.t.aircraft.AEW = {
+    -- {guid=''}
+}
+CONFIG.t.aircraft.AC = {
+    -- {guid=''}
+}
 
 
 -- CONFIG.s.const.aircraftIsDestroyedOnTheGround = -10

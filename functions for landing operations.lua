@@ -55,23 +55,62 @@ function DeleteCargo(fromUnit, cargoItem)
     end
 end
 
+-- ---@param fromUnit string
+-- ---@param platformType string
+-- ---@param platformDBid number
+-- ---@param cargoItem CargoItem
+-- function TransferCargo(fromUnit, platformType, platformDBid, cargoItem)
+--     local base = ScenEdit_GetUnit({ guid = fromUnit })
+--     if base == nil then return end
+--     local platforms = base.embarkedUnits[platformType]
+
+--     if platforms ~= nil then
+--         ScenEdit_SpecialMessage('China', tostring(platforms.name))
+
+--         for k, v in ipairs(platforms) do
+--             local unit = SE_GetUnit({ guid = v })
+
+--             if unit ~= nil and unit.dbid == platformDBid then
+--                 UpdateCargo(base, unit, cargoItem)
+--             end
+--         end
+--     end
+-- end
 ---@param fromUnit string
 ---@param platformType string
 ---@param platformDBid number
+---@param loadoutDBID number
 ---@param cargoItem CargoItem
-function TransferCargo(fromUnit, platformType, platformDBid, cargoItem)
+function TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItem)
     local base = ScenEdit_GetUnit({ guid = fromUnit })
     if base == nil then return end
     local platforms = base.embarkedUnits[platformType]
+    local baseContainingCargo = base
+
+    -- if base.group and base.group.guid == fromUnit then
+    --     for _, guid in ipairs(base.group.unitlist) do
+    --         local b = SE_GetUnit({ guid = guid })
+
+    --         if b and GetCount(b.cargo) > 0 then
+    --             baseContainingCargo = b
+    --         end
+    --     end
+    -- end
 
     if platforms ~= nil then
-        ScenEdit_SpecialMessage('China', tostring(platforms.name))
+        -- ScenEdit_SpecialMessage('China', tostring(platforms.name))
 
         for k, v in ipairs(platforms) do
             local unit = SE_GetUnit({ guid = v })
 
-            if unit ~= nil and unit.dbid == platformDBid then
-                UpdateCargo(base, unit, cargoItem)
+            if platformType == 'Aircraft' then
+                if unit ~= nil and unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
+                    UpdateCargo(baseContainingCargo, unit, cargoItem)
+                end
+            else
+                if unit ~= nil and unit.dbid == platformDBid then
+                    UpdateCargo(baseContainingCargo, unit, cargoItem)
+                end
             end
         end
     end
@@ -180,12 +219,14 @@ end
 ---@field transitDistance number
 ---@field ship CMO__Unit
 ---@field speed number
+---@field destination table
 ---@param params IFVLocationParam
 function LaunchAmphibiousIFV(params)
     local ship = params.ship
     local transitBearing = params.transitBearing
     local transitDistance = params.transitDistance
     local speed = params.speed
+    local destination = params.destination
     local IFVlocations = GenerateIFVLocations(params)
 
     local destinationTemp = {}
@@ -206,7 +247,9 @@ function LaunchAmphibiousIFV(params)
             DISTANCE = transitDistance
         })
 
-        courseTemp = GetCourseByPoints({ destinationTemp })
+        -- courseTemp = GetCourseByPoints({ destinationTemp })
+        courseTemp = { { lat = destinationTemp.latitude, lon = destinationTemp.longitude } }
+        InsertList(courseTemp, destination)
 
         local addedUnit = ScenEdit_AddUnit({
             side = 'China',
@@ -256,8 +299,11 @@ end
 ---@param units table<number, EmbarkedUnit>
 function AddUnitsToShip(shipId, units)
     for k, unit in ipairs(units) do
+        -- local name = unit[2].name
+
         for j = 1, unit[1], 1 do
             unit[2].base = shipId
+            -- unit[2].name = name .. ' #' .. j
             ScenEdit_AddUnit(unit[2])
         end
     end
@@ -339,6 +385,12 @@ function AddLandingShips()
                 distance = shipInfo.verticalDistance
             })
 
+            local firstRp072a2 = GetPointFromBearing({
+                initialLocation = firstRp073a,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+
             AddUnitsByRP(
                 {
                     initialLocation = firstRp075,
@@ -356,17 +408,24 @@ function AddLandingShips()
                     manualSpeed = shipInfo.shipSpeed,
                 },
                 {
-                    { 12, {
+                    { 6, {
                         side = 'China',
                         type = 'aircraft',
-                        name = 'Warhorse',
+                        name = infoItem.names[1],
                         dbid = CONFIG.const.platformBDID2,
                         loadoutid = CONFIG.const.loadoutDBID3
+                    } },
+                    { 6, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = infoItem.names[1],
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID4
                     } },
                     { 13, {
                         side = 'China',
                         type = 'aircraft',
-                        name = 'Wardog',
+                        name = infoItem.names[1],
                         dbid = CONFIG.const.platformBDID5,
                         loadoutid = CONFIG.const.loadoutDBID2
                     } },
@@ -394,7 +453,7 @@ function AddLandingShips()
                     { 4, {
                         side = 'China',
                         type = 'aircraft',
-                        name = 'Warhorse',
+                        name = infoItem.names[1],
                         dbid = CONFIG.const.platformBDID2,
                         loadoutid = CONFIG.const.loadoutDBID3
                     } },
@@ -458,6 +517,25 @@ function AddLandingShips()
                 },
                 nil
             )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRp072a2,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type072a2
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 072A',
+                    dbid = CONFIG.const.platformBDID32,
+                    cargo = cargoList.type072a2,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                nil
+            )
         end
     end
 
@@ -497,6 +575,11 @@ function CalculateDestination()
             })
             local firstRp071InLSTArea = GetPointFromBearing({
                 initialLocation = firstRp073a,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp072a2 = GetPointFromBearing({
+                initialLocation = firstRp071InLSTArea,
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
@@ -545,6 +628,14 @@ function CalculateDestination()
                 GenerateLocations({
                     initialLocation = firstRp071InLSTArea,
                     num = area.num.type071InLSTArea,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.type072a2.locations,
+                GenerateLocations({
+                    initialLocation = firstRp072a2,
+                    num = area.num.type072a2,
                     bearing = area.heading.horizontal,
                     distance = shipInfo.horizontalDistance
                 }))

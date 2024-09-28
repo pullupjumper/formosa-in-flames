@@ -10,7 +10,8 @@ if unit then
     if unit.dbid == CONFIG.const.platformBDID28
         or unit.dbid == CONFIG.const.platformBDID29
         or unit.dbid == CONFIG.const.platformBDID30
-        or unit.dbid == CONFIG.const.platformBDID31 then
+        or unit.dbid == CONFIG.const.platformBDID31
+        or unit.dbid == CONFIG.const.platformBDID36 then
         unit.readytime = CONFIG.const.readytime
 
         -- if unit.mission ~= nil and unit.mission.isactive and unit.mission.subtype == 'Land Strike' then

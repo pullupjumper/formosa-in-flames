@@ -167,6 +167,8 @@ end
 local function toFringPosition(battery, group)
     battery.state = CONFIG.const.batteryState.REPOSITIONING
     local courseIdx = math.random(GetCount(battery.position.firingpositions))
+    group.course = battery.position.firingpositions[courseIdx].course
+    group.manualSpeed = 30
 
     for _, guid in ipairs(group.group.unitlist) do
         local unit = SE_GetUnit({ guid = guid })
@@ -175,8 +177,8 @@ local function toFringPosition(battery, group)
             ScenEdit_SetUnit({
                 guid = unit.guid,
                 manualthrottle = 'Flank',
-                manualSpeed = 30,
-                course = battery.position.firingpositions[courseIdx].course,
+                -- manualSpeed = 30,
+                -- course = battery.position.firingpositions[courseIdx].course,
                 holdposition = false
             })
         end
@@ -185,6 +187,8 @@ end
 
 local function toAssemblyArea(battery, group)
     battery.state = CONFIG.const.batteryState.REPOSITIONING
+    group.course = battery.position.assemblyArea.course
+    group.manualSpeed = 30
 
     for _, guid in ipairs(group.group.unitlist) do
         local unit = SE_GetUnit({ guid = guid })
@@ -193,8 +197,8 @@ local function toAssemblyArea(battery, group)
             ScenEdit_SetUnit({
                 guid = unit.guid,
                 manualthrottle = 'Flank',
-                manualSpeed = 30,
-                course = battery.position.assemblyArea.course,
+                -- manualSpeed = 30,
+                -- course = battery.position.assemblyArea.course,
                 holdposition = false
             })
             ScenEdit_SetDoctrine({ side = 'China', guid = unit.guid }, { weapon_control_status_land = 2 })

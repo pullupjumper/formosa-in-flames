@@ -15,24 +15,24 @@ if ship.dbid == CONFIG.const.platformBDID7 then
     LaunchAmphibiousIFV({
         ship = ship,
         num = 40,
-        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,
+        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.horizontal,
         distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
         transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
-        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
         speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed,
-        destination = CONFIG.c.landingOperation.const.shipInfo.heading.south.destination
+        destination = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.destination
 
     })
 elseif ship.dbid == CONFIG.const.platformBDID8 or ship.dbid == CONFIG.const.platformBDID9 then
     LaunchAmphibiousIFV({
         ship = ship,
         num = 10,
-        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.horizontal,
+        bearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.horizontal,
         distance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleHorizontalDistance,
         transitDistance = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleTransitDistance,
-        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.south.vertical,
+        transitBearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
         speed = CONFIG.c.landingOperation.const.shipInfo.amphibiousVehicleSpeed,
-        destination = CONFIG.c.landingOperation.const.shipInfo.heading.south.destination
+        destination = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.destination
 
     })
 end
