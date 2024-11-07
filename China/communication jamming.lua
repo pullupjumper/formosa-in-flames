@@ -33,8 +33,8 @@ local function getCommsLevel(unitGUID)
         end
     end
 
-    for _, zone in ipairs(CONFIG.t.C2.operationalZones) do
-        local ROCC = SE_GetUnit({ guid = zone.ROCC.guid })
+    for ROCCGuid, value in pairs(CONFIG.t.IADS.ROCC) do
+        local ROCC = SE_GetUnit({ guid = ROCCGuid })
 
         if ROCC then
             local d = Tool_Range(unitGUID, ROCC.guid)
@@ -114,14 +114,8 @@ if CONFIG.c.commsJamming.isActivated then
         end
     end
 
-    for _, zone in ipairs(CONFIG.t.C2.operationalZones) do
-        for _, u in ipairs(zone.ROCC.units) do
-            jammed_num = commsJamming(CONFIG, u, jammer, jammed_num)
-        end
-
-        for _, u in ipairs(zone.TAAOC.units) do
-            jammed_num = commsJamming(CONFIG, u, jammer, jammed_num)
-        end
+    for key, value in pairs(CONFIG.t.IADS.units) do
+        jammed_num = commsJamming(CONFIG, value, jammer, jammed_num)
     end
 
     for _, value in ipairs(CONFIG.t.aircraft.AC) do

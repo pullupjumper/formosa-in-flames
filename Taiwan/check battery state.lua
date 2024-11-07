@@ -6,7 +6,8 @@ if CONFIG == nil then
     return
 end
 
-CheckBatteryState(CONFIG, 'srbm', CONFIG.t.srbm.batteries, 'Taiwan', false)
-CheckBatteryState(CONFIG, 'glcm', CONFIG.t.glcm.batteries, 'Taiwan', false)
+CheckBatteryState(CONFIG, 'mlrs', CONFIG.t.ground.mlrs.batteries, 'Taiwan', false)
+CheckBatteryState(CONFIG, 'srbm', CONFIG.t.ground.srbm.batteries, 'Taiwan', false)
+CheckBatteryState(CONFIG, 'glcm', CONFIG.t.ground.glcm.batteries, 'Taiwan', false)
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

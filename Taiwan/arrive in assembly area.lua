@@ -7,16 +7,28 @@ if CONFIG == nil then
     return
 end
 
-for _, battery in ipairs(CONFIG.t.srbm.batteries) do
-    if unit and unit.guid == battery.guid then
-        battery.reloadStartTime = ScenEdit_CurrentTime()
+
+if CONFIG.t.ground.mlrs.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'Taiwan', 'mlrs', false)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, false)
     end
 end
 
+if CONFIG.t.ground.glcm.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'Taiwan', 'glcm', false)
 
-for _, battery in ipairs(CONFIG.t.glcm.batteries) do
-    if unit and unit.guid == battery.guid then
-        battery.reloadStartTime = ScenEdit_CurrentTime()
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, false)
+    end
+end
+
+if CONFIG.t.ground.srbm.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'Taiwan', 'srbm', false)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, false)
     end
 end
 

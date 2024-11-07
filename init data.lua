@@ -1,16 +1,16 @@
 local function initRunways()
-    CONFIG.c.srbm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE ON RADAR')
-    CONFIG.c.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE ON RUNWAY')
-    CONFIG.c.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE ON RUNWAY 2')
-    CONFIG.c.srbm.packages[2].targetList[3] = InitTargetList('China', 'STRIKE ON RUNWAY 3')
-    CONFIG.c.srbm.packages[3].targetList[1] = InitTargetList('China', 'STRIKE ON PORT')
-    CONFIG.c.srbm.packages[4].targetList[1] = InitTargetList('China', 'STRIKE ON SHELTER')
-    CONFIG.c.srbm.packages[4].targetList[2] = InitTargetList('China', 'STRIKE ON SHELTER 2')
-    CONFIG.c.srbm.packages[4].targetList[3] = InitTargetList('China', 'STRIKE ON SHELTER 3')
-    CONFIG.c.glcm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE ON HELIPAD')
-    CONFIG.c.glcm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE ON CONTINGENCY RUNWAY')
+    CONFIG.c.ground.srbm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/RADAR')
+    CONFIG.c.ground.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
+    CONFIG.c.ground.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
+    CONFIG.c.ground.srbm.packages[3].targetList[1] = InitTargetList('China', 'STRIKE/PORT')
+    CONFIG.c.ground.srbm.packages[4].targetList[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
+    CONFIG.c.ground.srbm.packages[4].targetList[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
+    CONFIG.c.ground.srbm.packages[4].targetList[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
+    CONFIG.c.ground.glcm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/HELIPAD')
+    CONFIG.c.ground.glcm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
+    CONFIG.c.ground.mlrs.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/C2/NORTH')
 
-    for _, value in ipairs(CONFIG.c.srbm.packages[2].targetList[3]) do
+    for _, value in ipairs(CONFIG.c.ground.srbm.packages[2].targetList[2]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
 
         if contact then
@@ -61,26 +61,52 @@ local function initC2()
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        for i, operationalZone in ipairs(CONFIG.t.C2.operationalZones) do
-            if unit ~= nil and unit:inArea(operationalZone.area) then
-                if unit.dbid == CONFIG.const.platformBDID15 or unit.dbid == CONFIG.const.platformBDID14 then
+        for ROCCGuid, item in pairs(CONFIG.t.IADS.ROCC) do
+            if unit ~= nil and unit:inArea(item.area) then
+                if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
                     local data = {
                         guid = unit.guid,
                         OODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
+                        EMCON_Setting = 'Radar=Passive'
                     }
-                    table.insert(CONFIG.t.C2.operationalZones[i].ROCC.units, data)
+
+                    table.insert(CONFIG.t.IADS.ROCC[ROCCGuid].SAM, unit.guid)
+                    CONFIG.t.IADS.units[unit.guid] = data
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID33 or unit.dbid == CONFIG.const.platformBDID34 then
+                if unit.dbid == CONFIG.const.platformBDID41
+                    or unit.dbid == CONFIG.const.platformBDID42
+                    or unit.dbid == CONFIG.const.platformBDID43
+                    or unit.dbid == CONFIG.const.platformBDID44 then
                     local data = {
                         guid = unit.guid,
                         OODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
+                        EMCON_Setting = 'Radar=Passive'
                     }
-                    table.insert(CONFIG.t.C2.operationalZones[i].TAAOC.units, data)
+
+                    table.insert(CONFIG.t.IADS.ROCC[ROCCGuid].radar, unit.guid)
+                    CONFIG.t.IADS.units[unit.guid] = data
+                end
+            end
+        end
+
+        for TAAOCGuid, item in pairs(CONFIG.t.IADS.TAAOC) do
+            if unit ~= nil and unit:inArea(item.area) then
+                if unit.dbid == CONFIG.const.platformBDID33 then
+                    local data = {
+                        guid = unit.guid,
+                        OODA = unit.OODA,
+                        isOutOfComms = false,
+                        outofcomms = 0,
+                        EMCON_Setting = 'Radar=Passive'
+                    }
+
+                    table.insert(CONFIG.t.IADS.TAAOC[TAAOCGuid].SAM, unit.guid)
+                    CONFIG.t.IADS.units[unit.guid] = data
                 end
             end
         end
@@ -89,18 +115,34 @@ local function initC2()
     for _, value in ipairs(unitsFromChina) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        for index, operationalZone in ipairs(CONFIG.c.C2.operationalZones) do
-            if unit ~= nil and unit:inArea(operationalZone.area) then
+        for c2Guid, item in pairs(CONFIG.c.IADS.C2) do
+            if unit ~= nil and unit:inArea(item.area) then
                 if unit.dbid == CONFIG.const.platformBDID18
                     or unit.dbid == CONFIG.const.platformBDID19
+                    or unit.dbid == CONFIG.const.platformBDID20
                     or unit.dbid == CONFIG.const.platformBDID21 then
                     local data = {
                         guid = unit.guid,
                         OODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
+                        EMCON_Setting = 'Radar=Passive'
                     }
-                    table.insert(CONFIG.c.C2.operationalZones[index].C2.units, data)
+
+                    table.insert(CONFIG.c.IADS.C2[c2Guid].SAM, unit.guid)
+                    CONFIG.c.IADS.units[unit.guid] = data
+                end
+
+                if unit.dbid == CONFIG.const.platformBDID16 or unit.dbid == CONFIG.const.platformBDID17 then
+                    local data = {
+                        guid = unit.guid,
+                        OODA = unit.OODA,
+                        isOutOfComms = false,
+                        outofcomms = 0,
+                        EMCON_Setting = 'Radar=Passive'
+                    }
+                    table.insert(CONFIG.c.IADS.C2[c2Guid].radar, unit.guid)
+                    CONFIG.c.IADS.units[unit.guid] = data
                 end
             end
         end
@@ -156,6 +198,68 @@ local function initAC()
     end
 end
 
+local function initSIGINT()
+    local units = VP_GetSide({ Side = 'US' }).units
+    local unitsFromChina = VP_GetSide({ Side = 'China' }).units
+
+    for _, value in ipairs(units) do
+        local unit = SE_GetUnit({ guid = value.guid })
+
+        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID45 then
+            CONFIG.u.SIGINT.units[unit.guid] = {
+                guid = unit.guid,
+                OODA = unit.OODA,
+                comms_level = 40,
+                comms_base = 40,
+                comms_threshold = 30,
+                outofcomms = 0,
+            }
+        end
+    end
+
+    for _, value in ipairs(unitsFromChina) do
+        local unit = SE_GetUnit({ guid = value.guid })
+
+        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID47 then
+            CONFIG.c.SIGINT.units[unit.guid] = {
+                guid = unit.guid,
+                OODA = unit.OODA,
+                comms_level = 40,
+                comms_base = 40,
+                comms_threshold = 30,
+                outofcomms = 0,
+            }
+        end
+    end
+end
+
+local function remove(side)
+    local unitsFromChina = VP_GetSide({ Side = side }).units
+    for index, u in ipairs(unitsFromChina) do
+        local unit = SE_GetUnit({ guid = u.guid })
+        local count = 0
+        for _, sensor in ipairs(unit.sensors) do
+            if sensor['sensor_dbid'] == 0 then
+                count = count + 1
+            end
+        end
+
+        count = count - 1
+        print(count)
+        for index, sensor in ipairs(unit.sensors) do
+            if count >= 1 and sensor['sensor_dbid'] == 0 then
+                ScenEdit_UpdateUnit({
+                    guid = unit.guid,
+                    dbid = 0,
+                    mode = 'remove_sensor',
+                    sensorId = sensor['sensor_guid']
+                })
+                count = count - 1
+            end
+        end
+    end
+end
+
 -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 if CONFIG.isSaved then
     gKH.State.SaveTableToKey(CONFIG, "CONFIG")
@@ -163,15 +267,17 @@ end
 
 local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if _CONFIG ~= nil and GetCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
+if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].targetList) <= 0 then
     initRunways()
     CalculateDestination()
+    -- remove('Taiwan')
+    -- remove('China')
 
     if CONFIG.c.GPSJamming.isStrikeActivated then
         initGPSJammers()
     end
 
-    if CONFIG.t.C2.isActivated then
+    if CONFIG.t.IADS.isActivated then
         initC2()
     end
 
@@ -181,6 +287,10 @@ if _CONFIG ~= nil and GetCount(_CONFIG.c.srbm.packages[1].targetList) <= 0 then
 
     if CONFIG.t.aircraft.isActivated then
         initAC()
+    end
+
+    if CONFIG.u.SIGINT.isActivated then
+        initSIGINT()
     end
 
     if CONFIG.isDevMode then

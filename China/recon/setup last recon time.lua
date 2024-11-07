@@ -5,6 +5,7 @@ if CONFIG == nil then
     return
 end
 
-CONFIG.c.srbm.lastReconTime = ScenEdit_CurrentTime()
-CONFIG.c.glcm.lastReconTime = ScenEdit_CurrentTime()
+CONFIG.c.ground.mlrs.lastReconTime = ScenEdit_CurrentTime()
+CONFIG.c.ground.srbm.lastReconTime = ScenEdit_CurrentTime()
+CONFIG.c.ground.glcm.lastReconTime = ScenEdit_CurrentTime()
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

@@ -7,8 +7,8 @@ if CONFIG == nil then
 end
 
 if unit ~= nil then
-    local wz8 = LaunchWZ8(unit, CONFIG.c.srbm.onSAM.const.wz8Course, nil)
-    table.insert(CONFIG.c.srbm.onSAM.wz8Temp, { unit = wz8.guid })
+    local wz8 = LaunchWZ8(unit, CONFIG.c.recon.const.wz8Course, nil)
+    table.insert(CONFIG.c.recon.wz8Temp, { unit = wz8.guid })
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

@@ -34,6 +34,7 @@ end
 function DeleteCargo(fromUnit, cargoItem)
     local cargoGuidList = {}
     local count = 0
+    local resultCount = 0
 
     if fromUnit == nil or fromUnit.cargo[1].cargo == nil then
         return
@@ -51,65 +52,56 @@ function DeleteCargo(fromUnit, cargoItem)
     end
 
     for k, v in ipairs(cargoGuidList) do
-        fromUnit:deleteUnitCargo(v)
+        local result = fromUnit:deleteUnitCargo(v)
+
+        if result then
+            resultCount = resultCount + 1
+        end
     end
+
+    return resultCount
 end
 
--- ---@param fromUnit string
--- ---@param platformType string
--- ---@param platformDBid number
--- ---@param cargoItem CargoItem
--- function TransferCargo(fromUnit, platformType, platformDBid, cargoItem)
---     local base = ScenEdit_GetUnit({ guid = fromUnit })
---     if base == nil then return end
---     local platforms = base.embarkedUnits[platformType]
-
---     if platforms ~= nil then
---         ScenEdit_SpecialMessage('China', tostring(platforms.name))
-
---         for k, v in ipairs(platforms) do
---             local unit = SE_GetUnit({ guid = v })
-
---             if unit ~= nil and unit.dbid == platformDBid then
---                 UpdateCargo(base, unit, cargoItem)
---             end
---         end
---     end
--- end
 ---@param fromUnit string
 ---@param platformType string
 ---@param platformDBid number
 ---@param loadoutDBID number
----@param cargoItem CargoItem
-function TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItem)
+---@param cargoItems CargoItems
+function TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItems)
     local base = ScenEdit_GetUnit({ guid = fromUnit })
     if base == nil then return end
     local platforms = base.embarkedUnits[platformType]
     local baseContainingCargo = base
 
-    -- if base.group and base.group.guid == fromUnit then
-    --     for _, guid in ipairs(base.group.unitlist) do
-    --         local b = SE_GetUnit({ guid = guid })
-
-    --         if b and GetCount(b.cargo) > 0 then
-    --             baseContainingCargo = b
-    --         end
-    --     end
-    -- end
-
     if platforms ~= nil then
-        -- ScenEdit_SpecialMessage('China', tostring(platforms.name))
+        local count = GetCount(cargoItems)
 
         for k, v in ipairs(platforms) do
             local unit = SE_GetUnit({ guid = v })
 
             if platformType == 'Aircraft' then
                 if unit ~= nil and unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
-                    UpdateCargo(baseContainingCargo, unit, cargoItem)
+                    if count > 1 then
+                        for _, item in ipairs(cargoItems[k]) do
+                            UpdateCargo(baseContainingCargo, unit, item)
+                        end
+                    else
+                        for _, item in ipairs(cargoItems[1]) do
+                            UpdateCargo(baseContainingCargo, unit, item)
+                        end
+                    end
                 end
             else
                 if unit ~= nil and unit.dbid == platformDBid then
-                    UpdateCargo(baseContainingCargo, unit, cargoItem)
+                    if count > 1 then
+                        for _, item in ipairs(cargoItems[k]) do
+                            UpdateCargo(baseContainingCargo, unit, item)
+                        end
+                    else
+                        for _, item in ipairs(cargoItems[1]) do
+                            UpdateCargo(baseContainingCargo, unit, item)
+                        end
+                    end
                 end
             end
         end
@@ -169,106 +161,60 @@ end
 ---@field bearing number
 ---@field distance number
 ---@param params LocationParam
-function GenerateIFVLocations(params)
+function GenerateACVLocations(params)
     local locations = {}
     local ship = params.ship
     local bearing = params.bearing
     local distance = params.distance
 
-    if params.num == 10 then
-        local col = GenerateLocations({
-            initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
-            num = 10,
-            bearing = (bearing + 90),
-            distance = distance
-        })
+    local col = GenerateLocations({
+        initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
+        num = params.num,
+        bearing = (bearing + 90),
+        distance = distance
+    })
 
-        locations = InsertList(locations, col)
-    elseif params.num == 40 then
-        local firstLocation = World_GetPointFromBearing({
-            LATITUDE = ship.latitude,
-            LONGITUDE = ship.longitude,
-            BEARING = (bearing + 180),
-            DISTANCE = (distance * 1.5)
-        })
-
-        local firstRow = GenerateLocations({
-            initialLocation = firstLocation,
-            num = 4,
-            bearing = bearing,
-            distance = distance
-        })
-
-        for index, initLocation in ipairs(firstRow) do
-            local col = GenerateLocations({
-                initialLocation = initLocation,
-                num = 10,
-                bearing = (bearing + 90),
-                distance = distance
-            })
-
-            locations = InsertList(locations, col)
-        end
-    end
-
+    locations = InsertList(locations, col)
     return locations
 end
 
----@class IFVLocationParam:table
+---@class ACVLocationParam:table
 ---@field transitBearing number
 ---@field transitDistance number
 ---@field ship CMO__Unit
 ---@field speed number
 ---@field destination table
----@param params IFVLocationParam
-function LaunchAmphibiousIFV(params)
+---@param params ACVLocationParam
+function LaunchACV(params)
     local ship = params.ship
-    local transitBearing = params.transitBearing
-    local transitDistance = params.transitDistance
-    local speed = params.speed
     local destination = params.destination
-    local IFVlocations = GenerateIFVLocations(params)
+    local ACVlocations = GenerateACVLocations(params)
+    if ship == nil or ship.IsDestroyed then return end
+    local dbid = 241
+    local name = 'ZBD-05'
+    local result = DeleteCargo(ship, { type = 2, num = params.num, dbid = dbid })
 
-    local destinationTemp = {}
-    local courseTemp = {}
-    -- local unitTemp = {}
-
-    if ship == nil or ship.IsDestroyed then
-        return
+    if result == 0 then
+        dbid = 240
+        name = 'ZTD-05'
+        result = DeleteCargo(ship, { type = 2, num = params.num, dbid = dbid })
     end
 
-    DeleteCargo(ship, { type = 2, num = params.num, dbid = 3 })
-
-    for k, v in ipairs(IFVlocations) do
-        destinationTemp = World_GetPointFromBearing({
-            LATITUDE = v.latitude,
-            LONGITUDE = v.longitude,
-            BEARING = transitBearing,
-            DISTANCE = transitDistance
-        })
-
-        -- courseTemp = GetCourseByPoints({ destinationTemp })
-        courseTemp = { { lat = destinationTemp.latitude, lon = destinationTemp.longitude } }
-        InsertList(courseTemp, destination)
-
-        local addedUnit = ScenEdit_AddUnit({
-            side = 'China',
-            type = 'Vehicle',
-            name = 'AAV7',
-            dbid = 3,
-            LATITUDE = v.latitude,
-            LONGITUDE = v.longitude,
-        })
-
-        if addedUnit == nil then
-            return
+    if result > 0 then
+        for i = 1, result, 1 do
+            local addedUnit = ScenEdit_AddUnit({
+                side = 'China',
+                type = 'Vehicle',
+                name = name,
+                dbid = dbid,
+                LATITUDE = ACVlocations[i].latitude,
+                LONGITUDE = ACVlocations[i].longitude,
+            })
+            if addedUnit == nil then return end
+            ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+            addedUnit.throttle = 'Full'
+            addedUnit.course = destination
         end
-
-        ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
-        addedUnit.throttle = 'Full'
-        addedUnit.course = courseTemp
-        addedUnit.manualSpeed = speed
-        addedUnit.manualAltitude = -2
     end
 end
 

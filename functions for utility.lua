@@ -24,7 +24,7 @@ function GetCount(list)
     if list == nil then return 0 end
     local count = 0
 
-    for k, v in ipairs(list) do
+    for k, v in pairs(list) do
         count = count + 1
     end
 

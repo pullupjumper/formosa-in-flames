@@ -6,11 +6,11 @@ if CONFIG == nil then
 end
 
 
-CONFIG.c.srbm.onSAM.h6nTemp = LaunchUnits(
-    CONFIG.c.srbm.onSAM.const.h6nBaseGUID,
-    CONFIG.c.srbm.onSAM.const.h6nCourse,
+CONFIG.c.recon.h6nTemp = LaunchUnits(
+    CONFIG.c.recon.const.h6nBaseGUID,
+    CONFIG.c.recon.const.h6nCourse,
     1,
-    CONFIG.c.srbm.onSAM.const.h6nDBID,
+    CONFIG.c.recon.const.h6nDBID,
     'Aircraft'
 )
 

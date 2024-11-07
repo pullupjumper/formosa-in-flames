@@ -52,7 +52,7 @@ function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepea
     if mode == 'add' then
         local retval, result = pcall(ScenEdit_SetTrigger,
             {
-                description = name .. '_Entertrigg',
+                description = name .. '',
                 mode = 'add',
                 type = 'UnitEntersArea',
                 TargetFilter = FilterType,
@@ -65,18 +65,18 @@ function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepea
             return false
         end
         local retval, result = pcall(ScenEdit_SetAction,
-            { mode = 'add', type = 'LuaScript', name = name .. '-enteraction', ScriptText = script })
+            { mode = 'add', type = 'LuaScript', name = name .. '', ScriptText = script })
         if not retval then
             print("[ERROR]: " .. result .. '- trigger:' .. name)
             return false
         end
         ScenEdit_SetEvent(name, { mode = 'add', IsRepeatable = isRepeatable, isActive = isActive, isShown = true })
-        ScenEdit_SetEventTrigger(name, { mode = 'add', name = name .. '_Entertrigg' })
-        ScenEdit_SetEventAction(name, { mode = 'add', name = name .. '-enteraction' })
+        ScenEdit_SetEventTrigger(name, { mode = 'add', name = name .. '' })
+        ScenEdit_SetEventAction(name, { mode = 'add', name = name .. '' })
     elseif mode == 'update' then
         if area ~= nil then
             ScenEdit_SetTrigger({
-                description = name .. '_Entertrigg',
+                description = name .. '',
                 mode = 'update',
                 type = 'UnitEntersArea',
                 TargetFilter = FilterType,
@@ -85,11 +85,11 @@ function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepea
             })
         end
         if script ~= nil then
-            ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name .. '-enteraction', ScriptText = script })
+            ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name .. '', ScriptText = script })
         end
     elseif mode == 'remove' then
-        ScenEdit_SetTrigger({ description = name .. '_Entertrigg', mode = 'remove' })
-        ScenEdit_SetAction({ description = name .. '-action', mode = 'remove' })
+        ScenEdit_SetTrigger({ description = name .. '', mode = 'remove' })
+        ScenEdit_SetAction({ description = name .. '', mode = 'remove' })
         ScenEdit_SetEvent(name, { mode = 'remove' })
     end
 end

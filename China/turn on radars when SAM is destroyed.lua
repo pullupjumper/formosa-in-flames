@@ -1,10 +1,41 @@
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.const.radarDistance }
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+
+if CONFIG == nil then
+    print('CONFIG == nil')
+    ScenEdit_MsgBox('CONFIG == nil', 1)
+    return
+end
 
 if unit == nil then
     ScenEdit_SpecialMessage('China', 'unit == nil')
     return
+end
+
+if unit.dbid == CONFIG.const.platformBDID25 then
+    for _, component in ipairs(unit.components) do
+        ScenEdit_SpecialMessage('China', tostring(component['comp_dbid']))
+        ScenEdit_SpecialMessage('China', tostring(component['comp_status']))
+        if component['comp_dbid'] == CONFIG.const.sensorBDID13
+            and component['comp_status'] == 'Destroyed' then
+            ScenEdit_SpecialMessage('China', tostring(unit.name .. '\'s jammer is destroyed'))
+            ScenEdit_SpecialMessage('China', tostring(component['comp_dbid']))
+            ScenEdit_SpecialMessage('China', tostring(component['comp_status']))
+
+            for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
+                if unit.guid == value.guid then
+                    local event = ScenEdit_GetEvent(value.eventName)
+
+                    if event then
+                        event.isActive = false
+                        ScenEdit_SpecialMessage('China', tostring(event.eventName) .. ' is deactivated')
+                    end
+                end
+            end
+        end
+    end
 end
 
 local latitude = unit.latitude

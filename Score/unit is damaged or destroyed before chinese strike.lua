@@ -19,7 +19,7 @@ if unit then
         { latitude = unit.latitude, longitude = unit.longitude }
     )
 end
-
+-- ScenEdit_SpecialMessage('Taiwan', 'enter')
 -- if unit then
 --     local targets = unit.targetedBy
 
@@ -27,6 +27,8 @@ end
 --         local target = SE_GetUnit({ guid = guid })
 
 --         if target then
+--             ScenEdit_SpecialMessage('Taiwan', tostring(target.name))
+
 --             if (target.type ~= 'Submarine') and (target.dbid ~= CONFIG.s.const.weaponDBID) then
 --                 local score = ScenEdit_GetScore("Taiwan")
 --                 ScenEdit_SetScore(
@@ -35,7 +37,7 @@ end
 --                 )
 --                 ScenEdit_SpecialMessage(
 --                     'Taiwan',
---                     CONFIG.s.const.msg.attackBeforeTheHHour,
+--                     'You have attacked first and caused a military esclaion.',
 --                     { latitude = unit.latitude, longitude = unit.longitude }
 --                 )
 --             end

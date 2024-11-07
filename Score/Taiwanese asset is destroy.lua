@@ -32,20 +32,27 @@ if unit then
             )
         end
 
-        if unit.dbid == CONFIG.const.platformBDID27 then
-            for _, battery in ipairs(CONFIG.t.srbm.batteries) do
-                if unit.guid == battery.wpnStorageFacility then
-                    battery.position.magazineWeapenNum = 0
-                end
-            end
+        -- if unit.dbid == CONFIG.const.platformBDID27 then
+        --     for _, battery in ipairs(CONFIG.t.ground.srbm.batteries) do
+        --         if unit.guid == battery.wpnStorageFacility then
+        --             battery.position.magazineWeapenNum = 0
+        --         end
+        --     end
 
-            for _, battery in ipairs(CONFIG.t.glcm.batteries) do
-                if unit.guid == battery.wpnStorageFacility then
-                    battery.position.magazineWeapenNum = 0
-                end
-            end
+        --     for _, battery in ipairs(CONFIG.t.ground.glcm.batteries) do
+        --         if unit.guid == battery.wpnStorageFacility then
+        --             battery.position.magazineWeapenNum = 0
+        --         end
+        --     end
 
-            ScenEdit_SpecialMessage('Taiwan', "Weapon storage facility has been destoryed")
+        --     ScenEdit_SpecialMessage('Taiwan', "Weapon storage facility has been destoryed")
+        -- end
+
+        if unit.dbid == CONFIG.const.platformBDID50 then
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'mlrs')
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'srbm')
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'glcm')
+            ScenEdit_SpecialMessage('Taiwan', "An ammunition section has been destoryed.")
         end
     end
 end

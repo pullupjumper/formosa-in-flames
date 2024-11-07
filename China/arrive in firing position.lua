@@ -7,8 +7,8 @@ if CONFIG == nil then
 end
 
 
-if CONFIG.c.glcm.isStrikeActivated then
-    for _, battery in ipairs(CONFIG.c.glcm.batteries) do
+if CONFIG.c.ground.glcm.isStrikeActivated then
+    for _, battery in pairs(CONFIG.c.ground.glcm.batteries) do
         if unit then
             if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
                 SetWCSToFree(battery, unit)
@@ -17,8 +17,8 @@ if CONFIG.c.glcm.isStrikeActivated then
     end
 end
 
-if CONFIG.c.mlrs.isStrikeActivated then
-    for _, battery in ipairs(CONFIG.c.mlrs.batteries) do
+if CONFIG.c.ground.mlrs.isStrikeActivated then
+    for _, battery in pairs(CONFIG.c.ground.mlrs.batteries) do
         if unit then
             if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
                 SetWCSToFree(battery, unit)
@@ -27,8 +27,8 @@ if CONFIG.c.mlrs.isStrikeActivated then
     end
 end
 
-if CONFIG.c.srbm.isStrikeActivated then
-    for _, battery in ipairs(CONFIG.c.srbm.batteries) do
+if CONFIG.c.ground.srbm.isStrikeActivated then
+    for _, battery in pairs(CONFIG.c.ground.srbm.batteries) do
         if unit then
             if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
                 SetWCSToFree(battery, unit)

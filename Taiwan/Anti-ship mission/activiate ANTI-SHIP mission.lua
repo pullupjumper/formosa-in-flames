@@ -8,9 +8,10 @@ local function setAntiShipMissionStartTime()
     local currentTime = ScenEdit_CurrentTime()
     local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
     local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
-    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP WEST').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'ANTI-SHIP NORTH').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'RECON3').starttime = reconStartTime3
+    ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/WEST').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/WEST').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/PENGHU').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'RECON/3').starttime = reconStartTime3
 end
 
 if CONFIG == nil then
@@ -19,16 +20,16 @@ if CONFIG == nil then
     return
 end
 
-if CONFIG.t.asm.isAntishipMissionActivated == false and contacts ~= nil then
+if CONFIG.t.ground.ascm.isAntishipMissionActivated == false and contacts ~= nil then
     for index, value in ipairs(contacts) do
-        if value:inArea(CONFIG.t.asm.const.nai1) and value.typed == 2 then
+        if value:inArea(CONFIG.t.ground.ascm.const.nai1) and value.typed == 2 then
             table.insert(temp, value)
         end
     end
 
-    if GetCount(temp) > CONFIG.t.asm.const.shipNumInNai1 then
+    if GetCount(temp) > CONFIG.t.ground.ascm.const.shipNumInNai1 then
         setAntiShipMissionStartTime()
-        CONFIG.t.asm.isAntishipMissionActivated = true
+        CONFIG.t.ground.ascm.isAntishipMissionActivated = true
         event.isActive = false
         ScenEdit_MsgBox('Launch ANT-SHIP mission', 0)
     end
