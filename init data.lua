@@ -8,7 +8,7 @@ local function initRunways()
     CONFIG.c.ground.srbm.packages[4].targetList[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
     CONFIG.c.ground.glcm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/HELIPAD')
     CONFIG.c.ground.glcm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
-    CONFIG.c.ground.mlrs.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/C2/NORTH')
+    CONFIG.c.ground.mlrs.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/C2/N')
 
     for _, value in ipairs(CONFIG.c.ground.srbm.packages[2].targetList[2]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
@@ -72,8 +72,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    table.insert(CONFIG.t.IADS.ROCC[ROCCGuid].SAM, unit.guid)
-                    CONFIG.t.IADS.units[unit.guid] = data
+                    CONFIG.t.IADS.ROCC[ROCCGuid].SAM[unit.guid] = data
                 end
 
                 if unit.dbid == CONFIG.const.platformBDID41
@@ -88,8 +87,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    table.insert(CONFIG.t.IADS.ROCC[ROCCGuid].radar, unit.guid)
-                    CONFIG.t.IADS.units[unit.guid] = data
+                    CONFIG.t.IADS.ROCC[ROCCGuid].radar[unit.guid] = data
                 end
             end
         end
@@ -105,8 +103,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    table.insert(CONFIG.t.IADS.TAAOC[TAAOCGuid].SAM, unit.guid)
-                    CONFIG.t.IADS.units[unit.guid] = data
+                    CONFIG.t.IADS.TAAOC[TAAOCGuid].SAM[unit.guid] = data
                 end
             end
         end
@@ -129,8 +126,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    table.insert(CONFIG.c.IADS.C2[c2Guid].SAM, unit.guid)
-                    CONFIG.c.IADS.units[unit.guid] = data
+                    CONFIG.c.IADS.C2[c2Guid].SAM[unit.guid] = data
                 end
 
                 if unit.dbid == CONFIG.const.platformBDID16 or unit.dbid == CONFIG.const.platformBDID17 then
@@ -141,8 +137,8 @@ local function initC2()
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
                     }
-                    table.insert(CONFIG.c.IADS.C2[c2Guid].radar, unit.guid)
-                    CONFIG.c.IADS.units[unit.guid] = data
+
+                    CONFIG.c.IADS.C2[c2Guid].radar[unit.guid] = data
                 end
             end
         end
@@ -206,7 +202,7 @@ local function initSIGINT()
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID45 then
-            CONFIG.u.SIGINT.units[unit.guid] = {
+            CONFIG.u.SIGINT.RA[unit.guid] = {
                 guid = unit.guid,
                 OODA = unit.OODA,
                 comms_level = 40,
@@ -221,7 +217,7 @@ local function initSIGINT()
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID47 then
-            CONFIG.c.SIGINT.units[unit.guid] = {
+            CONFIG.c.SIGINT.RA[unit.guid] = {
                 guid = unit.guid,
                 OODA = unit.OODA,
                 comms_level = 40,
@@ -229,33 +225,6 @@ local function initSIGINT()
                 comms_threshold = 30,
                 outofcomms = 0,
             }
-        end
-    end
-end
-
-local function remove(side)
-    local unitsFromChina = VP_GetSide({ Side = side }).units
-    for index, u in ipairs(unitsFromChina) do
-        local unit = SE_GetUnit({ guid = u.guid })
-        local count = 0
-        for _, sensor in ipairs(unit.sensors) do
-            if sensor['sensor_dbid'] == 0 then
-                count = count + 1
-            end
-        end
-
-        count = count - 1
-        print(count)
-        for index, sensor in ipairs(unit.sensors) do
-            if count >= 1 and sensor['sensor_dbid'] == 0 then
-                ScenEdit_UpdateUnit({
-                    guid = unit.guid,
-                    dbid = 0,
-                    mode = 'remove_sensor',
-                    sensorId = sensor['sensor_guid']
-                })
-                count = count - 1
-            end
         end
     end
 end

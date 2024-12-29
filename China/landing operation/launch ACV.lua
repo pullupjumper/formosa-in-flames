@@ -36,9 +36,14 @@ if ship and (ship.dbid == CONFIG.const.platformBDID7
 end
 
 if ship and ship.dbid == CONFIG.const.platformBDID48 then
-    if ship.group and contacts then
+    local check = SE_GetUnit({ guid = ship.guid })
+    ScenEdit_SpecialMessage('China', ship.name)
+
+    if check and ship.group and contacts then
+        ScenEdit_SpecialMessage('China', ship.group.name)
+
         local filteredContacts = FilterContacts(contacts, function(contact)
-            return contact:inArea(CONFIG.c.landingOperation.const.sag[ship.group.guid].area)
+            return contact:inArea(CONFIG.c.landingOperation.const.sag[ship.group.name].area)
                 and (contact.typed == 8)
         end)
 
@@ -49,6 +54,7 @@ if ship and ship.dbid == CONFIG.const.platformBDID48 then
                 { ship },
                 2691
             )
+            ScenEdit_SpecialMessage('China', launchedNum .. ' launched')
         end
     end
 end

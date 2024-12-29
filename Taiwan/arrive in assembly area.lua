@@ -32,4 +32,12 @@ if CONFIG.t.ground.srbm.isStrikeActivated then
     end
 end
 
+if CONFIG.t.ground.ascm.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'Taiwan', 'ascm', false)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, false)
+    end
+end
+
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

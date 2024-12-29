@@ -15,7 +15,7 @@ end
 
 if contacts ~= nil then
     for _, value in ipairs(contacts) do
-        if value:inArea(CONFIG.t.ground.ascm.const.nai1) and value.type == 'Surface' then
+        if value:inArea(CONFIG.t.ground.ascm.test.nai1) and value.type == 'Surface' then
             table.insert(temp, value)
         end
     end

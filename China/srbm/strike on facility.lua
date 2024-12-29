@@ -57,50 +57,57 @@ local function trackTarget(CONFIG, units, UAVDBID, target)
     return false
 end
 
-local function assessTargets(CONFIG, type)
+local function analyzeTargets(CONFIG, type)
     local _targetList = {}
     local mlrsConfig = CONFIG.c.ground[type]
-    local elapsedTime = 0
+    -- local elapsedTime = 0
 
-    if mlrsConfig.lastReconTime then
-        elapsedTime = ScenEdit_CurrentTime() - mlrsConfig.lastReconTime
-    end
+    -- if mlrsConfig.lastReconTime then
+    --     elapsedTime = ScenEdit_CurrentTime() - mlrsConfig.lastReconTime
+    -- end
 
     for index, package in ipairs(mlrsConfig.packages) do
         local targetListIdx = package.index
-        local filteredTargets = {}
+        local targets = {}
 
         for _, v in ipairs(package.targetList[targetListIdx]) do
             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
 
             if target then
+                local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
                 local BDA = target.BDA
-                local hasReconed = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage')
-                    and mlrsConfig.lastReconTime and ScenEdit_CurrentTime() > mlrsConfig.lastReconTime
-                    and elapsedTime <= mlrsConfig.const.contactAge
-                local isTheFirstStrike = targetListIdx == 1 and not mlrsConfig.packages[index].isFinished
-                local strikeIfRadar = package.name == 'RADAR'
+                local detections = target.lastDetections
+                -- local hasReconed = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage')
+                --     and mlrsConfig.lastReconTime and ScenEdit_CurrentTime() > mlrsConfig.lastReconTime
+                --     and elapsedTime <= mlrsConfig.const.contactAge
+                local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+                    (detections and detections[1].age <= mlrsConfig.const.contactAge) and
+                    not isHelipad
+                local isInitialWaveOfAttacks = targetListIdx == 1 and
+                    not mlrsConfig.packages[index].isFinished and
+                    not isHelipad
+                local isRadar = package.name == 'RADAR' and not isHelipad
+                local isHelipadEmbarkedWithHelicopter = isHelipad and
+                    not mlrsConfig.packages[index].isFinished and
+                    GetCount(SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft']) > 0
 
-                if (isTheFirstStrike or hasReconed or strikeIfRadar) then
-                    table.insert(filteredTargets, target)
+
+                if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
+                    table.insert(targets, target)
                 end
             end
         end
 
         table.insert(_targetList, {
             isDecidedToStrike = false,
-            fixedTargets = filteredTargets,
+            fixedTargets = targets,
             emittingTargets = {},
             radioTargets = {},
-            targets = filteredTargets
+            targets = targets
         })
 
-        if CONFIG.isDevMode and GetCount(filteredTargets) > 0 then
-            -- if index == 1 then
-            --     ScenEdit_SpecialMessage('China', 'Fixed targets:===============================')
-            -- end
-
-            ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(filteredTargets))
+        if CONFIG.isDevMode and GetCount(targets) > 0 then
+            ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(targets))
 
             if index == GetCount(mlrsConfig.packages) then
                 ScenEdit_SpecialMessage('China', 'Fixed targets:===============================')
@@ -111,7 +118,7 @@ local function assessTargets(CONFIG, type)
     return _targetList
 end
 
-local function assessEmissions(CONFIG, type, targetList, contacts)
+local function analyzeEmissions(CONFIG, type, targetList, contacts)
     local mlrsConfig = CONFIG.c.ground[type]
 
     for index, package in ipairs(mlrsConfig.packages) do
@@ -134,10 +141,6 @@ local function assessEmissions(CONFIG, type, targetList, contacts)
         InsertList(targetList[index].targets, targets)
 
         if CONFIG.isDevMode and GetCount(targets) > 0 then
-            -- if index == 1 then
-            --     ScenEdit_SpecialMessage('China', 'Emission targets:===============================')
-            -- end
-
             ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(targets))
 
             if index == GetCount(mlrsConfig.packages) then
@@ -157,7 +160,10 @@ local function analyzeRadioTransmissions(CONFIG, type, targetList, contacts)
 
         for _, area in ipairs(areas) do
             for _, c in ipairs(contacts) do
-                if c.typed == 8 and c:inArea(area) then
+                if (c.typed == 8 or
+                        string.find(c.type_description, 'ROCC') ~= nil or
+                        string.find(c.type_description, 'TAAOC') ~= nil) and
+                    c:inArea(area) then
                     table.insert(targets, c)
                 end
             end
@@ -171,17 +177,16 @@ local function analyzeRadioTransmissions(CONFIG, type, targetList, contacts)
         local isTracking = false
 
         for _, c in ipairs(contacts) do
-            for _, emission in pairs(CONFIG.c.SIGINT.emissions) do
+            for _, transmission in pairs(CONFIG.c.SIGINT.transmissions) do
                 local distance = Tool_Range(
-                    { latitude = emission.latitude, longitude = emission.longitude }, c.guid
+                    { latitude = transmission.latitude, longitude = transmission.longitude }, c.guid
                 )
 
                 if distance <= CONFIG.c.SIGINT.const.maxRange and
-                    emission.type == 'mobile' and
-                    emission.temp > CONFIG.c.SIGINT.const.maxCount then
+                    transmission.temp > CONFIG.c.SIGINT.const.maxCount then
                     table.insert(targets, c)
 
-                    if not isTracking then
+                    if not isTracking and transmission.type == 'mobile' then
                         isTracking = trackTarget(
                             CONFIG,
                             VP_GetSide({ Side = 'China' }).units,
@@ -203,10 +208,6 @@ local function analyzeRadioTransmissions(CONFIG, type, targetList, contacts)
         InsertList(targetList[index].targets, targets)
 
         if CONFIG.isDevMode and GetCount(targets) > 0 then
-            -- if index == 1 then
-            --     ScenEdit_SpecialMessage('China', 'Radio targets:===============================')
-            -- end
-
             ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(targets))
 
             if index == GetCount(mlrsConfig.packages) then
@@ -274,10 +275,6 @@ local function launchMissiles(CONFIG, type, targetList, weaponDBID)
                 mlrsConfig.packages[index].index = mlrsConfig.packages[index].index + 1
 
                 if CONFIG.isDevMode then
-                    -- if index == 1 then
-                    --     ScenEdit_SpecialMessage('China', '/ Firing missiles:===============================')
-                    -- end
-
                     ScenEdit_SpecialMessage(
                         'China',
                         mlrsConfig.packages[index].name .. '/Missiles: ' .. result
@@ -311,7 +308,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
             pkg.missionName,
             false
         )
-        pkg.striker.units = strikers
+        -- pkg.striker.units = strikers
 
         if pkg.escort then
             local escorts = AssignEmbarkedUnitToStrikeMission(
@@ -322,7 +319,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
                 pkg.missionName,
                 true
             )
-            pkg.escort.units = escorts
+            -- pkg.escort.units = escorts
         end
 
         if pkg.wildWeasel then
@@ -334,7 +331,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
                 pkg.missionName,
                 true
             )
-            pkg.wildWeasel.units = wildWeasels
+            -- pkg.wildWeasel.units = wildWeasels
         end
 
         if pkg.jammer then
@@ -346,7 +343,7 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
                 pkg.missionName,
                 true
             )
-            pkg.jammer.units = jammers
+            -- pkg.jammer.units = jammers
         end
 
         if pkg.tanker then
@@ -415,11 +412,11 @@ launchH6NIfRequired(CONFIG.c.recon)
 
 if CONFIG.c.ground.mlrs.isStrikeActivated then
     local targetList = {}
-    local isAllArrived = true
+    local isAllArrived = false
     local key = CONFIG.c.ground.mlrs.packages[1].batteries[1].guid
     local weaponDBID = CONFIG.c.ground.mlrs.batteries[key].weaponDBID
-    targetList = assessTargets(CONFIG, 'mlrs')
-    targetList = assessEmissions(CONFIG, 'mlrs', targetList, contacts)
+    targetList = analyzeTargets(CONFIG, 'mlrs')
+    targetList = analyzeEmissions(CONFIG, 'mlrs', targetList, contacts)
     targetList = analyzeRadioTransmissions(CONFIG, 'mlrs', targetList, contacts)
     targetList = determineIfDeployByTargetNum(targetList, 7)
     isAllArrived = deployBatteries(CONFIG, 'mlrs', targetList)
@@ -427,24 +424,33 @@ if CONFIG.c.ground.mlrs.isStrikeActivated then
 end
 
 if CONFIG.c.ground.srbm.isStrikeActivated then
-    local targetList = assessTargets(CONFIG, 'srbm')
+    local targetList = analyzeTargets(CONFIG, 'srbm')
     targetList = determineIfDeployByTargetNum(targetList, 7)
     local isAllArrived = deployBatteries(CONFIG, 'srbm', targetList)
     if isAllArrived then launchMissiles(CONFIG, 'srbm', targetList) end
 end
 
 if CONFIG.c.ground.glcm.isStrikeActivated then
-    local targetList = assessTargets(CONFIG, 'glcm')
-    targetList = determineIfDeployByTargetNum(targetList, 7)
+    local targetList = analyzeTargets(CONFIG, 'glcm')
+    targetList = determineIfDeployByTargetNum(targetList, 5)
     local isAllArrived = deployBatteries(CONFIG, 'glcm', targetList)
     if isAllArrived then launchMissiles(CONFIG, 'glcm', targetList) end
 end
 
 if CONFIG.c.surface.lacm.isStrikeActivated then
+    local ships = {}
+
+    for _, value in ipairs(SE_GetUnit({ unitname = 'CSG' }).group.unitlist) do
+        local unit = SE_GetUnit({ guid = value })
+        if unit and unit.dbid == CONFIG.const.platformBDID51 then
+            table.insert(ships, { guid = value })
+        end
+    end
+
     AttackContacts(
         CONFIG.c.surface.lacm.const.targetList,
         5,
-        CONFIG.c.surface.lacm.const.ships,
+        ships,
         CONFIG.c.surface.lacm.const.weaponDBID
     )
 end
@@ -488,7 +494,16 @@ if CONFIG.c.air.landBased.aam.isStrikeActivated then
             return false
         end
     end
-    airStrike(CONFIG, 'landBased', 'aam', contacts, airContactHandler, 1)
+    -- local airContactHandler = function(package)
+    --     return function(value)
+    --         if value.typed == 0 and value:inArea(package.area) then
+    --             return true
+    --         end
+
+    --         return false
+    --     end
+    -- end
+    airStrike(CONFIG, 'landBased', 'aam', contacts, airContactHandler, 6)
 end
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

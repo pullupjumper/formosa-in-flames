@@ -7,10 +7,12 @@ local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 local function setAntiShipMissionStartTime()
     local currentTime = ScenEdit_CurrentTime()
     local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
-    local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 5 * 60))
-    ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/WEST').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/WEST').starttime = antiShipStartTime
-    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/PENGHU').starttime = antiShipStartTime
+    local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
+    local asuwAgainstACVStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 40 * 60))
+    ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/1').starttime = antiShipStartTime
+    ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/2').starttime = reconStartTime3
+    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/W').starttime = asuwAgainstACVStartTime
+    ScenEdit_GetMission('Taiwan', 'ASUW/ACV/PENGHU').starttime = asuwAgainstACVStartTime
     ScenEdit_GetMission('Taiwan', 'RECON/3').starttime = reconStartTime3
 end
 
@@ -20,16 +22,16 @@ if CONFIG == nil then
     return
 end
 
-if CONFIG.t.ground.ascm.isAntishipMissionActivated == false and contacts ~= nil then
+if CONFIG.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
     for index, value in ipairs(contacts) do
-        if value:inArea(CONFIG.t.ground.ascm.const.nai1) and value.typed == 2 then
+        if value:inArea(CONFIG.t.ground.ascm.test.nai1) and value.typed == 2 then
             table.insert(temp, value)
         end
     end
 
-    if GetCount(temp) > CONFIG.t.ground.ascm.const.shipNumInNai1 then
+    if GetCount(temp) > CONFIG.t.ground.ascm.test.shipNumInNai1 then
         setAntiShipMissionStartTime()
-        CONFIG.t.ground.ascm.isAntishipMissionActivated = true
+        CONFIG.t.ground.ascm.test.isAntishipMissionActivated = true
         event.isActive = false
         ScenEdit_MsgBox('Launch ANT-SHIP mission', 0)
     end

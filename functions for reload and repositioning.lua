@@ -282,7 +282,7 @@ function CheckBatteryState(CONFIG, platform, batteries, side, isRepositioningAut
                     end
 
                     local elapsedTime = ScenEdit_CurrentTime() - battery.reloadStartTime
-                    local result = IsMetWithAmmoTrucks(CONFIG, group, side, platform, isRepositioningAutomatically)
+                    local result = IsMetWithAmmoTrucks(CONFIG, group, side, platform, false)
                     local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and elapsedTime >= CONFIG.c['ground'][platform].const.reloadTime)
                         and result.isMet
                         and IsWpnNumLessThan(group, battery.wpnNumLessThan, battery.weaponDBID)
@@ -310,7 +310,10 @@ function CheckBatteryState(CONFIG, platform, batteries, side, isRepositioningAut
                 local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and diff >= CONFIG[field]['ground'][platform].const.reloadTime)
                     and result.isMet
                     and IsWpnNumLessThan(group, battery.wpnNumLessThan, battery.weaponDBID)
-
+                -- ScenEdit_SpecialMessage('Taiwan', battery.name)
+                -- ScenEdit_SpecialMessage('Taiwan', tostring(diff))
+                -- ScenEdit_SpecialMessage('Taiwan', tostring(result.isMet))
+                -- ScenEdit_SpecialMessage('Taiwan', tostring(isMoreThanReloadTime))
                 if isMoreThanReloadTime then
                     -- Reload(battery, battery.weaponDBID)
                     Reload(
@@ -331,31 +334,33 @@ function IsMetWithAmmoTrucks(CONFIG, unit, side, platform, isRepositioningAutoma
     if side == 'China' then
         key = 'c'
     end
-    local group = SE_GetUnit({ guid = unit.group.guid })
+    -- local group = SE_GetUnit({ guid = unit.group.guid })
 
-    if group then
-        for _, battery in pairs(CONFIG[key].ground[platform].batteries) do
-            local isTrue = true
+    if unit.group then
+        local group = SE_GetUnit({ guid = unit.group.guid })
 
-            if isRepositioningAutomatically then
-                isTrue = battery.state == CONFIG.const.batteryState.REPOSITIONING
-            end
+        if group then
+            for _, battery in pairs(CONFIG[key].ground[platform].batteries) do
+                local isTrue = true
 
-            if battery.guid == group.guid and isTrue then
-                local ammoTrucks = SE_GetUnit({ guid = battery.ammunitionSection })
+                if isRepositioningAutomatically then
+                    isTrue = battery.state == CONFIG.const.batteryState.REPOSITIONING
+                end
 
-                for _, p in pairs(CONFIG[key].ground[platform].const.position) do
-                    local isMetWithAmmoTrucks = unit:inArea(p.assemblyArea.area)
-                        and (ammoTrucks and ammoTrucks:inArea(p.assemblyArea.area))
-                    if isMetWithAmmoTrucks then
-                        return { isMet = true, battery = battery }
+                if battery.guid == group.guid and isTrue then
+                    local ammoTrucks = SE_GetUnit({ guid = battery.ammunitionSection })
+
+                    for _, p in pairs(CONFIG[key].ground[platform].const.position) do
+                        local isMetWithAmmoTrucks = unit:inArea(p.assemblyArea.area)
+                            and (ammoTrucks and ammoTrucks:inArea(p.assemblyArea.area))
+                        if isMetWithAmmoTrucks then
+                            return { isMet = true, battery = battery }
+                        end
                     end
                 end
             end
         end
     end
-
-
 
     return { isMet = false, battery = nil }
 end
@@ -363,6 +368,11 @@ end
 function DestroyAmmoSecHandler(unit, side, platform)
     local field = 't'
     if side == 'China' then field = 'c' end
+
+    if unit.group == nil then
+        return
+    end
+
     local ammoSec = CONFIG[field].ground[platform].ammunitionSections[unit.group.guid]
 
     if ammoSec and ammoSec.wpnCurrent > 0 then

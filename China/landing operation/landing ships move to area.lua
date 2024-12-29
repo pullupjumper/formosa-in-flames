@@ -78,8 +78,8 @@ local function setCoursesForAllShips(CONFIG)
 
         for _, infoItem in ipairs(shipLocationInfo) do
             if unit and unit:inArea(infoItem.from.stagingArea) then
-                local groupNameForLHD = infoItem.name .. ' LHD/LPD Landing Ship Group'
-                local groupNameForLST = infoItem.name .. ' LST Landing Ship Group'
+                local groupNameForLHD = infoItem.name .. ' LHD/LPD Grp'
+                local groupNameForLST = infoItem.name .. ' LST Grp'
                 local groupForLHD = ScenEdit_GetUnit({ unitname = groupNameForLHD })
                 local groupForLST = ScenEdit_GetUnit({ unitname = groupNameForLST })
                 local locationFor075 = infoItem.to.result.type075.locations[1]
@@ -187,8 +187,9 @@ local function setCoursesForAllShips(CONFIG)
                     infoItem.to.result.type072a2.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type071.dbid then
                     local locationIndex = infoItem.to.result.type071.locationIndex
+                    local len = GetCount(infoItem.to.result.type071.locations)
 
-                    if locationIndex > 2 then
+                    if locationIndex > len then
                         if groupForLST and GetCount(groupForLST.course) == 0 then
                             groupForLST.course = GetCourseByPoints({ locationFor072a })
                             groupForLST.manualSpeed = shipInfo.shipSpeed
@@ -205,11 +206,11 @@ local function setCoursesForAllShips(CONFIG)
                     end
 
                     if CONFIG.c.landingOperation.isTesting then
-                        if locationIndex > 2 then
+                        if locationIndex > len then
                             ScenEdit_SetUnit({
                                 guid = unit.guid,
-                                latitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - 2].latitude,
-                                longitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - 2].longitude,
+                                latitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - len].latitude,
+                                longitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - len].longitude,
                                 manualSpeed = 0,
                             })
                         else
@@ -230,13 +231,14 @@ local function setCoursesForAllShips(CONFIG)
     end
 
     for _, group in pairs(CONFIG.c.landingOperation.const.sag) do
-        local unit = SE_GetUnit({ guid = group.guid })
+        -- local unit = SE_GetUnit({ guid = group.guid })
+        local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
 
         if unit ~= nil then
-            unit.course = group.course.toArchorageArea
+            unit.course = group.to.archorageArea
 
             if CONFIG.c.landingOperation.isTesting then
-                local count = GetCount(group.course.toArchorageArea)
+                local count = GetCount(group.to.archorageArea)
                 local type052d = 0
                 local type054a = 0
 
@@ -248,22 +250,22 @@ local function setCoursesForAllShips(CONFIG)
                             if type052d == 0 then
                                 ScenEdit_SetUnit({
                                     guid = ship.guid,
-                                    latitude = group.course.toArchorageArea[count].lat,
-                                    longitude = group.course.toArchorageArea[count].lon,
-                                    heading = group.heading,
+                                    latitude = group.to.archorageArea[count].lat,
+                                    longitude = group.to.archorageArea[count].lon,
+                                    heading = group.to.heading,
                                 })
                             else
                                 local point = World_GetPointFromBearing({
-                                    LATITUDE = group.course.toArchorageArea[count].lat,
-                                    LONGITUDE = group.course.toArchorageArea[count].lon,
-                                    BEARING = group.heading - 180,
+                                    LATITUDE = group.to.archorageArea[count].lat,
+                                    LONGITUDE = group.to.archorageArea[count].lon,
+                                    BEARING = group.to.heading - 180,
                                     DISTANCE = 1.5,
                                 })
                                 ScenEdit_SetUnit({
                                     guid = ship.guid,
                                     latitude = point.latitude,
                                     longitude = point.longitude,
-                                    heading = group.heading,
+                                    heading = group.to.heading,
                                 })
                             end
                             type052d = type052d + 1
@@ -272,29 +274,29 @@ local function setCoursesForAllShips(CONFIG)
                         if ship.dbid == CONFIG.const.platformBDID49 then
                             if type054a == 0 then
                                 local point = World_GetPointFromBearing({
-                                    LATITUDE = group.course.toArchorageArea[count].lat,
-                                    LONGITUDE = group.course.toArchorageArea[count].lon,
-                                    BEARING = group.heading - 45,
+                                    LATITUDE = group.to.archorageArea[count].lat,
+                                    LONGITUDE = group.to.archorageArea[count].lon,
+                                    BEARING = group.to.heading - 45,
                                     DISTANCE = 1.5,
                                 })
                                 ScenEdit_SetUnit({
                                     guid = ship.guid,
                                     latitude = point.latitude,
                                     longitude = point.longitude,
-                                    heading = group.heading,
+                                    heading = group.to.heading,
                                 })
                             else
                                 local point = World_GetPointFromBearing({
-                                    LATITUDE = group.course.toArchorageArea[count].lat,
-                                    LONGITUDE = group.course.toArchorageArea[count].lon,
-                                    BEARING = group.heading + 45,
+                                    LATITUDE = group.to.archorageArea[count].lat,
+                                    LONGITUDE = group.to.archorageArea[count].lon,
+                                    BEARING = group.to.heading + 45,
                                     DISTANCE = 1.5,
                                 })
                                 ScenEdit_SetUnit({
                                     guid = ship.guid,
                                     latitude = point.latitude,
                                     longitude = point.longitude,
-                                    heading = group.heading,
+                                    heading = group.to.heading,
                                 })
                             end
                             type054a = type054a + 1
@@ -494,12 +496,23 @@ local function setCoursesForLSTs(CONFIG)
         local unit = SE_GetUnit({ guid = value.guid })
 
         for _, zone in ipairs(operationalZones) do
-            if unit and unit:inArea(zone.LSTAnchorageArea) then
+            if unit and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
                 if unit.dbid == CONFIG.const.platformBDID10 or unit.dbid == CONFIG.const.platformBDID32 then
-                    unit.group = "none"
-                    unit.course = nil
+                    -- unit.group = "none"
+                    -- unit.course = nil
+                    -- unit.manualSpeed = zone.LSTSettings.speed
+                    -- ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1].name)
+
+                    local grpName = zone.name .. ' LSM Grp'
+                    unit.group = grpName
+                    -- unit.course = nil
                     unit.manualSpeed = zone.LSTSettings.speed
-                    ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1].name)
+                    local grp = SE_GetUnit({ unitname = grpName })
+                    grp.formation = { spacing_unit = 1, lead = unit.guid, name = 'Line', spacing = 0.5 }
+
+                    if grp and grp.mission == nil then
+                        ScenEdit_AssignUnitToMission(grp.guid, zone.boat.missions[1].name)
+                    end
                 else
                     local destinationTemp = World_GetPointFromBearing({
                         LATITUDE = unit.latitude,
@@ -507,18 +520,29 @@ local function setCoursesForLSTs(CONFIG)
                         BEARING = zone.LSTSettings.course.bearing,
                         DISTANCE = zone.LSTSettings.course.distance
                     })
+
+                    if unit.group and unit.group.name == (zone.name .. ' LST Grp') then
+                        unit.group = 'none'
+                    end
+
                     unit.course = GetCourseByPoints({ destinationTemp })
                     unit.manualSpeed = zone.LSTSettings.speed
                 end
             end
+
+            -- if unit and unit.name==(zone.name .. ' LST Grp') then
+            --     unit.formation = { spacing_unit = 1, name = 'Line', spacing = 0.2 }
+            -- end
         end
     end
 
     for _, group in pairs(CONFIG.c.landingOperation.const.sag) do
-        local unit = SE_GetUnit({ guid = group.guid })
+        -- local unit = SE_GetUnit({ guid = group.guid })
+        local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
 
         if unit ~= nil then
-            unit.course = group.course.toAmphibiousVehicleStagingArea
+            -- unit.course = group.course.toAmphibiousVehicleStagingArea
+            unit.course = group.to.amphibiousVehicleStagingArea
         end
     end
 end

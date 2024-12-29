@@ -30,7 +30,7 @@ local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, da
             ((math.random(-120 * x, 120 * x) ^ 2 / 1500000) / 10 ^ 5 * (x ^ 2.25 / 10 ^ 2.4))
     end
 
-    for elint_guid, value in pairs(CONFIG[key].SIGINT.units) do
+    for elint_guid, value in pairs(CONFIG[key].SIGINT.RA) do
         local elint_u = SE_GetUnit({ guid = elint_guid })
         local distance = Tool_Range(enemy_unit.guid, elint_guid)
         if elint_u and elint_u.condition == 'Airborne' and math.random() < getY(distance) and isEmitting then
@@ -131,12 +131,12 @@ function HandleSIGINT(CONFIG, units, isShown, side)
                 end
             end
 
-            local result = getSIGINT(value.guid, value.name, isEmitting, isShown, side)
+            local result = getSIGINT(value.guid, value.msg, isEmitting, isShown, side)
 
             if result.isDetected then
-                if CONFIG[field].SIGINT.emissions[value.guid] then
-                    CONFIG[field].SIGINT.emissions[value.guid].latitude = result.latitude
-                    CONFIG[field].SIGINT.emissions[value.guid].longitude = result.longitude
+                if CONFIG[field].SIGINT.transmissions[value.guid] then
+                    CONFIG[field].SIGINT.transmissions[value.guid].latitude = result.latitude
+                    CONFIG[field].SIGINT.transmissions[value.guid].longitude = result.longitude
                 else
                     local type = 'mobile'
 
@@ -145,9 +145,10 @@ function HandleSIGINT(CONFIG, units, isShown, side)
                         type = 'C2'
                     end
 
-                    CONFIG[field].SIGINT.emissions[value.guid] = {
+                    CONFIG[field].SIGINT.transmissions[value.guid] = {
                         name = value.name,
                         guid = value.guid,
+                        msg = value.msg,
                         type = type,
                         latitude = result.latitude,
                         longitude = result.longitude,
@@ -157,10 +158,11 @@ function HandleSIGINT(CONFIG, units, isShown, side)
                     }
                 end
 
-                CONFIG[field].SIGINT.emissions[value.guid].temp = CONFIG[field].SIGINT.emissions[value.guid].temp + 1
+                CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions[value.guid]
+                    .temp + 1
 
-                if CONFIG[field].SIGINT.emissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount then
-                    if not CONFIG[field].SIGINT.emissions[value.guid].autodetectable then
+                if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount then
+                    if not CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
                         if unit.group then
                             for _, v in ipairs(unit.group.unitlist) do
                                 SE_SetUnit({ guid = v, autodetectable = true })
@@ -169,18 +171,19 @@ function HandleSIGINT(CONFIG, units, isShown, side)
                             SE_SetUnit({ guid = value.guid, autodetectable = true })
                         end
 
-                        CONFIG[field].SIGINT.emissions[value.guid].autodetectable = true
+                        CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = true
                         -- ScenEdit_MsgBox('autodetectable = true', 0)
                     end
                 end
             else
-                if CONFIG[field].SIGINT.emissions[value.guid] then
-                    if CONFIG[field].SIGINT.emissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount - 1 then
-                        CONFIG[field].SIGINT.emissions[value.guid].temp = CONFIG[field].SIGINT.emissions[value.guid]
+                if CONFIG[field].SIGINT.transmissions[value.guid] then
+                    if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount - 1 then
+                        CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions
+                            [value.guid]
                             .temp - 1
                     end
 
-                    if CONFIG[field].SIGINT.emissions[value.guid].autodetectable then
+                    if CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
                         if unit.group then
                             for _, v in ipairs(unit.group.unitlist) do
                                 SE_SetUnit({ guid = v, autodetectable = false })
@@ -189,7 +192,7 @@ function HandleSIGINT(CONFIG, units, isShown, side)
                             SE_SetUnit({ guid = value.guid, autodetectable = false })
                         end
 
-                        CONFIG[field].SIGINT.emissions[value.guid].autodetectable = false
+                        CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = false
                         -- ScenEdit_MsgBox('autodetectable = false', 0)
                     end
                 end

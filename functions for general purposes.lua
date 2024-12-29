@@ -14,7 +14,7 @@ local function getCurrentWeaponNum(guid, weaponDBID)
     return 0
 end
 
--- RenameUnitsFromBase('6Z8LM5-0HMIJ3QGCRQ5F', 12, 3413, '41st Air Brigade')
+-- RenameUnitsFromBase('6Z8LM5-0HMIJ3QGCRQ5F', 12, 683, '603rd Air Cavalry Bde')
 ---@param fromUnit string
 ---@param num number
 ---@param weaponDBID number
@@ -264,6 +264,11 @@ end
 ---@param course? CMO__TableOfWaypoints|nil
 function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort, course)
     local airbase = ScenEdit_GetUnit({ guid = fromUnit })
+
+    if airbase == nil then
+        airbase = ScenEdit_GetUnit({ unitname = fromUnit })
+    end
+
     if airbase == nil or airbase.embarkedUnits['Aircraft'] == nil then return end
     local m = ScenEdit_GetMission(airbase.side, missionName)
     if m == nil then return end
@@ -339,6 +344,7 @@ function AttackContact(contact, qty, batteries, btyIdx, grpIdx, weaponDBID)
                         local totalWpnCurrentNum = 0
                         local totalWpnDefaultNum = 0
                         local totalQtyAssigned = 0
+                        local toatalQtyFired = 0
                         local defaultNum = 1
                         local mountDBID = unit.mounts[1]['mount_dbid']
                         local mountIndex = 1
@@ -366,11 +372,13 @@ function AttackContact(contact, qty, batteries, btyIdx, grpIdx, weaponDBID)
 
                         for _, item in ipairs(ScenEdit_WeaponAllocation(guid, '', '')) do
                             totalQtyAssigned = totalQtyAssigned + item.qtyAssigned
+                            toatalQtyFired = toatalQtyFired + item.qtyFired
                         end
 
                         local isLessThan = totalQtyAssigned < totalWpnDefaultNum
+                        local isCurrentQtyMoreThan = totalWpnCurrentNum > (totalQtyAssigned - toatalQtyFired)
 
-                        if totalWpnCurrentNum > 0 and not isHold and isLessThan then
+                        if totalWpnCurrentNum > 0 and not isHold and isLessThan and isCurrentQtyMoreThan then
                             local result = ScenEdit_AttackContact(
                                 guid,
                                 contact.guid,
@@ -399,6 +407,7 @@ function AttackContact(contact, qty, batteries, btyIdx, grpIdx, weaponDBID)
                 local totalWpnCurrentNum = 0
                 local totalWpnDefaultNum = 0
                 local totalQtyAssigned = 0
+                local toatalQtyFired = 0
                 local defaultNum = 1
                 local mountDBID = group.mounts[1]['mount_dbid']
                 local mountIndex = 1
@@ -426,9 +435,10 @@ function AttackContact(contact, qty, batteries, btyIdx, grpIdx, weaponDBID)
 
                 for _, item in ipairs(ScenEdit_WeaponAllocation(group.guid, '', '')) do
                     totalQtyAssigned = totalQtyAssigned + item.qtyAssigned
+                    toatalQtyFired = toatalQtyFired + item.qtyFired
                 end
 
-                local isLessThan = totalQtyAssigned < totalWpnDefaultNum
+                local isLessThan = (totalQtyAssigned + toatalQtyFired) < totalWpnDefaultNum
 
                 -- local isLessThan = GetCount(ScenEdit_WeaponAllocation(group.guid, '', '')) < totalWpnDefaultNum
 
@@ -450,6 +460,8 @@ function AttackContact(contact, qty, batteries, btyIdx, grpIdx, weaponDBID)
                     return { btyIdx = btyIdx, grpIdx = grpIdx, launchedNum = launchedNum }
                 end
             end
+        else
+            break
         end
     end
 

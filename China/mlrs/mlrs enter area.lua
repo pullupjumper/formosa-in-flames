@@ -60,7 +60,7 @@ if unit then
             index = 1,
             isFinished = false
         }
-        CONFIG.c.ground.mlrs.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/C2/SOUTH')
+        CONFIG.c.ground.mlrs.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/C2/S')
     end
 end
 

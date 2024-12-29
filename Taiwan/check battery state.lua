@@ -9,5 +9,6 @@ end
 CheckBatteryState(CONFIG, 'mlrs', CONFIG.t.ground.mlrs.batteries, 'Taiwan', false)
 CheckBatteryState(CONFIG, 'srbm', CONFIG.t.ground.srbm.batteries, 'Taiwan', false)
 CheckBatteryState(CONFIG, 'glcm', CONFIG.t.ground.glcm.batteries, 'Taiwan', false)
+CheckBatteryState(CONFIG, 'ascm', CONFIG.t.ground.ascm.batteries, 'Taiwan', false)
 
 gKH.State.SaveTableToKey(CONFIG, "CONFIG")

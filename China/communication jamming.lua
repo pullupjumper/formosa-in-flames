@@ -77,7 +77,7 @@ local function commsJamming(CONFIG, u, jammer, jammed_num)
         if u.isOutOfComms == false then
             if u.outofcomms < math.random(5, 10) and u.outofcomms >= 0 and jammed_num < CONFIG.c.commsJamming.const.jammingLimit then
                 local d = Tool_Range(jammer.guid, u.guid)
-                local n = 1 * math.sqrt(1 - (d ^ 1.9 / 450 ^ 1.8))
+                local n = 1 * math.sqrt(1 - (d ^ 1.9 / CONFIG.c.commsJamming.const.jammingRange ^ 1.8))
 
                 if n == n and n > (math.random() / 2) then
                     local unit = SE_SetUnit({ guid = u.guid, outofcomms = true })
@@ -114,9 +114,61 @@ if CONFIG.c.commsJamming.isActivated then
         end
     end
 
-    for key, value in pairs(CONFIG.t.IADS.units) do
-        jammed_num = commsJamming(CONFIG, value, jammer, jammed_num)
+    local units = {}
+
+    for key, item in pairs(CONFIG.t.IADS.ROCC) do
+        for index, value in pairs(item.SAM) do
+            units[value.guid] = value
+        end
+        for index, value in pairs(item.radar) do
+            units[value.guid] = value
+        end
     end
+
+    for key, item in pairs(CONFIG.t.IADS.TAAOC) do
+        for index, value in pairs(item.SAM) do
+            units[value.guid] = value
+        end
+    end
+
+    table.sort(units, function(a, b)
+        local da = Tool_Range(jammer.guid, a.guid)
+        local db = Tool_Range(jammer.guid, b.guid)
+        return da < db
+    end)
+
+    for index, value in pairs(units) do
+        for key, item in pairs(CONFIG.t.IADS.ROCC) do
+            if item.SAM[value.guid] then
+                jammed_num = commsJamming(CONFIG, item.SAM[value.guid], jammer, jammed_num)
+            end
+
+            if item.radar[value.guid] then
+                jammed_num = commsJamming(CONFIG, item.radar[value.guid], jammer, jammed_num)
+            end
+        end
+
+        for key, item in pairs(CONFIG.t.IADS.TAAOC) do
+            if item.SAM[value.guid] then
+                jammed_num = commsJamming(CONFIG, item.SAM[value.guid], jammer, jammed_num)
+            end
+        end
+    end
+
+    -- for key, item in pairs(CONFIG.t.IADS.ROCC) do
+    --     for index, value in pairs(item.SAM) do
+    --         jammed_num = commsJamming(CONFIG, value, jammer, jammed_num)
+    --     end
+    --     for index, value in pairs(item.radar) do
+    --         jammed_num = commsJamming(CONFIG, value, jammer, jammed_num)
+    --     end
+    -- end
+
+    -- for key, item in pairs(CONFIG.t.IADS.TAAOC) do
+    --     for index, value in pairs(item.SAM) do
+    --         jammed_num = commsJamming(CONFIG, value, jammer, jammed_num)
+    --     end
+    -- end
 
     for _, value in ipairs(CONFIG.t.aircraft.AC) do
         local unit = SE_GetUnit({ guid = value.guid })
