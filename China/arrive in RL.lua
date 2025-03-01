@@ -1,0 +1,37 @@
+local unit = ScenEdit_UnitX()
+local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+-- local e=ScenEdit_EventX()
+-- ScenEdit_SpecialMessage('China', tostring(GetCount(e.triggers)))
+-- ScenEdit_SpecialMessage('China', tostring(e.triggers[1].UnitEntersArea.Description))
+
+if CONFIG == nil then
+    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
+    return
+end
+
+
+if CONFIG.c.ground.glcm.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'China', 'glcm', true)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, true)
+    end
+end
+
+if CONFIG.c.ground.mlrs.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'China', 'mlrs', true)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, true)
+    end
+end
+
+if CONFIG.c.ground.srbm.isStrikeActivated then
+    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'China', 'srbm', true)
+
+    if result.isMet then
+        SetReloadStartTime(result.battery, unit, true)
+    end
+end
+
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")

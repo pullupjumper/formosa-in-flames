@@ -40,7 +40,10 @@ function DeleteCargo(fromUnit, cargoItem)
     --     return
     -- end
 
-    if fromUnit == nil or fromUnit.cargo == nil or (fromUnit.cargo and fromUnit.cargo[1] == nil) then
+    if fromUnit == nil or
+        fromUnit.cargo == nil or
+        cargoItem.num == 0 or
+        (fromUnit.cargo and fromUnit.cargo[1] == nil) then
         return 0
     end
 
@@ -194,23 +197,18 @@ function LaunchACV(params)
     local destination = params.destination
     local ACVlocations = GenerateACVLocations(params)
     if ship == nil or ship.IsDestroyed then return end
-    local dbid = 241
-    local name = 'ZBD-05'
-    local result = DeleteCargo(ship, { type = 2, num = params.num, dbid = dbid })
+    local zbd = DeleteCargo(ship, { type = 2, num = params.num, dbid = 241 })
+    local ztd = DeleteCargo(ship, { type = 2, num = params.num - zbd, dbid = 240 })
+    local index = 0
+    local count = 0
 
-    if result == 0 then
-        dbid = 240
-        name = 'ZTD-05'
-        result = DeleteCargo(ship, { type = 2, num = params.num, dbid = dbid })
-    end
-
-    if result > 0 then
-        for i = 1, result, 1 do
+    if ztd > 0 then
+        for i = 1, ztd, 1 do
             local addedUnit = ScenEdit_AddUnit({
                 side = 'China',
                 type = 'Vehicle',
-                name = name,
-                dbid = dbid,
+                name = 'ZTD-05',
+                dbid = 240,
                 LATITUDE = ACVlocations[i].latitude,
                 LONGITUDE = ACVlocations[i].longitude,
             })
@@ -218,8 +216,30 @@ function LaunchACV(params)
             ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
             addedUnit.throttle = 'Full'
             addedUnit.course = destination
+            index = i
+            count = count + 1
         end
     end
+
+    if zbd > 0 then
+        for i = index + 1, index + zbd, 1 do
+            local addedUnit = ScenEdit_AddUnit({
+                side = 'China',
+                type = 'Vehicle',
+                name = 'ZBD-05',
+                dbid = 241,
+                LATITUDE = ACVlocations[i].latitude,
+                LONGITUDE = ACVlocations[i].longitude,
+            })
+            if addedUnit == nil then return end
+            ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+            addedUnit.throttle = 'Full'
+            addedUnit.course = destination
+            count = count + 1
+        end
+    end
+
+    return count
 end
 
 ---@param units table<number, CMO_Unit>
@@ -319,8 +339,13 @@ function AddLandingShips()
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
-            local firstRp072a = GetPointFromBearing({
+            local firstRp076 = GetPointFromBearing({
                 initialLocation = firstRp071,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp072a = GetPointFromBearing({
+                initialLocation = firstRp076,
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
@@ -329,8 +354,15 @@ function AddLandingShips()
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
-            local firstRp073a = GetPointFromBearing({
+
+            local firstRpFerry1 = GetPointFromBearing({
                 initialLocation = firstRp072iii,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+
+            local firstRp073a = GetPointFromBearing({
+                initialLocation = firstRpFerry1,
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
@@ -413,6 +445,56 @@ function AddLandingShips()
 
             AddUnitsByRP(
                 {
+                    initialLocation = firstRp076,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.type076
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Type 076',
+                    dbid = CONFIG.const.platformBDID54,
+                    cargo = cargoList.type075,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                {
+                    { 6, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = infoItem.names[1],
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID3
+                    } },
+                    { 6, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = infoItem.names[1],
+                        dbid = CONFIG.const.platformBDID2,
+                        loadoutid = CONFIG.const.loadoutDBID4
+                    } },
+                    { 13, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = infoItem.names[1],
+                        dbid = CONFIG.const.platformBDID5,
+                        loadoutid = CONFIG.const.loadoutDBID2
+                    } },
+                    { 8, {
+                        side = 'China',
+                        type = 'aircraft',
+                        name = infoItem.names[1],
+                        dbid = CONFIG.const.platformBDID55,
+                        loadoutid = CONFIG.const.loadoutDBID6
+                    } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                }
+            )
+
+
+            AddUnitsByRP(
+                {
                     initialLocation = firstRp072a,
                     bearing = area.heading.horizontal,
                     distance = shipInfo.horizontalDistance,
@@ -443,6 +525,25 @@ function AddLandingShips()
                     name = 'Type 072III',
                     dbid = CONFIG.const.platformBDID8,
                     cargo = cargoList.type072iii,
+                    heading = area.heading.vertical,
+                    manualSpeed = shipInfo.shipSpeed,
+                },
+                nil
+            )
+
+            AddUnitsByRP(
+                {
+                    initialLocation = firstRpFerry1,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance,
+                    num = infoItem.from.num.ferry1
+                },
+                {
+                    side = 'China',
+                    type = 'Ship',
+                    name = 'Ferry',
+                    dbid = CONFIG.const.platformBDID56,
+                    cargo = cargoList.ferry1,
                     heading = area.heading.vertical,
                     manualSpeed = shipInfo.shipSpeed,
                 },
@@ -508,25 +609,35 @@ function CalculateDestination()
         for _, area in ipairs(infoItem.to.areas) do
             local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
             local firstRp071 = ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
-            local firstRp072iii = GetPointFromBearing({
+            local firstRp076 = GetPointFromBearing({
+                initialLocation = firstRp071,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRp072a = GetPointFromBearing({
                 initialLocation = firstRp075,
                 bearing = area.heading.vertical,
                 distance = shipInfo.distanceBetweenLSTAndLPDArea
             })
-            local firstRp072a = GetPointFromBearing({
+            local firstRp072iii = GetPointFromBearing({
+                initialLocation = firstRp072a,
+                bearing = area.heading.vertical,
+                distance = shipInfo.verticalDistance
+            })
+            local firstRpFerry1 = GetPointFromBearing({
                 initialLocation = firstRp072iii,
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
             local firstRp071InLSTArea = GetPointFromBearing({
-                initialLocation = firstRp072a,
+                initialLocation = firstRpFerry1,
                 bearing = area.heading.vertical,
                 distance = shipInfo.verticalDistance
             })
             local firstRp073a = GetPointFromBearing({
                 initialLocation = firstRp071InLSTArea,
                 bearing = area.heading.vertical,
-                distance = shipInfo.verticalDistance
+                distance = shipInfo.verticalDistance * 2
             })
             local firstRp072a2 = GetPointFromBearing({
                 initialLocation = firstRp073a,
@@ -550,6 +661,14 @@ function CalculateDestination()
                     distance = shipInfo.horizontalDistance
                 }))
             InsertList(
+                infoItem.to.result.type076.locations,
+                GenerateLocations({
+                    initialLocation = firstRp076,
+                    num = area.num.type076,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
                 infoItem.to.result.type072iii.locations,
                 GenerateLocations({
                     initialLocation = firstRp072iii,
@@ -562,6 +681,14 @@ function CalculateDestination()
                 GenerateLocations({
                     initialLocation = firstRp072a,
                     num = area.num.type072a,
+                    bearing = area.heading.horizontal,
+                    distance = shipInfo.horizontalDistance
+                }))
+            InsertList(
+                infoItem.to.result.ferry1.locations,
+                GenerateLocations({
+                    initialLocation = firstRpFerry1,
+                    num = area.num.ferry1,
                     bearing = area.heading.horizontal,
                     distance = shipInfo.horizontalDistance
                 }))
@@ -606,39 +733,69 @@ function RemoveShips()
                 unit.dbid == CONFIG.const.platformBDID8 or
                 unit.dbid == CONFIG.const.platformBDID9 or
                 unit.dbid == CONFIG.const.platformBDID10 or
-                unit.dbid == CONFIG.const.platformBDID32 then
+                unit.dbid == CONFIG.const.platformBDID32 or
+                unit.dbid == CONFIG.const.platformBDID54 or
+                unit.dbid == CONFIG.const.platformBDID56 then
                 ScenEdit_DeleteUnit({ side = 'China', guid = unit.guid })
             end
         end
     end
 end
 
-function AddACs()
-    for _, info in ipairs(CONFIG.c.air.landBased.const.ACInfo) do
+function RemoveMagazinesByBaseGUID(baseGUID)
+    local base = SE_GetUnit({ guid = baseGUID })
+
+    if base then
+        for _, magazine in ipairs(base.magazines) do
+            for _, wpn in ipairs(magazine['mag_weapons']) do
+                ScenEdit_AddWeaponToUnitMagazine({ guid = baseGUID, wpn_dbid = wpn['wpn_dbid'], number = 1000, remove = true })
+            end
+        end
+    end
+end
+
+function AddACs(side)
+    local key = 'c'
+
+    if side == 'Taiwan' then
+        key = 't'
+    end
+
+    for _, info in ipairs(CONFIG[key].air.landBased.const.ACInfo) do
         local base = SE_GetUnit({ guid = info.baseGUID })
 
         if base and base.embarkedUnits.Aircraft then
             for _, embarkedUnit in ipairs(base.embarkedUnits.Aircraft) do
-                ScenEdit_DeleteUnit({ side = "China", guid = embarkedUnit })
+                ScenEdit_DeleteUnit({ side = embarkedUnit.side, guid = embarkedUnit })
             end
         end
 
-        for _, embarkedUnit in ipairs(info.embarkedUnits) do
-            for _, loadout in ipairs(embarkedUnit.loadouts) do
-                for i = 1, loadout.num, 1 do
-                    local unit = ScenEdit_AddUnit({
-                        side      = embarkedUnit.side,
-                        type      = embarkedUnit.type,
-                        dbid      = embarkedUnit.dbid,
-                        unitname  = embarkedUnit.name .. ' #' .. tostring(i),
-                        base      = info.baseGUID,
-                        loadoutid = loadout.loadoutId
-                    })
-                    -- ScenEdit_SpecialMessage('China', unit.name)
-                    if unit and loadout.missionName then
-                        ScenEdit_AssignUnitToMission(unit.guid, loadout.missionName)
+        if info.embarkedUnits then
+            for _, embarkedUnit in ipairs(info.embarkedUnits) do
+                for _, loadout in ipairs(embarkedUnit.loadouts) do
+                    for i = 1, loadout.num, 1 do
+                        local unit = ScenEdit_AddUnit({
+                            side      = embarkedUnit.side,
+                            type      = embarkedUnit.type,
+                            dbid      = embarkedUnit.dbid,
+                            unitname  = embarkedUnit.name .. ' #' .. tostring(i),
+                            base      = info.baseGUID,
+                            loadoutid = loadout.loadoutId
+                        })
+                        -- ScenEdit_SpecialMessage('China', unit.name)
+                        if unit and loadout.missionName then
+                            ScenEdit_AssignUnitToMission(unit.guid, loadout.missionName)
+                        end
                     end
                 end
+            end
+        end
+
+        if info.loadouts then
+            RemoveMagazinesByBaseGUID(info.baseGUID)
+
+            for _, loadout in ipairs(info.loadouts) do
+                ScenEdit_FillMagsForLoadout({ unit = info.name, loadoutid = loadout.loadoutId, quantity = loadout.num })
             end
         end
     end

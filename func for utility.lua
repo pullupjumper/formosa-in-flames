@@ -106,3 +106,36 @@ function FilterContacts(contacts, handler)
 
     return temp
 end
+
+-- 定義函數：printBox
+-- 參數：strings - 一個包含多個字串的 table
+function printBox(strings, side)
+    -- 找出最長字串的長度
+    local maxLen = 0
+    for _, str in ipairs(strings) do
+        if #str > maxLen then
+            maxLen = #str
+        end
+    end
+
+    -- 計算邊框寬度
+    local width = 70
+
+    -- 構建頂部和底部邊框：連續的 -
+    local border = string.rep("-", width)
+
+    -- 構建中間行
+    local middleLines = {}
+    for _, str in ipairs(strings) do
+        -- 計算需要補充的空格數（這裡不補充空格，因為靠左對齊）
+        -- 構建中間行：| 空格 字串
+        local middle = "| " .. str
+        table.insert(middleLines, middle)
+    end
+
+    -- 組合成一個單一的字串
+    local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
+
+    -- 一次性輸出
+    ScenEdit_SpecialMessage(side, boxString)
+end

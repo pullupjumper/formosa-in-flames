@@ -20,6 +20,7 @@ if unit and CONFIG.c.IADS.isActivated then
                     targeting = target + OODA.targeting,
                     evasion = OODA.evasion
                 }
+                data.currOODA = u.OODA
             end
         end
 
@@ -36,8 +37,10 @@ if unit and CONFIG.c.IADS.isActivated then
                     targeting = target + OODA.targeting,
                     evasion = OODA.evasion
                 }
+                data.currOODA = u.OODA
                 -- ScenEdit_SpecialMessage('Taiwan', tostring(u.OODA.detection))
             end
         end
     end
 end
+gKH.State.SaveTableToKey(CONFIG, "CONFIG")

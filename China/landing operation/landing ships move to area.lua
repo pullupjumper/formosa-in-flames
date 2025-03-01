@@ -105,6 +105,26 @@ local function setCoursesForAllShips(CONFIG)
                     unit.group = groupNameForLHD
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type075.locationIndex = locationIndex
+                elseif unit.dbid == infoItem.to.result.type076.dbid then
+                    local locationIndex = infoItem.to.result.type076.locationIndex
+
+                    if groupForLHD and GetCount(groupForLHD.course) == 0 then
+                        groupForLHD.course = GetCourseByPoints({ locationFor075 })
+                        groupForLHD.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    if CONFIG.c.landingOperation.isTesting then
+                        ScenEdit_SetUnit({
+                            guid = unit.guid,
+                            latitude = infoItem.to.result.type076.locations[locationIndex].latitude,
+                            longitude = infoItem.to.result.type076.locations[locationIndex].longitude,
+                            manualSpeed = 0,
+                        })
+                    end
+
+                    unit.group = groupNameForLHD
+                    locationIndex = locationIndex + 1
+                    infoItem.to.result.type076.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type072iii.dbid then
                     local locationIndex = infoItem.to.result.type072iii.locationIndex
 
@@ -145,6 +165,26 @@ local function setCoursesForAllShips(CONFIG)
                     unit.group = groupNameForLST
                     locationIndex = locationIndex + 1
                     infoItem.to.result.type072a.locationIndex = locationIndex
+                elseif unit.dbid == infoItem.to.result.ferry1.dbid then
+                    local locationIndex = infoItem.to.result.ferry1.locationIndex
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                    end
+
+                    if CONFIG.c.landingOperation.isTesting then
+                        ScenEdit_SetUnit({
+                            guid = unit.guid,
+                            latitude = infoItem.to.result.ferry1.locations[locationIndex].latitude,
+                            longitude = infoItem.to.result.ferry1.locations[locationIndex].longitude,
+                            manualSpeed = 0,
+                        })
+                    end
+
+                    unit.group = groupNameForLST
+                    locationIndex = locationIndex + 1
+                    infoItem.to.result.ferry1.locationIndex = locationIndex
                 elseif unit.dbid == infoItem.to.result.type073a.dbid then
                     local locationIndex = infoItem.to.result.type073a.locationIndex
 
@@ -325,7 +365,9 @@ local function getUnitsInAnchorageArea(CONFIG)
                 or unit.dbid == CONFIG.const.platformBDID8
                 or unit.dbid == CONFIG.const.platformBDID9
                 or unit.dbid == CONFIG.const.platformBDID10
-                or unit.dbid == CONFIG.const.platformBDID32) then
+                or unit.dbid == CONFIG.const.platformBDID32
+                or unit.dbid == CONFIG.const.platformBDID54
+                or unit.dbid == CONFIG.const.platformBDID56) then
             if unit.unitstate ~= 'Unassigned' then
                 isUnitMoving = true
                 break
@@ -365,7 +407,9 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
 
     for _, zone in ipairs(operationalZones) do
         for _, u in ipairs(unitsInAnchorageArea1) do
-            if u ~= nil and u.dbid == CONFIG.const.platformBDID6 and u:inArea(zone.anchorageArea) then
+            if u ~= nil and
+                (u.dbid == CONFIG.const.platformBDID6 or u.dbid == CONFIG.const.platformBDID54) and
+                u:inArea(zone.anchorageArea) then
                 TransferCargo(
                     u.guid,
                     'Boats',
@@ -405,6 +449,15 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
                     zone.attackHelicopter.dbid,
                     zone.attackHelicopter.missions
                 )
+
+                if zone.reconUAV then
+                    AssignEmbarkedUnitsToMissions(
+                        u.guid,
+                        'Aircraft',
+                        zone.reconUAV.dbid,
+                        zone.reconUAV.missions
+                    )
+                end
             end
 
             if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(zone.anchorageArea) then
@@ -498,21 +551,21 @@ local function setCoursesForLSTs(CONFIG)
         for _, zone in ipairs(operationalZones) do
             if unit and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
                 if unit.dbid == CONFIG.const.platformBDID10 or unit.dbid == CONFIG.const.platformBDID32 then
-                    -- unit.group = "none"
-                    -- unit.course = nil
-                    -- unit.manualSpeed = zone.LSTSettings.speed
-                    -- ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1].name)
-
-                    local grpName = zone.name .. ' LSM Grp'
-                    unit.group = grpName
-                    -- unit.course = nil
+                    unit.group = "none"
+                    unit.course = nil
                     unit.manualSpeed = zone.LSTSettings.speed
-                    local grp = SE_GetUnit({ unitname = grpName })
-                    grp.formation = { spacing_unit = 1, lead = unit.guid, name = 'Line', spacing = 0.5 }
+                    ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1].name)
 
-                    if grp and grp.mission == nil then
-                        ScenEdit_AssignUnitToMission(grp.guid, zone.boat.missions[1].name)
-                    end
+                    -- local grpName = zone.name .. ' LSM Grp'
+                    -- unit.group = grpName
+                    -- -- unit.course = nil
+                    -- unit.manualSpeed = zone.LSTSettings.speed
+                    -- local grp = SE_GetUnit({ unitname = grpName })
+                    -- grp.formation = { spacing_unit = 1, lead = unit.guid, name = 'Line', spacing = 0.5 }
+
+                    -- if grp and grp.mission == nil then
+                    --     ScenEdit_AssignUnitToMission(grp.guid, zone.boat.missions[1].name)
+                    -- end
                 else
                     local destinationTemp = World_GetPointFromBearing({
                         LATITUDE = unit.latitude,
@@ -537,11 +590,9 @@ local function setCoursesForLSTs(CONFIG)
     end
 
     for _, group in pairs(CONFIG.c.landingOperation.const.sag) do
-        -- local unit = SE_GetUnit({ guid = group.guid })
         local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
 
         if unit ~= nil then
-            -- unit.course = group.course.toAmphibiousVehicleStagingArea
             unit.course = group.to.amphibiousVehicleStagingArea
         end
     end
@@ -594,7 +645,7 @@ local function retransferCargos(CONFIG)
             for _, value in ipairs(units) do
                 local unit = SE_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID6 then
+                if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID54) then
                     TransferCargo(
                         unit.guid,
                         'Boats',
@@ -645,6 +696,7 @@ end
 
 if CONFIG.c.landingOperation.isLandingShipsArrived then
     startAmphibiousLandingAttack(CONFIG)
+    CONFIG.c.air.landBased.gbu.isStrikeActivated = true
 end
 
 if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then

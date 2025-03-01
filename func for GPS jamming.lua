@@ -143,3 +143,75 @@ function GPSJamming()
         end
     end
 end
+
+function CircularRandomPosition(x_latitude, x_longitude, max_radius)
+    local randomisationCircle = World_GetCircleFromPoint({
+        latitude = x_latitude,
+        longitude = x_longitude,
+        radius = (math.random(0, max_radius * 10) / 10),
+        numpoints = 72
+    })
+    local randomisedPoint = randomisationCircle[math.random(1, #randomisationCircle)]
+    return randomisedPoint
+end
+
+function RemoveJammingZones()
+    local s = VP_GetSide({ name = 'China' })
+
+    if s then
+        for _, zone in ipairs(s.standardzones) do
+            for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+                if zone.description == jammer.zoneName then
+                    local myz = s:getstandardzone(zone.guid)
+
+                    for _, area in ipairs(myz.area) do
+                        ScenEdit_DeleteReferencePoint({ side = "China", name = area.name })
+                    end
+
+                    ScenEdit_RemoveZone('China', -925, { Description = myz.description })
+                    ScenEdit_DeleteUnit({ side = "China", unitname = jammer.name })
+                end
+            end
+        end
+    end
+end
+
+function AddGPSJammingZones()
+    for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+        local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+        local unit = ScenEdit_AddUnit({
+            type = 'Facility',
+            unitname = jammer.name,
+            dbid = 764,
+            side = 'China',
+            Lat = point.latitude,
+            Lon = point.longitude,
+            autodetectable = false
+        })
+
+        if unit then
+            ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+        end
+
+        local area = NewArea(point, { side = 'China', shape = 'circle', distance = jammer.radius })
+        local zone = ScenEdit_AddZone('China', -925, { description = jammer.zoneName, area = area, })
+        zone.enablers = { GNSS_GLONASS = true, GNSS_GPS = false, GNSS_BeiDou = true, GNSS_NavIC = true }
+    end
+end
+
+function TurnOffGPSEffectByUnit(unit)
+    for index, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+        if unit.name == jammer.name then
+            local s = VP_GetSide({ name = 'China' })
+
+            if s then
+                for _, zone in ipairs(s.standardzones) do
+                    if zone.description == jammer.zoneName then
+                        local myz = s:getstandardzone(zone.guid)
+                        myz.enablers = { GNSS_GLONASS = true, GNSS_GPS = true, GNSS_BeiDou = true, GNSS_NavIC = true }
+                    end
+                end
+            end
+        end
+    end
+end

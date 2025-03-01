@@ -2,7 +2,8 @@ local function initRunways()
     CONFIG.c.ground.srbm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/RADAR')
     CONFIG.c.ground.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
     CONFIG.c.ground.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
-    CONFIG.c.ground.srbm.packages[3].targetList[1] = InitTargetList('China', 'STRIKE/PORT')
+    CONFIG.c.ground.srbm.packages[3].targetList[1] = InitTargetList('China', 'STRIKE/PORT/1')
+    CONFIG.c.ground.srbm.packages[3].targetList[2] = InitTargetList('China', 'STRIKE/PORT/2')
     CONFIG.c.ground.srbm.packages[4].targetList[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
     CONFIG.c.ground.srbm.packages[4].targetList[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
     CONFIG.c.ground.srbm.packages[4].targetList[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
@@ -35,24 +36,24 @@ local function initRunways()
     end
 end
 
-local function initGPSJammers()
-    for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
-        local jammer = SE_GetUnit({ guid = value.guid })
-        local eventName = value.eventName
-        local event = ScenEdit_GetEvent(eventName)
+-- local function initGPSJammers()
+--     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
+--         local jammer = SE_GetUnit({ guid = value.guid })
+--         local eventName = value.eventName
+--         local event = ScenEdit_GetEvent(eventName)
 
-        if jammer and event == nil then
-            if jammer.dbid == CONFIG.const.platformBDID25 then
-                local jammingArea = NewArea(
-                    { latitude = jammer.latitude, longitude = jammer.longitude },
-                    { side = 'China', distance = '15', shape = 'circle' }
-                )
-                local FilterType = { TargetSide = 'Taiwan', TargetType = 6 }
-                UnitEntersAreaEvent(eventName, FilterType, jammingArea, 'GPSJamming()', 'add', false, true, true)
-            end
-        end
-    end
-end
+--         if jammer and event == nil then
+--             if jammer.dbid == CONFIG.const.platformBDID25 then
+--                 local jammingArea = NewArea(
+--                     { latitude = jammer.latitude, longitude = jammer.longitude },
+--                     { side = 'China', distance = '15', shape = 'circle' }
+--                 )
+--                 local FilterType = { TargetSide = 'Taiwan', TargetType = 6 }
+--                 UnitEntersAreaEvent(eventName, FilterType, jammingArea, 'GPSJamming()', 'add', false, true, true)
+--             end
+--         end
+--     end
+-- end
 
 local function initC2()
     local units = VP_GetSide({ Side = "Taiwan" }).units
@@ -65,8 +66,10 @@ local function initC2()
             if unit ~= nil and unit:inArea(item.area) then
                 if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
                     local data = {
+                        name = unit.name,
                         guid = unit.guid,
                         OODA = unit.OODA,
+                        currOODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
@@ -80,8 +83,10 @@ local function initC2()
                     or unit.dbid == CONFIG.const.platformBDID43
                     or unit.dbid == CONFIG.const.platformBDID44 then
                     local data = {
+                        name = unit.name,
                         guid = unit.guid,
                         OODA = unit.OODA,
+                        currOODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
@@ -96,8 +101,10 @@ local function initC2()
             if unit ~= nil and unit:inArea(item.area) then
                 if unit.dbid == CONFIG.const.platformBDID33 then
                     local data = {
+                        name = unit.name,
                         guid = unit.guid,
                         OODA = unit.OODA,
+                        currOODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
@@ -119,8 +126,10 @@ local function initC2()
                     or unit.dbid == CONFIG.const.platformBDID20
                     or unit.dbid == CONFIG.const.platformBDID21 then
                     local data = {
+                        name = unit.name,
                         guid = unit.guid,
                         OODA = unit.OODA,
+                        currOODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
@@ -131,8 +140,10 @@ local function initC2()
 
                 if unit.dbid == CONFIG.const.platformBDID16 or unit.dbid == CONFIG.const.platformBDID17 then
                     local data = {
+                        name = unit.name,
                         guid = unit.guid,
                         OODA = unit.OODA,
+                        currOODA = unit.OODA,
                         isOutOfComms = false,
                         outofcomms = 0,
                         EMCON_Setting = 'Radar=Passive'
@@ -242,9 +253,9 @@ if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].targetList) <= 
     -- remove('Taiwan')
     -- remove('China')
 
-    if CONFIG.c.GPSJamming.isStrikeActivated then
-        initGPSJammers()
-    end
+    -- if CONFIG.c.GPSJamming.isStrikeActivated then
+    --     initGPSJammers()
+    -- end
 
     if CONFIG.t.IADS.isActivated then
         initC2()

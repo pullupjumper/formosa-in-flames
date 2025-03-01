@@ -70,20 +70,12 @@ if unit then
                 "You have destroyed a MLRS."
             )
         elseif unit.dbid == CONFIG.const.platformBDID25 then
-            for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
-                if unit.guid == value.guid then
-                    local event = ScenEdit_GetEvent(value.eventName)
-
-                    if event then
-                        event.isActive = false
-                        ScenEdit_SetScore(
-                            "Taiwan",
-                            (score + CONFIG.s.const.mlrs),
-                            "You have destroyed a GPS jammer."
-                        )
-                    end
-                end
-            end
+            ScenEdit_SetScore(
+                "Taiwan",
+                (score + CONFIG.s.const.mlrs),
+                "You have destroyed a GPS jammer."
+            )
+            TurnOffGPSEffectByUnit(unit)
         elseif unit.dbid == CONFIG.const.platformBDID27 then
             -- for _, battery in ipairs(CONFIG.c.glcm.batteries) do
             --     if unit.guid == battery.wpnStorageFacility then
