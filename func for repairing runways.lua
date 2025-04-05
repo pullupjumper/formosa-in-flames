@@ -1,17 +1,10 @@
 function WhenRunwayIsDamaged(side)
-    local field = ''
-    if side == 'China' then
-        field = 'c'
-    else
-        field = 't'
-    end
-
+    local field = (side == 'China') and 'c' or 't'
     local unit = ScenEdit_UnitX()
     local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
     if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
+        ScenEdit_SpecialMessage(side, 'CONFIG == nil')
         return
     end
 
@@ -29,19 +22,11 @@ function WhenRunwayIsDamaged(side)
 end
 
 function RepairRunway(side)
-    local field = ''
-
-    if side == 'China' then
-        field = 'c'
-    else
-        field = 't'
-    end
-
+    local field = (side == 'China') and 'c' or 't'
     local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
     if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
+        ScenEdit_SpecialMessage(side, 'CONFIG == nil')
         return
     end
 

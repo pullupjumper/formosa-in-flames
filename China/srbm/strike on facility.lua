@@ -52,6 +52,61 @@ local function trackTarget(CONFIG, units, UAVDBID, target)
     return false
 end
 
+-- local function analyzeTargets(CONFIG, type)
+--     local targetsSortedByPackage = {}
+--     local mlrsConfig = CONFIG.c.ground[type]
+
+--     for index, package in ipairs(mlrsConfig.packages) do
+--         local batchTargetlistsIdx = package.index
+--         local targets = {}
+
+--         for _, v in ipairs(package.batchTargetlists[batchTargetlistsIdx]) do
+--             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
+
+--             if target then
+--                 local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
+--                 local BDA = target.BDA
+--                 local detections = target.lastDetections
+--                 -- local hasReconed = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage')
+--                 --     and mlrsConfig.lastReconTime and ScenEdit_CurrentTime() > mlrsConfig.lastReconTime
+--                 --     and elapsedTime <= mlrsConfig.const.contactAge
+--                 local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+--                     (detections and detections[1].age <= mlrsConfig.const.contactAge) and
+--                     not isHelipad
+--                 local isInitialWaveOfAttacks = batchTargetlistsIdx == 1 and
+--                     not mlrsConfig.packages[index].isFinished and
+--                     not isHelipad
+--                 local isRadar = package.name == 'RADAR' and not isHelipad
+--                 local isHelipadEmbarkedWithHelicopter = isHelipad and
+--                     not mlrsConfig.packages[index].isFinished and
+--                     GetCount(SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft']) > 0
+
+--                 if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
+--                     table.insert(targets, target)
+--                 end
+--             end
+--         end
+
+--         table.insert(targetsSortedByPackage, {
+--             isDecidedToStrike = false,
+--             fixedTargets = targets,
+--             emittingTargets = {},
+--             radioTargets = {},
+--             targets = targets
+--         })
+
+--         if CONFIG.isDevMode and GetCount(targets) > 0 then
+--             ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(targets))
+
+--             if index == GetCount(mlrsConfig.packages) then
+--                 ScenEdit_SpecialMessage('China', 'Fixed targets:===============================')
+--             end
+--         end
+--     end
+
+--     return targetsSortedByPackage
+-- end
+
 local function analyzeTargets(CONFIG, type)
     local function isHelipad(target)
         return string.find(target.type_description, 'Helipad') ~= nil
@@ -65,8 +120,8 @@ local function analyzeTargets(CONFIG, type)
             not isHelipad(target)
     end
 
-    local function isInitialWave(package, target, targetListIdx)
-        return targetListIdx == 1 and not package.isFinished and not isHelipad(target)
+    local function isInitialWave(package, target, batchTargetlistsIdx)
+        return batchTargetlistsIdx == 1 and not package.isFinished and not isHelipad(target)
     end
 
     local function isRadarTarget(package, target)
@@ -80,11 +135,11 @@ local function analyzeTargets(CONFIG, type)
             #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
     end
 
-    local function evaluateTargets(mlrsConfig, package, targetListIdx)
+    local function evaluateTargets(mlrsConfig, package, batchTargetlistsIdx)
         return function(v)
             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
             if target and (
-                    isInitialWave(package, target, targetListIdx) or
+                    isInitialWave(package, target, batchTargetlistsIdx) or
                     isHeavyDamage(mlrsConfig, target) or
                     isRadarTarget(package, target) or
                     isHelipadWithHelicopter(package, target)
@@ -100,9 +155,9 @@ local function analyzeTargets(CONFIG, type)
     local mlrsConfig = CONFIG.c.ground[type]
 
     for index, package in ipairs(mlrsConfig.packages) do
-        local targetListIdx = package.index
-        local targets = Array_utils.new(package.targetList[targetListIdx])
-            :filter(evaluateTargets(mlrsConfig, package, targetListIdx))
+        local batchTargetlistsIdx = package.index
+        local targets = Array_utils.new(package.batchTargetlists[batchTargetlistsIdx])
+            :filter(evaluateTargets(mlrsConfig, package, batchTargetlistsIdx))
             :value()
 
         table.insert(targetsSortedByPackage, {
@@ -115,14 +170,14 @@ local function analyzeTargets(CONFIG, type)
 
         if CONFIG.isDevMode and #targets > 0 then
             -- Modified: Replaced GetCount with #
-            printBox({ 'Fixed targets/' .. package.name .. ': ' .. #targets }, 'China')
+            printBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
         end
     end
 
     return targetsSortedByPackage
 end
 
--- local function analyzeEmissions(CONFIG, type, targetList, contacts)
+-- local function analyzeEmissions(CONFIG, type, targetsSortedByPackage, contacts)
 --     local mlrsConfig = CONFIG.c.ground[type]
 
 --     for index, package in ipairs(mlrsConfig.packages) do
@@ -142,8 +197,8 @@ end
 --             end
 --         end
 
---         targetList[index].emittingTargets = targets
---         InsertList(targetList[index].targets, targets)
+--         targetsSortedByPackage[index].emittingTargets = targets
+--         InsertList(targetsSortedByPackage[index].targets, targets)
 
 --         if CONFIG.isDevMode and #targets > 0 then
 --             -- Modified: Replaced GetCount with #
@@ -156,10 +211,8 @@ end
 --         end
 --     end
 
---     return targetList
+--     return targetsSortedByPackage
 -- end
-
-
 
 -- 主函數
 local function analyzeEmissions(CONFIG, type, targetsSortedByPackage, contacts)
@@ -215,7 +268,7 @@ local function analyzeEmissions(CONFIG, type, targetsSortedByPackage, contacts)
             targets = Array_utils.new(targets):concat(filteredTargets):value()
         end
 
-        -- 更新 targetList
+        -- 更新 targetsSortedByPackage
         targetsSortedByPackage[index].emittingTargets = targets
         -- InsertList(targetsSortedByPackage[index].targets, targets)
         targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
@@ -224,14 +277,14 @@ local function analyzeEmissions(CONFIG, type, targetsSortedByPackage, contacts)
 
         -- 開發模式下的調試信息
         if CONFIG.isDevMode and #targets > 0 then
-            printBox({ 'Emission targets/' .. package.name .. ': ' .. #targets }, 'China')
+            printBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
         end
     end
 
     return targetsSortedByPackage
 end
 
-local function analyzeRadioTransmissions(CONFIG, type, targetsSortedByPackage, contacts)
+local function findRadioDirection(CONFIG, type, targetsSortedByPackage, contacts)
     local mlrsConfig = CONFIG.c.ground[type]
 
     local isC2Facility = function(area)
@@ -271,7 +324,7 @@ local function analyzeRadioTransmissions(CONFIG, type, targetsSortedByPackage, c
         return targets
     end
 
-    local function filterTargetsWithinRangeOfTransmissionSources(CONFIG, contacts)
+    local function filterTargetsWithinRangeOfRadioSource(CONFIG, contacts)
         local targets = {}
         local isTracking = false
         local units = VP_GetSide({ Side = 'China' }).units
@@ -295,7 +348,7 @@ local function analyzeRadioTransmissions(CONFIG, type, targetsSortedByPackage, c
 
     for index, package in ipairs(mlrsConfig.packages) do
         local targets = filterTargetsInArea(contacts, package.areas)
-        targets = filterTargetsWithinRangeOfTransmissionSources(CONFIG, targets)
+        targets = filterTargetsWithinRangeOfRadioSource(CONFIG, targets)
         targetsSortedByPackage[index].radioTargets = targets
         -- InsertList(targetsSortedByPackage[index].targets, targets)
         targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
@@ -303,23 +356,15 @@ local function analyzeRadioTransmissions(CONFIG, type, targetsSortedByPackage, c
             :value()
 
         if CONFIG.isDevMode and #targets > 0 then
-            -- -- Modified: Replaced GetCount with #
-            -- ScenEdit_SpecialMessage('China', package.name .. ': ' .. #targets)
-
-            -- -- Modified: Replaced GetCount with #
-            -- if index == #mlrsConfig.packages then
-            --     ScenEdit_SpecialMessage('China', 'Radio targets:===============================')
-            -- end
-            printBox({ 'Radio targets/' .. package.name .. ': ' .. #targets }, 'China')
+            printBox('China', 'Radio targets/' .. package.name .. ': ' .. #targets)
         end
     end
 
     return targetsSortedByPackage
 end
 
-local function determineIfDeployByTargetNum(targetsSortedByPackage, targetNum)
+local function determineIfDeployByTargetCount(targetsSortedByPackage, targetNum)
     for _, item in ipairs(targetsSortedByPackage) do
-        -- Modified: Replaced GetCount with #
         item.isTargetsMoreThan = #item.targets >= targetNum
             or (#item.emittingTargets >= 1 and #item.fixedTargets <= 1)
             or (#item.radioTargets >= 1 and #item.fixedTargets <= 1)
@@ -335,9 +380,9 @@ local function deployBatteries(CONFIG, type, targetsSortedByPackage)
 
     local isBtyReady = function(bty, mlrsConfig, group)
         return mlrsConfig.batteries[bty.guid].state == CONFIG.const.batteryState.HIDE
-            and not IsWpnNumLessThan(
+            and not IsLowAmmo(
                 group,
-                mlrsConfig.batteries[bty.guid].wpnNumLessThan,
+                mlrsConfig.batteries[bty.guid].ammoThreshold,
                 mlrsConfig.batteries[bty.guid].weaponDBID
             )
     end
@@ -374,31 +419,31 @@ end
 local function launchMissiles(CONFIG, type, targetsSortedByPackage, weaponDBID)
     local mlrsConfig = CONFIG.c.ground[type]
 
-    for index, item in ipairs(targetsSortedByPackage) do
+    for idx, item in ipairs(targetsSortedByPackage) do
         if item.isTargetsMoreThan then
             local result = AttackContacts(
                 item.targets,
-                mlrsConfig.packages[index].num,
-                mlrsConfig.packages[index].batteries,
+                mlrsConfig.packages[idx].num,
+                mlrsConfig.packages[idx].batteries,
                 weaponDBID
             )
 
             if result > 0 then
-                mlrsConfig.packages[index].index = mlrsConfig.packages[index].index + 1
+                mlrsConfig.packages[idx].index = mlrsConfig.packages[idx].index + 1
 
                 if CONFIG.isDevMode then
-                    printBox({ mlrsConfig.packages[index].name .. '/Missiles: ' .. result }, 'China')
+                    printBox('China', mlrsConfig.packages[idx].name .. '/Fired missiles: ' .. result)
                 end
             end
 
             -- Modified: Replaced GetCount with #
-            local targetListLength = #mlrsConfig.packages[index].targetList
-            local nextTargetListIdx = mlrsConfig.packages[index].index
+            local targetListLength = #mlrsConfig.packages[idx].batchTargetlists
+            local nextTargetListIdx = mlrsConfig.packages[idx].index
             local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
 
             if isTargetListIdxOutOfBounds then
-                mlrsConfig.packages[index].index = targetListLength
-                mlrsConfig.packages[index].isFinished = true
+                mlrsConfig.packages[idx].index = targetListLength
+                mlrsConfig.packages[idx].isFinished = true
             end
         end
     end
@@ -515,31 +560,31 @@ end
 launchH6NIfRequired(CONFIG.c.recon)
 
 if CONFIG.c.ground.mlrs.isStrikeActivated then
-    local targetList = {}
+    local targetsSortedByPackage = {}
     local isAllArrived = false
     local key = CONFIG.c.ground.mlrs.packages[1].batteries[1].guid
     local weaponDBID = CONFIG.c.ground.mlrs.batteries[key].weaponDBID
-    targetList = analyzeTargets(CONFIG, 'mlrs')
-    targetList = analyzeEmissions(CONFIG, 'mlrs', targetList, contacts)
-    targetList = analyzeRadioTransmissions(CONFIG, 'mlrs', targetList, contacts)
-    targetList = determineIfDeployByTargetNum(targetList, 1)
-    isAllArrived = deployBatteries(CONFIG, 'mlrs', targetList)
-    if isAllArrived then launchMissiles(CONFIG, 'mlrs', targetList, weaponDBID) end
+    targetsSortedByPackage = analyzeTargets(CONFIG, 'mlrs')
+    targetsSortedByPackage = analyzeEmissions(CONFIG, 'mlrs', targetsSortedByPackage, contacts)
+    targetsSortedByPackage = findRadioDirection(CONFIG, 'mlrs', targetsSortedByPackage, contacts)
+    targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
+    isAllArrived = deployBatteries(CONFIG, 'mlrs', targetsSortedByPackage)
+    if isAllArrived then launchMissiles(CONFIG, 'mlrs', targetsSortedByPackage, weaponDBID) end
 end
 
 if CONFIG.c.ground.srbm.isStrikeActivated then
-    local targetList = analyzeTargets(CONFIG, 'srbm')
-    targetList = determineIfDeployByTargetNum(targetList, 7)
-    local isAllArrived = deployBatteries(CONFIG, 'srbm', targetList)
-    if isAllArrived then launchMissiles(CONFIG, 'srbm', targetList) end
+    local targetsSortedByPackage = analyzeTargets(CONFIG, 'srbm')
+    targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
+    local isAllArrived = deployBatteries(CONFIG, 'srbm', targetsSortedByPackage)
+    if isAllArrived then launchMissiles(CONFIG, 'srbm', targetsSortedByPackage) end
 end
 
 
 if CONFIG.c.ground.glcm.isStrikeActivated then
-    local targetList = analyzeTargets(CONFIG, 'glcm')
-    targetList = determineIfDeployByTargetNum(targetList, 5)
-    local isAllArrived = deployBatteries(CONFIG, 'glcm', targetList)
-    if isAllArrived then launchMissiles(CONFIG, 'glcm', targetList) end
+    local targetsSortedByPackage = analyzeTargets(CONFIG, 'glcm')
+    targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
+    local isAllArrived = deployBatteries(CONFIG, 'glcm', targetsSortedByPackage)
+    if isAllArrived then launchMissiles(CONFIG, 'glcm', targetsSortedByPackage) end
 end
 
 if CONFIG.c.surface.lacm.isStrikeActivated then
@@ -553,7 +598,7 @@ if CONFIG.c.surface.lacm.isStrikeActivated then
     end
 
     AttackContacts(
-        CONFIG.c.surface.lacm.const.targetList,
+        CONFIG.c.surface.lacm.const.targetlist,
         5,
         ships,
         CONFIG.c.surface.lacm.const.weaponDBID
@@ -562,7 +607,7 @@ end
 
 if CONFIG.c.subSurface.slcm.isStrikeActivated then
     AttackContacts(
-        CONFIG.c.subSurface.slcm.const.targetList,
+        CONFIG.c.subSurface.slcm.const.targetlist,
         8,
         CONFIG.c.subSurface.slcm.const.submarines,
         CONFIG.c.subSurface.slcm.const.weaponDBID

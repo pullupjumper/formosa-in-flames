@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table id="dataTable">
+        <thead>
+            <tr id="tableHead"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const dataString = `{
+    "ROCC": {
+        "ROCC/North":{
+            "name":"ROCC/North",
+            "SAM":{
+                "Unit A": { "name": "Unit A", "OODADetection": "20/20", "OODATargeting": "10/10", "isOutOfComms": true, "EMCON_Setting": "ON", "isDestroyed": false }
+            },
+            "radar":{
+                "Unit A": { "name": "Unit A", "OODADetection": "20/20", "OODATargeting": "10/10", "isOutOfComms": true, "EMCON_Setting": "ON", "isDestroyed": false }
+            }
+        },
+        "ROCC/South":{
+            "name":"ROCC/South",
+            "SAM":{
+                "Unit A": { "name": "Unit A", "OODADetection": "20/20", "OODATargeting": "10/10", "isOutOfComms": true, "EMCON_Setting": "ON", "isDestroyed": false }
+            },
+            "radar":{
+                "Unit A": { "name": "Unit A", "OODADetection": "20/20", "OODATargeting": "10/10", "isOutOfComms": true, "EMCON_Setting": "ON", "isDestroyed": false }
+            }
+        }      
+    },
+    "TAAOC": {
+        "TAAOC/North":{
+            "name":"TAAOC/North",
+            "SAM":{
+                "Unit A": { "name": "Unit A", "OODADetection": "20/20", "OODATargeting": "10/10", "isOutOfComms": true, "EMCON_Setting": "ON", "isDestroyed": false }
+            }
+        }
+    }
+}`;
+
+        let data = JSON.parse(dataString);
+        let tableHead = document.getElementById("tableHead");
+        let tableBody = document.getElementById("tableBody");
+
+        let headers = ["C2 Node", "Name", "OODA Detection", "OODA Targeting", "Out of Comms", "EMCON Setting", "Destroyed"];
+        headers.forEach(header => {
+            let th = document.createElement("th");
+            th.textContent = header;
+            tableHead.appendChild(th);
+        });
+
+        Object.keys(data).forEach(area => {
+            Object.keys(data[area]).forEach(subArea => {
+                let unitTypes = Object.keys(data[area][subArea]).filter(type => type !== "name");
+                let totalUnits = unitTypes.reduce((sum, type) => sum + Object.keys(data[area][subArea][type]).length, 0);
+                let firstRow = true;
+
+                unitTypes.forEach(type => {
+                    Object.keys(data[area][subArea][type]).forEach((unitName) => {
+                        let unit = data[area][subArea][type][unitName];
+                        let row = document.createElement("tr");
+
+                        if (firstRow) {
+                            let areaCell = document.createElement("td");
+                            areaCell.textContent = data[area][subArea].name;
+                            areaCell.rowSpan = totalUnits;
+                            row.appendChild(areaCell);
+                            firstRow = false;
+                        }
+
+                        ["name", "OODADetection", "OODATargeting", "isOutOfComms", "EMCON_Setting", "isDestroyed"].forEach(key => {
+                            let cell = document.createElement("td");
+                            cell.textContent = typeof unit[key] === "boolean" ? (unit[key] ? "YES" : "NO") : unit[key];
+                            row.appendChild(cell);
+                        });
+
+                        tableBody.appendChild(row);
+                    });
+                });
+            });
+        });
+    </script>
+
+</body>
+
+</html>

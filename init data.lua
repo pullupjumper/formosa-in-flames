@@ -1,17 +1,17 @@
 local function initRunways()
-    CONFIG.c.ground.srbm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/RADAR')
-    CONFIG.c.ground.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
-    CONFIG.c.ground.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
-    CONFIG.c.ground.srbm.packages[3].targetList[1] = InitTargetList('China', 'STRIKE/PORT/1')
-    CONFIG.c.ground.srbm.packages[3].targetList[2] = InitTargetList('China', 'STRIKE/PORT/2')
-    CONFIG.c.ground.srbm.packages[4].targetList[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
-    CONFIG.c.ground.srbm.packages[4].targetList[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
-    CONFIG.c.ground.srbm.packages[4].targetList[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
-    CONFIG.c.ground.glcm.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/HELIPAD')
-    CONFIG.c.ground.glcm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
-    CONFIG.c.ground.mlrs.packages[1].targetList[1] = InitTargetList('China', 'STRIKE/C2/N')
+    CONFIG.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
+    CONFIG.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
+    CONFIG.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
+    CONFIG.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
+    CONFIG.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
+    CONFIG.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
+    CONFIG.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
+    CONFIG.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
+    CONFIG.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
+    CONFIG.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
+    CONFIG.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
 
-    for _, value in ipairs(CONFIG.c.ground.srbm.packages[2].targetList[2]) do
+    for _, value in ipairs(CONFIG.c.ground.srbm.packages[2].batchTargetlists[2]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
 
         if contact then
@@ -179,7 +179,7 @@ local function initAC()
 
         if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID38 then
             table.insert(
-                CONFIG.t.aircraft.AEW,
+                CONFIG.t.air.landBased.AEW,
                 {
                     guid = unit.guid,
                     OODA = unit.OODA,
@@ -191,7 +191,7 @@ local function initAC()
             )
         elseif unit and unit.type == 'Aircraft' then
             table.insert(
-                CONFIG.t.aircraft.AC,
+                CONFIG.t.air.landBased.AC,
                 {
                     guid = unit.guid,
                     OODA = unit.OODA,
@@ -247,15 +247,10 @@ end
 
 local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].targetList) <= 0 then
+if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].batchTargetlists) <= 0 then
     initRunways()
     CalculateDestination()
-    -- remove('Taiwan')
-    -- remove('China')
-
-    -- if CONFIG.c.GPSJamming.isStrikeActivated then
-    --     initGPSJammers()
-    -- end
+    initAC()
 
     if CONFIG.t.IADS.isActivated then
         initC2()
@@ -263,10 +258,6 @@ if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].targetList) <= 
 
     if CONFIG.c.commsJamming.isActivated then
         initCommsJammers('China')
-    end
-
-    if CONFIG.t.aircraft.isActivated then
-        initAC()
     end
 
     if CONFIG.u.SIGINT.isActivated then

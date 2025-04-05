@@ -11,7 +11,8 @@ local ship = ScenEdit_UnitX()
 if ship and (ship.dbid == CONFIG.const.platformBDID7
         or ship.dbid == CONFIG.const.platformBDID8
         or ship.dbid == CONFIG.const.platformBDID9
-        or ship.dbid == CONFIG.const.platformBDID56) then
+        or ship.dbid == CONFIG.const.platformBDID10
+        or ship.name == 'Ferry') then
     if ship.group then
         local group = SE_GetUnit({ guid = ship.group.guid })
 
@@ -22,7 +23,7 @@ if ship and (ship.dbid == CONFIG.const.platformBDID7
         end
     end
 
-    for _, zone in ipairs(CONFIG.c.landingOperation.const.operationalZones) do
+    for _, zone in ipairs(CONFIG.c.PHIBOP.const.operationalZones) do
         if ship:inArea(zone.ACV.area) then
             local result = LaunchACV({
                 ship = ship,
@@ -52,7 +53,7 @@ end
 --         ScenEdit_SpecialMessage('China', ship.group.name)
 
 --         local filteredContacts = FilterContacts(contacts, function(contact)
---             return contact:inArea(CONFIG.c.landingOperation.const.sag[ship.group.name].area)
+--             return contact:inArea(CONFIG.c.PHIBOP.const.sag[ship.group.name].area)
 --                 and (contact.typed == 8)
 --         end)
 

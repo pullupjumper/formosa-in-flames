@@ -7,15 +7,15 @@ if CONFIG == nil then
 end
 
 -- local function setCoursesForAllShips(CONFIG)
---     local shipInfo = CONFIG.c.landingOperation.const.shipInfo
---     local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+--     local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
+--     local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
 
 --     for _, value in ipairs(units) do
 --         local unit = SE_GetUnit({ guid = value.guid })
 
---         for _, infoItem in ipairs(shipLocationInfo) do
+--         for _, infoItem in ipairs(initialLocations) do
 --             if unit and unit:inArea(infoItem.from.stagingArea) then
---                 unit.manualSpeed = shipInfo.shipSpeed
+--                 unit.manualSpeed = shipSettings.shipSpeed
 
 --                 if unit.dbid == infoItem.to.result.type075.dbid then
 --                     local locationIndex = infoItem.to.result.type075.locationIndex
@@ -64,300 +64,324 @@ end
 --             end
 --         end
 
---         CONFIG.c.landingOperation.isLandingShipsArrived = true
---         CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
+--         CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = true
+--         CONFIG.c.PHIBOP.isShipsStartedMoving = false
 --     end
 -- end
 
 local function setCoursesForAllShips(CONFIG)
-    local shipInfo = CONFIG.c.landingOperation.const.shipInfo
-    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
+    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
+    local calculations = CONFIG.c.PHIBOP.calculations
 
-    for _, value in ipairs(units) do
-        local unit = SE_GetUnit({ guid = value.guid })
+    for _, _item in ipairs(units) do
+        local actualUnit = SE_GetUnit({ guid = _item.guid })
 
-        for _, infoItem in ipairs(shipLocationInfo) do
-            if unit and unit:inArea(infoItem.from.stagingArea) then
-                local groupNameForLHD = infoItem.name .. ' LHD/LPD Grp'
-                local groupNameForLST = infoItem.name .. ' LST Grp'
+        for _, item in ipairs(initialLocations) do
+            if actualUnit and actualUnit:inArea(item.from.stagingArea) then
+                local groupNameForLHD = item.name .. ' LHD/LPD Grp'
+                local groupNameForLST = item.name .. ' LST Grp'
                 local groupForLHD = ScenEdit_GetUnit({ unitname = groupNameForLHD })
                 local groupForLST = ScenEdit_GetUnit({ unitname = groupNameForLST })
-                local locationFor075 = infoItem.to.result.type075.locations[1]
-                local locationFor072a = infoItem.to.result.type072a.locations[1]
+                local locationFor075 = calculations[item.name].result.type075.locations[1]
+                local locationFor072a = calculations[item.name].result.type072a.locations[1]
 
-                if unit.dbid == infoItem.to.result.type075.dbid then
-                    local locationIndex = infoItem.to.result.type075.locationIndex
-
-                    if groupForLHD and GetCount(groupForLHD.course) == 0 then
-                        groupForLHD.course = GetCourseByPoints({ locationFor075 })
-                        groupForLHD.manualSpeed = shipInfo.shipSpeed
-                    end
-
-                    if CONFIG.c.landingOperation.isTesting then
-                        ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type075.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type075.locations[locationIndex].longitude,
-                            manualSpeed = 0,
-                        })
-                    end
-
-                    unit.group = groupNameForLHD
-                    locationIndex = locationIndex + 1
-                    infoItem.to.result.type075.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type076.dbid then
-                    local locationIndex = infoItem.to.result.type076.locationIndex
+                if actualUnit.dbid == calculations[item.name].result.type075.dbid then
+                    local locationIndex = calculations[item.name].result.type075.locationIndex
 
                     if groupForLHD and GetCount(groupForLHD.course) == 0 then
                         groupForLHD.course = GetCourseByPoints({ locationFor075 })
-                        groupForLHD.manualSpeed = shipInfo.shipSpeed
+                        groupForLHD.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type076.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type076.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.type075.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.type075.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLHD
+                    actualUnit.group = groupNameForLHD
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type076.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type072iii.dbid then
-                    local locationIndex = infoItem.to.result.type072iii.locationIndex
+                    calculations[item.name].result.type075.locationIndex = locationIndex
+                elseif actualUnit.dbid == calculations[item.name].result.type076.dbid then
+                    local locationIndex = calculations[item.name].result.type076.locationIndex
+
+                    if groupForLHD and GetCount(groupForLHD.course) == 0 then
+                        groupForLHD.course = GetCourseByPoints({ locationFor075 })
+                        groupForLHD.manualSpeed = shipSettings.shipSpeed
+                    end
+
+                    if CONFIG.c.PHIBOP.isTesting then
+                        ScenEdit_SetUnit({
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.type076.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.type076.locations[locationIndex].longitude,
+                            manualSpeed = 0,
+                        })
+                    end
+
+                    actualUnit.group = groupNameForLHD
+                    locationIndex = locationIndex + 1
+                    calculations[item.name].result.type076.locationIndex = locationIndex
+                elseif actualUnit.dbid == calculations[item.name].result.type072iii.dbid then
+                    local locationIndex = calculations[item.name].result.type072iii.locationIndex
 
                     if groupForLST and GetCount(groupForLST.course) == 0 then
                         groupForLST.course = GetCourseByPoints({ locationFor072a })
-                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type072iii.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type072iii.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.type072iii.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.type072iii.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLST
+                    actualUnit.group = groupNameForLST
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type072iii.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type072a.dbid then
-                    local locationIndex = infoItem.to.result.type072a.locationIndex
+                    calculations[item.name].result.type072iii.locationIndex = locationIndex
+                elseif actualUnit.dbid == calculations[item.name].result.type072a.dbid then
+                    local locationIndex = calculations[item.name].result.type072a.locationIndex
 
                     if groupForLST and GetCount(groupForLST.course) == 0 then
                         groupForLST.course = GetCourseByPoints({ locationFor072a })
-                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type072a.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type072a.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.type072a.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.type072a.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLST
+                    actualUnit.group = groupNameForLST
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type072a.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.ferry1.dbid then
-                    local locationIndex = infoItem.to.result.ferry1.locationIndex
+                    calculations[item.name].result.type072a.locationIndex = locationIndex
+                elseif actualUnit.name == 'Ferry' then
+                    local locationIndex = calculations[item.name].result.ferry.locationIndex
 
                     if groupForLST and GetCount(groupForLST.course) == 0 then
                         groupForLST.course = GetCourseByPoints({ locationFor072a })
-                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.ferry1.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.ferry1.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.ferry.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.ferry.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLST
+                    actualUnit.group = groupNameForLST
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.ferry1.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type073a.dbid then
-                    local locationIndex = infoItem.to.result.type073a.locationIndex
+                    calculations[item.name].result.ferry.locationIndex = locationIndex
+                elseif actualUnit.name == 'RORO' then
+                    local locationIndex = calculations[item.name].result.roro.locationIndex
 
                     if groupForLST and GetCount(groupForLST.course) == 0 then
                         groupForLST.course = GetCourseByPoints({ locationFor072a })
-                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type073a.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type073a.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.roro.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.roro.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLST
+                    actualUnit.group = groupNameForLST
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type073a.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type072a2.dbid then
-                    local locationIndex = infoItem.to.result.type072a2.locationIndex
+                    calculations[item.name].result.roro.locationIndex = locationIndex
+                elseif actualUnit.name == 'Barge' then
+                    local locationIndex = calculations[item.name].result.barge.locationIndex
 
                     if groupForLST and GetCount(groupForLST.course) == 0 then
                         groupForLST.course = GetCourseByPoints({ locationFor072a })
-                        groupForLST.manualSpeed = shipInfo.shipSpeed
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
-                            guid = unit.guid,
-                            latitude = infoItem.to.result.type072a2.locations[locationIndex].latitude,
-                            longitude = infoItem.to.result.type072a2.locations[locationIndex].longitude,
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.barge.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.barge.locations[locationIndex].longitude,
                             manualSpeed = 0,
                         })
                     end
 
-                    unit.group = groupNameForLST
+                    actualUnit.group = groupNameForLST
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type072a2.locationIndex = locationIndex
-                elseif unit.dbid == infoItem.to.result.type071.dbid then
-                    local locationIndex = infoItem.to.result.type071.locationIndex
-                    local len = GetCount(infoItem.to.result.type071.locations)
+                    calculations[item.name].result.barge.locationIndex = locationIndex
+                elseif actualUnit.dbid == calculations[item.name].result.type073a.dbid then
+                    local locationIndex = calculations[item.name].result.type073a.locationIndex
+
+                    if groupForLST and GetCount(groupForLST.course) == 0 then
+                        groupForLST.course = GetCourseByPoints({ locationFor072a })
+                        groupForLST.manualSpeed = shipSettings.shipSpeed
+                    end
+
+                    if CONFIG.c.PHIBOP.isTesting then
+                        ScenEdit_SetUnit({
+                            guid = actualUnit.guid,
+                            latitude = calculations[item.name].result.type073a.locations[locationIndex].latitude,
+                            longitude = calculations[item.name].result.type073a.locations[locationIndex].longitude,
+                            manualSpeed = 0,
+                        })
+                    end
+
+                    actualUnit.group = groupNameForLST
+                    locationIndex = locationIndex + 1
+                    calculations[item.name].result.type073a.locationIndex = locationIndex
+                elseif actualUnit.dbid == calculations[item.name].result.type071.dbid then
+                    local locationIndex = calculations[item.name].result.type071.locationIndex
+                    local len = GetCount(calculations[item.name].result.type071.locations)
 
                     if locationIndex > len then
                         if groupForLST and GetCount(groupForLST.course) == 0 then
                             groupForLST.course = GetCourseByPoints({ locationFor072a })
-                            groupForLST.manualSpeed = shipInfo.shipSpeed
+                            groupForLST.manualSpeed = shipSettings.shipSpeed
                         end
 
-                        unit.group = groupNameForLST
+                        actualUnit.group = groupNameForLST
                     else
                         if groupForLHD and GetCount(groupForLHD.course) == 0 then
                             groupForLHD.course = GetCourseByPoints({ locationFor075 })
-                            groupForLHD.manualSpeed = shipInfo.shipSpeed
+                            groupForLHD.manualSpeed = shipSettings.shipSpeed
                         end
 
-                        unit.group = groupNameForLHD
+                        actualUnit.group = groupNameForLHD
                     end
 
-                    if CONFIG.c.landingOperation.isTesting then
+                    if CONFIG.c.PHIBOP.isTesting then
                         if locationIndex > len then
                             ScenEdit_SetUnit({
-                                guid = unit.guid,
-                                latitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - len].latitude,
-                                longitude = infoItem.to.result.type071InLSTArea.locations[locationIndex - len].longitude,
+                                guid = actualUnit.guid,
+                                latitude = calculations[item.name].result.type071InLSTArea.locations
+                                    [locationIndex - len].latitude,
+                                longitude = calculations[item.name].result.type071InLSTArea.locations
+                                    [locationIndex - len].longitude,
                                 manualSpeed = 0,
                             })
                         else
                             ScenEdit_SetUnit({
-                                guid = unit.guid,
-                                latitude = infoItem.to.result.type071.locations[locationIndex].latitude,
-                                longitude = infoItem.to.result.type071.locations[locationIndex].longitude,
+                                guid = actualUnit.guid,
+                                latitude = calculations[item.name].result.type071.locations[locationIndex].latitude,
+                                longitude = calculations[item.name].result.type071.locations[locationIndex].longitude,
                                 manualSpeed = 0,
                             })
                         end
                     end
 
                     locationIndex = locationIndex + 1
-                    infoItem.to.result.type071.locationIndex = locationIndex
+                    calculations[item.name].result.type071.locationIndex = locationIndex
                 end
             end
         end
     end
 
-    for _, group in pairs(CONFIG.c.landingOperation.const.sag) do
+    for _, group in pairs(CONFIG.c.PHIBOP.const.sag) do
         -- local unit = SE_GetUnit({ guid = group.guid })
         local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
+        if unit == nil then goto continue end
+        unit.course = group.to.archorageArea
 
-        if unit ~= nil then
-            unit.course = group.to.archorageArea
+        if CONFIG.c.PHIBOP.isTesting then
+            local count = GetCount(group.to.archorageArea)
+            local type052d = 0
+            local type054a = 0
 
-            if CONFIG.c.landingOperation.isTesting then
-                local count = GetCount(group.to.archorageArea)
-                local type052d = 0
-                local type054a = 0
+            for _, u in ipairs(unit.group.unitlist) do
+                local ship = SE_GetUnit({ guid = u })
+                if ship == nil then goto continue2 end
 
-                for _, u in ipairs(unit.group.unitlist) do
-                    local ship = SE_GetUnit({ guid = u })
-
-                    if ship then
-                        if ship.dbid == CONFIG.const.platformBDID48 then
-                            if type052d == 0 then
-                                ScenEdit_SetUnit({
-                                    guid = ship.guid,
-                                    latitude = group.to.archorageArea[count].lat,
-                                    longitude = group.to.archorageArea[count].lon,
-                                    heading = group.to.heading,
-                                })
-                            else
-                                local point = World_GetPointFromBearing({
-                                    LATITUDE = group.to.archorageArea[count].lat,
-                                    LONGITUDE = group.to.archorageArea[count].lon,
-                                    BEARING = group.to.heading - 180,
-                                    DISTANCE = 1.5,
-                                })
-                                ScenEdit_SetUnit({
-                                    guid = ship.guid,
-                                    latitude = point.latitude,
-                                    longitude = point.longitude,
-                                    heading = group.to.heading,
-                                })
-                            end
-                            type052d = type052d + 1
-                        end
-
-                        if ship.dbid == CONFIG.const.platformBDID49 then
-                            if type054a == 0 then
-                                local point = World_GetPointFromBearing({
-                                    LATITUDE = group.to.archorageArea[count].lat,
-                                    LONGITUDE = group.to.archorageArea[count].lon,
-                                    BEARING = group.to.heading - 45,
-                                    DISTANCE = 1.5,
-                                })
-                                ScenEdit_SetUnit({
-                                    guid = ship.guid,
-                                    latitude = point.latitude,
-                                    longitude = point.longitude,
-                                    heading = group.to.heading,
-                                })
-                            else
-                                local point = World_GetPointFromBearing({
-                                    LATITUDE = group.to.archorageArea[count].lat,
-                                    LONGITUDE = group.to.archorageArea[count].lon,
-                                    BEARING = group.to.heading + 45,
-                                    DISTANCE = 1.5,
-                                })
-                                ScenEdit_SetUnit({
-                                    guid = ship.guid,
-                                    latitude = point.latitude,
-                                    longitude = point.longitude,
-                                    heading = group.to.heading,
-                                })
-                            end
-                            type054a = type054a + 1
-                        end
+                if ship.dbid == CONFIG.const.platformBDID48 then
+                    if type052d == 0 then
+                        ScenEdit_SetUnit({
+                            guid = ship.guid,
+                            latitude = group.to.archorageArea[count].lat,
+                            longitude = group.to.archorageArea[count].lon,
+                            heading = group.to.heading,
+                        })
+                    else
+                        local point = World_GetPointFromBearing({
+                            LATITUDE = group.to.archorageArea[count].lat,
+                            LONGITUDE = group.to.archorageArea[count].lon,
+                            BEARING = group.to.heading - 180,
+                            DISTANCE = 1.5,
+                        })
+                        ScenEdit_SetUnit({
+                            guid = ship.guid,
+                            latitude = point.latitude,
+                            longitude = point.longitude,
+                            heading = group.to.heading,
+                        })
                     end
+                    type052d = type052d + 1
                 end
+
+                if ship.dbid == CONFIG.const.platformBDID49 then
+                    if type054a == 0 then
+                        local point = World_GetPointFromBearing({
+                            LATITUDE = group.to.archorageArea[count].lat,
+                            LONGITUDE = group.to.archorageArea[count].lon,
+                            BEARING = group.to.heading - 45,
+                            DISTANCE = 1.5,
+                        })
+                        ScenEdit_SetUnit({
+                            guid = ship.guid,
+                            latitude = point.latitude,
+                            longitude = point.longitude,
+                            heading = group.to.heading,
+                        })
+                    else
+                        local point = World_GetPointFromBearing({
+                            LATITUDE = group.to.archorageArea[count].lat,
+                            LONGITUDE = group.to.archorageArea[count].lon,
+                            BEARING = group.to.heading + 45,
+                            DISTANCE = 1.5,
+                        })
+                        ScenEdit_SetUnit({
+                            guid = ship.guid,
+                            latitude = point.latitude,
+                            longitude = point.longitude,
+                            heading = group.to.heading,
+                        })
+                    end
+                    type054a = type054a + 1
+                end
+
+                ::continue2::
             end
         end
+
+        ::continue::
     end
 
-    CONFIG.c.landingOperation.isLandingShipsArrived = true
-    CONFIG.c.landingOperation.isLandingShipsStartedMoving = false
+    CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = true
+    CONFIG.c.PHIBOP.isShipsStartedMoving = false
 end
 
-local function getUnitsInAnchorageArea(CONFIG)
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
+local function getUnitsInAnchorageArea()
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
     local unitsInAnchorageArea1 = {}
     local isUnitMoving = false
 
-    for _, value in ipairs(units) do
-        local unit = SE_GetUnit({ guid = value.guid })
+    for _, item in ipairs(units) do
+        local unit = SE_GetUnit({ guid = item.guid })
 
         if unit ~= nil
             and (unit.dbid == CONFIG.const.platformBDID6
@@ -385,7 +409,7 @@ local function getUnitsInAnchorageArea(CONFIG)
 end
 
 local function createCargoMissions()
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, mission in ipairs(zone.boat.missions) do
@@ -402,8 +426,8 @@ local function createCargoMissions()
     end
 end
 
-local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1, CONFIG)
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
+local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1)
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, u in ipairs(unitsInAnchorageArea1) do
@@ -491,38 +515,38 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
         end
     end
 
-    for _, value in ipairs(CONFIG.c.landingOperation.const.transportAircraft) do
+    for _, item in ipairs(CONFIG.c.PHIBOP.const.transportAircraft) do
         TransferCargo(
-            value.guid,
+            item.guid,
             'Aircraft',
-            value.dbid,
-            value.cargoItemsForTransfer[1].loadoutId,
-            value.cargoItemsForTransfer[1].cargoItems
+            item.dbid,
+            item.cargoItemsForTransfer[1].loadoutId,
+            item.cargoItemsForTransfer[1].cargoItems
         )
         AssignEmbarkedUnitsToMissions(
-            value.guid,
+            item.guid,
             'Aircraft',
-            value.dbid,
-            value.missions
+            item.dbid,
+            item.missions
         )
     end
 end
 
-local function startAmphibiousLandingAttack(CONFIG)
-    local result = getUnitsInAnchorageArea(CONFIG)
+local function startAmphibiousAssault(CONFIG)
+    local result = getUnitsInAnchorageArea()
 
     if GetCount(result.units) > 15 and not result.isUnitMoving then
         createCargoMissions()
-        transferCargosAndAssignHelicoptersToMissions(result.units, CONFIG)
-        CONFIG.c.landingOperation.isLandingShipsArrived = false
-        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = true
-        CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = ScenEdit_CurrentTime()
+        transferCargosAndAssignHelicoptersToMissions(result.units)
+        CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = false
+        CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched = true
+        CONFIG.c.PHIBOP.amphibiousAssaultStartTime = ScenEdit_CurrentTime()
     end
 end
 
 local function setLandingMissionStartTime(CONFIG)
-    CONFIG.c.landingOperation.airlandingMissionStartTime = ScenEdit_CurrentTime()
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
+    CONFIG.c.PHIBOP.airlandingMissionStartTime = ScenEdit_CurrentTime()
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, mission in ipairs(zone.tansportHelicopter.missions) do
@@ -543,53 +567,33 @@ local function setLandingMissionStartTime(CONFIG)
 end
 
 local function setCoursesForLSTs(CONFIG)
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
 
-    for _, value in ipairs(units) do
-        local unit = SE_GetUnit({ guid = value.guid })
+    for _, item in ipairs(units) do
+        local unit = SE_GetUnit({ guid = item.guid })
 
         for _, zone in ipairs(operationalZones) do
             if unit and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
-                if unit.dbid == CONFIG.const.platformBDID10 or unit.dbid == CONFIG.const.platformBDID32 then
-                    unit.group = "none"
-                    unit.course = nil
-                    unit.manualSpeed = zone.LSTSettings.speed
-                    ScenEdit_AssignUnitToMission(unit.guid, zone.boat.missions[1].name)
+                local destinationTemp = World_GetPointFromBearing({
+                    LATITUDE = unit.latitude,
+                    LONGITUDE = unit.longitude,
+                    BEARING = zone.LSTSettings.course.bearing,
+                    DISTANCE = zone.LSTSettings.course.distance
+                })
 
-                    -- local grpName = zone.name .. ' LSM Grp'
-                    -- unit.group = grpName
-                    -- -- unit.course = nil
-                    -- unit.manualSpeed = zone.LSTSettings.speed
-                    -- local grp = SE_GetUnit({ unitname = grpName })
-                    -- grp.formation = { spacing_unit = 1, lead = unit.guid, name = 'Line', spacing = 0.5 }
+                if unit.group and unit.group.name == (zone.name .. ' LST Grp') then
+                    unit.group = 'none'
+                end
 
-                    -- if grp and grp.mission == nil then
-                    --     ScenEdit_AssignUnitToMission(grp.guid, zone.boat.missions[1].name)
-                    -- end
-                else
-                    local destinationTemp = World_GetPointFromBearing({
-                        LATITUDE = unit.latitude,
-                        LONGITUDE = unit.longitude,
-                        BEARING = zone.LSTSettings.course.bearing,
-                        DISTANCE = zone.LSTSettings.course.distance
-                    })
-
-                    if unit.group and unit.group.name == (zone.name .. ' LST Grp') then
-                        unit.group = 'none'
-                    end
-
+                if unit.name ~= 'RORO' and unit.name ~= 'Barge' then
                     unit.course = GetCourseByPoints({ destinationTemp })
                     unit.manualSpeed = zone.LSTSettings.speed
                 end
             end
-
-            -- if unit and unit.name==(zone.name .. ' LST Grp') then
-            --     unit.formation = { spacing_unit = 1, name = 'Line', spacing = 0.2 }
-            -- end
         end
     end
 
-    for _, group in pairs(CONFIG.c.landingOperation.const.sag) do
+    for _, group in pairs(CONFIG.c.PHIBOP.const.sag) do
         local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
 
         if unit ~= nil then
@@ -598,7 +602,7 @@ local function setCoursesForLSTs(CONFIG)
     end
 end
 
-local function getContactNumInArea(contacts, area)
+local function countContactsInArea(contacts, area)
     local filteredContacts = {}
 
     for _, contact in ipairs(contacts) do
@@ -611,39 +615,38 @@ local function getContactNumInArea(contacts, area)
 end
 
 local function startAirLanding(CONFIG)
-    local shipLocationInfo = CONFIG.c.landingOperation.const.shipLocationInfo
+    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
     local contacts = ScenEdit_GetContacts('China')
     local elapsedTime = 0
-    local landingAttackStartTime = CONFIG.c.landingOperation.amphibiousLandingAttackStartTime
+    local amphibiousAssaultStartTime = CONFIG.c.PHIBOP.amphibiousAssaultStartTime
 
-    if landingAttackStartTime then
-        elapsedTime = ScenEdit_CurrentTime() - landingAttackStartTime
+    if amphibiousAssaultStartTime then
+        elapsedTime = ScenEdit_CurrentTime() - amphibiousAssaultStartTime
     end
 
-    if contacts == nil then
-        return
-    end
+    if contacts == nil then return end
 
-    local contactNum = getContactNumInArea(contacts, shipLocationInfo[1].airLandingZone)
-    local isContactNumLessThan = contactNum < shipLocationInfo[1].numOfContactsInAirLandingZone
-    local isTimeExceeded = landingAttackStartTime and elapsedTime >= CONFIG.c.landingOperation.const.periodOfTime
+    local contactNum = countContactsInArea(contacts, initialLocations[1].airLandingZone)
+    local isContactCountLessThan = contactNum < initialLocations[1].numOfContactsInAirLandingZone
+    local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= CONFIG.c.PHIBOP.const.periodOfTime
 
-    if isContactNumLessThan or isTimeExceeded then
+    if isContactCountLessThan or isTimeExceeded then
         setLandingMissionStartTime(CONFIG)
         setCoursesForLSTs(CONFIG)
         ScenEdit_MsgBox('Start air landing', 0)
-        CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
+        CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched = false
+        CONFIG.c.PHIBOP.isSecondWaveStarted = true
     end
 end
 
 local function retransferCargos(CONFIG)
-    local operationalZones = CONFIG.c.landingOperation.const.operationalZones
-    local elapsedTime = ScenEdit_CurrentTime() - CONFIG.c.landingOperation.airlandingMissionStartTime
+    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+    local elapsedTime = ScenEdit_CurrentTime() - CONFIG.c.PHIBOP.airlandingMissionStartTime
 
     if elapsedTime >= (3600 * 2) then
         for _, zone in ipairs(operationalZones) do
-            for _, value in ipairs(units) do
-                local unit = SE_GetUnit({ guid = value.guid })
+            for _, item in ipairs(units) do
+                local unit = SE_GetUnit({ guid = item.guid })
 
                 if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID54) then
                     TransferCargo(
@@ -690,20 +693,134 @@ local function retransferCargos(CONFIG)
     end
 end
 
-if CONFIG.c.landingOperation.isLandingShipsStartedMoving then
+local function calculateSphericalCenter(coords)
+    -- 檢查輸入是否有效
+    if not coords or #coords < 4 then
+        return nil, "需要至少4個座標點來形成四方形"
+    end
+
+    -- 初始化笛卡爾座標總和
+    local xSum = 0
+    local ySum = 0
+    local zSum = 0
+
+    -- 將經緯度轉換為笛卡爾座標並計算總和
+    for _, point in ipairs(coords) do
+        if not point.latitude or not point.longitude then
+            return nil, "每個座標點必須包含latitude和longitude屬性"
+        end
+
+        -- 將角度轉換為弧度
+        local latRad = math.rad(point.latitude)
+        local lonRad = math.rad(point.longitude)
+
+        -- 轉換到笛卡爾座標
+        local x = math.cos(latRad) * math.cos(lonRad)
+        local y = math.cos(latRad) * math.sin(lonRad)
+        local z = math.sin(latRad)
+
+        xSum = xSum + x
+        ySum = ySum + y
+        zSum = zSum + z
+    end
+
+    -- 計算平均值
+    local count = #coords
+    local xAvg = xSum / count
+    local yAvg = ySum / count
+    local zAvg = zSum / count
+
+    -- 將平均笛卡爾座標轉回經緯度
+    local hyp = math.sqrt(xAvg * xAvg + yAvg * yAvg)
+    local centerLat = math.deg(math.atan2(zAvg, hyp))
+    local centerLon = math.deg(math.atan2(yAvg, xAvg))
+
+    return {
+        latitude = centerLat,
+        longitude = centerLon
+    }
+end
+
+local setCoursesForBarges = function(CONFIG)
+    local result = CountUnitsInEachArea()
+
+    if GetCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1 then
+        local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+        local roros = {}
+        local barges = {}
+
+        for _, item in ipairs(units) do
+            local actualUnit = SE_GetUnit({ guid = item.guid })
+
+            for _, zone in ipairs(operationalZones) do
+                if actualUnit and actualUnit.name == 'Barge' and actualUnit.type == 'Ship' and actualUnit:inArea(zone.LSTAnchorageArea) then
+                    local points = ScenEdit_GetReferencePoints({ side = "China", area = zone.offloadArea })
+                    local centerPoint = calculateSphericalCenter(points)
+
+                    if centerPoint then
+                        local d1 = Tool_Range({ latitude = actualUnit.latitude, longitude = actualUnit.longitude },
+                            centerPoint)
+                        local b1 = Tool_Bearing({ latitude = actualUnit.latitude, longitude = actualUnit.longitude },
+                            centerPoint)
+                        local b2 = math.abs(zone.LSTSettings.course.bearing - b1)
+                        local d2 = d1 * math.cos(b2 * 2 * math.pi / 360)
+                        local destination = World_GetPointFromBearing({
+                            latitude = actualUnit.latitude,
+                            longitude = actualUnit.longitude,
+                            distance = d2,
+                            bearing = zone.LSTSettings.course.bearing
+                        })
+                        actualUnit.course = { destination }
+                        actualUnit.manualSpeed = zone.LSTSettings.speed
+                        table.insert(barges, { unit = actualUnit, zone = zone, dest = destination })
+                        CONFIG.c.PHIBOP.barges[actualUnit.guid] = { guid = actualUnit.guid, roros = {} }
+                    end
+                end
+
+                if actualUnit and actualUnit.name == 'RORO' and actualUnit.type == 'Ship' and actualUnit:inArea(zone.LSTAnchorageArea) then
+                    table.insert(roros, { unit = actualUnit, zone = zone })
+                end
+            end
+        end
+
+        for _, item in ipairs(roros) do
+            for _, barge in ipairs(barges) do
+                if barge.unit:inArea(item.zone.LSTAnchorageArea) then
+                    table.insert(CONFIG.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
+                    local destination = World_GetPointFromBearing({
+                        latitude = item.unit.latitude,
+                        longitude = item.unit.longitude,
+                        distance = item.zone.LSTSettings.course.distance,
+                        bearing = item.zone.LSTSettings.course.bearing
+                    })
+                    item.unit.course = { destination, barge.dest }
+                    item.unit.manualSpeed = item.zone.LSTSettings.speed
+                end
+            end
+        end
+
+        CONFIG.c.PHIBOP.isSecondWaveStarted = false
+    end
+end
+
+if CONFIG.c.PHIBOP.isShipsStartedMoving then
     setCoursesForAllShips(CONFIG)
 end
 
-if CONFIG.c.landingOperation.isLandingShipsArrived then
-    startAmphibiousLandingAttack(CONFIG)
+if CONFIG.c.PHIBOP.isShipsArrivedInStagingArea then
+    startAmphibiousAssault(CONFIG)
     CONFIG.c.air.landBased.gbu.isStrikeActivated = true
 end
 
-if CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched then
+if CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched then
     startAirLanding(CONFIG)
 end
 
-if CONFIG.c.landingOperation.airlandingMissionStartTime ~= nil then
+if CONFIG.c.PHIBOP.isSecondWaveStarted then
+    setCoursesForBarges(CONFIG)
+end
+
+if CONFIG.c.PHIBOP.airlandingMissionStartTime ~= nil then
     retransferCargos(CONFIG)
 end
 

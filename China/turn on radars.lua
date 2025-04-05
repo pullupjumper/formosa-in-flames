@@ -12,40 +12,41 @@ local longitude = unit.longitude
 
 for _, value in ipairs(units) do
     local u = SE_GetUnit({ guid = value.guid })
+    if u == nil then goto continue end
+    local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-    if u ~= nil then
-        local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
-
-        if (u.dbid == 2537 or u.dbid == 2538) then
-            if distance < temp.distance then
-                temp.unit = u
-                temp.distance = distance
-            end
+    if (u.dbid == CONFIG.const.platformBDID16 or u.dbid == CONFIG.const.platformBDID17) then
+        if distance < temp.distance then
+            temp.unit = u
+            temp.distance = distance
         end
     end
+
+    ::continue::
 end
 
 if temp.unit == nil then
     for _, value in ipairs(units) do
         local u = SE_GetUnit({ guid = value.guid })
+        if u == nil then goto continue end
 
-        if u ~= nil then
-            local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
+        local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-            if u.dbid == CONFIG.const.platformBDID18
-                or u.dbid == CONFIG.const.platformBDID19
-                or u.dbid == CONFIG.const.platformBDID20
-                or u.dbid == CONFIG.const.platformBDID21 then
-                if distance < temp.distance then
-                    temp.unit = u
-                    temp.distance = distance
-                end
+        if u.dbid == CONFIG.const.platformBDID18
+            or u.dbid == CONFIG.const.platformBDID19
+            or u.dbid == CONFIG.const.platformBDID20
+            or u.dbid == CONFIG.const.platformBDID21 then
+            if distance < temp.distance then
+                temp.unit = u
+                temp.distance = distance
             end
         end
+
+        ::continue::
     end
 end
 
 if temp.unit ~= nil then
     ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    ScenEdit_SpecialMessage('China', tostring(temp.unit.name) .. '\'s radar is activated.')
+    printBox('China', tostring(temp.unit.name) .. '\'s radar is activated.')
 end

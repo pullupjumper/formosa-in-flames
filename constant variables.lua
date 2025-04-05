@@ -34,8 +34,8 @@ CONFIG.c.surface.lacm.const = {}
 CONFIG.c.subSurface = {}
 CONFIG.c.subSurface.slcm = {}
 CONFIG.c.subSurface.slcm.const = {}
-CONFIG.c.landingOperation = {}
-CONFIG.c.landingOperation.const = {}
+CONFIG.c.PHIBOP = {}
+CONFIG.c.PHIBOP.const = {}
 CONFIG.c.recon = {}
 CONFIG.c.recon.const = {}
 CONFIG.c.GPSJamming = {}
@@ -62,8 +62,6 @@ CONFIG.t.repairRunway = {}
 CONFIG.t.repairRunway.const = {}
 CONFIG.t.IADS = {}
 CONFIG.t.IADS.const = {}
-CONFIG.t.aircraft = {}
-CONFIG.t.aircraft.const = {}
 CONFIG.t.air = {}
 CONFIG.t.air.landBased = {}
 CONFIG.t.air.landBased.const = {}
@@ -128,6 +126,22 @@ CONFIG.const.platformBDID53 = 320  -- ammo
 CONFIG.const.platformBDID54 = 4876 -- 076
 CONFIG.const.platformBDID55 = 4962 -- GJ-11
 CONFIG.const.platformBDID56 = 2566 -- ferry
+CONFIG.const.platformBDID57 = 7419 -- J-10C
+CONFIG.const.platformBDID58 = 241  -- ZBD-05
+CONFIG.const.platformBDID59 = 240  -- ZTD-05
+CONFIG.const.platformBDID60 = 318  -- PLL-05
+CONFIG.const.platformBDID61 = 319  -- PLZ-96
+CONFIG.const.platformBDID62 = 2876 -- PGZ-09
+CONFIG.const.platformBDID63 = 758  -- PGZ-95
+CONFIG.const.platformBDID64 = 2034 -- 悍馬車
+CONFIG.const.platformBDID65 = 2806 -- MC
+CONFIG.const.platformBDID66 = 2162 -- SA-15
+CONFIG.const.platformBDID67 = 430  -- M977
+CONFIG.const.platformBDID68 = 2034 -- 悍馬車
+CONFIG.const.platformBDID69 = 236  -- ZBD-04
+CONFIG.const.platformBDID70 = 245  -- ZTZ-96A
+CONFIG.const.platformBDID71 = 4122 -- bridge
+CONFIG.const.platformBDID72 = 4925 -- Barge
 
 CONFIG.const.sensorBDID1 = 2788    -- S-300 Tombstone
 CONFIG.const.sensorBDID2 = 4155    -- S-400 Grave Stone
@@ -185,7 +199,7 @@ CONFIG.c.IADS.isActivated = true
 CONFIG.c.IADS.C2 = {
     ['IC8B0X-0HN84DHD12B41'] = {
         name = '#A C2/IADS',
-        msg = 'Radio transmissions, C2/IADS',
+        msg = 'Radio source, C2/IADS',
         guid = 'IC8B0X-0HN84DHD12B41',
         area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
         radar = {},
@@ -193,7 +207,7 @@ CONFIG.c.IADS.C2 = {
     },
     ['IC8B0X-0HN84DHD12B7R'] = {
         name = '#B C2/IADS',
-        msg = 'Radio transmissions, C2/IADS',
+        msg = 'Radio source, C2/IADS',
         guid = 'IC8B0X-0HN84DHD12B7R',
         area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
         radar = {},
@@ -201,7 +215,7 @@ CONFIG.c.IADS.C2 = {
     },
     ['IC8B0X-0HN84DHD12BBJ'] = {
         name = '#C C2/IADS',
-        msg = 'Radio transmissions, C2/IADS',
+        msg = 'Radio source, C2/IADS',
         guid = 'IC8B0X-0HN84DHD12BBJ',
         area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
         radar = {},
@@ -212,14 +226,15 @@ CONFIG.c.IADS.const.values = { C2 = 1.5, }
 
 -- comms jamming
 CONFIG.c.commsJamming.isActivated = true
-CONFIG.c.commsJamming.const.jammingLimit = 12
-CONFIG.c.commsJamming.const.jammingRange = 200
+CONFIG.c.commsJamming.const.limit = 12
+CONFIG.c.commsJamming.const.range = 200
+CONFIG.c.commsJamming.const.initialComms = -20
 CONFIG.c.commsJamming.jammers = {
     -- { guid = '' },
 }
 
 -- GPS Jamming
-CONFIG.c.GPSJamming.isStrikeActivated = true
+CONFIG.c.GPSJamming.isActivated = true
 -- CONFIG.c.GPSJamming.const.GPSGuidedWeapons = {
 --     { dbid = 779,  jammingResistance = 33 }, -- ATACMS
 --     { dbid = 452,  jammingResistance = 33 }, -- SLAM-ER
@@ -229,7 +244,7 @@ CONFIG.c.GPSJamming.isStrikeActivated = true
 --     { dbid = 3026, jammingResistance = 66 }, -- WC
 --     { dbid = 1717, jammingResistance = 33 }, -- ATACMS M57
 -- }
-CONFIG.c.GPSJamming.jammers = {
+CONFIG.c.GPSJamming.const.jammers = {
     -- { guid = 'IC8B0X-0HN3VIK603IHV', eventName = '(China) GPS Jamming 1', area = {} },
     -- { guid = 'IC8B0X-0HN3VIK603IN0', eventName = '(China) GPS Jamming 2', area = {} },
     { zoneName = 'JAMMING ZONE/1', name = '1st Bn, 1st ECM Bde', point = { lat = 'N 25.28.17', lon = 'E 119.35.17' }, randomRadius = 2, radius = 14 },
@@ -237,10 +252,9 @@ CONFIG.c.GPSJamming.jammers = {
 }
 
 -- MLRS on mobile units
-CONFIG.c.ground.mlrs.lastReconTime = nil
 CONFIG.c.ground.mlrs.isStrikeActivated = false
-CONFIG.c.ground.mlrs.strikeTimes = 0
-CONFIG.c.ground.mlrs.idxPackage = 1
+CONFIG.c.ground.mlrs.const.wpnDefault = 192
+CONFIG.c.ground.mlrs.const.ammoThreshold = 50
 CONFIG.c.ground.mlrs.const.position = {
     north = {
         RL = {
@@ -312,17 +326,17 @@ CONFIG.c.ground.mlrs.const.position = {
 CONFIG.c.ground.mlrs.ammunitions = {
     ['IC8B0X-0HN9ASEFCGDKF'] = {
         guid = 'IC8B0X-0HN9ASEFCGDKF',
-        wpnCurrent = 192,
-        wpnDefault = 192,
+        wpnCurrent = CONFIG.c.ground.mlrs.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.mlrs.const.wpnDefault,
     },
 }
 CONFIG.c.ground.mlrs.ammunitionSections = {
     ['IC8B0X-0HN7R5QOERV4D'] = {
         guid = 'IC8B0X-0HN7R5QOERV4D',
         name = 'Ammo Sec, 6th Bn, 73rd Arty Bde',
-        wpnCurrent = 192,
-        wpnDefault = 192,
-        unitNum = 3,
+        wpnCurrent = CONFIG.c.ground.mlrs.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.mlrs.const.wpnDefault,
+        unitCount = 3,
         position = CONFIG.c.ground.mlrs.const.position.north,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -332,20 +346,20 @@ CONFIG.c.ground.mlrs.ammunitionSections = {
 CONFIG.c.ground.mlrs.batteries = {
     ['IC8B0X-0HN5UJRVS1JEK'] = {
         name = '6th Bn, 73rd Arty Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN5UJRVS1JEK',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.mlrs.const.position.north,
         weaponDBID = 4471,
-        wpnNumLessThan = 50,
+        ammoThreshold = CONFIG.c.ground.mlrs.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOERV4D'
     }
 }
 CONFIG.c.ground.mlrs.packages = {
     {
         name = 'North',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HN5UJRVS1JEK', }
         },
@@ -362,10 +376,9 @@ CONFIG.c.ground.mlrs.const.contactAge = 30 * 60
 CONFIG.c.ground.mlrs.const.reloadTime = 30 * 60
 
 -- GLCM
-CONFIG.c.ground.glcm.lastReconTime = nil
 CONFIG.c.ground.glcm.isStrikeActivated = false
-CONFIG.c.ground.glcm.strikeTimes = 0
-CONFIG.c.ground.glcm.idxPackage = 1
+CONFIG.c.ground.glcm.const.wpnDefault = 48
+CONFIG.c.ground.glcm.const.ammoThreshold = 50
 CONFIG.c.ground.glcm.const.position = {
     brigade635 = {
         RL = {
@@ -401,17 +414,17 @@ CONFIG.c.ground.glcm.const.position = {
 CONFIG.c.ground.glcm.ammunitions = {
     ['IC8B0X-0HN99I5RL5KR9'] = {
         guid = 'IC8B0X-0HN99I5RL5KR9',
-        wpnCurrent = 48,
-        wpnDefault = 48,
+        wpnCurrent = CONFIG.c.ground.glcm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.glcm.const.wpnDefault,
     },
 }
 CONFIG.c.ground.glcm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVG88'] = {
         guid = 'IC8B0X-0HN7R5QOIVG88',
         name = 'Ammo Sec, 635th Bde, PLARF',
-        wpnCurrent = 48,
-        wpnDefault = 48,
-        unitNum = 4,
+        wpnCurrent = CONFIG.c.ground.glcm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.glcm.const.wpnDefault,
+        unitCount = 4,
         position = CONFIG.c.ground.glcm.const.position.brigade635,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -431,18 +444,18 @@ CONFIG.c.ground.glcm.batteries = {
     ['6Z8LM5-0HMN97ERAUODK'] = {
         guid = '6Z8LM5-0HMN97ERAUODK',
         name = '635th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.glcm.const.position.brigade635,
         weaponDBID = 2122,
-        wpnNumLessThan = 50,
+        ammoThreshold = CONFIG.c.ground.glcm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVG88'
     },
 }
 ---@class CONFIG__Package:table
 ---@field name string
----@field targetList table<CONFIG__TargetList>
+---@field batchTargetlists table<CONFIG__TargetList>
 ---@field batteries table
 ---@field num number
 ---@field index number
@@ -451,7 +464,7 @@ CONFIG.c.ground.glcm.packages = {
     ---@type CONFIG__Package
     {
         name = 'HELIPAD',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK' },
         },
@@ -461,7 +474,7 @@ CONFIG.c.ground.glcm.packages = {
     },
     {
         name = 'CONTINGENCY RUNWAY',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK' },
         },
@@ -475,10 +488,9 @@ CONFIG.c.ground.glcm.const.reloadTime = 45 * 60
 
 
 -- SRBM
-CONFIG.c.ground.srbm.lastReconTime = nil
 CONFIG.c.ground.srbm.isStrikeActivated = false
-CONFIG.c.ground.srbm.strikeTimes = 0
-CONFIG.c.ground.srbm.idxPackage = 1
+CONFIG.c.ground.srbm.const.wpnDefault = 36
+CONFIG.c.ground.srbm.const.ammoThreshold = 35
 CONFIG.c.ground.srbm.const.position = {
     brigade615 = {
         RL = {
@@ -664,42 +676,42 @@ CONFIG.c.ground.srbm.const.position = {
 CONFIG.c.ground.srbm.ammunitions = {
     ['IC8B0X-0HN9ASEFCG848'] = {
         guid = 'IC8B0X-0HN9ASEFCG848',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9ASEFCG95Q'] = {
         guid = 'IC8B0X-0HN9ASEFCG95Q',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9ASEFCG8CT'] = {
         guid = 'IC8B0X-0HN9ASEFCG8CT',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9ASEFCG8OK'] = {
         guid = 'IC8B0X-0HN9ASEFCG8OK',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9ASEFCG9GA'] = {
         guid = 'IC8B0X-0HN9ASEFCG9GA',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9ASEFCGA5A'] = {
         guid = 'IC8B0X-0HN9ASEFCGA5A',
-        wpnCurrent = 72,
-        wpnDefault = 72,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault * 2,
     },
 }
 CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVL7D'] = {
         guid = 'IC8B0X-0HN7R5QOIVL7D',
         name = 'Ammo Sec, 615th Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade615,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -708,9 +720,9 @@ CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVLSG'] = {
         guid = 'IC8B0X-0HN7R5QOIVLSG',
         name = 'Ammo Sec, 614th Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade614,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -719,9 +731,9 @@ CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVMO1'] = {
         guid = 'IC8B0X-0HN7R5QOIVMO1',
         name = 'Ammo Sec, 636th Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade636,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -730,9 +742,9 @@ CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVOSN'] = {
         guid = 'IC8B0X-0HN7R5QOIVOSN',
         name = 'Ammo Sec, 616th Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade616,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -741,9 +753,9 @@ CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVPNC'] = {
         guid = 'IC8B0X-0HN7R5QOIVPNC',
         name = 'Ammo Sec, 613rd Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade613,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -752,9 +764,9 @@ CONFIG.c.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVQ6P'] = {
         guid = 'IC8B0X-0HN7R5QOIVQ6P',
         name = 'Ammo Sec, 617th Bde, PLARF',
-        wpnCurrent = 36,
-        wpnDefault = 36,
-        unitNum = 9,
+        wpnCurrent = CONFIG.c.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.c.ground.srbm.const.wpnDefault,
+        unitCount = 9,
         position = CONFIG.c.ground.srbm.const.position.brigade617,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -765,74 +777,74 @@ CONFIG.c.ground.srbm.batteries = {
     ['X58F5H-0HN1G2IFLNKG9'] = {
         guid = 'X58F5H-0HN1G2IFLNKG9',
         name = '615th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade615,
         weaponDBID = 2142,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D'
     },
     ['X58F5H-0HN1LQGRV8HNQ'] = {
         guid = 'X58F5H-0HN1LQGRV8HNQ',
         name = '614th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade614,
         weaponDBID = 2142,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG'
     },
     ['IC8B0X-0HN822OHANPB3'] = {
         guid = 'IC8B0X-0HN822OHANPB3',
         name = '636th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade636,
         weaponDBID = 4511,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1'
     },
     ['X58F5H-0HN1G2IFLF6QE'] = {
         guid = 'X58F5H-0HN1G2IFLF6QE',
         name = '616th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade616,
         weaponDBID = 2145,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN'
     },
     ['X58F5H-0HN1G2DEBC7O8'] = {
         guid = 'X58F5H-0HN1G2DEBC7O8',
         name = '613rd Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade613,
         weaponDBID = 40,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC'
     },
     ['IC8B0X-0HN822OHANRHI'] = {
         guid = 'IC8B0X-0HN822OHANRHI',
         name = '617th Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.c.ground.srbm.const.position.brigade617,
         weaponDBID = 4511,
-        wpnNumLessThan = 35,
+        ammoThreshold = CONFIG.c.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P'
     },
 }
 CONFIG.c.ground.srbm.packages = {
     {
         name = 'RADAR',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ' },
             { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8' }
@@ -843,7 +855,7 @@ CONFIG.c.ground.srbm.packages = {
     },
     {
         name = 'RUNWAY',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3' },
             { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI' }
@@ -854,7 +866,7 @@ CONFIG.c.ground.srbm.packages = {
     },
     {
         name = 'PORT',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             -- { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8'},
             { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9' }
@@ -865,7 +877,7 @@ CONFIG.c.ground.srbm.packages = {
     },
     {
         name = 'SHELTER',
-        targetList = {},
+        batchTargetlists = {},
         batteries = {
             { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE' }
         },
@@ -875,7 +887,7 @@ CONFIG.c.ground.srbm.packages = {
     },
 }
 CONFIG.c.ground.srbm.const.contactAge = 30 * 60
-CONFIG.c.ground.srbm.const.reloadTime = 45 * 60
+CONFIG.c.ground.srbm.const.reloadTime = 5 * 60
 CONFIG.c.ground.srbm.const.contingencyRunways = {
     { base = { guid = 'IC8B0X-0HN7DO7L1HUU1' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDN' } },
     { base = { guid = 'IC8B0X-0HN7DO7L1HUTV' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDM' } },
@@ -941,6 +953,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 26233, num = 24 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 26233, num = 24 }, --AKD-88 X 2
         }
     },
     {
@@ -983,6 +998,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 33464, num = 3, missionName = 'SIGINT' },
                 }
             },
+        },
+        loadouts = {
+            { loadoutId = 25380, num = 12 }, --KAB-1500 X 2
         }
     },
     {
@@ -998,6 +1016,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 25372, num = 24 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 25372, num = 24 }, --YJ-91 X 4
         }
     },
     {
@@ -1022,6 +1043,10 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 28027, num = 12, missionName = 'CAP' },
                 }
             },
+        },
+        loadouts = {
+            { loadoutId = 28027, num = 12 }, --PL-15 X 4
+            { loadoutId = 26233, num = 12 }, --AKD-88 X 2
         }
     },
     {
@@ -1046,6 +1071,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 25372, num = 8 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 25372, num = 8 }, --YJ-91 X 4
         }
     },
     {
@@ -1061,6 +1089,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 33615, num = 12 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 33615, num = 12 }, --YJ-63 X 4
         }
     },
     {
@@ -1112,6 +1143,11 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 25595, num = 8 },
                 }
             },
+        },
+        loadouts = {
+            { loadoutId = 25372, num = 8 }, --YJ-91 X 4
+            { loadoutId = 21743, num = 8 }, --YJ-83 X 2
+            { loadoutId = 25595, num = 8 }, --LS-6-500 X 2
         }
     },
     {
@@ -1127,6 +1163,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 33615, num = 12 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 33615, num = 12 }, --YJ-63 X 4
         }
     },
     {
@@ -1142,6 +1181,9 @@ CONFIG.c.air.landBased.const.ACInfo = {
                     { loadoutId = 28027, num = 12 },
                 }
             }
+        },
+        loadouts = {
+            { loadoutId = 28027, num = 12 }, --PL-15 X 4
         }
     },
     {
@@ -1305,108 +1347,115 @@ CONFIG.c.air.landBased.gbu.const.timeSpan = 0
 
 
 -- landing operation
-CONFIG.c.landingOperation.isTesting = true
-CONFIG.c.landingOperation.isLandingShipsStartedMoving = true
-CONFIG.c.landingOperation.isLandingShipsArrived = false
-CONFIG.c.landingOperation.amphibiousLandingAttackStartTime = nil
-CONFIG.c.landingOperation.isAmphibiousLandingAttackLaunched = false
-CONFIG.c.landingOperation.airlandingMissionStartTime = nil
-CONFIG.c.landingOperation.idxShipLocationInfo = 1
-CONFIG.c.landingOperation.const.periodOfTime = 5 * 60
-CONFIG.c.landingOperation.const.airlandingArea = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
-CONFIG.c.landingOperation.const.contactNumInAirlandingArea = 3
+CONFIG.c.PHIBOP.isTesting = true
+CONFIG.c.PHIBOP.isShipsStartedMoving = true
+CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = false
+CONFIG.c.PHIBOP.amphibiousAssaultStartTime = nil
+CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched = false
+CONFIG.c.PHIBOP.isSecondWaveStarted = false
+CONFIG.c.PHIBOP.airlandingMissionStartTime = nil
+CONFIG.c.PHIBOP.const.periodOfTime = 5 * 60
 
 ---@class CargoItems
 ---@field type number
 ---@field num number
 ---@field dbid number
 
-CONFIG.c.landingOperation.const.cargoList = {
+
+CONFIG.c.PHIBOP.const.cargoList = {
     ---@type table<number, CargoItems>
     type075 = {
-        { type = 2, num = 21, dbid = 318 },  -- PLL-05 11
-        { type = 2, num = 12, dbid = 319 },  -- PLZ-96 12
-        { type = 3, num = 3,  dbid = 2876 }, -- PGZ-09 3
-        { type = 3, num = 1,  dbid = 758 },  -- PGZ-95 1
-        { type = 3, num = 30, dbid = 2034 }, -- 悍馬車 30
-        { type = 3, num = 76, dbid = 2039 }, -- MC 76
+        { type = 2, num = 21, dbid = CONFIG.const.platformBDID60 }, -- PLL-05 11
+        { type = 2, num = 12, dbid = CONFIG.const.platformBDID61 }, -- PLZ-96 12
+        { type = 3, num = 3,  dbid = CONFIG.const.platformBDID62 }, -- PGZ-09 3
+        { type = 3, num = 1,  dbid = CONFIG.const.platformBDID63 }, -- PGZ-95 1
+        { type = 3, num = 30, dbid = CONFIG.const.platformBDID68 }, -- 悍馬車 30
+        { type = 3, num = 76, dbid = CONFIG.const.platformBDID65 }, -- MC 76
     },
     ---@type table<number, CargoItems>
     type071 = {
-        { type = 2, num = 5,  dbid = 318 },  -- PLL-05 11
-        { type = 2, num = 12, dbid = 319 },  -- PLZ-96 12
-        { type = 3, num = 3,  dbid = 2876 }, -- PGZ-09 3
-        { type = 3, num = 1,  dbid = 758 },  -- PGZ-95 1
-        { type = 3, num = 2,  dbid = 2162 }, -- SA-15 2
-        { type = 3, num = 22, dbid = 2039 }  -- MC
+        { type = 2, num = 5,  dbid = CONFIG.const.platformBDID60 }, -- PLL-05 11
+        { type = 2, num = 12, dbid = CONFIG.const.platformBDID61 }, -- PLZ-96 12
+        { type = 3, num = 3,  dbid = CONFIG.const.platformBDID62 }, -- PGZ-09 3
+        { type = 3, num = 1,  dbid = CONFIG.const.platformBDID63 }, -- PGZ-95 1
+        { type = 3, num = 2,  dbid = CONFIG.const.platformBDID66 }, -- SA-15 2
+        { type = 3, num = 22, dbid = CONFIG.const.platformBDID65 }  -- MC
     },
     ---@type table<number, CargoItems>
     type072iii = {
-        { type = 2, num = 5, dbid = 241 }, -- ZBD-05
-        { type = 2, num = 5, dbid = 240 }, -- ZTD-05
-        { type = 3, num = 6, dbid = 2039 }
+        { type = 2, num = 5, dbid = CONFIG.const.platformBDID58 }, -- ZBD-05
+        { type = 2, num = 5, dbid = CONFIG.const.platformBDID59 }, -- ZTD-05
+        { type = 3, num = 6, dbid = CONFIG.const.platformBDID65 }
     },
     ---@type table<number, CargoItems>
     type072a = {
-        { type = 2, num = 5, dbid = 241 }, -- ZBD-05
-        { type = 2, num = 5, dbid = 240 }, -- ZTD-05
-        { type = 3, num = 6, dbid = 2039 }
+        { type = 2, num = 5, dbid = CONFIG.const.platformBDID58 }, -- ZBD-05
+        { type = 2, num = 5, dbid = CONFIG.const.platformBDID59 }, -- ZTD-05
+        { type = 3, num = 6, dbid = CONFIG.const.platformBDID65 }
     },
     ---@type table<number, CargoItems>
     type073a = {
-        { type = 2, num = 3, dbid = 241 },
-        { type = 2, num = 3, dbid = 240 }, -- ZTD-05
+        { type = 2, num = 3, dbid = CONFIG.const.platformBDID58 },
+        { type = 2, num = 3, dbid = CONFIG.const.platformBDID59 }, -- ZTD-05
     },
     ---@type table<number, CargoItems>
-    type072a2 = {
-        { type = 3, num = 1, dbid = 2086 },
-        { type = 3, num = 1, dbid = 4324 }
+    ferry = {
+        { type = 2, num = 56, dbid = CONFIG.const.platformBDID58 }, -- ZBD-05
+        { type = 2, num = 56, dbid = CONFIG.const.platformBDID59 }, -- ZTD-05
     },
-    ferry1 = {
-        { type = 2, num = 56, dbid = 241 }, -- ZBD-05
-        { type = 2, num = 56, dbid = 240 }, -- ZTD-05
-    },
-    ferry2 = {
-        { type = 2, num = 28, dbid = 236 },  -- ZBD-04
-        { type = 2, num = 28, dbid = 245 },  -- ZTZ-96A
-        { type = 2, num = 9,  dbid = 318 },  -- PLL-05
-        { type = 3, num = 2,  dbid = 758 },  -- PGZ-95
-        { type = 3, num = 1,  dbid = 2876 }, -- PGZ-09
-        { type = 2, num = 7,  dbid = 319 },  -- PLZ-07/PLZ-96
-        { type = 3, num = 1,  dbid = 2162 }, -- SA-15
-        { type = 2, num = 4,  dbid = 430 },  -- M977
+    ---@type table<number, CargoItems>
+    barge = {
+        { type = 2, num = 28, dbid = CONFIG.const.platformBDID69 }, -- ZBD-04
+        { type = 2, num = 28, dbid = CONFIG.const.platformBDID70 }, -- ZTZ-96A
+        { type = 2, num = 9,  dbid = CONFIG.const.platformBDID60 }, -- PLL-05
+        { type = 3, num = 2,  dbid = CONFIG.const.platformBDID63 }, -- PGZ-95
+        { type = 3, num = 1,  dbid = CONFIG.const.platformBDID62 }, -- PGZ-09
+        { type = 2, num = 7,  dbid = CONFIG.const.platformBDID61 }, -- PLZ-07/PLZ-96
+        { type = 3, num = 1,  dbid = CONFIG.const.platformBDID66 }, -- SA-15
+        { type = 2, num = 4,  dbid = CONFIG.const.platformBDID67 }, -- M977
     }
 }
----@type CargoItems
-CONFIG.c.landingOperation.const.cargoItemsForTransferForBoat = {
-    { type = 2, num = 1, dbid = 241 },
-    { type = 2, num = 1, dbid = 240 },
+CONFIG.c.PHIBOP.const.cargoListForTransfer = {
+    boat = {
+        { type = 2, num = 1, dbid = CONFIG.const.platformBDID58 }, -- ZBD-05
+        { type = 2, num = 1, dbid = CONFIG.const.platformBDID59 }, -- ZTD-05
+    },
+    assultLandingGroup = {
+        { type = 2, num = 4, dbid = CONFIG.const.platformBDID60 }, -- PLL-05
+        -- 突擊上陸群
+    },
+    deepAssaultGroup1 = {
+        { type = 2, num = 1, dbid = CONFIG.const.platformBDID61 }, -- PLZ-96
+        { type = 3, num = 1, dbid = CONFIG.const.platformBDID62 }, -- PGZ-09
+        -- 縱深突擊群
+    },
+    deepAssaultGroup2 = {
+        { type = 2, num = 1, dbid = CONFIG.const.platformBDID61 }, -- PLZ-96
+        { type = 3, num = 1, dbid = CONFIG.const.platformBDID63 }, -- PGZ-95
+        -- 縱深突擊群
+    },
+    deepAssaultGroup3 = {
+        { type = 3, num = 1, dbid = CONFIG.const.platformBDID66 }, -- SA-15
+        -- 縱深突擊群
+    },
+    airAssaultGroup1 = {
+        { type = 3, num = 2, dbid = CONFIG.const.platformBDID65 }, -- MC -- 075/071 Z-18
+    },
+    airAssaultGroup2 = {
+        { type = 3, num = 1, dbid = CONFIG.const.platformBDID68 }, -- 悍馬車
+    },
+    airAssaultGroup3 = {
+        { type = 2, num = 3, dbid = CONFIG.const.platformBDID39 }, -- II-76 ZBD-03
+    },
 }
-CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup = {
-    { type = 2, num = 4, dbid = 318 },  -- PLL-05
-}                                       -- 突擊上陸群
-CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1 = {
-    { type = 2, num = 1, dbid = 319 },  -- PLZ-96
-    { type = 3, num = 1, dbid = 2876 }, -- PGZ-09
-}                                       -- 縱深突擊群
-CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2 = {
-    { type = 2, num = 1, dbid = 319 },  -- PLZ-96
-    { type = 3, num = 1, dbid = 758 },  -- PGZ-95
-}                                       -- 縱深突擊群
-CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup3 = {
-    { type = 3, num = 1, dbid = 2162 },
-}
----@type CargoItems
-CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter = { { type = 3, num = 2, dbid = 2039 } }       -- 075/071 Z-18
-CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter2 = { { type = 3, num = 1, dbid = 2034 } }
-CONFIG.c.landingOperation.const.cargoItemsForTransferForTransportAircraft = { { type = 2, num = 3, dbid = 317 } } -- II-76
-CONFIG.c.landingOperation.const.missionStartime = {
+
+CONFIG.c.PHIBOP.const.missionStartime = {
     transportHelicopter = { 42 * 60, 72 * 60, 92 * 60, 112 * 60 },
     attackHelicopter = { 40 * 60, },
-    boat = { 0, 41 * 60, 61 * 60, },
+    boat = { 41 * 60, 61 * 60, },
     reconUAV = { 0 }
 }
-CONFIG.c.landingOperation.const.shipInfo = {
+CONFIG.c.PHIBOP.const.shipSettings = {
     distanceBetweenLSTAndLPDArea = 13,
     horizontalDistance = 0.4,
     verticalDistance = 0.4,
@@ -1457,9 +1506,9 @@ CONFIG.c.landingOperation.const.shipInfo = {
     ACVTransitDistance = 5,
     ACVHorizontalDistance = 0.05,
 }
-CONFIG.c.landingOperation.const.shipLocationInfo = {
+CONFIG.c.PHIBOP.const.initialLocations = {
     {
-        name = 'North',
+        name = 'Taoyuan',
         names = {
             'Air Assault Bn',
             'Combined Arms Bn',
@@ -1468,7 +1517,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
         from = {
             areas = { {
                 startingPoints = { type075 = { side = "China", area = { 'RP-11169' } } },
-                heading = CONFIG.c.landingOperation.const.shipInfo.heading.north
+                heading = CONFIG.c.PHIBOP.const.shipSettings.heading.north
             } },
             stagingArea = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
             num = {
@@ -1478,9 +1527,9 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072iii = 7,
                 type072a = 8,
                 type073a = 7,
-                type072a2 = 0,
-                ferry1 = 4,
-                ferry2 = 0,
+                ferry = 4,
+                roro = 2,
+                barge = 1,
             }
         },
         to = {
@@ -1490,7 +1539,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type075 = { side = "China", area = { 'RP-4322' } },
                         type071 = { side = "China", area = { 'RP-3915' } },
                     },
-                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.west,
+                    heading = CONFIG.c.PHIBOP.const.shipSettings.heading.west,
                     num = {
                         type075 = 2,
                         type071 = 4,
@@ -1499,23 +1548,11 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type072a = 8,
                         type073a = 7,
                         type071InLSTArea = 0,
-                        type072a2 = 0,
-                        ferry1 = 4,
-                        ferry2 = 0,
+                        ferry = 4,
+                        roro = 2,
+                        barge = 1,
                     }
                 },
-            },
-            result = {
-                type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
-                type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
-                type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
-                type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
-                type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
-                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, },
-                ferry1 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
-                ferry2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
             }
         },
         airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
@@ -1531,7 +1568,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
         from = {
             areas = { {
                 startingPoints = { type075 = { side = "China", area = { 'RP-56195' } } },
-                heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu
+                heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu
             } },
             stagingArea = { 'RP-46584', 'RP-46585', 'RP-46586', 'RP-46587' },
             num = {
@@ -1542,9 +1579,9 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072a = 4,
                 type073a = 2,
                 type071InLSTArea = 0,
-                type072a2 = 0,
-                ferry1 = 4,
-                ferry2 = 0,
+                ferry = 4,
+                roro = 2,
+                barge = 1,
             }
         },
         to = {
@@ -1554,7 +1591,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type075 = { side = "China", area = { 'RP-69332' } },
                         type071 = { side = "China", area = { 'RP-69333' } },
                     },
-                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu,
+                    heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu,
                     num = {
                         type075 = 1,
                         type071 = 3,
@@ -1563,23 +1600,11 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type072a = 4,
                         type073a = 2,
                         type071InLSTArea = 0,
-                        type072a2 = 0,
-                        ferry1 = 4,
-                        ferry2 = 0,
+                        ferry = 4,
+                        roro = 2,
+                        barge = 1,
                     }
                 },
-            },
-            result = {
-                type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
-                type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
-                type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
-                type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
-                type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
-                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, },
-                ferry1 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
-                ferry2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
             }
         },
         airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
@@ -1595,7 +1620,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
         from = {
             areas = { {
                 startingPoints = { type075 = { side = "China", area = { 'RP-59972' } } },
-                heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu
+                heading = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu
             } },
             stagingArea = { 'RP-59975', 'RP-59976', 'RP-59977', 'RP-59978' },
             num = {
@@ -1606,9 +1631,9 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                 type072a = 3,
                 type073a = 1,
                 type071InLSTArea = 0,
-                type072a2 = 0,
-                ferry1 = 0,
-                ferry2 = 0,
+                ferry = 0,
+                roro = 0,
+                barge = 0,
             }
         },
         to = {
@@ -1618,7 +1643,7 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type075 = { side = "China", area = { 'RP-59973' } },
                         type071 = { side = "China", area = { 'RP-59974' } },
                     },
-                    heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu,
+                    heading = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu,
                     num = {
                         type075 = 1,
                         type071 = 1,
@@ -1627,23 +1652,11 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
                         type072a = 3,
                         type073a = 1,
                         type071InLSTArea = 0,
-                        type072a2 = 0,
-                        ferry1 = 0,
-                        ferry2 = 0,
+                        ferry = 0,
+                        roro = 0,
+                        barge = 0,
                     }
                 },
-            },
-            result = {
-                type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
-                type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
-                type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
-                type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
-                type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
-                type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
-                type072a2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID32, },
-                ferry1 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
-                ferry2 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
             }
         },
         airLandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
@@ -1651,34 +1664,75 @@ CONFIG.c.landingOperation.const.shipLocationInfo = {
     },
 
 }
-
-CONFIG.c.landingOperation.const.operationalZones = {
+CONFIG.c.PHIBOP.calculations = {
+    ['Taoyuan'] = {
+        name = 'Taoyuan',
+        result = {
+            type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
+            type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
+            type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
+            type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
+            type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
+            type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            ferry = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            roro = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            barge = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID72, },
+        }
+    },
+    ['Penghu'] = {
+        name = 'Penghu',
+        result = {
+            type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
+            type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
+            type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
+            type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
+            type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
+            type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            ferry = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            roro = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            barge = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID72, },
+        }
+    },
+    ['Sishu'] = {
+        name = 'Sishu',
+        result = {
+            type075 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID6, },
+            type071 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            type076 = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID54, },
+            type072iii = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID8, },
+            type072a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID9, },
+            type073a = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID10, },
+            type071InLSTArea = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID7, },
+            ferry = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            roro = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID56, },
+            barge = { locations = {}, locationIndex = 1, dbid = CONFIG.const.platformBDID72, },
+        }
+    },
+}
+CONFIG.c.PHIBOP.const.operationalZones = {
     {
-        name = 'North',
+        name = 'Taoyuan',
         baseGUID = '6Z8LM5-0HMMNGU6J8P2N',
         anchorageArea = { 'RP-9684', 'RP-9685', 'RP-9686', 'RP-9687' },
         LSTAnchorageArea = { 'RP-9712', 'RP-9713', 'RP-9714', 'RP-9715' },
         area = { 'RP-6787', 'RP-6788', 'RP-6789', 'RP-6790' },
+        offloadArea = { 'RP-141074', 'RP-141075', 'RP-141076', 'RP-141077' },
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = {
                 {
                     name = 'LANDING/TAO/1/1',
                     loadoutId = 0,
-                    num = 0,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[1],
+                    num = 1,
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[1],
                 },
                 {
                     name = 'LANDING/TAO/1/2',
                     loadoutId = 0,
-                    num = 1,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[2],
-                },
-                {
-                    name = 'LANDING/TAO/1/3',
-                    loadoutId = 0,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[2],
                 },
             },
             zone = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
@@ -1693,9 +1747,9 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
                         }
                     },
                 },
@@ -1703,11 +1757,10 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            -- CONFIG.c.landingOperation.const.cargoItemsForTransferForBoat
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup3,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup3,
                         }
                     },
                 }
@@ -1720,25 +1773,25 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'AIRLANDING/TAO/1/1',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[1],
                 },
                 {
                     name = 'AIRLANDING/TAO/1/2',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[2],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[2],
                 },
                 {
                     name = 'AIRLANDING/TAO/2/1',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[3],
                 },
                 {
                     name = 'AIRLANDING/TAO/2/2',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[4],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[4],
                 },
             },
             zone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
@@ -1754,17 +1807,18 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 type075 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
+
                     },
                     {
                         loadoutId = CONFIG.const.loadoutDBID4,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter2 }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup2 }
                     },
                 },
                 type071 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
                     },
                 }
             },
@@ -1776,22 +1830,22 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'CAS/E',
                     loadoutId = CONFIG.const.loadoutDBID2,
                     num = 13,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.attackHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.attackHelicopter[1],
                 },
             }
         },
         LSTSettings = {
-            speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.shipSpeed,
             course = {
-                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical,
-                distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
+                bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.west.vertical,
+                distance = CONFIG.c.PHIBOP.const.shipSettings.transitDistance
             }
         },
         ACV = {
-            bearing = CONFIG.c.landingOperation.const.shipInfo.heading.west.horizontal,
-            distance = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalDistance,
-            speed = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalSpeed,
-            destination = CONFIG.c.landingOperation.const.shipInfo.heading.west.destination,
+            bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.west.horizontal,
+            distance = CONFIG.c.PHIBOP.const.shipSettings.ACVHorizontalDistance,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.ACVSpeed,
+            destination = CONFIG.c.PHIBOP.const.shipSettings.heading.west.destination,
             area = { 'RP-7722', 'RP-7723', 'RP-7724', 'RP-7725' }
         },
         reconUAV = {
@@ -1801,7 +1855,7 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'RECON/3',
                     loadoutId = CONFIG.const.loadoutDBID6,
                     num = 8,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.reconUAV[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.reconUAV[1],
                 },
             }
         }
@@ -1812,26 +1866,21 @@ CONFIG.c.landingOperation.const.operationalZones = {
         anchorageArea = { 'RP-69328', 'RP-69329', 'RP-69330', 'RP-69331' },
         LSTAnchorageArea = { 'RP-69324', 'RP-69325', 'RP-69326', 'RP-69327' },
         area = { 'RP-73973', 'RP-73974', 'RP-73975', 'RP-73976' },
+        offloadArea = { 'RP-141078', 'RP-141079', 'RP-141080', 'RP-141081' },
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = {
                 {
                     name = 'LANDING/SISHU/1/1',
                     loadoutId = 0,
-                    num = 0,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[1],
+                    num = 1,
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[1],
                 },
                 {
                     name = 'LANDING/SISHU/1/2',
                     loadoutId = 0,
-                    num = 1,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[2],
-                },
-                {
-                    name = 'LANDING/SISHU/1/3',
-                    loadoutId = 0,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[2],
                 },
             },
             zone = { 'RP-69316', 'RP-69317', 'RP-69318', 'RP-69319' },
@@ -1846,9 +1895,9 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
                         }
                     },
                 },
@@ -1856,11 +1905,10 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            -- CONFIG.c.landingOperation.const.cargoItemsForTransferForBoat
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup3,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup3
                         }
                     },
                 }
@@ -1873,25 +1921,25 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'AIRLANDING/CHANGLONG/1/1',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[1],
                 },
                 {
                     name = 'AIRLANDING/CHANGLONG/1/2',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[2],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[2],
                 },
                 {
                     name = 'AIRLANDING/CHANGLONG/2/1',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[3],
                 },
                 {
                     name = 'AIRLANDING/CHANGLONG/2/2',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[4],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[4],
                 },
             },
             zone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
@@ -1907,17 +1955,17 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 type075 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
                     },
                     {
                         loadoutId = CONFIG.const.loadoutDBID4,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter2 }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup2 }
                     },
                 },
                 type071 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
                     },
                 }
             },
@@ -1929,22 +1977,22 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'CAS/S',
                     loadoutId = CONFIG.const.loadoutDBID2,
                     num = 13,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.attackHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.attackHelicopter[1],
                 },
             }
         },
         LSTSettings = {
-            speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.shipSpeed,
             course = {
-                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
-                distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
+                bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.vertical,
+                distance = CONFIG.c.PHIBOP.const.shipSettings.transitDistance
             }
         },
         ACV = {
-            bearing = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.horizontal,
-            distance = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalDistance,
-            speed = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalSpeed,
-            destination = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.destination,
+            bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.horizontal,
+            distance = CONFIG.c.PHIBOP.const.shipSettings.ACVHorizontalDistance,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.ACVSpeed,
+            destination = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.destination,
             area = { 'RP-69320', 'RP-69321', 'RP-69322', 'RP-69323' }
         }
     },
@@ -1954,26 +2002,21 @@ CONFIG.c.landingOperation.const.operationalZones = {
         anchorageArea = { 'RP-46576', 'RP-46577', 'RP-46578', 'RP-46579' },
         LSTAnchorageArea = { 'RP-46572', 'RP-46573', 'RP-46574', 'RP-46575' },
         area = { 'RP-69261', 'RP-69262', 'RP-69263', 'RP-69264' },
+        offloadArea = { 'RP-141082', 'RP-141083', 'RP-141084', 'RP-141085' },
         boat = {
             dbid = CONFIG.const.platformBDID1,
             missions = {
                 {
                     name = 'LANDING/PENGHU/1/1',
                     loadoutId = 0,
-                    num = 0,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[1],
+                    num = 1,
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[1],
                 },
                 {
                     name = 'LANDING/PENGHU/1/2',
                     loadoutId = 0,
-                    num = 1,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[2],
-                },
-                {
-                    name = 'LANDING/PENGHU/1/3',
-                    loadoutId = 0,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.boat[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.boat[2],
                 },
             },
             zone = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' },
@@ -1988,9 +2031,9 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
                         }
                     },
                 },
@@ -1998,11 +2041,10 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     {
                         loadoutId = 0,
                         cargoItems = {
-                            -- CONFIG.c.landingOperation.const.cargoItemsForTransferForBoat
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForAssultLandingGroup,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup1,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup2,
-                            CONFIG.c.landingOperation.const.cargoItemsForTransferForDeepThrustGroup3,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.assultLandingGroup,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup1,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup2,
+                            CONFIG.c.PHIBOP.const.cargoListForTransfer.deepAssaultGroup3
                         }
                     },
                 }
@@ -2015,25 +2057,25 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'AIRLANDING/PENGHU/1/1',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[1],
                 },
                 {
                     name = 'AIRLANDING/PENGHU/1/2',
                     loadoutId = CONFIG.const.loadoutDBID3,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[2],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[2],
                 },
                 {
                     name = 'AIRLANDING/PENGHU/2/1',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[3],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[3],
                 },
                 {
                     name = 'AIRLANDING/PENGHU/2/2',
                     loadoutId = CONFIG.const.loadoutDBID4,
                     num = 3,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.transportHelicopter[4],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.transportHelicopter[4],
                 },
             },
             zone = { 'RP-59968', 'RP-59969', 'RP-59970', 'RP-59971' },
@@ -2049,17 +2091,17 @@ CONFIG.c.landingOperation.const.operationalZones = {
                 type075 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
                     },
                     {
                         loadoutId = CONFIG.const.loadoutDBID4,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter2 }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup2 }
                     },
                 },
                 type071 = {
                     {
                         loadoutId = CONFIG.const.loadoutDBID3,
-                        cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForHelicapter }
+                        cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup1 }
                     },
                 }
             },
@@ -2071,27 +2113,27 @@ CONFIG.c.landingOperation.const.operationalZones = {
                     name = 'CAS/PENGHU',
                     loadoutId = CONFIG.const.loadoutDBID2,
                     num = 13,
-                    startTime = CONFIG.c.landingOperation.const.missionStartime.attackHelicopter[1],
+                    startTime = CONFIG.c.PHIBOP.const.missionStartime.attackHelicopter[1],
                 },
             }
         },
         LSTSettings = {
-            speed = CONFIG.c.landingOperation.const.shipInfo.shipSpeed,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.shipSpeed,
             course = {
-                bearing = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.vertical,
-                distance = CONFIG.c.landingOperation.const.shipInfo.transitDistance
+                bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu.vertical,
+                distance = CONFIG.c.PHIBOP.const.shipSettings.transitDistance
             }
         },
         ACV = {
-            bearing = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.horizontal,
-            distance = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalDistance,
-            speed = CONFIG.c.landingOperation.const.shipInfo.ACVHorizontalSpeed,
-            destination = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.destination,
+            bearing = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu.horizontal,
+            distance = CONFIG.c.PHIBOP.const.shipSettings.ACVHorizontalDistance,
+            speed = CONFIG.c.PHIBOP.const.shipSettings.ACVSpeed,
+            destination = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu.destination,
             area = { 'RP-46329', 'RP-46330', 'RP-46331', 'RP-46332' }
         }
     },
 }
-CONFIG.c.landingOperation.const.transportAircraft = {
+CONFIG.c.PHIBOP.const.transportAircraft = {
     {
         name = 'Zhangpu AAB',
         guid = 'X58F5H-0HN00TRR0Q1JQ',
@@ -2107,12 +2149,12 @@ CONFIG.c.landingOperation.const.transportAircraft = {
         cargoItemsForTransfer = {
             {
                 loadoutId = CONFIG.const.loadoutDBID5,
-                cargoItems = { CONFIG.c.landingOperation.const.cargoItemsForTransferForTransportAircraft }
+                cargoItems = { CONFIG.c.PHIBOP.const.cargoListForTransfer.airAssaultGroup3 }
             },
         }
     },
 }
-CONFIG.c.landingOperation.const.sag = {
+CONFIG.c.PHIBOP.const.sag = {
     ['SAG 173'] = {
         groupName = 'SAG 173',
         from = {
@@ -2127,7 +2169,7 @@ CONFIG.c.landingOperation.const.sag = {
             amphibiousVehicleStagingArea = {
                 { lat = 'N 25.05.36', lon = 'E 121.01.58', desiredSpeed = 14, },
             },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.west.vertical,
         },
         area = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
     },
@@ -2145,7 +2187,7 @@ CONFIG.c.landingOperation.const.sag = {
             amphibiousVehicleStagingArea = {
                 { lat = 'N 25.08.29', lon = 'E 121.10.20', desiredSpeed = 14, },
             },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.west.vertical,
         },
         area = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' }
     },
@@ -2153,7 +2195,7 @@ CONFIG.c.landingOperation.const.sag = {
         groupName = 'SAG 167',
         from = {
             startingPoint = { lat = 'N 23.29.19', lon = 'E 118.04.37', },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu.vertical,
         },
         to = {
             archorageArea = {
@@ -2162,7 +2204,7 @@ CONFIG.c.landingOperation.const.sag = {
             amphibiousVehicleStagingArea = {
                 { lat = 'N 23.32.34', lon = 'E 119.29.14', desiredSpeed = 14, },
             },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.penghu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.penghu.vertical,
         },
         area = { 'RP-59968', 'RP-59969', 'RP-59970', 'RP-59971' },
     },
@@ -2170,7 +2212,7 @@ CONFIG.c.landingOperation.const.sag = {
         groupName = 'SAG 154',
         from = {
             startingPoint = { lat = 'N 22.32.59', lon = 'E 118.04.52', },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.vertical,
         },
         to = {
             archorageArea = {
@@ -2179,7 +2221,7 @@ CONFIG.c.landingOperation.const.sag = {
             amphibiousVehicleStagingArea = {
                 { lat = 'N 22.53.16', lon = 'E 120.07.39', desiredSpeed = 14, },
             },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.vertical,
         },
         area = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
     },
@@ -2187,7 +2229,7 @@ CONFIG.c.landingOperation.const.sag = {
         groupName = 'SAG 175',
         from = {
             startingPoint = { lat = 'N 22.44.28', lon = 'E 118.01.16', },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.vertical,
         },
         to = {
             archorageArea = {
@@ -2196,10 +2238,17 @@ CONFIG.c.landingOperation.const.sag = {
             amphibiousVehicleStagingArea = {
                 { lat = 'N 22.58.52', lon = 'E 120.05.48', desiredSpeed = 14, },
             },
-            heading = CONFIG.c.landingOperation.const.shipInfo.heading.sishu.vertical,
+            heading = CONFIG.c.PHIBOP.const.shipSettings.heading.sishu.vertical,
         },
         area = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
     },
+}
+CONFIG.c.PHIBOP.barges = {
+    -- [''] = {
+    --     guid = '',
+    --     bridgeGUID = '',
+    --     roros = {},
+    -- },
 }
 
 -- land strike from DDG
@@ -2247,6 +2296,10 @@ CONFIG.c.surface.lacm.const.csg = {
                         { loadoutId = 25212, num = 3, },
                     }
                 },
+            },
+            loadouts = {
+                { loadoutId = 34294, num = 24, }, -- LS-6-500 X 4
+                { loadoutId = 9677,  num = 16, }, -- YJ-91 X 4
             }
         },
         type055 = {
@@ -2301,11 +2354,11 @@ CONFIG.c.surface.lacm.const.csg = {
             { lat = 'N 21.14.11', lon = 'E 121.34.36', },
             { lat = 'N 21.32.59', lon = 'E 122.12.58', },
         },
-        -- heading = CONFIG.c.landingOperation.const.shipInfo.heading.west.vertical,
+        -- heading = CONFIG.c.PHIBOP.const.shipInfo.heading.west.vertical,
     },
 }
 CONFIG.c.surface.lacm.const.weaponDBID = 4058
-CONFIG.c.surface.lacm.const.targetList = {
+CONFIG.c.surface.lacm.const.targetlist = {
     { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC71' },
     { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC73' },
     { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC6V' }
@@ -2340,7 +2393,7 @@ CONFIG.c.subSurface.slcm.const.submarines = {
     },
 }
 CONFIG.c.subSurface.slcm.const.weaponDBID = 3716
-CONFIG.c.subSurface.slcm.const.targetList = {
+CONFIG.c.subSurface.slcm.const.targetlist = {
     { guid = '6Z8LM5-0HMIJ7B89BCF3' },
     { guid = '6Z8LM5-0HMIJ7B89BCF4' },
     { guid = '6Z8LM5-0HMIJ7B89BCF5' },
@@ -2355,7 +2408,8 @@ CONFIG.c.repairRunway.const.percentagePerHour = 3
 
 -- MLRS
 CONFIG.t.ground.mlrs.isStrikeActivated = true
-CONFIG.t.ground.mlrs.isReloadActivated = true
+CONFIG.t.ground.mlrs.const.wpnDefault = 144
+CONFIG.t.ground.mlrs.const.ammoThreshold = 25
 CONFIG.t.ground.mlrs.const.position = {
     pingzhen = {
         RL = {
@@ -2385,17 +2439,17 @@ CONFIG.t.ground.mlrs.const.position = {
 CONFIG.t.ground.mlrs.ammunitions = {
     ['IC8B0X-0HN9B47GHVJ7G'] = {
         guid = 'IC8B0X-0HN9B47GHVJ7G',
-        wpnCurrent = 144,
-        wpnDefault = 144,
+        wpnCurrent = CONFIG.t.ground.mlrs.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.mlrs.const.wpnDefault,
     }
 }
 CONFIG.t.ground.mlrs.ammunitionSections = {
     ['IC8B0X-0HN7RT1I581BB'] = {
         name = 'Ammo Sec, Rocket Arty Coy, 21st Arty Command',
         guid = 'IC8B0X-0HN7RT1I581BB',
-        wpnCurrent = 144,
-        wpnDefault = 144,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.mlrs.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.mlrs.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.mlrs.const.position.pingzhen,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2405,13 +2459,13 @@ CONFIG.t.ground.mlrs.ammunitionSections = {
 CONFIG.t.ground.mlrs.batteries = {
     ['IC8B0X-0HN7RU9I3KV9T'] = {
         name = 'Rocket Arty Coy, 21st Arty Command',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN7RU9I3KV9T',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.mlrs.const.position.pingzhen,
         weaponDBID = 2948,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.mlrs.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7RT1I581BB'
     },
 }
@@ -2422,7 +2476,8 @@ CONFIG.t.ground.mlrs.const.erectingTime = nil
 
 -- SRBM
 CONFIG.t.ground.srbm.isStrikeActivated = true
-CONFIG.t.ground.srbm.isReloadActivated = true
+CONFIG.t.ground.srbm.const.wpnDefault = 27
+CONFIG.t.ground.srbm.const.ammoThreshold = 25
 CONFIG.t.ground.srbm.const.position = {
     pingzhen = {
         RL = {
@@ -2476,17 +2531,17 @@ CONFIG.t.ground.srbm.const.position = {
 CONFIG.t.ground.srbm.ammunitions = {
     ['IC8B0X-0HN9B47GHVJG6'] = {
         guid = 'IC8B0X-0HN9B47GHVJG6',
-        wpnCurrent = 27,
-        wpnDefault = 27,
+        wpnCurrent = CONFIG.t.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.srbm.const.wpnDefault,
     }
 }
 CONFIG.t.ground.srbm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVSFS'] = {
         name = 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
         guid = 'IC8B0X-0HN7R5QOIVSFS',
-        wpnCurrent = 27,
-        wpnDefault = 27,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.srbm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.srbm.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.srbm.const.position.dadu,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2496,13 +2551,13 @@ CONFIG.t.ground.srbm.ammunitionSections = {
 CONFIG.t.ground.srbm.batteries = {
     ['IC8B0X-0HN7SOIUF4D47'] = {
         name = 'Rocket Arty Coy, 58th Arty Command',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN7SOIUF4D47',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.srbm.const.position.dadu,
         weaponDBID = 1717,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.srbm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS'
     },
 }
@@ -2511,7 +2566,8 @@ CONFIG.t.ground.srbm.const.reloadTime = 10 * 60
 
 -- GLCM
 CONFIG.t.ground.glcm.isStrikeActivated = true
-CONFIG.t.ground.glcm.isReloadActivated = true
+CONFIG.t.ground.glcm.const.wpnDefault = 24
+CONFIG.t.ground.glcm.const.ammoThreshold = 25
 CONFIG.t.ground.glcm.const.position = {
     quanxi = {
         RL = {
@@ -2547,22 +2603,22 @@ CONFIG.t.ground.glcm.const.position = {
 CONFIG.t.ground.glcm.ammunitions = {
     ['IC8B0X-0HN9B47GHVKAG'] = {
         guid = 'IC8B0X-0HN9B47GHVKAG',
-        wpnCurrent = 48,
-        wpnDefault = 48,
+        wpnCurrent = CONFIG.t.ground.glcm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.t.ground.glcm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9B47GHVL3V'] = {
         guid = 'IC8B0X-0HN9B47GHVL3V',
-        wpnCurrent = 48,
-        wpnDefault = 48,
+        wpnCurrent = CONFIG.t.ground.glcm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.t.ground.glcm.const.wpnDefault * 2,
     }
 }
 CONFIG.t.ground.glcm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVTHT'] = {
         name = 'Ammo Sec, 641st Bn, 791st AFAD & Arty Bde',
         guid = 'IC8B0X-0HN7R5QOIVTHT',
-        wpnCurrent = 24,
-        wpnDefault = 24,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.glcm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.glcm.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.glcm.const.position.quanxi,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2571,9 +2627,9 @@ CONFIG.t.ground.glcm.ammunitionSections = {
     ['IC8B0X-0HN7R5QOIVUDC'] = {
         name = 'Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde',
         guid = 'IC8B0X-0HN7R5QOIVUDC',
-        wpnCurrent = 24,
-        wpnDefault = 24,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.glcm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.glcm.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.glcm.const.position.neipu,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2584,23 +2640,23 @@ CONFIG.t.ground.glcm.batteries = {
     ['X58F5H-0HN1ESDRTUULO'] = {
         guid = 'X58F5H-0HN1ESDRTUULO',
         name = '641st Bn, 791st AFAD & Arty Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.glcm.const.position.quanxi,
         weaponDBID = 3228,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.glcm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT'
     },
     ['X58F5H-0HN1ESDRTLGU7'] = {
         guid = 'X58F5H-0HN1ESDRTLGU7',
         name = '642nd Bn, 791st AFAD & Arty Bde',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.glcm.const.position.neipu,
         weaponDBID = 3228,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.glcm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC'
     }
 }
@@ -2610,7 +2666,8 @@ CONFIG.t.ground.glcm.const.reloadTime = 45 * 60
 
 -- ASM
 CONFIG.t.ground.ascm.isStrikeActivated = true
-CONFIG.t.ground.ascm.isReloadActivated = true
+CONFIG.t.ground.ascm.const.wpnDefault = 16
+CONFIG.t.ground.ascm.const.ammoThreshold = 25
 CONFIG.t.ground.ascm.const.position = {
     pingzhen = {
         RL = {
@@ -2706,22 +2763,22 @@ CONFIG.t.ground.ascm.const.position = {
 CONFIG.t.ground.ascm.ammunitions = {
     ['IC8B0X-0HN9B47GHVLV9'] = {
         guid = 'IC8B0X-0HN9B47GHVLV9',
-        wpnCurrent = 48,
-        wpnDefault = 48,
+        wpnCurrent = CONFIG.t.ground.ascm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.t.ground.ascm.const.wpnDefault * 2,
     },
     ['IC8B0X-0HN9JFGVR06D8'] = {
         guid = 'IC8B0X-0HN9JFGVR06D8',
-        wpnCurrent = 48,
-        wpnDefault = 48,
+        wpnCurrent = CONFIG.t.ground.ascm.const.wpnDefault * 2,
+        wpnDefault = CONFIG.t.ground.ascm.const.wpnDefault * 2,
     },
 }
 CONFIG.t.ground.ascm.ammunitionSections = {
     ['IC8B0X-0HN87KFOFSGUB'] = {
         name = 'Hai Feng Shore-based ASM SUPP Sqn',
         guid = 'IC8B0X-0HN87KFOFSGUB',
-        wpnCurrent = 16,
-        wpnDefault = 16,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.ascm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.ascm.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.ascm.const.position.pingzhen,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2730,9 +2787,9 @@ CONFIG.t.ground.ascm.ammunitionSections = {
     ['IC8B0X-0HN9JFGVR07U5'] = {
         name = 'Hai Feng Shore-based ASM SUPP Sqn',
         guid = 'IC8B0X-0HN9JFGVR07U5',
-        wpnCurrent = 16,
-        wpnDefault = 16,
-        unitNum = 2,
+        wpnCurrent = CONFIG.t.ground.ascm.const.wpnDefault,
+        wpnDefault = CONFIG.t.ground.ascm.const.wpnDefault,
+        unitCount = 2,
         position = CONFIG.t.ground.ascm.const.position.dong,
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.STATIC,
@@ -2742,57 +2799,57 @@ CONFIG.t.ground.ascm.ammunitionSections = {
 CONFIG.t.ground.ascm.batteries = {
     ['IC8B0X-0HN87MOIE9C4U'] = {
         name = '2nd Hai Feng Shore-based ASM MOB Sqn',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN87MOIE9C4U',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.ascm.const.position.luzhu,
         weaponDBID = 1133,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.ascm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
     },
     ['X58F5H-0HMVEU1FUVOLC'] = {
         name = '4th Hai Feng Shore-based ASM MOB Sqn',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'X58F5H-0HMVEU1FUVOLC',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.ascm.const.position.luzhu,
         weaponDBID = 1133,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.ascm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
     },
     ['X58F5H-0HMVEU1FUVO8I'] = {
         name = '1st Hai Feng Shore-based ASM MOB Sqn',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'X58F5H-0HMVEU1FUVO8I',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.ascm.const.position.dong,
         weaponDBID = 1133,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.ascm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
     },
     ['X58F5H-0HMVEU1FUVO6J'] = {
         name = '3rd Hai Feng Shore-based ASM MOB Sqn',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'X58F5H-0HMVEU1FUVO6J',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.ascm.const.position.dong,
         weaponDBID = 1133,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.ascm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
     },
     ['IC8B0X-0HN8CEO4EUE8B'] = {
         name = '5th Hai Feng Shore-based ASM MOB Sqn',
-        msg = 'Radio transmissions, Bty',
+        msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN8CEO4EUE8B',
         reloadStartTime = nil,
         state = CONFIG.const.batteryState.HIDE,
         position = CONFIG.t.ground.ascm.const.position.luzhu,
         weaponDBID = 1133,
-        wpnNumLessThan = 25,
+        ammoThreshold = CONFIG.t.ground.ascm.const.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
     },
 }
@@ -2818,7 +2875,7 @@ CONFIG.t.IADS.isActivated = true
 CONFIG.t.IADS.ROCC = {
     ['IC8B0X-0HN6F67JSFPAF'] = {
         name = 'ROCC/North',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN6F67JSFPAF',
         area = { 'RP-83642', 'RP-83643', 'RP-83644', 'RP-83645' },
         SAM = {},
@@ -2826,7 +2883,7 @@ CONFIG.t.IADS.ROCC = {
     },
     ['IC8B0X-0HN6F67JSFOLD'] = {
         name = 'ROCC/East',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN6F67JSFOLD',
         area = { 'RP-83646', 'RP-83647', 'RP-83648', 'RP-83649' },
         SAM = {},
@@ -2834,7 +2891,7 @@ CONFIG.t.IADS.ROCC = {
     },
     ['IC8B0X-0HN6F67JSFQ0D'] = {
         name = 'ROCC/South',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN6F67JSFQ0D',
         area = { 'RP-83650', 'RP-83651', 'RP-83652', 'RP-83653' },
         SAM = {},
@@ -2844,37 +2901,28 @@ CONFIG.t.IADS.ROCC = {
 CONFIG.t.IADS.TAAOC = {
     ['IC8B0X-0HN41D1QKTVU7'] = {
         name = 'TAAOC/North',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN41D1QKTVU7',
         area = { 'RP-83642', 'RP-83643', 'RP-83644', 'RP-83645' },
         SAM = {},
     },
     ['IC8B0X-0HN41D1QKU1ED'] = {
         name = 'TAAOC/Center',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN41D1QKU1ED',
         area = { 'RP-83646', 'RP-83647', 'RP-83648', 'RP-83649' },
         SAM = {},
     },
     ['IC8B0X-0HN41D1QKU0JP'] = {
         name = 'TAAOC/South',
-        msg = 'Radio transmissions, C2',
+        msg = 'Radio source, C2',
         guid = 'IC8B0X-0HN41D1QKU0JP',
         area = { 'RP-83650', 'RP-83651', 'RP-83652', 'RP-83653' },
         SAM = {},
     },
 }
--- CONFIG.t.IADS.units = {}
 CONFIG.t.IADS.const.values = { ROCC = 1.5, TAAOC = 1.5 }
 
--- aircraft
-CONFIG.t.aircraft.isActivated = true
-CONFIG.t.aircraft.AEW = {
-    -- {guid=''}
-}
-CONFIG.t.aircraft.AC = {
-    -- {guid=''}
-}
 
 CONFIG.t.air.landBased.const.wpnNum = 8
 CONFIG.t.air.landBased.const.ACInfo = {
@@ -3105,6 +3153,51 @@ CONFIG.t.air.landBased.const.ACInfo = {
             }
         }
     },
+    {
+        name = 'Rende Emergency Highway Strip',
+        baseGUID = 'X58F5H-0HMU28MM77N82',
+        loadouts = {
+            { loadoutId = 19104, num = CONFIG.t.air.landBased.const.wpnNum }, --Wan Chien X 2
+        }
+    },
+    {
+        name = 'Madou Emergency Highway Strip',
+        baseGUID = 'X58F5H-0HMU28MM7836P',
+        loadouts = {
+            { loadoutId = 22785, num = CONFIG.t.air.landBased.const.wpnNum }, --AMRAAM X 4
+            { loadoutId = 22789, num = CONFIG.t.air.landBased.const.wpnNum }, --Harpoon X 2
+            { loadoutId = 22790, num = CONFIG.t.air.landBased.const.wpnNum }, --GBU X 2
+        }
+    },
+    {
+        name = 'Minxiong Emergency Highway Strip',
+        baseGUID = 'X58F5H-0HMU28MM78J9P',
+        loadouts = {
+            { loadoutId = 22785, num = CONFIG.t.air.landBased.const.wpnNum }, --AMRAAM X 4
+            { loadoutId = 22789, num = CONFIG.t.air.landBased.const.wpnNum }, --Harpoon X 2
+            { loadoutId = 22790, num = CONFIG.t.air.landBased.const.wpnNum }, --GBU X 2
+        }
+    },
+    {
+        name = 'Tainan Field Airdrome',
+        baseGUID = 'IC8B0X-0HN81FNLB6M8Q',
+        loadouts = {
+            { loadoutId = 7347, num = CONFIG.t.air.landBased.const.wpnNum }, --Hellfire X 8
+        }
+    },
+    {
+        name = 'Hsinchu Field Airdrome ',
+        baseGUID = 'IC8B0X-0HN81FNLB2OPJ',
+        loadouts = {
+            { loadoutId = 15213, num = CONFIG.t.air.landBased.const.wpnNum }, --Hellfire X 16
+        }
+    },
+}
+CONFIG.t.air.landBased.AEW = {
+    -- {guid=''}
+}
+CONFIG.t.air.landBased.AC = {
+    -- {guid=''}
 }
 
 
@@ -3123,9 +3216,7 @@ CONFIG.u.SIGINT.const.maxCount = 5
 
 
 
--- CONFIG.s.const.aircraftIsDestroyedOnTheGround = -10
 CONFIG.s.const.destroyingAircraftOnTheGround = 5
--- CONFIG.s.const.aircraftIsDestroyedInHangar = -50
 CONFIG.s.const.destroyingSupply = 100
 CONFIG.s.const.lhd = 10
 CONFIG.s.const.lst = 10
@@ -3133,7 +3224,6 @@ CONFIG.s.const.ddg = 10
 CONFIG.s.const.cv = 100
 CONFIG.s.const.ifv = -5
 CONFIG.s.const.infantry = -3
--- CONFIG.s.const.samIsDestroyed = -20
 CONFIG.s.const.sub = 15
 CONFIG.s.const.uav = 20
 CONFIG.s.const.mlrs = 20

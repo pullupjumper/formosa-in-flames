@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weapon Table</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Base</th>
+                <th>Weapon Name</th>
+                <th>Current Weapon Count</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const dataString = `[
+            {
+                "name": "Base1",
+                "wpns": [
+                    { "name": "wpn1", "currWpn": 6 },
+                    { "name": "wpn2", "currWpn": 6 }
+                ]
+            },
+            {
+                "name": "Base2",
+                "wpns": [
+                    { "name": "wpn1", "currWpn": 6 },
+                    { "name": "wpn2", "currWpn": 6 }
+                ]
+            }
+        ]`;
+
+        let data = JSON.parse(dataString);
+        let tableBody = document.getElementById("tableBody");
+
+        data.forEach(base => {
+            base.wpns.forEach((weapon, index) => {
+                let row = document.createElement("tr");
+
+                if (index === 0) {
+                    let baseCell = document.createElement("td");
+                    baseCell.textContent = base.name;
+                    baseCell.rowSpan = base.wpns.length;
+                    row.appendChild(baseCell);
+                }
+
+                let weaponCell = document.createElement("td");
+                weaponCell.textContent = weapon.name;
+                row.appendChild(weaponCell);
+
+                let countCell = document.createElement("td");
+                countCell.textContent = weapon.currWpn;
+                row.appendChild(countCell);
+
+                tableBody.appendChild(row);
+            });
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Area</th>
+                <th>Unit Type</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const dataString = `{ 
+            "Area A": {
+                "ZBD-05": 0,
+                "ZTD-05": 0,
+                "PLL-05": 0,
+                "PLZ-96": 0,
+                "PGZ-09": 0,
+                "PGZ-95": 0,
+                "SA-15": 0
+            },
+            "Area B": {
+                "ZBD-05": 0,
+                "ZTD-05": 0,
+                "PLL-05": 0,
+                "PLZ-96": 0,
+                "PGZ-09": 0,
+                "PGZ-95": 0,
+                "SA-15": 0
+            }
+        }`;
+
+        let data = JSON.parse(dataString);
+        let tableBody = document.getElementById("tableBody");
+
+        Object.keys(data).forEach(area => {
+            const unitTypes = Object.keys(data[area]);
+            unitTypes.forEach((unitType, index) => {
+                let row = document.createElement("tr");
+
+                if (index === 0) {
+                    let areaCell = document.createElement("td");
+                    areaCell.textContent = area;
+                    areaCell.rowSpan = unitTypes.length;
+                    row.appendChild(areaCell);
+                }
+
+                let typeCell = document.createElement("td");
+                typeCell.textContent = unitType;
+                row.appendChild(typeCell);
+
+                let countCell = document.createElement("td");
+                countCell.textContent = data[area][unitType];
+                row.appendChild(countCell);
+
+                tableBody.appendChild(row);
+            });
+        });
+    </script>
+</body>
+
+</html>

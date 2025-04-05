@@ -8,7 +8,7 @@ end
 
 
 if CONFIG.c.ground.glcm.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'China', 'glcm', true)
+    local result = IsMetWithAmmo(CONFIG, unit, 'glcm', true)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, true)
@@ -17,7 +17,7 @@ end
 
 
 if CONFIG.c.ground.mlrs.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'China', 'mlrs', true)
+    local result = IsMetWithAmmo(CONFIG, unit, 'mlrs', true)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, true)
@@ -26,7 +26,7 @@ end
 
 
 if CONFIG.c.ground.srbm.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'China', 'srbm', true)
+    local result = IsMetWithAmmo(CONFIG, unit, 'srbm', true)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, true)

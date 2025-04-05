@@ -11,35 +11,38 @@ if unit and CONFIG.c.IADS.isActivated then
         for _, data in pairs(CONFIG.c.IADS.C2[unit.guid].radar) do
             local u = SE_GetUnit({ guid = data.guid })
 
-            if u then
-                local OODA = GetOODA(CONFIG.c.IADS.const.values.C2)
-                local detect = data.OODA.detection
-                local target = data.OODA.targeting
-                u.OODA = {
-                    detection = detect + OODA.detection,
-                    targeting = target + OODA.targeting,
-                    evasion = OODA.evasion
-                }
-                data.currOODA = u.OODA
-            end
+            if u == nil then goto continue end
+            local OODA = GetOODA(CONFIG.c.IADS.const.values.C2)
+            local detect = data.OODA.detection
+            local target = data.OODA.targeting
+            u.OODA = {
+                detection = detect + OODA.detection,
+                targeting = target + OODA.targeting,
+                evasion = OODA.evasion
+            }
+            data.currOODA = u.OODA
+
+            ::continue::
         end
 
         for _, data in pairs(CONFIG.c.IADS.C2[unit.guid].SAM) do
             local u = SE_GetUnit({ guid = data.guid })
 
-            if u then
-                local OODA = GetOODA(CONFIG.c.IADS.const.values.C2)
-                local detect = data.OODA.detection
-                local target = data.OODA.targeting
-                -- ScenEdit_SpecialMessage('Taiwan', tostring(u.OODA.detection))
-                u.OODA = {
-                    detection = detect + OODA.detection,
-                    targeting = target + OODA.targeting,
-                    evasion = OODA.evasion
-                }
-                data.currOODA = u.OODA
-                -- ScenEdit_SpecialMessage('Taiwan', tostring(u.OODA.detection))
-            end
+            if u == nil then goto continue end
+
+            local OODA = GetOODA(CONFIG.c.IADS.const.values.C2)
+            local detect = data.OODA.detection
+            local target = data.OODA.targeting
+            -- ScenEdit_SpecialMessage('Taiwan', tostring(u.OODA.detection))
+            u.OODA = {
+                detection = detect + OODA.detection,
+                targeting = target + OODA.targeting,
+                evasion = OODA.evasion
+            }
+            data.currOODA = u.OODA
+            -- ScenEdit_SpecialMessage('Taiwan', tostring(u.OODA.detection))
+
+            ::continue::
         end
     end
 end

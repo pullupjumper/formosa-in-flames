@@ -18,3 +18,4 @@ end
 -- end
 
 unit.readytime = CONFIG.const.readytime
+-- unit.mission = ''

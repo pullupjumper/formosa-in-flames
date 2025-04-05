@@ -27,27 +27,22 @@ function LaunchUnits(baseGUID, course, num, unitDBID, unitType)
     local base = ScenEdit_GetUnit({ guid = baseGUID })
     local count = 0
     local temp = {}
-
-    if base == nil or base.embarkedUnits[unitType] == nil then
-        return
-    end
+    if base == nil or base.embarkedUnits[unitType] == nil then return end
 
     for k, v in ipairs(base.embarkedUnits[unitType]) do
         local unit = ScenEdit_GetUnit({ guid = v })
+        if unit == nil then goto continue end
 
-        if unit then
-            if unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
-                unit:Launch(true)
-                unit.course = course
-                -- ScenEdit_SetUnit({ guid = unit.guid, course = course })
-                count = count + 1
-                table.insert(temp, { unit = unit.guid, hasLaunched = false })
-            end
-
-            if count >= num then
-                break
-            end
+        if unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
+            unit:Launch(true)
+            unit.course = course
+            -- ScenEdit_SetUnit({ guid = unit.guid, course = course })
+            count = count + 1
+            table.insert(temp, { unit = unit.guid, hasLaunched = false })
         end
+
+        if count >= num then break end
+        ::continue::
     end
 
     return temp

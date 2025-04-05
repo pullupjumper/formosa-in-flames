@@ -16,7 +16,7 @@ if ship and ship.dbid == CONFIG.const.platformBDID48 then
         -- ScenEdit_SpecialMessage('China', ship.group.name)
 
         local filteredContacts = FilterContacts(contacts, function(contact)
-            return contact:inArea(CONFIG.c.landingOperation.const.sag[ship.group.name].area)
+            return contact:inArea(CONFIG.c.PHIBOP.const.sag[ship.group.name].area)
                 and (contact.typed == 8)
         end)
 

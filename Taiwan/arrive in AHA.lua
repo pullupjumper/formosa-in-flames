@@ -8,7 +8,7 @@ end
 
 
 if CONFIG.t.ground.glcm.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'Taiwan', 'glcm', false)
+    local result = IsMetWithAmmo(CONFIG, unit, 'glcm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
@@ -17,7 +17,7 @@ end
 
 
 if CONFIG.t.ground.mlrs.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'Taiwan', 'mlrs', false)
+    local result = IsMetWithAmmo(CONFIG, unit, 'mlrs', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
@@ -26,7 +26,7 @@ end
 
 
 if CONFIG.t.ground.srbm.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'Taiwan', 'srbm', false)
+    local result = IsMetWithAmmo(CONFIG, unit, 'srbm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
@@ -35,7 +35,7 @@ end
 
 
 if CONFIG.t.ground.ascm.isStrikeActivated then
-    local result = IsMetWithAmmo(CONFIG, unit, 'Taiwan', 'ascm', false)
+    local result = IsMetWithAmmo(CONFIG, unit, 'ascm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)

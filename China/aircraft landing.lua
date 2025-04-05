@@ -11,8 +11,10 @@ if unit then
         or unit.dbid == CONFIG.const.platformBDID29
         or unit.dbid == CONFIG.const.platformBDID30
         or unit.dbid == CONFIG.const.platformBDID31
-        or unit.dbid == CONFIG.const.platformBDID36 then
+        or unit.dbid == CONFIG.const.platformBDID36
+        or unit.dbid == CONFIG.const.platformBDID57 then
         unit.readytime = CONFIG.const.readytime
+        unit.mission = ''
 
         -- if unit.mission ~= nil and unit.mission.isactive and unit.mission.subtype == 'Land Strike' then
         --     unit.mission.isactive = false

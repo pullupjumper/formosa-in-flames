@@ -109,7 +109,10 @@ end
 
 -- 定義函數：printBox
 -- 參數：strings - 一個包含多個字串的 table
-function printBox(strings, side)
+function printBox(side, ...)
+    -- 收集所有字串參數到陣列中
+    local strings = { ... }
+
     -- 找出最長字串的長度
     local maxLen = 0
     for _, str in ipairs(strings) do
@@ -127,7 +130,6 @@ function printBox(strings, side)
     -- 構建中間行
     local middleLines = {}
     for _, str in ipairs(strings) do
-        -- 計算需要補充的空格數（這裡不補充空格，因為靠左對齊）
         -- 構建中間行：| 空格 字串
         local middle = "| " .. str
         table.insert(middleLines, middle)

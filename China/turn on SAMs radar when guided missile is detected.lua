@@ -18,21 +18,21 @@ end
 
 for _, value in ipairs(units) do
     local u = ScenEdit_GetUnit({ guid = value.guid })
+    if u == nil then goto continue end
 
-    if u ~= nil then
-        local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
+    local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-        if u.dbid == CONFIG.const.platformBDID19
-            or u.dbid == CONFIG.const.platformBDID20 then
-            if u.IsDecoy == false and distance < temp.distance then
-                temp.unit = u
-                temp.distance = distance
-            end
+    if u.dbid == CONFIG.const.platformBDID19 or u.dbid == CONFIG.const.platformBDID20 then
+        if u.IsDecoy == false and distance < temp.distance then
+            temp.unit = u
+            temp.distance = distance
         end
     end
+
+    ::continue::
 end
 
 if temp.unit ~= nil then
     ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    ScenEdit_SpecialMessage('China', tostring(temp.unit.name) .. '\'s radar is activated.')
+    printBox('China', tostring(temp.unit.name) .. '\'s radar is activated.')
 end
