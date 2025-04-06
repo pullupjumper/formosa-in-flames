@@ -678,7 +678,7 @@ function CountUnitsInEachArea()
     local unitsFromChina = VP_GetSide({ Side = 'China' }).units
     local result = {}
 
-    for _, zone in ipairs(CONFIG.c.PHIBOP.const.operationalZones) do
+    for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
         local item = {
             ['ZBD-05'] = 0,
             ['ZTD-05'] = 0,
@@ -695,43 +695,43 @@ function CountUnitsInEachArea()
             local unit = SE_GetUnit({ guid = value.guid })
 
             if unit and unit:inArea(zone.area) then
-                if unit.dbid == CONFIG.const.platformBDID58 then
+                if unit.dbid == CONFIG.platformDBID58 then
                     item['ZBD-05'] = item['ZBD-05'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID59 then
+                if unit.dbid == CONFIG.platformDBID59 then
                     item['ZTD-05'] = item['ZTD-05'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID60 then
+                if unit.dbid == CONFIG.platformDBID60 then
                     item['PLL-05'] = item['PLL-05'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID61 then
+                if unit.dbid == CONFIG.platformDBID61 then
                     item['PLZ-96'] = item['PLZ-96'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID62 then
+                if unit.dbid == CONFIG.platformDBID62 then
                     item['PGZ-09'] = item['PGZ-09'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID63 then
+                if unit.dbid == CONFIG.platformDBID63 then
                     item['PGZ-95'] = item['PGZ-95'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID66 then
+                if unit.dbid == CONFIG.platformDBID66 then
                     item['SA-15'] = item['SA-15'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID65 then
+                if unit.dbid == CONFIG.platformDBID65 then
                     item['AirborneCorps'] = item['AirborneCorps'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID64 then
+                if unit.dbid == CONFIG.platformDBID64 then
                     item['HMMWV'] = item['HMMWV'] + 1
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID39 then
+                if unit.dbid == CONFIG.platformDBID39 then
                     item['ZBD-03'] = item['ZBD-03'] + 1
                 end
             end
@@ -825,10 +825,10 @@ function ToggleUnitForm()
 end
 
 function ToggleC2Form(side)
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if CONFIG == nil then
-        ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+    if saveData == nil then
+        ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
         return
     end
 
@@ -843,7 +843,7 @@ function ToggleC2Form(side)
         local types = { ... }
 
         for _, type in pairs(types) do
-            for index, item in pairs(CONFIG[key].IADS[type]) do
+            for index, item in pairs(saveData[key].IADS[type]) do
                 if rows[type] == nil then
                     rows[type] = {}
                 end
@@ -993,10 +993,10 @@ function ToggleC2Form(side)
 end
 
 function ToggleBtyStatusForm(side)
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if CONFIG == nil then
-        ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+    if saveData == nil then
+        ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
         return
     end
 
@@ -1011,24 +1011,24 @@ function ToggleBtyStatusForm(side)
         local rows = {}
 
         for index, type in pairs(types) do
-            if CONFIG[key].ground[type].ammunitionSections then
-                for k, value in pairs(CONFIG[key].ground[type].ammunitionSections) do
+            if saveData[key].ground[type].ammunitionSections then
+                for k, value in pairs(saveData[key].ground[type].ammunitionSections) do
                     rows[k] = {}
                 end
             end
         end
 
         for index, type in pairs(types) do
-            if CONFIG[key].ground[type].batteries then
-                for _, bty in pairs(CONFIG[key].ground[type].batteries) do
+            if saveData[key].ground[type].batteries then
+                for _, bty in pairs(saveData[key].ground[type].batteries) do
                     local name = bty.name
                     local status = ''
-                    local remainingAmmoInVehicles = CONFIG[key].ground[type].ammunitionSections[bty.ammunitionSection]
+                    local remainingAmmoInVehicles = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
                         .wpnCurrent
-                    local ammoSec = CONFIG[key].ground[type].ammunitionSections[bty.ammunitionSection]
-                    local reloadTime = CONFIG[key].ground[type].const.reloadTime / 60
-                    local remainingAmmo = CONFIG[key].ground[type].ammunitions
-                        [CONFIG[key].ground[type].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
+                    local ammoSec = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
+                    local reloadTime = CONFIG[key].ground[type].reloadTime / 60
+                    local remainingAmmo = saveData[key].ground[type].ammunitions
+                        [saveData[key].ground[type].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
                     local reloadingRemainingTime = nil
                     local transloadingRemainingTime = nil
 
@@ -1234,12 +1234,12 @@ function ToggleBtyStatusForm(side)
 end
 
 function PopulateMagazineInBasesTable(side)
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    if CONFIG == nil then
-        ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
-        return
-    end
+    -- if CONFIG == nil then
+    --     ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+    --     return
+    -- end
 
     local createDataString = function(side)
         local key = 't'
@@ -1250,7 +1250,7 @@ function PopulateMagazineInBasesTable(side)
 
         local rows = {}
 
-        for index, item in ipairs(CONFIG[key].air.landBased.const.ACInfo) do
+        for index, item in ipairs(CONFIG[key].air.landBased.ACInfo) do
             local base = SE_GetUnit({ guid = item.baseGUID })
 
             if base and item.loadouts then
@@ -1355,13 +1355,13 @@ end
 
 function SetWCSToHold()
     local units = VP_GetSide({ Side = 'Taiwan' }).units
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
-        return
-    end
+    -- if CONFIG == nil then
+    --     print('CONFIG == nil')
+    --     ScenEdit_MsgBox('CONFIG == nil', 1)
+    --     return
+    -- end
 
     local HTMLTemplate = [[
     <!DOCTYPE html>
@@ -1466,7 +1466,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID15 then
+                if unit and unit.dbid == CONFIG.platformDBID15 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,
@@ -1479,7 +1479,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID15 then
+                if unit and unit.dbid == CONFIG.platformDBID15 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,
@@ -1494,7 +1494,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID14 then
+                if unit and unit.dbid == CONFIG.platformDBID14 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,
@@ -1507,7 +1507,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID14 then
+                if unit and unit.dbid == CONFIG.platformDBID14 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,
@@ -1522,7 +1522,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID33 then
+                if unit and unit.dbid == CONFIG.platformDBID33 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,
@@ -1535,7 +1535,7 @@ function SetWCSToHold()
             for index, value in ipairs(units) do
                 local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.const.platformBDID33 then
+                if unit and unit.dbid == CONFIG.platformDBID33 then
                     ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
                     ScenEdit_SetUnitIntermittentEmissionConfig(
                         unit.guid,

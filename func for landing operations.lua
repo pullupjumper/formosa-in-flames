@@ -388,17 +388,9 @@ function GetPointFromBearing(params)
 end
 
 function AddLandingShips()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-    if CONFIG == nil then
-        print('CONFIG == nil')
-        ScenEdit_MsgBox('CONFIG == nil', 1)
-        return
-    end
-
-    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
-    local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
-    local cargoList = CONFIG.c.PHIBOP.const.cargoList
+    local initialLocations = CONFIG.c.PHIBOP.initialLocations
+    local shipSettings = CONFIG.c.PHIBOP.shipSettings
+    local cargoList = CONFIG.c.PHIBOP.cargoList
 
     for _, item in ipairs(initialLocations) do
         for _, area in ipairs(item.from.areas) do
@@ -457,7 +449,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 075',
-                    dbid = CONFIG.const.platformBDID6,
+                    dbid = CONFIG.platformDBID6,
                     cargo = cargoList.type075,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -467,24 +459,24 @@ function AddLandingShips()
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID2,
-                        loadoutid = CONFIG.const.loadoutDBID3
+                        dbid = CONFIG.platformDBID2,
+                        loadoutid = CONFIG.loadoutDBID3
                     } },
                     { 6, {
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID2,
-                        loadoutid = CONFIG.const.loadoutDBID4
+                        dbid = CONFIG.platformDBID2,
+                        loadoutid = CONFIG.loadoutDBID4
                     } },
                     { 13, {
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID5,
-                        loadoutid = CONFIG.const.loadoutDBID2
+                        dbid = CONFIG.platformDBID5,
+                        loadoutid = CONFIG.loadoutDBID2
                     } },
-                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
                 }
             )
 
@@ -499,7 +491,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 071',
-                    dbid = CONFIG.const.platformBDID7,
+                    dbid = CONFIG.platformDBID7,
                     cargo = cargoList.type071,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -509,10 +501,10 @@ function AddLandingShips()
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID2,
-                        loadoutid = CONFIG.const.loadoutDBID3
+                        dbid = CONFIG.platformDBID2,
+                        loadoutid = CONFIG.loadoutDBID3
                     } },
-                    { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                    { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
                 }
             )
 
@@ -527,7 +519,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 076',
-                    dbid = CONFIG.const.platformBDID54,
+                    dbid = CONFIG.platformDBID54,
                     cargo = cargoList.type075,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -537,31 +529,31 @@ function AddLandingShips()
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID2,
-                        loadoutid = CONFIG.const.loadoutDBID3
+                        dbid = CONFIG.platformDBID2,
+                        loadoutid = CONFIG.loadoutDBID3
                     } },
                     { 6, {
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID2,
-                        loadoutid = CONFIG.const.loadoutDBID4
+                        dbid = CONFIG.platformDBID2,
+                        loadoutid = CONFIG.loadoutDBID4
                     } },
                     { 13, {
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID5,
-                        loadoutid = CONFIG.const.loadoutDBID2
+                        dbid = CONFIG.platformDBID5,
+                        loadoutid = CONFIG.loadoutDBID2
                     } },
                     { 8, {
                         side = 'China',
                         type = 'aircraft',
                         name = item.names[1],
-                        dbid = CONFIG.const.platformBDID55,
-                        loadoutid = CONFIG.const.loadoutDBID6
+                        dbid = CONFIG.platformDBID55,
+                        loadoutid = CONFIG.loadoutDBID6
                     } },
-                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.const.platformBDID1 } },
+                    { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
                 }
             )
 
@@ -576,7 +568,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Barge',
-                    dbid = CONFIG.const.platformBDID72,
+                    dbid = CONFIG.platformDBID72,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
                 },
@@ -594,7 +586,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'RORO',
-                    dbid = CONFIG.const.platformBDID56,
+                    dbid = CONFIG.platformDBID56,
                     cargo = cargoList.barge,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -613,7 +605,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 072A',
-                    dbid = CONFIG.const.platformBDID9,
+                    dbid = CONFIG.platformDBID9,
                     cargo = cargoList.type072a,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -632,7 +624,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 072III',
-                    dbid = CONFIG.const.platformBDID8,
+                    dbid = CONFIG.platformDBID8,
                     cargo = cargoList.type072iii,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -651,7 +643,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Ferry',
-                    dbid = CONFIG.const.platformBDID56,
+                    dbid = CONFIG.platformDBID56,
                     cargo = cargoList.ferry,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -670,7 +662,7 @@ function AddLandingShips()
                     side = 'China',
                     type = 'Ship',
                     name = 'Type 073A',
-                    dbid = CONFIG.const.platformBDID10,
+                    dbid = CONFIG.platformDBID10,
                     cargo = cargoList.type073a,
                     heading = area.heading.vertical,
                     manualSpeed = shipSettings.shipSpeed,
@@ -683,17 +675,9 @@ function AddLandingShips()
     -- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
 end
 
-function CalculateDestination()
-    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-    -- if CONFIG == nil then
-    --     print('CONFIG == nil')
-    --     ScenEdit_MsgBox('CONFIG == nil', 1)
-    --     return
-    -- end
-
-    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
-    local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
+function CalculateDestination(saveData)
+    local initialLocations = CONFIG.c.PHIBOP.initialLocations
+    local shipSettings = CONFIG.c.PHIBOP.shipSettings
 
     for _, item in ipairs(initialLocations) do
         for _, area in ipairs(item.to.areas) do
@@ -741,7 +725,7 @@ function CalculateDestination()
             })
 
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type075.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type075.locations,
                 GenerateLocations({
                     initialLocation = firstRp075,
                     num = area.num.type075,
@@ -749,7 +733,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type071.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type071.locations,
                 GenerateLocations({
                     initialLocation = firstRp071,
                     num = area.num.type071,
@@ -757,7 +741,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type076.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type076.locations,
                 GenerateLocations({
                     initialLocation = firstRp076,
                     num = area.num.type076,
@@ -765,7 +749,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.barge.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.barge.locations,
                 GenerateLocations({
                     initialLocation = firstRpBarge,
                     num = area.num.barge,
@@ -774,7 +758,7 @@ function CalculateDestination()
                 })
             )
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.roro.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.roro.locations,
                 GenerateLocations({
                     initialLocation = firstRpRORO,
                     num = area.num.roro,
@@ -782,7 +766,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type072iii.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type072iii.locations,
                 GenerateLocations({
                     initialLocation = firstRp072iii,
                     num = area.num.type072iii,
@@ -790,7 +774,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type072a.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type072a.locations,
                 GenerateLocations({
                     initialLocation = firstRp072a,
                     num = area.num.type072a,
@@ -798,7 +782,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.ferry.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.ferry.locations,
                 GenerateLocations({
                     initialLocation = firstRpFerry,
                     num = area.num.ferry,
@@ -806,7 +790,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type073a.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type073a.locations,
                 GenerateLocations({
                     initialLocation = firstRp073a,
                     num = area.num.type073a,
@@ -814,7 +798,7 @@ function CalculateDestination()
                     distance = shipSettings.horizontalDistance
                 }))
             InsertList(
-                CONFIG.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
+                saveData.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
                 GenerateLocations({
                     initialLocation = firstRp071InLSTArea,
                     num = area.num.type071InLSTArea,
@@ -833,14 +817,14 @@ function RemoveShips()
         local unit = SE_GetUnit({ guid = u.guid })
         if unit == nil then goto continue end
 
-        if unit.dbid == CONFIG.const.platformBDID6 or
-            unit.dbid == CONFIG.const.platformBDID7 or
-            unit.dbid == CONFIG.const.platformBDID8 or
-            unit.dbid == CONFIG.const.platformBDID9 or
-            unit.dbid == CONFIG.const.platformBDID10 or
-            unit.dbid == CONFIG.const.platformBDID32 or
-            unit.dbid == CONFIG.const.platformBDID54 or
-            unit.dbid == CONFIG.const.platformBDID56 then
+        if unit.dbid == CONFIG.platformDBID6 or
+            unit.dbid == CONFIG.platformDBID7 or
+            unit.dbid == CONFIG.platformDBID8 or
+            unit.dbid == CONFIG.platformDBID9 or
+            unit.dbid == CONFIG.platformDBID10 or
+            unit.dbid == CONFIG.platformDBID32 or
+            unit.dbid == CONFIG.platformDBID54 or
+            unit.dbid == CONFIG.platformDBID56 then
             ScenEdit_DeleteUnit({ side = 'China', guid = unit.guid })
         end
 
@@ -863,7 +847,7 @@ end
 function AddACs(side)
     local key = (side == 'China') and 'c' or 't'
 
-    for _, info in ipairs(CONFIG[key].air.landBased.const.ACInfo) do
+    for _, info in ipairs(CONFIG[key].air.landBased.ACInfo) do
         local base = SE_GetUnit({ guid = info.baseGUID })
 
         if base and base.embarkedUnits.Aircraft then
@@ -904,7 +888,7 @@ function AddACs(side)
 end
 
 function AddSAGs()
-    for _, value in pairs(CONFIG.c.PHIBOP.const.sag) do
+    for _, value in pairs(CONFIG.c.PHIBOP.sag) do
         local sag = SE_GetUnit({ side = 'China', unitname = value.groupName })
 
         if sag then
@@ -941,7 +925,7 @@ function AddSAGs()
             heading   = value.from.heading,
             side      = 'China',
             type      = 'Ship',
-            dbid      = CONFIG.const.platformBDID48,
+            dbid      = CONFIG.platformDBID48,
             group     = value.groupName,
             unitname  = '052D',
         })
@@ -951,7 +935,7 @@ function AddSAGs()
             heading   = value.from.heading,
             side      = 'China',
             type      = 'Ship',
-            dbid      = CONFIG.const.platformBDID49,
+            dbid      = CONFIG.platformDBID49,
             group     = value.groupName,
             unitname  = '054A',
         })
@@ -961,7 +945,7 @@ function AddSAGs()
             heading   = value.from.heading,
             side      = 'China',
             type      = 'Ship',
-            dbid      = CONFIG.const.platformBDID49,
+            dbid      = CONFIG.platformDBID49,
             group     = value.groupName,
             unitname  = '054A',
         })
@@ -971,7 +955,7 @@ function AddSAGs()
             heading   = value.from.heading,
             side      = 'China',
             type      = 'Ship',
-            dbid      = CONFIG.const.platformBDID48,
+            dbid      = CONFIG.platformDBID48,
             group     = value.groupName,
             unitname  = '052D',
         })
@@ -985,7 +969,7 @@ function AddSAGs()
 end
 
 function AddCSG()
-    local csg = SE_GetUnit({ side = 'China', unitname = CONFIG.c.surface.lacm.const.csg.groupName })
+    local csg = SE_GetUnit({ side = 'China', unitname = CONFIG.c.surface.lacm.csg.groupName })
 
     if csg then
         for index, guid in ipairs(csg.group.unitlist) do
@@ -994,44 +978,44 @@ function AddCSG()
     end
 
     local pl054 = World_GetPointFromBearing({
-        LATITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        LONGITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        BEARING = CONFIG.c.surface.lacm.const.csg.from.heading - 45,
+        LATITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        LONGITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        BEARING = CONFIG.c.surface.lacm.csg.from.heading - 45,
         DISTANCE = 4.5,
     })
     local pr054 = World_GetPointFromBearing({
-        LATITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        LONGITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        BEARING = CONFIG.c.surface.lacm.const.csg.from.heading + 45,
+        LATITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        LONGITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        BEARING = CONFIG.c.surface.lacm.csg.from.heading + 45,
         DISTANCE = 4.5,
     })
     local p901 = World_GetPointFromBearing({
-        LATITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        LONGITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        BEARING = CONFIG.c.surface.lacm.const.csg.from.heading - 180,
+        LATITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        LONGITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        BEARING = CONFIG.c.surface.lacm.csg.from.heading - 180,
         DISTANCE = 4.5,
     })
     local pl055 = World_GetPointFromBearing({
-        LATITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        LONGITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        BEARING = CONFIG.c.surface.lacm.const.csg.from.heading - 45,
+        LATITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        LONGITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        BEARING = CONFIG.c.surface.lacm.csg.from.heading - 45,
         DISTANCE = 20,
     })
     local pr055 = World_GetPointFromBearing({
-        LATITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        LONGITUDE = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        BEARING = CONFIG.c.surface.lacm.const.csg.from.heading + 45,
+        LATITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        LONGITUDE = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        BEARING = CONFIG.c.surface.lacm.csg.from.heading + 45,
         DISTANCE = 20,
     })
 
     local _002 = ScenEdit_AddUnit({
-        latitude  = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lat,
-        longitude = CONFIG.c.surface.lacm.const.csg.from.startingPoint.lon,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        latitude  = CONFIG.c.surface.lacm.csg.from.startingPoint.lat,
+        longitude = CONFIG.c.surface.lacm.csg.from.startingPoint.lon,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type002.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type002.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '002',
     })
 
@@ -1057,10 +1041,10 @@ function AddCSG()
     end
 
     if _002 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type002.embarkedUnits, _002.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type002.embarkedUnits, _002.guid)
 
-        if CONFIG.c.surface.lacm.const.csg.unitList.type002.loadouts then
-            for _, loadout in ipairs(CONFIG.c.surface.lacm.const.csg.unitList.type002.loadouts) do
+        if CONFIG.c.surface.lacm.csg.unitList.type002.loadouts then
+            for _, loadout in ipairs(CONFIG.c.surface.lacm.csg.unitList.type002.loadouts) do
                 ScenEdit_FillMagsForLoadout({ unit = _002.name, loadoutid = loadout.loadoutId, quantity = loadout.num })
             end
         end
@@ -1069,77 +1053,77 @@ function AddCSG()
     local _901 = ScenEdit_AddUnit({
         latitude  = p901.latitude,
         longitude = p901.longitude,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type901.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type901.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '901',
     })
 
     if _901 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type901.embarkedUnits, _901.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type901.embarkedUnits, _901.guid)
     end
 
     local _l055 = ScenEdit_AddUnit({
         latitude  = pl055.latitude,
         longitude = pl055.longitude,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type055.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type055.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '055',
     })
 
     if _l055 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type055.embarkedUnits, _l055.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type055.embarkedUnits, _l055.guid)
     end
 
     local _r055 = ScenEdit_AddUnit({
         latitude  = pr055.latitude,
         longitude = pr055.longitude,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type055.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type055.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '055',
     })
 
     if _r055 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type055.embarkedUnits, _r055.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type055.embarkedUnits, _r055.guid)
     end
 
     local _l054 = ScenEdit_AddUnit({
         latitude  = pl054.latitude,
         longitude = pl054.longitude,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type054a.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type054a.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '054',
     })
     if _l054 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type054a.embarkedUnits, _l054.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type054a.embarkedUnits, _l054.guid)
     end
 
     local _r054 = ScenEdit_AddUnit({
         latitude  = pr054.latitude,
         longitude = pr054.longitude,
-        heading   = CONFIG.c.surface.lacm.const.csg.from.heading,
+        heading   = CONFIG.c.surface.lacm.csg.from.heading,
         side      = 'China',
         type      = 'Ship',
-        dbid      = CONFIG.c.surface.lacm.const.csg.unitList.type054a.dbid,
-        group     = CONFIG.c.surface.lacm.const.csg.groupName,
+        dbid      = CONFIG.c.surface.lacm.csg.unitList.type054a.dbid,
+        group     = CONFIG.c.surface.lacm.csg.groupName,
         unitname  = '054',
     })
     if _r054 then
-        addEmbarkedUnits(CONFIG.c.surface.lacm.const.csg.unitList.type054a.embarkedUnits, _r054.guid)
+        addEmbarkedUnits(CONFIG.c.surface.lacm.csg.unitList.type054a.embarkedUnits, _r054.guid)
     end
 
-    local _csg = SE_GetUnit({ side = "China", unitname = CONFIG.c.surface.lacm.const.csg.groupName })
+    local _csg = SE_GetUnit({ side = "China", unitname = CONFIG.c.surface.lacm.csg.groupName })
 
     if _csg then
         ScenEdit_SetReferencePoint({
@@ -1161,6 +1145,6 @@ function AddCSG()
             bearingtype = 1
         })
 
-        _csg.course = CONFIG.c.surface.lacm.const.csg.to.area
+        _csg.course = CONFIG.c.surface.lacm.csg.to.area
     end
 end

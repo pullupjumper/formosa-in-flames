@@ -1,18 +1,18 @@
 local unit = ScenEdit_UnitX()
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
-if unit and CONFIG.t.IADS.isActivated then
-    if CONFIG.t.IADS.ROCC[unit.guid] then
-        for _, data in pairs(CONFIG.t.IADS.ROCC[unit.guid].radar) do
+if unit and saveData.t.IADS.isActivated then
+    if saveData.t.IADS.ROCC[unit.guid] then
+        for _, data in pairs(saveData.t.IADS.ROCC[unit.guid].radar) do
             local u = SE_GetUnit({ guid = data.guid })
 
             if u then
-                local OODA = GetOODA(CONFIG.t.IADS.const.values.ROCC)
+                local OODA = GetOODA(CONFIG.t.IADS.values.ROCC)
                 local detect = data.OODA.detection
                 local target = data.OODA.targeting
                 u.OODA = {
@@ -24,11 +24,11 @@ if unit and CONFIG.t.IADS.isActivated then
             end
         end
 
-        for _, data in pairs(CONFIG.t.IADS.ROCC[unit.guid].SAM) do
+        for _, data in pairs(saveData.t.IADS.ROCC[unit.guid].SAM) do
             local u = SE_GetUnit({ guid = data.guid })
 
             if u then
-                local OODA = GetOODA(CONFIG.t.IADS.const.values.ROCC)
+                local OODA = GetOODA(CONFIG.t.IADS.values.ROCC)
                 local detect = data.OODA.detection
                 local target = data.OODA.targeting
                 -- ScenEdit_SpecialMessage('China', 'BEFORE ' .. tostring(u.OODA.detection))
@@ -43,12 +43,12 @@ if unit and CONFIG.t.IADS.isActivated then
         end
     end
 
-    if CONFIG.t.IADS.TAAOC[unit.guid] then
-        for _, data in pairs(CONFIG.t.IADS.TAAOC[unit.guid].SAM) do
+    if saveData.t.IADS.TAAOC[unit.guid] then
+        for _, data in pairs(saveData.t.IADS.TAAOC[unit.guid].SAM) do
             local u = SE_GetUnit({ guid = data.guid })
 
             if u then
-                local OODA = GetOODA(CONFIG.t.IADS.const.values.TAAOC)
+                local OODA = GetOODA(CONFIG.t.IADS.values.TAAOC)
                 local detect = data.OODA.detection
                 local target = data.OODA.targeting
                 -- ScenEdit_SpecialMessage('China', tostring(u.OODA.detection))
@@ -63,4 +63,4 @@ if unit and CONFIG.t.IADS.isActivated then
         end
     end
 end
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

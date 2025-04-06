@@ -1,17 +1,17 @@
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
-if CONFIG.u.SIGINT.isActivated then
-    HandleSIGINT(CONFIG, CONFIG.t.ground.srbm.batteries, true, 'China')
-    HandleSIGINT(CONFIG, CONFIG.t.ground.glcm.batteries, true, 'China')
-    HandleSIGINT(CONFIG, CONFIG.t.ground.mlrs.batteries, true, 'China')
-    HandleSIGINT(CONFIG, CONFIG.t.ground.ascm.batteries, true, 'China')
-    HandleSIGINT(CONFIG, CONFIG.t.IADS.ROCC, true, 'China')
-    HandleSIGINT(CONFIG, CONFIG.t.IADS.TAAOC, true, 'China')
+if saveData.u.SIGINT.isActivated then
+    HandleSIGINT(saveData, saveData.t.ground.srbm.batteries, true, 'China')
+    HandleSIGINT(saveData, saveData.t.ground.glcm.batteries, true, 'China')
+    HandleSIGINT(saveData, saveData.t.ground.mlrs.batteries, true, 'China')
+    HandleSIGINT(saveData, saveData.t.ground.ascm.batteries, true, 'China')
+    HandleSIGINT(saveData, saveData.t.IADS.ROCC, true, 'China')
+    HandleSIGINT(saveData, saveData.t.IADS.TAAOC, true, 'China')
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

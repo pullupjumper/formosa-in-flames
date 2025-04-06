@@ -21,7 +21,7 @@ end
 ---@param baseGUID string
 ---@param course CMO__TableOfWaypoints
 ---@param num number
----@param unitDBID string
+---@param unitDBID number
 ---@param unitType string @ Aircraft or Boats
 function LaunchUnits(baseGUID, course, num, unitDBID, unitType)
     local base = ScenEdit_GetUnit({ guid = baseGUID })
@@ -50,7 +50,7 @@ end
 
 ---@param h6n CMO__Unit
 ---@param course CMO__TableOfWaypoints
----@param contact CMO__Contact
+---@param contact CMO__Contact | nil
 function LaunchWZ8(h6n, course, contact)
     local wz8 = ScenEdit_AddUnit({
         side = 'China',

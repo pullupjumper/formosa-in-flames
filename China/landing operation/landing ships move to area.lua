@@ -1,14 +1,14 @@
 local units = VP_GetSide({ Side = 'China' }).units
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('China', 'saveData is nil')
     return
 end
 
 -- local function setCoursesForAllShips(CONFIG)
---     local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
---     local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
+--     local shipSettings = CONFIG.c.PHIBOP.shipSettings
+--     local initialLocations = CONFIG.c.PHIBOP.initialLocations
 
 --     for _, value in ipairs(units) do
 --         local unit = SE_GetUnit({ guid = value.guid })
@@ -69,10 +69,10 @@ end
 --     end
 -- end
 
-local function setCoursesForAllShips(CONFIG)
-    local shipSettings = CONFIG.c.PHIBOP.const.shipSettings
-    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
-    local calculations = CONFIG.c.PHIBOP.calculations
+local function setCoursesForAllShips(saveData)
+    local shipSettings = CONFIG.c.PHIBOP.shipSettings
+    local initialLocations = CONFIG.c.PHIBOP.initialLocations
+    local calculations = saveData.c.PHIBOP.calculations
 
     for _, _item in ipairs(units) do
         local actualUnit = SE_GetUnit({ guid = _item.guid })
@@ -94,7 +94,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLHD.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.type075.locations[locationIndex].latitude,
@@ -114,7 +114,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLHD.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.type076.locations[locationIndex].latitude,
@@ -134,7 +134,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.type072iii.locations[locationIndex].latitude,
@@ -154,7 +154,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.type072a.locations[locationIndex].latitude,
@@ -174,7 +174,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.ferry.locations[locationIndex].latitude,
@@ -194,7 +194,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.roro.locations[locationIndex].latitude,
@@ -214,7 +214,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.barge.locations[locationIndex].latitude,
@@ -234,7 +234,7 @@ local function setCoursesForAllShips(CONFIG)
                         groupForLST.manualSpeed = shipSettings.shipSpeed
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         ScenEdit_SetUnit({
                             guid = actualUnit.guid,
                             latitude = calculations[item.name].result.type073a.locations[locationIndex].latitude,
@@ -266,7 +266,7 @@ local function setCoursesForAllShips(CONFIG)
                         actualUnit.group = groupNameForLHD
                     end
 
-                    if CONFIG.c.PHIBOP.isTesting then
+                    if saveData.c.PHIBOP.isTesting then
                         if locationIndex > len then
                             ScenEdit_SetUnit({
                                 guid = actualUnit.guid,
@@ -293,13 +293,13 @@ local function setCoursesForAllShips(CONFIG)
         end
     end
 
-    for _, group in pairs(CONFIG.c.PHIBOP.const.sag) do
+    for _, group in pairs(CONFIG.c.PHIBOP.sag) do
         -- local unit = SE_GetUnit({ guid = group.guid })
         local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
         if unit == nil then goto continue end
         unit.course = group.to.archorageArea
 
-        if CONFIG.c.PHIBOP.isTesting then
+        if saveData.c.PHIBOP.isTesting then
             local count = GetCount(group.to.archorageArea)
             local type052d = 0
             local type054a = 0
@@ -308,7 +308,7 @@ local function setCoursesForAllShips(CONFIG)
                 local ship = SE_GetUnit({ guid = u })
                 if ship == nil then goto continue2 end
 
-                if ship.dbid == CONFIG.const.platformBDID48 then
+                if ship.dbid == CONFIG.platformDBID48 then
                     if type052d == 0 then
                         ScenEdit_SetUnit({
                             guid = ship.guid,
@@ -333,7 +333,7 @@ local function setCoursesForAllShips(CONFIG)
                     type052d = type052d + 1
                 end
 
-                if ship.dbid == CONFIG.const.platformBDID49 then
+                if ship.dbid == CONFIG.platformDBID49 then
                     if type054a == 0 then
                         local point = World_GetPointFromBearing({
                             LATITUDE = group.to.archorageArea[count].lat,
@@ -371,12 +371,12 @@ local function setCoursesForAllShips(CONFIG)
         ::continue::
     end
 
-    CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = true
-    CONFIG.c.PHIBOP.isShipsStartedMoving = false
+    saveData.c.PHIBOP.isShipsArrivedInStagingArea = true
+    saveData.c.PHIBOP.isShipsStartedMoving = false
 end
 
 local function getUnitsInAnchorageArea()
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
     local unitsInAnchorageArea1 = {}
     local isUnitMoving = false
 
@@ -384,14 +384,14 @@ local function getUnitsInAnchorageArea()
         local unit = SE_GetUnit({ guid = item.guid })
 
         if unit ~= nil
-            and (unit.dbid == CONFIG.const.platformBDID6
-                or unit.dbid == CONFIG.const.platformBDID7
-                or unit.dbid == CONFIG.const.platformBDID8
-                or unit.dbid == CONFIG.const.platformBDID9
-                or unit.dbid == CONFIG.const.platformBDID10
-                or unit.dbid == CONFIG.const.platformBDID32
-                or unit.dbid == CONFIG.const.platformBDID54
-                or unit.dbid == CONFIG.const.platformBDID56) then
+            and (unit.dbid == CONFIG.platformDBID6
+                or unit.dbid == CONFIG.platformDBID7
+                or unit.dbid == CONFIG.platformDBID8
+                or unit.dbid == CONFIG.platformDBID9
+                or unit.dbid == CONFIG.platformDBID10
+                or unit.dbid == CONFIG.platformDBID32
+                or unit.dbid == CONFIG.platformDBID54
+                or unit.dbid == CONFIG.platformDBID56) then
             if unit.unitstate ~= 'Unassigned' then
                 isUnitMoving = true
                 break
@@ -409,7 +409,7 @@ local function getUnitsInAnchorageArea()
 end
 
 local function createCargoMissions()
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, mission in ipairs(zone.boat.missions) do
@@ -427,12 +427,12 @@ local function createCargoMissions()
 end
 
 local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea1)
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, u in ipairs(unitsInAnchorageArea1) do
             if u ~= nil and
-                (u.dbid == CONFIG.const.platformBDID6 or u.dbid == CONFIG.const.platformBDID54) and
+                (u.dbid == CONFIG.platformDBID6 or u.dbid == CONFIG.platformDBID54) and
                 u:inArea(zone.anchorageArea) then
                 TransferCargo(
                     u.guid,
@@ -484,7 +484,7 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
                 end
             end
 
-            if u ~= nil and u.dbid == CONFIG.const.platformBDID7 and u:inArea(zone.anchorageArea) then
+            if u ~= nil and u.dbid == CONFIG.platformDBID7 and u:inArea(zone.anchorageArea) then
                 TransferCargo(
                     u.guid,
                     'Boats',
@@ -515,7 +515,7 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
         end
     end
 
-    for _, item in ipairs(CONFIG.c.PHIBOP.const.transportAircraft) do
+    for _, item in ipairs(CONFIG.c.PHIBOP.transportAircraft) do
         TransferCargo(
             item.guid,
             'Aircraft',
@@ -532,21 +532,21 @@ local function transferCargosAndAssignHelicoptersToMissions(unitsInAnchorageArea
     end
 end
 
-local function startAmphibiousAssault(CONFIG)
+local function startAmphibiousAssault(saveData)
     local result = getUnitsInAnchorageArea()
 
     if GetCount(result.units) > 15 and not result.isUnitMoving then
         createCargoMissions()
         transferCargosAndAssignHelicoptersToMissions(result.units)
-        CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = false
-        CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched = true
-        CONFIG.c.PHIBOP.amphibiousAssaultStartTime = ScenEdit_CurrentTime()
+        saveData.c.PHIBOP.isShipsArrivedInStagingArea = false
+        saveData.c.PHIBOP.isAmphibiousAssaultLaunched = true
+        saveData.c.PHIBOP.amphibiousAssaultStartTime = ScenEdit_CurrentTime()
     end
 end
 
-local function setLandingMissionStartTime(CONFIG)
-    CONFIG.c.PHIBOP.airlandingMissionStartTime = ScenEdit_CurrentTime()
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+local function setLandingMissionStartTime(saveData)
+    saveData.c.PHIBOP.airlandingMissionStartTime = ScenEdit_CurrentTime()
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
     for _, zone in ipairs(operationalZones) do
         for _, mission in ipairs(zone.tansportHelicopter.missions) do
@@ -566,8 +566,8 @@ local function setLandingMissionStartTime(CONFIG)
     end
 end
 
-local function setCoursesForLSTs(CONFIG)
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+local function setCoursesForLSTs()
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
     for _, item in ipairs(units) do
         local unit = SE_GetUnit({ guid = item.guid })
@@ -593,7 +593,7 @@ local function setCoursesForLSTs(CONFIG)
         end
     end
 
-    for _, group in pairs(CONFIG.c.PHIBOP.const.sag) do
+    for _, group in pairs(CONFIG.c.PHIBOP.sag) do
         local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
 
         if unit ~= nil then
@@ -614,11 +614,11 @@ local function countContactsInArea(contacts, area)
     return GetCount(filteredContacts)
 end
 
-local function startAirLanding(CONFIG)
-    local initialLocations = CONFIG.c.PHIBOP.const.initialLocations
+local function startAirLanding(saveData)
+    local initialLocations = CONFIG.c.PHIBOP.initialLocations
     local contacts = ScenEdit_GetContacts('China')
     local elapsedTime = 0
-    local amphibiousAssaultStartTime = CONFIG.c.PHIBOP.amphibiousAssaultStartTime
+    local amphibiousAssaultStartTime = saveData.c.PHIBOP.amphibiousAssaultStartTime
 
     if amphibiousAssaultStartTime then
         elapsedTime = ScenEdit_CurrentTime() - amphibiousAssaultStartTime
@@ -628,27 +628,27 @@ local function startAirLanding(CONFIG)
 
     local contactNum = countContactsInArea(contacts, initialLocations[1].airLandingZone)
     local isContactCountLessThan = contactNum < initialLocations[1].numOfContactsInAirLandingZone
-    local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= CONFIG.c.PHIBOP.const.periodOfTime
+    local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= CONFIG.c.PHIBOP.periodOfTime
 
     if isContactCountLessThan or isTimeExceeded then
         setLandingMissionStartTime(CONFIG)
-        setCoursesForLSTs(CONFIG)
+        setCoursesForLSTs()
         ScenEdit_MsgBox('Start air landing', 0)
-        CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched = false
-        CONFIG.c.PHIBOP.isSecondWaveStarted = true
+        saveData.c.PHIBOP.isAmphibiousAssaultLaunched = false
+        saveData.c.PHIBOP.isSecondWaveStarted = true
     end
 end
 
-local function retransferCargos(CONFIG)
-    local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
-    local elapsedTime = ScenEdit_CurrentTime() - CONFIG.c.PHIBOP.airlandingMissionStartTime
+local function retransferCargos(saveData)
+    local operationalZones = CONFIG.c.PHIBOP.operationalZones
+    local elapsedTime = ScenEdit_CurrentTime() - saveData.c.PHIBOP.airlandingMissionStartTime
 
     if elapsedTime >= (3600 * 2) then
         for _, zone in ipairs(operationalZones) do
             for _, item in ipairs(units) do
                 local unit = SE_GetUnit({ guid = item.guid })
 
-                if unit and (unit.dbid == CONFIG.const.platformBDID6 or unit.dbid == CONFIG.const.platformBDID54) then
+                if unit and (unit.dbid == CONFIG.platformDBID6 or unit.dbid == CONFIG.platformDBID54) then
                     TransferCargo(
                         unit.guid,
                         'Boats',
@@ -672,7 +672,7 @@ local function retransferCargos(CONFIG)
                     )
                 end
 
-                if unit and unit.dbid == CONFIG.const.platformBDID7 then
+                if unit and unit.dbid == CONFIG.platformDBID7 then
                     TransferCargo(
                         unit.guid,
                         'Boats',
@@ -741,11 +741,11 @@ local function calculateSphericalCenter(coords)
     }
 end
 
-local setCoursesForBarges = function(CONFIG)
+local setCoursesForBarges = function(saveData)
     local result = CountUnitsInEachArea()
 
     if GetCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1 then
-        local operationalZones = CONFIG.c.PHIBOP.const.operationalZones
+        local operationalZones = CONFIG.c.PHIBOP.operationalZones
         local roros = {}
         local barges = {}
 
@@ -773,7 +773,7 @@ local setCoursesForBarges = function(CONFIG)
                         actualUnit.course = { destination }
                         actualUnit.manualSpeed = zone.LSTSettings.speed
                         table.insert(barges, { unit = actualUnit, zone = zone, dest = destination })
-                        CONFIG.c.PHIBOP.barges[actualUnit.guid] = { guid = actualUnit.guid, roros = {} }
+                        saveData.c.PHIBOP.barges[actualUnit.guid] = { guid = actualUnit.guid, roros = {} }
                     end
                 end
 
@@ -786,7 +786,7 @@ local setCoursesForBarges = function(CONFIG)
         for _, item in ipairs(roros) do
             for _, barge in ipairs(barges) do
                 if barge.unit:inArea(item.zone.LSTAnchorageArea) then
-                    table.insert(CONFIG.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
+                    table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
                     local destination = World_GetPointFromBearing({
                         latitude = item.unit.latitude,
                         longitude = item.unit.longitude,
@@ -799,30 +799,30 @@ local setCoursesForBarges = function(CONFIG)
             end
         end
 
-        CONFIG.c.PHIBOP.isSecondWaveStarted = false
+        saveData.c.PHIBOP.isSecondWaveStarted = false
     end
 end
 
-if CONFIG.c.PHIBOP.isShipsStartedMoving then
-    setCoursesForAllShips(CONFIG)
+if saveData.c.PHIBOP.isShipsStartedMoving then
+    setCoursesForAllShips(saveData)
 end
 
-if CONFIG.c.PHIBOP.isShipsArrivedInStagingArea then
-    startAmphibiousAssault(CONFIG)
-    CONFIG.c.air.landBased.gbu.isStrikeActivated = true
+if saveData.c.PHIBOP.isShipsArrivedInStagingArea then
+    startAmphibiousAssault(saveData)
+    saveData.c.air.landBased.gbu.isActivated = true
 end
 
-if CONFIG.c.PHIBOP.isAmphibiousAssaultLaunched then
-    startAirLanding(CONFIG)
+if saveData.c.PHIBOP.isAmphibiousAssaultLaunched then
+    startAirLanding(saveData)
 end
 
-if CONFIG.c.PHIBOP.isSecondWaveStarted then
-    setCoursesForBarges(CONFIG)
+if saveData.c.PHIBOP.isSecondWaveStarted then
+    setCoursesForBarges(saveData)
 end
 
-if CONFIG.c.PHIBOP.airlandingMissionStartTime ~= nil then
-    retransferCargos(CONFIG)
+if saveData.c.PHIBOP.airlandingMissionStartTime ~= nil then
+    retransferCargos(saveData)
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")
 --OnPlottedCourse OnFerryMission RTB_Manual Tasked Unassigned

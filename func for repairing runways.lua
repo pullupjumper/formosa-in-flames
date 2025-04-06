@@ -1,42 +1,42 @@
 function WhenRunwayIsDamaged(side)
     local field = (side == 'China') and 'c' or 't'
     local unit = ScenEdit_UnitX()
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if CONFIG == nil then
-        ScenEdit_SpecialMessage(side, 'CONFIG == nil')
+    if saveData == nil then
+        ScenEdit_SpecialMessage(side, 'saveData is nil')
         return
     end
 
-    if not CONFIG[field].repairRunway.isActivated then
-        CONFIG[field].repairRunway.isActivated = true
+    if not saveData[field].repairRunway.isActivated then
+        saveData[field].repairRunway.isActivated = true
     end
 
-    for _, value in ipairs(CONFIG[field].repairRunway.runways) do
-        if unit and unit.guid == value.guid and value.startTime == nil then
-            value.startTime = ScenEdit_CurrentTime()
+    for _, runway in ipairs(saveData[field].repairRunway.runways) do
+        if unit and unit.guid == runway.guid and runway.startTime == nil then
+            runway.startTime = ScenEdit_CurrentTime()
         end
     end
 
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+    gKH.State.SaveTableToKey(saveData, "SaveData")
 end
 
 function RepairRunway(side)
     local field = (side == 'China') and 'c' or 't'
-    local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+    local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if CONFIG == nil then
-        ScenEdit_SpecialMessage(side, 'CONFIG == nil')
+    if saveData == nil then
+        ScenEdit_SpecialMessage(side, 'saveData is nil')
         return
     end
 
-    for _, value in ipairs(CONFIG[field].repairRunway.runways) do
-        local runway = SE_GetUnit({ guid = value.guid })
+    for _, runway in ipairs(saveData[field].repairRunway.runways) do
+        local actualRunway = SE_GetUnit({ guid = runway.guid })
 
-        if runway and value.startTime ~= nil then
+        if actualRunway and runway.startTime ~= nil then
             ScenEdit_SetUnitDamage({
-                guid = runway.guid,
-                dp = -runway.damage.startdp * CONFIG[field].repairRunway.const.percentagePerHour / 12 / 100,
+                guid = actualRunway.guid,
+                dp = -actualRunway.damage.startdp * CONFIG[field].repairRunway.percentagePerHour / 12 / 100,
                 fires = 'NoFire'
             })
 

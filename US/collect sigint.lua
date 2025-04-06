@@ -1,15 +1,15 @@
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
-if CONFIG.u.SIGINT.isActivated then
-    HandleSIGINT(CONFIG, CONFIG.c.ground.mlrs.batteries, true)
-    HandleSIGINT(CONFIG, CONFIG.c.ground.srbm.batteries, true)
-    HandleSIGINT(CONFIG, CONFIG.c.ground.glcm.batteries, true)
-    HandleSIGINT(CONFIG, CONFIG.c.IADS.C2, true)
+if saveData.u.SIGINT.isActivated then
+    HandleSIGINT(saveData, saveData.c.ground.mlrs.batteries, true)
+    HandleSIGINT(saveData, saveData.c.ground.srbm.batteries, true)
+    HandleSIGINT(saveData, saveData.c.ground.glcm.batteries, true)
+    HandleSIGINT(saveData, saveData.c.IADS.C2, true)
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

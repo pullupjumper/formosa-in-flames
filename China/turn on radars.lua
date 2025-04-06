@@ -1,6 +1,6 @@
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
-local temp = { unit = nil, distance = CONFIG.const.radarDistance }
+local temp = { unit = nil, distance = CONFIG.radarDistance }
 
 if unit == nil then
     ScenEdit_SpecialMessage('China', 'unit == nil')
@@ -15,7 +15,7 @@ for _, value in ipairs(units) do
     if u == nil then goto continue end
     local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-    if (u.dbid == CONFIG.const.platformBDID16 or u.dbid == CONFIG.const.platformBDID17) then
+    if (u.dbid == CONFIG.platformDBID16 or u.dbid == CONFIG.platformDBID17) then
         if distance < temp.distance then
             temp.unit = u
             temp.distance = distance
@@ -32,10 +32,10 @@ if temp.unit == nil then
 
         local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-        if u.dbid == CONFIG.const.platformBDID18
-            or u.dbid == CONFIG.const.platformBDID19
-            or u.dbid == CONFIG.const.platformBDID20
-            or u.dbid == CONFIG.const.platformBDID21 then
+        if u.dbid == CONFIG.platformDBID18
+            or u.dbid == CONFIG.platformDBID19
+            or u.dbid == CONFIG.platformDBID20
+            or u.dbid == CONFIG.platformDBID21 then
             if distance < temp.distance then
                 temp.unit = u
                 temp.distance = distance

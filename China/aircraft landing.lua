@@ -1,19 +1,13 @@
 local unit = ScenEdit_UnitX()
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
-    return
-end
 
 if unit then
-    if unit.dbid == CONFIG.const.platformBDID28
-        or unit.dbid == CONFIG.const.platformBDID29
-        or unit.dbid == CONFIG.const.platformBDID30
-        or unit.dbid == CONFIG.const.platformBDID31
-        or unit.dbid == CONFIG.const.platformBDID36
-        or unit.dbid == CONFIG.const.platformBDID57 then
-        unit.readytime = CONFIG.const.readytime
+    if unit.dbid == CONFIG.platformDBID28
+        or unit.dbid == CONFIG.platformDBID29
+        or unit.dbid == CONFIG.platformDBID30
+        or unit.dbid == CONFIG.platformDBID31
+        or unit.dbid == CONFIG.platformDBID36
+        or unit.dbid == CONFIG.platformDBID57 then
+        unit.readytime = CONFIG.readytime
         unit.mission = ''
 
         -- if unit.mission ~= nil and unit.mission.isactive and unit.mission.subtype == 'Land Strike' then
@@ -21,23 +15,23 @@ if unit then
         -- end
     end
 
-    -- if unit.dbid == CONFIG.const.platformBDID2 then
+    -- if unit.dbid == CONFIG.platformDBID2 then
     --     ScenEdit_SpecialMessage('China', tostring(unit.base.guid) .. tostring(unit.name))
-    --     -- updateCargo(unit.base, unit, CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter)
+    --     -- updateCargo(unit.base, unit, CONFIG.c.landingOperation.cargoItemForTransferForHelicapter)
 
     --     -- transferCargo(
     --     --     unit.base.guid,
     --     --     'Aircraft',
     --     --     unit.dbid,
-    --     --     CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter
+    --     --     CONFIG.c.landingOperation.cargoItemForTransferForHelicapter
     --     -- )
     --     ScenEdit_UpdateUnitCargo({
     --         guid = unit.base.guid,
     --         mode = 'remove_cargo',
     --         cargo = { {
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.num,
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.dbid,
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.type
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.num,
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.dbid,
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.type
     --         } }
     --     })
 
@@ -45,9 +39,9 @@ if unit then
     --         guid = unit.guid,
     --         mode = 'add_cargo',
     --         cargo = { {
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.num,
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.dbid,
-    --             CONFIG.c.landingOperation.const.cargoItemForTransferForHelicapter.type
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.num,
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.dbid,
+    --             CONFIG.c.landingOperation.cargoItemForTransferForHelicapter.type
     --         } }
     --     })
     --     ScenEdit_SpecialMessage('China', tostring(result.cargo))

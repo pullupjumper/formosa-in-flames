@@ -2,7 +2,7 @@
 local contacts = ScenEdit_GetContacts('Taiwan')
 local event = ScenEdit_EventX()
 local temp = {}
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function setAntiShipMissionStartTime()
     local currentTime = ScenEdit_CurrentTime()
@@ -16,25 +16,24 @@ local function setAntiShipMissionStartTime()
     ScenEdit_GetMission('Taiwan', 'RECON/3').starttime = reconStartTime3
 end
 
-if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
-if CONFIG.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
+if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
     for index, value in ipairs(contacts) do
-        if value:inArea(CONFIG.t.ground.ascm.test.nai1) and value.typed == 2 then
+        if value:inArea(saveData.t.ground.ascm.test.nai1) and value.typed == 2 then
             table.insert(temp, value)
         end
     end
 
-    if GetCount(temp) > CONFIG.t.ground.ascm.test.shipNumInNai1 then
+    if GetCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
         setAntiShipMissionStartTime()
-        CONFIG.t.ground.ascm.test.isAntishipMissionActivated = true
+        saveData.t.ground.ascm.test.isAntishipMissionActivated = true
         event.isActive = false
         ScenEdit_MsgBox('Launch ANT-SHIP mission', 0)
     end
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

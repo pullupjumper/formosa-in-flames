@@ -1,14 +1,14 @@
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('China', 'saveData is nil')
     return
 end
 
-local function getCommsLevel(unitGUID)
-    local comm_bonif = CONFIG.c.commsJamming.const.initialComms
+local function getCommsLevel(saveData, unitGUID)
+    local comm_bonif = CONFIG.c.commsJamming.initialComms
 
-    for _, value in ipairs(CONFIG.c.commsJamming.jammers) do
+    for _, value in ipairs(saveData.c.commsJamming.jammers) do
         local jammer = SE_GetUnit({ guid = value.guid })
 
         if jammer and jammer.condition == 'Airborne' and jammer.jammer then
@@ -16,7 +16,7 @@ local function getCommsLevel(unitGUID)
         end
     end
 
-    for _, value in ipairs(CONFIG.t.air.landBased.AEW) do
+    for _, value in ipairs(saveData.t.air.landBased.AEW) do
         local AEW = SE_GetUnit({ guid = value.guid })
 
         if AEW and AEW.condition == 'Airborne' then
@@ -33,7 +33,7 @@ local function getCommsLevel(unitGUID)
         end
     end
 
-    for ROCCGuid, value in pairs(CONFIG.t.IADS.ROCC) do
+    for ROCCGuid, value in pairs(saveData.t.IADS.ROCC) do
         local ROCC = SE_GetUnit({ guid = ROCCGuid })
 
         if ROCC then
@@ -54,7 +54,7 @@ local function getCommsLevel(unitGUID)
     return math.floor(comm_bonif)
 end
 
-local function commsJamming(CONFIG, u, jammer, jammed_num)
+local function commsJamming(u, jammer, jammed_num)
     if u.isOutOfComms then
         if u.outofcomms <= math.random(15, 25) then
             local unit = SE_SetUnit({ guid = u.guid, outofcomms = true })
@@ -75,9 +75,9 @@ local function commsJamming(CONFIG, u, jammer, jammed_num)
 
     if jammer and jammer.condition == 'Airborne' and jammer.jammer then
         if u.isOutOfComms == false then
-            if u.outofcomms < math.random(5, 10) and u.outofcomms >= 0 and jammed_num < CONFIG.c.commsJamming.const.limit then
+            if u.outofcomms < math.random(5, 10) and u.outofcomms >= 0 and jammed_num < CONFIG.c.commsJamming.limit then
                 local d = Tool_Range(jammer.guid, u.guid)
-                local n = 1 * math.sqrt(1 - (d ^ 1.9 / CONFIG.c.commsJamming.const.range ^ 1.8))
+                local n = 1 * math.sqrt(1 - (d ^ 1.9 / CONFIG.c.commsJamming.range ^ 1.8))
 
                 if n == n and n > (math.random() / 2) then
                     local unit = SE_SetUnit({ guid = u.guid, outofcomms = true })
@@ -105,11 +105,11 @@ local function commsJamming(CONFIG, u, jammer, jammed_num)
     return jammed_num
 end
 
-if CONFIG.c.commsJamming.isActivated then
+if saveData.c.commsJamming.isActivated then
     local jammer = nil
     local jammed_num = 0
 
-    for _, j in ipairs(CONFIG.c.commsJamming.jammers) do
+    for _, j in ipairs(saveData.c.commsJamming.jammers) do
         local unit = SE_GetUnit({ guid = j.guid })
 
         if unit and unit.condition == 'Airborne' and unit.jammer then
@@ -120,7 +120,7 @@ if CONFIG.c.commsJamming.isActivated then
 
     local units = {}
 
-    for key, item in pairs(CONFIG.t.IADS.ROCC) do
+    for key, item in pairs(saveData.t.IADS.ROCC) do
         for index, value in pairs(item.SAM) do
             units[value.guid] = value
         end
@@ -129,7 +129,7 @@ if CONFIG.c.commsJamming.isActivated then
         end
     end
 
-    for key, item in pairs(CONFIG.t.IADS.TAAOC) do
+    for key, item in pairs(saveData.t.IADS.TAAOC) do
         for index, value in pairs(item.SAM) do
             units[value.guid] = value
         end
@@ -144,28 +144,28 @@ if CONFIG.c.commsJamming.isActivated then
     end
 
     for index, value in pairs(units) do
-        for key, item in pairs(CONFIG.t.IADS.ROCC) do
+        for key, item in pairs(saveData.t.IADS.ROCC) do
             if item.SAM[value.guid] then
-                jammed_num = commsJamming(CONFIG, item.SAM[value.guid], jammer, jammed_num)
+                jammed_num = commsJamming(item.SAM[value.guid], jammer, jammed_num)
             end
 
             if item.radar[value.guid] then
-                jammed_num = commsJamming(CONFIG, item.radar[value.guid], jammer, jammed_num)
+                jammed_num = commsJamming(item.radar[value.guid], jammer, jammed_num)
             end
         end
 
-        for key, item in pairs(CONFIG.t.IADS.TAAOC) do
+        for key, item in pairs(saveData.t.IADS.TAAOC) do
             if item.SAM[value.guid] then
-                jammed_num = commsJamming(CONFIG, item.SAM[value.guid], jammer, jammed_num)
+                jammed_num = commsJamming(item.SAM[value.guid], jammer, jammed_num)
             end
         end
     end
 
-    for _, value in ipairs(CONFIG.t.air.landBased.AC) do
+    for _, value in ipairs(saveData.t.air.landBased.AC) do
         local unit = SE_GetUnit({ guid = value.guid })
 
         if unit and unit.condition == 'Airborne' then
-            value.comms_level = value.comms_base + getCommsLevel(unit.guid)
+            value.comms_level = value.comms_base + getCommsLevel(saveData, unit.guid)
             -- ScenEdit_SpecialMessage('Taiwan', tostring(value.comms_level))
 
             if value.comms_level < value.comms_threshold then
@@ -175,4 +175,4 @@ if CONFIG.c.commsJamming.isActivated then
     end
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

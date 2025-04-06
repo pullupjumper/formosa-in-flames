@@ -1,21 +1,21 @@
-local function initRunways()
-    CONFIG.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
-    CONFIG.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
-    CONFIG.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
-    CONFIG.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
-    CONFIG.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
-    CONFIG.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
-    CONFIG.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
-    CONFIG.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
-    CONFIG.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
-    CONFIG.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
-    CONFIG.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
+local function initRunways(saveData)
+    saveData.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
+    saveData.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
+    saveData.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
+    saveData.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
+    saveData.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
+    saveData.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
+    saveData.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
+    saveData.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
+    saveData.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
+    saveData.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
+    saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
 
-    for _, value in ipairs(CONFIG.c.ground.srbm.packages[2].batchTargetlists[2]) do
+    for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
 
         if contact then
-            table.insert(CONFIG.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+            table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
         end
     end
 
@@ -31,7 +31,7 @@ local function initRunways()
                 or unit.dbid == 1424
                 or unit.dbid == 1423
                 or unit.dbid == 1421) then
-            table.insert(CONFIG.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
+            table.insert(saveData.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
         end
     end
 end
@@ -43,7 +43,7 @@ end
 --         local event = ScenEdit_GetEvent(eventName)
 
 --         if jammer and event == nil then
---             if jammer.dbid == CONFIG.const.platformBDID25 then
+--             if jammer.dbid == CONFIG.platformDBID25 then
 --                 local jammingArea = NewArea(
 --                     { latitude = jammer.latitude, longitude = jammer.longitude },
 --                     { side = 'China', distance = '15', shape = 'circle' }
@@ -55,16 +55,16 @@ end
 --     end
 -- end
 
-local function initC2()
+local function initC2(saveData)
     local units = VP_GetSide({ Side = "Taiwan" }).units
     local unitsFromChina = VP_GetSide({ Side = "China" }).units
 
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        for ROCCGuid, item in pairs(CONFIG.t.IADS.ROCC) do
+        for ROCCGuid, item in pairs(saveData.t.IADS.ROCC) do
             if unit ~= nil and unit:inArea(item.area) then
-                if unit.dbid == CONFIG.const.platformBDID14 or unit.dbid == CONFIG.const.platformBDID15 then
+                if unit.dbid == CONFIG.platformDBID14 or unit.dbid == CONFIG.platformDBID15 then
                     local data = {
                         name = unit.name,
                         guid = unit.guid,
@@ -75,13 +75,13 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    CONFIG.t.IADS.ROCC[ROCCGuid].SAM[unit.guid] = data
+                    saveData.t.IADS.ROCC[ROCCGuid].SAM[unit.guid] = data
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID41
-                    or unit.dbid == CONFIG.const.platformBDID42
-                    or unit.dbid == CONFIG.const.platformBDID43
-                    or unit.dbid == CONFIG.const.platformBDID44 then
+                if unit.dbid == CONFIG.platformDBID41
+                    or unit.dbid == CONFIG.platformDBID42
+                    or unit.dbid == CONFIG.platformDBID43
+                    or unit.dbid == CONFIG.platformDBID44 then
                     local data = {
                         name = unit.name,
                         guid = unit.guid,
@@ -92,14 +92,14 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    CONFIG.t.IADS.ROCC[ROCCGuid].radar[unit.guid] = data
+                    saveData.t.IADS.ROCC[ROCCGuid].radar[unit.guid] = data
                 end
             end
         end
 
-        for TAAOCGuid, item in pairs(CONFIG.t.IADS.TAAOC) do
+        for TAAOCGuid, item in pairs(saveData.t.IADS.TAAOC) do
             if unit ~= nil and unit:inArea(item.area) then
-                if unit.dbid == CONFIG.const.platformBDID33 then
+                if unit.dbid == CONFIG.platformDBID33 then
                     local data = {
                         name = unit.name,
                         guid = unit.guid,
@@ -110,7 +110,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    CONFIG.t.IADS.TAAOC[TAAOCGuid].SAM[unit.guid] = data
+                    saveData.t.IADS.TAAOC[TAAOCGuid].SAM[unit.guid] = data
                 end
             end
         end
@@ -119,12 +119,12 @@ local function initC2()
     for _, value in ipairs(unitsFromChina) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        for c2Guid, item in pairs(CONFIG.c.IADS.C2) do
+        for c2Guid, item in pairs(saveData.c.IADS.C2) do
             if unit ~= nil and unit:inArea(item.area) then
-                if unit.dbid == CONFIG.const.platformBDID18
-                    or unit.dbid == CONFIG.const.platformBDID19
-                    or unit.dbid == CONFIG.const.platformBDID20
-                    or unit.dbid == CONFIG.const.platformBDID21 then
+                if unit.dbid == CONFIG.platformDBID18
+                    or unit.dbid == CONFIG.platformDBID19
+                    or unit.dbid == CONFIG.platformDBID20
+                    or unit.dbid == CONFIG.platformDBID21 then
                     local data = {
                         name = unit.name,
                         guid = unit.guid,
@@ -135,10 +135,10 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    CONFIG.c.IADS.C2[c2Guid].SAM[unit.guid] = data
+                    saveData.c.IADS.C2[c2Guid].SAM[unit.guid] = data
                 end
 
-                if unit.dbid == CONFIG.const.platformBDID16 or unit.dbid == CONFIG.const.platformBDID17 then
+                if unit.dbid == CONFIG.platformDBID16 or unit.dbid == CONFIG.platformDBID17 then
                     local data = {
                         name = unit.name,
                         guid = unit.guid,
@@ -149,7 +149,7 @@ local function initC2()
                         EMCON_Setting = 'Radar=Passive'
                     }
 
-                    CONFIG.c.IADS.C2[c2Guid].radar[unit.guid] = data
+                    saveData.c.IADS.C2[c2Guid].radar[unit.guid] = data
                 end
             end
         end
@@ -159,27 +159,27 @@ local function initC2()
     ScenEdit_SpecialMessage('China', 'C2 init done.')
 end
 
-local function initCommsJammers(side)
+local function initCommsJammers(side, saveData)
     local units = VP_GetSide({ Side = side }).units
 
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        if unit and (unit.dbid == CONFIG.const.platformBDID35 or unit.dbid == CONFIG.const.platformBDID37) then
-            table.insert(CONFIG.c.commsJamming.jammers, { guid = unit.guid })
+        if unit and (unit.dbid == CONFIG.platformDBID35 or unit.dbid == CONFIG.platformDBID37) then
+            table.insert(saveData.c.commsJamming.jammers, { guid = unit.guid })
         end
     end
 end
 
-local function initAC()
+local function initAC(saveData)
     local units = VP_GetSide({ Side = 'Taiwan' }).units
 
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID38 then
+        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID38 then
             table.insert(
-                CONFIG.t.air.landBased.AEW,
+                saveData.t.air.landBased.AEW,
                 {
                     guid = unit.guid,
                     OODA = unit.OODA,
@@ -191,7 +191,7 @@ local function initAC()
             )
         elseif unit and unit.type == 'Aircraft' then
             table.insert(
-                CONFIG.t.air.landBased.AC,
+                saveData.t.air.landBased.AC,
                 {
                     guid = unit.guid,
                     OODA = unit.OODA,
@@ -205,15 +205,15 @@ local function initAC()
     end
 end
 
-local function initSIGINT()
+local function initSIGINT(saveData)
     local units = VP_GetSide({ Side = 'US' }).units
     local unitsFromChina = VP_GetSide({ Side = 'China' }).units
 
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID45 then
-            CONFIG.u.SIGINT.RA[unit.guid] = {
+        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID45 then
+            saveData.u.SIGINT.RA[unit.guid] = {
                 guid = unit.guid,
                 OODA = unit.OODA,
                 comms_level = 40,
@@ -227,8 +227,8 @@ local function initSIGINT()
     for _, value in ipairs(unitsFromChina) do
         local unit = SE_GetUnit({ guid = value.guid })
 
-        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.const.platformBDID47 then
-            CONFIG.c.SIGINT.RA[unit.guid] = {
+        if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID47 then
+            saveData.c.SIGINT.RA[unit.guid] = {
                 guid = unit.guid,
                 OODA = unit.OODA,
                 comms_level = 40,
@@ -240,33 +240,33 @@ local function initSIGINT()
     end
 end
 
--- gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+
 if CONFIG.isSaved then
-    gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+    gKH.State.SaveTableToKey(SaveData, "SaveData")
 end
 
-local _CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if _CONFIG ~= nil and GetCount(_CONFIG.c.ground.srbm.packages[1].batchTargetlists) <= 0 then
-    initRunways()
-    CalculateDestination()
-    initAC()
+if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetlists) <= 0 then
+    initRunways(saveData)
+    CalculateDestination(saveData)
+    initAC(saveData)
 
-    if CONFIG.t.IADS.isActivated then
-        initC2()
+    if saveData.t.IADS.isActivated then
+        initC2(saveData)
     end
 
-    if CONFIG.c.commsJamming.isActivated then
-        initCommsJammers('China')
+    if saveData.c.commsJamming.isActivated then
+        initCommsJammers('China', saveData)
     end
 
-    if CONFIG.u.SIGINT.isActivated then
-        initSIGINT()
+    if saveData.u.SIGINT.isActivated then
+        initSIGINT(saveData)
     end
 
     if CONFIG.isDevMode then
         ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
-        gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+        gKH.State.SaveTableToKey(saveData, "SaveData")
     end
 else
     ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')

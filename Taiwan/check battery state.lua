@@ -1,13 +1,12 @@
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
-CheckBatteryState(CONFIG, 'mlrs', 'Taiwan', false)
-CheckBatteryState(CONFIG, 'srbm', 'Taiwan', false)
-CheckBatteryState(CONFIG, 'glcm', 'Taiwan', false)
-CheckBatteryState(CONFIG, 'ascm', 'Taiwan', false)
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+CheckBatteryState(saveData, 'mlrs', 'Taiwan', false)
+CheckBatteryState(saveData, 'srbm', 'Taiwan', false)
+CheckBatteryState(saveData, 'glcm', 'Taiwan', false)
+CheckBatteryState(saveData, 'ascm', 'Taiwan', false)
+gKH.State.SaveTableToKey(saveData, "SaveData")

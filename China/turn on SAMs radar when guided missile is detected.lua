@@ -8,13 +8,7 @@ end
 
 local latitude = contact.latitude
 local longitude = contact.longitude
-local temp = { unit = nil, distance = CONFIG.const.radarDistance }
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
-    return
-end
+local temp = { unit = nil, distance = CONFIG.radarDistance }
 
 for _, value in ipairs(units) do
     local u = ScenEdit_GetUnit({ guid = value.guid })
@@ -22,7 +16,7 @@ for _, value in ipairs(units) do
 
     local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-    if u.dbid == CONFIG.const.platformBDID19 or u.dbid == CONFIG.const.platformBDID20 then
+    if u.dbid == CONFIG.platformDBID19 or u.dbid == CONFIG.platformDBID20 then
         if u.IsDecoy == false and distance < temp.distance then
             temp.unit = u
             temp.distance = distance

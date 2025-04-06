@@ -1,9 +1,9 @@
 local unit = ScenEdit_UnitX()
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 local contacts = ScenEdit_GetContacts('Taiwan')
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('China', 'saveData is nil')
     return
 end
 
@@ -15,30 +15,30 @@ if contacts then
     end
 end
 
-if CONFIG.c.ground.glcm.isStrikeActivated then
-    for _, battery in pairs(CONFIG.c.ground.glcm.batteries) do
+if saveData.c.ground.glcm.isActivated then
+    for _, battery in pairs(saveData.c.ground.glcm.batteries) do
         if unit then
-            if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
+            if battery.guid == unit.guid and battery.state == CONFIG.batteryState.REPOSITIONING then
                 SetStateToHIDE(battery, unit)
             end
         end
     end
 end
 
-if CONFIG.c.ground.mlrs.isStrikeActivated then
-    for _, battery in pairs(CONFIG.c.ground.mlrs.batteries) do
+if saveData.c.ground.mlrs.isActivated then
+    for _, battery in pairs(saveData.c.ground.mlrs.batteries) do
         if unit then
-            if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
+            if battery.guid == unit.guid and battery.state == CONFIG.batteryState.REPOSITIONING then
                 SetStateToHIDE(battery, unit)
             end
         end
     end
 end
 
-if CONFIG.c.ground.srbm.isStrikeActivated then
-    for _, battery in pairs(CONFIG.c.ground.srbm.batteries) do
+if saveData.c.ground.srbm.isActivated then
+    for _, battery in pairs(saveData.c.ground.srbm.batteries) do
         if unit then
-            if battery.guid == unit.guid and battery.state == CONFIG.const.batteryState.REPOSITIONING then
+            if battery.guid == unit.guid and battery.state == CONFIG.batteryState.REPOSITIONING then
                 SetStateToHIDE(battery, unit)
             end
         end
@@ -46,4 +46,4 @@ if CONFIG.c.ground.srbm.isStrikeActivated then
 end
 
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

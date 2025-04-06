@@ -1,22 +1,15 @@
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
-local temp = { unit = nil, distance = CONFIG.const.radarDistance }
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
-    return
-end
+local temp = { unit = nil, distance = CONFIG.radarDistance }
 
 if unit == nil then
     ScenEdit_SpecialMessage('China', 'unit == nil')
     return
 end
 
--- if unit.dbid == CONFIG.const.platformBDID25 then
+-- if unit.dbid == CONFIG.platformDBID25 then
 --     for _, component in ipairs(unit.components) do
---         if component['comp_dbid'] == CONFIG.const.sensorBDID13
+--         if component['comp_dbid'] == CONFIG.sensorDBID13
 --             and component['comp_status'] == 'Destroyed' then
 --             printBox(
 --                 'China',
@@ -44,12 +37,12 @@ local longitude = unit.longitude
 local isDestroyed = false
 
 for _, component in ipairs(unit.components) do
-    if (component['comp_dbid'] == CONFIG.const.sensorBDID1
-            or component['comp_dbid'] == CONFIG.const.sensorBDID2
-            or component['comp_dbid'] == CONFIG.const.sensorBDID3
-            or component['comp_dbid'] == CONFIG.const.sensorBDID4
-            or component['comp_dbid'] == CONFIG.const.sensorBDID5
-            or component['comp_dbid'] == CONFIG.const.sensorBDID6)
+    if (component['comp_dbid'] == CONFIG.sensorDBID1
+            or component['comp_dbid'] == CONFIG.sensorDBID2
+            or component['comp_dbid'] == CONFIG.sensorDBID3
+            or component['comp_dbid'] == CONFIG.sensorDBID4
+            or component['comp_dbid'] == CONFIG.sensorDBID5
+            or component['comp_dbid'] == CONFIG.sensorDBID6)
         and component['comp_status'] == 'Destroyed' then
         printBox(
             'China',
@@ -67,17 +60,17 @@ if isDestroyed then
         if u == nil then goto continue end
         local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-        if u.dbid == CONFIG.const.platformBDID18
-            or u.dbid == CONFIG.const.platformBDID19
-            or u.dbid == CONFIG.const.platformBDID20
-            or u.dbid == CONFIG.const.platformBDID21 then
+        if u.dbid == CONFIG.platformDBID18
+            or u.dbid == CONFIG.platformDBID19
+            or u.dbid == CONFIG.platformDBID20
+            or u.dbid == CONFIG.platformDBID21 then
             for i, component in ipairs(u.components) do
-                if (component['comp_dbid'] == CONFIG.const.sensorBDID1
-                        or component['comp_dbid'] == CONFIG.const.sensorBDID2
-                        or component['comp_dbid'] == CONFIG.const.sensorBDID3
-                        or component['comp_dbid'] == CONFIG.const.sensorBDID4
-                        or component['comp_dbid'] == CONFIG.const.sensorBDID5
-                        or component['comp_dbid'] == CONFIG.const.sensorBDID6)
+                if (component['comp_dbid'] == CONFIG.sensorDBID1
+                        or component['comp_dbid'] == CONFIG.sensorDBID2
+                        or component['comp_dbid'] == CONFIG.sensorDBID3
+                        or component['comp_dbid'] == CONFIG.sensorDBID4
+                        or component['comp_dbid'] == CONFIG.sensorDBID5
+                        or component['comp_dbid'] == CONFIG.sensorDBID6)
                     and component['comp_status'] ~= 'Destroyed' then
                     if distance < temp.distance and unit.guid ~= u.guid then
                         temp.unit = u

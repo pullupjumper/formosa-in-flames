@@ -1,11 +1,11 @@
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    ScenEdit_SpecialMessage('China', 'CONFIG == nil')
+if saveData == nil then
+    ScenEdit_SpecialMessage('China', 'saveData is nil')
     return
 end
 
-for _, value in ipairs(CONFIG.c.ground.srbm.const.contingencyRunways) do
+for _, value in ipairs(CONFIG.c.ground.srbm.contingencyRunways) do
     local contact = ScenEdit_GetContact({ side = "China", guid = value.base.guid })
     local runwayContact = ScenEdit_GetContact({ side = "China", guid = value.runway.guid })
 
@@ -16,8 +16,8 @@ for _, value in ipairs(CONFIG.c.ground.srbm.const.contingencyRunways) do
             local num = GetCount(runway.embarkedUnits['Aircraft'])
 
             if num >= 6 then
-                CONFIG.c.ground.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/RUNWAY/4')
-                CONFIG.c.ground.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE/RUNWAY/5')
+                saveData.c.ground.srbm.packages[2].targetList[1] = InitTargetList('China', 'STRIKE/RUNWAY/4')
+                saveData.c.ground.srbm.packages[2].targetList[2] = InitTargetList('China', 'STRIKE/RUNWAY/5')
                 -- CONFIG.c.ground.srbm.packages[2].targetList[3] = InitTargetList('China', 'STRIKE ON RUNWAY 6')
                 break
             end
@@ -25,4 +25,4 @@ for _, value in ipairs(CONFIG.c.ground.srbm.const.contingencyRunways) do
     end
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

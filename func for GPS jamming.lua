@@ -101,9 +101,9 @@ end
 --     if weapon then
 --         weaponU = SE_GetUnit({ guid = weapon.guid }) --Unit Wrapper of the Unit
 --     end
---     -- ScenEdit_MsgBox(tostring(CONFIG.c.GPSJamming.const.GPSGuidedWeapons[1]),1)
+--     -- ScenEdit_MsgBox(tostring(CONFIG.c.GPSJamming.GPSGuidedWeapons[1]),1)
 
---     for _, wpn in ipairs(CONFIG.c.GPSJamming.const.GPSGuidedWeapons) do
+--     for _, wpn in ipairs(CONFIG.c.GPSJamming.GPSGuidedWeapons) do
 --         if weaponU and weaponU.dbid == wpn.dbid then
 --             if math.random(100) > wpn.jammingResistance then
 --                 if weaponU.course then
@@ -160,7 +160,7 @@ function RemoveJammingZones()
     if s == nil then return end
 
     for _, zone in ipairs(s.standardzones) do
-        for _, jammer in ipairs(CONFIG.c.GPSJamming.const.jammers) do
+        for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
             if zone.description == jammer.zoneName then
                 local myz = s:getstandardzone(zone.guid)
 
@@ -176,7 +176,7 @@ function RemoveJammingZones()
 end
 
 function AddGPSJammingZones()
-    for _, jammer in ipairs(CONFIG.c.GPSJamming.const.jammers) do
+    for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
         local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
         local unit = ScenEdit_AddUnit({
             type = 'Facility',
@@ -202,7 +202,7 @@ function TurnOffGPSEffectByUnit(unit)
     local s = VP_GetSide({ name = 'China' })
     if s == nil then return end
 
-    for index, jammer in ipairs(CONFIG.c.GPSJamming.const.jammers) do
+    for index, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
         if unit.name ~= jammer.name then goto continue end
 
         for _, zone in ipairs(s.standardzones) do

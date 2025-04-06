@@ -1,43 +1,42 @@
 local unit = ScenEdit_UnitX()
-local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if CONFIG == nil then
-    print('CONFIG == nil')
-    ScenEdit_MsgBox('CONFIG == nil', 1)
+if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
     return
 end
 
 
-if CONFIG.t.ground.mlrs.isStrikeActivated then
-    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'mlrs', false)
+if saveData.t.ground.mlrs.isActivated then
+    local result = IsMetWithAmmoTrucks(saveData, unit, 'mlrs', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
     end
 end
 
-if CONFIG.t.ground.glcm.isStrikeActivated then
-    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'glcm', false)
+if saveData.t.ground.glcm.isActivated then
+    local result = IsMetWithAmmoTrucks(saveData, unit, 'glcm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
     end
 end
 
-if CONFIG.t.ground.srbm.isStrikeActivated then
-    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'srbm', false)
+if saveData.t.ground.srbm.isActivated then
+    local result = IsMetWithAmmoTrucks(saveData, unit, 'srbm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
     end
 end
 
-if CONFIG.t.ground.ascm.isStrikeActivated then
-    local result = IsMetWithAmmoTrucks(CONFIG, unit, 'ascm', false)
+if saveData.t.ground.ascm.isActivated then
+    local result = IsMetWithAmmoTrucks(saveData, unit, 'ascm', false)
 
     if result.isMet then
         SetReloadStartTime(result.battery, unit, false)
     end
 end
 
-gKH.State.SaveTableToKey(CONFIG, "CONFIG")
+gKH.State.SaveTableToKey(saveData, "SaveData")

@@ -1,4 +1,4 @@
-local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, data)
+local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, saveData, data)
     local key = 'u'
     if side == 'China' then key = 'c' end
     if isEmitting == nil then isEmitting = false end
@@ -30,7 +30,7 @@ local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, da
             ((math.random(-120 * x, 120 * x) ^ 2 / 1500000) / 10 ^ 5 * (x ^ 2.25 / 10 ^ 2.4))
     end
 
-    for elint_guid, value in pairs(CONFIG[key].SIGINT.RA) do
+    for elint_guid, value in pairs(saveData[key].SIGINT.RA) do
         local elint_u = SE_GetUnit({ guid = elint_guid })
         local distance = Tool_Range(enemy_unit.guid, elint_guid)
         if elint_u and elint_u.condition == 'Airborne' and math.random() < getY(distance) and isEmitting then
@@ -116,7 +116,7 @@ end
 --         if unit and math.random() > 0.3 then
 --             local isEmitting = false
 
---             if unit.dbid and unit.dbid == CONFIG.const.platformBDID46 then
+--             if unit.dbid and unit.dbid == CONFIG.const.platformDBID46 then
 --                 isEmitting = true
 --             else
 --                 local count = GetCount(unit.course)
@@ -206,8 +206,8 @@ local function getSideConfig(side)
 end
 
 -- 檢查單位是否正在發射訊號
-local function isUnitEmitting(unit, unitData, enemySide, config)
-    if unit.dbid == config.const.platformBDID46 then
+local function isUnitEmitting(unit, unitData, enemySide)
+    if unit.dbid == CONFIG.platformDBID46 then
         return true
     end
 
@@ -234,8 +234,8 @@ local function updateAutodetectableState(unit, guid, isAutodetectable)
 end
 
 -- 處理 SIGINT 傳輸數據
-local function updateTransmissionData(config, field, unitData, result, unit)
-    local transmission = config[field].SIGINT.transmissions[unitData.guid]
+local function updateTransmissionData(saveData, field, unitData, result, unit)
+    local transmission = saveData[field].SIGINT.transmissions[unitData.guid]
 
     -- 如果傳輸記錄不存在，則創建新記錄
     if not transmission then
@@ -251,7 +251,7 @@ local function updateTransmissionData(config, field, unitData, result, unit)
             temp = 0,
             autodetectable = false
         }
-        config[field].SIGINT.transmissions[unitData.guid] = transmission
+        saveData[field].SIGINT.transmissions[unitData.guid] = transmission
     end
 
     -- 更新經緯度
@@ -262,7 +262,7 @@ local function updateTransmissionData(config, field, unitData, result, unit)
     transmission.temp = transmission.temp + 1
 
     -- 檢查是否超過最大計數並更新 autodetectable
-    local maxCount = config[field].SIGINT.const.maxCount
+    local maxCount = CONFIG[field].SIGINT.maxCount
     if transmission.temp > maxCount and not transmission.autodetectable then
         updateAutodetectableState(unit, unitData.guid, true)
         transmission.autodetectable = true
@@ -270,11 +270,11 @@ local function updateTransmissionData(config, field, unitData, result, unit)
 end
 
 -- 處理未檢測到的情況
-local function handleUndetected(config, field, unit, unitData)
-    local transmission = config[field].SIGINT.transmissions[unitData.guid]
+local function handleUndetected(saveData, field, unit, unitData)
+    local transmission = saveData[field].SIGINT.transmissions[unitData.guid]
     if not transmission then return end
 
-    local maxCount = config[field].SIGINT.const.maxCount
+    local maxCount = CONFIG[field].SIGINT.maxCount
     if transmission.temp > maxCount - 1 then
         transmission.temp = transmission.temp - 1
     end
@@ -286,23 +286,23 @@ local function handleUndetected(config, field, unit, unitData)
 end
 
 -- 主函數
-function HandleSIGINT(config, units, isShown, side)
+function HandleSIGINT(saveData, units, isShown, side)
     local sideConfig = getSideConfig(side)
     local field, enemySide = sideConfig.field, sideConfig.enemySide
 
-    for _, unitData in pairs(units) do
-        local unit = SE_GetUnit({ guid = unitData.guid })
-        if not unit or math.random() <= 0.3 then
+    for _, unit in pairs(units) do
+        local actualUnit = SE_GetUnit({ guid = unit.guid })
+        if not actualUnit or math.random() <= 0.3 then
             goto continue
         end
 
-        local isEmitting = isUnitEmitting(unit, unitData, enemySide, config)
-        local result = getSIGINT(unitData.guid, unitData.msg, isEmitting, isShown, side)
+        local isEmitting = isUnitEmitting(actualUnit, unit, enemySide)
+        local result = getSIGINT(unit.guid, unit.msg, isEmitting, isShown, side, saveData)
 
         if result.isDetected then
-            updateTransmissionData(config, field, unitData, result, unit)
+            updateTransmissionData(saveData, field, unit, result, actualUnit)
         else
-            handleUndetected(config, field, unit, unitData)
+            handleUndetected(saveData, field, actualUnit, unit)
         end
 
         ::continue::
