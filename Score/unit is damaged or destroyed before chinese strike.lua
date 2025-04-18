@@ -9,7 +9,7 @@ if unit then
     )
     ScenEdit_SpecialMessage(
         'Taiwan',
-        'You have attacked first and caused a military esclaion.',
+        'You have attacked first to cause a military esclaion.',
         { latitude = unit.latitude, longitude = unit.longitude }
     )
 end

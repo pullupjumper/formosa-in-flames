@@ -673,14 +673,24 @@ end
 
 function DestroyAmmoSecHandler(unit, side, platform, saveData)
     local field = (side == 'China') and 'c' or 't'
-    if unit.group == nil then return end
-    local ammoSec = saveData[field].ground[platform].ammunitionSections[unit.group.guid]
+    local isAmmo = false
+    if unit.group == nil then isAmmo = true end
 
-    if ammoSec and ammoSec.wpnCurrent > 0 then
-        if (ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount) < 0 then
-            ammoSec.wpnCurrent = 0
-        else
-            ammoSec.wpnCurrent = ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount
+    if isAmmo then
+        local ammo = saveData[field].ground[platform].ammunitions[unit.guid]
+
+        if ammo and ammo.wpnCurrent > 0 then
+            ammo.wpnCurrent = 0
+        end
+    else
+        local ammoSec = saveData[field].ground[platform].ammunitionSections[unit.group.guid]
+
+        if ammoSec and ammoSec.wpnCurrent > 0 then
+            if (ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount) < 0 then
+                ammoSec.wpnCurrent = 0
+            else
+                ammoSec.wpnCurrent = ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount
+            end
         end
     end
 end

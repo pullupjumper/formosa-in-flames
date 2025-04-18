@@ -144,17 +144,6 @@ end
 --     end
 -- end
 
-function CircularRandomPosition(x_latitude, x_longitude, max_radius)
-    local randomisationCircle = World_GetCircleFromPoint({
-        latitude = x_latitude,
-        longitude = x_longitude,
-        radius = (math.random(0, max_radius * 10) / 10),
-        numpoints = 72
-    })
-    local randomisedPoint = randomisationCircle[math.random(1, #randomisationCircle)]
-    return randomisedPoint
-end
-
 function RemoveJammingZones()
     local s = VP_GetSide({ name = 'China' })
     if s == nil then return end
@@ -175,26 +164,78 @@ function RemoveJammingZones()
     end
 end
 
+-- function AddGPSJammingZones()
+--     for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+--         local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+--         local unit = ScenEdit_AddUnit({
+--             type = 'Facility',
+--             unitname = jammer.name,
+--             dbid = 764,
+--             side = 'China',
+--             Lat = point.latitude,
+--             Lon = point.longitude,
+--             autodetectable = false
+--         })
+
+--         if unit then
+--             ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+--             local area = NewArea(point, { side = 'China', shape = 'circle', distance = jammer.radius })
+--             local zone = ScenEdit_AddZone('China', -925, { description = jammer.zoneName, area = area, })
+--             zone.enablers = { GNSS_GLONASS = true, GNSS_GPS = false, GNSS_BeiDou = true, GNSS_NavIC = true }
+--         end
+--     end
+-- end
+
+function TryAddJammerUnit(jammer, attempt, max_attempts)
+    attempt = attempt or 1
+    max_attempts = max_attempts or 50
+
+    local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+    local unit = ScenEdit_AddUnit({
+        type = 'Facility',
+        unitname = jammer.name,
+        dbid = 764,
+        side = 'China',
+        Lat = point.latitude,
+        Lon = point.longitude,
+        autodetectable = false
+    })
+
+    if unit then
+        return unit, point
+    elseif attempt < max_attempts then
+        return TryAddJammerUnit(jammer, attempt + 1, max_attempts)
+    else
+        print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. jammer.name)
+        return nil, nil
+    end
+end
+
 function AddGPSJammingZones()
     for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-        local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
-        local unit = ScenEdit_AddUnit({
-            type = 'Facility',
-            unitname = jammer.name,
-            dbid = 764,
-            side = 'China',
-            Lat = point.latitude,
-            Lon = point.longitude,
-            autodetectable = false
-        })
+        local unit, point = TryAddJammerUnit(jammer)
 
         if unit then
             ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
-        end
 
-        local area = NewArea(point, { side = 'China', shape = 'circle', distance = jammer.radius })
-        local zone = ScenEdit_AddZone('China', -925, { description = jammer.zoneName, area = area, })
-        zone.enablers = { GNSS_GLONASS = true, GNSS_GPS = false, GNSS_BeiDou = true, GNSS_NavIC = true }
+            local area = NewArea(point, {
+                side = 'China',
+                shape = 'circle',
+                distance = jammer.radius
+            })
+
+            local zone = ScenEdit_AddZone('China', -925, {
+                description = jammer.zoneName,
+                area = area
+            })
+
+            zone.enablers = {
+                GNSS_GLONASS = true,
+                GNSS_GPS = false,
+                GNSS_BeiDou = true,
+                GNSS_NavIC = true
+            }
+        end
     end
 end
 

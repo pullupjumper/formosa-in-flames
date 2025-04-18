@@ -37,6 +37,7 @@ CONFIG.t.repairRunway = {}
 CONFIG.t.IADS = {}
 CONFIG.t.air = {}
 CONFIG.t.air.landBased = {}
+CONFIG.t.surface = {}
 CONFIG.u = {}
 CONFIG.u.SIGINT = {}
 CONFIG.s = {}
@@ -112,6 +113,9 @@ CONFIG.platformDBID69 = 236  -- ZBD-04
 CONFIG.platformDBID70 = 245  -- ZTZ-96A
 CONFIG.platformDBID71 = 4122 -- bridge
 CONFIG.platformDBID72 = 4925 -- Barge
+CONFIG.platformDBID73 = 2155 -- Kidd
+CONFIG.platformDBID74 = 4149 -- Kang Ding
+CONFIG.platformDBID75 = 906  -- S-70C
 
 CONFIG.sensorDBID1 = 2788    -- S-300 Tombstone
 CONFIG.sensorDBID2 = 4155    -- S-400 Grave Stone
@@ -157,6 +161,27 @@ CONFIG.c.SIGINT.maxRange = 2.5
 
 -- IADS
 CONFIG.c.IADS.values = { C2 = 1.5, }
+CONFIG.c.IADS.C2FacilityDBIDs = {
+    319,
+    318,
+    115,
+    113
+}
+CONFIG.c.IADS.randomRadius = 10
+CONFIG.c.IADS.C2Settings = {
+    {
+        position = { lat = "N 25.17.49", lon = "E 119.07.19" },
+        area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
+    },
+    {
+        position = { lat = "N 24.23.21", lon = "E 117.44.52" },
+        area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
+    },
+    {
+        position = { lat = "N 23.55.21", lon = "E 115.36.40" },
+        area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
+    },
+}
 
 -- Comms Jamming
 CONFIG.c.commsJamming.limit = 12
@@ -165,15 +190,15 @@ CONFIG.c.commsJamming.initialComms = -20
 
 -- GPS Jamming
 CONFIG.c.GPSJamming.jammers = {
-    { zoneName = 'JAMMING ZONE/1', name = '1st Bn, 1st ECM Bde', point = { lat = 'N 25.28.17', lon = 'E 119.35.17' }, randomRadius = 2, radius = 14 },
-    { zoneName = 'JAMMING ZONE/2', name = '2nd Bn, 1st ECM Bde', point = { lat = 'N 24.43.49', lon = 'E 118.29.41' }, randomRadius = 2, radius = 14 },
+    { zoneName = 'JAMMING ZONE/1', name = '1st Bn, 1st ECM Bde', point = { lat = 'N 25.28.17', lon = 'E 119.35.17' }, randomRadius = 20, radius = 14 },
+    { zoneName = 'JAMMING ZONE/2', name = '2nd Bn, 1st ECM Bde', point = { lat = 'N 24.43.49', lon = 'E 118.29.41' }, randomRadius = 20, radius = 14 },
 }
 
 -- MLRS
 CONFIG.c.ground.mlrs.wpnDefault = 192
 CONFIG.c.ground.mlrs.ammoThreshold = 50
 CONFIG.c.ground.mlrs.position = {
-    north = {
+    pingtan = {
         RL = {
             course = {
                 { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
@@ -210,33 +235,34 @@ CONFIG.c.ground.mlrs.position = {
             area = { 'RP-114447', 'RP-114448', 'RP-114449', 'RP-114450' }
         },
     },
-    penghu = {
+    chinchew = {
         RL = {
             course = {
-                { lat = 'N 23.30.52', lon = 'E 119.34.10', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
             },
-            area = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' }
+            area = { 'RP-114455', 'RP-114456', 'RP-114457', 'RP-114458' }
         },
         HA = {
             course = {
-                { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-                { lat = 'N 25.30.10', lon = 'E 119.47.13', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
             },
-            area = { 'RP-44256', 'RP-44257', 'RP-44258', 'RP-44259' }
+            area = { 'RP-114451', 'RP-114452', 'RP-114453', 'RP-114454' }
         },
         FP = {
             {
                 course = {
-                    { lat = 'N 23.30.58', lon = 'E 119.34.33', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+                    { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
                 },
-                area = { 'RP-46296', 'RP-46297', 'RP-46298', 'RP-46299' }
+                area = { 'RP-46390', 'RP-46391', 'RP-46392', 'RP-46393' }
             },
         },
         AHA = {
             course = {
-                { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+                { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
             },
-            area = { 'RP-114447', 'RP-114448', 'RP-114449', 'RP-114450' }
+            area = { 'RP-114459', 'RP-114460', 'RP-114461', 'RP-114462' }
         },
     },
 }
@@ -784,12 +810,12 @@ CONFIG.c.air.landBased.gbu.timeSpan = 0
 
 -- Amphibious ops
 CONFIG.c.PHIBOP.periodOfTime = 5 * 60
----@class CargoItems
+---@class CargoItem
 ---@field type number
 ---@field num number
 ---@field dbid number
 CONFIG.c.PHIBOP.cargoList = {
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     type075 = {
         { type = 2, num = 21, dbid = CONFIG.platformDBID60 }, -- PLL-05 11
         { type = 2, num = 12, dbid = CONFIG.platformDBID61 }, -- PLZ-96 12
@@ -798,7 +824,7 @@ CONFIG.c.PHIBOP.cargoList = {
         { type = 3, num = 30, dbid = CONFIG.platformDBID68 }, -- 悍馬車 30
         { type = 3, num = 76, dbid = CONFIG.platformDBID65 }, -- MC 76
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     type071 = {
         { type = 2, num = 5,  dbid = CONFIG.platformDBID60 }, -- PLL-05 11
         { type = 2, num = 12, dbid = CONFIG.platformDBID61 }, -- PLZ-96 12
@@ -807,29 +833,29 @@ CONFIG.c.PHIBOP.cargoList = {
         { type = 3, num = 2,  dbid = CONFIG.platformDBID66 }, -- SA-15 2
         { type = 3, num = 22, dbid = CONFIG.platformDBID65 }  -- MC
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     type072iii = {
         { type = 2, num = 5, dbid = CONFIG.platformDBID58 }, -- ZBD-05
         { type = 2, num = 5, dbid = CONFIG.platformDBID59 }, -- ZTD-05
         { type = 3, num = 6, dbid = CONFIG.platformDBID65 }
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     type072a = {
         { type = 2, num = 5, dbid = CONFIG.platformDBID58 }, -- ZBD-05
         { type = 2, num = 5, dbid = CONFIG.platformDBID59 }, -- ZTD-05
         { type = 3, num = 6, dbid = CONFIG.platformDBID65 }
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     type073a = {
         { type = 2, num = 3, dbid = CONFIG.platformDBID58 },
         { type = 2, num = 3, dbid = CONFIG.platformDBID59 }, -- ZTD-05
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     ferry = {
         { type = 2, num = 56, dbid = CONFIG.platformDBID58 }, -- ZBD-05
         { type = 2, num = 56, dbid = CONFIG.platformDBID59 }, -- ZTD-05
     },
-    ---@type table<number, CargoItems>
+    ---@type table<number, CargoItem>
     barge = {
         { type = 2, num = 28, dbid = CONFIG.platformDBID69 }, -- ZBD-04
         { type = 2, num = 28, dbid = CONFIG.platformDBID70 }, -- ZTZ-96A
@@ -2277,14 +2303,75 @@ CONFIG.t.air.landBased.ACInfo = {
     },
 }
 
+CONFIG.t.surface.sag = {
+    ['264th Sqn'] = {
+        groupName = '264th Sqn',
+        unitList = {
+            kidd = {
+                dbid = CONFIG.platformDBID73,
+                embarkedUnits = {
+                    {
+                        side = 'Taiwan',
+                        type = 'Air',
+                        dbid = CONFIG.platformDBID75,
+                        name = '2nd ASW Aviation Grp',
+                        loadouts = {
+                            { loadoutId = 845, num = 2 },
+                        }
+                    },
+                },
+            },
+            kangDing = {
+                dbid = CONFIG.platformDBID74,
+                embarkedUnits = {
+                    {
+                        side = 'Taiwan',
+                        type = 'Air',
+                        dbid = CONFIG.platformDBID75,
+                        name = '2nd ASW Aviation Grp',
+                        loadouts = {
+                            { loadoutId = 845, num = 1 },
+                        }
+                    },
+                }
+            },
+        },
+        missionName = 'ASW/E',
+        from = {
+            startingPoint = { lat = 'N 24.28.47', lon = 'E 122.25.49', },
+            heading = 0
+        },
+    },
+}
+
+CONFIG.t.surface.ships = {
+    {
+        name = 'Port of Keelung',
+        baseGUID = 'X58F5H-0HMSMDQJ7LEUI',
+        embarkedUnits = {
+            {
+                side = 'Taiwan',
+                type = 'Ship',
+                dbid = 3441,
+                name = '131st Fleet',
+                loadouts = {
+                    { loadoutId = 0, num = 6 },
+                }
+            }
+        }
+    },
+}
+
 
 -- SIGINT
-CONFIG.u.SIGINT.maxCount = 5
+-- CONFIG.u.SIGINT.maxCount = 5
+CONFIG.u.SIGINT.maxCount = 1
 
 
 -- Score
 CONFIG.s.destroyingAircraftOnTheGround = 5
-CONFIG.s.destroyingSupply = 100
+CONFIG.s.destroyingAmmo = 100
+CONFIG.s.destroyingAmmoTruck = 20
 CONFIG.s.lhd = 10
 CONFIG.s.lst = 10
 CONFIG.s.ddg = 10
@@ -2293,10 +2380,11 @@ CONFIG.s.ifv = -5
 CONFIG.s.infantry = -3
 CONFIG.s.sub = 15
 CONFIG.s.uav = 20
-CONFIG.s.mlrs = 20
+CONFIG.s.tel = 20
 CONFIG.s.weaponDBID = 905
 CONFIG.s.attackBeforeTheHHour = -1000
 CONFIG.s.undergroundShelterIsDestroyed = -200
+CONFIG.s.destroyingCivilianFacility = -100
 
 
 
@@ -2359,30 +2447,30 @@ SaveData.c.SIGINT.transmissions = {
 -- IADS
 SaveData.c.IADS.isActivated = true
 SaveData.c.IADS.C2 = {
-    ['IC8B0X-0HN84DHD12B41'] = {
-        name = '#A C2/IADS',
-        msg = 'Radio source, C2/IADS',
-        guid = 'IC8B0X-0HN84DHD12B41',
-        area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
-        radar = {},
-        SAM = {},
-    },
-    ['IC8B0X-0HN84DHD12B7R'] = {
-        name = '#B C2/IADS',
-        msg = 'Radio source, C2/IADS',
-        guid = 'IC8B0X-0HN84DHD12B7R',
-        area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
-        radar = {},
-        SAM = {},
-    },
-    ['IC8B0X-0HN84DHD12BBJ'] = {
-        name = '#C C2/IADS',
-        msg = 'Radio source, C2/IADS',
-        guid = 'IC8B0X-0HN84DHD12BBJ',
-        area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
-        radar = {},
-        SAM = {},
-    },
+    -- ['IC8B0X-0HN84DHD12BBJ'] = {
+    --     name = '#A C2/IADS',
+    --     msg = 'Radio source, C2/IADS',
+    --     guid = 'IC8B0X-0HN84DHD12BBJ',
+    --     area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
+    --     radar = {},
+    --     SAM = {},
+    -- },
+    -- ['IC8B0X-0HN84DHD12B7R'] = {
+    --     name = '#B C2/IADS',
+    --     msg = 'Radio source, C2/IADS',
+    --     guid = 'IC8B0X-0HN84DHD12B7R',
+    --     area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
+    --     radar = {},
+    --     SAM = {},
+    -- },
+    -- ['IC8B0X-0HN84DHD12B41'] = {
+    --     name = '#C C2/IADS',
+    --     msg = 'Radio source, C2/IADS',
+    --     guid = 'IC8B0X-0HN84DHD12B41',
+    --     area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
+    --     radar = {},
+    --     SAM = {},
+    -- },
 }
 
 -- comms jamming
@@ -2412,42 +2500,82 @@ SaveData.c.ground.mlrs.ammunitions = {
         wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
         wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
     },
+    ['IC8B0X-0HNBRRE2PRT40'] = {
+        guid = 'IC8B0X-0HNBRRE2PRT40',
+        wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
+        wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
+    },
 }
 SaveData.c.ground.mlrs.ammunitionSections = {
     ['IC8B0X-0HN7R5QOERV4D'] = {
         guid = 'IC8B0X-0HN7R5QOERV4D',
-        name = 'Ammo Sec, 6th Bn, 73rd Arty Bde',
+        name = 'Ammo Sec, 1st Bn, 1st Rockets Arty Bde',
         wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
         wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
         unitCount = 3,
-        position = CONFIG.c.ground.mlrs.position.north,
+        position = CONFIG.c.ground.mlrs.position.pingtan,
         reloadStartTime = nil,
         state = CONFIG.batteryState.STATIC,
         ammunition = 'IC8B0X-0HN9ASEFCGDKF',
     },
+    ['IC8B0X-0HNBRRE2PRRG9'] = {
+        guid = 'IC8B0X-0HNBRRE2PRRG9',
+        name = 'Ammo Sec, 6th Bn, 73rd Arty Bde',
+        wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
+        wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
+        unitCount = 3,
+        position = CONFIG.c.ground.mlrs.position.chinchew,
+        reloadStartTime = nil,
+        state = CONFIG.batteryState.STATIC,
+        ammunition = 'IC8B0X-0HNBRRE2PRT40',
+    },
 }
 SaveData.c.ground.mlrs.batteries = {
     ['IC8B0X-0HN5UJRVS1JEK'] = {
-        name = '6th Bn, 73rd Arty Bde',
+        name = '1st Bn, 1st Rockets Arty Bde',
         msg = 'Radio source, Bty',
         guid = 'IC8B0X-0HN5UJRVS1JEK',
         reloadStartTime = nil,
         state = CONFIG.batteryState.HIDE,
-        position = CONFIG.c.ground.mlrs.position.north,
-        weaponDBID = 4471,
+        position = CONFIG.c.ground.mlrs.position.pingtan,
+        weaponDBID = 4472,
         ammoThreshold = CONFIG.c.ground.mlrs.ammoThreshold,
         ammunitionSection = 'IC8B0X-0HN7R5QOERV4D'
-    }
+    },
+    ['IC8B0X-0HNBRRE2PRQAL'] = {
+        name = '6th Bn, 73rd Arty Bde',
+        msg = 'Radio source, Bty',
+        guid = 'IC8B0X-0HNBRRE2PRQAL',
+        reloadStartTime = nil,
+        state = CONFIG.batteryState.HIDE,
+        position = CONFIG.c.ground.mlrs.position.chinchew,
+        weaponDBID = 4472,
+        ammoThreshold = CONFIG.c.ground.mlrs.ammoThreshold,
+        ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9'
+    },
 }
 SaveData.c.ground.mlrs.packages = {
     {
-        name = 'North',
+        name = 'Pingtan',
         batchTargetlists = {},
         batteries = {
-            { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HN5UJRVS1JEK', }
+            { name = '1st Bn, 1st Rockets Arty Bde', guid = 'IC8B0X-0HN5UJRVS1JEK', }
         },
         areas = {
             { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+            -- { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' }
+        },
+        num = 8,
+        index = 1,
+        isFinished = false
+    },
+    {
+        name = 'Chinchew',
+        batchTargetlists = {},
+        batteries = {
+            { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HNBRRE2PRQAL', }
+        },
+        areas = {
             { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' }
         },
         num = 8,
@@ -2486,7 +2614,8 @@ SaveData.c.ground.glcm.ammunitionSections = {
 ---@field state? BatteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
 ---@field position table
 ---@field weaponDBID number
----@field wpnStorageFacility string
+---@field ammoThreshold number
+---@field ammunitionSection string
 SaveData.c.ground.glcm.batteries = {
     ---@type CONFIG__Battery
     ['6Z8LM5-0HMN97ERAUODK'] = {

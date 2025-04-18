@@ -53,6 +53,13 @@ if unit then
             DestroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
             ScenEdit_SpecialMessage('Taiwan', "An ammunition section has been destoryed.")
         end
+
+        if unit.dbid == CONFIG.platformDBID53 then
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
+            DestroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
+            ScenEdit_SpecialMessage('Taiwan', "An ammunition has been destoryed.")
+        end
     end
 end
 

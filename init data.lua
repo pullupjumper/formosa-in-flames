@@ -10,6 +10,8 @@ local function initRunways(saveData)
     saveData.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
     saveData.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
     saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
+    saveData.c.ground.mlrs.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/S')
+
 
     for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
         local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
@@ -57,7 +59,7 @@ end
 
 local function initC2(saveData)
     local units = VP_GetSide({ Side = "Taiwan" }).units
-    local unitsFromChina = VP_GetSide({ Side = "China" }).units
+    -- local unitsFromChina = VP_GetSide({ Side = "China" }).units
 
     for _, value in ipairs(units) do
         local unit = SE_GetUnit({ guid = value.guid })
@@ -111,45 +113,6 @@ local function initC2(saveData)
                     }
 
                     saveData.t.IADS.TAAOC[TAAOCGuid].SAM[unit.guid] = data
-                end
-            end
-        end
-    end
-
-    for _, value in ipairs(unitsFromChina) do
-        local unit = SE_GetUnit({ guid = value.guid })
-
-        for c2Guid, item in pairs(saveData.c.IADS.C2) do
-            if unit ~= nil and unit:inArea(item.area) then
-                if unit.dbid == CONFIG.platformDBID18
-                    or unit.dbid == CONFIG.platformDBID19
-                    or unit.dbid == CONFIG.platformDBID20
-                    or unit.dbid == CONFIG.platformDBID21 then
-                    local data = {
-                        name = unit.name,
-                        guid = unit.guid,
-                        OODA = unit.OODA,
-                        currOODA = unit.OODA,
-                        isOutOfComms = false,
-                        outofcomms = 0,
-                        EMCON_Setting = 'Radar=Passive'
-                    }
-
-                    saveData.c.IADS.C2[c2Guid].SAM[unit.guid] = data
-                end
-
-                if unit.dbid == CONFIG.platformDBID16 or unit.dbid == CONFIG.platformDBID17 then
-                    local data = {
-                        name = unit.name,
-                        guid = unit.guid,
-                        OODA = unit.OODA,
-                        currOODA = unit.OODA,
-                        isOutOfComms = false,
-                        outofcomms = 0,
-                        EMCON_Setting = 'Radar=Passive'
-                    }
-
-                    saveData.c.IADS.C2[c2Guid].radar[unit.guid] = data
                 end
             end
         end
@@ -256,6 +219,10 @@ if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetli
         initC2(saveData)
     end
 
+    if saveData.c.IADS.isActivated then
+        InitC2Facilities(saveData)
+    end
+
     if saveData.c.commsJamming.isActivated then
         initCommsJammers('China', saveData)
     end
@@ -265,8 +232,8 @@ if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetli
     end
 
     if CONFIG.isDevMode then
-        ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
         gKH.State.SaveTableToKey(saveData, "SaveData")
+        ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
     end
 else
     ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')

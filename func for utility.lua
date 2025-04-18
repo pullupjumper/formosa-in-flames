@@ -19,19 +19,6 @@ function ForEach(list, fn)
 end
 
 ---@param list table
----@return number
-function GetCount(list)
-    if list == nil then return 0 end
-    local count = 0
-
-    for k, v in pairs(list) do
-        count = count + 1
-    end
-
-    return count
-end
-
----@param list table
 ---@return table
 function Reverse(list)
     local count = GetCount(list)
@@ -42,18 +29,6 @@ function Reverse(list)
     end
 
     return temp
-end
-
----@param list table
----@param insertedList table
-function InsertList(list, insertedList)
-    local count = GetCount(insertedList)
-
-    for i = 1, count, 1 do
-        table.insert(list, insertedList[i])
-    end
-
-    return list
 end
 
 ---@param units table<number, CMO__Unit>
@@ -105,39 +80,4 @@ function FilterContacts(contacts, handler)
     end
 
     return temp
-end
-
--- 定義函數：printBox
--- 參數：strings - 一個包含多個字串的 table
-function printBox(side, ...)
-    -- 收集所有字串參數到陣列中
-    local strings = { ... }
-
-    -- 找出最長字串的長度
-    local maxLen = 0
-    for _, str in ipairs(strings) do
-        if #str > maxLen then
-            maxLen = #str
-        end
-    end
-
-    -- 計算邊框寬度
-    local width = 70
-
-    -- 構建頂部和底部邊框：連續的 -
-    local border = string.rep("-", width)
-
-    -- 構建中間行
-    local middleLines = {}
-    for _, str in ipairs(strings) do
-        -- 構建中間行：| 空格 字串
-        local middle = "| " .. str
-        table.insert(middleLines, middle)
-    end
-
-    -- 組合成一個單一的字串
-    local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
-
-    -- 一次性輸出
-    ScenEdit_SpecialMessage(side, boxString)
 end

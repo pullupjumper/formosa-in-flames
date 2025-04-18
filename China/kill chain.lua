@@ -21,9 +21,10 @@ local function trackTarget(saveData, units, UAVDBID, target)
     end
 
     if UAV == nil then
+        local d = 1000
+
         for _, value in ipairs(units) do
             local unit = SE_GetUnit({ guid = value.guid })
-            local d = 1000
 
             if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
                 local distance = Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, target.guid)
@@ -52,116 +53,40 @@ local function trackTarget(saveData, units, UAVDBID, target)
     return false
 end
 
--- local function analyzeTargets(CONFIG, type)
---     local targetsSortedByPackage = {}
---     local mlrsConfig = CONFIG.c.ground[type]
-
---     for index, package in ipairs(mlrsConfig.packages) do
---         local batchTargetlistsIdx = package.index
---         local targets = {}
-
---         for _, v in ipairs(package.batchTargetlists[batchTargetlistsIdx]) do
---             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
-
---             if target then
---                 local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
---                 local BDA = target.BDA
---                 local detections = target.lastDetections
---                 -- local hasReconed = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage')
---                 --     and mlrsConfig.lastReconTime and ScenEdit_CurrentTime() > mlrsConfig.lastReconTime
---                 --     and elapsedTime <= mlrsConfig.contactAge
---                 local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
---                     (detections and detections[1].age <= mlrsConfig.contactAge) and
---                     not isHelipad
---                 local isInitialWaveOfAttacks = batchTargetlistsIdx == 1 and
---                     not mlrsConfig.packages[index].isFinished and
---                     not isHelipad
---                 local isRadar = package.name == 'RADAR' and not isHelipad
---                 local isHelipadEmbarkedWithHelicopter = isHelipad and
---                     not mlrsConfig.packages[index].isFinished and
---                     GetCount(SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft']) > 0
-
---                 if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
---                     table.insert(targets, target)
---                 end
---             end
---         end
-
---         table.insert(targetsSortedByPackage, {
---             isDecidedToStrike = false,
---             fixedTargets = targets,
---             emittingTargets = {},
---             radioTargets = {},
---             targets = targets
---         })
-
---         if CONFIG.isDevMode and GetCount(targets) > 0 then
---             ScenEdit_SpecialMessage('China', package.name .. ': ' .. GetCount(targets))
-
---             if index == GetCount(mlrsConfig.packages) then
---                 ScenEdit_SpecialMessage('China', 'Fixed targets:===============================')
---             end
---         end
---     end
-
---     return targetsSortedByPackage
--- end
-
-local function analyzeTargets(saveData, platform)
-    local function isHelipad(target)
-        return string.find(target.type_description, 'Helipad') ~= nil
-    end
-
-    local function isHeavyDamage(platform, target)
-        local BDA = target.BDA
-        local detections = target.lastDetections
-        return BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
-            (detections and detections[1].age <= CONFIG.c.ground[platform].contactAge) and
-            not isHelipad(target)
-    end
-
-    local function isInitialWave(package, target, batchTargetlistsIdx)
-        return batchTargetlistsIdx == 1 and not package.isFinished and not isHelipad(target)
-    end
-
-    local function isRadarTarget(package, target)
-        return package.name == 'RADAR' and not isHelipad(target)
-    end
-
-    local function isHelipadWithHelicopter(package, target)
-        return isHelipad(target) and
-            not package.isFinished and
-            -- Modified: Replaced GetCount with #
-            #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
-    end
-
-    local function evaluateTargets(platform, package, batchTargetlistsIdx)
-        return function(v)
-            local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
-            if target and (
-                    isInitialWave(package, target, batchTargetlistsIdx) or
-                    isHeavyDamage(platform, target) or
-                    isRadarTarget(package, target) or
-                    isHelipadWithHelicopter(package, target)
-                ) then
-                return true
-            end
-
-            return false
-        end
-    end
-
+local function analyzeTargets(saveData, type)
     local targetsSortedByPackage = {}
-    local mlrsConfig = saveData.c.ground[platform]
+    local mlrsConfig = saveData.c.ground[type]
 
     for index, package in ipairs(mlrsConfig.packages) do
         local batchTargetlistsIdx = package.index
-        local targets = Array_utils.new(package.batchTargetlists[batchTargetlistsIdx])
-            :filter(evaluateTargets(platform, package, batchTargetlistsIdx))
-            :value()
+        local targets = {}
+
+        for _, v in ipairs(package.batchTargetlists[batchTargetlistsIdx]) do
+            local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
+
+            if target then
+                local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
+                local BDA = target.BDA
+                local detections = target.lastDetections
+                local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+                    (detections and detections[1].age <= mlrsConfig.contactAge) and
+                    not isHelipad
+                local isInitialWaveOfAttacks = batchTargetlistsIdx == 1 and
+                    not mlrsConfig.packages[index].isFinished and
+                    not isHelipad
+                local isRadar = package.name == 'RADAR' and not isHelipad
+                local isHelipadEmbarkedWithHelicopter = isHelipad and
+                    not mlrsConfig.packages[index].isFinished and
+                    GetCount(SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft']) > 0
+
+                if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
+                    table.insert(targets, target)
+                end
+            end
+        end
 
         table.insert(targetsSortedByPackage, {
-            isTargetsMoreThan = false,
+            isDecidedToStrike = false,
             fixedTargets = targets,
             emittingTargets = {},
             radioTargets = {},
@@ -169,7 +94,6 @@ local function analyzeTargets(saveData, platform)
         })
 
         if CONFIG.isDevMode and #targets > 0 then
-            -- Modified: Replaced GetCount with #
             printBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
         end
     end
@@ -177,105 +101,99 @@ local function analyzeTargets(saveData, platform)
     return targetsSortedByPackage
 end
 
--- local function analyzeEmissions(CONFIG, type, targetsSortedByPackage, contacts)
---     local mlrsConfig = CONFIG.c.ground[type]
+-- local function analyzeTargets(saveData, platform)
+--     local function isHelipad(target)
+--         return string.find(target.type_description, 'Helipad') ~= nil
+--     end
+
+--     local function isHeavyDamage(platform, target)
+--         local BDA = target.BDA
+--         local detections = target.lastDetections
+--         return BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+--             (detections and detections[1].age <= CONFIG.c.ground[platform].contactAge) and
+--             not isHelipad(target)
+--     end
+
+--     local function isInitialWave(package, target, batchTargetlistsIdx)
+--         return batchTargetlistsIdx == 1 and not package.isFinished and not isHelipad(target)
+--     end
+
+--     local function isRadarTarget(package, target)
+--         return package.name == 'RADAR' and not isHelipad(target)
+--     end
+
+--     local function isHelipadWithHelicopter(package, target)
+--         return isHelipad(target) and
+--             not package.isFinished and
+--             -- Modified: Replaced GetCount with #
+--             #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
+--     end
+
+--     local function evaluateTargets(platform, package, batchTargetlistsIdx)
+--         return function(v)
+--             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
+--             if target and (
+--                     isInitialWave(package, target, batchTargetlistsIdx) or
+--                     isHeavyDamage(platform, target) or
+--                     isRadarTarget(package, target) or
+--                     isHelipadWithHelicopter(package, target)
+--                 ) then
+--                 return true
+--             end
+
+--             return false
+--         end
+--     end
+
+--     local targetsSortedByPackage = {}
+--     local mlrsConfig = saveData.c.ground[platform]
 
 --     for index, package in ipairs(mlrsConfig.packages) do
---         local targets = {}
+--         local batchTargetlistsIdx = package.index
+--         local targets = Array_utils.new(package.batchTargetlists[batchTargetlistsIdx])
+--             :filter(evaluateTargets(platform, package, batchTargetlistsIdx))
+--             :value()
 
---         for _, area in ipairs(package.areas) do
---             for _, c in ipairs(contacts) do
---                 local isSensor = c.emissions and
---                     (c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID9 or
---                         c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID10 or
---                         c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID11 or
---                         c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID12 or
---                         c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID14)
---                 local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
---                 local isSAM = isSensor and isAgeLessThan
---                 if c:inArea(area) and isSAM then table.insert(targets, c) end
---             end
---         end
-
---         targetsSortedByPackage[index].emittingTargets = targets
---         InsertList(targetsSortedByPackage[index].targets, targets)
+--         table.insert(targetsSortedByPackage, {
+--             isTargetsMoreThan = false,
+--             fixedTargets = targets,
+--             emittingTargets = {},
+--             radioTargets = {},
+--             targets = targets
+--         })
 
 --         if CONFIG.isDevMode and #targets > 0 then
 --             -- Modified: Replaced GetCount with #
---             ScenEdit_SpecialMessage('China', package.name .. ': ' .. #targets)
-
---             -- Modified: Replaced GetCount with #
---             if index == #mlrsConfig.packages then
---                 ScenEdit_SpecialMessage('China', 'Emission targets:===============================')
---             end
+--             printBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
 --         end
 --     end
 
 --     return targetsSortedByPackage
 -- end
 
--- 主函數
-local function analyzeEmissions(saveData, platform, targetsSortedByPackage, contacts)
-    -- 定義過濾條件：檢查是否為感測器目標
-    local function isEmissionFromSpecificSensor(c)
-        if not c.emissions or not c.emissions[1] then
-            return false
-        end
-        local sensorDbid = c.emissions[1]['sensor_dbid']
-        return sensorDbid == CONFIG.sensorDBID9 or
-            sensorDbid == CONFIG.sensorDBID10 or
-            sensorDbid == CONFIG.sensorDBID11 or
-            sensorDbid == CONFIG.sensorDBID12 or
-            sensorDbid == CONFIG.sensorDBID14
-    end
-
-    -- 定義過濾條件：檢查年齡是否小於指定值
-    local function isAgeValid(c)
-        return c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
-    end
-
-    -- 定義過濾條件：檢查是否在區域內並滿足 SAM 條件
-    local function isValidTarget(c, area)
-        local isSensor = isEmissionFromSpecificSensor(c)
-        local isAgeLessThan = isAgeValid(c)
-        local isSAM = isSensor and isAgeLessThan
-        return c:inArea(area) and isSAM
-    end
-
-    -- 定義 filter 的具名回調函數
-    local function filterTargetsByArea(area)
-        -- 注意：這裡需要外部變數 area 和 CONFIG，因此需要在調用時動態綁定
-        -- 這個函數將在循環中使用，並依賴外部的 area 和 CONFIG
-        return function(c)
-            return isValidTarget(c, area)
-        end
-    end
-
-    local mlrsConfig = saveData.c.ground[platform]
+local function analyzeEmissions(saveData, type, targetsSortedByPackage, contacts)
+    local mlrsConfig = saveData.c.ground[type]
 
     for index, package in ipairs(mlrsConfig.packages) do
-        -- 初始化 Array_utils 對象
-        local contactArray = Array_utils.new(contacts)
-
-        -- 針對每個 area 過濾出符合條件的 targets
         local targets = {}
+
         for _, area in ipairs(package.areas) do
-            -- 使用具名回調函數，並傳入當前的 area
-            local filteredTargets = contactArray
-                :filter(filterTargetsByArea(area))
-                :value()
-            -- InsertList(targets, filteredTargets)
-            targets = Array_utils.new(targets):concat(filteredTargets):value()
+            for _, c in ipairs(contacts) do
+                local isSensor = c.emissions and
+                    (c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID9 or
+                        c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID10 or
+                        c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID11 or
+                        c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID12 or
+                        c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID14)
+                local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
+                local isSAM = isSensor and isAgeLessThan
+                if c:inArea(area) and isSAM then table.insert(targets, c) end
+            end
         end
 
-        -- 更新 targetsSortedByPackage
         targetsSortedByPackage[index].emittingTargets = targets
-        -- InsertList(targetsSortedByPackage[index].targets, targets)
-        targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
-            :concat(targets)
-            :value()
+        InsertList(targetsSortedByPackage[index].targets, targets)
 
-        -- 開發模式下的調試信息
         if CONFIG.isDevMode and #targets > 0 then
             printBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
         end
@@ -284,17 +202,87 @@ local function analyzeEmissions(saveData, platform, targetsSortedByPackage, cont
     return targetsSortedByPackage
 end
 
+-- -- 主函數
+-- local function analyzeEmissions(saveData, platform, targetsSortedByPackage, contacts)
+--     -- 定義過濾條件：檢查是否為感測器目標
+--     local function isEmissionFromSpecificSensor(c)
+--         if not c.emissions or not c.emissions[1] then
+--             return false
+--         end
+--         local sensorDbid = c.emissions[1]['sensor_dbid']
+--         return sensorDbid == CONFIG.sensorDBID9 or
+--             sensorDbid == CONFIG.sensorDBID10 or
+--             sensorDbid == CONFIG.sensorDBID11 or
+--             sensorDbid == CONFIG.sensorDBID12 or
+--             sensorDbid == CONFIG.sensorDBID14
+--     end
+
+--     -- 定義過濾條件：檢查年齡是否小於指定值
+--     local function isAgeValid(c)
+--         return c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
+--     end
+
+--     -- 定義過濾條件：檢查是否在區域內並滿足 SAM 條件
+--     local function isValidTarget(c, area)
+--         local isSensor = isEmissionFromSpecificSensor(c)
+--         local isAgeLessThan = isAgeValid(c)
+--         local isSAM = isSensor and isAgeLessThan
+--         return c:inArea(area) and isSAM
+--     end
+
+--     -- 定義 filter 的具名回調函數
+--     local function filterTargetsByArea(area)
+--         -- 注意：這裡需要外部變數 area 和 CONFIG，因此需要在調用時動態綁定
+--         -- 這個函數將在循環中使用，並依賴外部的 area 和 CONFIG
+--         return function(c)
+--             return isValidTarget(c, area)
+--         end
+--     end
+
+--     local mlrsConfig = saveData.c.ground[platform]
+
+--     for index, package in ipairs(mlrsConfig.packages) do
+--         -- 初始化 Array_utils 對象
+--         local contactArray = Array_utils.new(contacts)
+
+--         -- 針對每個 area 過濾出符合條件的 targets
+--         local targets = {}
+--         for _, area in ipairs(package.areas) do
+--             -- 使用具名回調函數，並傳入當前的 area
+--             local filteredTargets = contactArray
+--                 :filter(filterTargetsByArea(area))
+--                 :value()
+--             -- InsertList(targets, filteredTargets)
+--             targets = Array_utils.new(targets):concat(filteredTargets):value()
+--         end
+
+--         -- 更新 targetsSortedByPackage
+--         targetsSortedByPackage[index].emittingTargets = targets
+--         -- InsertList(targetsSortedByPackage[index].targets, targets)
+--         targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
+--             :concat(targets)
+--             :value()
+
+--         -- 開發模式下的調試信息
+--         if CONFIG.isDevMode and #targets > 0 then
+--             printBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
+--         end
+--     end
+
+--     return targetsSortedByPackage
+-- end
+
 local function findRadioDirection(saveData, platform, targetsSortedByPackage, contacts)
     local mlrsConfig = saveData.c.ground[platform]
 
-    local isC2Facility = function(area)
-        return function(c)
-            return (c.typed == 8 or
-                    string.find(c.type_description, 'ROCC') ~= nil or
-                    string.find(c.type_description, 'TAAOC') ~= nil) and
-                c:inArea(area)
-        end
-    end
+    -- local isC2Facility = function(area)
+    --     return function(c)
+    --         return (c.typed == 8 or
+    --                 string.find(c.type_description, 'ROCC') ~= nil or
+    --                 string.find(c.type_description, 'TAAOC') ~= nil) and
+    --             c:inArea(area)
+    --     end
+    -- end
 
     local isWithinRange = function(distance, transmission)
         return distance <= CONFIG.c.SIGINT.maxRange and
@@ -304,22 +292,22 @@ local function findRadioDirection(saveData, platform, targetsSortedByPackage, co
     local function filterTargetsInArea(contacts, areas)
         local targets = {}
 
-        for _, area in ipairs(areas) do
-            Array_utils.new(contacts)
-                :filter(isC2Facility(area))
-                :forEach(function(c) table.insert(targets, c) end)
-        end
-
         -- for _, area in ipairs(areas) do
-        --     for _, c in ipairs(contacts) do
-        --         if (c.typed == 8 or
-        --                 string.find(c.type_description, 'ROCC') ~= nil or
-        --                 string.find(c.type_description, 'TAAOC') ~= nil) and
-        --             c:inArea(area) then
-        --             table.insert(targets, c)
-        --         end
-        --     end
+        --     Array_utils.new(contacts)
+        --         :filter(isC2Facility(area))
+        --         :forEach(function(c) table.insert(targets, c) end)
         -- end
+
+        for _, area in ipairs(areas) do
+            for _, c in ipairs(contacts) do
+                if (c.typed == 8 or
+                        string.find(c.type_description, 'ROCC') ~= nil or
+                        string.find(c.type_description, 'TAAOC') ~= nil) and
+                    c:inArea(area) then
+                    table.insert(targets, c)
+                end
+            end
+        end
 
         return targets
     end
@@ -337,7 +325,7 @@ local function findRadioDirection(saveData, platform, targetsSortedByPackage, co
                     table.insert(targets, contact)
 
                     if not isTracking and tm.type == 'mobile' then
-                        isTracking = trackTarget(CONFIG, units, CONFIG.platformDBID13, contact)
+                        isTracking = trackTarget(saveData, units, CONFIG.platformDBID13, contact)
                     end
                 end
             end
@@ -350,10 +338,10 @@ local function findRadioDirection(saveData, platform, targetsSortedByPackage, co
         local targets = filterTargetsInArea(contacts, package.areas)
         targets = filterTargetsWithinRangeOfRadioSource(saveData, targets)
         targetsSortedByPackage[index].radioTargets = targets
-        -- InsertList(targetsSortedByPackage[index].targets, targets)
-        targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
-            :concat(targets)
-            :value()
+        InsertList(targetsSortedByPackage[index].targets, targets)
+        -- targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
+        --     :concat(targets)
+        --     :value()
 
         if CONFIG.isDevMode and #targets > 0 then
             printBox('China', 'Radio targets/' .. package.name .. ': ' .. #targets)
@@ -436,7 +424,6 @@ local function launchMissiles(saveData, platform, targetsSortedByPackage, weapon
                 end
             end
 
-            -- Modified: Replaced GetCount with #
             local targetListLength = #mlrsConfig.packages[idx].batchTargetlists
             local nextTargetListIdx = mlrsConfig.packages[idx].index
             local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
@@ -500,11 +487,18 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
     end
 
     if contacts and filterFn and contactNum then
-        -- local fn = filterFn(package)
-        -- local filteredContacts = FilterContacts(contacts, fn)
-        local filteredContacts = Array_utils.new(contacts):filter(filterFn(package)):value()
+        local fn = filterFn(package)
+        local filteredContacts = {}
 
-        -- Modified: Replaced GetCount with #
+        for _, contact in ipairs(contacts) do
+            local result = fn(contact)
+            if result then
+                table.insert(filteredContacts, contact)
+            end
+        end
+        -- local filteredContacts = FilterContacts(contacts, fn)
+        -- local filteredContacts = Array_utils.new(contacts):filter(filterFn(package)):value()
+
         if #filteredContacts >= contactNum then
             for _, value in ipairs(filteredContacts) do
                 value.posture = 'H'

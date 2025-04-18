@@ -211,6 +211,12 @@ local function isUnitEmitting(unit, unitData, enemySide)
         return true
     end
 
+    for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
+        if unit.dbid == DBID then
+            return true
+        end
+    end
+
     -- 替換 GetCount 為 #
     local courseCount = #unit.course
     if courseCount == 0 or unit.speed == 0 then

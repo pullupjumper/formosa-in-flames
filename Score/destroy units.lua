@@ -49,51 +49,50 @@ if unit then
     end
 
     if unit.type == 'Facility' then
-        if unit.dbid == CONFIG.platformDBID23 then
-            -- ScenEdit_SetScore(
-            --     "Taiwan",
-            --     (score + CONFIG.s.destroyingSupply),
-            --     "You have destroyed a landed supply."
-            -- )
-
-            -- CONFIG.c.mlrs.batteries[2].position.magazineWeapenNum = CONFIG.c.mlrs.batteries[2].position
-            --     .magazineWeapenNum - 72
-
-            -- if CONFIG.c.mlrs.batteries[2].position.magazineWeapenNum < 0 then
-            --     CONFIG.c.mlrs.batteries[2].position.magazineWeapenNum = 0
-            -- end
-        elseif unit.dbid == CONFIG.platformDBID22 or unit.dbid == CONFIG.platformDBID24 then
+        if unit.dbid == CONFIG.platformDBID22 or
+            unit.dbid == CONFIG.platformDBID24 or
+            string.find(unit.name, 'DF') or
+            string.find(unit.name, 'CJ') then
             ScenEdit_SetScore(
                 "Taiwan",
-                (score + CONFIG.s.mlrs),
-                "You have destroyed a MLRS."
+                (score + CONFIG.s.tel),
+                "You have destroyed a TEL."
             )
         elseif unit.dbid == CONFIG.platformDBID25 then
             ScenEdit_SetScore(
                 "Taiwan",
-                (score + CONFIG.s.mlrs),
+                (score + CONFIG.s.tel),
                 "You have destroyed a GPS jammer."
             )
             TurnOffGPSEffectByUnit(unit)
-        elseif unit.dbid == CONFIG.platformDBID27 then
-            -- for _, battery in ipairs(CONFIG.c.glcm.batteries) do
-            --     if unit.guid == battery.wpnStorageFacility then
-            --         battery.position.magazineWeapenNum = 0
-            --     end
-            -- end
-
-            -- for _, battery in ipairs(CONFIG.c.mlrs.batteries) do
-            --     if unit.guid == battery.wpnStorageFacility then
-            --         battery.position.magazineWeapenNum = 0
-            --     end
-            -- end
-
-            ScenEdit_SpecialMessage('Taiwan', "You have destroyed a weapon storage facility.")
+        elseif unit.dbid == CONFIG.platformDBID53 then
+            DestroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
+            DestroyAmmoSecHandler(unit, 'China', 'srbm', saveData)
+            DestroyAmmoSecHandler(unit, 'China', 'glcm', saveData)
+            ScenEdit_SetScore(
+                "Taiwan",
+                (score + CONFIG.s.destroyingAmmo),
+                "You have destroyed a ammo revetment."
+            )
         elseif unit.dbid == CONFIG.platformDBID50 then
             DestroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
             DestroyAmmoSecHandler(unit, 'China', 'srbm', saveData)
             DestroyAmmoSecHandler(unit, 'China', 'glcm', saveData)
-            ScenEdit_SpecialMessage('Taiwan', "You have destroyed an ammunition section.")
+            ScenEdit_SetScore(
+                "Taiwan",
+                (score + CONFIG.s.destroyingAmmoTruck),
+                "You have destroyed an ammunition truck."
+            )
+        else
+            for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
+                if unit.dbid == DBID and not saveData.c.IADS.C2[unit.guid] then
+                    ScenEdit_SetScore(
+                        "Taiwan",
+                        (score + CONFIG.s.destroyingCivilianFacility),
+                        "Destruction of civilian facilities"
+                    )
+                end
+            end
         end
     end
 
