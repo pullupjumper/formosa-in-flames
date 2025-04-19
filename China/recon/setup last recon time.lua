@@ -1,8 +1,8 @@
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-    ScenEdit_SpecialMessage('China', 'saveData is nil')
-    return
+  ScenEdit_SpecialMessage('China', 'saveData is nil')
+  return
 end
 
 saveData.c.ground.mlrs.lastReconTime = ScenEdit_CurrentTime()

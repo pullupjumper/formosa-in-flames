@@ -1,17 +1,17 @@
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-    ScenEdit_SpecialMessage('China', 'saveData is nil')
-    return
+  ScenEdit_SpecialMessage('China', 'saveData is nil')
+  return
 end
 
 
-saveData.c.recon.h6nTemp = LaunchUnits(
-    CONFIG.c.recon.h6nBaseGUID,
-    CONFIG.c.recon.h6nCourse,
-    1,
-    CONFIG.c.recon.h6nDBID,
-    'Aircraft'
+saveData.c.recon.temp.H6N = LaunchUnits(
+  CONFIG.c.recon.bases.H6N.guid,
+  CONFIG.c.recon.courses.H6N,
+  1,
+  CONFIG.c.platformDBID76,
+  'Aircraft'
 )
 
 

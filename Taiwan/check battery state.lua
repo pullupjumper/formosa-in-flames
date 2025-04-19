@@ -1,8 +1,8 @@
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
-    return
+  ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+  return
 end
 
 CheckBatteryState(saveData, 'mlrs', 'Taiwan', false)

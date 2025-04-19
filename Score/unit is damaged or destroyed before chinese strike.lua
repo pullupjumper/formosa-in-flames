@@ -2,16 +2,16 @@ local unit = ScenEdit_UnitX()
 
 
 if unit then
-    local score = ScenEdit_GetScore("Taiwan")
-    ScenEdit_SetScore(
-        "Taiwan", (score + CONFIG.s.attackBeforeTheHHour),
-        "Attacked before the Chinese missile strike."
-    )
-    ScenEdit_SpecialMessage(
-        'Taiwan',
-        'You have attacked first to cause a military esclaion.',
-        { latitude = unit.latitude, longitude = unit.longitude }
-    )
+  local score = ScenEdit_GetScore("Taiwan")
+  ScenEdit_SetScore(
+    "Taiwan", (score + CONFIG.s.attackBeforeTheHHour),
+    "Attacked before the Chinese missile strike."
+  )
+  ScenEdit_SpecialMessage(
+    'Taiwan',
+    'You have attacked first to cause a military esclaion.',
+    { latitude = unit.latitude, longitude = unit.longitude }
+  )
 end
 -- ScenEdit_SpecialMessage('Taiwan', 'enter')
 -- if unit then

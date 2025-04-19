@@ -1,76 +1,76 @@
 function CountUnitsInEachArea()
-    local unitsFromChina = VP_GetSide({ Side = 'China' }).units
-    local result = {}
+  local unitsFromChina = VP_GetSide({ Side = 'China' }).units
+  local result = {}
 
-    for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
-        local item = {
-            ['ZBD-05'] = 0,
-            ['ZTD-05'] = 0,
-            ['PLL-05'] = 0,
-            ['PLZ-96'] = 0,
-            ['PGZ-09'] = 0,
-            ['PGZ-95'] = 0,
-            ['SA-15'] = 0,
-            ['AirborneCorps'] = 0,
-            ['HMMWV'] = 0,
-            ['ZBD-03'] = 0
-        }
-        for index, value in ipairs(unitsFromChina) do
-            local unit = SE_GetUnit({ guid = value.guid })
+  for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
+    local item = {
+      ['ZBD-05'] = 0,
+      ['ZTD-05'] = 0,
+      ['PLL-05'] = 0,
+      ['PLZ-96'] = 0,
+      ['PGZ-09'] = 0,
+      ['PGZ-95'] = 0,
+      ['SA-15'] = 0,
+      ['AirborneCorps'] = 0,
+      ['HMMWV'] = 0,
+      ['ZBD-03'] = 0
+    }
+    for index, value in ipairs(unitsFromChina) do
+      local unit = SE_GetUnit({ guid = value.guid })
 
-            if unit and unit:inArea(zone.area) then
-                if unit.dbid == CONFIG.platformDBID58 then
-                    item['ZBD-05'] = item['ZBD-05'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID59 then
-                    item['ZTD-05'] = item['ZTD-05'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID60 then
-                    item['PLL-05'] = item['PLL-05'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID61 then
-                    item['PLZ-96'] = item['PLZ-96'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID62 then
-                    item['PGZ-09'] = item['PGZ-09'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID63 then
-                    item['PGZ-95'] = item['PGZ-95'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID66 then
-                    item['SA-15'] = item['SA-15'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID65 then
-                    item['AirborneCorps'] = item['AirborneCorps'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID64 then
-                    item['HMMWV'] = item['HMMWV'] + 1
-                end
-
-                if unit.dbid == CONFIG.platformDBID39 then
-                    item['ZBD-03'] = item['ZBD-03'] + 1
-                end
-            end
+      if unit and unit:inArea(zone.area) then
+        if unit.dbid == CONFIG.platformDBID58 then
+          item['ZBD-05'] = item['ZBD-05'] + 1
         end
 
-        result[zone.name] = item
+        if unit.dbid == CONFIG.platformDBID59 then
+          item['ZTD-05'] = item['ZTD-05'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID60 then
+          item['PLL-05'] = item['PLL-05'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID61 then
+          item['PLZ-96'] = item['PLZ-96'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID62 then
+          item['PGZ-09'] = item['PGZ-09'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID63 then
+          item['PGZ-95'] = item['PGZ-95'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID66 then
+          item['SA-15'] = item['SA-15'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID65 then
+          item['AirborneCorps'] = item['AirborneCorps'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID64 then
+          item['HMMWV'] = item['HMMWV'] + 1
+        end
+
+        if unit.dbid == CONFIG.platformDBID39 then
+          item['ZBD-03'] = item['ZBD-03'] + 1
+        end
+      end
     end
 
-    return result
+    result[zone.name] = item
+  end
+
+  return result
 end
 
 function LandedUnitTable()
-    local result = CountUnitsInEachArea()
+  local result = CountUnitsInEachArea()
 
-    local HTMLTemplate = [[
+  local HTMLTemplate = [[
     <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -144,76 +144,76 @@ function LandedUnitTable()
 </body>
 </html>
     ]]
-    local msg = string.format(HTMLTemplate, gKH.json.stringify(result))
-    local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local msg = string.format(HTMLTemplate, gKH.json.stringify(result))
+  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
 function C2Table(side)
-    local saveData = gKH.State.LoadTableFromKey("SaveData")
+  local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if saveData == nil then
-        ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
-        return
+  if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+    return
+  end
+
+  local createDataString = function(side, ...)
+    local key = 't'
+
+    if side == 'China' then
+      key = 'c'
     end
 
-    local createDataString = function(side, ...)
-        local key = 't'
+    local rows = {}
+    local types = { ... }
 
-        if side == 'China' then
-            key = 'c'
+    for _, type in pairs(types) do
+      for index, item in pairs(saveData[key].IADS[type]) do
+        if rows[type] == nil then
+          rows[type] = {}
         end
 
-        local rows = {}
-        local types = { ... }
+        rows[type][item.guid] = { name = item.name }
 
-        for _, type in pairs(types) do
-            for index, item in pairs(saveData[key].IADS[type]) do
-                if rows[type] == nil then
-                    rows[type] = {}
-                end
+        if item.SAM then
+          rows[type][item.guid]['SAM'] = {}
 
-                rows[type][item.guid] = { name = item.name }
-
-                if item.SAM then
-                    rows[type][item.guid]['SAM'] = {}
-
-                    for _, sam in pairs(item.SAM) do
-                        local unit = SE_GetUnit({ guid = sam.guid })
-                        local isDestroyed = unit == nil
-                        rows[type][item.guid]['SAM'][sam.guid] = {
-                            name = sam.name,
-                            OODADetection = tostring(sam.currOODA.detection) .. '/' .. tostring(sam.OODA.detection),
-                            OODATargeting = tostring(sam.currOODA.targeting) .. '/' .. tostring(sam.OODA.targeting),
-                            isOutOfComms = sam.isOutOfComms,
-                            EMCON_Setting = sam.EMCON_Setting,
-                            isDestroyed = isDestroyed
-                        }
-                    end
-                end
-
-                if item.radar then
-                    rows[type][item.guid]['radar'] = { name = item.name }
-
-                    for _, radar in pairs(item.radar) do
-                        local unit = SE_GetUnit({ guid = radar.guid })
-                        local isDestroyed = unit == nil
-                        rows[type][item.guid]['radar'][radar.guid] = {
-                            name = radar.name,
-                            OODADetection = tostring(radar.currOODA.detection) .. '/' .. tostring(radar.OODA.detection),
-                            OODATargeting = tostring(radar.currOODA.targeting) .. '/' .. tostring(radar.OODA.targeting),
-                            isOutOfComms = radar.isOutOfComms,
-                            EMCON_Setting = radar.EMCON_Setting,
-                            isDestroyed = isDestroyed
-                        }
-                    end
-                end
-            end
+          for _, sam in pairs(item.SAM) do
+            local unit = SE_GetUnit({ guid = sam.guid })
+            local isDestroyed = unit == nil
+            rows[type][item.guid]['SAM'][sam.guid] = {
+              name = sam.name,
+              OODADetection = tostring(sam.currOODA.detection) .. '/' .. tostring(sam.OODA.detection),
+              OODATargeting = tostring(sam.currOODA.targeting) .. '/' .. tostring(sam.OODA.targeting),
+              isOutOfComms = sam.isOutOfComms,
+              EMCON_Setting = sam.EMCON_Setting,
+              isDestroyed = isDestroyed
+            }
+          end
         end
 
-        return gKH.json.stringify(rows)
+        if item.radar then
+          rows[type][item.guid]['radar'] = { name = item.name }
+
+          for _, radar in pairs(item.radar) do
+            local unit = SE_GetUnit({ guid = radar.guid })
+            local isDestroyed = unit == nil
+            rows[type][item.guid]['radar'][radar.guid] = {
+              name = radar.name,
+              OODADetection = tostring(radar.currOODA.detection) .. '/' .. tostring(radar.OODA.detection),
+              OODATargeting = tostring(radar.currOODA.targeting) .. '/' .. tostring(radar.OODA.targeting),
+              isOutOfComms = radar.isOutOfComms,
+              EMCON_Setting = radar.EMCON_Setting,
+              isDestroyed = isDestroyed
+            }
+          end
+        end
+      end
     end
 
-    local HTMLTemplate = [[
+    return gKH.json.stringify(rows)
+  end
+
+  local HTMLTemplate = [[
    <!DOCTYPE html>
 <html lang="zh-TW">
 
@@ -306,124 +306,124 @@ function C2Table(side)
 
 </html>
     ]]
-    local str
-    if side == 'China' then
-        str = createDataString(side, 'C2')
-    else
-        str = createDataString(side, 'ROCC', 'TAAOC')
-    end
-    local msg = string.format(HTMLTemplate, str)
-    local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local str
+  if side == 'China' then
+    str = createDataString(side, 'C2')
+  else
+    str = createDataString(side, 'ROCC', 'TAAOC')
+  end
+  local msg = string.format(HTMLTemplate, str)
+  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
 function BtyStateTable(side)
-    local saveData = gKH.State.LoadTableFromKey("SaveData")
+  local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-    if saveData == nil then
-        ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
-        return
+  if saveData == nil then
+    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+    return
+  end
+
+  local createDataString = function(side, ...)
+    local key = 't'
+    local types = { ... }
+
+    if side == 'China' then
+      key = 'c'
     end
 
-    local createDataString = function(side, ...)
-        local key = 't'
-        local types = { ... }
+    local rows = {}
 
-        if side == 'China' then
-            key = 'c'
+    for index, type in pairs(types) do
+      if saveData[key].ground[type].ammunitionSections then
+        for k, value in pairs(saveData[key].ground[type].ammunitionSections) do
+          rows[k] = {}
         end
-
-        local rows = {}
-
-        for index, type in pairs(types) do
-            if saveData[key].ground[type].ammunitionSections then
-                for k, value in pairs(saveData[key].ground[type].ammunitionSections) do
-                    rows[k] = {}
-                end
-            end
-        end
-
-        for index, type in pairs(types) do
-            if saveData[key].ground[type].batteries then
-                for _, bty in pairs(saveData[key].ground[type].batteries) do
-                    local name = bty.name
-                    local status = ''
-                    local remainingAmmoInVehicles = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
-                        .wpnCurrent
-                    local ammoSec = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
-                    local reloadTime = CONFIG[key].ground[type].reloadTime / 60
-                    local remainingAmmo = saveData[key].ground[type].ammunitions
-                        [saveData[key].ground[type].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
-                    local reloadingRemainingTime = nil
-                    local transloadingRemainingTime = nil
-
-                    if bty.state == 0 then
-                        status = 'STATIC'
-                    elseif bty.state == 1 then
-                        status = 'REPOSITIONING'
-                    elseif bty.state == 2 then
-                        status = 'RELOAD'
-                    else
-                        status = 'HIDE'
-                    end
-
-                    if bty.reloadStartTime ~= nil then
-                        reloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - bty.reloadStartTime) / 60) * 100 +
-                                0.5) /
-                            100
-
-                        if reloadingRemainingTime < 0 then
-                            reloadingRemainingTime = 0
-                        end
-                    end
-
-                    if bty.reloadStartTime == nil then
-                        reloadingRemainingTime = 0
-                    end
-
-                    if ammoSec.reloadStartTime ~= nil then
-                        transloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) *
-                            100 +
-                            0.5) / 100
-
-                        if transloadingRemainingTime < 0 then
-                            transloadingRemainingTime = 0
-                        end
-                    end
-
-                    if ammoSec.reloadStartTime == nil then
-                        transloadingRemainingTime = 0
-                    end
-
-                    if side == 'China' then
-                        table.insert(rows[bty.ammunitionSection], {
-                            name = name,
-                            type = type,
-                            status = status,
-                            remainingAmmoInVehicles = remainingAmmoInVehicles,
-                            remainingAmmo = remainingAmmo,
-                            reloadTimeForBty = reloadingRemainingTime,
-                            reloadTimeForAmmoSec = transloadingRemainingTime,
-                            defaultReloadTime = reloadTime
-                        })
-                    else
-                        table.insert(rows[bty.ammunitionSection], {
-                            name = name,
-                            type = type,
-                            remainingAmmoInVehicles = remainingAmmoInVehicles,
-                            remainingAmmo = remainingAmmo,
-                            reloadTimeForBty = reloadingRemainingTime,
-                            reloadTimeForAmmoSec = transloadingRemainingTime,
-                            defaultReloadTime = reloadTime
-                        })
-                    end
-                end
-            end
-        end
-
-        return gKH.json.stringify(rows)
+      end
     end
 
-    local HTMLTemplate = [[
+    for index, type in pairs(types) do
+      if saveData[key].ground[type].batteries then
+        for _, bty in pairs(saveData[key].ground[type].batteries) do
+          local name = bty.name
+          local status = ''
+          local remainingAmmoInVehicles = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
+              .wpnCurrent
+          local ammoSec = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
+          local reloadTime = CONFIG[key].ground[type].reloadTime / 60
+          local remainingAmmo = saveData[key].ground[type].ammunitions
+              [saveData[key].ground[type].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
+          local reloadingRemainingTime = nil
+          local transloadingRemainingTime = nil
+
+          if bty.state == 0 then
+            status = 'STATIC'
+          elseif bty.state == 1 then
+            status = 'REPOSITIONING'
+          elseif bty.state == 2 then
+            status = 'RELOAD'
+          else
+            status = 'HIDE'
+          end
+
+          if bty.reloadStartTime ~= nil then
+            reloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - bty.reloadStartTime) / 60) * 100 +
+                  0.5) /
+                100
+
+            if reloadingRemainingTime < 0 then
+              reloadingRemainingTime = 0
+            end
+          end
+
+          if bty.reloadStartTime == nil then
+            reloadingRemainingTime = 0
+          end
+
+          if ammoSec.reloadStartTime ~= nil then
+            transloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) *
+              100 +
+              0.5) / 100
+
+            if transloadingRemainingTime < 0 then
+              transloadingRemainingTime = 0
+            end
+          end
+
+          if ammoSec.reloadStartTime == nil then
+            transloadingRemainingTime = 0
+          end
+
+          if side == 'China' then
+            table.insert(rows[bty.ammunitionSection], {
+              name = name,
+              type = type,
+              status = status,
+              remainingAmmoInVehicles = remainingAmmoInVehicles,
+              remainingAmmo = remainingAmmo,
+              reloadTimeForBty = reloadingRemainingTime,
+              reloadTimeForAmmoSec = transloadingRemainingTime,
+              defaultReloadTime = reloadTime
+            })
+          else
+            table.insert(rows[bty.ammunitionSection], {
+              name = name,
+              type = type,
+              remainingAmmoInVehicles = remainingAmmoInVehicles,
+              remainingAmmo = remainingAmmo,
+              reloadTimeForBty = reloadingRemainingTime,
+              reloadTimeForAmmoSec = transloadingRemainingTime,
+              defaultReloadTime = reloadTime
+            })
+          end
+        end
+      end
+    end
+
+    return gKH.json.stringify(rows)
+  end
+
+  local HTMLTemplate = [[
    <!DOCTYPE html>
 <html lang="zh-TW">
 
@@ -552,51 +552,51 @@ function BtyStateTable(side)
 
 </html>
     ]]
-    local str = createDataString(side, 'srbm', 'mlrs', 'glcm', 'ascm')
-    local msg = string.format(HTMLTemplate, str)
-    local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local str = createDataString(side, 'srbm', 'mlrs', 'glcm', 'ascm')
+  local msg = string.format(HTMLTemplate, str)
+  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
 function MagazineInBasesTable(side)
-    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+  -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    -- if CONFIG == nil then
-    --     ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
-    --     return
-    -- end
+  -- if CONFIG == nil then
+  --     ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
+  --     return
+  -- end
 
-    local createDataString = function(side)
-        local key = 't'
+  local createDataString = function(side)
+    local key = 't'
 
-        if side == 'China' then
-            key = 'c'
-        end
-
-        local rows = {}
-
-        for index, item in ipairs(CONFIG[key].air.landBased.ACInfo) do
-            local base = SE_GetUnit({ guid = item.baseGUID })
-
-            if base and item.loadouts then
-                local obj = { name = item.name, wpns = {} }
-
-                for _, magazine in ipairs(base.magazines) do
-                    for _, wpn in ipairs(magazine['mag_weapons']) do
-                        table.insert(obj.wpns, {
-                            name = wpn['wpn_name'],
-                            currWpn = wpn['wpn_current'],
-                        })
-                    end
-                end
-
-                table.insert(rows, obj)
-            end
-        end
-
-        return gKH.json.stringify(rows)
+    if side == 'China' then
+      key = 'c'
     end
 
-    local HTMLTemplate = [[
+    local rows = {}
+
+    for index, item in ipairs(CONFIG[key].air.landBased.ACInfo) do
+      local base = SE_GetUnit({ guid = item.baseGUID })
+
+      if base and item.loadouts then
+        local obj = { name = item.name, wpns = {} }
+
+        for _, magazine in ipairs(base.magazines) do
+          for _, wpn in ipairs(magazine['mag_weapons']) do
+            table.insert(obj.wpns, {
+              name = wpn['wpn_name'],
+              currWpn = wpn['wpn_current'],
+            })
+          end
+        end
+
+        table.insert(rows, obj)
+      end
+    end
+
+    return gKH.json.stringify(rows)
+  end
+
+  local HTMLTemplate = [[
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -672,22 +672,22 @@ function MagazineInBasesTable(side)
 
     ]]
 
-    local str = createDataString(side)
-    local msg = string.format(HTMLTemplate, str)
-    local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local str = createDataString(side)
+  local msg = string.format(HTMLTemplate, str)
+  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
 function WCSSettingTable()
-    local units = VP_GetSide({ Side = 'Taiwan' }).units
-    -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
+  local units = VP_GetSide({ Side = 'Taiwan' }).units
+  -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
 
-    -- if CONFIG == nil then
-    --     print('CONFIG == nil')
-    --     ScenEdit_MsgBox('CONFIG == nil', 1)
-    --     return
-    -- end
+  -- if CONFIG == nil then
+  --     print('CONFIG == nil')
+  --     ScenEdit_MsgBox('CONFIG == nil', 1)
+  --     return
+  -- end
 
-    local HTMLTemplate = [[
+  local HTMLTemplate = [[
     <!DOCTYPE html>
 <html lang="zh-TW">
 
@@ -782,92 +782,92 @@ function WCSSettingTable()
 </html>
     ]]
 
-    local msg = string.format(HTMLTemplate)
-    local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local msg = string.format(HTMLTemplate)
+  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 
-    if form['pressed'] and form['pressed'] == 'Done' then
-        if form['pac23'] and string.gsub(form['pac23'], "%'", "") == 'on' then
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
+  if form['pressed'] and form['pressed'] == 'Done' then
+    if form['pac23'] and string.gsub(form['pac23'], "%'", "") == 'on' then
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-                if unit and unit.dbid == CONFIG.platformDBID15 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-                    )
-                end
-            end
-        else
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
-
-                if unit and unit.dbid == CONFIG.platformDBID15 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-                    )
-                end
-            end
+        if unit and unit.dbid == CONFIG.platformDBID15 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
+          )
         end
+      end
+    else
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
 
-        if form['skybow3'] and string.gsub(form['skybow3'], "%'", "") == 'on' then
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
-
-                if unit and unit.dbid == CONFIG.platformDBID14 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-                    )
-                end
-            end
-        else
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
-
-                if unit and unit.dbid == CONFIG.platformDBID14 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-                    )
-                end
-            end
+        if unit and unit.dbid == CONFIG.platformDBID15 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
+          )
         end
-
-        if form['tc2'] and string.gsub(form['tc2'], "%'", "") == 'on' then
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
-
-                if unit and unit.dbid == CONFIG.platformDBID33 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-                    )
-                end
-            end
-        else
-            for index, value in ipairs(units) do
-                local unit = ScenEdit_GetUnit({ guid = value.guid })
-
-                if unit and unit.dbid == CONFIG.platformDBID33 then
-                    ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-                    ScenEdit_SetUnitIntermittentEmissionConfig(
-                        unit.guid,
-                        'Green',
-                        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-                    )
-                end
-            end
-        end
+      end
     end
+
+    if form['skybow3'] and string.gsub(form['skybow3'], "%'", "") == 'on' then
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit and unit.dbid == CONFIG.platformDBID14 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
+          )
+        end
+      end
+    else
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit and unit.dbid == CONFIG.platformDBID14 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
+          )
+        end
+      end
+    end
+
+    if form['tc2'] and string.gsub(form['tc2'], "%'", "") == 'on' then
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit and unit.dbid == CONFIG.platformDBID33 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
+          )
+        end
+      end
+    else
+      for index, value in ipairs(units) do
+        local unit = ScenEdit_GetUnit({ guid = value.guid })
+
+        if unit and unit.dbid == CONFIG.platformDBID33 then
+          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          ScenEdit_SetUnitIntermittentEmissionConfig(
+            unit.guid,
+            'Green',
+            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
+          )
+        end
+      end
+    end
+  end
 end

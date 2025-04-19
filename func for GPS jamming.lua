@@ -1,48 +1,48 @@
 function NewArea(position, mode)
-    local side = mode.side
-    local shape = mode.shape
-    if side == nil or shape == nil then return false end
-    local name = (mode.name or "RP")
-    local bear_offset = (mode.bear_offset or 0)
-    local rpTable = {}
-    local a = 1
-    --Circle
-    if shape == 'circle' then
-        local distance = mode.distance
-        for i = 0, 359, 45 do
-            local location = World_GetPointFromBearing({
-                latitude = position.latitude,
-                longitude = position.longitude,
-                distance = distance,
-                bearing = i
-            })
-            local rp = ScenEdit_AddReferencePoint({
-                side = side,
-                latitude = location.latitude,
-                longitude = location.longitude
-            })
-            a = a + 1
-            table.insert(rpTable, rp.name)
-        end
-    elseif shape == 'square' then
-        local distance = mode.distance
-        for i = 0, 3 do
-            local b = 45 + (90 * i) + bear_offset
-            local location = World_GetPointFromBearing({
-                latitude = position.latitude,
-                longitude = position.longitude,
-                distance = distance,
-                bearing = b
-            })
-            local rp = ScenEdit_AddReferencePoint({
-                side = side,
-                latitude = location.latitude,
-                longitude = location.longitude
-            })
-        end
+  local side = mode.side
+  local shape = mode.shape
+  if side == nil or shape == nil then return false end
+  local name = (mode.name or "RP")
+  local bear_offset = (mode.bear_offset or 0)
+  local rpTable = {}
+  local a = 1
+  --Circle
+  if shape == 'circle' then
+    local distance = mode.distance
+    for i = 0, 359, 45 do
+      local location = World_GetPointFromBearing({
+        latitude = position.latitude,
+        longitude = position.longitude,
+        distance = distance,
+        bearing = i
+      })
+      local rp = ScenEdit_AddReferencePoint({
+        side = side,
+        latitude = location.latitude,
+        longitude = location.longitude
+      })
+      a = a + 1
+      table.insert(rpTable, rp.name)
     end
+  elseif shape == 'square' then
+    local distance = mode.distance
+    for i = 0, 3 do
+      local b = 45 + (90 * i) + bear_offset
+      local location = World_GetPointFromBearing({
+        latitude = position.latitude,
+        longitude = position.longitude,
+        distance = distance,
+        bearing = b
+      })
+      local rp = ScenEdit_AddReferencePoint({
+        side = side,
+        latitude = location.latitude,
+        longitude = location.longitude
+      })
+    end
+  end
 
-    return (rpTable)
+  return (rpTable)
 end
 
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
@@ -145,23 +145,23 @@ end
 -- end
 
 function RemoveJammingZones()
-    local s = VP_GetSide({ name = 'China' })
-    if s == nil then return end
+  local s = VP_GetSide({ name = 'China' })
+  if s == nil then return end
 
-    for _, zone in ipairs(s.standardzones) do
-        for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-            if zone.description == jammer.zoneName then
-                local myz = s:getstandardzone(zone.guid)
+  for _, zone in ipairs(s.standardzones) do
+    for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+      if zone.description == jammer.zoneName then
+        local myz = s:getstandardzone(zone.guid)
 
-                for _, area in ipairs(myz.area) do
-                    ScenEdit_DeleteReferencePoint({ side = "China", name = area.name })
-                end
-
-                ScenEdit_RemoveZone('China', -925, { Description = myz.description })
-                ScenEdit_DeleteUnit({ side = "China", unitname = jammer.name })
-            end
+        for _, area in ipairs(myz.area) do
+          ScenEdit_DeleteReferencePoint({ side = "China", name = area.name })
         end
+
+        ScenEdit_RemoveZone('China', -925, { Description = myz.description })
+        ScenEdit_DeleteUnit({ side = "China", unitname = jammer.name })
+      end
     end
+  end
 end
 
 -- function AddGPSJammingZones()
@@ -187,72 +187,72 @@ end
 -- end
 
 function TryAddJammerUnit(jammer, attempt, max_attempts)
-    attempt = attempt or 1
-    max_attempts = max_attempts or 50
+  attempt = attempt or 1
+  max_attempts = max_attempts or 50
 
-    local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
-    local unit = ScenEdit_AddUnit({
-        type = 'Facility',
-        unitname = jammer.name,
-        dbid = 764,
-        side = 'China',
-        Lat = point.latitude,
-        Lon = point.longitude,
-        autodetectable = false
-    })
+  local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+  local unit = ScenEdit_AddUnit({
+    type = 'Facility',
+    unitname = jammer.name,
+    dbid = 764,
+    side = 'China',
+    Lat = point.latitude,
+    Lon = point.longitude,
+    autodetectable = false
+  })
 
-    if unit then
-        return unit, point
-    elseif attempt < max_attempts then
-        return TryAddJammerUnit(jammer, attempt + 1, max_attempts)
-    else
-        print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. jammer.name)
-        return nil, nil
-    end
+  if unit then
+    return unit, point
+  elseif attempt < max_attempts then
+    return TryAddJammerUnit(jammer, attempt + 1, max_attempts)
+  else
+    print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. jammer.name)
+    return nil, nil
+  end
 end
 
 function AddGPSJammingZones()
-    for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-        local unit, point = TryAddJammerUnit(jammer)
+  for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+    local unit, point = TryAddJammerUnit(jammer)
 
-        if unit then
-            ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+    if unit then
+      ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
-            local area = NewArea(point, {
-                side = 'China',
-                shape = 'circle',
-                distance = jammer.radius
-            })
+      local area = NewArea(point, {
+        side = 'China',
+        shape = 'circle',
+        distance = jammer.radius
+      })
 
-            local zone = ScenEdit_AddZone('China', -925, {
-                description = jammer.zoneName,
-                area = area
-            })
+      local zone = ScenEdit_AddZone('China', -925, {
+        description = jammer.zoneName,
+        area = area
+      })
 
-            zone.enablers = {
-                GNSS_GLONASS = true,
-                GNSS_GPS = false,
-                GNSS_BeiDou = true,
-                GNSS_NavIC = true
-            }
-        end
+      zone.enablers = {
+        GNSS_GLONASS = true,
+        GNSS_GPS = false,
+        GNSS_BeiDou = true,
+        GNSS_NavIC = true
+      }
     end
+  end
 end
 
 function TurnOffGPSEffectByUnit(unit)
-    local s = VP_GetSide({ name = 'China' })
-    if s == nil then return end
+  local s = VP_GetSide({ name = 'China' })
+  if s == nil then return end
 
-    for index, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-        if unit.name ~= jammer.name then goto continue end
+  for index, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+    if unit.name ~= jammer.name then goto continue end
 
-        for _, zone in ipairs(s.standardzones) do
-            if zone.description == jammer.zoneName then
-                local myz = s:getstandardzone(zone.guid)
-                myz.enablers = { GNSS_GLONASS = true, GNSS_GPS = true, GNSS_BeiDou = true, GNSS_NavIC = true }
-            end
-        end
-
-        ::continue::
+    for _, zone in ipairs(s.standardzones) do
+      if zone.description == jammer.zoneName then
+        local myz = s:getstandardzone(zone.guid)
+        myz.enablers = { GNSS_GLONASS = true, GNSS_GPS = true, GNSS_BeiDou = true, GNSS_NavIC = true }
+      end
     end
+
+    ::continue::
+  end
 end

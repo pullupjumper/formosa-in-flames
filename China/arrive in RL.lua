@@ -2,33 +2,33 @@ local unit = ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-    ScenEdit_SpecialMessage('China', 'saveData is nil')
-    return
+  ScenEdit_SpecialMessage('China', 'saveData is nil')
+  return
 end
 
 
 if saveData.c.ground.glcm.isActivated then
-    local result = IsMetWithAmmoTrucks(saveData, unit, 'glcm', true)
+  local result = IsMetWithAmmoTrucks(saveData, unit, 'glcm', true)
 
-    if result.isMet then
-        SetReloadStartTime(result.battery, unit, true)
-    end
+  if result.isMet then
+    SetReloadStartTime(result.battery, unit, true)
+  end
 end
 
 if saveData.c.ground.mlrs.isActivated then
-    local result = IsMetWithAmmoTrucks(saveData, unit, 'mlrs', true)
+  local result = IsMetWithAmmoTrucks(saveData, unit, 'mlrs', true)
 
-    if result.isMet then
-        SetReloadStartTime(result.battery, unit, true)
-    end
+  if result.isMet then
+    SetReloadStartTime(result.battery, unit, true)
+  end
 end
 
 if saveData.c.ground.srbm.isActivated then
-    local result = IsMetWithAmmoTrucks(saveData, unit, 'srbm', true)
+  local result = IsMetWithAmmoTrucks(saveData, unit, 'srbm', true)
 
-    if result.isMet then
-        SetReloadStartTime(result.battery, unit, true)
-    end
+  if result.isMet then
+    SetReloadStartTime(result.battery, unit, true)
+  end
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
