@@ -69,7 +69,7 @@ local function analyzeTargets(saveData, type)
         local BDA = target.BDA
         local detections = target.lastDetections
         local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
-            (detections and detections[1].age <= mlrsConfig.contactAge) and
+            (detections and detections[1].age <= CONFIG.c.ground[type].contactAge) and
             not isHelipad
         local isInitialWaveOfAttacks = batchTargetlistsIdx == 1 and
             not mlrsConfig.packages[index].isFinished and

@@ -15,7 +15,7 @@ function RemoveC2Facilities()
   end
 end
 
-function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName)
+function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName, unitType, unitname, autodetectable)
   local units = {}
 
   local function TryCreateUnit(attempt, max_attempts)
@@ -23,13 +23,13 @@ function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName)
     local point = CircularRandomPosition(centerPoint.lat, centerPoint.lon, randomRadius)
 
     local unit = ScenEdit_AddUnit({
-      type = 'Facility',
+      type = unitType,
       dbid = dbid,
-      side = sideName or 'China',
+      side = sideName,
       Lat = point.latitude,
       Lon = point.longitude,
-      autodetectable = true,
-      unitname = "Suspected C2 Facility#" .. RandomTxt(2)
+      autodetectable = autodetectable,
+      unitname = unitname
     })
 
     if unit then
@@ -46,6 +46,7 @@ function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName)
     local unit = TryCreateUnit(1, 50)
     if unit then
       table.insert(units, unit)
+      if count == 1 then return unit end
     end
   end
 
@@ -59,7 +60,10 @@ function ADDC2Facilities()
       CONFIG.c.IADS.C2FacilityDBIDs,
       5,
       CONFIG.c.IADS.randomRadius,
-      'China'
+      'China',
+      'Facility',
+      "Suspected C2 Facility#" .. RandomTxt(2),
+      true
     )
   end
 end
@@ -115,7 +119,7 @@ function InitC2Facilities(saveData)
             currOODA = unit.OODA,
             isOutOfComms = false,
             outofcomms = 0,
-            EMCON_Setting = 'Radar=Passive'
+            EMCONSetting = 'Radar=Passive'
           }
 
           saveData.c.IADS.C2[c2Guid].SAM[unit.guid] = data
@@ -129,7 +133,7 @@ function InitC2Facilities(saveData)
             currOODA = unit.OODA,
             isOutOfComms = false,
             outofcomms = 0,
-            EMCON_Setting = 'Radar=Passive'
+            EMCONSetting = 'Radar=Passive'
           }
 
           saveData.c.IADS.C2[c2Guid].radar[unit.guid] = data
@@ -145,7 +149,12 @@ function RemoveMagazinesByBaseGUID(baseGUID)
   if base then
     for _, magazine in ipairs(base.magazines) do
       for _, wpn in ipairs(magazine['mag_weapons']) do
-        ScenEdit_AddWeaponToUnitMagazine({ guid = baseGUID, wpn_dbid = wpn['wpn_dbid'], number = 1000, remove = true })
+        ScenEdit_AddWeaponToUnitMagazine({
+          guid = baseGUID,
+          wpn_dbid = wpn['wpn_dbid'],
+          number = 1000,
+          remove = true
+        })
       end
     end
   end
@@ -187,7 +196,7 @@ end
 function AddACs(side)
   local key = (side == 'China') and 'c' or 't'
 
-  for _, info in ipairs(CONFIG[key].air.landBased.ACInfo) do
+  for _, info in ipairs(CONFIG[key].air.landBased.deployedACs) do
     local base = SE_GetUnit({ guid = info.baseGUID })
 
     if base and base.embarkedUnits.Aircraft then
@@ -197,24 +206,6 @@ function AddACs(side)
     end
 
     if info.embarkedUnits then
-      -- for _, embarkedUnit in ipairs(info.embarkedUnits) do
-      --     for _, loadout in ipairs(embarkedUnit.loadouts) do
-      --         for i = 1, loadout.num, 1 do
-      --             local unit = ScenEdit_AddUnit({
-      --                 side      = embarkedUnit.side,
-      --                 type      = embarkedUnit.type,
-      --                 dbid      = embarkedUnit.dbid,
-      --                 unitname  = embarkedUnit.name .. ' #' .. tostring(i),
-      --                 base      = info.baseGUID,
-      --                 loadoutid = loadout.loadoutId
-      --             })
-      --             -- ScenEdit_SpecialMessage('China', unit.name)
-      --             if unit and loadout.missionName then
-      --                 ScenEdit_AssignUnitToMission(unit.guid, loadout.missionName)
-      --             end
-      --         end
-      --     end
-      -- end
       AddEmbarkedUnits(info.embarkedUnits, info.baseGUID)
     end
 
@@ -539,10 +530,10 @@ function AddCSG()
   end
 end
 
-function AddShips(side)
+function AddDeployedShipsAtPort(side)
   local key = (side == 'China') and 'c' or 't'
 
-  for _, info in ipairs(CONFIG[key].surface.ships) do
+  for _, info in ipairs(CONFIG[key].surface.deployedShips) do
     local base = SE_GetUnit({ guid = info.baseGUID })
 
     if base and base.embarkedUnits.Boats then
@@ -568,25 +559,20 @@ function AddSubmarines(side)
         ScenEdit_DeleteUnit({ side = side, guid = actualUnit.guid })
       end
 
-      local position = CircularRandomPosition(
-        unit.from.startingPoint.lat,
-        unit.from.startingPoint.lon,
-        CONFIG.c.subSurface.slcm.randomRadius
+      local addedUnit = CreateRandomUnits(
+        unit.from.startingPoint,
+        { CONFIG.platformDBID77 },
+        1,
+        CONFIG.c.subSurface.slcm.randomRadius,
+        side,
+        'Submarine',
+        unit.name,
+        false
       )
-
-      local addedUnit = ScenEdit_AddUnit({
-        latitude  = position.latitude,
-        longitude = position.longitude,
-        heading   = unit.from.heading,
-        side      = side,
-        type      = 'Submarine',
-        dbid      = CONFIG.platformDBID77,
-        unitname  = unit.name,
-      })
 
       if addedUnit then
         addedUnit.course = unit.course
-        SE_SetUnit({ guid = addedUnit.guid, desiredDepth = -300 })
+        -- SE_SetUnit({ guid = addedUnit.guid, desiredDepth = -300 })
         ScenEdit_AddReloadsToUnit({
           side = side,
           guid = addedUnit.guid,

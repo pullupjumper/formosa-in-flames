@@ -5,22 +5,22 @@ if saveData == nil then
   return
 end
 
-local function getCommsLevel(saveData, unitGUID)
+local function getCommsLevel(saveData, affectedUnitGUID)
   local comm_bonif = CONFIG.c.commsJamming.initialComms
 
-  for _, value in ipairs(saveData.c.commsJamming.jammers) do
-    local jammer = SE_GetUnit({ guid = value.guid })
+  for _, jammer in ipairs(saveData.c.commsJamming.jammers) do
+    local actualJammer = SE_GetUnit({ guid = jammer.guid })
 
-    if jammer and jammer.condition == 'Airborne' and jammer.jammer then
-      comm_bonif = -120 + Tool_Range(unitGUID, jammer.guid) ^ 1.04 + comm_bonif
+    if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
+      comm_bonif = -120 + Tool_Range(affectedUnitGUID, actualJammer.guid) ^ 1.04 + comm_bonif
     end
   end
 
-  for _, value in ipairs(saveData.t.air.landBased.AEW) do
-    local AEW = SE_GetUnit({ guid = value.guid })
+  for _, AEW in ipairs(saveData.t.air.landBased.AEW) do
+    local actualAEW = SE_GetUnit({ guid = AEW.guid })
 
-    if AEW and AEW.condition == 'Airborne' then
-      local d = Tool_Range(unitGUID, AEW.guid)
+    if actualAEW and actualAEW.condition == 'Airborne' then
+      local d = Tool_Range(affectedUnitGUID, actualAEW.guid)
       if d < 100 then
         comm_bonif = comm_bonif + 400 + math.random(-1, 1)
       elseif d < 200 then
@@ -37,7 +37,7 @@ local function getCommsLevel(saveData, unitGUID)
     local ROCC = SE_GetUnit({ guid = ROCCGuid })
 
     if ROCC then
-      local d = Tool_Range(unitGUID, ROCC.guid)
+      local d = Tool_Range(affectedUnitGUID, ROCC.guid)
       if d < 100 then
         comm_bonif = comm_bonif + 400 + math.random(-1, 1)
       elseif d < 200 then
@@ -54,122 +54,107 @@ local function getCommsLevel(saveData, unitGUID)
   return math.floor(comm_bonif)
 end
 
-local function commsJamming(u, jammer, jammed_num)
-  if u.isOutOfComms then
-    if u.outofcomms <= math.random(15, 25) then
-      local unit = SE_SetUnit({ guid = u.guid, outofcomms = true })
-      u.outofcomms = u.outofcomms + 1
+local function commsJamming(affectedUnit, jammer, jammedNum)
+  if affectedUnit.isOutOfComms then
+    if affectedUnit.outofcomms <= math.random(15, 25) then
+      SE_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
+      affectedUnit.outofcomms = affectedUnit.outofcomms + 1
     else
-      local unit = SE_SetUnit({ guid = u.guid, outofcomms = false })
-      u.outofcomms = 0
-      u.isOutOfComms = false
+      SE_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+      affectedUnit.outofcomms = 0
+      affectedUnit.isOutOfComms = false
     end
-  elseif u.isOutOfComms == false then
-    local unit = SE_GetUnit({ guid = u.guid })
+  elseif affectedUnit.isOutOfComms == false then
+    local actualAffectedUnit = SE_GetUnit({ guid = affectedUnit.guid })
 
-    if unit and unit.outOfComms then
-      local unit = SE_SetUnit({ guid = u.guid, outofcomms = false })
-      u.outofcomms = 0
+    if actualAffectedUnit and actualAffectedUnit.outOfComms then
+      SE_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+      affectedUnit.outofcomms = 0
     end
   end
 
   if jammer and jammer.condition == 'Airborne' and jammer.jammer then
-    if u.isOutOfComms == false then
-      if u.outofcomms < math.random(5, 10) and u.outofcomms >= 0 and jammed_num < CONFIG.c.commsJamming.limit then
-        local d = Tool_Range(jammer.guid, u.guid)
+    if affectedUnit.isOutOfComms == false then
+      if affectedUnit.outofcomms < math.random(5, 10) and affectedUnit.outofcomms >= 0 and jammedNum < CONFIG.c.commsJamming.limit then
+        local d = Tool_Range(jammer.guid, affectedUnit.guid)
         local n = 1 * math.sqrt(1 - (d ^ 1.9 / CONFIG.c.commsJamming.range ^ 1.8))
 
         if n == n and n > (math.random() / 2) then
-          local unit = SE_SetUnit({ guid = u.guid, outofcomms = true })
-          u.outofcomms = u.outofcomms + 1
-          u.isOutOfComms = true
-          jammed_num = jammed_num + 1
+          SE_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
+          affectedUnit.outofcomms = affectedUnit.outofcomms + 1
+          affectedUnit.isOutOfComms = true
+          jammedNum = jammedNum + 1
         else
-          local unit = SE_SetUnit({ guid = u.guid, outofcomms = false })
-          u.outofcomms = 0
-          u.isOutOfComms = false
-          jammed_num = jammed_num + 1
+          SE_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+          affectedUnit.outofcomms = 0
+          affectedUnit.isOutOfComms = false
+          jammedNum = jammedNum + 1
         end
-      elseif u.outofcomms < 0 then
-        local unit = SE_SetUnit({ guid = u.guid, outofcomms = false })
-        u.isOutOfComms = false
-        u.outofcomms = u.outofcomms + 1
+      elseif affectedUnit.outofcomms < 0 then
+        SE_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+        affectedUnit.isOutOfComms = false
+        affectedUnit.outofcomms = affectedUnit.outofcomms + 1
       else
-        local unit = SE_SetUnit({ guid = u.guid, outofcomms = false })
-        u.isOutOfComms = false
-        u.outofcomms = math.random(-5, -1)
+        SE_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+        affectedUnit.isOutOfComms = false
+        affectedUnit.outofcomms = math.random(-5, -1)
       end
     end
   end
 
-  return jammed_num
+  return jammedNum
 end
 
 if saveData.c.commsJamming.isActivated then
-  local jammer = nil
-  local jammed_num = 0
+  local jammerTemp = nil
+  local jammedNum = 0
 
-  for _, j in ipairs(saveData.c.commsJamming.jammers) do
-    local unit = SE_GetUnit({ guid = j.guid })
+  for _, jammer in ipairs(saveData.c.commsJamming.jammers) do
+    local actualJammer = SE_GetUnit({ guid = jammer.guid })
 
-    if unit and unit.condition == 'Airborne' and unit.jammer then
-      jammer = unit
+    if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
+      jammerTemp = actualJammer
       break
     end
   end
 
-  local units = {}
+  local unitTemp = {}
 
   for key, item in pairs(saveData.t.IADS.ROCC) do
-    for index, value in pairs(item.SAM) do
-      units[value.guid] = value
+    for _, value in pairs(item.SAM) do
+      unitTemp[value.guid] = value
     end
-    for index, value in pairs(item.radar) do
-      units[value.guid] = value
+    for _, value in pairs(item.radar) do
+      unitTemp[value.guid] = value
     end
   end
 
   for key, item in pairs(saveData.t.IADS.TAAOC) do
-    for index, value in pairs(item.SAM) do
-      units[value.guid] = value
+    for _, value in pairs(item.SAM) do
+      unitTemp[value.guid] = value
     end
   end
 
-  if jammer then
-    table.sort(units, function(a, b)
-      local da = Tool_Range(jammer.guid, a.guid)
-      local db = Tool_Range(jammer.guid, b.guid)
+  if jammerTemp then
+    table.sort(unitTemp, function(a, b)
+      local da = Tool_Range(jammerTemp.guid, a.guid)
+      local db = Tool_Range(jammerTemp.guid, b.guid)
       return da < db
     end)
   end
 
-  for index, value in pairs(units) do
-    for key, item in pairs(saveData.t.IADS.ROCC) do
-      if item.SAM[value.guid] then
-        jammed_num = commsJamming(item.SAM[value.guid], jammer, jammed_num)
-      end
-
-      if item.radar[value.guid] then
-        jammed_num = commsJamming(item.radar[value.guid], jammer, jammed_num)
-      end
-    end
-
-    for key, item in pairs(saveData.t.IADS.TAAOC) do
-      if item.SAM[value.guid] then
-        jammed_num = commsJamming(item.SAM[value.guid], jammer, jammed_num)
-      end
-    end
+  for _, affectedUnit in pairs(unitTemp) do
+    jammedNum = commsJamming(affectedUnit, jammerTemp, jammedNum)
   end
 
-  for _, value in ipairs(saveData.t.air.landBased.AC) do
-    local unit = SE_GetUnit({ guid = value.guid })
+  for _, AC in ipairs(saveData.t.air.landBased.AC) do
+    local actualAC = SE_GetUnit({ guid = AC.guid })
 
-    if unit and unit.condition == 'Airborne' then
-      value.comms_level = value.comms_base + getCommsLevel(saveData, unit.guid)
-      -- ScenEdit_SpecialMessage('Taiwan', tostring(value.comms_level))
+    if actualAC and actualAC.condition == 'Airborne' then
+      AC.commsLevel = AC.commsBase + getCommsLevel(saveData, actualAC.guid)
 
-      if value.comms_level < value.comms_threshold then
-        ScenEdit_SetUnit({ guid = value.guid, outofcomms = true, RTB = true })
+      if AC.commsLevel < AC.commsThreshold then
+        ScenEdit_SetUnit({ guid = AC.guid, outofcomms = true, RTB = true })
       end
     end
   end

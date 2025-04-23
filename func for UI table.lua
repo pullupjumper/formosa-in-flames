@@ -185,7 +185,7 @@ function C2Table(side)
               OODADetection = tostring(sam.currOODA.detection) .. '/' .. tostring(sam.OODA.detection),
               OODATargeting = tostring(sam.currOODA.targeting) .. '/' .. tostring(sam.OODA.targeting),
               isOutOfComms = sam.isOutOfComms,
-              EMCON_Setting = sam.EMCON_Setting,
+              EMCONSetting = sam.EMCONSetting,
               isDestroyed = isDestroyed
             }
           end
@@ -202,7 +202,7 @@ function C2Table(side)
               OODADetection = tostring(radar.currOODA.detection) .. '/' .. tostring(radar.OODA.detection),
               OODATargeting = tostring(radar.currOODA.targeting) .. '/' .. tostring(radar.OODA.targeting),
               isOutOfComms = radar.isOutOfComms,
-              EMCON_Setting = radar.EMCON_Setting,
+              EMCONSetting = radar.EMCONSetting,
               isDestroyed = isDestroyed
             }
           end
@@ -289,7 +289,7 @@ function C2Table(side)
                             firstRow = false;
                         }
 
-                        ["name", "OODADetection", "OODATargeting", "isOutOfComms", "EMCON_Setting", "isDestroyed"].forEach(key => {
+                        ["name", "OODADetection", "OODATargeting", "isOutOfComms", "EMCONSetting", "isDestroyed"].forEach(key => {
                             let cell = document.createElement("td");
                             cell.textContent = typeof unit[key] === "boolean" ? (unit[key] ? "YES" : "NO") : unit[key];
                             row.appendChild(cell);

@@ -59,60 +59,59 @@ end
 
 local function initC2(saveData)
   local units = VP_GetSide({ Side = "Taiwan" }).units
-  -- local unitsFromChina = VP_GetSide({ Side = "China" }).units
 
-  for _, value in ipairs(units) do
-    local unit = SE_GetUnit({ guid = value.guid })
+  for _, unit in ipairs(units) do
+    local actualUnit = SE_GetUnit({ guid = unit.guid })
 
     for ROCCGuid, item in pairs(saveData.t.IADS.ROCC) do
-      if unit ~= nil and unit:inArea(item.area) then
-        if unit.dbid == CONFIG.platformDBID14 or unit.dbid == CONFIG.platformDBID15 then
+      if actualUnit ~= nil and actualUnit:inArea(item.area) then
+        if actualUnit.dbid == CONFIG.platformDBID14 or actualUnit.dbid == CONFIG.platformDBID15 then
           local data = {
-            name = unit.name,
-            guid = unit.guid,
-            OODA = unit.OODA,
-            currOODA = unit.OODA,
+            name = actualUnit.name,
+            guid = actualUnit.guid,
+            OODA = actualUnit.OODA,
+            currOODA = actualUnit.OODA,
             isOutOfComms = false,
             outofcomms = 0,
-            EMCON_Setting = 'Radar=Passive'
+            EMCONSetting = 'Radar=Passive'
           }
 
-          saveData.t.IADS.ROCC[ROCCGuid].SAM[unit.guid] = data
+          saveData.t.IADS.ROCC[ROCCGuid].SAM[actualUnit.guid] = data
         end
 
-        if unit.dbid == CONFIG.platformDBID41
-            or unit.dbid == CONFIG.platformDBID42
-            or unit.dbid == CONFIG.platformDBID43
-            or unit.dbid == CONFIG.platformDBID44 then
+        if actualUnit.dbid == CONFIG.platformDBID41
+            or actualUnit.dbid == CONFIG.platformDBID42
+            or actualUnit.dbid == CONFIG.platformDBID43
+            or actualUnit.dbid == CONFIG.platformDBID44 then
           local data = {
-            name = unit.name,
-            guid = unit.guid,
-            OODA = unit.OODA,
-            currOODA = unit.OODA,
+            name = actualUnit.name,
+            guid = actualUnit.guid,
+            OODA = actualUnit.OODA,
+            currOODA = actualUnit.OODA,
             isOutOfComms = false,
             outofcomms = 0,
-            EMCON_Setting = 'Radar=Passive'
+            EMCONSetting = 'Radar=Passive'
           }
 
-          saveData.t.IADS.ROCC[ROCCGuid].radar[unit.guid] = data
+          saveData.t.IADS.ROCC[ROCCGuid].radar[actualUnit.guid] = data
         end
       end
     end
 
     for TAAOCGuid, item in pairs(saveData.t.IADS.TAAOC) do
-      if unit ~= nil and unit:inArea(item.area) then
-        if unit.dbid == CONFIG.platformDBID33 then
+      if actualUnit ~= nil and actualUnit:inArea(item.area) then
+        if actualUnit.dbid == CONFIG.platformDBID33 then
           local data = {
-            name = unit.name,
-            guid = unit.guid,
-            OODA = unit.OODA,
-            currOODA = unit.OODA,
+            name = actualUnit.name,
+            guid = actualUnit.guid,
+            OODA = actualUnit.OODA,
+            currOODA = actualUnit.OODA,
             isOutOfComms = false,
             outofcomms = 0,
-            EMCON_Setting = 'Radar=Passive'
+            EMCONSetting = 'Radar=Passive'
           }
 
-          saveData.t.IADS.TAAOC[TAAOCGuid].SAM[unit.guid] = data
+          saveData.t.IADS.TAAOC[TAAOCGuid].SAM[actualUnit.guid] = data
         end
       end
     end
@@ -125,11 +124,11 @@ end
 local function initCommsJammers(side, saveData)
   local units = VP_GetSide({ Side = side }).units
 
-  for _, value in ipairs(units) do
-    local unit = SE_GetUnit({ guid = value.guid })
+  for _, unit in ipairs(units) do
+    local actualUnit = SE_GetUnit({ guid = unit.guid })
 
-    if unit and (unit.dbid == CONFIG.platformDBID35 or unit.dbid == CONFIG.platformDBID37) then
-      table.insert(saveData.c.commsJamming.jammers, { guid = unit.guid })
+    if actualUnit and (actualUnit.dbid == CONFIG.platformDBID35 or actualUnit.dbid == CONFIG.platformDBID37) then
+      table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
     end
   end
 end
@@ -137,30 +136,30 @@ end
 local function initAC(saveData)
   local units = VP_GetSide({ Side = 'Taiwan' }).units
 
-  for _, value in ipairs(units) do
-    local unit = SE_GetUnit({ guid = value.guid })
+  for _, unit in ipairs(units) do
+    local actualUnit = SE_GetUnit({ guid = unit.guid })
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID38 then
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == CONFIG.platformDBID38 then
       table.insert(
         saveData.t.air.landBased.AEW,
         {
-          guid = unit.guid,
-          OODA = unit.OODA,
-          comms_level = 40,
-          comms_base = 40,
-          comms_threshold = 30,
+          guid = actualUnit.guid,
+          OODA = actualUnit.OODA,
+          commsLevel = 40,
+          commsBase = 40,
+          commsThreshold = 30,
           outofcomms = 0,
         }
       )
-    elseif unit and unit.type == 'Aircraft' then
+    elseif actualUnit and actualUnit.type == 'Aircraft' then
       table.insert(
         saveData.t.air.landBased.AC,
         {
-          guid = unit.guid,
-          OODA = unit.OODA,
-          comms_level = 40,
-          comms_base = 40,
-          comms_threshold = 30,
+          guid = actualUnit.guid,
+          OODA = actualUnit.OODA,
+          commsLevel = 40,
+          commsBase = 40,
+          commsThreshold = 30,
           outofcomms = 0,
         }
       )
@@ -179,9 +178,9 @@ local function initSIGINT(saveData)
       saveData.u.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
-        comms_level = 40,
-        comms_base = 40,
-        comms_threshold = 30,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
         outofcomms = 0,
       }
     end
@@ -194,12 +193,23 @@ local function initSIGINT(saveData)
       saveData.c.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
-        comms_level = 40,
-        comms_base = 40,
-        comms_threshold = 30,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
         outofcomms = 0,
       }
     end
+  end
+end
+
+local function setupEventStartTime()
+  for _, event in ipairs(CONFIG.c.eventList) do
+    ScenEdit_SetTrigger({
+      mode = 'update',
+      name = event.name,
+      type = 'Time',
+      time = event.startTime
+    })
   end
 end
 
@@ -214,6 +224,7 @@ if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetli
   initRunways(saveData)
   CalculateDestination(saveData)
   initAC(saveData)
+  setupEventStartTime()
 
   if saveData.t.IADS.isActivated then
     initC2(saveData)

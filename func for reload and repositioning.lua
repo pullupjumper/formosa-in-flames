@@ -501,7 +501,7 @@ end
 --                 if battery.guid == group.guid and isTrue then
 --                     local area = nil
 
---                     for _, p in pairs(CONFIG[key].ground[platform].position) do
+--                     for _, p in pairs(CONFIG[key].ground[platform].positions) do
 --                         if unit:inArea(p.RL.area) then
 --                             area = p.RL.area
 --                             break
@@ -546,7 +546,7 @@ end
 --                 if section.guid == group.guid and isTrue then
 --                     local ammo = SE_GetUnit({ guid = section.ammunition })
 
---                     for _, p in pairs(CONFIG[key].ground[platform].position) do
+--                     for _, p in pairs(CONFIG[key].ground[platform].positions) do
 --                         local isMetWithAmmo = unit:inArea(p.AHA.area) and (ammo and ammo:inArea(p.AHA.area))
 
 --                         if isMetWithAmmo then
@@ -599,7 +599,7 @@ function IsMetWithAmmoTrucks(saveData, unit, platform, isRepositioningAutomatica
     -- If matching group found and state is valid
     if battery.guid == group.guid and isStateValid then
       -- Find the area where unit is located
-      local area = FindUnitArea(unit, config.position)
+      local area = FindUnitArea(unit, config.positions)
       if not area then
         return { isMet = false, battery = nil }
       end
@@ -649,7 +649,7 @@ function IsMetWithAmmo(saveData, unit, platform, isRepositioningAutomatically)
       local ammo = SE_GetUnit({ guid = section.ammunition })
 
       -- Check if unit and ammo are in the same area
-      for _, p in pairs(config.position) do
+      for _, p in pairs(config.positions) do
         local isInSameArea = unit:inArea(p.AHA.area) and (ammo and ammo:inArea(p.AHA.area))
         if isInSameArea then
           return { isMet = true, battery = section }

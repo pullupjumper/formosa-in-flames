@@ -162,7 +162,7 @@ CONFIG.c.SIGINT.maxCount = 1
 CONFIG.c.SIGINT.maxRange = 2.5
 
 -- IADS
-CONFIG.c.IADS.values = { C2 = 1.5, }
+CONFIG.c.IADS.ratio = { C2 = 1.5, }
 CONFIG.c.IADS.C2FacilityDBIDs = {
   319,
   318,
@@ -187,7 +187,7 @@ CONFIG.c.IADS.C2Settings = {
 
 -- Comms Jamming
 CONFIG.c.commsJamming.limit = 12
-CONFIG.c.commsJamming.range = 200
+CONFIG.c.commsJamming.range = 150
 CONFIG.c.commsJamming.initialComms = -20
 
 -- GPS Jamming
@@ -199,7 +199,7 @@ CONFIG.c.GPSJamming.jammers = {
 -- MLRS
 CONFIG.c.ground.mlrs.wpnDefault = 192
 CONFIG.c.ground.mlrs.ammoThreshold = 50
-CONFIG.c.ground.mlrs.position = {
+CONFIG.c.ground.mlrs.positions = {
   pingtan = {
     RL = {
       course = {
@@ -274,7 +274,7 @@ CONFIG.c.ground.mlrs.reloadTime = 30 * 60
 -- GLCM
 CONFIG.c.ground.glcm.wpnDefault = 48
 CONFIG.c.ground.glcm.ammoThreshold = 50
-CONFIG.c.ground.glcm.position = {
+CONFIG.c.ground.glcm.positions = {
   brigade635 = {
     RL = {
       course = {
@@ -312,7 +312,7 @@ CONFIG.c.ground.glcm.reloadTime = 45 * 60
 -- SRBM
 CONFIG.c.ground.srbm.wpnDefault = 36
 CONFIG.c.ground.srbm.ammoThreshold = 35
-CONFIG.c.ground.srbm.position = {
+CONFIG.c.ground.srbm.positions = {
   brigade615 = {
     RL = {
       course = {
@@ -504,13 +504,10 @@ CONFIG.c.ground.srbm.contingencyRunways = {
 
 
 -- Recon
--- CONFIG.c.recon.h6nBaseGUID = 'X58F5H-0HMRAQFR07T2V'
--- CONFIG.c.recon.bzk005BaseGUID = '6Z8LM5-0HMIJ3QGCRQC4'
 CONFIG.c.recon.bases = {
   H6N = { guid = 'X58F5H-0HMRAQFR07T2V' },
   BZK005 = { guid = '6Z8LM5-0HMIJ3QGCRQC4' }
 }
--- CONFIG.c.recon.h6nDBID = 7136
 CONFIG.c.recon.contactAge = 15 * 60
 CONFIG.c.recon.courses = {
   WZ8 = {
@@ -529,24 +526,9 @@ CONFIG.c.recon.courses = {
     { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
   }
 }
--- CONFIG.c.recon.wz8Course = {
---     { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
---     { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
--- }
--- CONFIG.c.recon.h6nCourse = {
---     { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
---     { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
--- }
 
 -- Strike
-CONFIG.c.air.landBased.ACInfo = {
+CONFIG.c.air.landBased.deployedACs = {
   {
     name = 'Huizhou Pingtan AB (PLAAF)',
     baseGUID = '6Z8LM5-0HMLLL9B5QBF0',
@@ -1854,10 +1836,30 @@ CONFIG.c.subSurface.slcm.randomRadius = 20
 CONFIG.c.repairRunway.percentagePerHour = 3
 
 
+--Setup start time
+CONFIG.c.eventList = {
+  { name = '(China) (Recon) Launch H6N',                         startTime = '2027-06-09 01:20:00' },
+  { name = '(China) (Ground/SRBM) Setup start time',             startTime = '2027-06-09 02:40:00' },
+  -- { name = '(China) (Ground/SRBM) Setup start time',             startTime = '2027-06-09 01:00:00' },
+  { name = '(China) Target runways or emergency highway strips', startTime = '2027-06-09 02:35:00' },
+  { name = '(China) (Air/Land-based/ASCM) Setup start time',     startTime = '2027-06-09 02:40:00' },
+  -- { name = '(China) (Amphibious ops) Setup start time',      startTime = '2027-06-09 02:40:00' },
+  { name = '(China) (Amphibious ops) Setup start time',          startTime = '2027-06-09 07:00:00' },
+  { name = '(China) (Ground/MLRS) Setup start time',             startTime = '2027-06-09 03:10:00' },
+  -- { name = '(China) (Air/Land-based/LACM) Setup start time',     startTime = '2027-06-09 03:40:00' },
+  { name = '(China) (Air/Land-based/LACM) Setup start time',     startTime = '2027-06-09 01:00:00' },
+  { name = '(China) (Ground/GLCM) Setup start time',             startTime = '2027-06-09 05:30:00' },
+  { name = '(China) (Surface/LACM) Setup start time',            startTime = '2027-06-09 06:00:00' },
+  { name = '(China) (Sub-surface/SLCM) Setup start time',        startTime = '2027-06-09 06:30:00' },
+  { name = '(China) (Air/Land-based/AAM) Setup start time',      startTime = '2027-06-09 06:40:00' },
+  { name = '(China) (Air/Ship-based/LACM) Setup start time',     startTime = '2027-06-09 07:00:00' },
+}
+
+
 -- MLRS
 CONFIG.t.ground.mlrs.wpnDefault = 144
 CONFIG.t.ground.mlrs.ammoThreshold = 25
-CONFIG.t.ground.mlrs.position = {
+CONFIG.t.ground.mlrs.positions = {
   pingzhen = {
     RL = {
       course = {
@@ -1889,7 +1891,7 @@ CONFIG.t.ground.mlrs.reloadTime = 30 * 60
 -- SRBM
 CONFIG.t.ground.srbm.wpnDefault = 27
 CONFIG.t.ground.srbm.ammoThreshold = 25
-CONFIG.t.ground.srbm.position = {
+CONFIG.t.ground.srbm.positions = {
   pingzhen = {
     RL = {
       course = {
@@ -1945,7 +1947,7 @@ CONFIG.t.ground.srbm.reloadTime = 10 * 60
 -- GLCM
 CONFIG.t.ground.glcm.wpnDefault = 24
 CONFIG.t.ground.glcm.ammoThreshold = 25
-CONFIG.t.ground.glcm.position = {
+CONFIG.t.ground.glcm.positions = {
   quanxi = {
     RL = {
       course = {},
@@ -1983,7 +1985,7 @@ CONFIG.t.ground.glcm.reloadTime = 45 * 60
 -- ASCM
 CONFIG.t.ground.ascm.wpnDefault = 16
 CONFIG.t.ground.ascm.ammoThreshold = 25
-CONFIG.t.ground.ascm.position = {
+CONFIG.t.ground.ascm.positions = {
   pingzhen = {
     RL = {
       course = {
@@ -2083,12 +2085,12 @@ CONFIG.t.repairRunway.percentagePerHour = 3
 
 
 -- IADS
-CONFIG.t.IADS.values = { ROCC = 1.5, TAAOC = 1.5 }
+CONFIG.t.IADS.ratio = { ROCC = 1.5, TAAOC = 1.5 }
 
 
 -- Aircraft settings
 CONFIG.t.air.landBased.wpnNum = 8
-CONFIG.t.air.landBased.ACInfo = {
+CONFIG.t.air.landBased.deployedACs = {
   {
     name = 'Ching Chuang Kang AB',
     baseGUID = '6Z8LM5-0HMIHS2L949R0',
@@ -2398,7 +2400,7 @@ CONFIG.t.surface.sag = {
   },
 }
 
-CONFIG.t.surface.ships = {
+CONFIG.t.surface.deployedShips = {
   {
     name = 'Port of Keelung',
     baseGUID = 'X58F5H-0HMSMDQJ7LEUI',
@@ -2567,7 +2569,7 @@ SaveData.c.ground.mlrs.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
     wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
     unitCount = 3,
-    position = CONFIG.c.ground.mlrs.position.pingtan,
+    position = CONFIG.c.ground.mlrs.positions.pingtan,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCGDKF',
@@ -2578,7 +2580,7 @@ SaveData.c.ground.mlrs.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.mlrs.wpnDefault,
     wpnDefault = CONFIG.c.ground.mlrs.wpnDefault,
     unitCount = 3,
-    position = CONFIG.c.ground.mlrs.position.chinchew,
+    position = CONFIG.c.ground.mlrs.positions.chinchew,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HNBRRE2PRT40',
@@ -2591,7 +2593,7 @@ SaveData.c.ground.mlrs.batteries = {
     guid = 'IC8B0X-0HN5UJRVS1JEK',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.mlrs.position.pingtan,
+    position = CONFIG.c.ground.mlrs.positions.pingtan,
     weaponDBID = 4472,
     ammoThreshold = CONFIG.c.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOERV4D'
@@ -2602,7 +2604,7 @@ SaveData.c.ground.mlrs.batteries = {
     guid = 'IC8B0X-0HNBRRE2PRQAL',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.mlrs.position.chinchew,
+    position = CONFIG.c.ground.mlrs.positions.chinchew,
     weaponDBID = 4472,
     ammoThreshold = CONFIG.c.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9'
@@ -2655,7 +2657,7 @@ SaveData.c.ground.glcm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.glcm.wpnDefault,
     wpnDefault = CONFIG.c.ground.glcm.wpnDefault,
     unitCount = 4,
-    position = CONFIG.c.ground.glcm.position.brigade635,
+    position = CONFIG.c.ground.glcm.positions.brigade635,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN99I5RL5KR9',
@@ -2678,7 +2680,7 @@ SaveData.c.ground.glcm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.glcm.position.brigade635,
+    position = CONFIG.c.ground.glcm.positions.brigade635,
     weaponDBID = 2122,
     ammoThreshold = CONFIG.c.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVG88'
@@ -2757,7 +2759,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade615,
+    position = CONFIG.c.ground.srbm.positions.brigade615,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCG848',
@@ -2768,7 +2770,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade614,
+    position = CONFIG.c.ground.srbm.positions.brigade614,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCG95Q',
@@ -2779,7 +2781,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade636,
+    position = CONFIG.c.ground.srbm.positions.brigade636,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCG8CT',
@@ -2790,7 +2792,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade616,
+    position = CONFIG.c.ground.srbm.positions.brigade616,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCG8OK',
@@ -2801,7 +2803,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade613,
+    position = CONFIG.c.ground.srbm.positions.brigade613,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCG9GA',
@@ -2812,7 +2814,7 @@ SaveData.c.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.c.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    position = CONFIG.c.ground.srbm.position.brigade617,
+    position = CONFIG.c.ground.srbm.positions.brigade617,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9ASEFCGA5A',
@@ -2825,7 +2827,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade615,
+    position = CONFIG.c.ground.srbm.positions.brigade615,
     weaponDBID = 2142,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D'
@@ -2836,7 +2838,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade614,
+    position = CONFIG.c.ground.srbm.positions.brigade614,
     weaponDBID = 2142,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG'
@@ -2847,7 +2849,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade636,
+    position = CONFIG.c.ground.srbm.positions.brigade636,
     weaponDBID = 4511,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1'
@@ -2858,7 +2860,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade616,
+    position = CONFIG.c.ground.srbm.positions.brigade616,
     weaponDBID = 2145,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN'
@@ -2869,7 +2871,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade613,
+    position = CONFIG.c.ground.srbm.positions.brigade613,
     weaponDBID = 40,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC'
@@ -2880,7 +2882,7 @@ SaveData.c.ground.srbm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.c.ground.srbm.position.brigade617,
+    position = CONFIG.c.ground.srbm.positions.brigade617,
     weaponDBID = 4511,
     ammoThreshold = CONFIG.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P'
@@ -2936,9 +2938,6 @@ SaveData.c.ground.srbm.packages = {
 
 -- Recon
 SaveData.c.recon.isActivated = false
--- SaveData.c.recon.h6nTemp = {}
--- SaveData.c.recon.wz8Temp = {}
--- SaveData.c.recon.bzk005Temp = {}
 SaveData.c.recon.temp = {
   H6N = {},
   WZ8 = {},
@@ -3182,7 +3181,7 @@ SaveData.t.ground.mlrs.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.mlrs.wpnDefault,
     wpnDefault = CONFIG.t.ground.mlrs.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.mlrs.position.pingzhen,
+    position = CONFIG.t.ground.mlrs.positions.pingzhen,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9B47GHVJ7G',
@@ -3195,7 +3194,7 @@ SaveData.t.ground.mlrs.batteries = {
     guid = 'IC8B0X-0HN7RU9I3KV9T',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.mlrs.position.pingzhen,
+    position = CONFIG.t.ground.mlrs.positions.pingzhen,
     weaponDBID = 2948,
     ammoThreshold = CONFIG.t.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7RT1I581BB'
@@ -3219,7 +3218,7 @@ SaveData.t.ground.srbm.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.srbm.wpnDefault,
     wpnDefault = CONFIG.t.ground.srbm.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.srbm.position.dadu,
+    position = CONFIG.t.ground.srbm.positions.dadu,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9B47GHVJG6',
@@ -3232,7 +3231,7 @@ SaveData.t.ground.srbm.batteries = {
     guid = 'IC8B0X-0HN7SOIUF4D47',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.srbm.position.dadu,
+    position = CONFIG.t.ground.srbm.positions.dadu,
     weaponDBID = 1717,
     ammoThreshold = CONFIG.t.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS'
@@ -3262,7 +3261,7 @@ SaveData.t.ground.glcm.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.glcm.wpnDefault,
     wpnDefault = CONFIG.t.ground.glcm.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.glcm.position.quanxi,
+    position = CONFIG.t.ground.glcm.positions.quanxi,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9B47GHVKAG',
@@ -3273,7 +3272,7 @@ SaveData.t.ground.glcm.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.glcm.wpnDefault,
     wpnDefault = CONFIG.t.ground.glcm.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.glcm.position.neipu,
+    position = CONFIG.t.ground.glcm.positions.neipu,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9B47GHVL3V',
@@ -3286,7 +3285,7 @@ SaveData.t.ground.glcm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.glcm.position.quanxi,
+    position = CONFIG.t.ground.glcm.positions.quanxi,
     weaponDBID = 3228,
     ammoThreshold = CONFIG.t.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT'
@@ -3297,7 +3296,7 @@ SaveData.t.ground.glcm.batteries = {
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.glcm.position.neipu,
+    position = CONFIG.t.ground.glcm.positions.neipu,
     weaponDBID = 3228,
     ammoThreshold = CONFIG.t.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC'
@@ -3328,7 +3327,7 @@ SaveData.t.ground.ascm.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.ascm.wpnDefault,
     wpnDefault = CONFIG.t.ground.ascm.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.ascm.position.pingzhen,
+    position = CONFIG.t.ground.ascm.positions.pingzhen,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9B47GHVLV9',
@@ -3339,7 +3338,7 @@ SaveData.t.ground.ascm.ammunitionSections = {
     wpnCurrent = CONFIG.t.ground.ascm.wpnDefault,
     wpnDefault = CONFIG.t.ground.ascm.wpnDefault,
     unitCount = 2,
-    position = CONFIG.t.ground.ascm.position.dong,
+    position = CONFIG.t.ground.ascm.positions.dong,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
     ammunition = 'IC8B0X-0HN9JFGVR06D8',
@@ -3352,7 +3351,7 @@ SaveData.t.ground.ascm.batteries = {
     guid = 'IC8B0X-0HN87MOIE9C4U',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.ascm.position.luzhu,
+    position = CONFIG.t.ground.ascm.positions.luzhu,
     weaponDBID = 1133,
     ammoThreshold = CONFIG.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
@@ -3363,7 +3362,7 @@ SaveData.t.ground.ascm.batteries = {
     guid = 'X58F5H-0HMVEU1FUVOLC',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.ascm.position.luzhu,
+    position = CONFIG.t.ground.ascm.positions.luzhu,
     weaponDBID = 1133,
     ammoThreshold = CONFIG.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
@@ -3374,7 +3373,7 @@ SaveData.t.ground.ascm.batteries = {
     guid = 'X58F5H-0HMVEU1FUVO8I',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.ascm.position.dong,
+    position = CONFIG.t.ground.ascm.positions.dong,
     weaponDBID = 1133,
     ammoThreshold = CONFIG.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
@@ -3385,7 +3384,7 @@ SaveData.t.ground.ascm.batteries = {
     guid = 'X58F5H-0HMVEU1FUVO6J',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.ascm.position.dong,
+    position = CONFIG.t.ground.ascm.positions.dong,
     weaponDBID = 1133,
     ammoThreshold = CONFIG.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
@@ -3396,7 +3395,7 @@ SaveData.t.ground.ascm.batteries = {
     guid = 'IC8B0X-0HN8CEO4EUE8B',
     reloadStartTime = nil,
     state = CONFIG.batteryState.HIDE,
-    position = CONFIG.t.ground.ascm.position.luzhu,
+    position = CONFIG.t.ground.ascm.positions.luzhu,
     weaponDBID = 1133,
     ammoThreshold = CONFIG.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'

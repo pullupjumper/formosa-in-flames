@@ -12,7 +12,7 @@ if unit and saveData.t.IADS.isActivated then
       local actualUnit = SE_GetUnit({ guid = data.guid })
 
       if actualUnit then
-        -- local OODA = GetOODA(CONFIG.t.IADS.values.ROCC)
+        -- local OODA = GetOODA(CONFIG.t.IADS.ratio.ROCC)
         -- local detect = data.OODA.detection
         -- local target = data.OODA.targeting
         -- actualUnit.OODA = {
@@ -30,7 +30,7 @@ if unit and saveData.t.IADS.isActivated then
       local actualUnit = SE_GetUnit({ guid = data.guid })
 
       if actualUnit then
-        -- local OODA = GetOODA(CONFIG.t.IADS.values.ROCC)
+        -- local OODA = GetOODA(CONFIG.t.IADS.ratio.ROCC)
         -- local detect = data.OODA.detection
         -- local target = data.OODA.targeting
         -- actualUnit.OODA = {
@@ -50,7 +50,7 @@ if unit and saveData.t.IADS.isActivated then
       local actualUnit = SE_GetUnit({ guid = data.guid })
 
       if actualUnit then
-        -- local OODA = GetOODA(CONFIG.t.IADS.values.TAAOC)
+        -- local OODA = GetOODA(CONFIG.t.IADS.ratio.TAAOC)
         -- local detect = data.OODA.detection
         -- local target = data.OODA.targeting
         -- actualUnit.OODA = {

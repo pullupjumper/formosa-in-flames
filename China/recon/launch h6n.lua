@@ -10,7 +10,7 @@ saveData.c.recon.temp.H6N = LaunchUnits(
   CONFIG.c.recon.bases.H6N.guid,
   CONFIG.c.recon.courses.H6N,
   1,
-  CONFIG.c.platformDBID76,
+  CONFIG.platformDBID76,
   'Aircraft'
 )
 

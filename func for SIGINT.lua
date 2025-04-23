@@ -102,103 +102,102 @@ local function isInArea(point, area, side)
 end
 
 -- function HandleSIGINT(CONFIG, units, isShown, side)
---     local field = 'u'
---     local enermySide = 'China'
+--   local field = 'u'
+--   local enermySide = 'China'
 
---     if side == 'China' then
---         field = 'c'
---         enermySide = 'Taiwan'
---     end
+--   if side == 'China' then
+--     field = 'c'
+--     enermySide = 'Taiwan'
+--   end
 
---     for _, value in pairs(units) do
---         local unit = SE_GetUnit({ guid = value.guid })
+--   for _, value in pairs(units) do
+--     local unit = SE_GetUnit({ guid = value.guid })
 
---         if unit and math.random() > 0.3 then
---             local isEmitting = false
+--     if unit and math.random() > 0.3 then
+--       local isEmitting = false
 
---             if unit.dbid and unit.dbid == CONFIG.const.platformDBID46 then
---                 isEmitting = true
---             else
---                 local count = GetCount(unit.course)
---                 local isLeavingRL = not isInArea(
---                     unit.course[count],
---                     value.position.RL.area,
---                     enermySide
---                 )
+--       if unit.dbid and unit.dbid == CONFIG.const.platformDBID46 then
+--         isEmitting = true
+--       else
+--         local count = GetCount(unit.course)
+--         local isLeavingRL = not isInArea(
+--           unit.course[count],
+--           value.position.RL.area,
+--           enermySide
+--         )
 
---                 if count > 0 and isLeavingRL and unit.speed > 0 then
---                     isEmitting = true
---                 end
---             end
-
---             local result = getSIGINT(value.guid, value.msg, isEmitting, isShown, side)
-
---             if result.isDetected then
---                 if CONFIG[field].SIGINT.transmissions[value.guid] then
---                     CONFIG[field].SIGINT.transmissions[value.guid].latitude = result.latitude
---                     CONFIG[field].SIGINT.transmissions[value.guid].longitude = result.longitude
---                 else
---                     local type = 'mobile'
-
---                     if string.find(value.name, 'ROCC') ~= nil or
---                         string.find(value.name, 'TAAOC') ~= nil then
---                         type = 'C2'
---                     end
-
---                     CONFIG[field].SIGINT.transmissions[value.guid] = {
---                         name = value.name,
---                         guid = value.guid,
---                         msg = value.msg,
---                         type = type,
---                         latitude = result.latitude,
---                         longitude = result.longitude,
---                         contacts = {},
---                         temp = 0,
---                         autodetectable = false
---                     }
---                 end
-
---                 CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions[value.guid]
---                     .temp + 1
-
---                 if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount then
---                     if not CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
---                         if unit.group then
---                             for _, v in ipairs(unit.group.unitlist) do
---                                 SE_SetUnit({ guid = v, autodetectable = true })
---                             end
---                         else
---                             SE_SetUnit({ guid = value.guid, autodetectable = true })
---                         end
-
---                         CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = true
---                     end
---                 end
---             else
---                 if CONFIG[field].SIGINT.transmissions[value.guid] then
---                     if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount - 1 then
---                         CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions
---                             [value.guid]
---                             .temp - 1
---                     end
-
---                     if CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
---                         if unit.group then
---                             for _, v in ipairs(unit.group.unitlist) do
---                                 SE_SetUnit({ guid = v, autodetectable = false })
---                             end
---                         else
---                             SE_SetUnit({ guid = value.guid, autodetectable = false })
---                         end
-
---                         CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = false
---                     end
---                 end
---             end
+--         if count > 0 and isLeavingRL and unit.speed > 0 then
+--           isEmitting = true
 --         end
---     end
--- end
+--       end
 
+--       local result = getSIGINT(value.guid, value.msg, isEmitting, isShown, side)
+
+--       if result.isDetected then
+--         if CONFIG[field].SIGINT.transmissions[value.guid] then
+--           CONFIG[field].SIGINT.transmissions[value.guid].latitude = result.latitude
+--           CONFIG[field].SIGINT.transmissions[value.guid].longitude = result.longitude
+--         else
+--           local type = 'mobile'
+
+--           if string.find(value.name, 'ROCC') ~= nil or
+--               string.find(value.name, 'TAAOC') ~= nil then
+--             type = 'C2'
+--           end
+
+--           CONFIG[field].SIGINT.transmissions[value.guid] = {
+--             name = value.name,
+--             guid = value.guid,
+--             msg = value.msg,
+--             type = type,
+--             latitude = result.latitude,
+--             longitude = result.longitude,
+--             contacts = {},
+--             temp = 0,
+--             autodetectable = false
+--           }
+--         end
+
+--         CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions[value.guid]
+--             .temp + 1
+
+--         if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount then
+--           if not CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
+--             if unit.group then
+--               for _, v in ipairs(unit.group.unitlist) do
+--                 SE_SetUnit({ guid = v, autodetectable = true })
+--               end
+--             else
+--               SE_SetUnit({ guid = value.guid, autodetectable = true })
+--             end
+
+--             CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = true
+--           end
+--         end
+--       else
+--         if CONFIG[field].SIGINT.transmissions[value.guid] then
+--           if CONFIG[field].SIGINT.transmissions[value.guid].temp > CONFIG[field].SIGINT.const.maxCount - 1 then
+--             CONFIG[field].SIGINT.transmissions[value.guid].temp = CONFIG[field].SIGINT.transmissions
+--                 [value.guid]
+--                 .temp - 1
+--           end
+
+--           if CONFIG[field].SIGINT.transmissions[value.guid].autodetectable then
+--             if unit.group then
+--               for _, v in ipairs(unit.group.unitlist) do
+--                 SE_SetUnit({ guid = v, autodetectable = false })
+--               end
+--             else
+--               SE_SetUnit({ guid = value.guid, autodetectable = false })
+--             end
+
+--             CONFIG[field].SIGINT.transmissions[value.guid].autodetectable = false
+--           end
+--         end
+--       end
+--     end
+--   end
+-- end
 
 -- 輔助函數：根據側別設置字段和敵方側別
 local function getSideConfig(side)
@@ -217,7 +216,6 @@ local function isUnitEmitting(unit, unitData, enemySide)
     end
   end
 
-  -- 替換 GetCount 為 #
   local courseCount = #unit.course
   if courseCount == 0 or unit.speed == 0 then
     return false

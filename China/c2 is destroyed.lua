@@ -12,7 +12,7 @@ if unit and saveData.c.IADS.isActivated then
       local actualUnit = SE_GetUnit({ guid = data.guid })
 
       if actualUnit == nil then goto continue end
-      -- local OODA = GetOODA(CONFIG.c.IADS.values.C2)
+      -- local OODA = GetOODA(CONFIG.c.IADS.ratio.C2)
       -- local detect = data.OODA.detection
       -- local target = data.OODA.targeting
       -- actualUnit.OODA = {
@@ -31,7 +31,7 @@ if unit and saveData.c.IADS.isActivated then
       local actualUnit = SE_GetUnit({ guid = data.guid })
 
       if actualUnit == nil then goto continue end
-      -- local OODA = GetOODA(CONFIG.c.IADS.values.C2)
+      -- local OODA = GetOODA(CONFIG.c.IADS.ratio.C2)
       -- local detect = data.OODA.detection
       -- local target = data.OODA.targeting
       -- actualUnit.OODA = {
