@@ -29,7 +29,7 @@ function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName, un
       Lat = point.latitude,
       Lon = point.longitude,
       autodetectable = autodetectable,
-      unitname = unitname
+      unitname = unitname .. RandomTxt(2),
     })
 
     if unit then
@@ -58,11 +58,11 @@ function ADDC2Facilities()
     CreateRandomUnits(
       setting.position,
       CONFIG.c.IADS.C2FacilityDBIDs,
-      5,
+      3,
       CONFIG.c.IADS.randomRadius,
       'China',
       'Facility',
-      "Suspected C2 Facility#" .. RandomTxt(2),
+      "Suspected C2 Facility#",
       true
     )
   end
@@ -79,64 +79,67 @@ function InitC2Facilities(saveData)
       local actualUnit = ScenEdit_GetUnit({ guid = u.guid })
       if actualUnit == nil then goto continue end
 
-      for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
-        if actualUnit.dbid == DBID and actualUnit:inArea(setting.area) then
-          table.insert(facilities, actualUnit)
-          break
+      for _, area in ipairs(setting.areas) do
+        for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
+          if actualUnit.dbid == DBID and actualUnit:inArea(area) then
+            table.insert(facilities, actualUnit)
+            break
+          end
         end
       end
-
       ::continue::
     end
 
     if #facilities > 0 then
       local randomIdx = math.random(#facilities)
       saveData.c.IADS.C2[facilities[randomIdx].guid] = {
-        name = facilities[randomIdx].name,
+        name = facilities[randomIdx].name .. '/' .. setting.areaName,
         msg = 'Radio source, ' .. facilities[randomIdx].name,
         guid = facilities[randomIdx].guid,
-        area = setting.area,
+        areas = setting.areas,
         SAM = {},
         radar = {}
       }
     end
   end
 
-  for _, value in ipairs(units) do
-    local unit = SE_GetUnit({ guid = value.guid })
+  for _, unit in ipairs(units) do
+    local actualUnit = SE_GetUnit({ guid = unit.guid })
 
     for c2Guid, item in pairs(saveData.c.IADS.C2) do
-      if unit ~= nil and unit:inArea(item.area) then
-        if (unit.dbid == CONFIG.platformDBID18
-              or unit.dbid == CONFIG.platformDBID19
-              or unit.dbid == CONFIG.platformDBID20
-              or unit.dbid == CONFIG.platformDBID21) and
-            string.find(unit.name, 'DECOY') == nil then
-          local data = {
-            name = unit.name,
-            guid = unit.guid,
-            OODA = unit.OODA,
-            currOODA = unit.OODA,
-            isOutOfComms = false,
-            outofcomms = 0,
-            EMCONSetting = 'Radar=Passive'
-          }
+      for _, area in ipairs(item.areas) do
+        if actualUnit ~= nil and actualUnit:inArea(area) then
+          if (actualUnit.dbid == CONFIG.platformDBID18
+                or actualUnit.dbid == CONFIG.platformDBID19
+                or actualUnit.dbid == CONFIG.platformDBID20
+                or actualUnit.dbid == CONFIG.platformDBID21) and
+              string.find(actualUnit.name, 'DECOY') == nil then
+            local data = {
+              name = actualUnit.name,
+              guid = actualUnit.guid,
+              OODA = actualUnit.OODA,
+              currOODA = actualUnit.OODA,
+              isOutOfComms = false,
+              outofcomms = 0,
+              EMCONSetting = 'Radar=Passive'
+            }
 
-          saveData.c.IADS.C2[c2Guid].SAM[unit.guid] = data
-        end
+            saveData.c.IADS.C2[c2Guid].SAM[actualUnit.guid] = data
+          end
 
-        if unit.dbid == CONFIG.platformDBID16 or unit.dbid == CONFIG.platformDBID17 then
-          local data = {
-            name = unit.name,
-            guid = unit.guid,
-            OODA = unit.OODA,
-            currOODA = unit.OODA,
-            isOutOfComms = false,
-            outofcomms = 0,
-            EMCONSetting = 'Radar=Passive'
-          }
+          if actualUnit.dbid == CONFIG.platformDBID16 or actualUnit.dbid == CONFIG.platformDBID17 then
+            local data = {
+              name = actualUnit.name,
+              guid = actualUnit.guid,
+              OODA = actualUnit.OODA,
+              currOODA = actualUnit.OODA,
+              isOutOfComms = false,
+              outofcomms = 0,
+              EMCONSetting = 'Radar=Passive'
+            }
 
-          saveData.c.IADS.C2[c2Guid].radar[unit.guid] = data
+            saveData.c.IADS.C2[c2Guid].radar[actualUnit.guid] = data
+          end
         end
       end
     end
@@ -573,6 +576,7 @@ function AddSubmarines(side)
       if addedUnit then
         addedUnit.course = unit.course
         -- SE_SetUnit({ guid = addedUnit.guid, desiredDepth = -300 })
+
         ScenEdit_AddReloadsToUnit({
           side = side,
           guid = addedUnit.guid,

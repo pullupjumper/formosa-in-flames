@@ -358,7 +358,7 @@ local function getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
   local weaponAllocations = ScenEdit_WeaponAllocation('', contactGuid, side)
-  if #weaponAllocations > 0 then
+  if weaponAllocations and #weaponAllocations > 0 then
     for _, allocation in ipairs(weaponAllocations) do
       totalTargetAmmoCount = totalTargetAmmoCount + allocation.qtyAssigned
     end
@@ -399,7 +399,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
     printBox('China', 'func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
-    return false     -- Target already has sufficient weapons allocated, no need to fire more
+    return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 
   return true
@@ -420,19 +420,19 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
 
   -- Check if we have a valid unit at the current group index
   if grpIdx > #groupUnit.group.unitlist then
-    return true, 0     -- Move to next battery, no weapons allocated
+    return true, 0 -- Move to next battery, no weapons allocated
   end
 
   local guid = groupUnit.group.unitlist[grpIdx]
   local unit = ScenEdit_GetUnit({ guid = guid })
 
   if not unit then
-    return true, 0     -- Unit not found, move to next, no weapons allocated
+    return true, 0 -- Unit not found, move to next, no weapons allocated
   end
 
   -- Find weapon info and check availability
   local weaponInfo = getWeaponInfo(unit, weaponDBID)
-  weaponDBID = weaponInfo.weaponDBID   -- Use found weaponDBID if not provided
+  weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
   if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
@@ -469,7 +469,7 @@ end
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
   local weaponInfo = getWeaponInfo(unit, weaponDBID)
-  weaponDBID = weaponInfo.weaponDBID   -- Use found weaponDBID if not provided
+  weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
   if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
@@ -528,7 +528,7 @@ function AttackContact(contact, ammoToAllocate, batteries, btyIdx, grpIdx, weapo
 
       -- Update our tracking variables
       totalAmmoAllocated = totalAmmoAllocated + ammoAllocated
-      attemptCount = attemptCount + 1       -- Count each unit processing as one attempt
+      attemptCount = attemptCount + 1 -- Count each unit processing as one attempt
 
       if advanceBattery then
         btyIdx = btyIdx + 1

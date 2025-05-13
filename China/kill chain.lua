@@ -4,7 +4,7 @@ local function launchH6NIfRequired(saveData)
       CONFIG.c.recon.bases.H6N.guid,
       CONFIG.c.recon.courses.H6N,
       1,
-      CONFIG.c.platformDBID76,
+      CONFIG.platformDBID76,
       'Aircraft'
     )
   end
@@ -438,7 +438,7 @@ end
 
 local function handleStrikePackagesWithMission(package, contacts, filterFn, contactNum)
   local assignAllUnitsToStrikeMission = function(pkg)
-    AssignEmbarkedUnitToStrikeMission(
+    local result = AssignEmbarkedUnitToStrikeMission(
       pkg.striker.baseGUID,
       pkg.striker.num,
       pkg.striker.weaponDBID,
@@ -484,6 +484,24 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
       local mission = ScenEdit_GetMission('China', pkg.tanker.missionName)
       mission.isactive = true
     end
+
+    if result == nil then return false end
+
+    return #result > 0
+  end
+
+  local mission = ScenEdit_GetMission('China', package.missionName)
+
+  if mission then
+    -- ScenEdit_SetMission('China', package.missionName, { starttime = ScenEdit_CurrentTime() })
+
+    for _, guid in ipairs(mission.targetlist) do
+      local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
+
+      if contact and contact.BDA and contact.BDA['STRUCTURAL'] == 'Heavy damage' then
+        ScenEdit_RemoveUnitAsTarget({ contact.guid }, mission.name)
+      end
+    end
   end
 
   if contacts and filterFn and contactNum then
@@ -499,19 +517,37 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
     -- local filteredContacts = FilterContacts(contacts, fn)
     -- local filteredContacts = Array_utils.new(contacts):filter(filterFn(package)):value()
 
-    if #filteredContacts >= contactNum then
+    if #filteredContacts >= contactNum or (mission and #mission.targetlist > 0) then
       for _, value in ipairs(filteredContacts) do
         value.posture = 'H'
         ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
       end
-      assignAllUnitsToStrikeMission(package)
-      return true
+      return assignAllUnitsToStrikeMission(package)
     end
   else
-    assignAllUnitsToStrikeMission(package)
-    return true
+    return assignAllUnitsToStrikeMission(package)
   end
   return false
+end
+
+local function isPackagesFinished(packages)
+  for _, package in ipairs(packages) do
+    if not package.hasLaunched then
+      return false
+    end
+  end
+
+  return true
+end
+
+local function isNoUnitAssignedToMission(missionName)
+  local mission = ScenEdit_GetMission('China', missionName)
+
+  if mission then
+    return #mission.unitlist == 0
+  end
+
+  return true
 end
 
 local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
@@ -523,7 +559,7 @@ local function airStrike(saveData, base, type, contacts, contactHandler, contact
   end
 
   local isAllowedToAttack = not antishipConfig.lastStrikeTime
-      or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].timeSpan)
+      or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
 
   for _, package in ipairs(antishipConfig.packages) do
     if not package.hasLaunched and isAllowedToAttack then
@@ -535,6 +571,13 @@ local function airStrike(saveData, base, type, contacts, contactHandler, contact
       end
 
       break
+    end
+  end
+
+  if isPackagesFinished(antishipConfig.packages) and
+      isNoUnitAssignedToMission(antishipConfig.packages[#antishipConfig.packages].missionName) then
+    for _, package in ipairs(antishipConfig.packages) do
+      package.hasLaunched = false
     end
   end
 end
@@ -622,7 +665,15 @@ if saveData.c.subSurface.slcm.isActivated then
 end
 
 if saveData.c.air.landBased.lacm.isActivated then
-  airStrike(saveData, 'landBased', 'lacm')
+  local contactHandler = function(package)
+    return function(contact)
+      return
+          (string.find(contact.type_description, 'ROCC') ~= nil or
+            string.find(contact.type_description, 'TAAOC') ~= nil) and
+          contact:inArea(package.area)
+    end
+  end
+  airStrike(saveData, 'landBased', 'lacm', contacts, contactHandler, 1)
 end
 
 if saveData.c.air.shipBased.lacm.isActivated then
@@ -631,8 +682,8 @@ end
 
 if saveData.c.air.landBased.ascm.isActivated then
   local navalContactHandler = function(package)
-    return function(value)
-      return value.typed == 2 and value:inArea(package.area)
+    return function(contact)
+      return contact.typed == 2 and contact:inArea(package.area)
     end
   end
   airStrike(saveData, 'landBased', 'ascm', contacts, navalContactHandler, 4)
@@ -640,12 +691,12 @@ end
 
 if saveData.c.air.landBased.aam.isActivated then
   local airContactHandler = function(package)
-    return function(value)
-      if value.emissions and value.emissions[1] then
-        local emission = value.emissions[1]['sensor_dbid']
+    return function(contact)
+      if contact.emissions and contact.emissions[1] then
+        local emission = contact.emissions[1]['sensor_dbid']
         return (emission == CONFIG.sensorDBID7 or emission == CONFIG.sensorDBID8) and
-            value.typed == 0 and
-            value:inArea(package.area)
+            contact.typed == 0 and
+            contact:inArea(package.area)
       end
 
       return false
@@ -656,8 +707,8 @@ end
 
 if saveData.c.air.landBased.gbu.isActivated then
   local groundContactHandler = function(package)
-    return function(value)
-      return value.typed == 8 and value:inArea(package.area)
+    return function(contact)
+      return contact.typed == 8 and contact:inArea(package.area)
     end
   end
   airStrike(saveData, 'landBased', 'gbu', contacts, groundContactHandler, 1)

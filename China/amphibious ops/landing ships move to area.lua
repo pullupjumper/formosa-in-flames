@@ -6,67 +6,310 @@ if saveData == nil then
   return
 end
 
--- local function setCoursesForAllShips(CONFIG)
---     local shipSettings = CONFIG.c.PHIBOP.shipSettings
---     local initialLocations = CONFIG.c.PHIBOP.initialLocations
+-- local function setCoursesForAllShips(saveData)
+--   local shipSettings = CONFIG.c.PHIBOP.shipSettings
+--   local initialLocations = CONFIG.c.PHIBOP.initialLocations
+--   local calculations = saveData.c.PHIBOP.calculations
 
---     for _, value in ipairs(units) do
---         local unit = SE_GetUnit({ guid = value.guid })
+--   for _, _item in ipairs(units) do
+--     local actualUnit = SE_GetUnit({ guid = _item.guid })
 
---         for _, infoItem in ipairs(initialLocations) do
---             if unit and unit:inArea(infoItem.from.stagingArea) then
---                 unit.manualSpeed = shipSettings.shipSpeed
+--     for _, item in ipairs(initialLocations) do
+--       if actualUnit and actualUnit:inArea(item.from.stagingArea) then
+--         local groupNameForLHD = item.name .. ' LHD/LPD Grp'
+--         local groupNameForLST = item.name .. ' LST Grp'
+--         local groupForLHD = ScenEdit_GetUnit({ unitname = groupNameForLHD })
+--         local groupForLST = ScenEdit_GetUnit({ unitname = groupNameForLST })
+--         local locationFor075 = calculations[item.name].result.type075.locations[1]
+--         local locationFor072a = calculations[item.name].result.type072a.locations[1]
 
---                 if unit.dbid == infoItem.to.result.type075.dbid then
---                     local locationIndex = infoItem.to.result.type075.locationIndex
---                     local location = infoItem.to.result.type075.locations[locationIndex]
---                     unit.course = GetCourseByPoints({ location })
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type075.locationIndex = locationIndex
---                 elseif unit.dbid == infoItem.to.result.type072iii.dbid then
---                     local locationIndex = infoItem.to.result.type072iii.locationIndex
---                     local location = infoItem.to.result.type072iii.locations[locationIndex]
---                     unit.course = GetCourseByPoints({ location })
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type072iii.locationIndex = locationIndex
---                 elseif unit.dbid == infoItem.to.result.type072a.dbid then
---                     local locationIndex = infoItem.to.result.type072a.locationIndex
---                     local location = infoItem.to.result.type072a.locations[locationIndex]
---                     unit.course = GetCourseByPoints({ location })
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type072a.locationIndex = locationIndex
---                 elseif unit.dbid == infoItem.to.result.type073a.dbid then
---                     local locationIndex = infoItem.to.result.type073a.locationIndex
---                     local location = infoItem.to.result.type073a.locations[locationIndex]
---                     unit.course = GetCourseByPoints({ location })
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type073a.locationIndex = locationIndex
---                 elseif unit.dbid == infoItem.to.result.type072a2.dbid then
---                     local locationIndex = infoItem.to.result.type072a2.locationIndex
---                     local location = infoItem.to.result.type072a2.locations[locationIndex]
---                     unit.course = GetCourseByPoints({ location })
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type072a2.locationIndex = locationIndex
---                 elseif unit.dbid == infoItem.to.result.type071.dbid then
---                     local locationIndex = infoItem.to.result.type071.locationIndex
+--         if actualUnit.dbid == calculations[item.name].result.type075.dbid then
+--           local locationIndex = calculations[item.name].result.type075.locationIndex
 
---                     if locationIndex > 2 then
---                         local location = infoItem.to.result.type071InLSTArea.locations[locationIndex - 2]
---                         unit.course = GetCourseByPoints({ location })
---                     else
---                         local location = infoItem.to.result.type071.locations[locationIndex]
---                         unit.course = GetCourseByPoints({ location })
---                     end
+--           if groupForLHD and GetCount(groupForLHD.course) == 0 then
+--             groupForLHD.course = GetCourseByPoints({ locationFor075 })
+--             groupForLHD.manualSpeed = shipSettings.shipSpeed
+--           end
 
---                     locationIndex = locationIndex + 1
---                     infoItem.to.result.type071.locationIndex = locationIndex
---                 end
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.type075.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.type075.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLHD
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type075.locationIndex = locationIndex
+--         elseif actualUnit.dbid == calculations[item.name].result.type076.dbid then
+--           local locationIndex = calculations[item.name].result.type076.locationIndex
+
+--           if groupForLHD and GetCount(groupForLHD.course) == 0 then
+--             groupForLHD.course = GetCourseByPoints({ locationFor075 })
+--             groupForLHD.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.type076.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.type076.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLHD
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type076.locationIndex = locationIndex
+--         elseif actualUnit.dbid == calculations[item.name].result.type072iii.dbid then
+--           local locationIndex = calculations[item.name].result.type072iii.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.type072iii.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.type072iii.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type072iii.locationIndex = locationIndex
+--         elseif actualUnit.dbid == calculations[item.name].result.type072a.dbid then
+--           local locationIndex = calculations[item.name].result.type072a.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.type072a.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.type072a.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type072a.locationIndex = locationIndex
+--         elseif actualUnit.name == 'Ferry' then
+--           local locationIndex = calculations[item.name].result.ferry.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.ferry.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.ferry.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.ferry.locationIndex = locationIndex
+--         elseif actualUnit.name == 'RORO' then
+--           local locationIndex = calculations[item.name].result.roro.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.roro.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.roro.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.roro.locationIndex = locationIndex
+--         elseif actualUnit.name == 'Barge' then
+--           local locationIndex = calculations[item.name].result.barge.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.barge.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.barge.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.barge.locationIndex = locationIndex
+--         elseif actualUnit.dbid == calculations[item.name].result.type073a.dbid then
+--           local locationIndex = calculations[item.name].result.type073a.locationIndex
+
+--           if groupForLST and GetCount(groupForLST.course) == 0 then
+--             groupForLST.course = GetCourseByPoints({ locationFor072a })
+--             groupForLST.manualSpeed = shipSettings.shipSpeed
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             ScenEdit_SetUnit({
+--               guid = actualUnit.guid,
+--               latitude = calculations[item.name].result.type073a.locations[locationIndex].latitude,
+--               longitude = calculations[item.name].result.type073a.locations[locationIndex].longitude,
+--               manualSpeed = 0,
+--             })
+--           end
+
+--           actualUnit.group = groupNameForLST
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type073a.locationIndex = locationIndex
+--         elseif actualUnit.dbid == calculations[item.name].result.type071.dbid then
+--           local locationIndex = calculations[item.name].result.type071.locationIndex
+--           local len = GetCount(calculations[item.name].result.type071.locations)
+
+--           if locationIndex > len then
+--             if groupForLST and GetCount(groupForLST.course) == 0 then
+--               groupForLST.course = GetCourseByPoints({ locationFor072a })
+--               groupForLST.manualSpeed = shipSettings.shipSpeed
 --             end
+
+--             actualUnit.group = groupNameForLST
+--           else
+--             if groupForLHD and GetCount(groupForLHD.course) == 0 then
+--               groupForLHD.course = GetCourseByPoints({ locationFor075 })
+--               groupForLHD.manualSpeed = shipSettings.shipSpeed
+--             end
+
+--             actualUnit.group = groupNameForLHD
+--           end
+
+--           if saveData.c.PHIBOP.isTesting then
+--             if locationIndex > len then
+--               ScenEdit_SetUnit({
+--                 guid = actualUnit.guid,
+--                 latitude = calculations[item.name].result.type071InLSTArea.locations
+--                     [locationIndex - len].latitude,
+--                 longitude = calculations[item.name].result.type071InLSTArea.locations
+--                     [locationIndex - len].longitude,
+--                 manualSpeed = 0,
+--               })
+--             else
+--               ScenEdit_SetUnit({
+--                 guid = actualUnit.guid,
+--                 latitude = calculations[item.name].result.type071.locations[locationIndex].latitude,
+--                 longitude = calculations[item.name].result.type071.locations[locationIndex].longitude,
+--                 manualSpeed = 0,
+--               })
+--             end
+--           end
+
+--           locationIndex = locationIndex + 1
+--           calculations[item.name].result.type071.locationIndex = locationIndex
+--         end
+--       end
+--     end
+--   end
+
+--   for _, group in pairs(CONFIG.c.PHIBOP.sag) do
+--     -- local unit = SE_GetUnit({ guid = group.guid })
+--     local unit = SE_GetUnit({ side = 'China', unitname = group.groupName })
+--     if unit == nil then goto continue end
+--     unit.course = group.to.archorageArea
+
+--     if saveData.c.PHIBOP.isTesting then
+--       local count = GetCount(group.to.archorageArea)
+--       local type052d = 0
+--       local type054a = 0
+
+--       for _, u in ipairs(unit.group.unitlist) do
+--         local ship = SE_GetUnit({ guid = u })
+--         if ship == nil then goto continue2 end
+
+--         if ship.dbid == CONFIG.platformDBID48 then
+--           if type052d == 0 then
+--             ScenEdit_SetUnit({
+--               guid = ship.guid,
+--               latitude = group.to.archorageArea[count].lat,
+--               longitude = group.to.archorageArea[count].lon,
+--               heading = group.to.heading,
+--             })
+--           else
+--             local point = World_GetPointFromBearing({
+--               LATITUDE = group.to.archorageArea[count].lat,
+--               LONGITUDE = group.to.archorageArea[count].lon,
+--               BEARING = group.to.heading - 180,
+--               DISTANCE = 1.5,
+--             })
+--             ScenEdit_SetUnit({
+--               guid = ship.guid,
+--               latitude = point.latitude,
+--               longitude = point.longitude,
+--               heading = group.to.heading,
+--             })
+--           end
+--           type052d = type052d + 1
 --         end
 
---         CONFIG.c.PHIBOP.isShipsArrivedInStagingArea = true
---         CONFIG.c.PHIBOP.isShipsStartedMoving = false
+--         if ship.dbid == CONFIG.platformDBID49 then
+--           if type054a == 0 then
+--             local point = World_GetPointFromBearing({
+--               LATITUDE = group.to.archorageArea[count].lat,
+--               LONGITUDE = group.to.archorageArea[count].lon,
+--               BEARING = group.to.heading - 45,
+--               DISTANCE = 1.5,
+--             })
+--             ScenEdit_SetUnit({
+--               guid = ship.guid,
+--               latitude = point.latitude,
+--               longitude = point.longitude,
+--               heading = group.to.heading,
+--             })
+--           else
+--             local point = World_GetPointFromBearing({
+--               LATITUDE = group.to.archorageArea[count].lat,
+--               LONGITUDE = group.to.archorageArea[count].lon,
+--               BEARING = group.to.heading + 45,
+--               DISTANCE = 1.5,
+--             })
+--             ScenEdit_SetUnit({
+--               guid = ship.guid,
+--               latitude = point.latitude,
+--               longitude = point.longitude,
+--               heading = group.to.heading,
+--             })
+--           end
+--           type054a = type054a + 1
+--         end
+
+--         ::continue2::
+--       end
 --     end
+
+--     ::continue::
+--   end
+
+--   saveData.c.PHIBOP.isShipsArrivedInStagingArea = true
+--   saveData.c.PHIBOP.isShipsStartedMoving = false
 -- end
 
 local function setCoursesForAllShips(saveData)
@@ -79,211 +322,165 @@ local function setCoursesForAllShips(saveData)
 
     for _, item in ipairs(initialLocations) do
       if actualUnit and actualUnit:inArea(item.from.stagingArea) then
-        local groupNameForLHD = item.name .. ' LHD/LPD Grp'
-        local groupNameForLST = item.name .. ' LST Grp'
-        local groupForLHD = ScenEdit_GetUnit({ unitname = groupNameForLHD })
-        local groupForLST = ScenEdit_GetUnit({ unitname = groupNameForLST })
-        local locationFor075 = calculations[item.name].result.type075.locations[1]
-        local locationFor072a = calculations[item.name].result.type072a.locations[1]
-
         if actualUnit.dbid == calculations[item.name].result.type075.dbid then
           local locationIndex = calculations[item.name].result.type075.locationIndex
-
-          if groupForLHD and GetCount(groupForLHD.course) == 0 then
-            groupForLHD.course = GetCourseByPoints({ locationFor075 })
-            groupForLHD.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.type075.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.type075.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.type075.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLHD
           locationIndex = locationIndex + 1
           calculations[item.name].result.type075.locationIndex = locationIndex
         elseif actualUnit.dbid == calculations[item.name].result.type076.dbid then
           local locationIndex = calculations[item.name].result.type076.locationIndex
-
-          if groupForLHD and GetCount(groupForLHD.course) == 0 then
-            groupForLHD.course = GetCourseByPoints({ locationFor075 })
-            groupForLHD.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.type076.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.type076.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.type076.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLHD
           locationIndex = locationIndex + 1
           calculations[item.name].result.type076.locationIndex = locationIndex
         elseif actualUnit.dbid == calculations[item.name].result.type072iii.dbid then
           local locationIndex = calculations[item.name].result.type072iii.locationIndex
-
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.type072iii.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.type072iii.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.type072iii.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.type072iii.locationIndex = locationIndex
         elseif actualUnit.dbid == calculations[item.name].result.type072a.dbid then
           local locationIndex = calculations[item.name].result.type072a.locationIndex
+          local location = calculations[item.name].result.type072a.locations[locationIndex]
 
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.type072a.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.type072a.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.type072a.locationIndex = locationIndex
         elseif actualUnit.name == 'Ferry' then
           local locationIndex = calculations[item.name].result.ferry.locationIndex
-
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.ferry.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.ferry.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.ferry.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.ferry.locationIndex = locationIndex
         elseif actualUnit.name == 'RORO' then
           local locationIndex = calculations[item.name].result.roro.locationIndex
-
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.roro.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.roro.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.roro.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.roro.locationIndex = locationIndex
         elseif actualUnit.name == 'Barge' then
           local locationIndex = calculations[item.name].result.barge.locationIndex
-
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.barge.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.barge.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.barge.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.barge.locationIndex = locationIndex
         elseif actualUnit.dbid == calculations[item.name].result.type073a.dbid then
           local locationIndex = calculations[item.name].result.type073a.locationIndex
-
-          if groupForLST and GetCount(groupForLST.course) == 0 then
-            groupForLST.course = GetCourseByPoints({ locationFor072a })
-            groupForLST.manualSpeed = shipSettings.shipSpeed
-          end
+          local location = calculations[item.name].result.type073a.locations[locationIndex]
+          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
             ScenEdit_SetUnit({
               guid = actualUnit.guid,
-              latitude = calculations[item.name].result.type073a.locations[locationIndex].latitude,
-              longitude = calculations[item.name].result.type073a.locations[locationIndex].longitude,
+              latitude = location.latitude,
+              longitude = location.longitude,
               manualSpeed = 0,
             })
           end
 
-          actualUnit.group = groupNameForLST
           locationIndex = locationIndex + 1
           calculations[item.name].result.type073a.locationIndex = locationIndex
         elseif actualUnit.dbid == calculations[item.name].result.type071.dbid then
           local locationIndex = calculations[item.name].result.type071.locationIndex
           local len = GetCount(calculations[item.name].result.type071.locations)
+          local location = nil
 
           if locationIndex > len then
-            if groupForLST and GetCount(groupForLST.course) == 0 then
-              groupForLST.course = GetCourseByPoints({ locationFor072a })
-              groupForLST.manualSpeed = shipSettings.shipSpeed
-            end
-
-            actualUnit.group = groupNameForLST
+            location = calculations[item.name].result.type071InLSTArea.locations[locationIndex - len]
+            actualUnit.course = GetCourseByPoints({ location })
+            actualUnit.manualSpeed = shipSettings.shipSpeed
           else
-            if groupForLHD and GetCount(groupForLHD.course) == 0 then
-              groupForLHD.course = GetCourseByPoints({ locationFor075 })
-              groupForLHD.manualSpeed = shipSettings.shipSpeed
-            end
-
-            actualUnit.group = groupNameForLHD
+            location = calculations[item.name].result.type071.locations[locationIndex]
+            actualUnit.course = GetCourseByPoints({ location })
+            actualUnit.manualSpeed = shipSettings.shipSpeed
           end
 
           if saveData.c.PHIBOP.isTesting then
-            if locationIndex > len then
-              ScenEdit_SetUnit({
-                guid = actualUnit.guid,
-                latitude = calculations[item.name].result.type071InLSTArea.locations
-                    [locationIndex - len].latitude,
-                longitude = calculations[item.name].result.type071InLSTArea.locations
-                    [locationIndex - len].longitude,
-                manualSpeed = 0,
-              })
-            else
-              ScenEdit_SetUnit({
-                guid = actualUnit.guid,
-                latitude = calculations[item.name].result.type071.locations[locationIndex].latitude,
-                longitude = calculations[item.name].result.type071.locations[locationIndex].longitude,
-                manualSpeed = 0,
-              })
-            end
+            ScenEdit_SetUnit({
+              guid = actualUnit.guid,
+              latitude = location.latitude,
+              longitude = location.longitude,
+              manualSpeed = 0,
+            })
           end
 
           locationIndex = locationIndex + 1
@@ -391,7 +588,8 @@ local function getUnitsInAnchorageArea()
           or unit.dbid == CONFIG.platformDBID10
           or unit.dbid == CONFIG.platformDBID32
           or unit.dbid == CONFIG.platformDBID54
-          or unit.dbid == CONFIG.platformDBID56) then
+          or unit.dbid == CONFIG.platformDBID56
+          or unit.dbid == CONFIG.platformDBID72) then
       if unit.unitstate ~= 'Unassigned' then
         isUnitMoving = true
         break

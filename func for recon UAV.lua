@@ -6,6 +6,10 @@ function IsDestroyedOrRTB(list, num)
   for index, value in ipairs(list) do
     local unit = SE_GetUnit({ guid = value.unit })
 
+    if unit and #unit.course == 0 then
+      unit:RTB(true)
+    end
+
     if unit == nil or (unit.unitstate == 'RTB_Manual' or unit.unitstate == 'RTB') then
       times = times + 1
     end

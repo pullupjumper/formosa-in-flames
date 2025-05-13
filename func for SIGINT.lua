@@ -210,6 +210,10 @@ local function isUnitEmitting(unit, unitData, enemySide)
     return true
   end
 
+  if unit.dbid == CONFIG.platformDBID78 then
+    return true
+  end
+
   for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
     if unit.dbid == DBID then
       return true

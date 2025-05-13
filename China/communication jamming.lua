@@ -106,46 +106,46 @@ local function commsJamming(affectedUnit, jammer, jammedNum)
 end
 
 if saveData.c.commsJamming.isActivated then
-  local jammerTemp = nil
-  local jammedNum = 0
+  -- local jammerTemp = nil
+  -- local jammedNum = 0
 
-  for _, jammer in ipairs(saveData.c.commsJamming.jammers) do
-    local actualJammer = SE_GetUnit({ guid = jammer.guid })
+  -- for _, jammer in ipairs(saveData.c.commsJamming.jammers) do
+  --   local actualJammer = SE_GetUnit({ guid = jammer.guid })
 
-    if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
-      jammerTemp = actualJammer
-      break
-    end
-  end
+  --   if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
+  --     jammerTemp = actualJammer
+  --     break
+  --   end
+  -- end
 
-  local unitTemp = {}
+  -- local unitTemp = {}
 
-  for key, item in pairs(saveData.t.IADS.ROCC) do
-    for _, value in pairs(item.SAM) do
-      unitTemp[value.guid] = value
-    end
-    for _, value in pairs(item.radar) do
-      unitTemp[value.guid] = value
-    end
-  end
+  -- for key, item in pairs(saveData.t.IADS.ROCC) do
+  --   for _, value in pairs(item.SAM) do
+  --     unitTemp[value.guid] = value
+  --   end
+  --   for _, value in pairs(item.radar) do
+  --     unitTemp[value.guid] = value
+  --   end
+  -- end
 
-  for key, item in pairs(saveData.t.IADS.TAAOC) do
-    for _, value in pairs(item.SAM) do
-      unitTemp[value.guid] = value
-    end
-  end
+  -- for key, item in pairs(saveData.t.IADS.TAAOC) do
+  --   for _, value in pairs(item.SAM) do
+  --     unitTemp[value.guid] = value
+  --   end
+  -- end
 
-  if jammerTemp then
-    table.sort(unitTemp, function(a, b)
-      local da = Tool_Range(jammerTemp.guid, a.guid)
-      local db = Tool_Range(jammerTemp.guid, b.guid)
-      return da < db
-    end)
-  end
+  -- if jammerTemp then
+  --   table.sort(unitTemp, function(a, b)
+  --     local da = Tool_Range(jammerTemp.guid, a.guid)
+  --     local db = Tool_Range(jammerTemp.guid, b.guid)
+  --     return da < db
+  --   end)
+  -- end
 
-  for _, affectedUnit in pairs(unitTemp) do
-    jammedNum = commsJamming(affectedUnit, jammerTemp, jammedNum)
-  end
+  -- for _, affectedUnit in pairs(unitTemp) do
+  --   jammedNum = commsJamming(affectedUnit, jammerTemp, jammedNum)
+  -- end
 
   for _, AC in ipairs(saveData.t.air.landBased.AC) do
     local actualAC = SE_GetUnit({ guid = AC.guid })

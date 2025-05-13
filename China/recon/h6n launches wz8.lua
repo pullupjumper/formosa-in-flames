@@ -10,7 +10,8 @@ if unit then
   local wz8 = LaunchWZ8(unit, CONFIG.c.recon.courses.WZ8)
 
   if wz8 then
-    table.insert(saveData.c.recon.temp.WZ8, { unit = wz8.guid })
+    -- table.insert(saveData.c.recon.temp.WZ8, { unit = wz8.guid })
+    saveData.c.recon.temp.WZ8 = { { unit = wz8.guid } }
   end
 end
 

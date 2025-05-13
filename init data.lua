@@ -12,7 +12,6 @@ local function initRunways(saveData)
   saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
   saveData.c.ground.mlrs.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/S')
 
-
   for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
     local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
 
@@ -63,62 +62,63 @@ local function initC2(saveData)
   for _, unit in ipairs(units) do
     local actualUnit = SE_GetUnit({ guid = unit.guid })
 
-    for ROCCGuid, item in pairs(saveData.t.IADS.ROCC) do
-      if actualUnit ~= nil and actualUnit:inArea(item.area) then
-        if actualUnit.dbid == CONFIG.platformDBID14 or actualUnit.dbid == CONFIG.platformDBID15 then
-          local data = {
-            name = actualUnit.name,
-            guid = actualUnit.guid,
-            OODA = actualUnit.OODA,
-            currOODA = actualUnit.OODA,
-            isOutOfComms = false,
-            outofcomms = 0,
-            EMCONSetting = 'Radar=Passive'
-          }
+    for _, item in pairs(saveData.t.IADS.ROCC) do
+      for _, area in ipairs(item.areas) do
+        if actualUnit ~= nil and actualUnit:inArea(area) then
+          if actualUnit.dbid == CONFIG.platformDBID14 or actualUnit.dbid == CONFIG.platformDBID15 then
+            local data = {
+              name = actualUnit.name,
+              guid = actualUnit.guid,
+              OODA = actualUnit.OODA,
+              currOODA = actualUnit.OODA,
+              isOutOfComms = false,
+              outofcomms = 0,
+              EMCONSetting = 'Radar=Passive'
+            }
 
-          saveData.t.IADS.ROCC[ROCCGuid].SAM[actualUnit.guid] = data
-        end
+            saveData.t.IADS.ROCC[item.guid].SAM[actualUnit.guid] = data
+          end
 
-        if actualUnit.dbid == CONFIG.platformDBID41
-            or actualUnit.dbid == CONFIG.platformDBID42
-            or actualUnit.dbid == CONFIG.platformDBID43
-            or actualUnit.dbid == CONFIG.platformDBID44 then
-          local data = {
-            name = actualUnit.name,
-            guid = actualUnit.guid,
-            OODA = actualUnit.OODA,
-            currOODA = actualUnit.OODA,
-            isOutOfComms = false,
-            outofcomms = 0,
-            EMCONSetting = 'Radar=Passive'
-          }
+          if actualUnit.dbid == CONFIG.platformDBID41
+              or actualUnit.dbid == CONFIG.platformDBID42
+              or actualUnit.dbid == CONFIG.platformDBID43
+              or actualUnit.dbid == CONFIG.platformDBID44 then
+            local data = {
+              name = actualUnit.name,
+              guid = actualUnit.guid,
+              OODA = actualUnit.OODA,
+              currOODA = actualUnit.OODA,
+              isOutOfComms = false,
+              outofcomms = 0,
+              EMCONSetting = 'Radar=Passive'
+            }
 
-          saveData.t.IADS.ROCC[ROCCGuid].radar[actualUnit.guid] = data
+            saveData.t.IADS.ROCC[item.guid].radar[actualUnit.guid] = data
+          end
         end
       end
     end
 
-    for TAAOCGuid, item in pairs(saveData.t.IADS.TAAOC) do
-      if actualUnit ~= nil and actualUnit:inArea(item.area) then
-        if actualUnit.dbid == CONFIG.platformDBID33 then
-          local data = {
-            name = actualUnit.name,
-            guid = actualUnit.guid,
-            OODA = actualUnit.OODA,
-            currOODA = actualUnit.OODA,
-            isOutOfComms = false,
-            outofcomms = 0,
-            EMCONSetting = 'Radar=Passive'
-          }
+    for _, item in pairs(saveData.t.IADS.TAAOC) do
+      for _, area in ipairs(item.areas) do
+        if actualUnit ~= nil and actualUnit:inArea(area) then
+          if actualUnit.dbid == CONFIG.platformDBID33 or actualUnit.dbid == CONFIG.platformDBID34 then
+            local data = {
+              name = actualUnit.name,
+              guid = actualUnit.guid,
+              OODA = actualUnit.OODA,
+              currOODA = actualUnit.OODA,
+              isOutOfComms = false,
+              outofcomms = 0,
+              EMCONSetting = 'Radar=Passive'
+            }
 
-          saveData.t.IADS.TAAOC[TAAOCGuid].SAM[actualUnit.guid] = data
+            saveData.t.IADS.TAAOC[item.guid].SAM[actualUnit.guid] = data
+          end
         end
       end
     end
   end
-
-  ScenEdit_SpecialMessage('Taiwan', 'C2 init done.')
-  ScenEdit_SpecialMessage('China', 'C2 init done.')
 end
 
 local function initCommsJammers(side, saveData)

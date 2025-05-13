@@ -33,20 +33,4 @@ if saveData.c.ground.srbm.isActivated then
   end
 end
 
--- if CONFIG.c.ground.mlrs.isActivated then
---     local result = IsMetWithAmmoTrucks(CONFIG, unit, 'China', 'mlrs', true)
-
---     if result.isMet then
---         SetReloadStartTime(result.battery, unit, true)
---     end
--- end
-
--- if CONFIG.c.ground.srbm.isActivated then
---     local result = IsMetWithAmmoTrucks(CONFIG, unit, 'China', 'srbm', true)
-
---     if result.isMet then
---         SetReloadStartTime(result.battery, unit, true)
---     end
--- end
-
 gKH.State.SaveTableToKey(saveData, "SaveData")
