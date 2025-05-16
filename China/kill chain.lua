@@ -10,6 +10,74 @@ local function launchH6NIfRequired(saveData)
   end
 end
 
+local function shouldTakeoffBeforeStrike(q)
+  return (not q.hasLaunched) and q.takeoffTime ~= nil and q.missionStartTime ~= nil
+end
+
+local function shouldTakeoffAfterStrike(q)
+  return (not q.hasLaunched) and q.missionStartTime ~= nil
+end
+
+local function isAfterStartTime(time)
+  return ScenEdit_CurrentTime() > ParseDatetimeToTimestamp(time)
+end
+
+local function isH6N(q)
+  return not q.hasLaunched and q.unitDBID == CONFIG.platformDBID76
+end
+
+local function shouldEnterTargetArea(q)
+  return q.hasLaunched and not q.isFinished and q.takeoffTime ~= nil and q.missionStartTime ~= nil
+end
+
+local function shouldRTB(q)
+  return q.hasLaunched and not q.isFinished
+end
+
+local function handleReconQueue(saveData)
+  for _, q in ipairs(saveData.c.recon.queue) do
+    if shouldTakeoffBeforeStrike(q) and isAfterStartTime(q.takeoffTime) then
+      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+
+      if units and #units > 0 then
+        q.unitGUID = units[1].unit
+        q.hasLaunched = true
+      end
+    elseif shouldTakeoffAfterStrike(q) and isAfterStartTime(q.missionStartTime) then
+      local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
+
+      if units and #units > 0 then
+        q.unitGUID = units[1].unit
+        q.hasLaunched = true
+        q.isFinished = true
+      end
+    elseif isH6N(q) then
+      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+
+      if units and #units > 0 then
+        q.unitGUID = units[1].unit
+        q.hasLaunched = true
+      end
+    end
+
+    if shouldEnterTargetArea(q) and isAfterStartTime(q.missionStartTime) then
+      local unit = SE_GetUnit({ guid = q.unitGUID })
+
+      if unit then
+        ScenEdit_AssignUnitToMission(unit.guid, q.missionName)
+        q.isFinished = true
+      end
+    elseif shouldRTB(q) then
+      local unit = SE_GetUnit({ guid = q.unitGUID })
+
+      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 then
+        unit:RTB(true)
+        q.isFinished = true
+      end
+    end
+  end
+end
+
 local function trackTarget(saveData, units, UAVDBID, target)
   local UAV = nil
 
@@ -77,7 +145,7 @@ local function analyzeTargets(saveData, type)
         local isRadar = package.name == 'RADAR' and not isHelipad
         local isHelipadEmbarkedWithHelicopter = isHelipad and
             not mlrsConfig.packages[index].isFinished and
-            GetCount(SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft']) > 0
+            #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
 
         if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
           table.insert(targets, target)
@@ -94,82 +162,12 @@ local function analyzeTargets(saveData, type)
     })
 
     if CONFIG.isDevMode and #targets > 0 then
-      printBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
+      PrintBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
     end
   end
 
   return targetsSortedByPackage
 end
-
--- local function analyzeTargets(saveData, platform)
---     local function isHelipad(target)
---         return string.find(target.type_description, 'Helipad') ~= nil
---     end
-
---     local function isHeavyDamage(platform, target)
---         local BDA = target.BDA
---         local detections = target.lastDetections
---         return BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
---             (detections and detections[1].age <= CONFIG.c.ground[platform].contactAge) and
---             not isHelipad(target)
---     end
-
---     local function isInitialWave(package, target, batchTargetlistsIdx)
---         return batchTargetlistsIdx == 1 and not package.isFinished and not isHelipad(target)
---     end
-
---     local function isRadarTarget(package, target)
---         return package.name == 'RADAR' and not isHelipad(target)
---     end
-
---     local function isHelipadWithHelicopter(package, target)
---         return isHelipad(target) and
---             not package.isFinished and
---             -- Modified: Replaced GetCount with #
---             #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
---     end
-
---     local function evaluateTargets(platform, package, batchTargetlistsIdx)
---         return function(v)
---             local target = ScenEdit_GetContact({ side = 'China', guid = v.guid })
---             if target and (
---                     isInitialWave(package, target, batchTargetlistsIdx) or
---                     isHeavyDamage(platform, target) or
---                     isRadarTarget(package, target) or
---                     isHelipadWithHelicopter(package, target)
---                 ) then
---                 return true
---             end
-
---             return false
---         end
---     end
-
---     local targetsSortedByPackage = {}
---     local mlrsConfig = saveData.c.ground[platform]
-
---     for index, package in ipairs(mlrsConfig.packages) do
---         local batchTargetlistsIdx = package.index
---         local targets = Array_utils.new(package.batchTargetlists[batchTargetlistsIdx])
---             :filter(evaluateTargets(platform, package, batchTargetlistsIdx))
---             :value()
-
---         table.insert(targetsSortedByPackage, {
---             isTargetsMoreThan = false,
---             fixedTargets = targets,
---             emittingTargets = {},
---             radioTargets = {},
---             targets = targets
---         })
-
---         if CONFIG.isDevMode and #targets > 0 then
---             -- Modified: Replaced GetCount with #
---             printBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
---         end
---     end
-
---     return targetsSortedByPackage
--- end
 
 local function analyzeEmissions(saveData, type, targetsSortedByPackage, contacts)
   local mlrsConfig = saveData.c.ground[type]
@@ -195,94 +193,15 @@ local function analyzeEmissions(saveData, type, targetsSortedByPackage, contacts
     InsertList(targetsSortedByPackage[index].targets, targets)
 
     if CONFIG.isDevMode and #targets > 0 then
-      printBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
+      PrintBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
     end
   end
 
   return targetsSortedByPackage
 end
 
--- -- 主函數
--- local function analyzeEmissions(saveData, platform, targetsSortedByPackage, contacts)
---     -- 定義過濾條件：檢查是否為感測器目標
---     local function isEmissionFromSpecificSensor(c)
---         if not c.emissions or not c.emissions[1] then
---             return false
---         end
---         local sensorDbid = c.emissions[1]['sensor_dbid']
---         return sensorDbid == CONFIG.sensorDBID9 or
---             sensorDbid == CONFIG.sensorDBID10 or
---             sensorDbid == CONFIG.sensorDBID11 or
---             sensorDbid == CONFIG.sensorDBID12 or
---             sensorDbid == CONFIG.sensorDBID14
---     end
-
---     -- 定義過濾條件：檢查年齡是否小於指定值
---     local function isAgeValid(c)
---         return c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
---     end
-
---     -- 定義過濾條件：檢查是否在區域內並滿足 SAM 條件
---     local function isValidTarget(c, area)
---         local isSensor = isEmissionFromSpecificSensor(c)
---         local isAgeLessThan = isAgeValid(c)
---         local isSAM = isSensor and isAgeLessThan
---         return c:inArea(area) and isSAM
---     end
-
---     -- 定義 filter 的具名回調函數
---     local function filterTargetsByArea(area)
---         -- 注意：這裡需要外部變數 area 和 CONFIG，因此需要在調用時動態綁定
---         -- 這個函數將在循環中使用，並依賴外部的 area 和 CONFIG
---         return function(c)
---             return isValidTarget(c, area)
---         end
---     end
-
---     local mlrsConfig = saveData.c.ground[platform]
-
---     for index, package in ipairs(mlrsConfig.packages) do
---         -- 初始化 Array_utils 對象
---         local contactArray = Array_utils.new(contacts)
-
---         -- 針對每個 area 過濾出符合條件的 targets
---         local targets = {}
---         for _, area in ipairs(package.areas) do
---             -- 使用具名回調函數，並傳入當前的 area
---             local filteredTargets = contactArray
---                 :filter(filterTargetsByArea(area))
---                 :value()
---             -- InsertList(targets, filteredTargets)
---             targets = Array_utils.new(targets):concat(filteredTargets):value()
---         end
-
---         -- 更新 targetsSortedByPackage
---         targetsSortedByPackage[index].emittingTargets = targets
---         -- InsertList(targetsSortedByPackage[index].targets, targets)
---         targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
---             :concat(targets)
---             :value()
-
---         -- 開發模式下的調試信息
---         if CONFIG.isDevMode and #targets > 0 then
---             printBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
---         end
---     end
-
---     return targetsSortedByPackage
--- end
-
 local function findRadioDirection(saveData, platform, targetsSortedByPackage, contacts)
   local mlrsConfig = saveData.c.ground[platform]
-
-  -- local isC2Facility = function(area)
-  --     return function(c)
-  --         return (c.typed == 8 or
-  --                 string.find(c.type_description, 'ROCC') ~= nil or
-  --                 string.find(c.type_description, 'TAAOC') ~= nil) and
-  --             c:inArea(area)
-  --     end
-  -- end
 
   local isWithinRange = function(distance, transmission)
     return distance <= CONFIG.c.SIGINT.maxRange and
@@ -291,12 +210,6 @@ local function findRadioDirection(saveData, platform, targetsSortedByPackage, co
 
   local function filterTargetsInArea(contacts, areas)
     local targets = {}
-
-    -- for _, area in ipairs(areas) do
-    --     Array_utils.new(contacts)
-    --         :filter(isC2Facility(area))
-    --         :forEach(function(c) table.insert(targets, c) end)
-    -- end
 
     for _, area in ipairs(areas) do
       for _, c in ipairs(contacts) do
@@ -339,12 +252,9 @@ local function findRadioDirection(saveData, platform, targetsSortedByPackage, co
     targets = filterTargetsWithinRangeOfRadioSource(saveData, targets)
     targetsSortedByPackage[index].radioTargets = targets
     InsertList(targetsSortedByPackage[index].targets, targets)
-    -- targetsSortedByPackage[index].targets = Array_utils.new(targetsSortedByPackage[index].targets)
-    --     :concat(targets)
-    --     :value()
 
     if CONFIG.isDevMode and #targets > 0 then
-      printBox('China', 'Radio targets/' .. package.name .. ': ' .. #targets)
+      PrintBox('China', 'Radio targets/' .. package.name .. ': ' .. #targets)
     end
   end
 
@@ -420,7 +330,7 @@ local function launchMissiles(saveData, platform, targetsSortedByPackage, weapon
         mlrsConfig.packages[idx].index = mlrsConfig.packages[idx].index + 1
 
         if CONFIG.isDevMode then
-          printBox('China', mlrsConfig.packages[idx].name .. '/Fired missiles: ' .. result)
+          PrintBox('China', mlrsConfig.packages[idx].name .. '/Fired missiles: ' .. result)
         end
       end
 
@@ -550,6 +460,38 @@ local function isNoUnitAssignedToMission(missionName)
   return true
 end
 
+-- local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
+--   local antishipConfig = saveData.c.air[base][type]
+--   local elapsedTime = 0
+
+--   if antishipConfig.lastStrikeTime then
+--     elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
+--   end
+
+--   local isAllowedToAttack = not antishipConfig.lastStrikeTime
+--       or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
+
+--   for _, package in ipairs(antishipConfig.packages) do
+--     if not package.hasLaunched and isAllowedToAttack then
+--       local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+
+--       if isAssigned then
+--         package.hasLaunched = true
+--         antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+--       end
+
+--       break
+--     end
+--   end
+
+--   if isPackagesFinished(antishipConfig.packages) and
+--       isNoUnitAssignedToMission(antishipConfig.packages[#antishipConfig.packages].missionName) then
+--     for _, package in ipairs(antishipConfig.packages) do
+--       package.hasLaunched = false
+--     end
+--   end
+-- end
+
 local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
   local antishipConfig = saveData.c.air[base][type]
   local elapsedTime = 0
@@ -561,23 +503,26 @@ local function airStrike(saveData, base, type, contacts, contactHandler, contact
   local isAllowedToAttack = not antishipConfig.lastStrikeTime
       or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
 
-  for _, package in ipairs(antishipConfig.packages) do
-    if not package.hasLaunched and isAllowedToAttack then
-      local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+  for _, wave in ipairs(antishipConfig.ATO) do
+    if not wave.hasLaunched and isAfterStartTime(wave.startTime) then
+      for _, package in ipairs(wave.packages) do
+        if not package.hasLaunched and isAllowedToAttack then
+          local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
 
-      if isAssigned then
-        package.hasLaunched = true
-        antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+          if isAssigned then
+            package.hasLaunched = true
+            antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+          end
+
+          break
+        end
+      end
+
+      if isPackagesFinished(wave.packages) then
+        wave.hasLaunched = true
       end
 
       break
-    end
-  end
-
-  if isPackagesFinished(antishipConfig.packages) and
-      isNoUnitAssignedToMission(antishipConfig.packages[#antishipConfig.packages].missionName) then
-    for _, package in ipairs(antishipConfig.packages) do
-      package.hasLaunched = false
     end
   end
 end
@@ -594,7 +539,11 @@ if contacts == nil then
   return
 end
 
-launchH6NIfRequired(saveData)
+-- launchH6NIfRequired(saveData)
+
+if saveData.c.recon.isActivated then
+  handleReconQueue(saveData)
+end
 
 if saveData.c.ground.mlrs.isActivated then
   local targetsSortedByPackage = {}

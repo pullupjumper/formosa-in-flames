@@ -62,8 +62,8 @@ function Reload(battery, ammunitionSection, weaponDBID)
   battery.reloadStartTime = nil
 
   if CONFIG.isDevMode then
-    printBox('China', 'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
-    printBox('Taiwan', 'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
+    PrintBox('China', 'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
+    PrintBox('Taiwan', 'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
   end
 end
 
@@ -230,7 +230,7 @@ local function toAHA(section, group)
   end
 
   if CONFIG.isDevMode then
-    printBox('China', 'func/toAHA/' .. tostring(section.name))
+    PrintBox('China', 'func/toAHA/' .. tostring(section.name))
   end
 end
 
@@ -248,7 +248,7 @@ local function transload(section, ammunition)
   section.reloadStartTime = nil
 
   if CONFIG.isDevMode then
-    printBox('China', 'func/transload/Remaining ammunition/' .. tostring(ammunition.wpnCurrent))
+    PrintBox('China', 'func/transload/Remaining ammunition/' .. tostring(ammunition.wpnCurrent))
   end
 end
 
@@ -272,7 +272,7 @@ local function ammoSecToRL(section, group)
   end
 
   if CONFIG.isDevMode then
-    printBox('China', 'func/ammoSecToRL/' .. section.name)
+    PrintBox('China', 'func/ammoSecToRL/' .. section.name)
   end
 end
 
@@ -376,7 +376,7 @@ end
 -- Log debug information for battery operations
 function LogBatteryDebugInfo(battery, elapsedTime, result, isMoreThanReloadTime)
   if CONFIG.isDevMode then
-    printBox(
+    PrintBox(
       'China',
       'func/CheckBatteryState',
       'name:' .. battery.name,

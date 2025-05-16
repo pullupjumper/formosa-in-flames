@@ -213,6 +213,14 @@ local function setupEventStartTime()
   end
 end
 
+local function setupReconQueue(saveData)
+  for _, item in ipairs(saveData.c.air.landBased.lacm.ATO) do
+    if item.reconUAVs then
+      InsertList(saveData.c.recon.queue, item.reconUAVs)
+    end
+  end
+end
+
 
 if CONFIG.isSaved then
   gKH.State.SaveTableToKey(SaveData, "SaveData")
@@ -240,6 +248,10 @@ if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetli
 
   if saveData.u.SIGINT.isActivated then
     initSIGINT(saveData)
+  end
+
+  if saveData.c.recon.isActivated then
+    setupReconQueue(saveData)
   end
 
   if CONFIG.isDevMode then

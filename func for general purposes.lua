@@ -384,13 +384,13 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
-    printBox('China', 'func/AttackContact/No weapons available, no need to fire more')
+    PrintBox('China', 'func/AttackContact/No weapons available, no need to fire more')
     return false
   end
 
   -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
-    printBox('China', 'func/AttackContact/Maximum weapon allocation reached, no need to fire more')
+    PrintBox('China', 'func/AttackContact/Maximum weapon allocation reached, no need to fire more')
     return false
   end
 
@@ -398,7 +398,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
-    printBox('China', 'func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
+    PrintBox('China', 'func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
     return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 
@@ -656,7 +656,7 @@ end
 
 -- 定義函數：printBox
 -- 參數：strings - 一個包含多個字串的 table
-function printBox(side, ...)
+function PrintBox(side, ...)
   -- 收集所有字串參數到陣列中
   local strings = { ... }
 
@@ -687,4 +687,30 @@ function printBox(side, ...)
 
   -- 一次性輸出
   ScenEdit_SpecialMessage(side, boxString)
+end
+
+function ParseDatetimeToTimestamp(datetimeStr)
+  local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
+  local year, month, day, hour, min, sec = datetimeStr:match(pattern)
+
+  if not (year and month and day and hour and min and sec) then
+    error('Invalid datetime format: ' .. tostring(datetimeStr))
+  end
+
+  -- 先轉成 UTC table
+  local utcTable = {
+    year = tonumber(year),
+    month = tonumber(month),
+    day = tonumber(day),
+    hour = tonumber(hour),
+    min = tonumber(min),
+    sec = tonumber(sec),
+    isdst = false,
+  }
+
+  -- 算出 timestamp：我們要它是 UTC → 所以先用 os.time(utcTable) 當成本地時間
+  -- 然後補回 offset，就會得到真正的 UTC timestamp
+  local localTimestamp = os.time(utcTable)
+  local tzOffset = os.difftime(os.time(), os.time(os.date("!*t")))
+  return localTimestamp - tzOffset + (16 * 3600)
 end

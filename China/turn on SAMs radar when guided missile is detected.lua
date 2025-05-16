@@ -28,5 +28,5 @@ end
 
 if temp.unit ~= nil then
   ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-  printBox('China', tostring(temp.unit.name) .. '\'s radar is activated.')
+  PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated.')
 end

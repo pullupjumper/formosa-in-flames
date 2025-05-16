@@ -11,7 +11,7 @@ end
 --     for _, component in ipairs(unit.components) do
 --         if component['comp_dbid'] == CONFIG.sensorDBID13
 --             and component['comp_status'] == 'Destroyed' then
---             printBox(
+--             PrintBox(
 --                 'China',
 --                 unit.name .. '\'s jammer is destroyed',
 --                 'comp_dbid/' .. tostring(component['comp_dbid']),
@@ -44,7 +44,7 @@ for _, component in ipairs(unit.components) do
 				or component['comp_dbid'] == CONFIG.sensorDBID5
 				or component['comp_dbid'] == CONFIG.sensorDBID6)
 			and component['comp_status'] == 'Destroyed' then
-		printBox(
+		PrintBox(
 			'China',
 			unit.name .. '\'s radar is damaged',
 			'comp_dbid/' .. tostring(component['comp_dbid']),
@@ -86,5 +86,5 @@ end
 
 if temp.unit ~= nil then
 	ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-	printBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
+	PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
 end
