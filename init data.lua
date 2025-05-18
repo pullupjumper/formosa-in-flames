@@ -214,9 +214,26 @@ local function setupEventStartTime()
 end
 
 local function setupReconQueue(saveData)
-  for _, item in ipairs(saveData.c.air.landBased.lacm.ATO) do
+  for _, item in pairs(saveData.c.air.ATO) do
     if item.reconUAVs then
       InsertList(saveData.c.recon.queue, item.reconUAVs)
+    end
+  end
+end
+
+local function initATO(saveData)
+  for _, wave in pairs(saveData.c.air.ATO) do
+    for index, package in ipairs(wave.packages) do
+      if package.takeoffTime == nil and index == 1 then
+        PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
+      end
+
+      if package.takeoffTime == nil and index > 1 then
+        package.takeoffTime = os.date(
+          "%Y-%m-%d %I:%M:%S",
+          ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
+        )
+      end
     end
   end
 end
@@ -233,6 +250,7 @@ if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetli
   CalculateDestination(saveData)
   initAC(saveData)
   setupEventStartTime()
+  initATO(saveData)
 
   if saveData.t.IADS.isActivated then
     initC2(saveData)

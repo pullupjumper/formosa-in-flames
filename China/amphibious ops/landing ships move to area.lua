@@ -739,6 +739,7 @@ local function startAmphibiousAssault(saveData)
     saveData.c.PHIBOP.isShipsArrivedInStagingArea = false
     saveData.c.PHIBOP.isAmphibiousAssaultLaunched = true
     saveData.c.PHIBOP.amphibiousAssaultStartTime = ScenEdit_CurrentTime()
+    saveData.c.air.ATO['CAS/N/1'].isActivated = true
   end
 end
 
@@ -1007,7 +1008,6 @@ end
 
 if saveData.c.PHIBOP.isShipsArrivedInStagingArea then
   startAmphibiousAssault(saveData)
-  saveData.c.air.landBased.gbu.isActivated = true
 end
 
 if saveData.c.PHIBOP.isAmphibiousAssaultLaunched then

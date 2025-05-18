@@ -1,14 +1,35 @@
-local function launchH6NIfRequired(saveData)
-  if IsDestroyedOrRTB(saveData.c.recon.temp.H6N, 1) and IsDestroyedOrRTB(saveData.c.recon.temp.WZ8, 1) then
-    saveData.c.recon.temp.H6N = LaunchUnits(
-      CONFIG.c.recon.bases.H6N.guid,
-      CONFIG.c.recon.courses.H6N,
-      1,
-      CONFIG.platformDBID76,
-      'Aircraft'
-    )
-  end
-end
+local filterMakers = {
+  ['makeInfentryFilter'] = function(package)
+    return function(contact)
+      return contact.typed == 8 and contact:inArea(package.area)
+    end
+  end,
+  ['makeAirborneFilter'] = function(package)
+    return function(contact)
+      if contact.emissions and contact.emissions[1] then
+        local emission = contact.emissions[1]['sensor_dbid']
+        return (emission == CONFIG.sensorDBID7 or emission == CONFIG.sensorDBID8) and
+            contact.typed == 0 and
+            contact:inArea(package.area)
+      end
+
+      return false
+    end
+  end,
+  ['makeNavalTargetFilter'] = function(package)
+    return function(contact)
+      return contact.typed == 2 and contact:inArea(package.area)
+    end
+  end,
+  ['makeC2Filter'] = function(package)
+    return function(contact)
+      return
+          (string.find(contact.type_description, 'ROCC') ~= nil or
+            string.find(contact.type_description, 'TAAOC') ~= nil) and
+          contact:inArea(package.area)
+    end
+  end,
+}
 
 local function shouldTakeoffBeforeStrike(q)
   return (not q.hasLaunched) and q.takeoffTime ~= nil and q.missionStartTime ~= nil
@@ -492,26 +513,61 @@ end
 --   end
 -- end
 
-local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
-  local antishipConfig = saveData.c.air[base][type]
-  local elapsedTime = 0
+-- local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
+--   local antishipConfig = saveData.c.air[base][type]
+--   local elapsedTime = 0
 
-  if antishipConfig.lastStrikeTime then
-    elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
-  end
+--   if antishipConfig.lastStrikeTime then
+--     elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
+--   end
 
-  local isAllowedToAttack = not antishipConfig.lastStrikeTime
-      or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
+--   local isAllowedToAttack = not antishipConfig.lastStrikeTime
+--       or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
 
-  for _, wave in ipairs(antishipConfig.ATO) do
-    if not wave.hasLaunched and isAfterStartTime(wave.startTime) then
+--   for _, wave in ipairs(antishipConfig.ATO) do
+--     if not wave.hasLaunched and isAfterStartTime(wave.startTime) then
+--       for _, package in ipairs(wave.packages) do
+--         if not package.hasLaunched and isAllowedToAttack then
+--           local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+
+--           if isAssigned then
+--             package.hasLaunched = true
+--             antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+--           end
+
+--           break
+--         end
+--       end
+
+--       if isPackagesFinished(wave.packages) then
+--         wave.hasLaunched = true
+--       end
+
+--       break
+--     end
+--   end
+-- end
+
+local function airStrike(saveData, contacts)
+  -- local antishipConfig = saveData.c.air.ATO
+  -- local elapsedTime = 0
+
+  -- if antishipConfig.lastStrikeTime then
+  --   elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
+  -- end
+
+  -- local isAllowedToAttack = not antishipConfig.lastStrikeTime
+  --     or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
+
+  for _, wave in pairs(saveData.c.air.ATO) do
+    if not wave.hasLaunched and wave.isActivated then
       for _, package in ipairs(wave.packages) do
-        if not package.hasLaunched and isAllowedToAttack then
-          local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+        if not package.hasLaunched and isAfterStartTime(package.takeoffTime) then
+          local isAssigned = handleStrikePackagesWithMission(package, contacts, filterMakers[package.filterName], 1)
 
           if isAssigned then
             package.hasLaunched = true
-            antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
+            -- antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
           end
 
           break
@@ -522,7 +578,7 @@ local function airStrike(saveData, base, type, contacts, contactHandler, contact
         wave.hasLaunched = true
       end
 
-      break
+      -- break
     end
   end
 end
@@ -538,8 +594,6 @@ end
 if contacts == nil then
   return
 end
-
--- launchH6NIfRequired(saveData)
 
 if saveData.c.recon.isActivated then
   handleReconQueue(saveData)
@@ -613,54 +667,8 @@ if saveData.c.subSurface.slcm.isActivated then
   )
 end
 
-if saveData.c.air.landBased.lacm.isActivated then
-  local contactHandler = function(package)
-    return function(contact)
-      return
-          (string.find(contact.type_description, 'ROCC') ~= nil or
-            string.find(contact.type_description, 'TAAOC') ~= nil) and
-          contact:inArea(package.area)
-    end
-  end
-  airStrike(saveData, 'landBased', 'lacm', contacts, contactHandler, 1)
-end
-
-if saveData.c.air.shipBased.lacm.isActivated then
-  airStrike(saveData, 'shipBased', 'lacm')
-end
-
-if saveData.c.air.landBased.ascm.isActivated then
-  local navalContactHandler = function(package)
-    return function(contact)
-      return contact.typed == 2 and contact:inArea(package.area)
-    end
-  end
-  airStrike(saveData, 'landBased', 'ascm', contacts, navalContactHandler, 4)
-end
-
-if saveData.c.air.landBased.aam.isActivated then
-  local airContactHandler = function(package)
-    return function(contact)
-      if contact.emissions and contact.emissions[1] then
-        local emission = contact.emissions[1]['sensor_dbid']
-        return (emission == CONFIG.sensorDBID7 or emission == CONFIG.sensorDBID8) and
-            contact.typed == 0 and
-            contact:inArea(package.area)
-      end
-
-      return false
-    end
-  end
-  airStrike(saveData, 'landBased', 'aam', contacts, airContactHandler, 6)
-end
-
-if saveData.c.air.landBased.gbu.isActivated then
-  local groundContactHandler = function(package)
-    return function(contact)
-      return contact.typed == 8 and contact:inArea(package.area)
-    end
-  end
-  airStrike(saveData, 'landBased', 'gbu', contacts, groundContactHandler, 1)
+if saveData.c.air.isActivated then
+  airStrike(saveData, contacts)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

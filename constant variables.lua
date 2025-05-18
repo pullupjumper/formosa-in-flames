@@ -5,12 +5,7 @@ CONFIG.difficulty = 'normal'
 CONFIG.c = {}
 CONFIG.c.air = {}
 CONFIG.c.air.landBased = {}
-CONFIG.c.air.landBased.aam = {}
-CONFIG.c.air.landBased.ascm = {}
-CONFIG.c.air.landBased.lacm = {}
-CONFIG.c.air.landBased.gbu = {}
 CONFIG.c.air.shipBased = {}
-CONFIG.c.air.shipBased.lacm = {}
 CONFIG.c.ground = {}
 CONFIG.c.ground.mlrs = {}
 CONFIG.c.ground.srbm = {}
@@ -160,22 +155,17 @@ CONFIG.batteryState.HIDE = 3
 
 --Setup start time
 CONFIG.c.eventList = {
-  { name = '(China) (Recon) Launch H6N',                         startTime = '2027-06-09 01:20:00' },
+  -- { name = '(China) (Recon) Launch H6N',                         startTime = '2027-06-09 01:20:00' },
   { name = '(China) (Ground/SRBM) Setup start time',             startTime = '2027-06-09 02:40:00' },
   -- { name = '(China) (Ground/SRBM) Setup start time',             startTime = '2027-06-09 01:00:00' },
   { name = '(China) Target runways or emergency highway strips', startTime = '2027-06-09 02:35:00' },
-  { name = '(China) (Air/Land-based/ASCM) Setup start time',     startTime = '2027-06-09 02:40:00' },
   { name = '(China) (Amphibious ops) Setup start time',          startTime = '2027-06-09 02:40:00' },
   -- { name = '(China) (Amphibious ops) Setup start time',          startTime = '2027-06-09 01:00:00' },
   { name = '(China) (Ground/MLRS) Setup start time',             startTime = '2027-06-09 03:10:00' },
   -- { name = '(China) (Ground/MLRS) Setup start time',             startTime = '2027-06-09 01:00:00' },
-  -- { name = '(China) (Air/Land-based/LACM) Setup start time',     startTime = '2027-06-09 03:40:00' },
-  { name = '(China) (Air/Land-based/LACM) Setup start time',     startTime = '2027-06-09 01:00:00' },
   { name = '(China) (Ground/GLCM) Setup start time',             startTime = '2027-06-09 05:30:00' },
   { name = '(China) (Surface/LACM) Setup start time',            startTime = '2027-06-09 06:00:00' },
   { name = '(China) (Sub-surface/SLCM) Setup start time',        startTime = '2027-06-09 06:30:00' },
-  { name = '(China) (Air/Land-based/AAM) Setup start time',      startTime = '2027-06-09 06:40:00' },
-  { name = '(China) (Air/Ship-based/LACM) Setup start time',     startTime = '2027-06-09 07:00:00' },
 }
 
 
@@ -874,11 +864,11 @@ CONFIG.c.air.landBased.deployedACs = {
   },
 }
 -- CONFIG.c.air.landBased.lacm.strikeInterval = 50 * 60
-CONFIG.c.air.landBased.lacm.strikeInterval = 30 * 60
-CONFIG.c.air.landBased.ascm.strikeInterval = 0
-CONFIG.c.air.shipBased.lacm.strikeInterval = 80 * 60
-CONFIG.c.air.landBased.aam.strikeInterval = 0
-CONFIG.c.air.landBased.gbu.strikeInterval = 0
+-- CONFIG.c.air.landBased.lacm.strikeInterval = 30 * 60
+-- CONFIG.c.air.landBased.ascm.strikeInterval = 0
+-- CONFIG.c.air.shipBased.lacm.strikeInterval = 80 * 60
+-- CONFIG.c.air.landBased.aam.strikeInterval = 0
+-- CONFIG.c.air.landBased.gbu.strikeInterval = 0
 
 -- Amphibious ops
 CONFIG.c.PHIBOP.periodOfTime = 5 * 60
@@ -2499,12 +2489,7 @@ SaveData = {}
 SaveData.c = {}
 SaveData.c.air = {}
 SaveData.c.air.landBased = {}
-SaveData.c.air.landBased.aam = {}
-SaveData.c.air.landBased.ascm = {}
-SaveData.c.air.landBased.lacm = {}
-SaveData.c.air.landBased.gbu = {}
 SaveData.c.air.shipBased = {}
-SaveData.c.air.shipBased.lacm = {}
 SaveData.c.ground = {}
 SaveData.c.ground.mlrs = {}
 SaveData.c.ground.srbm = {}
@@ -2990,89 +2975,28 @@ SaveData.c.recon.temp = {
   BZK005 = {}
 }
 SaveData.c.recon.queue = {
-  -- {
-  --   baseGUID = CONFIG.c.recon.bases.H6N.guid,
-  --   unitDBID = CONFIG.platformDBID76,
-  --   unitGUID = nil,
-  --   missionName = nil,
-  --   course = CONFIG.c.recon.courses.H6N,
-  --   num = 1,
-  --   takeoffTime = '2027-06-09 01:00:00',
-  --   missionStartTime = nil,
-  --   hasLaunched = false
-  -- },
-}
-
-
-
--- Strike on shelters
-SaveData.c.air.landBased.lacm.isActivated = false
-SaveData.c.air.landBased.lacm.lastStrikeTime = nil
-SaveData.c.air.landBased.lacm.packages = {
   {
-    striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-    jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-    missionName = 'STRIKE/AB/S/1',
-    area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-    jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-    missionName = 'STRIKE/AB/C',
-    area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
-    jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-    missionName = 'STRIKE/AB/N/1',
-    area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
-    escort = nil,
-    wildWeasel = nil,
-    missionName = 'STRIKE/AB/S/1',
-    area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
-    escort = nil,
-    wildWeasel = nil,
-    missionName = 'STRIKE/AB/N/1',
-    area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-    jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-    missionName = 'STRIKE/AB/S/2',
-    area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-    hasLaunched = false,
-    tanker = nil
+    baseGUID = CONFIG.c.recon.bases.H6N.guid,
+    unitDBID = CONFIG.platformDBID76,
+    unitGUID = nil,
+    missionName = nil,
+    course = CONFIG.c.recon.courses.H6N,
+    num = 1,
+    takeoffTime = '2027-06-09 01:20:00',
+    missionStartTime = nil,
+    hasLaunched = false
   },
 }
-SaveData.c.air.landBased.lacm.ATO = {
-  {
-    name = '',
-    startTime = CONFIG.c.eventList[7].startTime,
+
+
+-- Air Tasking Order
+SaveData.c.air.isActivated = true
+SaveData.c.air.ATO = {
+  ['STRIKE/AB/W/1'] = {
+    name = 'STRIKE/AB/W/1',
+    isActivated = true,
     haeLaunched = false,
+    strikeInterval = 30 * 60,
     reconUAVs = {
       {
         baseGUID = CONFIG.c.recon.bases.BZK005.guid,
@@ -3085,17 +3009,17 @@ SaveData.c.air.landBased.lacm.ATO = {
         missionStartTime = '2027-06-09 01:30:00',
         hasLaunched = false
       },
-      {
-        baseGUID = CONFIG.c.recon.bases.BZK005.guid,
-        unitDBID = CONFIG.platformDBID13,
-        unitGUID = nil,
-        missionName = 'RECON/1',
-        course = nil,
-        num = 1,
-        takeoffTime = nil,
-        missionStartTime = '2027-06-09 01:00:00',
-        hasLaunched = false
-      },
+      -- {
+      --   baseGUID = CONFIG.c.recon.bases.BZK005.guid,
+      --   unitDBID = CONFIG.platformDBID13,
+      --   unitGUID = nil,
+      --   missionName = 'RECON/1',
+      --   course = nil,
+      --   num = 1,
+      --   takeoffTime = nil,
+      --   missionStartTime = '2027-06-09 01:00:00',
+      --   hasLaunched = false
+      -- },
       {
         baseGUID = CONFIG.c.recon.bases.H6N.guid,
         unitDBID = CONFIG.platformDBID76,
@@ -3103,7 +3027,7 @@ SaveData.c.air.landBased.lacm.ATO = {
         missionName = nil,
         course = CONFIG.c.recon.courses.H6N,
         num = 1,
-        takeoffTime = '2027-06-09 01:00:00',
+        takeoffTime = '2027-06-09 03:40:00',
         missionStartTime = nil,
         hasLaunched = false
       },
@@ -3117,7 +3041,10 @@ SaveData.c.air.landBased.lacm.ATO = {
         missionName = 'STRIKE/AB/S/1',
         area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
         hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        -- takeoffTime = '2027-06-09 03:40:00',
+        takeoffTime = '2027-06-09 01:00:00'
       },
       {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
@@ -3127,66 +3054,82 @@ SaveData.c.air.landBased.lacm.ATO = {
         missionName = 'STRIKE/AB/C',
         area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
         hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        takeoffTime = nil
       },
-    }
-  },
-  {
-    name = '',
-    startTime = '2027-06-09 02:30:00',
-    haeLaunched = false,
-    packages = {
       {
-        striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
+        striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, },
         escort = nil,
-        wildWeasel = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/N/1',
         area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
         hasLaunched = false,
-        tanker = nil
-      },
-      {
-        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
-        escort = nil,
-        wildWeasel = nil,
-        missionName = 'STRIKE/AB/S/1',
-        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
-        hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        takeoffTime = nil
       },
     }
   },
-}
-
-
--- Strike on the ground shelters at the Jiashan airbase
-SaveData.c.air.shipBased.lacm.isActivated = false
-SaveData.c.air.shipBased.lacm.lastStrikeTime = nil
-SaveData.c.air.shipBased.lacm.packages = {
-  {
-    striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
-    jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
-    missionName = 'STRIKE/AB/JHI',
-    hasLaunched = false,
-    tanker = nil
-  },
-  {
-    striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
-    escort = nil,
-    wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
-    jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
-    missionName = 'STRIKE/AB/E',
-    hasLaunched = false,
-    tanker = nil
-  },
-}
-SaveData.c.air.shipBased.lacm.ATO = {
-  {
-    name = '',
-    startTime = CONFIG.c.eventList[12].startTime,
+  -- ['STRIKE/AB/W/2'] = {
+  --   name = 'STRIKE/AB/W/2',
+  --   isActivated = true,
+  --   haeLaunched = false,
+  --   strikeInterval = 30 * 60,
+  --   reconUAVs = nil,
+  --   packages = {
+  --     {
+  --       striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
+  --       escort = nil,
+  --       wildWeasel = nil,
+  --       missionName = 'STRIKE/AB/S/1',
+  --       area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+  --       hasLaunched = false,
+  --       tanker = nil,
+  --       filterName = 'makeC2Filter',
+  --       takeoffTime = nil
+  --     },
+  --     {
+  --       striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
+  --       escort = nil,
+  --       wildWeasel = nil,
+  --       missionName = 'STRIKE/AB/N/1',
+  --       area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+  --       hasLaunched = false,
+  --       tanker = nil,
+  --       filterName = 'makeC2Filter',
+  --       takeoffTime = nil
+  --     },
+  --   }
+  -- },
+  -- ['STRIKE/AB/W/3'] = {
+  --   name = 'STRIKE/AB/W/3',
+  --   isActivated = true,
+  --   haeLaunched = false,
+  --   strikeInterval = 30 * 60,
+  --   reconUAVs = nil,
+  --   packages = {
+  --     {
+  --       striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
+  --       escort = nil,
+  --       wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
+  --       jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
+  --       missionName = 'STRIKE/AB/S/2',
+  --       area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+  --       hasLaunched = false,
+  --       tanker = nil,
+  --       filterName = 'makeC2Filter',
+  --       takeoffTime = nil
+  --     },
+  --   }
+  -- },
+  ['STRIKE/AB/E/1'] = {
+    name = 'STRIKE/AB/E/1',
+    isActivated = true,
     haeLaunched = false,
+    strikeInterval = 80 * 60,
+    reconUAVs = nil,
     packages = {
       {
         striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
@@ -3194,8 +3137,11 @@ SaveData.c.air.shipBased.lacm.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/JHI',
+        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
         hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = nil,
+        takeoffTime = '2027-06-09 07:00:00',
       },
       {
         striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
@@ -3203,35 +3149,20 @@ SaveData.c.air.shipBased.lacm.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/E',
+        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
         hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = nil,
+        takeoffTime = nil
       },
     }
   },
-}
-
-
-
-
--- Anti-ship
-SaveData.c.air.landBased.ascm.isActivated = false
-SaveData.c.air.landBased.ascm.lastStrikeTime = nil
-SaveData.c.air.landBased.ascm.packages = {
-  {
-    striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 8, },
-    escort = nil,
-    wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 8, },
-    missionName = 'ASUW/N',
-    area = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
-    hasLaunched = false,
-    tanker = nil
-  }
-}
-SaveData.c.air.landBased.ascm.ATO = {
-  {
-    name = '',
-    startTime = CONFIG.c.eventList[4].startTime,
+  ['ASUW/N/1'] = {
+    name = 'ASUW/N/1',
+    isActivated = true,
     haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
     packages = {
       {
         striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 8, },
@@ -3240,33 +3171,18 @@ SaveData.c.air.landBased.ascm.ATO = {
         missionName = 'ASUW/N',
         area = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
         hasLaunched = false,
-        tanker = nil
+        tanker = nil,
+        filterName = 'makeNavalTargetFilter',
+        takeoffTime = '2027-06-09 02:40:00'
       }
-    }
+    },
   },
-}
-
-
--- Air intercept
-SaveData.c.air.landBased.aam.isActivated = false
-SaveData.c.air.landBased.aam.lastStrikeTime = nil
-SaveData.c.air.landBased.aam.packages = {
-  {
-    striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, },
-    escort = nil,
-    wildWeasel = nil,
-    missionName = 'AIR INTERCEPT/E',
-    area = { 'RP-76319', 'RP-42688', 'RP-42687', 'RP-76320' },
-    jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-    hasLaunched = false,
-    tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
-  },
-}
-SaveData.c.air.landBased.aam.ATO = {
-  {
-    name = '',
-    startTime = CONFIG.c.eventList[11].startTime,
+  ['AIR INTERCEPT/E/1'] = {
+    name = 'AIR INTERCEPT/E/1',
+    isActivated = true,
     haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
     packages = {
       {
         striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, },
@@ -3275,49 +3191,33 @@ SaveData.c.air.landBased.aam.ATO = {
         missionName = 'AIR INTERCEPT/E',
         area = { 'RP-76319', 'RP-42688', 'RP-42687', 'RP-76320' },
         hasLaunched = false,
-        tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' }
+        tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
+        filterName = 'makeAirborneFilter',
+        takeoffTime = '2027-06-09 06:40:00',
       }
-    }
+    },
   },
-}
-
-
-
--- CAS
-SaveData.c.air.landBased.gbu.isActivated = false
-SaveData.c.air.landBased.gbu.lastStrikeTime = nil
-SaveData.c.air.landBased.gbu.packages = {
-  {
-    striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3226, num = 8, },
-    escort = nil,
-    wildWeasel = nil,
-    jammer = nil,
-    missionName = 'CAS/N',
-    area = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
-    hasLaunched = false,
-    tanker = nil
-  },
-}
-SaveData.c.air.landBased.gbu.ATO = {
-  {
-    name = '',
-    startTime = CONFIG.c.eventList[1].startTime,
+  ['CAS/N/1'] = {
+    name = 'CAS/N/1',
+    isActivated = false,
     haeLaunched = false,
+    strikeInterval = 30 * 60,
     packages = {
       {
         striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3226, num = 8, },
         escort = nil,
         wildWeasel = nil,
+        jammer = nil,
         missionName = 'CAS/N',
         area = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
         hasLaunched = false,
-        tanker = nil
-      }
+        tanker = nil,
+        filterName = 'makeInfentryFilter',
+        takeoffTime = '2027-06-09 01:30:00'
+      },
     }
   },
 }
-
-
 
 
 -- Amphibious ops
