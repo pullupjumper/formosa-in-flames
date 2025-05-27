@@ -1,3 +1,109 @@
+local contacts = ScenEdit_GetContacts('China')
+local saveData = gKH.State.LoadTableFromKey("SaveData")
+
+if saveData == nil then
+  ScenEdit_SpecialMessage('China', 'saveData is nil')
+  return
+end
+
+if contacts == nil then
+  return
+end
+
+local function trackTarget(saveData, units, UAVDBID, target)
+  local UAV = nil
+  local speed = 115
+  local type = 'BZK005'
+
+  if UAVDBID == CONFIG.platformDBID12 then
+    speed = 3300
+    type = 'WZ8'
+  end
+
+  for guid, value in pairs(saveData.c.recon.temp[type]) do
+    if value.targetGUID == target.guid then
+      local unit = SE_GetUnit({ guid = guid })
+      if unit then return true end
+    end
+  end
+
+  if UAV == nil then
+    local d = 1000
+
+    for _, value in ipairs(units) do
+      local unit = SE_GetUnit({ guid = value.guid })
+
+      if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
+        local distance = Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, target.guid)
+        if distance < d then
+          d = distance
+          UAV = unit
+        end
+      end
+    end
+  end
+
+  if UAV then
+    if UAV.mission then UAV.mission = '' end
+
+    UAV.course = { {
+      latitude = target.latitude,
+      longitude = target.longitude,
+      desiredSpeed = speed,
+      presetThrottle = 'Military'
+    } }
+
+    saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
+    return true
+  end
+
+  return false
+end
+
+local isWithinRange = function(distance, transmission)
+  return distance <= CONFIG.c.SIGINT.maxRange and
+      transmission.temp > CONFIG.c.SIGINT.maxCount
+end
+
+local function filterTargetsInArea(contacts, areas)
+  local targets = {}
+
+  for _, area in ipairs(areas) do
+    for _, c in ipairs(contacts) do
+      if (c.typed == 8 or
+            string.find(c.type_description, 'ROCC') ~= nil or
+            string.find(c.type_description, 'TAAOC') ~= nil) and
+          c:inArea(area) then
+        table.insert(targets, c)
+      end
+    end
+  end
+
+  return targets
+end
+
+local function filterTargetsWithinRangeOfRadioSource(saveData, contacts)
+  local targets = {}
+  local isTracking = false
+  local units = VP_GetSide({ Side = 'China' }).units
+
+  for _, contact in ipairs(contacts) do
+    for _, tm in pairs(saveData.c.SIGINT.transmissions) do
+      local distance = Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, contact.guid)
+
+      if isWithinRange(distance, tm) then
+        table.insert(targets, contact.guid)
+
+        if not isTracking and tm.type == 'mobile' then
+          isTracking = trackTarget(saveData, units, CONFIG.platformDBID13, contact)
+        end
+      end
+    end
+  end
+
+  return targets
+end
+
 local filterMakers = {
   ['makeInfentryFilter'] = function(package)
     return function(contact)
@@ -29,6 +135,55 @@ local filterMakers = {
           contact:inArea(package.area)
     end
   end,
+}
+
+local filters = {
+  ['analyzeEmissions'] = function(FST, contacts)
+    local SAMTargets = {}
+
+    for _, area in ipairs(FST.areas) do
+      for _, c in ipairs(contacts) do
+        local isSensor = c.emissions and
+            (c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID9 or
+              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID10 or
+              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID11 or
+              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID12 or
+              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID14)
+        local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= FST.contactAge
+        local isSAM = isSensor and isAgeLessThan
+        if c:inArea(area) and isSAM then table.insert(SAMTargets, c.guid) end
+      end
+    end
+
+    return SAMTargets
+  end,
+  ['findRadioDirection'] = function(FST, contacts, saveData)
+    local targets = filterTargetsInArea(contacts, FST.areas)
+    targets = filterTargetsWithinRangeOfRadioSource(saveData, targets)
+    return targets
+  end,
+  ['findNavalTargets'] = function(FST, contacts, saveData)
+    local navalTargets = {}
+    local isTracking = false
+    local units = VP_GetSide({ Side = 'China' }).units
+
+    for _, area in ipairs(FST.areas) do
+      for _, contact in ipairs(contacts) do
+        if contact.typed == 2 and
+            contact:inArea(area) and
+            contact.lastDetections and
+            contact.lastDetections[1].age <= FST.contactAge then
+          table.insert(navalTargets, contact.guid)
+
+          if not isTracking then
+            isTracking = trackTarget(saveData, units, CONFIG.platformDBID12, contact)
+          end
+        end
+      end
+    end
+
+    return navalTargets
+  end
 }
 
 local function shouldTakeoffBeforeStrike(q)
@@ -72,7 +227,7 @@ local function handleReconQueue(saveData)
         q.hasLaunched = true
         q.isFinished = true
       end
-    elseif isH6N(q) then
+    elseif isH6N(q) and isAfterStartTime(q.takeoffTime) then
       local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
@@ -91,277 +246,9 @@ local function handleReconQueue(saveData)
     elseif shouldRTB(q) then
       local unit = SE_GetUnit({ guid = q.unitGUID })
 
-      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 then
+      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
         unit:RTB(true)
         q.isFinished = true
-      end
-    end
-  end
-end
-
-local function trackTarget(saveData, units, UAVDBID, target)
-  local UAV = nil
-
-  for guid, value in pairs(saveData.c.recon.temp.BZK005) do
-    if value.targetGUID == target.guid then
-      local unit = SE_GetUnit({ guid = guid })
-      if unit then return true end
-    end
-  end
-
-  if UAV == nil then
-    local d = 1000
-
-    for _, value in ipairs(units) do
-      local unit = SE_GetUnit({ guid = value.guid })
-
-      if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
-        local distance = Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, target.guid)
-        if distance < d then
-          d = distance
-          UAV = unit
-        end
-      end
-    end
-  end
-
-  if UAV then
-    if UAV.mission then UAV.mission = '' end
-
-    UAV.course = { {
-      latitude = target.latitude,
-      longitude = target.longitude,
-      desiredSpeed = 115,
-      presetThrottle = 'Military'
-    } }
-
-    saveData.c.recon.temp.BZK005[UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
-    return true
-  end
-
-  return false
-end
-
-local function analyzeTargets(saveData, type)
-  local targetsSortedByPackage = {}
-  local mlrsConfig = saveData.c.ground[type]
-
-  for index, package in ipairs(mlrsConfig.packages) do
-    local batchTargetlistsIdx = package.index
-    local targets = {}
-
-    for _, obj in ipairs(package.batchTargetlists[batchTargetlistsIdx]) do
-      local target = ScenEdit_GetContact({ side = 'China', guid = obj.guid })
-
-      if target then
-        local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
-        local BDA = target.BDA
-        local detections = target.lastDetections
-        local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
-            (detections and detections[1].age <= CONFIG.c.ground[type].contactAge) and
-            not isHelipad
-        local isInitialWaveOfAttacks = batchTargetlistsIdx == 1 and
-            not mlrsConfig.packages[index].isFinished and
-            not isHelipad
-        local isRadar = package.name == 'RADAR' and not isHelipad
-        local isHelipadEmbarkedWithHelicopter = isHelipad and
-            not mlrsConfig.packages[index].isFinished and
-            #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
-
-        if (isInitialWaveOfAttacks or hasEvaluated or isRadar or isHelipadEmbarkedWithHelicopter) then
-          table.insert(targets, target)
-        end
-      end
-    end
-
-    table.insert(targetsSortedByPackage, {
-      isDecidedToStrike = false,
-      fixedTargets = targets,
-      emittingTargets = {},
-      radioTargets = {},
-      targets = targets
-    })
-
-    if CONFIG.isDevMode and #targets > 0 then
-      PrintBox('China', 'Fixed targets/' .. package.name .. ': ' .. #targets)
-    end
-  end
-
-  return targetsSortedByPackage
-end
-
-local function analyzeEmissions(saveData, type, targetsSortedByPackage, contacts)
-  local mlrsConfig = saveData.c.ground[type]
-
-  for index, package in ipairs(mlrsConfig.packages) do
-    local targets = {}
-
-    for _, area in ipairs(package.areas) do
-      for _, c in ipairs(contacts) do
-        local isSensor = c.emissions and
-            (c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID9 or
-              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID10 or
-              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID11 or
-              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID12 or
-              c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID14)
-        local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= CONFIG.c.recon.contactAge
-        local isSAM = isSensor and isAgeLessThan
-        if c:inArea(area) and isSAM then table.insert(targets, c) end
-      end
-    end
-
-    targetsSortedByPackage[index].emittingTargets = targets
-    InsertList(targetsSortedByPackage[index].targets, targets)
-
-    if CONFIG.isDevMode and #targets > 0 then
-      PrintBox('China', 'Emission targets/' .. package.name .. ': ' .. #targets)
-    end
-  end
-
-  return targetsSortedByPackage
-end
-
-local function findRadioDirection(saveData, platform, targetsSortedByPackage, contacts)
-  local mlrsConfig = saveData.c.ground[platform]
-
-  local isWithinRange = function(distance, transmission)
-    return distance <= CONFIG.c.SIGINT.maxRange and
-        transmission.temp > CONFIG.c.SIGINT.maxCount
-  end
-
-  local function filterTargetsInArea(contacts, areas)
-    local targets = {}
-
-    for _, area in ipairs(areas) do
-      for _, c in ipairs(contacts) do
-        if (c.typed == 8 or
-              string.find(c.type_description, 'ROCC') ~= nil or
-              string.find(c.type_description, 'TAAOC') ~= nil) and
-            c:inArea(area) then
-          table.insert(targets, c)
-        end
-      end
-    end
-
-    return targets
-  end
-
-  local function filterTargetsWithinRangeOfRadioSource(saveData, contacts)
-    local targets = {}
-    local isTracking = false
-    local units = VP_GetSide({ Side = 'China' }).units
-
-    for _, contact in ipairs(contacts) do
-      for _, tm in pairs(saveData.c.SIGINT.transmissions) do
-        local distance = Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, contact.guid)
-
-        if isWithinRange(distance, tm) then
-          table.insert(targets, contact)
-
-          if not isTracking and tm.type == 'mobile' then
-            isTracking = trackTarget(saveData, units, CONFIG.platformDBID13, contact)
-          end
-        end
-      end
-    end
-
-    return targets
-  end
-
-  for index, package in ipairs(mlrsConfig.packages) do
-    local targets = filterTargetsInArea(contacts, package.areas)
-    targets = filterTargetsWithinRangeOfRadioSource(saveData, targets)
-    targetsSortedByPackage[index].radioTargets = targets
-    InsertList(targetsSortedByPackage[index].targets, targets)
-
-    if CONFIG.isDevMode and #targets > 0 then
-      PrintBox('China', 'Radio targets/' .. package.name .. ': ' .. #targets)
-    end
-  end
-
-  return targetsSortedByPackage
-end
-
-local function determineIfDeployByTargetCount(targetsSortedByPackage, targetNum)
-  for _, item in ipairs(targetsSortedByPackage) do
-    item.isTargetsMoreThan = #item.targets >= targetNum
-        or (#item.emittingTargets >= 1 and #item.fixedTargets <= 1)
-        or (#item.radioTargets >= 1 and #item.fixedTargets <= 1)
-  end
-
-  return targetsSortedByPackage
-end
-
-local function deployBatteries(saveData, platform, targetsSortedByPackage)
-  local mlrsConfig = saveData.c.ground[platform]
-  local isAllBtiesArrived = true
-  local keys = {}
-
-  local isBtyReady = function(bty, mlrsConfig, group)
-    return mlrsConfig.batteries[bty.guid].state == CONFIG.batteryState.HIDE
-        and not IsLowAmmo(
-          group,
-          mlrsConfig.batteries[bty.guid].ammoThreshold,
-          mlrsConfig.batteries[bty.guid].weaponDBID
-        )
-  end
-
-  local isNotBtyAtFiringPosition = function(bty, mlrsConfig)
-    return mlrsConfig.batteries[bty.guid].state ~= CONFIG.batteryState.STATIC
-  end
-
-  for index, item in ipairs(targetsSortedByPackage) do
-    if item.isTargetsMoreThan then
-      table.insert(keys, index)
-    end
-  end
-
-  for _, index in ipairs(keys) do
-    for _, bty in ipairs(mlrsConfig.packages[index].batteries) do
-      local group = SE_GetUnit({ guid = bty.guid })
-
-      if group then
-        if isBtyReady(bty, mlrsConfig, group) then
-          ToFringPosition(mlrsConfig.batteries[bty.guid], group)
-        end
-
-        if isNotBtyAtFiringPosition(bty, mlrsConfig) then
-          isAllBtiesArrived = false
-        end
-      end
-    end
-  end
-
-  return isAllBtiesArrived
-end
-
-local function launchMissiles(saveData, platform, targetsSortedByPackage, weaponDBID)
-  local mlrsConfig = saveData.c.ground[platform]
-
-  for idx, item in ipairs(targetsSortedByPackage) do
-    if item.isTargetsMoreThan then
-      local result = AttackContacts(
-        item.targets,
-        mlrsConfig.packages[idx].num,
-        mlrsConfig.packages[idx].batteries,
-        weaponDBID
-      )
-
-      if result > 0 then
-        mlrsConfig.packages[idx].index = mlrsConfig.packages[idx].index + 1
-
-        if CONFIG.isDevMode then
-          PrintBox('China', mlrsConfig.packages[idx].name .. '/Fired missiles: ' .. result)
-        end
-      end
-
-      local targetListLength = #mlrsConfig.packages[idx].batchTargetlists
-      local nextTargetListIdx = mlrsConfig.packages[idx].index
-      local isTargetListIdxOutOfBounds = nextTargetListIdx > targetListLength
-
-      if isTargetListIdxOutOfBounds then
-        mlrsConfig.packages[idx].index = targetListLength
-        mlrsConfig.packages[idx].isFinished = true
       end
     end
   end
@@ -424,8 +311,6 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
   local mission = ScenEdit_GetMission('China', package.missionName)
 
   if mission then
-    -- ScenEdit_SetMission('China', package.missionName, { starttime = ScenEdit_CurrentTime() })
-
     for _, guid in ipairs(mission.targetlist) do
       local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
 
@@ -445,8 +330,6 @@ local function handleStrikePackagesWithMission(package, contacts, filterFn, cont
         table.insert(filteredContacts, contact)
       end
     end
-    -- local filteredContacts = FilterContacts(contacts, fn)
-    -- local filteredContacts = Array_utils.new(contacts):filter(filterFn(package)):value()
 
     if #filteredContacts >= contactNum or (mission and #mission.targetlist > 0) then
       for _, value in ipairs(filteredContacts) do
@@ -471,94 +354,160 @@ local function isPackagesFinished(packages)
   return true
 end
 
-local function isNoUnitAssignedToMission(missionName)
-  local mission = ScenEdit_GetMission('China', missionName)
-
-  if mission then
-    return #mission.unitlist == 0
+local function isFSEMFinished(FSEM)
+  for _, FST in ipairs(FSEM.FSTs) do
+    if not FST.isFinished then
+      return false
+    end
   end
 
   return true
 end
 
--- local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
---   local antishipConfig = saveData.c.air[base][type]
---   local elapsedTime = 0
+local function isBtyReady(bty, mlrsConfig, group)
+  return mlrsConfig.batteries[bty.guid].state == CONFIG.batteryState.HIDE
+      and not IsLowAmmo(
+        group,
+        mlrsConfig.batteries[bty.guid].ammoThreshold,
+        mlrsConfig.batteries[bty.guid].weaponDBID
+      )
+end
 
---   if antishipConfig.lastStrikeTime then
---     elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
---   end
+local function isNotBtyAtFiringPosition(bty, mlrsConfig)
+  return mlrsConfig.batteries[bty.guid].state ~= CONFIG.batteryState.STATIC
+end
 
---   local isAllowedToAttack = not antishipConfig.lastStrikeTime
---       or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
+local function evaluateTarget(target, FST, isFirstWave)
+  local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
+  local BDA = target.BDA
+  local detections = target.lastDetections
+  local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+      (detections and detections[1].age <= FST.contactAge) and
+      not isHelipad
+  local isHelipadEmbarkedWithHelicopter = isHelipad and
+      #SE_GetUnit({ guid = target.actualunitid }).embarkedUnits['Aircraft'] > 0
+  return hasEvaluated or isHelipadEmbarkedWithHelicopter or isFirstWave
+end
 
---   for _, package in ipairs(antishipConfig.packages) do
---     if not package.hasLaunched and isAllowedToAttack then
---       local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+local function shouldDeployToFiringPosition(saveData, FST)
+  local allBatteriesInPosition = true
 
---       if isAssigned then
---         package.hasLaunched = true
---         antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
---       end
+  for _, bty in ipairs(FST.batteries) do
+    local actualBty = SE_GetUnit({ guid = bty.guid })
 
---       break
---     end
---   end
+    if actualBty and isBtyReady(bty, saveData.c.ground[string.lower(FST.wpnSystem)], actualBty) then
+      ToFringPosition(saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid], actualBty)
+    end
 
---   if isPackagesFinished(antishipConfig.packages) and
---       isNoUnitAssignedToMission(antishipConfig.packages[#antishipConfig.packages].missionName) then
---     for _, package in ipairs(antishipConfig.packages) do
---       package.hasLaunched = false
---     end
---   end
--- end
+    if isNotBtyAtFiringPosition(bty, saveData.c.ground[string.lower(FST.wpnSystem)]) then
+      allBatteriesInPosition = false
+    end
+  end
 
--- local function airStrike(saveData, base, type, contacts, contactHandler, contactNum)
---   local antishipConfig = saveData.c.air[base][type]
---   local elapsedTime = 0
+  return allBatteriesInPosition
+end
 
---   if antishipConfig.lastStrikeTime then
---     elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
---   end
+local function identifyEmTargets(saveData, contacts, FST)
+  local evaluatedTargetlist = {}
 
---   local isAllowedToAttack = not antishipConfig.lastStrikeTime
---       or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
+  for _, filterName in ipairs(FST.filterNames) do
+    local targets = filters[filterName](FST, contacts, saveData)
 
---   for _, wave in ipairs(antishipConfig.ATO) do
---     if not wave.hasLaunched and isAfterStartTime(wave.startTime) then
---       for _, package in ipairs(wave.packages) do
---         if not package.hasLaunched and isAllowedToAttack then
---           local isAssigned = handleStrikePackagesWithMission(package, contacts, contactHandler, contactNum)
+    if CONFIG.isDevMode then
+      PrintBox('China', filterName .. '/' .. FST.name .. ': ' .. #targets)
+    end
 
---           if isAssigned then
---             package.hasLaunched = true
---             antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
---           end
+    InsertList(evaluatedTargetlist, targets)
+  end
 
---           break
---         end
---       end
+  return evaluatedTargetlist
+end
 
---       if isPackagesFinished(wave.packages) then
---         wave.hasLaunched = true
---       end
+local function assessTargetsDamage(FST, FSEM)
+  local evaluatedTargetlist = {}
 
---       break
---     end
---   end
--- end
+  if type(FST.targetlist) ~= 'table' and #FST.targetlist == 0 then
+    goto continue
+  end
+
+  for _, target in ipairs(FST.targetlist) do
+    local actualTarget = ScenEdit_GetContact({ side = 'China', guid = target })
+
+    if actualTarget and evaluateTarget(actualTarget, FST, FSEM.isFirstWave) then
+      table.insert(evaluatedTargetlist, actualTarget.guid)
+    end
+  end
+
+  ::continue::
+  return evaluatedTargetlist
+end
+
+local function executeFireSupportTasks(FSEM)
+  for _, FST in ipairs(FSEM.FSTs) do
+    if not FST.isFinished and isAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
+      local result = AttackContacts(
+        FST.evaluatedTargetlist,
+        FST.ammoPerTarget,
+        FST.batteries
+      )
+
+      if result > 0 then
+        FST.isFinished = true
+
+        if CONFIG.isDevMode then
+          PrintBox('China', FST.name .. '/Fired missiles: ' .. result)
+        end
+      end
+    end
+  end
+end
+
+local function strike(saveData, contacts)
+  for _, FSEM in pairs(saveData.c.ground.FSP) do
+    if not FSEM.isFinished and FSEM.isActivated then
+      local allBatteriesInPosition = true
+
+      for _, FST in ipairs(FSEM.FSTs) do
+        if not FST.isFinished and isAfterStartTime(FST.startTime) then
+          local evaluatedTargetlist = assessTargetsDamage(FST, FSEM)
+
+          if CONFIG.isDevMode then
+            PrintBox('China', FST.name .. ': ' .. #evaluatedTargetlist)
+          end
+
+          if type(FST.filterNames) == "table" and #FST.filterNames > 0 then
+            local emTargets = identifyEmTargets(saveData, contacts, FST)
+            InsertList(evaluatedTargetlist, emTargets)
+          end
+
+          FST.evaluatedTargetlist = evaluatedTargetlist
+
+          if #evaluatedTargetlist >= FST.minTargetCount then
+            if not shouldDeployToFiringPosition(saveData, FST) then
+              allBatteriesInPosition = false
+            end
+          else
+            allBatteriesInPosition = false
+          end
+        end
+      end
+
+      FSEM.allBatteriesInPosition = allBatteriesInPosition
+    end
+  end
+
+  for _, FSEM in pairs(saveData.c.ground.FSP) do
+    if not FSEM.isFinished and FSEM.isActivated and FSEM.allBatteriesInPosition then
+      executeFireSupportTasks(FSEM)
+    end
+
+    if isFSEMFinished(FSEM) then
+      FSEM.isFinished = true
+    end
+  end
+end
 
 local function airStrike(saveData, contacts)
-  -- local antishipConfig = saveData.c.air.ATO
-  -- local elapsedTime = 0
-
-  -- if antishipConfig.lastStrikeTime then
-  --   elapsedTime = ScenEdit_CurrentTime() - antishipConfig.lastStrikeTime
-  -- end
-
-  -- local isAllowedToAttack = not antishipConfig.lastStrikeTime
-  --     or (antishipConfig.lastStrikeTime and elapsedTime >= CONFIG.c.air[base][type].strikeInterval)
-
   for _, wave in pairs(saveData.c.air.ATO) do
     if not wave.hasLaunched and wave.isActivated then
       for _, package in ipairs(wave.packages) do
@@ -567,7 +516,6 @@ local function airStrike(saveData, contacts)
 
           if isAssigned then
             package.hasLaunched = true
-            -- antishipConfig.lastStrikeTime = ScenEdit_CurrentTime()
           end
 
           break
@@ -577,54 +525,14 @@ local function airStrike(saveData, contacts)
       if isPackagesFinished(wave.packages) then
         wave.hasLaunched = true
       end
-
-      -- break
     end
   end
 end
 
-local contacts = ScenEdit_GetContacts('China')
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if saveData == nil then
-  ScenEdit_SpecialMessage('China', 'saveData is nil')
-  return
-end
-
-if contacts == nil then
-  return
-end
 
 if saveData.c.recon.isActivated then
   handleReconQueue(saveData)
-end
-
-if saveData.c.ground.mlrs.isActivated then
-  local targetsSortedByPackage = {}
-  local isAllArrived = false
-  local key = saveData.c.ground.mlrs.packages[1].batteries[1].guid
-  local weaponDBID = saveData.c.ground.mlrs.batteries[key].weaponDBID
-  targetsSortedByPackage = analyzeTargets(saveData, 'mlrs')
-  targetsSortedByPackage = analyzeEmissions(saveData, 'mlrs', targetsSortedByPackage, contacts)
-  targetsSortedByPackage = findRadioDirection(saveData, 'mlrs', targetsSortedByPackage, contacts)
-  targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
-  isAllArrived = deployBatteries(saveData, 'mlrs', targetsSortedByPackage)
-  if isAllArrived then launchMissiles(saveData, 'mlrs', targetsSortedByPackage, weaponDBID) end
-end
-
-if saveData.c.ground.srbm.isActivated then
-  local targetsSortedByPackage = analyzeTargets(saveData, 'srbm')
-  targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
-  local isAllArrived = deployBatteries(saveData, 'srbm', targetsSortedByPackage)
-  if isAllArrived then launchMissiles(saveData, 'srbm', targetsSortedByPackage) end
-end
-
-
-if saveData.c.ground.glcm.isActivated then
-  local targetsSortedByPackage = analyzeTargets(saveData, 'glcm')
-  targetsSortedByPackage = determineIfDeployByTargetCount(targetsSortedByPackage, 5)
-  local isAllArrived = deployBatteries(saveData, 'glcm', targetsSortedByPackage)
-  if isAllArrived then launchMissiles(saveData, 'glcm', targetsSortedByPackage) end
 end
 
 if saveData.c.surface.lacm.isActivated then
@@ -633,15 +541,14 @@ if saveData.c.surface.lacm.isActivated then
   for _, value in ipairs(SE_GetUnit({ unitname = 'CSG' }).group.unitlist) do
     local unit = SE_GetUnit({ guid = value })
     if unit and unit.dbid == CONFIG.platformDBID51 then
-      table.insert(ships, { guid = value })
+      table.insert(ships, { guid = value, weaponDBID = CONFIG.c.surface.lacm.weaponDBID })
     end
   end
 
   AttackContacts(
     CONFIG.c.surface.lacm.targetlist,
     5,
-    ships,
-    CONFIG.c.surface.lacm.weaponDBID
+    ships
   )
 end
 
@@ -662,9 +569,12 @@ if saveData.c.subSurface.slcm.isActivated then
   AttackContacts(
     CONFIG.c.subSurface.slcm.targetlist,
     8,
-    CONFIG.c.subSurface.slcm.submarines,
-    CONFIG.c.subSurface.slcm.weaponDBID
+    CONFIG.c.subSurface.slcm.submarines
   )
+end
+
+if saveData.c.ground.isActivated then
+  strike(saveData, contacts)
 end
 
 if saveData.c.air.isActivated then

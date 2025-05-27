@@ -9,6 +9,7 @@ CONFIG.c.air.shipBased = {}
 CONFIG.c.ground = {}
 CONFIG.c.ground.mlrs = {}
 CONFIG.c.ground.srbm = {}
+CONFIG.c.ground.mrbm = {}
 CONFIG.c.ground.glcm = {}
 CONFIG.c.ground.ascm = {}
 CONFIG.c.surface = {}
@@ -60,7 +61,7 @@ CONFIG.platformDBID21 = 1277 -- HQ-12
 CONFIG.platformDBID22 = 4324 -- PHL-16
 CONFIG.platformDBID23 = 624  -- supply
 CONFIG.platformDBID24 = 3126 -- PHL-03
-CONFIG.platformDBID25 = 764  -- GPS Jammer
+CONFIG.platformDBID25 = 4582 -- GPS Jammer
 CONFIG.platformDBID26 = 1376 -- underground shelter
 CONFIG.platformDBID27 = 322  -- weapon storage facility
 CONFIG.platformDBID28 = 5014 -- J-20
@@ -559,6 +560,45 @@ CONFIG.c.ground.srbm.contingencyRunways = {
   { base = { guid = 'IC8B0X-0HN7DO7L1HUTT' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
 }
 
+-- MRBM
+CONFIG.c.ground.mrbm.wpnDefault = 24
+CONFIG.c.ground.mrbm.ammoThreshold = 35
+CONFIG.c.ground.mrbm.positions = {
+  brigade624 = {
+    RL = {
+      course = {
+        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = { 'RP-156928', 'RP-156929', 'RP-156930', 'RP-156931' }
+    },
+    HA = {
+      course = {
+        { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = { 'RP-156932', 'RP-156933', 'RP-156934', 'RP-156935' }
+    },
+    FP = {
+      {
+        course = {
+          { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        },
+        area = { 'RP-156936', 'RP-156937', 'RP-156938', 'RP-156939' }
+      },
+    },
+    AHA = {
+      course = {
+        { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = { 'RP-156924', 'RP-156925', 'RP-156926', 'RP-156927' }
+    },
+  },
+}
+CONFIG.c.ground.mrbm.contactAge = 15 * 60
+CONFIG.c.ground.mrbm.reloadTime = 5 * 60
+
 
 -- Recon
 CONFIG.c.recon.bases = {
@@ -568,15 +608,21 @@ CONFIG.c.recon.bases = {
 CONFIG.c.recon.contactAge = 15 * 60
 CONFIG.c.recon.courses = {
   WZ8 = {
-    { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
+    {
+      { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
+    },
+    {
+      { lat = 'N 25.08.36', lon = 'E 122.40.26', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 21.21.28', lon = 'E 121.20.36', desiredAltitude = 30480, desiredSpeed = 3300 },
+    }
   },
   H6N = {
     { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
@@ -1710,7 +1756,8 @@ CONFIG.c.PHIBOP.sag = {
   },
 }
 
--- Land strike from DDG
+-- Land strike from
+CONFIG.c.surface.lacm.weaponDBID = 4058
 CONFIG.c.surface.lacm.csg = {
   groupName = 'CSG',
   unitList = {
@@ -1815,7 +1862,6 @@ CONFIG.c.surface.lacm.csg = {
     -- heading = CONFIG.c.PHIBOP.shipInfo.heading.west.vertical,
   },
 }
-CONFIG.c.surface.lacm.weaponDBID = 4058
 CONFIG.c.surface.lacm.targetlist = {
   { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC71' },
   { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC73' },
@@ -1824,6 +1870,7 @@ CONFIG.c.surface.lacm.targetlist = {
 
 
 -- SLCM
+CONFIG.c.subSurface.slcm.weaponDBID = 3716
 CONFIG.c.subSurface.slcm.submarines = {
   {
     name = "407",
@@ -1838,6 +1885,7 @@ CONFIG.c.subSurface.slcm.submarines = {
       startingPoint = { lat = 'N 25.05.32', lon = 'E 122.11.39' },
       heading = 180
     },
+    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
   },
   {
     name = "408",
@@ -1852,6 +1900,7 @@ CONFIG.c.subSurface.slcm.submarines = {
       startingPoint = { lat = 'N 24.32.30', lon = 'E 122.47.45', },
       heading = 270
     },
+    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
   },
   {
     name = "409",
@@ -1865,6 +1914,7 @@ CONFIG.c.subSurface.slcm.submarines = {
       startingPoint = { lat = 'N 23.29.41', lon = 'E 122.39.12', },
       heading = 180
     },
+    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
   },
   {
     name = "410",
@@ -1878,9 +1928,10 @@ CONFIG.c.subSurface.slcm.submarines = {
       startingPoint = { lat = 'N 22.41.17', lon = 'E 122.01.36', },
       heading = 30
     },
+    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
   },
 }
-CONFIG.c.subSurface.slcm.weaponDBID = 3716
+
 CONFIG.c.subSurface.slcm.targetlist = {
   { guid = '6Z8LM5-0HMIJ7B89BCF3' },
   { guid = '6Z8LM5-0HMIJ7B89BCF4' },
@@ -2493,6 +2544,7 @@ SaveData.c.air.shipBased = {}
 SaveData.c.ground = {}
 SaveData.c.ground.mlrs = {}
 SaveData.c.ground.srbm = {}
+SaveData.c.ground.mrbm = {}
 SaveData.c.ground.glcm = {}
 SaveData.c.ground.ascm = {}
 SaveData.c.surface = {}
@@ -2582,7 +2634,7 @@ SaveData.c.GPSJamming.isActivated = true
 
 
 -- MLRS
-SaveData.c.ground.mlrs.isActivated = false
+SaveData.c.ground.mlrs.isActivated = true
 SaveData.c.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9ASEFCGDKF'] = {
     guid = 'IC8B0X-0HN9ASEFCGDKF',
@@ -2643,38 +2695,10 @@ SaveData.c.ground.mlrs.batteries = {
     ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9'
   },
 }
-SaveData.c.ground.mlrs.packages = {
-  {
-    name = 'Pingtan',
-    batchTargetlists = {},
-    batteries = {
-      { name = '1st Bn, 1st Rockets Arty Bde', guid = 'IC8B0X-0HN5UJRVS1JEK', }
-    },
-    areas = {
-      { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-    },
-    num = 8,
-    index = 1,
-    isFinished = false
-  },
-  {
-    name = 'Chinchew',
-    batchTargetlists = {},
-    batteries = {
-      { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HNBRRE2PRQAL', }
-    },
-    areas = {
-      { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' }
-    },
-    num = 8,
-    index = 1,
-    isFinished = false
-  },
-}
 
 
 -- GLCM
-SaveData.c.ground.glcm.isActivated = false
+SaveData.c.ground.glcm.isActivated = true
 SaveData.c.ground.glcm.ammunitions = {
   ['IC8B0X-0HN99I5RL5KR9'] = {
     guid = 'IC8B0X-0HN99I5RL5KR9',
@@ -2688,7 +2712,7 @@ SaveData.c.ground.glcm.ammunitionSections = {
     name = 'Ammo Sec, 635th Bde, PLARF',
     wpnCurrent = CONFIG.c.ground.glcm.wpnDefault,
     wpnDefault = CONFIG.c.ground.glcm.wpnDefault,
-    unitCount = 4,
+    unitCount = 8,
     position = CONFIG.c.ground.glcm.positions.brigade635,
     reloadStartTime = nil,
     state = CONFIG.batteryState.STATIC,
@@ -2698,7 +2722,7 @@ SaveData.c.ground.glcm.ammunitionSections = {
 ---@class CONFIG__Battery:table
 ---@field name string
 ---@field guid string
----@field reloadStartTime? number @in seconds or nil
+---@field reloadStartTime? number|nil @in seconds or nil
 ---@field state? BatteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
 ---@field position table
 ---@field weaponDBID number
@@ -2718,40 +2742,10 @@ SaveData.c.ground.glcm.batteries = {
     ammunitionSection = 'IC8B0X-0HN7R5QOIVG88'
   },
 }
----@class CONFIG__Package:table
----@field name string
----@field batchTargetlists table<CONFIG__TargetList>
----@field batteries table
----@field num number
----@field index number
----@field isFinished boolean
-SaveData.c.ground.glcm.packages = {
-  ---@type CONFIG__Package
-  {
-    name = 'HELIPAD',
-    batchTargetlists = {},
-    batteries = {
-      { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK' },
-    },
-    num = 2,
-    index = 1,
-    isFinished = false
-  },
-  {
-    name = 'CONTINGENCY RUNWAY',
-    batchTargetlists = {},
-    batteries = {
-      { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK' },
-    },
-    num = 4,
-    index = 1,
-    isFinished = false
-  },
-}
 
 
 -- SRBM
-SaveData.c.ground.srbm.isActivated = false
+SaveData.c.ground.srbm.isActivated = true
 SaveData.c.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9ASEFCG848'] = {
     guid = 'IC8B0X-0HN9ASEFCG848',
@@ -2920,52 +2914,42 @@ SaveData.c.ground.srbm.batteries = {
     ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P'
   },
 }
-SaveData.c.ground.srbm.packages = {
-  {
-    name = 'RADAR',
-    batchTargetlists = {},
-    batteries = {
-      { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ' },
-      { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8' }
-    },
-    num = 3,
-    index = 1,
-    isFinished = false
-  },
-  {
-    name = 'RUNWAY',
-    batchTargetlists = {},
-    batteries = {
-      { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3' },
-      { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI' }
-    },
-    num = 4,
-    index = 1,
-    isFinished = false
-  },
-  {
-    name = 'PORT',
-    batchTargetlists = {},
-    batteries = {
-      { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9' }
-    },
-    num = 2,
-    index = 1,
-    isFinished = false
-  },
-  {
-    name = 'SHELTER',
-    batchTargetlists = {},
-    batteries = {
-      { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE' }
-    },
-    num = 2,
-    index = 1,
-    isFinished = false
+
+-- MRBM
+SaveData.c.ground.mrbm.isActivated = true
+SaveData.c.ground.mrbm.ammunitions = {
+  ['IC8B0X-0HNCOR6HG2KK5'] = {
+    guid = 'IC8B0X-0HNCOR6HG2KK5',
+    wpnCurrent = CONFIG.c.ground.mrbm.wpnDefault * 2,
+    wpnDefault = CONFIG.c.ground.mrbm.wpnDefault * 2,
   },
 }
-
-
+SaveData.c.ground.mrbm.ammunitionSections = {
+  ['IC8B0X-0HNCOR6HG2KF9'] = {
+    guid = 'IC8B0X-0HNCOR6HG2KF9',
+    name = 'Ammo Sec, 624th Bde, PLARF',
+    wpnCurrent = CONFIG.c.ground.mrbm.wpnDefault,
+    wpnDefault = CONFIG.c.ground.mrbm.wpnDefault,
+    unitCount = 6,
+    position = CONFIG.c.ground.mrbm.positions.brigade624,
+    reloadStartTime = nil,
+    state = CONFIG.batteryState.STATIC,
+    ammunition = 'IC8B0X-0HNCOR6HG2KK5',
+  },
+}
+SaveData.c.ground.mrbm.batteries = {
+  ['IC8B0X-0HNCOR6HG2JE1'] = {
+    guid = 'IC8B0X-0HNCOR6HG2JE1',
+    name = '624th Bde',
+    msg = 'Radio source, Bty',
+    reloadStartTime = nil,
+    state = CONFIG.batteryState.HIDE,
+    position = CONFIG.c.ground.mrbm.positions.brigade624,
+    weaponDBID = 2105,
+    ammoThreshold = CONFIG.c.ground.mrbm.ammoThreshold,
+    ammunitionSection = 'IC8B0X-0HNCOR6HG2KF9'
+  },
+}
 
 -- Recon
 SaveData.c.recon.isActivated = true
@@ -2982,14 +2966,274 @@ SaveData.c.recon.queue = {
     missionName = nil,
     course = CONFIG.c.recon.courses.H6N,
     num = 1,
-    takeoffTime = '2027-06-09 01:20:00',
+    -- takeoffTime = '2027-06-09 01:20:00',
+    takeoffTime = '2027-06-09 01:00:00',
     missionStartTime = nil,
-    hasLaunched = false
+    hasLaunched = false,
+    isTracking = true
   },
 }
 
+-- Fire support plan
+SaveData.c.ground.isActivated = true
+SaveData.c.ground.FSP = {
+  ['STRIKE/INFRASTRUCTURE/1'] = {
+    name = 'STRIKE/INFRASTRUCTURE/1',
+    isActivated = true,
+    isFirstWave = true,
+    strikeInterval = 0 * 60,
+    reconUAVs = nil,
+    allBatteriesInPosition = false,
+    isFinished = false,
+    -- Fire support task
+    FSTs = {
+      {
+        name = 'RADAR',
+        wpnSystem = 'SRBM',
+        missionName = 'STRIKE/RADAR',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '614th Bde',
+            guid = 'X58F5H-0HN1LQGRV8HNQ',
+            weaponDBID = SaveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
+          },
+          {
+            name = '613rd Bde',
+            guid = 'X58F5H-0HN1G2DEBC7O8',
+            weaponDBID = SaveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
+          }
+        },
+        areas = nil,
+        startTime = '2027-06-09 01:00:00',
+        contactAge = CONFIG.c.ground.srbm.contactAge,
+        ammoPerTarget = 3,
+        minTargetCount = 4,
+        filterNames = nil,
+        isFinished = false
+      },
+      {
+        name = 'RUNWAY',
+        wpnSystem = 'SRBM',
+        missionName = 'STRIKE/RUNWAY/1',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '636th Bde',
+            guid = 'IC8B0X-0HN822OHANPB3',
+            weaponDBID = SaveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+          },
+          {
+            name = '617th Bde',
+            guid = 'IC8B0X-0HN822OHANRHI',
+            weaponDBID = SaveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+          }
+        },
+        areas = nil,
+        startTime = nil,
+        contactAge = CONFIG.c.ground.srbm.contactAge,
+        ammoPerTarget = 4,
+        minTargetCount = 4,
+        filterNames = nil,
+        isFinished = false
+      },
+      {
+        name = 'PORT',
+        wpnSystem = 'SRBM',
+        missionName = 'STRIKE/PORT/1',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '615th Bde',
+            guid = 'X58F5H-0HN1G2IFLNKG9',
+            weaponDBID = SaveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLNKG9'].weaponDBID
+          }
+        },
+        areas = nil,
+        startTime = nil,
+        contactAge = CONFIG.c.ground.srbm.contactAge,
+        ammoPerTarget = 2,
+        minTargetCount = 4,
+        filterNames = nil,
+        isFinished = false
+      },
+      {
+        name = 'SHELTER',
+        wpnSystem = 'SRBM',
+        missionName = 'STRIKE/SHELTER/1',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '616th Bde',
+            guid = 'X58F5H-0HN1G2IFLF6QE',
+            weaponDBID = SaveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
+          }
+        },
+        areas = nil,
+        startTime = nil,
+        contactAge = CONFIG.c.ground.srbm.contactAge,
+        ammoPerTarget = 2,
+        minTargetCount = 4,
+        filterNames = nil,
+        isFinished = false
+      },
+    }
+  },
+  ['STRIKE/C2/1'] = {
+    name = 'STRIKE/C2/1',
+    isActivated = true,
+    isFirstWave = false,
+    strikeInterval = 0 * 60,
+    reconUAVs = nil,
+    isFinished = false,
+    allBatteriesInPosition = false,
+    -- Fire support task
+    FSTs = {
+      {
+        name = 'PINGTAN',
+        wpnSystem = 'MLRS',
+        missionName = 'STRIKE/C2/N',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '1st Bn, 1st Rockets Arty Bde',
+            guid = 'IC8B0X-0HN5UJRVS1JEK',
+            weaponDBID = SaveData.c.ground.mlrs.batteries['IC8B0X-0HN5UJRVS1JEK'].weaponDBID
+          }
+        },
+        areas = { { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' }, },
+        startTime = '2027-06-09 01:30:00',
+        -- startTime =  '2027-06-09 03:10:00'
+        contactAge = CONFIG.c.ground.mlrs.contactAge,
+        ammoPerTarget = 8,
+        minTargetCount = 2,
+        filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+        isFinished = false
+      },
+      {
+        name = 'CHINCHEW',
+        wpnSystem = 'MLRS',
+        missionName = 'STRIKE/C2/S',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '6th Bn, 73rd Arty Bde',
+            guid = 'IC8B0X-0HNBRRE2PRQAL',
+            weaponDBID = SaveData.c.ground.mlrs.batteries['IC8B0X-0HNBRRE2PRQAL'].weaponDBID
+          }
+        },
+        areas = { {
+          'RP-156966', 'RP-156967', 'RP-156968', 'RP-156969',
+          'RP-156970', 'RP-156971', 'RP-156972', 'RP-156973',
+          'RP-156974'
+        } },
+        startTime = nil,
+        contactAge = CONFIG.c.ground.mlrs.contactAge,
+        ammoPerTarget = 8,
+        minTargetCount = 2,
+        filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+        isFinished = false
+      },
+    }
+  },
+  ['STRIKE/HELIPAD'] = {
+    name = 'STRIKE/HELIPAD',
+    isActivated = true,
+    isFirstWave = true,
+    strikeInterval = 60 * 60,
+    reconUAVs = nil,
+    isFinished = false,
+    allBatteriesInPosition = false,
+    -- Fire support task
+    FSTs = {
+      {
+        name = 'HELIPAD',
+        wpnSystem = 'GLCM',
+        missionName = 'STRIKE/HELIPAD',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '635th Bde',
+            guid = '6Z8LM5-0HMN97ERAUODK',
+            weaponDBID = SaveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+          }
+        },
+        areas = nil,
+        -- startTime = '2027-06-09 05:30:00',
+        startTime = '2027-06-09 02:00:00',
+        contactAge = CONFIG.c.ground.glcm.contactAge,
+        ammoPerTarget = 2,
+        minTargetCount = 1,
+        filterNames = nil,
+        isFinished = false
+      },
+      {
+        name = 'EMERGENCY HIGHWAY STRIP',
+        wpnSystem = 'GLCM',
+        missionName = 'STRIKE/EMERGENCY HIGHWAY STRIP',
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '635th Bde',
+            guid = '6Z8LM5-0HMN97ERAUODK',
+            weaponDBID = SaveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+          }
+        },
+        areas = nil,
+        startTime = nil,
+        contactAge = CONFIG.c.ground.glcm.contactAge,
+        ammoPerTarget = 4,
+        minTargetCount = 1,
+        filterNames = nil,
+        isFinished = false
+      }
+    }
+  },
+  ['ANTISHIP/EAST'] = {
+    name = 'ANTISHIP/EAST',
+    isActivated = true,
+    isFirstWave = false,
+    strikeInterval = 0 * 60,
+    reconUAVs = nil,
+    isFinished = false,
+    allBatteriesInPosition = false,
+    -- Fire support task
+    FSTs = {
+      {
+        name = 'ANTISHIP',
+        wpnSystem = 'MRBM',
+        missionName = nil,
+        targetlist = {},
+        evaluatedTargetlist = {},
+        batteries = {
+          {
+            name = '624th Bde',
+            guid = 'IC8B0X-0HNCOR6HG2JE1',
+            weaponDBID = SaveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
+          }
+        },
+        areas = { { 'RP-76319', 'RP-42688', 'RP-42687', 'RP-76320' } },
+        startTime = '2027-06-09 02:10:00',
+        contactAge = CONFIG.c.ground.mrbm.contactAge,
+        ammoPerTarget = 6,
+        minTargetCount = 1,
+        filterNames = { 'findNavalTargets' },
+        isFinished = false
+      }
+    }
+  }
+}
 
--- Air Tasking Order
+
+-- Air tasking order
 SaveData.c.air.isActivated = true
 SaveData.c.air.ATO = {
   ['STRIKE/AB/W/1'] = {
@@ -3039,12 +3283,17 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/S/1',
-        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+        area = {
+          'RP-156975', 'RP-156976', 'RP-156977',
+          'RP-156978', 'RP-156979', 'RP-156980',
+          'RP-156981', 'RP-156982', 'RP-156983',
+          'RP-156984', 'RP-156985', 'RP-156986', 'RP-156987'
+        },
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
-        -- takeoffTime = '2027-06-09 03:40:00',
-        takeoffTime = '2027-06-09 01:00:00'
+        takeoffTime = '2027-06-09 03:40:00',
+        -- takeoffTime = '2027-06-09 01:00:00'
       },
       {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
@@ -3052,7 +3301,11 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/C',
-        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
+        area = {
+          'RP-156966', 'RP-156967', 'RP-156968', 'RP-156969',
+          'RP-156970', 'RP-156971', 'RP-156972', 'RP-156973',
+          'RP-156974'
+        },
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
@@ -3084,7 +3337,12 @@ SaveData.c.air.ATO = {
   --       escort = nil,
   --       wildWeasel = nil,
   --       missionName = 'STRIKE/AB/S/1',
-  --       area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+  --       area = {
+  --         'RP-156975', 'RP-156976', 'RP-156977', 'RP-156978',
+  --         'RP-156979', 'RP-156980', 'RP-156981', 'RP-156982',
+  --         'RP-156983', 'RP-156984', 'RP-156985', 'RP-156986',
+  --         'RP-156987'
+  --       },
   --       hasLaunched = false,
   --       tanker = nil,
   --       filterName = 'makeC2Filter',
@@ -3116,7 +3374,12 @@ SaveData.c.air.ATO = {
   --       wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
   --       jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
   --       missionName = 'STRIKE/AB/S/2',
-  --       area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+  --       area = {
+  --         'RP-156975', 'RP-156976', 'RP-156977', 'RP-156978',
+  --         'RP-156979', 'RP-156980', 'RP-156981', 'RP-156982',
+  --         'RP-156983', 'RP-156984', 'RP-156985', 'RP-156986',
+  --         'RP-156987'
+  --       },
   --       hasLaunched = false,
   --       tanker = nil,
   --       filterName = 'makeC2Filter',
@@ -3137,7 +3400,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/JHI',
-        area = { 'RP-8016', 'RP-8017', 'RP-8018', 'RP-8019' },
+        area = { 'RP-156988', 'RP-156989', 'RP-156990', 'RP-156991', 'RP-156992', 'RP-156993' },
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
@@ -3149,7 +3412,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/E',
-        area = { 'RP-8008', 'RP-8009', 'RP-8010', 'RP-8011' },
+        area = { 'RP-156988', 'RP-156989', 'RP-156990', 'RP-156991', 'RP-156992', 'RP-156993' },
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
@@ -3194,6 +3457,7 @@ SaveData.c.air.ATO = {
         tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
         filterName = 'makeAirborneFilter',
         takeoffTime = '2027-06-09 06:40:00',
+        -- takeoffTime = '2027-06-09 01:00:00'
       }
     },
   },
@@ -3567,7 +3831,11 @@ SaveData.t.IADS.ROCC = {
     guid = 'IC8B0X-0HNC3OB4KJKTC',
     areas = {
       { 'RP-156521', 'RP-156522', 'RP-156523', 'RP-156524', 'RP-156525', 'RP-156526' },
-      { 'RP-156527', 'RP-156528', 'RP-156529', 'RP-156530', 'RP-156531', 'RP-156532', 'RP-156533', 'RP-156534', 'RP-156535' },
+      {
+        'RP-156527', 'RP-156528', 'RP-156529', 'RP-156530',
+        'RP-156531', 'RP-156532', 'RP-156533', 'RP-156534',
+        'RP-156535'
+      },
     },
     SAM = {},
     radar = {}
@@ -3577,7 +3845,12 @@ SaveData.t.IADS.ROCC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJL2M',
     areas = {
-      { 'RP-156536', 'RP-156537', 'RP-156538', 'RP-156539', 'RP-156540', 'RP-156541', 'RP-156542', 'RP-156543', 'RP-156544', 'RP-156545', 'RP-156546', 'RP-156547', 'RP-156548' },
+      {
+        'RP-156536', 'RP-156537', 'RP-156538', 'RP-156539',
+        'RP-156540', 'RP-156541', 'RP-156542', 'RP-156543',
+        'RP-156544', 'RP-156545', 'RP-156546', 'RP-156547',
+        'RP-156548'
+      },
     },
     SAM = {},
     radar = {}
@@ -3598,7 +3871,11 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU1ED',
     areas = {
-      { 'RP-156527', 'RP-156528', 'RP-156529', 'RP-156530', 'RP-156531', 'RP-156532', 'RP-156533', 'RP-156534', 'RP-156535' },
+      {
+        'RP-156527', 'RP-156528', 'RP-156529', 'RP-156530',
+        'RP-156531', 'RP-156532', 'RP-156533', 'RP-156534',
+        'RP-156535'
+      },
     },
     SAM = {},
   },
@@ -3607,7 +3884,12 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU0JP',
     areas = {
-      { 'RP-156536', 'RP-156537', 'RP-156538', 'RP-156539', 'RP-156540', 'RP-156541', 'RP-156542', 'RP-156543', 'RP-156544', 'RP-156545', 'RP-156546', 'RP-156547', 'RP-156548' },
+      {
+        'RP-156536', 'RP-156537', 'RP-156538', 'RP-156539',
+        'RP-156540', 'RP-156541', 'RP-156542', 'RP-156543',
+        'RP-156544', 'RP-156545', 'RP-156546', 'RP-156547',
+        'RP-156548'
+      },
     },
     SAM = {},
   },

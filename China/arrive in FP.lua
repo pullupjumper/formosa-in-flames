@@ -37,5 +37,14 @@ if saveData.c.ground.srbm.isActivated then
   end
 end
 
+if saveData.c.ground.mrbm.isActivated then
+  for _, battery in pairs(saveData.c.ground.mrbm.batteries) do
+    if unit then
+      if battery.guid == unit.guid and battery.state == CONFIG.batteryState.REPOSITIONING then
+        SetWCSToFree(battery, unit)
+      end
+    end
+  end
+end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

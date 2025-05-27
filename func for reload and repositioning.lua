@@ -76,6 +76,7 @@ function SetReloadStartTime(battery, group, isRepositioningAutomatically)
 
     if u and isRepositioningAutomatically then
       ScenEdit_SetUnit({ guid = u.guid, manualthrottle = 'Stop', manualSpeed = 0, holdposition = true })
+      u.formation = { spacing = 0, transpose = true }
     end
   end
 end
@@ -89,6 +90,7 @@ function SetWCSToFree(battery, group)
     if u then
       ScenEdit_SetUnit({ guid = u.guid, manualthrottle = 'Stop', manualSpeed = 0, holdposition = true })
       ScenEdit_SetDoctrine({ side = 'China', guid = u.guid }, { weapon_control_status_land = 1 })
+      u.formation = { spacing = 0, transpose = true }
     end
   end
 end
@@ -102,6 +104,7 @@ function SetStateToHIDE(battery, group)
     if u then
       ScenEdit_SetUnit({ guid = u.guid, manualthrottle = 'Stop', manualSpeed = 0, holdposition = true })
       ScenEdit_SetDoctrine({ side = 'China', guid = u.guid }, { weapon_control_status_land = 2 })
+      u.formation = { spacing = 0, transpose = true }
     end
   end
 end
@@ -150,8 +153,8 @@ end
 function ToFringPosition(battery, group)
   battery.state = CONFIG.batteryState.REPOSITIONING
   local courseIdx = math.random(GetCount(battery.position.FP))
-  group.course = battery.position.FP[courseIdx].course
-  group.manualSpeed = 30
+  -- group.course = battery.position.FP[courseIdx].course
+  -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = SE_GetUnit({ guid = guid })
@@ -170,8 +173,8 @@ end
 
 local function toRL(battery, group)
   battery.state = CONFIG.batteryState.REPOSITIONING
-  group.course = battery.position.RL.course
-  group.manualSpeed = 30
+  -- group.course = battery.position.RL.course
+  -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = SE_GetUnit({ guid = guid })
@@ -191,8 +194,8 @@ end
 
 local function toHA(battery, group)
   battery.state = CONFIG.batteryState.REPOSITIONING
-  group.course = battery.position.HA.course
-  group.manualSpeed = 30
+  -- group.course = battery.position.HA.course
+  -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = SE_GetUnit({ guid = guid })
@@ -212,8 +215,8 @@ end
 
 local function toAHA(section, group)
   section.state = CONFIG.batteryState.REPOSITIONING
-  group.course = section.position.AHA.course
-  group.manualSpeed = 30
+  -- group.course = section.position.AHA.course
+  -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = SE_GetUnit({ guid = guid })
@@ -224,7 +227,7 @@ local function toAHA(section, group)
         manualthrottle = 'Flank',
         manualSpeed = 30,
         course = section.position.AHA.course,
-        holdposition = false
+        holdposition = false,
       })
     end
   end
@@ -254,8 +257,8 @@ end
 
 local function ammoSecToRL(section, group)
   section.state = CONFIG.batteryState.REPOSITIONING
-  group.course = { section.position.RL.course[GetCount(section.position.RL.course)] }
-  group.manualSpeed = 30
+  -- group.course = { section.position.RL.course[GetCount(section.position.RL.course)] }
+  -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = SE_GetUnit({ guid = guid })
@@ -265,7 +268,7 @@ local function ammoSecToRL(section, group)
         guid = unit.guid,
         manualthrottle = 'Flank',
         manualSpeed = 30,
-        course = { section.position.RL.course[GetCount(section.position.RL.course)] },
+        course = { section.position.RL.course[#section.position.RL.course] },
         holdposition = false
       })
     end

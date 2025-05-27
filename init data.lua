@@ -1,18 +1,25 @@
 local function initRunways(saveData)
-  saveData.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
-  saveData.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
-  saveData.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
-  saveData.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
-  saveData.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
-  saveData.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
-  saveData.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
-  saveData.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
-  saveData.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
-  saveData.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
-  saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
-  saveData.c.ground.mlrs.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/S')
+  -- saveData.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
+  -- saveData.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
+  -- saveData.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
+  -- saveData.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
+  -- saveData.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
+  -- saveData.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
+  -- saveData.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
+  -- saveData.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
+  -- saveData.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
+  -- saveData.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
+  -- saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
+  -- saveData.c.ground.mlrs.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/S')
 
-  for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
+  -- for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
+  --   local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
+
+  --   if contact then
+  --     table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+  --   end
+  -- end
+  for _, value in ipairs(InitTargetList('China', 'STRIKE/RUNWAY/2')) do
     local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
 
     if contact then
@@ -238,6 +245,32 @@ local function initATO(saveData)
   end
 end
 
+local function initFSP(saveData)
+  for key, FSEM in pairs(saveData.c.ground.FSP) do
+    for index, FST in ipairs(FSEM.FSTs) do
+      if type(FST.missionName) == 'string' then
+        local mission = ScenEdit_GetMission('China', FST.missionName)
+
+        if mission then
+          for _, target in ipairs(mission.targetlist) do
+            table.insert(FST.targetlist, target)
+          end
+        end
+      end
+
+      if FST.startTime == nil and index == 1 then
+        PrintBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
+      end
+
+      if FST.startTime == nil and index > 1 then
+        FST.startTime = os.date(
+          "%Y-%m-%d %I:%M:%S",
+          ParseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
+        )
+      end
+    end
+  end
+end
 
 if CONFIG.isSaved then
   gKH.State.SaveTableToKey(SaveData, "SaveData")
@@ -245,12 +278,13 @@ end
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if saveData ~= nil and GetCount(saveData.c.ground.srbm.packages[1].batchTargetlists) <= 0 then
+if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].targetlist <= 0 then
   initRunways(saveData)
   CalculateDestination(saveData)
   initAC(saveData)
   setupEventStartTime()
   initATO(saveData)
+  initFSP(saveData)
 
   if saveData.t.IADS.isActivated then
     initC2(saveData)

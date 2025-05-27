@@ -491,7 +491,7 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   return { ammoAllocated = 0 }
 end
 
----@param contact CMO__Contact The target contact to attack
+---@param contact? CMO__Contact|string The target contact to attack
 ---@param ammoToAllocate number Total amount of ammunition to allocate for this attack
 ---@param batteries table<CONFIG__Battery> Array of batteries to use for attack
 ---@param btyIdx number Starting battery index
@@ -500,9 +500,14 @@ end
 ---@return table Results including next indices and number of weapons launched
 function AttackContact(contact, ammoToAllocate, batteries, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
+  side = (side == nil) and 'China' or 'Taiwan'
   local totalAmmoAllocated = 0
   local attemptCount = 0
   local maxAttempts = 50
+
+  if type(contact) == 'string' then
+    contact = ScenEdit_GetContact({ side = side, guid = contact })
+  end
 
   -- Set default values if not provided
   btyIdx = btyIdx or 1
@@ -513,7 +518,6 @@ function AttackContact(contact, ammoToAllocate, batteries, btyIdx, grpIdx, weapo
     local actualUnit = ScenEdit_GetUnit({ guid = batteries[btyIdx].guid })
 
     if not actualUnit then
-      side = (side == nil) and 'China' or 'Taiwan'
       actualUnit = ScenEdit_GetUnit({ side = side, unitname = batteries[btyIdx].name })
       -- break -- Battery not found, exit loop
       if not actualUnit then break end
@@ -523,7 +527,7 @@ function AttackContact(contact, ammoToAllocate, batteries, btyIdx, grpIdx, weapo
     if actualUnit.group then
       -- Track if we need to advance to next battery
       local advanceBattery, ammoAllocated = processUnitGroup(
-        actualUnit, contact, ammoToAllocate, totalAmmoAllocated, weaponDBID, grpIdx
+        actualUnit, contact, ammoToAllocate, totalAmmoAllocated, batteries[btyIdx].weaponDBID, grpIdx
       )
 
       -- Update our tracking variables
@@ -546,7 +550,7 @@ function AttackContact(contact, ammoToAllocate, batteries, btyIdx, grpIdx, weapo
       end
     else
       -- Handle single unit
-      local unitResult = processSingleUnit(actualUnit, contact, ammoToAllocate, weaponDBID)
+      local unitResult = processSingleUnit(actualUnit, contact, ammoToAllocate, batteries[btyIdx].weaponDBID)
       totalAmmoAllocated = totalAmmoAllocated + unitResult.ammoAllocated
       attemptCount = attemptCount + 1
 

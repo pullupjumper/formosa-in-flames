@@ -33,4 +33,13 @@ if saveData.c.ground.srbm.isActivated then
   end
 end
 
+
+if saveData.c.ground.mrbm.isActivated then
+  local result = IsMetWithAmmo(saveData, unit, 'mrbm', true)
+
+  if result.isMet then
+    SetReloadStartTime(result.battery, unit, true)
+  end
+end
+
 gKH.State.SaveTableToKey(saveData, "SaveData")

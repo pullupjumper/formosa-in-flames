@@ -74,8 +74,8 @@ function LaunchWZ8(h6n, course, contact)
     return
   end
 
-  -- local arcT = { 'PB1', 'PB2', 'SB1', 'SB2', 'SMF1', 'PMF2' };
-  -- ScenEdit_UpdateUnit({ guid = wz8.guid, mode = 'add_sensor', dbid = 6073, arc_detect = arcT, arc_track = arcT })
+  local arcT = { 'PB1', 'PB2', 'SB1', 'SB2', 'SMF1', 'PMF2' };
+  ScenEdit_UpdateUnit({ guid = wz8.guid, mode = 'add_sensor', dbid = 4576, arc_detect = arcT, arc_track = arcT })
   ScenEdit_SetEMCON('Unit', wz8.guid, 'Radar=Active')
 
   if course == nil and contact ~= nil then

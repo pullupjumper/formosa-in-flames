@@ -194,7 +194,7 @@ function TryAddJammerUnit(jammer, attempt, max_attempts)
   local unit = ScenEdit_AddUnit({
     type = 'Facility',
     unitname = jammer.name,
-    dbid = 764,
+    dbid = CONFIG.platformDBID25,
     side = 'China',
     Lat = point.latitude,
     Lon = point.longitude,

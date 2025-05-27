@@ -552,7 +552,7 @@ function BtyStateTable(side)
 
 </html>
     ]]
-  local str = createDataString(side, 'srbm', 'mlrs', 'glcm', 'ascm')
+  local str = createDataString(side, 'srbm', 'mlrs', 'glcm', 'ascm', 'mrbm')
   local msg = string.format(HTMLTemplate, str)
   local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
