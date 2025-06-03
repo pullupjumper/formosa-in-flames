@@ -19,13 +19,18 @@ local function initRunways(saveData)
   --     table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
   --   end
   -- end
-  for _, value in ipairs(InitTargetList('China', 'STRIKE/RUNWAY/2')) do
-    local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
+  local mission = ScenEdit_GetMission('China', 'STRIKE/RUNWAY/2')
 
-    if contact then
-      table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+  if mission then
+    for _, guid in ipairs(mission.targetlist) do
+      local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
+
+      if contact then
+        table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+      end
     end
   end
+
 
   local units = VP_GetSide({ Side = 'China' }).units
 
@@ -270,6 +275,149 @@ local function initFSP(saveData)
       end
     end
   end
+end
+
+function GetTargetlist()
+  local contacts = ScenEdit_GetContacts('China')
+  local bases = {
+    ['Jiashan AB'] = {},
+    ['Hualien AB'] = {},
+    ['Taitung/Jhihhang AB'] = {},
+    ['Pingtung North AB'] = {},
+    ['Pingtung South AB'] = {},
+    ['Gangshan AB'] = {},
+    ['Tainan AB'] = {},
+    ['Guiren AAB'] = {},
+    ['Magong AB'] = {},
+    ['Chiayi AB'] = {},
+    ['Ching Chuang Kang AB'] = {},
+    ['Hsinchu AB'] = {},
+    ['Longtan AAB'] = {},
+    ['Taipei Songshan Airport'] = {},
+    ['Taoyuan International Airport'] = {},
+    ['Hsinchu Field Airdrome'] = {},
+    ['Minxiong Emergency Highway Strip'] = {},
+    ['Madou Emergency Highway Strip'] = {},
+    ['Rende Emergency Highway Strip'] = {},
+    ['Tainan Field Airdrome'] = {},
+  }
+  local ports = {
+    ['Kaohsiung Port'] = {},
+    ['Donggang Wharf'] = {},
+    ['Port of Taipei'] = {},
+    ['Port of Keelung'] = {},
+    ['Suao Port'] = {},
+    ['HuangGang Fishing Harbor'] = {},
+    ['Magong Port'] = {},
+  }
+  local targetlist = {}
+
+  if contacts then
+    for _, contact in ipairs(contacts) do
+      for key, obj in pairs(bases) do
+        if string.find(contact.type_description, key) ~= nil then
+          obj['location'] = { latitude = contact.latitude, longitude = contact.longitude }
+        end
+      end
+    end
+
+    for _, contact in ipairs(contacts) do
+      for key, obj in pairs(bases) do
+        if string.match(contact.type_description, "Runway %(%d+m%)") ~= nil or
+            string.find(contact.type_description, 'Taxiway') ~= nil then
+          local d = Tool_Range(obj['location'], contact.guid)
+
+          if d <= 1 then
+            table.insert(targetlist, {
+              name = key .. '/' .. contact.type_description,
+              guid = contact.guid,
+              category = 'Airfield',
+              subType = contact.type_description,
+            })
+          end
+        end
+
+        if string.find(contact.type_description, 'Shelter') ~= nil or
+            string.find(contact.type_description, 'Hangar') ~= nil or
+            string.find(contact.type_description, 'Tarmac') ~= nil or
+            string.find(contact.type_description, 'Helipad') ~= nil then
+          local d = Tool_Range(obj['location'], contact.guid)
+
+          if d <= 1 then
+            table.insert(targetlist, {
+              name = key .. '/' .. contact.type_description,
+              guid = contact.guid,
+              category = 'Airfield',
+              subType = contact.type_description,
+            })
+          end
+        end
+
+        if string.find(contact.type_description, 'Ammo Bunker') ~= nil or
+            string.find(contact.type_description, 'Ammo Revetment') ~= nil then
+          local d = Tool_Range(obj['location'], contact.guid)
+
+          if d <= 1 then
+            table.insert(targetlist, {
+              name = key .. '/' .. contact.type_description,
+              guid = contact.guid,
+              category = 'Airfield',
+              subType = contact.type_description,
+            })
+          end
+        end
+      end
+    end
+
+    for _, contact in ipairs(contacts) do
+      if string.find(contact.type_description, 'Radar') ~= nil then
+        table.insert(targetlist, {
+          name = contact.type_description,
+          guid = contact.guid,
+          category = 'ISR',
+          subType = contact.type_description,
+        })
+      end
+    end
+
+    for _, contact in ipairs(contacts) do
+      for key, obj in pairs(ports) do
+        if string.find(contact.type_description, key) ~= nil then
+          obj['location'] = { latitude = contact.latitude, longitude = contact.longitude }
+        end
+      end
+    end
+
+    for _, contact in ipairs(contacts) do
+      for key, obj in pairs(ports) do
+        if string.find(contact.type_description, 'Pier') ~= nil then
+          local d = Tool_Range(obj['location'], contact.guid)
+
+          if d <= 1 then
+            table.insert(targetlist, {
+              name = key .. '/' .. contact.type_description,
+              guid = contact.guid,
+              category = 'Port',
+              subType = contact.type_description,
+            })
+          end
+        end
+      end
+    end
+
+    for _, contact in ipairs(contacts) do
+      if string.find(contact.type_description, 'ASM') ~= nil then
+        table.insert(targetlist, {
+          name = contact.type_description,
+          guid = contact.guid,
+          category = 'ASM',
+          subType = contact.type_description,
+        })
+      end
+    end
+  end
+
+  return targetlist
 end
 
 if CONFIG.isSaved then

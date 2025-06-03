@@ -38,119 +38,132 @@ CONFIG.u = {}
 CONFIG.u.SIGINT = {}
 CONFIG.s = {}
 CONFIG.c.areas = {
-  iadsC2SettingsFuzhou = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
-  iadsC2SettingsPutian = { 'RP-156577', 'RP-156578', 'RP-156579', 'RP-156580', },
-  iadsC2SettingsChangzhou = { 'RP-156581', 'RP-156582', 'RP-156583', 'RP-156584', },
-  iadsC2SettingsXiamen = { 'RP-156585', 'RP-156586', 'RP-156587', 'RP-156588', },
-  iadsC2SettingsZhangzhou = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
-  iadsC2SettingsShantou = { 'RP-156589', 'RP-156590', 'RP-156591', 'RP-156592', },
-  iadsC2SettingsShanwei = { 'RP-156593', 'RP-156594', 'RP-156595', 'RP-156596', },
-  iadsC2SettingsMeizhou = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
-  groundMlrsPositionsPingtanRL = { 'RP-114443', 'RP-114444', 'RP-114445', 'RP-114446' },
-  groundMlrsPositionsPingtanHA = { 'RP-114439', 'RP-114440', 'RP-114441', 'RP-114442' },
-  groundMlrsPositionsPingtanFP1 = { 'RP-44264', 'RP-44265', 'RP-44266', 'RP-44267' },
-  groundMlrsPositionsPingtanFP2 = { 'RP-44260', 'RP-44261', 'RP-44262', 'RP-44263' },
-  groundMlrsPositionsPingtanAHA = { 'RP-114447', 'RP-114448', 'RP-114449', 'RP-114450' },
-  groundMlrsChinchewRL = { 'RP-114455', 'RP-114456', 'RP-114457', 'RP-114458' },
-  groundMlrsChinchewHA = { 'RP-114451', 'RP-114452', 'RP-114453', 'RP-114454' },
-  groundMlrsChinchewFP1 = { 'RP-46390', 'RP-46391', 'RP-46392', 'RP-46393' },
-  groundMlrsChinchewAHA = { 'RP-114459', 'RP-114460', 'RP-114461', 'RP-114462' },
-  groundSrbmPositionsBrigade615RL = { 'RP-114467', 'RP-114468', 'RP-114469', 'RP-114470' },
-  groundSrbmPositionsBrigade615HA = { 'RP-114463', 'RP-114464', 'RP-114465', 'RP-114466' },
-  groundSrbmPositionsBrigade615FP1 = { 'RP-44322', 'RP-44323', 'RP-44324', 'RP-44325' },
-  groundSrbmPositionsBrigade615AHA = { 'RP-114471', 'RP-114472', 'RP-114473', 'RP-114474' },
-  groundSrbmPositionsBrigade614RL = { 'RP-114479', 'RP-114480', 'RP-114481', 'RP-114482' },
-  groundSrbmPositionsBrigade614HA = { 'RP-114475', 'RP-114476', 'RP-114477', 'RP-114478' },
-  groundSrbmPositionsBrigade614FP1 = { 'RP-44335', 'RP-44336', 'RP-44337', 'RP-44338' },
-  groundSrbmPositionsBrigade614AHA = { 'RP-114483', 'RP-114484', 'RP-114485', 'RP-114486' },
-  groundSrbmPositionsBrigade636RL = { 'RP-114491', 'RP-114492', 'RP-114493', 'RP-114494' },
-  groundSrbmPositionsBrigade636HA = { 'RP-114487', 'RP-114488', 'RP-114489', 'RP-114490' },
-  groundSrbmPositionsBrigade636FP1 = { 'RP-44357', 'RP-44358', 'RP-44359', 'RP-44360' },
-  groundSrbmPositionsBrigade636AHA = { 'RP-114495', 'RP-114496', 'RP-114497', 'RP-114498' },
-  groundSrbmPositionsBrigade616RL = { 'RP-114503', 'RP-114504', 'RP-114505', 'RP-114506' },
-  groundSrbmPositionsBrigade616HA = { 'RP-114499', 'RP-114500', 'RP-114501', 'RP-114502' },
-  groundSrbmPositionsBrigade616FP1 = { 'RP-44369', 'RP-44370', 'RP-44371', 'RP-44372' },
-  groundSrbmPositionsBrigade616AHA = { 'RP-114507', 'RP-114508', 'RP-114509', 'RP-114510' },
-  groundSrbmPositionsBrigade613RL = { 'RP-114515', 'RP-114516', 'RP-114517', 'RP-114518' },
-  groundSrbmPositionsBrigade613HA = { 'RP-114511', 'RP-114512', 'RP-114513', 'RP-114514' },
-  groundSrbmPositionsBrigade613FP1 = { 'RP-44391', 'RP-44392', 'RP-44393', 'RP-44394' },
-  groundSrbmPositionsBrigade613AHA = { 'RP-114519', 'RP-114520', 'RP-114521', 'RP-114522' },
-  groundSrbmPositionsBrigade617RL = { 'RP-114527', 'RP-114528', 'RP-114529', 'RP-114530' },
-  groundSrbmPositionsBrigade617HA = { 'RP-114523', 'RP-114524', 'RP-114525', 'RP-114526' },
-  groundSrbmPositionsBrigade617FP1 = { 'RP-44413', 'RP-44414', 'RP-44415', 'RP-44416' },
-  groundSrbmPositionsBrigade617AHA = { 'RP-114531', 'RP-114532', 'RP-114533', 'RP-114534' },
-  groundMrbmPositionsBrigade624RL = { 'RP-156928', 'RP-156929', 'RP-156930', 'RP-156931' },
-  groundMrbmPositionsBrigade624HA = { 'RP-156932', 'RP-156933', 'RP-156934', 'RP-156935' },
-  groundMrbmPositionsBrigade624FP1 = { 'RP-156936', 'RP-156937', 'RP-156938', 'RP-156939' },
-  groundMrbmPositionsBrigade624AHA = { 'RP-156924', 'RP-156925', 'RP-156926', 'RP-156927' },
-  phibopTaoyuanFromType075 = { 'RP-11169' },
-  phibopTaoyuanStaging = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
-  phibopTaoyuanToType075 = { 'RP-4322' },
-  phibopTaoyuanToType071 = { 'RP-3915' },
-  phibopAirlandingZone = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
-  phibopSishuFromType075 = { 'RP-56195' },
-  phibopSishuStaging = { 'RP-46584', 'RP-46585', 'RP-46586', 'RP-46587' },
-  phibopSishuToType075 = { 'RP-69332' },
-  phibopSishuToType071 = { 'RP-69333' },
-  phibopPenghuFromType075 = { 'RP-59972' },
-  phibopPenghuStaging = { 'RP-59975', 'RP-59976', 'RP-59977', 'RP-59978' },
-  phibopPenghuToType075 = { 'RP-59973' },
-  phibopPenghuToType071 = { 'RP-59974' },
-  phibopTaoyuanAnchorage = { 'RP-9684', 'RP-9685', 'RP-9686', 'RP-9687' },
-  phibopTaoyuanLstAnchorage = { 'RP-9712', 'RP-9713', 'RP-9714', 'RP-9715' },
-  phibopTaoyuanOpArea = { 'RP-6787', 'RP-6788', 'RP-6789', 'RP-6790' },
-  phibopTaoyuanOffload = { 'RP-141074', 'RP-141075', 'RP-141076', 'RP-141077' },
-  phibopTaoyuanBoatZone = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
-  phibopTaoyuanAcvArea = { 'RP-7722', 'RP-7723', 'RP-7724', 'RP-7725' },
-  phibopSishuAnchorage = { 'RP-69328', 'RP-69329', 'RP-69330', 'RP-69331' },
-  phibopSishuLstAnchorage = { 'RP-69324', 'RP-69325', 'RP-69326', 'RP-69327' },
-  phibopSishuOpArea = { 'RP-73973', 'RP-73974', 'RP-73975', 'RP-73976' },
-  phibopSishuOffload = { 'RP-141078', 'RP-141079', 'RP-141080', 'RP-141081' },
-  phibopSishuBoatZone = { 'RP-69316', 'RP-69317', 'RP-69318', 'RP-69319' },
-  phibopSishuTransportHelicopterZone = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
-  phibopSishuAcvArea = { 'RP-69320', 'RP-69321', 'RP-69322', 'RP-69323' },
-  phibopPenghuAnchorage = { 'RP-46576', 'RP-46577', 'RP-46578', 'RP-46579' },
-  phibopPenghuLstAnchorage = { 'RP-46572', 'RP-46573', 'RP-46574', 'RP-46575' },
-  phibopPenghuOpArea = { 'RP-69261', 'RP-69262', 'RP-69263', 'RP-69264' },
-  phibopPenghuOffload = { 'RP-141082', 'RP-141083', 'RP-141084', 'RP-141085' },
-  phibopPenghuBoatZone = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' },
-  phibopPenghuTransportHelicopterZone = { 'RP-59968', 'RP-59969', 'RP-59970', 'RP-59971' },
-  phibopPenghuAcvArea = { 'RP-46329', 'RP-46330', 'RP-46331', 'RP-46332' },
-  iadsC2Ic8b0x0hn84dhd12bbj = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
-  iadsC2Ic8b0x0hn84dhd12b7r = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
-  iadsC2Ic8b0x0hn84dhd12b41 = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
-  groundFspStrikeC2Pingtan = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-  groundFspStrikeC2Chinchew = { 'RP-156966', 'RP-156967', 'RP-156968', 'RP-156969', 'RP-156970', 'RP-156971', 'RP-156972', 'RP-156973', 'RP-156974' },
-  groundFspAntishipEast = { 'RP-76319', 'RP-42688', 'RP-42687', 'RP-76320' },
-  airAtoStrikeAbWS = { 'RP-156975', 'RP-156976', 'RP-156977', 'RP-156978', 'RP-156979', 'RP-156980', 'RP-156981', 'RP-156982', 'RP-156983', 'RP-156984', 'RP-156985', 'RP-156986', 'RP-156987' },
-  airAtoStrikeAbE = { 'RP-156988', 'RP-156989', 'RP-156990', 'RP-156991', 'RP-156992', 'RP-156993' },
-  airAtoAsuwN1 = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
-  airAtoCasN1 = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
+  ["OPAREA/FUZHOU"] = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
+  ["OPAREA/PUTIAN"] = { 'RP-156577', 'RP-156578', 'RP-156579', 'RP-156580', },
+  ["OPAREA/CHANGZHOU"] = { 'RP-156581', 'RP-156582', 'RP-156583', 'RP-156584', },
+  ["OPAREA/XIAMEN"] = { 'RP-156585', 'RP-156586', 'RP-156587', 'RP-156588', },
+  ["OPAREA/ZHANGZHOU"] = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
+  ["OPAREA/SHANTOU"] = { 'RP-156589', 'RP-156590', 'RP-156591', 'RP-156592', },
+  ["OPAREA/SHANWEI"] = { 'RP-156593', 'RP-156594', 'RP-156595', 'RP-156596', },
+  ["OPAREA/MEIZHOU"] = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
+  ["RL/PINGTAN"] = { 'RP-114443', 'RP-114444', 'RP-114445', 'RP-114446' },
+  ["HA/PINGTAN"] = { 'RP-114439', 'RP-114440', 'RP-114441', 'RP-114442' },
+  ["FP1/PINGTAN"] = { 'RP-44264', 'RP-44265', 'RP-44266', 'RP-44267' },
+  ["FP2/PINGTAN"] = { 'RP-44260', 'RP-44261', 'RP-44262', 'RP-44263' },
+  ["AHA/PINGTAN"] = { 'RP-114447', 'RP-114448', 'RP-114449', 'RP-114450' },
+  ["RL/CHINCHEW"] = { 'RP-114455', 'RP-114456', 'RP-114457', 'RP-114458' },
+  ["HA/CHINCHEW"] = { 'RP-114451', 'RP-114452', 'RP-114453', 'RP-114454' },
+  ["FP1/CHINCHEW"] = { 'RP-46390', 'RP-46391', 'RP-46392', 'RP-46393' },
+  ["AHA/CHINCHEW"] = { 'RP-114459', 'RP-114460', 'RP-114461', 'RP-114462' },
+  ["RL/BRIGADE615"] = { 'RP-114467', 'RP-114468', 'RP-114469', 'RP-114470' },
+  ["HA/BRIGADE615"] = { 'RP-114463', 'RP-114464', 'RP-114465', 'RP-114466' },
+  ["FP1/BRIGADE615"] = { 'RP-44322', 'RP-44323', 'RP-44324', 'RP-44325' },
+  ["AHA/BRIGADE615"] = { 'RP-114471', 'RP-114472', 'RP-114473', 'RP-114474' },
+  ["RL/BRIGADE614"] = { 'RP-114479', 'RP-114480', 'RP-114481', 'RP-114482' },
+  ["HA/BRIGADE614"] = { 'RP-114475', 'RP-114476', 'RP-114477', 'RP-114478' },
+  ["FP1/BRIGADE614"] = { 'RP-44335', 'RP-44336', 'RP-44337', 'RP-44338' },
+  ["AHA/BRIGADE614"] = { 'RP-114483', 'RP-114484', 'RP-114485', 'RP-114486' },
+  ["RL/BRIGADE636"] = { 'RP-114491', 'RP-114492', 'RP-114493', 'RP-114494' },
+  ["HA/BRIGADE636"] = { 'RP-114487', 'RP-114488', 'RP-114489', 'RP-114490' },
+  ["FP1/BRIGADE636"] = { 'RP-44357', 'RP-44358', 'RP-44359', 'RP-44360' },
+  ["AHA/BRIGADE636"] = { 'RP-114495', 'RP-114496', 'RP-114497', 'RP-114498' },
+  ["RL/BRIGADE616"] = { 'RP-114503', 'RP-114504', 'RP-114505', 'RP-114506' },
+  ["HA/BRIGADE616"] = { 'RP-114499', 'RP-114500', 'RP-114501', 'RP-114502' },
+  ["FP1/BRIGADE616"] = { 'RP-44369', 'RP-44370', 'RP-44371', 'RP-44372' },
+  ["AHA/BRIGADE616"] = { 'RP-114507', 'RP-114508', 'RP-114509', 'RP-114510' },
+  ["RL/BRIGADE613"] = { 'RP-114515', 'RP-114516', 'RP-114517', 'RP-114518' },
+  ["HA/BRIGADE613"] = { 'RP-114511', 'RP-114512', 'RP-114513', 'RP-114514' },
+  ["FP1/BRIGADE613"] = { 'RP-44391', 'RP-44392', 'RP-44393', 'RP-44394' },
+  ["AHA/BRIGADE613"] = { 'RP-114519', 'RP-114520', 'RP-114521', 'RP-114522' },
+  ["RL/BRIGADE617"] = { 'RP-114527', 'RP-114528', 'RP-114529', 'RP-114530' },
+  ["HA/BRIGADE617"] = { 'RP-114523', 'RP-114524', 'RP-114525', 'RP-114526' },
+  ["FP1/BRIGADE617"] = { 'RP-44413', 'RP-44414', 'RP-44415', 'RP-44416' },
+  ["AHA/BRIGADE617"] = { 'RP-114531', 'RP-114532', 'RP-114533', 'RP-114534' },
+  ["RL/BRIGADE624"] = { 'RP-156928', 'RP-156929', 'RP-156930', 'RP-156931' },
+  ["HA/BRIGADE624"] = { 'RP-156932', 'RP-156933', 'RP-156934', 'RP-156935' },
+  ["FP1/BRIGADE624"] = { 'RP-156936', 'RP-156937', 'RP-156938', 'RP-156939' },
+  ["AHA/BRIGADE624"] = { 'RP-156924', 'RP-156925', 'RP-156926', 'RP-156927' },
+  ["STARTING POINT/075/TAOYUAN"] = { 'RP-11169' },
+  ["OPAREA/D"] = { 'RP-46580', 'RP-46581', 'RP-46582', 'RP-46583' },
+  ["DESTINATION/075/TAOYUAN"] = { 'RP-4322' },
+  ["DESTINATION/071/TAOYUAN"] = { 'RP-3915' },
+  ["AIRLANDING/TAOYUAN"] = { 'RP-3819', 'RP-3820', 'RP-3821', 'RP-3822' },
+  ["STARTING POINT/075/SISHU"] = { 'RP-56195' },
+  ["OPAREA/F"] = { 'RP-46584', 'RP-46585', 'RP-46586', 'RP-46587' },
+  ["DESTINATION/075/SISHU"] = { 'RP-69332' },
+  ["DESTINATION/071/SISHU"] = { 'RP-69333' },
+  ["STARTING POINT/075/PENGHU"] = { 'RP-59972' },
+  ["OPAREA/E"] = { 'RP-59975', 'RP-59976', 'RP-59977', 'RP-59978' },
+  ["DESTINATION/075/PENGHU"] = { 'RP-59973' },
+  ["DESTINATION/071/PENGHU"] = { 'RP-59974' },
+  ["ANCH AREA/TAOYUAN"] = { 'RP-9684', 'RP-9685', 'RP-9686', 'RP-9687' },
+  ["LST ANCH AREA/TAOYUAN"] = { 'RP-9712', 'RP-9713', 'RP-9714', 'RP-9715' },
+  ["CAS/E"] = { 'RP-6787', 'RP-6788', 'RP-6789', 'RP-6790' },
+  ["OFFLOAD AREA/TAOYUAN"] = { 'RP-141074', 'RP-141075', 'RP-141076', 'RP-141077' },
+  ["LANDING/TAOYUAN"] = { 'RP-7702', 'RP-7703', 'RP-7704', 'RP-7705' },
+  ["AMPH VEH STAGING AREA/TAOYUAN"] = { 'RP-7722', 'RP-7723', 'RP-7724', 'RP-7725' },
+  ["ANCH AREA/SISHU"] = { 'RP-69328', 'RP-69329', 'RP-69330', 'RP-69331' },
+  ["LST ANCH AREA/SISHU"] = { 'RP-69324', 'RP-69325', 'RP-69326', 'RP-69327' },
+  ["CAS/S"] = { 'RP-73973', 'RP-73974', 'RP-73975', 'RP-73976' },
+  ["OFFLOAD AREA/SISHU"] = { 'RP-141078', 'RP-141079', 'RP-141080', 'RP-141081' },
+  ["LANDING/SISHU"] = { 'RP-69316', 'RP-69317', 'RP-69318', 'RP-69319' },
+  ["AIRLANDING/CHANGLONG"] = { 'RP-11165', 'RP-11166', 'RP-11167', 'RP-11168' },
+  ["AMPH VEH STAGING AREA/SHISHU"] = { 'RP-69320', 'RP-69321', 'RP-69322', 'RP-69323' },
+  ["ANCH AREA/PENGHU"] = { 'RP-46576', 'RP-46577', 'RP-46578', 'RP-46579' },
+  ["LST ANCH AREA/PENGHU"] = { 'RP-46572', 'RP-46573', 'RP-46574', 'RP-46575' },
+  ["CAS/PENGHU"] = { 'RP-69261', 'RP-69262', 'RP-69263', 'RP-69264' },
+  ["OFFLOAD AREA/PENGHU"] = { 'RP-141082', 'RP-141083', 'RP-141084', 'RP-141085' },
+  ["LANDING/PENGHU"] = { 'RP-46290', 'RP-46291', 'RP-46292', 'RP-46293' },
+  ["AIRLANDING/PENGHU"] = { 'RP-59968', 'RP-59969', 'RP-59970', 'RP-59971' },
+  ["AMPH VEH STAGING AREA/PENGHU"] = { 'RP-46329', 'RP-46330', 'RP-46331', 'RP-46332' },
+  ["OPAREA/NORTH"] = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
+  ["OPAREA/CENTER"] = {
+    'RP-156966', 'RP-156967', 'RP-156968',
+    'RP-156969', 'RP-156970', 'RP-156971',
+    'RP-156972', 'RP-156973', 'RP-156974'
+  },
+  ["OPAREA/PACIFIC"] = { 'RP-76319', 'RP-42688', 'RP-42687', 'RP-76320' },
+  ["OPAREA/SOUTH"] = {
+    'RP-156975', 'RP-156976', 'RP-156977',
+    'RP-156978', 'RP-156979', 'RP-156980',
+    'RP-156981', 'RP-156982', 'RP-156983',
+    'RP-156984', 'RP-156985', 'RP-156986', 'RP-156987'
+  },
+  ["OPAREA/EAST"] = { 'RP-156988', 'RP-156989', 'RP-156990', 'RP-156991', 'RP-156992', 'RP-156993' },
 }
 
 CONFIG.t.areas = {
-  groundMlrsPingzhenRL = { 'RP-100174', 'RP-100175', 'RP-100176', 'RP-100177' },
-  groundMlrsPingzhenFP1 = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' },
-  groundMlrsPingzhenAHA = { 'RP-114539', 'RP-114540', 'RP-114541', 'RP-114542' },
-  groundSrbmDaduRL = { 'RP-101781', 'RP-101782', 'RP-101783', 'RP-101784' },
-  groundSrbmDaduFP1 = { 'RP-101785', 'RP-101786', 'RP-101787', 'RP-101788' },
-  groundSrbmDaduAHA = { 'RP-114555', 'RP-114556', 'RP-114557', 'RP-114558' },
-  groundGlcmPositionsQuanxiRL = { 'RP-100170', 'RP-100171', 'RP-100172', 'RP-100173' },
-  groundGlcmPositionsQuanxiFP1 = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' },
-  groundGlcmPositionsQuanxiAHA = { 'RP-114547', 'RP-114548', 'RP-114549', 'RP-114550' },
-  groundGlcmNeipuRL = { 'RP-100166', 'RP-100167', 'RP-100168', 'RP-100169' },
-  groundGlcmNeipuFP1 = { 'RP-44288', 'RP-44289', 'RP-44290', 'RP-44291' },
-  groundGlcmNeipuAHA = { 'RP-114563', 'RP-114564', 'RP-114565', 'RP-114566' },
-  groundAscmLuzhuRL = { 'RP-107197', 'RP-107198', 'RP-107199', 'RP-107200' },
-  groundAscmLuzhuFP1 = { 'RP-107201', 'RP-107202', 'RP-107203', 'RP-107204' },
-  groundAscmLuzhuAHA = { 'RP-114435', 'RP-114436', 'RP-114437', 'RP-114438' },
-  groundAscmDongRL = { 'RP-116585', 'RP-116586', 'RP-116587', 'RP-116588' },
-  groundAscmDongFP1 = { 'RP-116593', 'RP-116594', 'RP-116595', 'RP-116596' },
-  groundAscmDongAHA = { 'RP-116581', 'RP-116582', 'RP-116583', 'RP-116584' },
-  iadsRoccNorth = { 'RP-83642', 'RP-83643', 'RP-83644', 'RP-83645' },
-  iadsRoccEast1 = { 'RP-156521', 'RP-156522', 'RP-156523', 'RP-156524', 'RP-156525', 'RP-156526' },
-  iadsRoccEast2 = { 'RP-156527', 'RP-156528', 'RP-156529', 'RP-156530', 'RP-156531', 'RP-156532', 'RP-156533', 'RP-156534', 'RP-156535' },
-  iadsRoccSouth = { 'RP-156536', 'RP-156537', 'RP-156538', 'RP-156539', 'RP-156540', 'RP-156541', 'RP-156542', 'RP-156543', 'RP-156544', 'RP-156545', 'RP-156546', 'RP-156547', 'RP-156548' },
+  ["RL/PINGZHEN"] = { 'RP-100174', 'RP-100175', 'RP-100176', 'RP-100177' },
+  ["FP1/PINGZHEN"] = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' },
+  ["AHA/PINGZHEN"] = { 'RP-114539', 'RP-114540', 'RP-114541', 'RP-114542' },
+  ["RL/DADU"] = { 'RP-101781', 'RP-101782', 'RP-101783', 'RP-101784' },
+  ["FP1/DADU"] = { 'RP-101785', 'RP-101786', 'RP-101787', 'RP-101788' },
+  ["AHA/DADU"] = { 'RP-114555', 'RP-114556', 'RP-114557', 'RP-114558' },
+  ["RL/QUANXI"] = { 'RP-100170', 'RP-100171', 'RP-100172', 'RP-100173' },
+  ["FP1/QUANXI"] = { 'RP-44300', 'RP-44301', 'RP-44302', 'RP-44303' },
+  ["AHA/QUANXI"] = { 'RP-114547', 'RP-114548', 'RP-114549', 'RP-114550' },
+  ["RL/NEIPU"] = { 'RP-100166', 'RP-100167', 'RP-100168', 'RP-100169' },
+  ["FP1/NEIPU"] = { 'RP-44288', 'RP-44289', 'RP-44290', 'RP-44291' },
+  ["AHA/NEIPU"] = { 'RP-114563', 'RP-114564', 'RP-114565', 'RP-114566' },
+  ["RL/LUZHU"] = { 'RP-107197', 'RP-107198', 'RP-107199', 'RP-107200' },
+  ["FP1/LUZHU"] = { 'RP-107201', 'RP-107202', 'RP-107203', 'RP-107204' },
+  ["AHA/LUZHU"] = { 'RP-114435', 'RP-114436', 'RP-114437', 'RP-114438' },
+  ["RL/DONG"] = { 'RP-116585', 'RP-116586', 'RP-116587', 'RP-116588' },
+  ["FP1/DONG"] = { 'RP-116593', 'RP-116594', 'RP-116595', 'RP-116596' },
+  ["AHA/DONG"] = { 'RP-116581', 'RP-116582', 'RP-116583', 'RP-116584' },
+  ["OPAREA/3RD"] = { 'RP-83642', 'RP-83643', 'RP-83644', 'RP-83645' },
+  ["OPAREA/2ND"] = { 'RP-156521', 'RP-156522', 'RP-156523', 'RP-156524', 'RP-156525', 'RP-156526' },
+  ["OPAREA/5TH"] = {
+    'RP-156527', 'RP-156528', 'RP-156529',
+    'RP-156530', 'RP-156531', 'RP-156532',
+    'RP-156533', 'RP-156534', 'RP-156535'
+  },
+  ["OPAREA/4TH"] = {
+    'RP-156536', 'RP-156537', 'RP-156538',
+    'RP-156539', 'RP-156540', 'RP-156541',
+    'RP-156542', 'RP-156543', 'RP-156544',
+    'RP-156545', 'RP-156546', 'RP-156547', 'RP-156548'
+  },
   groundAscmTestNai1 = { 'RP-7760', 'RP-7761', 'RP-7762', 'RP-7763' },
   groundAscmTestNai2 = { 'RP-7787', 'RP-7788', 'RP-7789', 'RP-7790' },
 }
@@ -300,56 +313,56 @@ CONFIG.c.IADS.C2Settings = {
   {
     position = { lat = "N 25.30.05", lon = "E 119.30.41" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsFuzhou,
+      CONFIG.c.areas["OPAREA/FUZHOU"],
     },
     areaName = 'Fuzhou'
   },
   {
     position = { lat = "N 25.19.12", lon = "E 119.06.36" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsPutian,
+      CONFIG.c.areas["OPAREA/PUTIAN"],
     },
     areaName = 'Putian'
   },
   {
     position = { lat = "N 24.57.01", lon = "E 118.34.22" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsChangzhou,
+      CONFIG.c.areas["OPAREA/CHANGZHOU"],
     },
     areaName = 'Changzhou'
   },
   {
     position = { lat = "N 24.43.19", lon = "E 118.12.29" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsXiamen,
+      CONFIG.c.areas["OPAREA/XIAMEN"],
     },
     areaName = 'Xiamen'
   },
   {
     position = { lat = "N 24.10.12", lon = "E 117.28.46" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsZhangzhou,
+      CONFIG.c.areas["OPAREA/ZHANGZHOU"],
     },
     areaName = 'Zhangzhou'
   },
   {
     position = { lat = "N 23.39.17", lon = "E 116.41.26" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsShantou,
+      CONFIG.c.areas["OPAREA/SHANTOU"],
     },
     areaName = 'Shantou'
   },
   {
     position = { lat = "N 23.08.19", lon = "E 115.22.49" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsShanwei,
+      CONFIG.c.areas["OPAREA/SHANWEI"],
     },
     areaName = 'Shanwei'
   },
   {
     position = { lat = "N 23.55.21", lon = "E 115.36.40" },
     areas = {
-      CONFIG.c.areas.iadsC2SettingsMeizhou,
+      CONFIG.c.areas["OPAREA/MEIZHOU"],
     },
     areaName = 'Meizhou'
   },
@@ -376,13 +389,13 @@ CONFIG.c.ground.mlrs.positions = {
         { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 25.30.13', lon = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsPositionsPingtanRL
+      area = CONFIG.c.areas["RL/PINGTAN"]
     },
     HA = {
       course = {
         { lat = 'N 25.30.02', lon = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsPositionsPingtanHA
+      area = CONFIG.c.areas["HA/PINGTAN"]
     },
     FP = {
       {
@@ -390,21 +403,21 @@ CONFIG.c.ground.mlrs.positions = {
           { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundMlrsPositionsPingtanFP1
+        area = CONFIG.c.areas["FP1/PINGTAN"]
       },
       {
         course = {
           { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundMlrsPositionsPingtanFP2
+        area = CONFIG.c.areas["FP2/PINGTAN"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsPositionsPingtanAHA
+      area = CONFIG.c.areas["AHA/PINGTAN"]
     },
   },
   chinchew = {
@@ -413,13 +426,13 @@ CONFIG.c.ground.mlrs.positions = {
         { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewRL
+      area = CONFIG.c.areas["RL/CHINCHEW"]
     },
     HA = {
       course = {
         { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewHA
+      area = CONFIG.c.areas["HA/CHINCHEW"]
     },
     FP = {
       {
@@ -427,14 +440,14 @@ CONFIG.c.ground.mlrs.positions = {
           { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundMlrsChinchewFP1
+        area = CONFIG.c.areas["FP1/CHINCHEW"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewAHA
+      area = CONFIG.c.areas["AHA/CHINCHEW"]
     },
   },
 }
@@ -451,13 +464,13 @@ CONFIG.c.ground.glcm.positions = {
         { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewRL
+      area = CONFIG.c.areas["RL/CHINCHEW"]
     },
     HA = {
       course = {
         { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewHA
+      area = CONFIG.c.areas["HA/CHINCHEW"]
     },
     FP = {
       {
@@ -465,14 +478,14 @@ CONFIG.c.ground.glcm.positions = {
           { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundMlrsChinchewFP1
+        area = CONFIG.c.areas["FP1/CHINCHEW"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMlrsChinchewAHA
+      area = CONFIG.c.areas["AHA/CHINCHEW"]
     },
   },
 }
@@ -489,13 +502,13 @@ CONFIG.c.ground.srbm.positions = {
         { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.16.56', lon = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade615RL
+      area = CONFIG.c.areas["RL/BRIGADE615"]
     },
     HA = {
       course = {
         { lat = 'N 24.17.06', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade615HA
+      area = CONFIG.c.areas["HA/BRIGADE615"]
     },
     FP = {
       {
@@ -503,14 +516,14 @@ CONFIG.c.ground.srbm.positions = {
           { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade615FP1
+        area = CONFIG.c.areas["FP1/BRIGADE615"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.17.05', lon = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade615AHA
+      area = CONFIG.c.areas["AHA/BRIGADE615"]
     },
   },
   brigade614 = {
@@ -519,13 +532,13 @@ CONFIG.c.ground.srbm.positions = {
         { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 26.03.40', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade614RL
+      area = CONFIG.c.areas["RL/BRIGADE614"]
     },
     HA = {
       course = {
         { lat = 'N 26.03.48', lon = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade614HA
+      area = CONFIG.c.areas["HA/BRIGADE614"]
     },
     FP = {
       {
@@ -533,14 +546,14 @@ CONFIG.c.ground.srbm.positions = {
           { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade614FP1
+        area = CONFIG.c.areas["FP1/BRIGADE614"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 26.03.47', lon = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade614AHA
+      area = CONFIG.c.areas["AHA/BRIGADE614"]
     },
   },
   brigade636 = {
@@ -549,13 +562,13 @@ CONFIG.c.ground.srbm.positions = {
         { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.45.25', lon = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade636RL
+      area = CONFIG.c.areas["RL/BRIGADE636"]
     },
     HA = {
       course = {
         { lat = 'N 24.45.33', lon = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade636HA
+      area = CONFIG.c.areas["HA/BRIGADE636"]
     },
     FP = {
       {
@@ -563,14 +576,14 @@ CONFIG.c.ground.srbm.positions = {
           { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade636FP1
+        area = CONFIG.c.areas["FP1/BRIGADE636"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.45.34', lon = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade636AHA
+      area = CONFIG.c.areas["AHA/BRIGADE636"]
     },
   },
   brigade616 = {
@@ -578,27 +591,27 @@ CONFIG.c.ground.srbm.positions = {
       course = {
         { lat = 'N 25.54.31', lon = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade616RL
+      area = CONFIG.c.areas["RL/BRIGADE616"]
     },
     HA = {
       course = {
         { lat = 'N 25.54.40', lon = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade616HA
+      area = CONFIG.c.areas["HA/BRIGADE616"]
     },
     FP = {
       {
         course = {
           { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade616FP1
+        area = CONFIG.c.areas["FP1/BRIGADE616"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 25.54.38', lon = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade616AHA
+      area = CONFIG.c.areas["AHA/BRIGADE616"]
     },
   },
   brigade613 = {
@@ -608,13 +621,13 @@ CONFIG.c.ground.srbm.positions = {
         { lat = 'N 28.27.26', lon = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 28.27.03', lon = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade613RL
+      area = CONFIG.c.areas["RL/BRIGADE613"]
     },
     HA = {
       course = {
         { lat = 'N 28.27.12', lon = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade613HA
+      area = CONFIG.c.areas["HA/BRIGADE613"]
     },
     FP = {
       {
@@ -623,14 +636,14 @@ CONFIG.c.ground.srbm.positions = {
           { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade613FP1
+        area = CONFIG.c.areas["FP1/BRIGADE613"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 28.27.12', lon = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade613AHA
+      area = CONFIG.c.areas["AHA/BRIGADE613"]
     },
   },
   brigade617 = {
@@ -639,13 +652,13 @@ CONFIG.c.ground.srbm.positions = {
         { lat = 'N 29.09.32', lon = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 29.08.57', lon = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade617RL
+      area = CONFIG.c.areas["RL/BRIGADE617"]
     },
     HA = {
       course = {
         { lat = 'N 29.09.01', lon = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade617HA
+      area = CONFIG.c.areas["HA/BRIGADE617"]
     },
     FP = {
       {
@@ -653,14 +666,14 @@ CONFIG.c.ground.srbm.positions = {
           { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundSrbmPositionsBrigade617FP1
+        area = CONFIG.c.areas["FP1/BRIGADE617"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 29.09.03', lon = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundSrbmPositionsBrigade617AHA
+      area = CONFIG.c.areas["AHA/BRIGADE617"]
     },
   },
 }
@@ -683,13 +696,13 @@ CONFIG.c.ground.mrbm.positions = {
         { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMrbmPositionsBrigade624RL
+      area = CONFIG.c.areas["RL/BRIGADE624"]
     },
     HA = {
       course = {
         { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMrbmPositionsBrigade624HA
+      area = CONFIG.c.areas["HA/BRIGADE624"]
     },
     FP = {
       {
@@ -697,14 +710,14 @@ CONFIG.c.ground.mrbm.positions = {
           { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
           { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
-        area = CONFIG.c.areas.groundMrbmPositionsBrigade624FP1
+        area = CONFIG.c.areas["FP1/BRIGADE624"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-      area = CONFIG.c.areas.groundMrbmPositionsBrigade624AHA
+      area = CONFIG.c.areas["AHA/BRIGADE624"]
     },
   },
 }
@@ -1189,10 +1202,10 @@ CONFIG.c.PHIBOP.initialLocations = {
     },
     from = {
       areas = { {
-        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas.phibopTaoyuanFromType075 } },
+        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas["STARTING POINT/075/TAOYUAN"] } },
         heading = CONFIG.c.PHIBOP.shipSettings.heading.north
       } },
-      stagingArea = CONFIG.c.areas.phibopTaoyuanStaging,
+      stagingArea = CONFIG.c.areas["OPAREA/D"],
       num = {
         type075 = 2,
         type071 = 4,
@@ -1209,8 +1222,8 @@ CONFIG.c.PHIBOP.initialLocations = {
       areas = {
         {
           startingPoints = {
-            type075 = { side = "China", area = CONFIG.c.areas.phibopTaoyuanToType075 },
-            type071 = { side = "China", area = CONFIG.c.areas.phibopTaoyuanToType071 },
+            type075 = { side = "China", area = CONFIG.c.areas["DESTINATION/075/TAOYUAN"] },
+            type071 = { side = "China", area = CONFIG.c.areas["DESTINATION/071/TAOYUAN"] },
           },
           heading = CONFIG.c.PHIBOP.shipSettings.heading.west,
           num = {
@@ -1228,7 +1241,7 @@ CONFIG.c.PHIBOP.initialLocations = {
         },
       }
     },
-    airLandingZone = CONFIG.c.areas.phibopAirlandingZone,
+    airLandingZone = CONFIG.c.areas["AIRLANDING/TAOYUAN"],
     numOfContactsInAirLandingZone = 3
   },
   {
@@ -1240,10 +1253,10 @@ CONFIG.c.PHIBOP.initialLocations = {
     },
     from = {
       areas = { {
-        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas.phibopSishuFromType075 } },
+        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas["STARTING POINT/075/SISHU"] } },
         heading = CONFIG.c.PHIBOP.shipSettings.heading.sishu
       } },
-      stagingArea = CONFIG.c.areas.phibopSishuStaging,
+      stagingArea = CONFIG.c.areas["OPAREA/F"],
       num = {
         type075 = 1,
         type071 = 3,
@@ -1261,8 +1274,8 @@ CONFIG.c.PHIBOP.initialLocations = {
       areas = {
         {
           startingPoints = {
-            type075 = { side = "China", area = CONFIG.c.areas.phibopSishuToType075 },
-            type071 = { side = "China", area = CONFIG.c.areas.phibopSishuToType071 },
+            type075 = { side = "China", area = CONFIG.c.areas["DESTINATION/075/SISHU"] },
+            type071 = { side = "China", area = CONFIG.c.areas["DESTINATION/071/SISHU"] },
           },
           heading = CONFIG.c.PHIBOP.shipSettings.heading.sishu,
           num = {
@@ -1280,7 +1293,7 @@ CONFIG.c.PHIBOP.initialLocations = {
         },
       }
     },
-    airLandingZone = CONFIG.c.areas.phibopAirlandingZone,
+    airLandingZone = CONFIG.c.areas["AIRLANDING/TAOYUAN"],
     numOfContactsInAirLandingZone = 3
   },
   {
@@ -1292,10 +1305,10 @@ CONFIG.c.PHIBOP.initialLocations = {
     },
     from = {
       areas = { {
-        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas.phibopPenghuFromType075 } },
+        startingPoints = { type075 = { side = "China", area = CONFIG.c.areas["STARTING POINT/075/PENGHU"] } },
         heading = CONFIG.c.PHIBOP.shipSettings.heading.penghu
       } },
-      stagingArea = CONFIG.c.areas.phibopPenghuStaging,
+      stagingArea = CONFIG.c.areas["OPAREA/E"],
       num = {
         type075 = 1,
         type071 = 1,
@@ -1313,8 +1326,8 @@ CONFIG.c.PHIBOP.initialLocations = {
       areas = {
         {
           startingPoints = {
-            type075 = { side = "China", area = CONFIG.c.areas.phibopPenghuToType075 },
-            type071 = { side = "China", area = CONFIG.c.areas.phibopPenghuToType071 },
+            type075 = { side = "China", area = CONFIG.c.areas["DESTINATION/075/PENGHU"] },
+            type071 = { side = "China", area = CONFIG.c.areas["DESTINATION/071/PENGHU"] },
           },
           heading = CONFIG.c.PHIBOP.shipSettings.heading.penghu,
           num = {
@@ -1332,7 +1345,7 @@ CONFIG.c.PHIBOP.initialLocations = {
         },
       }
     },
-    airLandingZone = CONFIG.c.areas.phibopAirlandingZone,
+    airLandingZone = CONFIG.c.areas["AIRLANDING/TAOYUAN"],
     numOfContactsInAirLandingZone = 3
   },
 
@@ -1341,10 +1354,10 @@ CONFIG.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
     baseGUID = '6Z8LM5-0HMMNGU6J8P2N',
-    anchorageArea = CONFIG.c.areas.phibopTaoyuanAnchorage,
-    LSTAnchorageArea = CONFIG.c.areas.phibopTaoyuanLstAnchorage,
-    area = CONFIG.c.areas.phibopTaoyuanOpArea,
-    offloadArea = CONFIG.c.areas.phibopTaoyuanOffload,
+    anchorageArea = CONFIG.c.areas["ANCH AREA/TAOYUAN"],
+    LSTAnchorageArea = CONFIG.c.areas["LST ANCH AREA/TAOYUAN"],
+    area = CONFIG.c.areas["CAS/E"],
+    offloadArea = CONFIG.c.areas["OFFLOAD AREA/TAOYUAN"],
     boat = {
       dbid = CONFIG.platformDBID1,
       missions = {
@@ -1361,7 +1374,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.boat[2],
         },
       },
-      zone = CONFIG.c.areas.phibopTaoyuanBoatZone,
+      zone = CONFIG.c.areas["LANDING/TAOYUAN"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleShip = 'Full',
@@ -1420,7 +1433,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
-      zone = CONFIG.c.areas.phibopAirlandingZone,
+      zone = CONFIG.c.areas["AIRLANDING/TAOYUAN"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleAircraft = 'Military',
@@ -1472,7 +1485,7 @@ CONFIG.c.PHIBOP.operationalZones = {
       distance = CONFIG.c.PHIBOP.shipSettings.ACVHorizontalDistance,
       speed = CONFIG.c.PHIBOP.shipSettings.ACVSpeed,
       destination = CONFIG.c.PHIBOP.shipSettings.heading.west.destination,
-      area = CONFIG.c.areas.phibopTaoyuanAcvArea
+      area = CONFIG.c.areas["AMPH VEH STAGING AREA/TAOYUAN"]
     },
     reconUAV = {
       dbid = CONFIG.platformDBID55,
@@ -1489,10 +1502,10 @@ CONFIG.c.PHIBOP.operationalZones = {
   {
     name = "Sishu",
     baseGUID = '6Z8LM5-0HMJV6AONGLAU',
-    anchorageArea = CONFIG.c.areas.phibopSishuAnchorage,
-    LSTAnchorageArea = CONFIG.c.areas.phibopSishuLstAnchorage,
-    area = CONFIG.c.areas.phibopSishuOpArea,
-    offloadArea = CONFIG.c.areas.phibopSishuOffload,
+    anchorageArea = CONFIG.c.areas["ANCH AREA/SISHU"],
+    LSTAnchorageArea = CONFIG.c.areas["LST ANCH AREA/SISHU"],
+    area = CONFIG.c.areas["CAS/S"],
+    offloadArea = CONFIG.c.areas["OFFLOAD AREA/SISHU"],
     boat = {
       dbid = CONFIG.platformDBID1,
       missions = {
@@ -1509,7 +1522,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.boat[2],
         },
       },
-      zone = CONFIG.c.areas.phibopSishuBoatZone,
+      zone = CONFIG.c.areas["LANDING/SISHU"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleShip = 'Full',
@@ -1568,7 +1581,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
-      zone = CONFIG.c.areas.phibopSishuTransportHelicopterZone,
+      zone = CONFIG.c.areas["AIRLANDING/CHANGLONG"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleAircraft = 'Military',
@@ -1619,16 +1632,16 @@ CONFIG.c.PHIBOP.operationalZones = {
       distance = CONFIG.c.PHIBOP.shipSettings.ACVHorizontalDistance,
       speed = CONFIG.c.PHIBOP.shipSettings.ACVSpeed,
       destination = CONFIG.c.PHIBOP.shipSettings.heading.sishu.destination,
-      area = CONFIG.c.areas.phibopSishuAcvArea
+      area = CONFIG.c.areas["AMPH VEH STAGING AREA/SHISHU"]
     }
   },
   {
     name = "Penghu",
     baseGUID = '6Z8LM5-0HMJV6AONGLAU',
-    anchorageArea = CONFIG.c.areas.phibopPenghuAnchorage,
-    LSTAnchorageArea = CONFIG.c.areas.phibopPenghuLstAnchorage,
-    area = CONFIG.c.areas.phibopPenghuOpArea,
-    offloadArea = CONFIG.c.areas.phibopPenghuOffload,
+    anchorageArea = CONFIG.c.areas["ANCH AREA/PENGHU"],
+    LSTAnchorageArea = CONFIG.c.areas["LST ANCH AREA/PENGHU"],
+    area = CONFIG.c.areas["CAS/PENGHU"],
+    offloadArea = CONFIG.c.areas["OFFLOAD AREA/PENGHU"],
     boat = {
       dbid = CONFIG.platformDBID1,
       missions = {
@@ -1645,7 +1658,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.boat[2],
         },
       },
-      zone = CONFIG.c.areas.phibopPenghuBoatZone,
+      zone = CONFIG.c.areas["LANDING/PENGHU"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleShip = 'Full',
@@ -1704,7 +1717,7 @@ CONFIG.c.PHIBOP.operationalZones = {
           startTime = CONFIG.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
-      zone = CONFIG.c.areas.phibopPenghuTransportHelicopterZone,
+      zone = CONFIG.c.areas["AIRLANDING/PENGHU"],
       settings = {
         Subtype = 'delivery',
         TransitThrottleAircraft = 'Military',
@@ -1755,7 +1768,7 @@ CONFIG.c.PHIBOP.operationalZones = {
       distance = CONFIG.c.PHIBOP.shipSettings.ACVHorizontalDistance,
       speed = CONFIG.c.PHIBOP.shipSettings.ACVSpeed,
       destination = CONFIG.c.PHIBOP.shipSettings.heading.penghu.destination,
-      area = CONFIG.c.areas.phibopPenghuAcvArea
+      area = CONFIG.c.areas["AMPH VEH STAGING AREA/PENGHU"]
     }
   },
 }
@@ -1797,7 +1810,7 @@ CONFIG.c.PHIBOP.sag = {
       },
       heading = CONFIG.c.PHIBOP.shipSettings.heading.west.vertical,
     },
-    area = CONFIG.c.areas.phibopAirlandingZone
+    area = CONFIG.c.areas["AIRLANDING/TAOYUAN"]
   },
   ['SAG 155'] = {
     groupName = 'SAG 155',
@@ -1815,7 +1828,7 @@ CONFIG.c.PHIBOP.sag = {
       },
       heading = CONFIG.c.PHIBOP.shipSettings.heading.west.vertical,
     },
-    area = CONFIG.c.areas.phibopAirlandingZone
+    area = CONFIG.c.areas["AIRLANDING/TAOYUAN"]
   },
   ['SAG 167'] = {
     groupName = 'SAG 167',
@@ -1832,7 +1845,7 @@ CONFIG.c.PHIBOP.sag = {
       },
       heading = CONFIG.c.PHIBOP.shipSettings.heading.penghu.vertical,
     },
-    area = CONFIG.c.areas.phibopPenghuTransportHelicopterZone,
+    area = CONFIG.c.areas["AIRLANDING/PENGHU"],
   },
   ['SAG 154'] = {
     groupName = 'SAG 154',
@@ -1849,7 +1862,7 @@ CONFIG.c.PHIBOP.sag = {
       },
       heading = CONFIG.c.PHIBOP.shipSettings.heading.sishu.vertical,
     },
-    area = CONFIG.c.areas.phibopSishuTransportHelicopterZone,
+    area = CONFIG.c.areas["AIRLANDING/CHANGLONG"],
   },
   ['SAG 175'] = {
     groupName = 'SAG 175',
@@ -1866,7 +1879,7 @@ CONFIG.c.PHIBOP.sag = {
       },
       heading = CONFIG.c.PHIBOP.shipSettings.heading.sishu.vertical,
     },
-    area = CONFIG.c.areas.phibopSishuTransportHelicopterZone,
+    area = CONFIG.c.areas["AIRLANDING/CHANGLONG"],
   },
 }
 
@@ -1977,9 +1990,9 @@ CONFIG.c.surface.lacm.csg = {
   },
 }
 CONFIG.c.surface.lacm.targetlist = {
-  { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC71' },
-  { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC73' },
-  { name = 'A/C Underground Aircraft Shelter (10x Large Aircraft)', guid = '6Z8LM5-0HMIJ7B89BC6V' }
+  '6Z8LM5-0HMIJ7B89BC71',
+  '6Z8LM5-0HMIJ7B89BC73',
+  '6Z8LM5-0HMIJ7B89BC6V',
 }
 
 
@@ -2047,9 +2060,9 @@ CONFIG.c.subSurface.slcm.submarines = {
 }
 
 CONFIG.c.subSurface.slcm.targetlist = {
-  { guid = '6Z8LM5-0HMIJ7B89BCF3' },
-  { guid = '6Z8LM5-0HMIJ7B89BCF4' },
-  { guid = '6Z8LM5-0HMIJ7B89BCF5' },
+  '6Z8LM5-0HMIJ7B89BCF3',
+  '6Z8LM5-0HMIJ7B89BCF4',
+  '6Z8LM5-0HMIJ7B89BCF5',
 }
 CONFIG.c.subSurface.slcm.randomRadius = 20
 
@@ -2069,7 +2082,7 @@ CONFIG.t.ground.mlrs.positions = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenRL
+      area = CONFIG.t.areas["RL/PINGZHEN"]
     },
     FP = {
       {
@@ -2077,14 +2090,14 @@ CONFIG.t.ground.mlrs.positions = {
           { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
           { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
         },
-        area = CONFIG.t.areas.groundMlrsPingzhenFP1
+        area = CONFIG.t.areas["FP1/PINGZHEN"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenAHA
+      area = CONFIG.t.areas["AHA/PINGZHEN"]
     },
   },
 }
@@ -2101,7 +2114,7 @@ CONFIG.t.ground.srbm.positions = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenRL
+      area = CONFIG.t.areas["RL/PINGZHEN"]
     },
     FP = {
       {
@@ -2109,14 +2122,14 @@ CONFIG.t.ground.srbm.positions = {
           { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
           { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
         },
-        area = CONFIG.t.areas.groundMlrsPingzhenFP1
+        area = CONFIG.t.areas["FP1/PINGZHEN"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenAHA
+      area = CONFIG.t.areas["AHA/PINGZHEN"]
     },
   },
   dadu = {
@@ -2125,7 +2138,7 @@ CONFIG.t.ground.srbm.positions = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundSrbmDaduRL
+      area = CONFIG.t.areas["RL/DADU"]
     },
     FP = {
       {
@@ -2133,14 +2146,14 @@ CONFIG.t.ground.srbm.positions = {
           { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
           { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
         },
-        area = CONFIG.t.areas.groundSrbmDaduFP1
+        area = CONFIG.t.areas["FP1/DADU"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundSrbmDaduAHA
+      area = CONFIG.t.areas["AHA/DADU"]
     },
   },
 }
@@ -2154,31 +2167,31 @@ CONFIG.t.ground.glcm.positions = {
   quanxi = {
     RL = {
       course = {},
-      area = CONFIG.t.areas.groundGlcmPositionsQuanxiRL
+      area = CONFIG.t.areas["RL/QUANXI"]
     },
     FP = {
       {
         course = {},
-        area = CONFIG.t.areas.groundMlrsPingzhenFP1
+        area = CONFIG.t.areas["FP1/PINGZHEN"]
       },
     },
     AHA = {
       course = {},
-      area = CONFIG.t.areas.groundGlcmPositionsQuanxiAHA
+      area = CONFIG.t.areas["AHA/QUANXI"]
     },
   },
   neipu = {
     RL = {
-      area = CONFIG.t.areas.groundGlcmNeipuRL
+      area = CONFIG.t.areas["RL/NEIPU"]
     },
     FP = {
       {
-        area = CONFIG.t.areas.groundGlcmNeipuFP1
+        area = CONFIG.t.areas["FP1/NEIPU"]
       },
     },
     AHA = {
       course = {},
-      area = CONFIG.t.areas.groundGlcmNeipuAHA
+      area = CONFIG.t.areas["AHA/NEIPU"]
     },
   }
 }
@@ -2195,7 +2208,7 @@ CONFIG.t.ground.ascm.positions = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenRL
+      area = CONFIG.t.areas["RL/PINGZHEN"]
     },
     FP = {
       {
@@ -2203,14 +2216,14 @@ CONFIG.t.ground.ascm.positions = {
           { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
           { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
         },
-        area = CONFIG.t.areas.groundMlrsPingzhenFP1
+        area = CONFIG.t.areas["FP1/PINGZHEN"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundMlrsPingzhenAHA
+      area = CONFIG.t.areas["AHA/PINGZHEN"]
     },
   },
   dadu = {
@@ -2219,7 +2232,7 @@ CONFIG.t.ground.ascm.positions = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundSrbmDaduRL
+      area = CONFIG.t.areas["RL/DADU"]
     },
     FP = {
       {
@@ -2227,56 +2240,56 @@ CONFIG.t.ground.ascm.positions = {
           { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
           { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
         },
-        area = CONFIG.t.areas.groundSrbmDaduFP1
+        area = CONFIG.t.areas["FP1/DADU"]
       },
     },
     AHA = {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-      area = CONFIG.t.areas.groundSrbmDaduAHA
+      area = CONFIG.t.areas["AHA/DADU"]
     },
   },
   neipu = {
     RL = {
-      area = CONFIG.t.areas.groundGlcmNeipuRL
+      area = CONFIG.t.areas["RL/NEIPU"]
     },
     FP = {
       {
-        area = CONFIG.t.areas.groundGlcmNeipuFP1
+        area = CONFIG.t.areas["FP1/NEIPU"]
       },
     },
     AHA = {
       course = {},
-      area = CONFIG.t.areas.groundGlcmNeipuAHA
+      area = CONFIG.t.areas["AHA/NEIPU"]
     },
   },
   luzhu = {
     RL = {
-      area = CONFIG.t.areas.groundAscmLuzhuRL
+      area = CONFIG.t.areas["RL/LUZHU"]
     },
     FP = {
       {
-        area = CONFIG.t.areas.groundAscmLuzhuFP1
+        area = CONFIG.t.areas["FP1/LUZHU"]
       },
     },
     AHA = {
       course = {},
-      area = CONFIG.t.areas.groundAscmLuzhuAHA
+      area = CONFIG.t.areas["AHA/LUZHU"]
     },
   },
   dong = {
     RL = {
-      area = CONFIG.t.areas.groundAscmDongRL
+      area = CONFIG.t.areas["RL/DONG"]
     },
     FP = {
       {
-        area = CONFIG.t.areas.groundAscmDongFP1
+        area = CONFIG.t.areas["FP1/DONG"]
       },
     },
     AHA = {
       course = {},
-      area = CONFIG.t.areas.groundAscmDongAHA
+      area = CONFIG.t.areas["AHA/DONG"]
     },
   },
 }
@@ -3254,7 +3267,7 @@ SaveData.c.ground.FSP = {
             weaponDBID = SaveData.c.ground.mlrs.batteries['IC8B0X-0HND05GGU36EN'].weaponDBID
           }
         },
-        areas = { CONFIG.c.areas.groundFspStrikeC2Pingtan },
+        areas = { CONFIG.c.areas["OPAREA/NORTH"] },
         startTime = '2027-06-09 01:30:00',
         -- startTime =  '2027-06-09 03:10:00'
         contactAge = CONFIG.c.ground.mlrs.contactAge,
@@ -3276,7 +3289,7 @@ SaveData.c.ground.FSP = {
             weaponDBID = SaveData.c.ground.mlrs.batteries['IC8B0X-0HNBRRE2PRQAL'].weaponDBID
           }
         },
-        areas = { CONFIG.c.areas.groundFspStrikeC2Chinchew },
+        areas = { CONFIG.c.areas["OPAREA/CENTER"] },
         startTime = nil,
         contactAge = CONFIG.c.ground.mlrs.contactAge,
         ammoPerTarget = 8,
@@ -3364,7 +3377,7 @@ SaveData.c.ground.FSP = {
             weaponDBID = SaveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
           }
         },
-        areas = { CONFIG.c.areas.groundFspAntishipEast },
+        areas = { CONFIG.c.areas["OPAREA/PACIFIC"] },
         startTime = '2027-06-09 02:10:00',
         contactAge = CONFIG.c.ground.mrbm.contactAge,
         ammoPerTarget = 6,
@@ -3427,7 +3440,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/S/1',
-        area = CONFIG.c.areas.airAtoStrikeAbWS,
+        area = CONFIG.c.areas["OPAREA/SOUTH"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
@@ -3440,7 +3453,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/C',
-        area = CONFIG.c.areas.groundFspStrikeC2Chinchew,
+        area = CONFIG.c.areas["OPAREA/CENTER"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
@@ -3452,7 +3465,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/N/1',
-        area = CONFIG.c.areas.groundFspStrikeC2Pingtan,
+        area = CONFIG.c.areas["OPAREA/NORTH"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
@@ -3535,7 +3548,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/JHI',
-        area = CONFIG.c.areas.airAtoStrikeAbE,
+        area = CONFIG.c.areas["OPAREA/EAST"],
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
@@ -3547,7 +3560,7 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/E',
-        area = CONFIG.c.areas.airAtoStrikeAbE,
+        area = CONFIG.c.areas["OPAREA/EAST"],
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
@@ -3567,7 +3580,7 @@ SaveData.c.air.ATO = {
         escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 8, },
         missionName = 'ASUW/N',
-        area = CONFIG.c.areas.phibopTaoyuanStaging,
+        area = CONFIG.c.areas["OPAREA/D"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeNavalTargetFilter',
@@ -3587,7 +3600,7 @@ SaveData.c.air.ATO = {
         escort = nil,
         wildWeasel = nil,
         missionName = 'AIR INTERCEPT/E',
-        area = CONFIG.c.areas.groundFspAntishipEast,
+        area = CONFIG.c.areas["OPAREA/PACIFIC"],
         hasLaunched = false,
         tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
         filterName = 'makeAirborneFilter',
@@ -3608,7 +3621,7 @@ SaveData.c.air.ATO = {
         wildWeasel = nil,
         jammer = nil,
         missionName = 'CAS/N',
-        area = CONFIG.c.areas.phibopTaoyuanBoatZone,
+        area = CONFIG.c.areas["LANDING/TAOYUAN"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeInfentryFilter',
@@ -3955,7 +3968,7 @@ SaveData.t.IADS.ROCC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJKIF',
     areas = {
-      CONFIG.t.areas.iadsRoccNorth,
+      CONFIG.t.areas["OPAREA/3RD"],
     },
     SAM = {},
     radar = {}
@@ -3964,7 +3977,7 @@ SaveData.t.IADS.ROCC = {
     name = 'ROCC/East',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJKTC',
-    areas = { CONFIG.t.areas.iadsRoccEast1, CONFIG.t.areas.iadsRoccEast2, },
+    areas = { CONFIG.t.areas["OPAREA/2ND"], CONFIG.t.areas["OPAREA/5TH"], },
     SAM = {},
     radar = {}
   },
@@ -3973,7 +3986,7 @@ SaveData.t.IADS.ROCC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJL2M',
     areas = {
-      CONFIG.t.areas.iadsRoccSouth,
+      CONFIG.t.areas["OPAREA/4TH"],
     },
     SAM = {},
     radar = {}
@@ -3985,7 +3998,7 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKTVU7',
     areas = {
-      CONFIG.t.areas.iadsRoccNorth,
+      CONFIG.t.areas["OPAREA/3RD"],
     },
     SAM = {},
   },
@@ -3994,7 +4007,7 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU1ED',
     areas = {
-      CONFIG.t.areas.iadsRoccEast2,
+      CONFIG.t.areas["OPAREA/5TH"],
     },
     SAM = {},
   },
@@ -4003,7 +4016,7 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU0JP',
     areas = {
-      CONFIG.t.areas.iadsRoccSouth,
+      CONFIG.t.areas["OPAREA/4TH"],
     },
     SAM = {},
   },
@@ -4012,7 +4025,7 @@ SaveData.t.IADS.TAAOC = {
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC27TV5Q0AS',
     areas = {
-      CONFIG.t.areas.iadsRoccEast1,
+      CONFIG.t.areas["OPAREA/2ND"],
     },
     SAM = {},
   },

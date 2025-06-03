@@ -115,112 +115,79 @@ function TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoI
   end
 end
 
----@class Point
----@field latitude string
----@field longitude string
----@param points table<number, Point>
-function GetCourseByPoints(points)
-  local course = {}
-  for k, v in pairs(points) do
-    course[k] = { TypeOf = 'ManualPlottedCourseWaypoint', latitude = v.latitude, longitude = v.longitude }
-  end
-  return course
-end
+-- ---@param points table<number, {latitude:string|number, longitude:string|number}>
+-- function GetCourseByPoints(points)
+--   local course = {}
+--   for k, v in pairs(points) do
+--     course[k] = { TypeOf = 'ManualPlottedCourseWaypoint', latitude = v.latitude, longitude = v.longitude }
+--   end
+--   return course
+-- end
 
----@class LocationParam:table
----@field initialLocation table
----@field num number
----@field bearing number
----@field distance number
----@param params LocationParam
-function GenerateLocations(params)
-  local numTemp = params.num
-  local bearingTemp = params.bearing
-  local distanceTemp = 0
-  local locations = {}
-  local locationTemp = params.initialLocation
 
-  if numTemp == 0 then
-    return {}
-  end
+-- ---@class ShipLocationParam:table
+-- ---@field ship CMO__Unit
+-- ---@field num number
+-- ---@field bearing number
+-- ---@field distance number
+-- ---@param params SBJ__Location_Params
+-- function GenerateACVLocations(params)
+--   local locations = {}
+--   local ship = params.ship
+--   local bearing = params.bearing
+--   local distance = params.distance
 
-  for i = 1, numTemp, 1 do
-    if i > 1 then
-      distanceTemp = params.distance
-    end
+--   local col = GenerateLocations({
+--     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
+--     num = params.num,
+--     bearing = (bearing + 90),
+--     distance = distance
+--   })
 
-    locationTemp = World_GetPointFromBearing({
-      LATITUDE = locationTemp.latitude,
-      LONGITUDE = locationTemp.longitude,
-      BEARING = bearingTemp,
-      DISTANCE = distanceTemp
-    })
+--   locations = InsertList(locations, col)
+--   return locations
+-- end
 
-    table.insert(locations, locationTemp)
-  end
+-- ---@param params SBJ__OffloadVehicles_Params
+-- ---@return table<number, CMO__Location>
+-- function GenerateLocationsForOffload(params)
+--   local numTemp = params.num
+--   local bearingTemp = params.bearing
+--   local distanceTemp = 0
+--   local firstDistance = params.firstDistance
+--   local locations = {}
+--   local locationTemp = { latitude = params.ship.latitude, longitude = params.ship.longitude }
 
-  return locations
-end
+--   if numTemp == 0 then
+--     return {}
+--   end
 
----@class ShipLocationParam:table
----@field ship CMO__Unit
----@field num number
----@field bearing number
----@field distance number
----@param params LocationParam
-function GenerateACVLocations(params)
-  local locations = {}
-  local ship = params.ship
-  local bearing = params.bearing
-  local distance = params.distance
+--   for i = 1, numTemp, 1 do
+--     if i > 1 then
+--       distanceTemp = params.distance
+--     else
+--       distanceTemp = firstDistance
+--     end
 
-  local col = GenerateLocations({
-    initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
-    num = params.num,
-    bearing = (bearing + 90),
-    distance = distance
-  })
+--     locationTemp = World_GetPointFromBearing({
+--       LATITUDE = locationTemp.latitude,
+--       LONGITUDE = locationTemp.longitude,
+--       BEARING = bearingTemp,
+--       DISTANCE = distanceTemp
+--     })
 
-  locations = InsertList(locations, col)
-  return locations
-end
+--     table.insert(locations, locationTemp)
+--   end
 
-function GenerateLocationsForOffload(params)
-  local numTemp = params.num
-  local bearingTemp = params.bearing
-  local distanceTemp = 0
-  local firstDistance = params.firstDistance
-  local locations = {}
-  local locationTemp = { latitude = params.ship.latitude, longitude = params.ship.longitude }
+--   return locations
+-- end
 
-  if numTemp == 0 then
-    return {}
-  end
-
-  for i = 1, numTemp, 1 do
-    if i > 1 then
-      distanceTemp = params.distance
-    else
-      distanceTemp = firstDistance
-    end
-
-    locationTemp = World_GetPointFromBearing({
-      LATITUDE = locationTemp.latitude,
-      LONGITUDE = locationTemp.longitude,
-      BEARING = bearingTemp,
-      DISTANCE = distanceTemp
-    })
-
-    table.insert(locations, locationTemp)
-  end
-
-  return locations
-end
-
+---@param params SBJ__OffloadVehicles_Params
+---@return number|nil
 function OffloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
-  local ACVlocations = GenerateLocationsForOffload(params)
+  local ACVlocations = GenerateLocations(params)
   local cargoList = {}
   local count = 0
   local resultCount = 0
@@ -254,18 +221,21 @@ function OffloadVehicles(params)
   return resultCount
 end
 
----@class ACVLocationParam:table
----@field transitBearing number
----@field transitDistance number
----@field ship CMO__Unit
----@field speed number
----@field destination table
----@param params ACVLocationParam
+---@param params SBJ__ACVLocation_Params
+---@return number|nil
 function LaunchACV(params)
   local ship = params.ship
-  local destination = params.destination
-  local ACVlocations = GenerateACVLocations(params)
   if ship == nil or ship.IsDestroyed then return end
+
+  local destination = params.destination
+  -- local ACVlocations = GenerateACVLocations(params)
+  local ACVlocations = GenerateLocations({
+    initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
+    num = params.num,
+    bearing = params.bearing,
+    distance = params.distance
+  })
+
   local zbd = DeleteCargo(ship, { type = 2, num = params.num, dbid = 241 })
   local ztd = DeleteCargo(ship, { type = 2, num = params.num - zbd, dbid = 240 })
   local index = 0
@@ -311,367 +281,25 @@ function LaunchACV(params)
   return count
 end
 
----@param units table<number, CMO_Unit>
----@param course CMO__TableOfWaypoints
-function SetCourseToUnits(course, units)
-  for k, v in ipairs(units) do
-    local unit = ScenEdit_GetUnit({ guid = v.guid })
+-- ---@param units table<number, CMO_Unit>
+-- ---@param course CMO__TableOfWaypoints
+-- function SetCourseToUnits(course, units)
+--   for k, v in ipairs(units) do
+--     local unit = ScenEdit_GetUnit({ guid = v.guid })
 
-    -- unit.course = course
-    if unit then
-      local destinationTemp = World_GetPointFromBearing({
-        LATITUDE = unit.latitude,
-        LONGITUDE = unit.longitude,
-        BEARING = course.bearing,
-        DISTANCE = course.distance
-      })
+--     -- unit.course = course
+--     if unit then
+--       local destinationTemp = World_GetPointFromBearing({
+--         LATITUDE = unit.latitude,
+--         LONGITUDE = unit.longitude,
+--         BEARING = course.bearing,
+--         DISTANCE = course.distance
+--       })
 
-      unit.course = GetCourseByPoints({ destinationTemp })
-    end
-  end
-end
-
----@class EmbarkedUnit
----@field num number
----@field unit CMO__Unit
----@param shipId string
----@param units table<number, EmbarkedUnit>
-function AddUnitsToShip(shipId, units)
-  for k, unit in ipairs(units) do
-    -- local name = unit[2].name
-
-    for j = 1, unit[1], 1 do
-      unit[2].base = shipId
-      -- unit[2].name = name .. ' #' .. j
-      ScenEdit_AddUnit(unit[2])
-    end
-  end
-end
-
----@param params LocationParam
----@param unit CMO__Unit
----@param embarkedUnits table<number, EmbarkedUnit>|nil
-function AddUnitsByRP(params, unit, embarkedUnits)
-  local locations = GenerateLocations(params)
-  local unitTemp = nil
-
-  for k, v in ipairs(locations) do
-    unit.latitude = v.latitude
-    unit.longitude = v.longitude
-    unitTemp = ScenEdit_AddUnit(unit)
-
-    if unitTemp and unit.cargo then
-      for key, cargoItem in ipairs(unit.cargo) do
-        for i = 1, cargoItem.num, 1 do
-          unitTemp:createUnitCargo(cargoItem.type, cargoItem.dbid)
-        end
-      end
-
-      if embarkedUnits then
-        AddUnitsToShip(unitTemp.guid, embarkedUnits)
-      end
-    end
-  end
-end
-
-function GetPointFromBearing(params)
-  local initialLocation = params.initialLocation
-  local bearing = params.bearing
-  local distance = params.distance
-
-  return GenerateLocations({
-    initialLocation = initialLocation,
-    num = 2,
-    bearing = bearing,
-    distance = distance
-  })[2]
-end
-
-function AddLandingShips()
-  local initialLocations = CONFIG.c.PHIBOP.initialLocations
-  local shipSettings = CONFIG.c.PHIBOP.shipSettings
-  local cargoList = CONFIG.c.PHIBOP.cargoList
-
-  for _, item in ipairs(initialLocations) do
-    for _, area in ipairs(item.from.areas) do
-      local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-      local firstRp071 = GetPointFromBearing({
-        initialLocation = firstRp075,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-      local firstRp076 = GetPointFromBearing({
-        initialLocation = firstRp071,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-      local firstRpBarge = GetPointFromBearing({
-        initialLocation = firstRp076,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-      local firstRpRORO = GetPointFromBearing({
-        initialLocation = firstRpBarge,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-      local firstRp072a = GetPointFromBearing({
-        initialLocation = firstRpRORO,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-      local firstRp072iii = GetPointFromBearing({
-        initialLocation = firstRp072a,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-
-      local firstRpFerry = GetPointFromBearing({
-        initialLocation = firstRp072iii,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-
-      local firstRp073a = GetPointFromBearing({
-        initialLocation = firstRpFerry,
-        bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
-      })
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp075,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type075
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 075',
-          dbid = CONFIG.platformDBID6,
-          cargo = cargoList.type075,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        {
-          { 6, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID2,
-            loadoutid = CONFIG.loadoutDBID3
-          } },
-          { 6, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID2,
-            loadoutid = CONFIG.loadoutDBID4
-          } },
-          { 13, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID5,
-            loadoutid = CONFIG.loadoutDBID2
-          } },
-          { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
-        }
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp071,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type071
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 071',
-          dbid = CONFIG.platformDBID7,
-          cargo = cargoList.type071,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        {
-          { 4, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID2,
-            loadoutid = CONFIG.loadoutDBID3
-          } },
-          { 4, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
-        }
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp076,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type076
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 076',
-          dbid = CONFIG.platformDBID54,
-          cargo = cargoList.type075,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        {
-          { 6, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID2,
-            loadoutid = CONFIG.loadoutDBID3
-          } },
-          { 6, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID2,
-            loadoutid = CONFIG.loadoutDBID4
-          } },
-          { 13, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID5,
-            loadoutid = CONFIG.loadoutDBID2
-          } },
-          { 8, {
-            side = 'China',
-            type = 'aircraft',
-            name = item.names[1],
-            dbid = CONFIG.platformDBID55,
-            loadoutid = CONFIG.loadoutDBID6
-          } },
-          { 3, { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
-        }
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRpBarge,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.barge
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Barge',
-          dbid = CONFIG.platformDBID72,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRpRORO,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.roro
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'RORO',
-          dbid = CONFIG.platformDBID56,
-          cargo = cargoList.barge,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp072a,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type072a
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 072A',
-          dbid = CONFIG.platformDBID9,
-          cargo = cargoList.type072a,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp072iii,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type072iii
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 072III',
-          dbid = CONFIG.platformDBID8,
-          cargo = cargoList.type072iii,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRpFerry,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.ferry
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Ferry',
-          dbid = CONFIG.platformDBID56,
-          cargo = cargoList.ferry,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-
-      AddUnitsByRP(
-        {
-          initialLocation = firstRp073a,
-          bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance,
-          num = item.from.num.type073a
-        },
-        {
-          side = 'China',
-          type = 'Ship',
-          name = 'Type 073A',
-          dbid = CONFIG.platformDBID10,
-          cargo = cargoList.type073a,
-          heading = area.heading.vertical,
-          manualSpeed = shipSettings.shipSpeed,
-        },
-        nil
-      )
-    end
-  end
-end
+--       unit.course = GetCourseByPoints({ destinationTemp })
+--     end
+--   end
+-- end
 
 function CalculateDestination(saveData)
   local initialLocations = CONFIG.c.PHIBOP.initialLocations
@@ -804,26 +432,5 @@ function CalculateDestination(saveData)
           distance = shipSettings.horizontalDistance
         }))
     end
-  end
-end
-
-function RemoveLandingShips()
-  local unitsFromChina = VP_GetSide({ Side = 'China' }).units
-  for index, u in ipairs(unitsFromChina) do
-    local unit = SE_GetUnit({ guid = u.guid })
-    if unit == nil then goto continue end
-
-    if unit.dbid == CONFIG.platformDBID6 or
-        unit.dbid == CONFIG.platformDBID7 or
-        unit.dbid == CONFIG.platformDBID8 or
-        unit.dbid == CONFIG.platformDBID9 or
-        unit.dbid == CONFIG.platformDBID10 or
-        unit.dbid == CONFIG.platformDBID32 or
-        unit.dbid == CONFIG.platformDBID54 or
-        unit.dbid == CONFIG.platformDBID56 then
-      ScenEdit_DeleteUnit({ side = 'China', guid = unit.guid })
-    end
-
-    ::continue::
   end
 end

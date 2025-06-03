@@ -599,3 +599,394 @@ function AddSubmarines(side)
     end
   end
 end
+
+---@class EmbarkedUnit
+---@field num number
+---@field setUnitDescriptor CMO__SetUnitDescriptor
+
+---@param shipId string
+---@param mutipledUnitSetting table<number, EmbarkedUnit>
+function AddUnitsToShip(shipId, mutipledUnitSetting)
+  for k, unitSetting in ipairs(mutipledUnitSetting) do
+    -- local name = unitSetting.setUnitDescriptor.name
+
+    for j = 1, unitSetting.num, 1 do
+      unitSetting.setUnitDescriptor.base = shipId
+      -- unitSetting.setUnitDescriptor.name = name .. ' #' .. j
+      ScenEdit_AddUnit(unitSetting.setUnitDescriptor)
+    end
+  end
+end
+
+---@param params SBJ__Location_Params
+---@param unit CMO__Unit
+---@param embarkedUnits table<number, EmbarkedUnit>|nil
+function AddUnitsByRP(params, unit, embarkedUnits)
+  local locations = GenerateLocations(params)
+  local unitTemp = nil
+
+  for k, v in ipairs(locations) do
+    unit.latitude = v.latitude
+    unit.longitude = v.longitude
+    unitTemp = ScenEdit_AddUnit(unit)
+
+    if unitTemp and unit.cargo then
+      for key, cargoItem in ipairs(unit.cargo) do
+        for i = 1, cargoItem.num, 1 do
+          unitTemp:createUnitCargo(cargoItem.type, cargoItem.dbid)
+        end
+      end
+
+      if embarkedUnits then
+        AddUnitsToShip(unitTemp.guid, embarkedUnits)
+      end
+    end
+  end
+end
+
+---@param params SBJ__Location_Params
+---@return table<number, CMO__Location>
+function GetPointFromBearing(params)
+  local initialLocation = params.initialLocation
+  local bearing = params.bearing
+  local distance = params.distance
+
+  return GenerateLocations({
+    initialLocation = initialLocation,
+    num = 2,
+    bearing = bearing,
+    distance = distance
+  })[2]
+end
+
+function AddLandingShips()
+  local initialLocations = CONFIG.c.PHIBOP.initialLocations
+  local shipSettings = CONFIG.c.PHIBOP.shipSettings
+  local cargoList = CONFIG.c.PHIBOP.cargoList
+
+  for _, item in ipairs(initialLocations) do
+    for _, area in ipairs(item.from.areas) do
+      local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
+      local firstRp071 = GetPointFromBearing({
+        initialLocation = firstRp075,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+      local firstRp076 = GetPointFromBearing({
+        initialLocation = firstRp071,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+      local firstRpBarge = GetPointFromBearing({
+        initialLocation = firstRp076,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+      local firstRpRORO = GetPointFromBearing({
+        initialLocation = firstRpBarge,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+      local firstRp072a = GetPointFromBearing({
+        initialLocation = firstRpRORO,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+      local firstRp072iii = GetPointFromBearing({
+        initialLocation = firstRp072a,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+
+      local firstRpFerry = GetPointFromBearing({
+        initialLocation = firstRp072iii,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+
+      local firstRp073a = GetPointFromBearing({
+        initialLocation = firstRpFerry,
+        bearing = area.heading.vertical,
+        distance = shipSettings.verticalDistance
+      })
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp075,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type075
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 075',
+          dbid = CONFIG.platformDBID6,
+          cargo = cargoList.type075,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        {
+          {
+            num = 6,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID2,
+              loadoutid = CONFIG.loadoutDBID3
+            }
+          },
+          {
+            num = 6,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID2,
+              loadoutid = CONFIG.loadoutDBID4
+            }
+          },
+          {
+            num = 13,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID5,
+              loadoutid = CONFIG.loadoutDBID2
+            }
+          },
+          { num = 3, setUnitDescriptor = { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
+        }
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp071,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type071
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 071',
+          dbid = CONFIG.platformDBID7,
+          cargo = cargoList.type071,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        {
+          {
+            num = 4,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID2,
+              loadoutid = CONFIG.loadoutDBID3
+            }
+          },
+          { num = 4, setUnitDescriptor = { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
+        }
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp076,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type076
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 076',
+          dbid = CONFIG.platformDBID54,
+          cargo = cargoList.type075,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        {
+          {
+            num = 6,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID2,
+              loadoutid = CONFIG.loadoutDBID3
+            }
+          },
+          {
+            num = 6,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID2,
+              loadoutid = CONFIG.loadoutDBID4
+            }
+          },
+          {
+            num = 13,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID5,
+              loadoutid = CONFIG.loadoutDBID2
+            }
+          },
+          {
+            num = 8,
+            setUnitDescriptor = {
+              side = 'China',
+              type = 'aircraft',
+              name = item.names[1],
+              dbid = CONFIG.platformDBID55,
+              loadoutid = CONFIG.loadoutDBID6
+            }
+          },
+          { num = 3, setUnitDescriptor = { side = 'China', type = 'ship', name = 'Warbird', dbid = CONFIG.platformDBID1 } },
+        }
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRpBarge,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.barge
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Barge',
+          dbid = CONFIG.platformDBID72,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRpRORO,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.roro
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'RORO',
+          dbid = CONFIG.platformDBID56,
+          cargo = cargoList.barge,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp072a,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type072a
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 072A',
+          dbid = CONFIG.platformDBID9,
+          cargo = cargoList.type072a,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp072iii,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type072iii
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 072III',
+          dbid = CONFIG.platformDBID8,
+          cargo = cargoList.type072iii,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRpFerry,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.ferry
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Ferry',
+          dbid = CONFIG.platformDBID56,
+          cargo = cargoList.ferry,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+
+      AddUnitsByRP(
+        {
+          initialLocation = firstRp073a,
+          bearing = area.heading.horizontal,
+          distance = shipSettings.horizontalDistance,
+          num = item.from.num.type073a
+        },
+        {
+          side = 'China',
+          type = 'Ship',
+          name = 'Type 073A',
+          dbid = CONFIG.platformDBID10,
+          cargo = cargoList.type073a,
+          heading = area.heading.vertical,
+          manualSpeed = shipSettings.shipSpeed,
+        },
+        nil
+      )
+    end
+  end
+end
+
+function RemoveLandingShips()
+  local unitsFromChina = VP_GetSide({ Side = 'China' }).units
+  for index, u in ipairs(unitsFromChina) do
+    local unit = SE_GetUnit({ guid = u.guid })
+    if unit == nil then goto continue end
+
+    if unit.dbid == CONFIG.platformDBID6 or
+        unit.dbid == CONFIG.platformDBID7 or
+        unit.dbid == CONFIG.platformDBID8 or
+        unit.dbid == CONFIG.platformDBID9 or
+        unit.dbid == CONFIG.platformDBID10 or
+        unit.dbid == CONFIG.platformDBID32 or
+        unit.dbid == CONFIG.platformDBID54 or
+        unit.dbid == CONFIG.platformDBID56 or
+        unit.dbid == CONFIG.platformDBID72 then
+      ScenEdit_DeleteUnit({ side = 'China', guid = unit.guid })
+    end
+
+    ::continue::
+  end
+end

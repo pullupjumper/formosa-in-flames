@@ -1,50 +1,3 @@
-function NewArea(position, mode)
-  local side = mode.side
-  local shape = mode.shape
-  if side == nil or shape == nil then return false end
-  local name = (mode.name or "RP")
-  local bear_offset = (mode.bear_offset or 0)
-  local rpTable = {}
-  local a = 1
-  --Circle
-  if shape == 'circle' then
-    local distance = mode.distance
-    for i = 0, 359, 45 do
-      local location = World_GetPointFromBearing({
-        latitude = position.latitude,
-        longitude = position.longitude,
-        distance = distance,
-        bearing = i
-      })
-      local rp = ScenEdit_AddReferencePoint({
-        side = side,
-        latitude = location.latitude,
-        longitude = location.longitude
-      })
-      a = a + 1
-      table.insert(rpTable, rp.name)
-    end
-  elseif shape == 'square' then
-    local distance = mode.distance
-    for i = 0, 3 do
-      local b = 45 + (90 * i) + bear_offset
-      local location = World_GetPointFromBearing({
-        latitude = position.latitude,
-        longitude = position.longitude,
-        distance = distance,
-        bearing = b
-      })
-      local rp = ScenEdit_AddReferencePoint({
-        side = side,
-        latitude = location.latitude,
-        longitude = location.longitude
-      })
-    end
-  end
-
-  return (rpTable)
-end
-
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
 --     if isRepeatable == nil then isRepeatable = false end
 --     if isActive == nil then isActive = true end
@@ -215,7 +168,7 @@ function AddGPSJammingZones()
   for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
     local unit, point = TryAddJammerUnit(jammer)
 
-    if unit then
+    if unit and point then
       ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
       local area = NewArea(point, {
@@ -229,12 +182,14 @@ function AddGPSJammingZones()
         area = area
       })
 
-      zone.enablers = {
-        GNSS_GLONASS = true,
-        GNSS_GPS = false,
-        GNSS_BeiDou = true,
-        GNSS_NavIC = true
-      }
+      if zone then
+        zone.enablers = {
+          GNSS_GLONASS = true,
+          GNSS_GPS = false,
+          GNSS_BeiDou = true,
+          GNSS_NavIC = true
+        }
+      end
     end
   end
 end

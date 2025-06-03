@@ -325,7 +325,7 @@ local function setCoursesForAllShips(saveData)
         if actualUnit.dbid == calculations[item.name].result.type075.dbid then
           local locationIndex = calculations[item.name].result.type075.locationIndex
           local location = calculations[item.name].result.type075.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -342,7 +342,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.dbid == calculations[item.name].result.type076.dbid then
           local locationIndex = calculations[item.name].result.type076.locationIndex
           local location = calculations[item.name].result.type076.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -359,7 +359,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.dbid == calculations[item.name].result.type072iii.dbid then
           local locationIndex = calculations[item.name].result.type072iii.locationIndex
           local location = calculations[item.name].result.type072iii.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -377,7 +377,7 @@ local function setCoursesForAllShips(saveData)
           local locationIndex = calculations[item.name].result.type072a.locationIndex
           local location = calculations[item.name].result.type072a.locations[locationIndex]
 
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -394,7 +394,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.name == 'Ferry' then
           local locationIndex = calculations[item.name].result.ferry.locationIndex
           local location = calculations[item.name].result.ferry.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -411,7 +411,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.name == 'RORO' then
           local locationIndex = calculations[item.name].result.roro.locationIndex
           local location = calculations[item.name].result.roro.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -428,7 +428,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.name == 'Barge' then
           local locationIndex = calculations[item.name].result.barge.locationIndex
           local location = calculations[item.name].result.barge.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -445,7 +445,7 @@ local function setCoursesForAllShips(saveData)
         elseif actualUnit.dbid == calculations[item.name].result.type073a.dbid then
           local locationIndex = calculations[item.name].result.type073a.locationIndex
           local location = calculations[item.name].result.type073a.locations[locationIndex]
-          actualUnit.course = GetCourseByPoints({ location })
+          actualUnit.course = { location }
           actualUnit.manualSpeed = shipSettings.shipSpeed
 
           if saveData.c.PHIBOP.isTesting then
@@ -466,11 +466,11 @@ local function setCoursesForAllShips(saveData)
 
           if locationIndex > len then
             location = calculations[item.name].result.type071InLSTArea.locations[locationIndex - len]
-            actualUnit.course = GetCourseByPoints({ location })
+            actualUnit.course = { location }
             actualUnit.manualSpeed = shipSettings.shipSpeed
           else
             location = calculations[item.name].result.type071.locations[locationIndex]
-            actualUnit.course = GetCourseByPoints({ location })
+            actualUnit.course = { location }
             actualUnit.manualSpeed = shipSettings.shipSpeed
           end
 
@@ -785,7 +785,7 @@ local function setCoursesForLSTs()
         end
 
         if unit.name ~= 'RORO' and unit.name ~= 'Barge' then
-          unit.course = GetCourseByPoints({ destinationTemp })
+          unit.course = { destinationTemp }
           unit.manualSpeed = zone.LSTSettings.speed
         end
       end
