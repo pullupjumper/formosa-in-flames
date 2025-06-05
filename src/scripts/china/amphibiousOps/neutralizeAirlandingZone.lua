@@ -16,17 +16,17 @@ if ship and ship.dbid == CONFIG.platformDBID48 then
 
     for _, contact in ipairs(contacts) do
       if contact:inArea(CONFIG.c.PHIBOP.sag[ship.group.name].area) and (contact.typed == 8) then
-        table.insert(filteredContacts, contact)
+        table.insert(filteredContacts, contact.guid)
       end
     end
 
     if GetCount(filteredContacts) > 0 then
-      local launchedNum = AttackContacts(
-        filteredContacts,
-        440 // GetCount(filteredContacts),
-        { ship },
-        2691
-      )
+      local launchedNum = AttackContacts({
+        contacts = filteredContacts,
+        qty = 440 // GetCount(filteredContacts),
+        batteries = { ship },
+        weaponDBID = 2691,
+      })
       -- ScenEdit_SpecialMessage('China', launchedNum .. ' launched')
     end
   end

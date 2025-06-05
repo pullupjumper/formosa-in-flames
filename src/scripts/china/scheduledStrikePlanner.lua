@@ -445,11 +445,11 @@ end
 local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
     if not FST.isFinished and isAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
-      local result = AttackContacts(
-        FST.evaluatedTargetlist,
-        FST.ammoPerTarget,
-        FST.batteries
-      )
+      local result = AttackContacts({
+        contacts = FST.evaluatedTargetlist,
+        qty = FST.ammoPerTarget,
+        batteries = FST.batteries,
+      })
 
       if result > 0 then
         FST.isFinished = true
@@ -545,11 +545,12 @@ if saveData.c.surface.lacm.isActivated then
     end
   end
 
-  AttackContacts(
-    CONFIG.c.surface.lacm.targetlist,
-    5,
-    ships
-  )
+  AttackContacts({
+    contacts = CONFIG.c.surface.lacm.targetlist,
+    qty = 5,
+    batteries = ships,
+    weaponDBID = CONFIG.c.surface.lacm.weaponDBID
+  })
 end
 
 if saveData.c.subSurface.slcm.isActivated then
@@ -566,11 +567,12 @@ if saveData.c.subSurface.slcm.isActivated then
     end
   end
 
-  AttackContacts(
-    CONFIG.c.subSurface.slcm.targetlist,
-    8,
-    CONFIG.c.subSurface.slcm.submarines
-  )
+  AttackContacts({
+    contacts = CONFIG.c.subSurface.slcm.targetlist,
+    qty = 8,
+    batteries = CONFIG.c.subSurface.slcm.submarines,
+    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
+  })
 end
 
 if saveData.c.ground.isActivated then

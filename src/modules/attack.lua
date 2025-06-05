@@ -1,3 +1,7 @@
+require("src.utils.gameApi")
+require("src.utils.logger")
+require("src.utils.utils")
+
 -- ---@param contact CMO__Contact
 -- ---@param qty number
 -- ---@param batteries table<CONFIG__Battery>
@@ -207,9 +211,16 @@ local function getWeaponInfo(unit, weaponDBID)
 
   -- Get currently assigned weapons
   local alreadyAllocatedWeapons = 0
-  local weaponAllocations = ScenEdit_WeaponAllocation(unit.guid, '', '')
+  local weaponAllocations, err = SafeCall(
+    "GameApi.ScenEdit_WeaponAllocation",
+    GameApi.ScenEdit_WeaponAllocation,
+    unit.guid,
+    '',
+    ''
+  )
 
-  if not weaponAllocations then
+  if err then
+    Logger.error(err)
     weaponAllocations = {}
   end
 
@@ -233,7 +244,19 @@ end
 local function getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
-  local weaponAllocations = ScenEdit_WeaponAllocation('', contactGuid, side)
+  local weaponAllocations, err = SafeCall(
+    "GameApi.ScenEdit_WeaponAllocation",
+    GameApi.ScenEdit_WeaponAllocation,
+    '',
+    contactGuid,
+    side
+  )
+
+  if err then
+    Logger.error(err)
+    weaponAllocations = {}
+  end
+
   if weaponAllocations and #weaponAllocations > 0 then
     for _, allocation in ipairs(weaponAllocations) do
       totalTargetAmmoCount = totalTargetAmmoCount + allocation.qtyAssigned
@@ -251,7 +274,13 @@ end
 ---@return boolean Whether the unit can fire
 local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   -- Check if unit is on hold
-  local doctrine = ScenEdit_GetDoctrine({ guid = unit.guid })
+  local doctrine, err = SafeCall("GameApi.ScenEdit_GetDoctrine", GameApi.ScenEdit_GetDoctrine, unit.guid)
+
+  if err then
+    Logger.error(err)
+    return false
+  end
+
   local isHold = doctrine.weapon_control_status_land == 2 or doctrine.weapon_control_status_land == '2'
 
   if isHold then
@@ -260,13 +289,13 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
-    PrintBox('China', 'func/AttackContact/No weapons available, no need to fire more')
+    Logger.log('func/AttackContact/No weapons available, no need to fire more')
     return false
   end
 
   -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
-    PrintBox('China', 'func/AttackContact/Maximum weapon allocation reached, no need to fire more')
+    Logger.log('func/AttackContact/Maximum weapon allocation reached, no need to fire more')
     return false
   end
 
@@ -274,7 +303,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
-    PrintBox('China', 'func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
+    Logger.log('func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
     return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 
@@ -286,7 +315,7 @@ end
 ---@param contact CMO__Contact The target contact
 ---@param totalAmmoRequested number Total amount of ammunition requested for this attack
 ---@param ammoAlreadyAllocated number Amount of ammunition already allocated in this attack
----@param weaponDBID number|nil Specific weapon DBID to use
+---@param weaponDBID number Specific weapon DBID to use
 ---@param grpIdx number Current group index
 ---@return boolean Whether to advance to next battery
 ---@return number Number of weapons allocated
@@ -300,7 +329,11 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
   end
 
   local guid = groupUnit.group.unitlist[grpIdx]
-  local unit = ScenEdit_GetUnit({ guid = guid })
+  local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+
+  if err then
+    Logger.error(err)
+  end
 
   if not unit then
     return true, 0 -- Unit not found, move to next, no weapons allocated
@@ -317,11 +350,15 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
     local ammoToAllocate = math.min(ammoNeeded, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result = ScenEdit_AttackContact(
+    local result, err = SafeCall("GameApi.ScenEdit_AttackContact", GameApi.ScenEdit_AttackContact,
       guid,
       contact.guid,
       { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
+
+    if err then
+      Logger.error(err)
+    end
 
     if result then
       ammoAllocated = ammoToAllocate
@@ -340,7 +377,7 @@ end
 ---@param unit CMO__Unit The unit to process
 ---@param contact CMO__Contact The target contact
 ---@param totalAmmoRequested number Total amount of ammunition requested for this attack
----@param weaponDBID number|nil Specific weapon DBID to use
+---@param weaponDBID number Specific weapon DBID to use
 ---@return table Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
@@ -353,11 +390,15 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result = ScenEdit_AttackContact(
+    local result, err = SafeCall("GameApi.ScenEdit_AttackContact", GameApi.ScenEdit_AttackContact,
       unit.guid,
       contact.guid,
       { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
+
+    if err then
+      Logger.error(err)
+    end
 
     if result then
       return { ammoAllocated = ammoToAllocate }
@@ -369,18 +410,23 @@ end
 
 ---@param contactGUID string The target contact to attack
 ---@param ammoToAllocate number Total amount of ammunition to allocate for this attack
----@param batteries table<CONFIG__Battery> Array of batteries to use for attack
+---@param batteries table<string, SBJ__Battery> Array of batteries to use for attack
 ---@param btyIdx number Starting battery index
 ---@param grpIdx number Starting group index
----@param side? string The side to use for the attack, default is 'China'
+---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
+---@param side string The side to use for the attack, default is 'China'
 ---@return table Results including next indices and number of weapons launched
-function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, side)
+function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
-  side = (side == nil) and 'China' or 'Taiwan'
+  -- side = (side == nil) and 'China' or 'Taiwan'
   local totalAmmoAllocated = 0
   local attemptCount = 0
   local maxAttempts = 50
-  local contact = ScenEdit_GetContact({ side = side, guid = contactGUID })
+
+  local contact, err = SafeCall("GameApi.ScenEdit_GetContact", GameApi.ScenEdit_GetContact, side, contactGUID)
+  if err then
+    Logger.error(err)
+  end
 
   if contact == nil then
     Logger.error("AttackContact: Contact not found with GUID: " .. tostring(contactGUID))
@@ -391,10 +437,18 @@ function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, s
 
     -- Process each battery until we've allocated enough ammo or tried all batteries
     while btyIdx <= #batteries and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
-      local actualUnit = ScenEdit_GetUnit({ guid = batteries[btyIdx].guid })
+      local actualUnit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, batteries[btyIdx].guid)
+      local wpnDBID = weaponDBID or batteries[btyIdx].weaponDBID
+
+      if err then
+        Logger.error(err)
+      end
 
       if not actualUnit then
-        actualUnit = ScenEdit_GetUnit({ side = side, unitname = batteries[btyIdx].name })
+        actualUnit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, batteries[btyIdx].name, side)
+        if err then
+          Logger.error(err)
+        end
         -- break -- Battery not found, exit loop
         if not actualUnit then break end
       end
@@ -403,7 +457,7 @@ function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, s
       if actualUnit.group then
         -- Track if we need to advance to next battery
         local advanceBattery, ammoAllocated = processUnitGroup(
-          actualUnit, contact, ammoToAllocate, totalAmmoAllocated, batteries[btyIdx].weaponDBID, grpIdx
+          actualUnit, contact, ammoToAllocate, totalAmmoAllocated, wpnDBID, grpIdx
         )
 
         -- Update our tracking variables
@@ -426,7 +480,7 @@ function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, s
         end
       else
         -- Handle single unit
-        local unitResult = processSingleUnit(actualUnit, contact, ammoToAllocate, batteries[btyIdx].weaponDBID)
+        local unitResult = processSingleUnit(actualUnit, contact, ammoToAllocate, wpnDBID)
         totalAmmoAllocated = totalAmmoAllocated + unitResult.ammoAllocated
         attemptCount = attemptCount + 1
 
@@ -445,13 +499,16 @@ function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, s
   return { btyIdx = btyIdx, grpIdx = grpIdx, ammoAllocated = totalAmmoAllocated }
 end
 
----@param contacts table<string> Array of contacts to attack
----@param qty number Total amount of ammunition to allocate for each contact
----@param batteries table<CONFIG__Battery> Array of batteries to use for attack
+---@param opts SBJ__AttackContacts_Params
 ---@return number Total number of ammunition launched across all contacts
-function AttackContacts(contacts, qty, batteries)
+function AttackContacts(opts)
   local result = { btyIdx = 1, grpIdx = 1, launchedNum = 0 }
   local totalLaunchedNum = 0
+  local contacts = opts.contacts or {}
+  local qty = opts.qty or 1
+  local batteries = opts.batteries
+  local weaponDBID = opts.weaponDBID
+  local side = opts.side or 'China'
 
   for _, contact in ipairs(contacts) do
     result = AttackContact(
@@ -459,7 +516,9 @@ function AttackContacts(contacts, qty, batteries)
       qty,
       batteries,
       result.btyIdx,
-      result.grpIdx
+      result.grpIdx,
+      weaponDBID,
+      side
     )
 
     totalLaunchedNum = totalLaunchedNum + result.ammoAllocated
@@ -467,3 +526,14 @@ function AttackContacts(contacts, qty, batteries)
 
   return totalLaunchedNum
 end
+
+-- 導出模組的公共函數和內部函數以便測試
+return {
+  AttackContact = AttackContact,
+  AttackContacts = AttackContacts,
+  getWeaponInfo = getWeaponInfo,
+  getAmmoAllocatedForTarget = getAmmoAllocatedForTarget,
+  canUnitFire = canUnitFire,
+  processUnitGroup = processUnitGroup,
+  processSingleUnit = processSingleUnit,
+}

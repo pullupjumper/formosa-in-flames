@@ -8,8 +8,9 @@
 --   }
 -- end
 
----@param numLetters number
----@return string
+--- Generate a random string of uppercase letters
+---@param numLetters number -- The number of letters to generate
+---@return string -- A string containing random uppercase letters
 function RandomTxt(numLetters)
   local totTxt = ""
   for i = 1, numLetters do
@@ -18,8 +19,9 @@ function RandomTxt(numLetters)
   return totTxt
 end
 
----@param list table
----@return number
+--- Get the count of items in a list
+---@param list table -- The list to count items in
+---@return number -- The number of items in the list
 function GetCount(list)
   if list == nil then return 0 end
   local count = 0
@@ -31,8 +33,10 @@ function GetCount(list)
   return count
 end
 
----@param list table
----@param insertedList table
+--- Insert a list of items into another list
+---@param list table -- The list to insert into
+---@param insertedList table -- The list of items to insert
+---@return table -- The updated list with items inserted
 function InsertList(list, insertedList)
   local count = GetCount(insertedList)
 
@@ -43,8 +47,9 @@ function InsertList(list, insertedList)
   return list
 end
 
----@param datetimeStr string
----@return number
+---Parse a datetime string in the format "YYYY-MM-DD HH:MM:SS" to a UTC timestamp
+---@param datetimeStr string -- The datetime string in the format "YYYY-MM-DD HH:MM:SS"
+---@return number -- The UTC timestamp corresponding to the datetime string
 function ParseDatetimeToTimestamp(datetimeStr)
   local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
@@ -75,8 +80,8 @@ end
 ---@param funcName string The name of the function being called
 ---@param func function The function to call
 ---@param ... any The arguments to pass to the function
----@return any|nil The result of the function call, or nil if an error occurred
----@return string|nil An error message if an error occurred, or nil if the call was successful
+---@return any|nil --The result of the function call, or nil if an error occurred
+---@return string|nil --An error message if an error occurred, or nil if the call was successful
 ---Example usage: local result, err = SafeCall("MyFunction", MyFunction, arg1, arg2)
 function SafeCall(funcName, func, ...)
   local args = { ... }
@@ -99,3 +104,11 @@ function SafeCall(funcName, func, ...)
 
   return result
 end
+
+return {
+  RandomTxt = RandomTxt,
+  GetCount = GetCount,
+  InsertList = InsertList,
+  ParseDatetimeToTimestamp = ParseDatetimeToTimestamp,
+  SafeCall = SafeCall
+}

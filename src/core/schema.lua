@@ -26,7 +26,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field num number
 ---@field bearing number
 ---@field distance number
----@field firstDistance number|nil
+---@field firstDistance? number
 
 ---@class SBJ__ACVLocation_Params:table
 ---@field bearing number
@@ -48,3 +48,20 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field distance number
 ---@field name string|nil
 ---@field bear_offset number|nil
+
+---@class SBJ__Battery:table
+---@field name string
+---@field guid string
+---@field reloadStartTime? number|nil @in seconds or nil
+---@field state BatteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
+---@field position table -- The position of the battery
+---@field weaponDBID number -- The weapon DBID to use for the battery
+---@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
+---@field ammunitionSection string -- The ammunition section guid to use for the battery
+
+---@class SBJ__AttackContacts_Params:table
+---@field contacts table<integer, string> -- A table of contact GUIDs to attack
+---@field qty number -- The number of salvos to launch
+---@field batteries table<string, SBJ__Battery> -- A table of batteries to use for the attack
+---@field weaponDBID? number -- The weapon DBID to use for the attack, if not specified, the default weapon will be used
+---@field side? string -- The side to use for the attack, if not specified, the side of the first battery will be used

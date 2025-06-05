@@ -273,17 +273,14 @@ CONFIG.loadoutDBID6 = 27825 -- GJ-11
 
 CONFIG.radarDistance = 70
 CONFIG.readytime = 3600 * 1.5
----@class BatteryState
----@field STATIC number
----@field REPOSITIONING number
----@field RELOAD number
----@field HIDE number
-CONFIG.batteryState = {}
-CONFIG.batteryState.STATIC = 0
-CONFIG.batteryState.REPOSITIONING = 1
-CONFIG.batteryState.RELOAD = 2
-CONFIG.batteryState.HIDE = 3
-
+---@enum CONFIG.batteryState
+--- Battery states for the ground units
+CONFIG.batteryState = {
+  STATIC = 0,
+  REPOSITIONING = 1,
+  RELOAD = 2,
+  HIDE = 3,
+}
 
 --Setup start time
 CONFIG.c.eventList = {
@@ -2879,18 +2876,10 @@ SaveData.c.ground.glcm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN99I5RL5KR9',
   },
 }
----@class CONFIG__Battery:table
----@field name string
----@field guid string
----@field reloadStartTime? number|nil @in seconds or nil
----@field state? BatteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
----@field position table
----@field weaponDBID number
----@field ammoThreshold number
----@field ammunitionSection string
+
 
 SaveData.c.ground.glcm.batteries = {
-  ---@type CONFIG__Battery
+  ---@type SBJ__Battery
   ['6Z8LM5-0HMN97ERAUODK'] = {
     guid = '6Z8LM5-0HMN97ERAUODK',
     name = '635th Bde',

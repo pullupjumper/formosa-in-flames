@@ -1,20 +1,31 @@
+local SafeCall = require "src.utils.utils".SafeCall
+local GameApi = require "src.utils.gameApi".GameApi
+local Logger = require "src.utils.logger".Logger
+
 ---@param x_latitude number
 ---@param x_longitude number
 ---@param max_radius number
 ---@return CMO__Location
 function CircularRandomPosition(x_latitude, x_longitude, max_radius)
-  local randomisationCircle = World_GetCircleFromPoint({
-    latitude = x_latitude,
-    longitude = x_longitude,
-    radius = (math.random(0, max_radius * 10) / 10),
-    numpoints = 72
-  })
+  local randomisationCircle, errorMessage = SafeCall("GameApi.World_GetCircleFromPoint", GameApi
+    .World_GetCircleFromPoint, {
+      latitude = x_latitude,
+      longitude = x_longitude,
+      radius = (math.random(0, max_radius * 10) / 10),
+      numpoints = 72
+    })
+
+  if errorMessage then
+    Logger.error("Error in World_GetCircleFromPoint: " .. tostring(errorMessage))
+  end
+
   local randomisedPoint = randomisationCircle[math.random(1, #randomisationCircle)]
   return randomisedPoint
 end
 
+---Generate a list of locations based on parameters
 ---@param params SBJ__Location_Params
----@return table <number, CMO__Location>
+---@return table<integer, CMO__Location>
 function GenerateLocations(params)
   local numTemp = params.num
   local bearingTemp = params.bearing
@@ -34,13 +45,18 @@ function GenerateLocations(params)
       distanceTemp = params.firstDistance
     end
 
-    locationTemp = World_GetPointFromBearing({
+    local newLocation, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
       LATITUDE = locationTemp.latitude,
       LONGITUDE = locationTemp.longitude,
       BEARING = bearingTemp,
       DISTANCE = distanceTemp
     })
 
+    if errorMessage then
+      Logger.error("Error in World_GetPointFromBearing: " .. tostring(errorMessage))
+    end
+
+    locationTemp = newLocation
     table.insert(locations, locationTemp)
   end
 
@@ -49,7 +65,7 @@ end
 
 ---@param position CMO__Location
 ---@param mode SBJ__AreaMode
----@return table <integer, CMO__ReferencePoint>|boolean
+---@return table<integer, CMO__ReferencePoint>|boolean
 function NewArea(position, mode)
   local side = mode.side
   local shape = mode.shape
@@ -62,35 +78,57 @@ function NewArea(position, mode)
   if shape == 'circle' then
     local distance = mode.distance
     for i = 0, 359, 45 do
-      local location = World_GetPointFromBearing({
+      local location, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
         latitude = position.latitude,
         longitude = position.longitude,
         distance = distance,
         bearing = i
       })
-      local rp = ScenEdit_AddReferencePoint({
+
+      if errorMessage then
+        Logger.error("Error in World_GetPointFromBearing (NewArea - circle): " .. tostring(errorMessage))
+      end
+
+      local newRp, errorMessage = SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi.ScenEdit_AddReferencePoint, {
         side = side,
         latitude = location.latitude,
         longitude = location.longitude
       })
-      a = a + 1
-      table.insert(rpTable, rp.name)
+
+      if errorMessage then
+        Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
+      end
+
+      if newRp then -- 只有在 newRp 有效時才插入
+        a = a + 1
+        table.insert(rpTable, newRp.name)
+      end
     end
   elseif shape == 'square' then
     local distance = mode.distance
     for i = 0, 3 do
       local b = 45 + (90 * i) + bear_offset
-      local location = World_GetPointFromBearing({
+      local location, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
         latitude = position.latitude,
         longitude = position.longitude,
         distance = distance,
         bearing = b
       })
-      local rp = ScenEdit_AddReferencePoint({
+
+      if errorMessage then
+        Logger.error("Error in World_GetPointFromBearing (NewArea - square): " .. tostring(errorMessage))
+      end
+
+      local newRp, errorMessage = SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi.ScenEdit_AddReferencePoint, {
         side = side,
         latitude = location.latitude,
         longitude = location.longitude
       })
+
+      if errorMessage then
+        Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
+      end
+      -- 這裡沒有對 rpTable 進行操作，所以不需要額外的 if newRp then 檢查
     end
   end
 
@@ -129,5 +167,15 @@ function PrintBox(side, ...)
   local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
 
   -- 一次性輸出
-  ScenEdit_SpecialMessage(side, boxString)
+  local _, errorMessage = SafeCall("GameApi.ScenEdit_SpecialMessage", GameApi.ScenEdit_SpecialMessage, side, boxString)
+  if errorMessage then
+    Logger.error("Error in ScenEdit_SpecialMessage: " .. tostring(errorMessage))
+  end
 end
+
+return {
+  CircularRandomPosition = CircularRandomPosition,
+  GenerateLocations = GenerateLocations,
+  NewArea = NewArea,
+  PrintBox = PrintBox
+}

@@ -4,12 +4,17 @@
 ---@param missions table<number, {name: string, num: number, loadoutId: number}> A list of missions to assign units to
 function AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
   local base = ScenEdit_GetUnit({ guid = fromUnit })
-  if base == nil then return end
+
+  if base == nil then
+    base = ScenEdit_GetUnit({ unitname = fromUnit })
+  end
+
+  if base == nil or base.embarkedUnits[platformType] == nil then return end
   local platforms = base.embarkedUnits[platformType]
   local filteredPlatforms = {}
 
-  for _, value in ipairs(platforms) do
-    local unit = SE_GetUnit({ guid = value })
+  for _, guid in ipairs(platforms) do
+    local unit = SE_GetUnit({ guid = guid })
     if unit ~= nil and unit.dbid == platformDBID then
       unit.manualSpeed = 'OFF'
       table.insert(filteredPlatforms, unit)
@@ -37,13 +42,13 @@ function AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, mis
   end
 end
 
----@param fromUnit string The unit guid with embarked units
----@param num number The number of units to assign to the mission
----@param weaponDBID number | 0 The database ID of the weapon to filter by, or 0 for any weapon
----@param unitDBID number | nil The database ID of the unit to filter by, or nil for any unit
----@param missionName string The name of the mission to assign units to
----@param isEscort boolean Whether the mission is an escort mission
----@return table<number, {unit: string}>|nil A list of assigned units
+---@param fromUnit string -- The unit guid with embarked units
+---@param num number -- The number of units to assign to the mission
+---@param weaponDBID number|0 -- The database ID of the weapon to filter by, or 0 for any weapon
+---@param unitDBID number|nil -- The database ID of the unit to filter by, or nil for any unit
+---@param missionName string -- The name of the mission to assign units to
+---@param isEscort boolean -- Whether the mission is an escort mission
+---@return table<integer, {unit: string}>|nil -- A list of assigned units
 function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   local airbase = ScenEdit_GetUnit({ guid = fromUnit })
 
@@ -58,8 +63,8 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
   local temp = {}
   local count = 0
 
-  for _, item in ipairs(airbase.embarkedUnits.Aircraft) do
-    local unit = ScenEdit_GetUnit({ guid = item })
+  for _, guid in ipairs(airbase.embarkedUnits.Aircraft) do
+    local unit = ScenEdit_GetUnit({ guid = guid })
     if unit == nil then goto continue end
 
     local weapons = ScenEdit_GetLoadout({ unitname = unit.guid }).weapons
