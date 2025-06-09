@@ -10,32 +10,13 @@ function Reload(battery, ammunitionSection, weaponDBID)
     for _, mount in ipairs(unit.mounts) do
       local totalWpnCurrentNum = 0
       local totalWpnDefaultNum = 0
-      -- local mountIndex = 1
-      -- local wpnIndex = 1
 
       for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
         if wpn['wpn_dbid'] == weaponDBID then
-          -- wpnIndex = wpnIdx
-          -- mountIndex = _
           totalWpnCurrentNum = totalWpnCurrentNum + wpn['wpn_current']
           totalWpnDefaultNum = totalWpnDefaultNum + wpn['wpn_maxcap']
         end
       end
-
-      -- if weaponDBID ~= nil and type(weaponDBID) == "number" then
-      --     for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-      --         if wpn['wpn_dbid'] == weaponDBID then
-      --             wpnIndex = wpnIdx
-      --             mountIndex = _
-      --             totalWpnCurrentNum = totalWpnCurrentNum + wpn['wpn_current']
-      --             totalWpnDefaultNum = totalWpnDefaultNum + wpn['wpn_maxcap']
-      --         end
-      --     end
-      -- end
-
-      -- if weaponDBID == nil then
-      --     weaponDBID = unit.mounts[mountIndex]['mount_weapons'][wpnIndex]['wpn_dbid']
-      -- end
 
       local requiredNum = totalWpnDefaultNum - totalWpnCurrentNum
 

@@ -187,7 +187,13 @@ end
 function OffloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
-  local ACVlocations = GenerateLocations(params)
+  local ACVlocations = GenerateLocations({
+    initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
+    num = params.num,
+    bearing = params.bearing,
+    distance = params.distance,
+    firstDistance = params.firstDistance
+  })
   local cargoList = {}
   local count = 0
   local resultCount = 0

@@ -3622,7 +3622,7 @@ SaveData.c.air.ATO = {
 
 
 -- Amphibious ops
-SaveData.c.PHIBOP.isTesting = false
+SaveData.c.PHIBOP.isTesting = true
 SaveData.c.PHIBOP.isShipsStartedMoving = true
 SaveData.c.PHIBOP.isShipsArrivedInStagingArea = false
 SaveData.c.PHIBOP.amphibiousAssaultStartTime = nil

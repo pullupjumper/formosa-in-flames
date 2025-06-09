@@ -53,7 +53,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field name string
 ---@field guid string
 ---@field reloadStartTime? number|nil @in seconds or nil
----@field state BatteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
+---@field state CONFIG.batteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
 ---@field position table -- The position of the battery
 ---@field weaponDBID number -- The weapon DBID to use for the battery
 ---@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
@@ -65,3 +65,22 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field batteries table<string, SBJ__Battery> -- A table of batteries to use for the attack
 ---@field weaponDBID? number -- The weapon DBID to use for the attack, if not specified, the default weapon will be used
 ---@field side? string -- The side to use for the attack, if not specified, the side of the first battery will be used
+
+---@class SBJ__MissionSettings:table
+---@field name string -- The name of the mission
+---@field num number -- The number of units to assign to the mission
+---@field loadoutId number -- The loadout ID to filter by, 0 for any loadout
+
+---@class SBJ__GenerateMissilePaths_Params
+---@field target_lat number 目標緯度
+---@field target_lon number 目標經度
+---@field launcher_lat number 發射器緯度
+---@field launcher_lon number 發射器經度
+---@field radar_range number 雷達範圍（海浬）
+---@field missile_count number|nil 飛彈數量，預設為 5
+---@field missile_speed_kts number|nil 飛彈速度（節），預設為 600
+---@field missile_range_nm number|nil 飛彈最大射程（海浬），預設為 100
+
+---@class SBJ__MissilePath
+---@field waypoints table<integer, CMO__Location> 飛彈路徑點列表
+---@field launch_time number 發射時間（UTC 時間戳）

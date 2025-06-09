@@ -216,14 +216,14 @@ local function handleReconQueue(saveData)
       local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
-        q.unitGUID = units[1].unit
+        q.unitGUID = units[1]
         q.hasLaunched = true
       end
     elseif shouldTakeoffAfterStrike(q) and isAfterStartTime(q.missionStartTime) then
       local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
 
       if units and #units > 0 then
-        q.unitGUID = units[1].unit
+        q.unitGUID = units[1]
         q.hasLaunched = true
         q.isFinished = true
       end
@@ -231,7 +231,7 @@ local function handleReconQueue(saveData)
       local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
-        q.unitGUID = units[1].unit
+        q.unitGUID = units[1]
         q.hasLaunched = true
       end
     end

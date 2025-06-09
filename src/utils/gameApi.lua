@@ -2,13 +2,12 @@ GameApi = {}
 
 ---comment
 ---@param guid string -- The GUID of the unit
----@param side? string -- The side of the unit, if not provided, will search by GUID only
 ---@return CMO__Unit -- Returns the unit object associated with the given GUID or side
-function GameApi.ScenEdit_GetUnit(guid, side)
+function GameApi.ScenEdit_GetUnit(guid)
   local result = ScenEdit_GetUnit({ guid = guid })
 
   if result == nil then
-    result = ScenEdit_GetUnit({ side = side, unitname = guid })
+    result = ScenEdit_GetUnit({ unitname = guid })
   end
 
   if result == nil then
@@ -114,6 +113,21 @@ end
 ---@return CMO__TableOfLocations -- Returns a table of locations representing a circle around a point
 function GameApi.World_GetCircleFromPoint(params)
   return World_GetCircleFromPoint(params)
+end
+
+---Gets a Mission wrapper for the specfied mission name or guid.
+---@param SideNameOrGuid string @ The name of the side or its guid.
+---@param missionNameOrGuid string @ the name or guid of the mission.
+---@return CMO__Mission|nil @ The associated mission wrapper or nil on failure.
+function GameApi.ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
+  local result = ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
+
+  if result == nil then
+    error("Mission not found with side: " ..
+      tostring(SideNameOrGuid) .. ", missionNameOrGuid: " .. tostring(missionNameOrGuid))
+  end
+
+  return result
 end
 
 return {

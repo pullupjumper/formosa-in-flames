@@ -42,7 +42,8 @@ function LaunchUnits(baseGUID, course, num, unitDBID, unitType)
       unit.course = course
       -- ScenEdit_SetUnit({ guid = unit.guid, course = course })
       count = count + 1
-      table.insert(temp, { unit = unit.guid, hasLaunched = false })
+      -- table.insert(temp, { unit = unit.guid, hasLaunched = false })
+      table.insert(temp, unit.guid)
     end
 
     if count >= num then break end
@@ -54,7 +55,7 @@ end
 
 ---@param h6n CMO__Unit
 ---@param course CMO__TableOfWaypoints
----@param contact CMO__Contact | nil
+---@param contact CMO__Contact|nil
 function LaunchWZ8(h6n, course, contact)
   local wz8 = ScenEdit_AddUnit({
     side = 'China',

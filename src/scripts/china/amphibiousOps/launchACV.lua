@@ -20,7 +20,7 @@ if ship and (ship.dbid == CONFIG.platformDBID7
       local result = LaunchACV({
         ship = ship,
         num = 5,
-        bearing = zone.ACV.bearing,
+        bearing = zone.ACV.bearing + 90,
         distance = zone.ACV.distance,
         speed = zone.ACV.speed,
         destination = zone.ACV.destination
