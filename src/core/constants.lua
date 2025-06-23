@@ -1,3 +1,4 @@
+---@class SBJ__CONFIG
 CONFIG = {}
 CONFIG.isDevMode = true
 CONFIG.isSaved = true
@@ -283,12 +284,11 @@ CONFIG.batteryState = {
 }
 
 --Setup start time
-CONFIG.c.eventList = {
-  { name = '(China) Target runways or emergency highway strips', startTime = '2027-06-09 02:35:00' },
-  { name = '(China) (Amphibious ops) Setup start time',          startTime = '2027-06-09 02:40:00' },
-  -- { name = '(China) (Amphibious ops) Setup start time',          startTime = '2027-06-09 01:00:00' },
-  { name = '(China) (Surface/LACM) Setup start time',            startTime = '2027-06-09 06:00:00' },
-  { name = '(China) (Sub-surface/SLCM) Setup start time',        startTime = '2027-06-09 06:30:00' },
+CONFIG.c.triggers = {
+  -- ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 02:40:00' },
+  ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 1:00:00' },
+  ['(China) (Surface/LACM) start time'] = { startTime = '2027-06-09 06:00:00' },
+  ['(China) (Sub-surface/SLCM) start time'] = { startTime = '2027-06-09 06:30:00' },
 }
 
 
@@ -676,11 +676,6 @@ CONFIG.c.ground.srbm.positions = {
 }
 CONFIG.c.ground.srbm.contactAge = 30 * 60
 CONFIG.c.ground.srbm.reloadTime = 5 * 60
-CONFIG.c.ground.srbm.contingencyRunways = {
-  { base = { guid = 'IC8B0X-0HN7DO7L1HUU1' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDN' } },
-  { base = { guid = 'IC8B0X-0HN7DO7L1HUTV' }, runway = { guid = 'X58F5H-0HN0KRS0IJKDM' } },
-  { base = { guid = 'IC8B0X-0HN7DO7L1HUTT' }, runway = { guid = 'X58F5H-0HN0KRS0IJKQB' } },
-}
 
 -- MRBM
 CONFIG.c.ground.mrbm.wpnDefault = 24
@@ -1031,12 +1026,6 @@ CONFIG.c.air.landBased.deployedACs = {
     }
   },
 }
--- CONFIG.c.air.landBased.lacm.strikeInterval = 50 * 60
--- CONFIG.c.air.landBased.lacm.strikeInterval = 30 * 60
--- CONFIG.c.air.landBased.ascm.strikeInterval = 0
--- CONFIG.c.air.shipBased.lacm.strikeInterval = 80 * 60
--- CONFIG.c.air.landBased.aam.strikeInterval = 0
--- CONFIG.c.air.landBased.gbu.strikeInterval = 0
 
 -- Amphibious ops
 CONFIG.c.PHIBOP.periodOfTime = 5 * 60
@@ -2692,9 +2681,10 @@ CONFIG.s.destroyingCivilianFacility = -100
 
 
 
-
+---@class SBJ__SaveData
 SaveData = {}
 SaveData.c = {}
+SaveData.c.targetlist = {}
 SaveData.c.air = {}
 SaveData.c.air.landBased = {}
 SaveData.c.air.shipBased = {}
@@ -3140,7 +3130,9 @@ SaveData.c.ground.FSP = {
       {
         name = 'RADAR',
         wpnSystem = 'SRBM',
-        missionName = 'STRIKE/RADAR',
+        queryParams = {
+          { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3166,7 +3158,17 @@ SaveData.c.ground.FSP = {
       {
         name = 'RUNWAY',
         wpnSystem = 'SRBM',
-        missionName = 'STRIKE/RUNWAY/1',
+        queryParams = {
+          { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3192,7 +3194,13 @@ SaveData.c.ground.FSP = {
       {
         name = 'PORT',
         wpnSystem = 'SRBM',
-        missionName = 'STRIKE/PORT/1',
+        queryParams = {
+          { baseName = 'Port of Keelung', subTypes = { 'Pier' } },
+          { baseName = 'Suao Port',       subTypes = { 'Pier' } },
+          { baseName = 'Kaohsiung Port',  subTypes = { 'Pier' } },
+          { baseName = 'Magong Port',     subTypes = { 'Pier' } },
+          { baseName = nil,               subTypes = { 'ASM' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3213,7 +3221,12 @@ SaveData.c.ground.FSP = {
       {
         name = 'SHELTER',
         wpnSystem = 'SRBM',
-        missionName = 'STRIKE/SHELTER/1',
+        queryParams = {
+          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3246,7 +3259,6 @@ SaveData.c.ground.FSP = {
       {
         name = 'PINGTAN',
         wpnSystem = 'MLRS',
-        missionName = 'STRIKE/C2/N',
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3268,7 +3280,6 @@ SaveData.c.ground.FSP = {
       {
         name = 'CHINCHEW',
         wpnSystem = 'MLRS',
-        missionName = 'STRIKE/C2/S',
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3301,7 +3312,10 @@ SaveData.c.ground.FSP = {
       {
         name = 'HELIPAD',
         wpnSystem = 'GLCM',
-        missionName = 'STRIKE/HELIPAD',
+        queryParams = {
+          { baseName = 'Guiren AAB',  subTypes = { 'Helipad' } },
+          { baseName = 'Longtan AAB', subTypes = { 'Helipad' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3323,7 +3337,11 @@ SaveData.c.ground.FSP = {
       {
         name = 'EMERGENCY HIGHWAY STRIP',
         wpnSystem = 'GLCM',
-        missionName = 'STRIKE/EMERGENCY HIGHWAY STRIP',
+        queryParams = {
+          { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+        },
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3356,7 +3374,6 @@ SaveData.c.ground.FSP = {
       {
         name = 'ANTISHIP',
         wpnSystem = 'MRBM',
-        missionName = nil,
         targetlist = {},
         evaluatedTargetlist = {},
         batteries = {
@@ -3385,6 +3402,7 @@ SaveData.c.air.ATO = {
   ['STRIKE/AB/W/1'] = {
     name = 'STRIKE/AB/W/1',
     isActivated = true,
+    isFirstWave = true,
     haeLaunched = false,
     strikeInterval = 30 * 60,
     reconUAVs = {
@@ -3429,10 +3447,18 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/S/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+        },
         area = CONFIG.c.areas["OPAREA/SOUTH"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = '2027-06-09 03:40:00',
         -- takeoffTime = '2027-06-09 01:00:00'
       },
@@ -3442,10 +3468,18 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/C',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
+          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } },
+        },
         area = CONFIG.c.areas["OPAREA/CENTER"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = nil
       },
       {
@@ -3454,79 +3488,103 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
         jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
         missionName = 'STRIKE/AB/N/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+        },
         area = CONFIG.c.areas["OPAREA/NORTH"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = nil
       },
     }
   },
-  -- ['STRIKE/AB/W/2'] = {
-  --   name = 'STRIKE/AB/W/2',
-  --   isActivated = true,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       missionName = 'STRIKE/AB/S/1',
-  --       area = {
-  --         'RP-156975', 'RP-156976', 'RP-156977', 'RP-156978',
-  --         'RP-156979', 'RP-156980', 'RP-156981', 'RP-156982',
-  --         'RP-156983', 'RP-156984', 'RP-156985', 'RP-156986',
-  --         'RP-156987'
-  --       },
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       takeoffTime = nil
-  --     },
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       missionName = 'STRIKE/AB/N/1',
-  --       area = { 'RP-8012', 'RP-8013', 'RP-8014', 'RP-8015' },
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       takeoffTime = nil
-  --     },
-  --   }
-  -- },
-  -- ['STRIKE/AB/W/3'] = {
-  --   name = 'STRIKE/AB/W/3',
-  --   isActivated = true,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-  --       jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-  --       missionName = 'STRIKE/AB/S/2',
-  --       area = {
-  --         'RP-156975', 'RP-156976', 'RP-156977', 'RP-156978',
-  --         'RP-156979', 'RP-156980', 'RP-156981', 'RP-156982',
-  --         'RP-156983', 'RP-156984', 'RP-156985', 'RP-156986',
-  --         'RP-156987'
-  --       },
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       takeoffTime = nil
-  --     },
-  --   }
-  -- },
+  ['STRIKE/AB/W/2'] = {
+    name = 'STRIKE/AB/W/2',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    packages = {
+      {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'STRIKE/AB/S/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+        },
+        area = CONFIG.c.areas["OPAREA/SOUTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 04:40:00',
+      },
+      {
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'STRIKE/AB/N/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/NORTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = nil
+      },
+    }
+  },
+  ['STRIKE/AB/W/3'] = {
+    name = 'STRIKE/AB/W/3',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    packages = {
+      {
+        striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
+        missionName = 'STRIKE/AB/S/2',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Pingtung South AB', subTypes = { 'Ammo Bunker' } },
+          { baseName = 'Tainan AB',         subTypes = { 'Ammo Bunker' } },
+          { baseName = 'Magong AB',         subTypes = { 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/SOUTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 05:40:00',
+      },
+    }
+  },
   ['STRIKE/AB/E/1'] = {
     name = 'STRIKE/AB/E/1',
     isActivated = true,
+    isFirstWave = false,
     haeLaunched = false,
     strikeInterval = 80 * 60,
     reconUAVs = nil,
@@ -3537,10 +3595,17 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/JHI',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Jhihhang AB', subTypes = { 'Shelter' } },
+        },
         area = CONFIG.c.areas["OPAREA/EAST"],
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = '2027-06-09 07:00:00',
       },
       {
@@ -3549,10 +3614,17 @@ SaveData.c.air.ATO = {
         wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
         jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
         missionName = 'STRIKE/AB/E',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Jiashan AB', subTypes = { 'Shelter' } },
+        },
         area = CONFIG.c.areas["OPAREA/EAST"],
         hasLaunched = false,
         tanker = nil,
         filterName = nil,
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = nil
       },
     }
@@ -3560,6 +3632,7 @@ SaveData.c.air.ATO = {
   ['ASUW/N/1'] = {
     name = 'ASUW/N/1',
     isActivated = true,
+    isFirstWave = false,
     haeLaunched = false,
     strikeInterval = 30 * 60,
     reconUAVs = nil,
@@ -3569,17 +3642,24 @@ SaveData.c.air.ATO = {
         escort = nil,
         wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 8, },
         missionName = 'ASUW/N',
+        missionType = 'sea',
+        targetlist = {},
+        queryParams = nil,
         area = CONFIG.c.areas["OPAREA/D"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeNavalTargetFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = '2027-06-09 02:40:00'
+        -- takeoffTime = '2027-06-09 01:00:00'
       }
     },
   },
   ['AIR INTERCEPT/E/1'] = {
     name = 'AIR INTERCEPT/E/1',
     isActivated = true,
+    isFirstWave = false,
     haeLaunched = false,
     strikeInterval = 30 * 60,
     reconUAVs = nil,
@@ -3589,10 +3669,15 @@ SaveData.c.air.ATO = {
         escort = nil,
         wildWeasel = nil,
         missionName = 'AIR INTERCEPT/E',
+        missionType = 'air',
+        targetlist = {},
+        queryParams = nil,
         area = CONFIG.c.areas["OPAREA/PACIFIC"],
         hasLaunched = false,
         tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
         filterName = 'makeAirborneFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = '2027-06-09 06:40:00',
         -- takeoffTime = '2027-06-09 01:00:00'
       }
@@ -3601,6 +3686,7 @@ SaveData.c.air.ATO = {
   ['CAS/N/1'] = {
     name = 'CAS/N/1',
     isActivated = false,
+    isFirstWave = false,
     haeLaunched = false,
     strikeInterval = 30 * 60,
     packages = {
@@ -3610,10 +3696,15 @@ SaveData.c.air.ATO = {
         wildWeasel = nil,
         jammer = nil,
         missionName = 'CAS/N',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = nil,
         area = CONFIG.c.areas["LANDING/TAOYUAN"],
         hasLaunched = false,
         tanker = nil,
         filterName = 'makeInfentryFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
         takeoffTime = '2027-06-09 01:30:00'
       },
     }
@@ -3622,12 +3713,13 @@ SaveData.c.air.ATO = {
 
 
 -- Amphibious ops
+SaveData.c.PHIBOP.startTime = CONFIG.c.triggers['(China) (Amphibious ops) start time'].startTime
 SaveData.c.PHIBOP.isTesting = true
 SaveData.c.PHIBOP.isShipsStartedMoving = true
-SaveData.c.PHIBOP.isShipsArrivedInStagingArea = false
+SaveData.c.PHIBOP.isWaitingForShipArrival = false
 SaveData.c.PHIBOP.amphibiousAssaultStartTime = nil
-SaveData.c.PHIBOP.isAmphibiousAssaultLaunched = false
-SaveData.c.PHIBOP.isSecondWaveStarted = false
+SaveData.c.PHIBOP.isWaitingForAmphibiousAssault = false
+SaveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
 SaveData.c.PHIBOP.airlandingMissionStartTime = nil
 SaveData.c.PHIBOP.calculations = {
   ['Taoyuan'] = {
@@ -3685,11 +3777,13 @@ SaveData.c.PHIBOP.barges = {
 }
 
 -- Land strike from DDG
-SaveData.c.surface.lacm.isActivated = false
+SaveData.c.surface.lacm.isActivated = true
+SaveData.c.surface.lacm.startTime = CONFIG.c.triggers['(China) (Surface/LACM) start time'].startTime
 
 
 -- SLCM
-SaveData.c.subSurface.slcm.isActivated = false
+SaveData.c.subSurface.slcm.isActivated = true
+SaveData.c.subSurface.slcm.startTime = CONFIG.c.triggers['(China) (Sub-surface/SLCM) start time'].startTime
 
 
 -- Runway repairment

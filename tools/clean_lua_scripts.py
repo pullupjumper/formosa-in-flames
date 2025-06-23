@@ -9,16 +9,25 @@ def process_lua_content(content):
     # 1. 移除完整的 require 語句
     # 匹配 'local var = require("module")' 或 'require("module")'
     # 考慮到 require 可能在行首或有縮排
+    # 1. 移除完整的 require 語句
+    # 匹配 'local var = require("module")', 'var = require("module")' 或 'require("module")'
+    # 考慮到 require 可能在行首或有縮排
+    # 1. 移除完整的 require 語句
+    # 匹配 'local var = require("module")', 'var = require("module")' 或 'require("module")'
+    # 考慮到 require 可能在行首或有縮排，以及可能帶有 .submodule
+    # 這裡嘗試匹配整個 require 語句的行
+    # 1. 移除完整的 require 語句
+    # 匹配 'local var = require("module")', 'var = require("module")' 或 'require("module")'
+    # 考慮到 require 可能在行首或有縮排，以及可能帶有 .submodule
+    # 這裡嘗試匹配整個 require 語句的行
     content = re.sub(
-        r"^\s*local\s+[\w_]+\s*=\s*require\s*([\"'])(?:(?!\1).)*\1(?:\s*\.[\w_]+)*\s*(--.*)?[\n\r]*",
-        "",
+        # r"^\s*(?:local\s+)?(?:[\w_]+\s*=\s*)?require\s*([\"'])(?:(?!\1).)*\1(?:\s*\.[\w_]+)*\s*(--.*)?[\n\r]*",
+        # "",
+        r'^\s*(local\s+)?\w*\s*=?\s*require\([^)]+\)(\.\w+)?\s*$',
+        '',
         content,
         flags=re.MULTILINE)
-    content = re.sub(
-        r"^\s*require\s*([\"'])(?:(?!\1).)*\1(?:\s*\.[\w_]+)*\s*(--.*)?[\n\r]*",
-        "",
-        content,
-        flags=re.MULTILINE)
+    content = re.sub(r'\n+', '\n', content).strip()
 
     # 2. 僅移除模組層級的 return {} 或 return { ... } 語句
     # 這裡使用一個更精確的模式，嘗試匹配檔案末尾的 return { ... } 結構
@@ -29,6 +38,45 @@ def process_lua_content(content):
                      "",
                      content,
                      flags=re.DOTALL)
+
+    # 3. 移除模組層級的 return module 語句 (不帶括號)
+    # 為了避免誤刪函數內部的 return，我們將從檔案末尾開始處理。
+    lines = content.splitlines()
+
+    # 從後往前遍歷，找到第一個非空且非註釋的行
+    i = len(lines) - 1
+    while i >= 0:
+        line = lines[i].strip()
+        # 忽略空行和註釋行
+        if not line or line.startswith("--"):
+            i -= 1
+            continue
+
+        # 檢查是否為模組層級的 return module
+        # 匹配 'return module_name' 形式，且不是 'return {}'
+        if re.match(r"^return\s+[\w_.]+\s*$", line) and not re.match(
+                r"^return\s*\{\s*(?:[^}]*?)\s*\}\s*$", line):
+            # 找到模組層級的 return，將其移除
+            lines[i] = ""  # 將該行設置為空字串，相當於移除
+            # 移除該 return 語句後，其後面的所有空白行和註釋行也應該被移除
+            j = i + 1
+            while j < len(lines):
+                if not lines[j].strip() or lines[j].strip().startswith("--"):
+                    lines[j] = ""
+                else:
+                    break  # 遇到非空非註釋行，停止移除
+                j += 1
+            break  # 找到並處理完畢，退出循環
+        else:
+            break  # 遇到其他有效程式碼，停止向上查找
+        i -= 1
+
+    content = "\n".join(lines)
+    # 清理多餘的空行，特別是檔案末尾
+    content = re.sub(r"(\n\s*){2,}$", "\n", content)  # 移除多餘的空行
+    content = content.strip()  # 移除首尾空白
+
+    return content
 
     return content
 

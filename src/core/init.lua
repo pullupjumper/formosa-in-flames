@@ -1,54 +1,3 @@
-local function initRunways(saveData)
-  -- saveData.c.ground.srbm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RADAR')
-  -- saveData.c.ground.srbm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/RUNWAY/1')
-  -- saveData.c.ground.srbm.packages[2].batchTargetlists[2] = InitTargetList('China', 'STRIKE/RUNWAY/2')
-  -- saveData.c.ground.srbm.packages[3].batchTargetlists[1] = InitTargetList('China', 'STRIKE/PORT/1')
-  -- saveData.c.ground.srbm.packages[3].batchTargetlists[2] = InitTargetList('China', 'STRIKE/PORT/2')
-  -- saveData.c.ground.srbm.packages[4].batchTargetlists[1] = InitTargetList('China', 'STRIKE/SHELTER/1')
-  -- saveData.c.ground.srbm.packages[4].batchTargetlists[2] = InitTargetList('China', 'STRIKE/SHELTER/2')
-  -- saveData.c.ground.srbm.packages[4].batchTargetlists[3] = InitTargetList('China', 'STRIKE/SHELTER/3')
-  -- saveData.c.ground.glcm.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/HELIPAD')
-  -- saveData.c.ground.glcm.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/EMERGENCY HIGHWAY STRIP')
-  -- saveData.c.ground.mlrs.packages[1].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/N')
-  -- saveData.c.ground.mlrs.packages[2].batchTargetlists[1] = InitTargetList('China', 'STRIKE/C2/S')
-
-  -- for _, value in ipairs(saveData.c.ground.srbm.packages[2].batchTargetlists[2]) do
-  --   local contact = ScenEdit_GetContact({ side = 'China', guid = value.guid })
-
-  --   if contact then
-  --     table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
-  --   end
-  -- end
-  local mission = ScenEdit_GetMission('China', 'STRIKE/RUNWAY/2')
-
-  if mission then
-    for _, guid in ipairs(mission.targetlist) do
-      local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
-
-      if contact then
-        table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
-      end
-    end
-  end
-
-
-  local units = VP_GetSide({ Side = 'China' }).units
-
-  for _, v in ipairs(units) do
-    local unit = SE_GetUnit({ guid = v.guid })
-
-    if unit and (unit.dbid == 55
-          or unit.dbid == 43
-          or unit.dbid == 757
-          or unit.dbid == 1422
-          or unit.dbid == 1424
-          or unit.dbid == 1423
-          or unit.dbid == 1421) then
-      table.insert(saveData.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
-    end
-  end
-end
-
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -214,17 +163,6 @@ local function initSIGINT(saveData)
   end
 end
 
-local function setupEventStartTime()
-  for _, event in ipairs(CONFIG.c.eventList) do
-    ScenEdit_SetTrigger({
-      mode = 'update',
-      name = event.name,
-      type = 'Time',
-      time = event.startTime
-    })
-  end
-end
-
 local function setupReconQueue(saveData)
   for _, item in pairs(saveData.c.air.ATO) do
     if item.reconUAVs then
@@ -240,6 +178,13 @@ local function initATO(saveData)
         PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
       end
 
+      if type(package.queryParams) == 'table' then
+        package.targetlist = SelectTargetsByQueryParams({
+          targetlist = saveData.c.targetlist,
+          queryParams = package.queryParams
+        })
+      end
+
       if package.takeoffTime == nil and index > 1 then
         package.takeoffTime = os.date(
           "%Y-%m-%d %I:%M:%S",
@@ -253,14 +198,11 @@ end
 local function initFSP(saveData)
   for key, FSEM in pairs(saveData.c.ground.FSP) do
     for index, FST in ipairs(FSEM.FSTs) do
-      if type(FST.missionName) == 'string' then
-        local mission = ScenEdit_GetMission('China', FST.missionName)
-
-        if mission then
-          for _, target in ipairs(mission.targetlist) do
-            table.insert(FST.targetlist, target)
-          end
-        end
+      if type(FST.queryParams) == 'table' then
+        FST.targetlist = SelectTargetsByQueryParams({
+          targetlist = saveData.c.targetlist,
+          queryParams = FST.queryParams
+        })
       end
 
       if FST.startTime == nil and index == 1 then
@@ -277,7 +219,7 @@ local function initFSP(saveData)
   end
 end
 
-function GetTargetlist()
+local function initTargetlist(saveData)
   local contacts = ScenEdit_GetContacts('China')
   local bases = {
     ['Jiashan AB'] = {},
@@ -414,10 +356,68 @@ function GetTargetlist()
           subType = contact.type_description,
         })
       end
+
+      if string.find(contact.type_description, 'Sky Bow') ~= nil then
+        table.insert(targetlist, {
+          name = contact.type_description,
+          guid = contact.guid,
+          category = 'SAM',
+          subType = contact.type_description,
+        })
+      end
+
+      if string.find(contact.type_description, 'Hengshan ROC command') ~= nil then
+        table.insert(targetlist, {
+          name = contact.type_description,
+          guid = contact.guid,
+          category = 'C2',
+          subType = contact.type_description,
+        })
+      end
     end
   end
 
-  return targetlist
+  saveData.c.targetlist = targetlist
+end
+
+local function initRunways(saveData)
+  local targetlist = SelectTargetsByQueryParams({
+    targetlist = saveData.c.targetlist,
+    queryParams = {
+      { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+      { baseName = 'Jiashan AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    },
+  })
+  for _, guid in ipairs(targetlist) do
+    local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
+    if contact then
+      table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
+    end
+  end
+
+  local units = VP_GetSide({ Side = 'China' }).units
+
+  for _, v in ipairs(units) do
+    local unit = SE_GetUnit({ guid = v.guid })
+
+    if unit and (unit.dbid == 55
+          or unit.dbid == 43
+          or unit.dbid == 757
+          or unit.dbid == 1422
+          or unit.dbid == 1424
+          or unit.dbid == 1423
+          or unit.dbid == 1421) then
+      table.insert(saveData.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
+    end
+  end
 end
 
 if CONFIG.isSaved then
@@ -427,12 +427,13 @@ end
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].targetlist <= 0 then
-  initRunways(saveData)
   CalculateDestination(saveData)
   initAC(saveData)
-  setupEventStartTime()
+  initTargetlist(saveData)
   initATO(saveData)
   initFSP(saveData)
+  initRunways(saveData)
+
 
   if saveData.t.IADS.isActivated then
     initC2(saveData)

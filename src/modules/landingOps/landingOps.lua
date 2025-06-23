@@ -440,3 +440,12 @@ function CalculateDestination(saveData)
     end
   end
 end
+
+return {
+  UpdateCargo = UpdateCargo,
+  TransferCargo = TransferCargo,
+  DeleteCargo = DeleteCargo,
+  LaunchACV = LaunchACV,
+  OffloadVehicles = OffloadVehicles,
+  CalculateDestination = CalculateDestination
+}

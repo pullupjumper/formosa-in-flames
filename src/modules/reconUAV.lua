@@ -115,3 +115,124 @@ function LaunchWZ8(h6n, course, contact)
   h6n:RTB(true)
   return wz8
 end
+
+local function shouldTakeoffBeforeStrike(q)
+  return (not q.hasLaunched) and q.takeoffTime ~= nil and q.missionStartTime ~= nil
+end
+
+local function shouldTakeoffAfterStrike(q)
+  return (not q.hasLaunched) and q.missionStartTime ~= nil
+end
+
+local function isH6N(q)
+  return not q.hasLaunched and q.unitDBID == CONFIG.platformDBID76
+end
+
+local function shouldEnterTargetArea(q)
+  return q.hasLaunched and not q.isFinished and q.takeoffTime ~= nil and q.missionStartTime ~= nil
+end
+
+local function shouldRTB(q)
+  return q.hasLaunched and not q.isFinished
+end
+
+function HandleReconQueue(saveData)
+  for _, q in ipairs(saveData.c.recon.queue) do
+    if shouldTakeoffBeforeStrike(q) and IsAfterStartTime(q.takeoffTime) then
+      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+
+      if units and #units > 0 then
+        q.unitGUID = units[1]
+        q.hasLaunched = true
+      end
+    elseif shouldTakeoffAfterStrike(q) and IsAfterStartTime(q.missionStartTime) then
+      local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
+
+      if units and #units > 0 then
+        q.unitGUID = units[1]
+        q.hasLaunched = true
+        q.isFinished = true
+      end
+    elseif isH6N(q) and IsAfterStartTime(q.takeoffTime) then
+      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+
+      if units and #units > 0 then
+        q.unitGUID = units[1]
+        q.hasLaunched = true
+      end
+    end
+
+    if shouldEnterTargetArea(q) and IsAfterStartTime(q.missionStartTime) then
+      local unit = SE_GetUnit({ guid = q.unitGUID })
+
+      if unit then
+        ScenEdit_AssignUnitToMission(unit.guid, q.missionName)
+        q.isFinished = true
+      end
+    elseif shouldRTB(q) then
+      local unit = SE_GetUnit({ guid = q.unitGUID })
+
+      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
+        unit:RTB(true)
+        q.isFinished = true
+      end
+    end
+  end
+end
+
+function TrackTarget(saveData, units, UAVDBID, target)
+  local UAV = nil
+  local speed = 115
+  local type = 'BZK005'
+
+  if UAVDBID == CONFIG.platformDBID12 then
+    speed = 3300
+    type = 'WZ8'
+  end
+
+  for guid, value in pairs(saveData.c.recon.temp[type]) do
+    if value.targetGUID == target.guid then
+      local unit = SE_GetUnit({ guid = guid })
+      if unit then return true end
+    end
+  end
+
+  if UAV == nil then
+    local d = 1000
+
+    for _, value in ipairs(units) do
+      local unit = SE_GetUnit({ guid = value.guid })
+
+      if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
+        local distance = Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, target.guid)
+        if distance < d then
+          d = distance
+          UAV = unit
+        end
+      end
+    end
+  end
+
+  if UAV and #UAV.course == 0 then
+    if UAV.mission then UAV.mission = '' end
+
+    UAV.course = { {
+      latitude = target.latitude,
+      longitude = target.longitude,
+      desiredSpeed = speed,
+      presetThrottle = 'Military'
+    } }
+
+    saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
+    return true
+  end
+
+  return false
+end
+
+return {
+  LaunchWZ8 = LaunchWZ8,
+  AssignEmbarkedUnitToStrikeMission = AssignEmbarkedUnitToStrikeMission,
+  HandleReconQueue = HandleReconQueue,
+  TrackTarget = TrackTarget
+}

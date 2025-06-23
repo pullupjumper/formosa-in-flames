@@ -1,6 +1,6 @@
-local SafeCall = require "src.utils.utils".SafeCall
-local GameApi = require "src.utils.gameApi".GameApi
-local Logger = require "src.utils.logger".Logger
+SafeCall = require("src.utils.utils").SafeCall
+GameApi = require("src.utils.gameApi")
+Logger = require("src.utils.logger")
 
 ---@param x_latitude number
 ---@param x_longitude number
@@ -173,9 +173,22 @@ function PrintBox(side, ...)
   end
 end
 
+---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
+---@return boolean
+function IsAfterStartTime(time)
+  local result, err = SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
+
+  if err then
+    Logger.error("Error in ScenEdit_CurrentTime: " .. err)
+  end
+
+  return result > ParseDatetimeToTimestamp(time)
+end
+
 return {
   CircularRandomPosition = CircularRandomPosition,
   GenerateLocations = GenerateLocations,
   NewArea = NewArea,
-  PrintBox = PrintBox
+  PrintBox = PrintBox,
+
 }

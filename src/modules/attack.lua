@@ -1,6 +1,6 @@
-require("src.utils.gameApi")
-require("src.utils.logger")
-require("src.utils.utils")
+GameApi = require("src.utils.gameApi")
+Logger = require("src.utils.logger")
+SafeCall = require("src.utils.utils").SafeCall
 
 -- ---@param contact CMO__Contact
 -- ---@param qty number
@@ -424,9 +424,9 @@ function AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, w
   local maxAttempts = 50
 
   local contact, err = SafeCall("GameApi.ScenEdit_GetContact", GameApi.ScenEdit_GetContact, side, contactGUID)
-  if err then
-    Logger.error(err)
-  end
+  -- if err then
+  --   Logger.error(err)
+  -- end
 
   if contact == nil then
     Logger.error("AttackContact: Contact not found with GUID: " .. tostring(contactGUID))

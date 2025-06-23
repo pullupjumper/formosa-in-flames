@@ -1,17 +1,30 @@
+SafeCall = require("src.utils.utils").SafeCall
+Logger = require("src.utils.logger")
 GameApi = {}
 
 ---comment
 ---@param guid string -- The GUID of the unit
 ---@return CMO__Unit -- Returns the unit object associated with the given GUID or side
 function GameApi.ScenEdit_GetUnit(guid)
-  local result = ScenEdit_GetUnit({ guid = guid })
+  -- local result = ScenEdit_GetUnit({ guid = guid })
 
-  if result == nil then
-    result = ScenEdit_GetUnit({ unitname = guid })
-  end
+  -- if result == nil then
+  --   result = ScenEdit_GetUnit({ unitname = guid })
+  -- end
 
-  if result == nil then
-    error("Unit not found with guid: " .. tostring(guid))
+  -- if result == nil then
+  --   error("Unit not found with guid: " .. tostring(guid))
+  -- end
+
+  -- return result
+  local result, err = SafeCall('GameApi.ScenEdit_GetUnit', ScenEdit_GetUnit, { guid = guid })
+
+  if not result then
+    result, err = SafeCall('GameApi.ScenEdit_GetUnit', ScenEdit_GetUnit, { unitname = guid })
+
+    if not result then
+      Logger.error('Failed to get unit ' .. guid .. ': ' .. err)
+    end
   end
 
   return result
@@ -23,7 +36,11 @@ end
 ---@param opts CMO__AttackOptions -- Options for the attack, such as weapon selection, salvo size, etc.
 ---@return boolean -- Returns true if the attack was successfully initiated, false otherwise
 function GameApi.ScenEdit_AttackContact(attackerID, contactId, opts)
-  return ScenEdit_AttackContact(attackerID, contactId, opts)
+  local result = ScenEdit_AttackContact(attackerID, contactId, opts)
+  if not result then
+    error('Failed to attack contact: ' .. tostring(contactId) .. ' with attacker: ' .. tostring(attackerID))
+  end
+  return result
 end
 
 ---comment
@@ -82,7 +99,13 @@ end
 ---@param isEscort? boolean -- Whether the mission is an escort mission
 ---@return boolean -- Returns true if the unit was successfully assigned to the mission, false otherwise
 function GameApi.ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
-  return ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
+  local result = ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
+
+  if not result then
+    error('Failed to assign')
+  end
+
+  return result
 end
 
 ---comment
@@ -130,6 +153,116 @@ function GameApi.ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
   return result
 end
 
-return {
-  GameApi = GameApi
-}
+---@return integer
+function GameApi.ScenEdit_CurrentTime()
+  return ScenEdit_CurrentTime()
+end
+
+---@param opts CMO__UnitUpdate
+---@return CMO__Unit
+function GameApi.ScenEdit_SetUnit(opts)
+  return ScenEdit_SetUnit(opts)
+end
+
+---@param side string
+---@param missionName string
+---@param settings CMO__Mission
+---@return CMO__Mission|nil
+function GameApi.ScenEdit_SetMission(side, missionName, settings)
+  local result = ScenEdit_SetMission(side, missionName, settings)
+
+  if result == nil then
+    error("Failed to set mission with side: " .. tostring(side) .. ", missionName: " .. tostring(missionName))
+  end
+
+  return result
+end
+
+---@param selector CMO__DoctrineSelector
+---@param doctrine CMO__Doctrine
+---@return CMO__Doctrine|nil
+function GameApi.ScenEdit_SetDoctrine(selector, doctrine)
+  local result = ScenEdit_SetDoctrine(selector, doctrine)
+
+  if result == nil then
+    error("Failed to set doctrine with selector: " .. tostring(selector))
+  end
+
+  return result
+end
+
+---@param side string
+---@param missionName string
+---@param missionType string
+---@param opts CMO__Mission
+---@return CMO__Mission|nil
+function GameApi.ScenEdit_AddMission(side, missionName, missionType, opts)
+  local result = ScenEdit_AddMission(side, missionName, missionType, opts)
+
+  if result == nil then
+    error("Failed to add mission with side: " .. tostring(side) .. ", missionName: " .. tostring(missionName))
+  end
+
+  return result
+end
+
+---@param side string
+---@return CMO__TableOfContacts
+function GameApi.ScenEdit_GetContacts(side)
+  local result = ScenEdit_GetContacts(side)
+
+  if result == nil then
+    error("Failed to get contacts with side: " .. tostring(side))
+  end
+
+  return result
+end
+
+---@param text string
+---@param code? integer
+function GameApi.ScenEdit_MsgBox(text, code)
+  return ScenEdit_MsgBox(text, code)
+end
+
+---@param opts CMO__SideSelector
+---@return CMO__Side
+function GameApi.VP_GetSide(opts)
+  local result = VP_GetSide(opts)
+
+  if result == nil then
+    error("Failed to get side with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param startLocation string|CMO__Location
+---@param endLocation string|CMO__Location
+---@return number
+function GameApi.Tool_Range(startLocation, endLocation)
+  return Tool_Range(startLocation, endLocation)
+end
+
+---comment
+---@param startLocation string|CMO__Location
+---@param endLocation string|CMO__Location
+---@return number
+function GameApi.Tool_Bearing(startLocation, endLocation)
+  return Tool_Bearing(startLocation, endLocation)
+end
+
+---comment
+---@param opts CMO__ReferencePointDescriptor
+---@return CMO__TableOfReferencePoints|nil
+function GameApi.ScenEdit_GetReferencePoints(opts)
+  local result = ScenEdit_GetReferencePoints(opts)
+
+  if result == nil then
+    error("Failed to get reference points with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+return GameApi

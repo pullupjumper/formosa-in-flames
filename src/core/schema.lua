@@ -84,3 +84,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@class SBJ__MissilePath
 ---@field waypoints table<integer, CMO__Location> 飛彈路徑點列表
 ---@field launch_time number 發射時間（UTC 時間戳）
+
+---@class SBJ__CONFIG:table
+
+---@class SBJ__SaveData:table

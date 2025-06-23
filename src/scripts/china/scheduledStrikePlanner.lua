@@ -10,59 +10,9 @@ if contacts == nil then
   return
 end
 
-local function trackTarget(saveData, units, UAVDBID, target)
-  local UAV = nil
-  local speed = 115
-  local type = 'BZK005'
-
-  if UAVDBID == CONFIG.platformDBID12 then
-    speed = 3300
-    type = 'WZ8'
-  end
-
-  for guid, value in pairs(saveData.c.recon.temp[type]) do
-    if value.targetGUID == target.guid then
-      local unit = SE_GetUnit({ guid = guid })
-      if unit then return true end
-    end
-  end
-
-  if UAV == nil then
-    local d = 1000
-
-    for _, value in ipairs(units) do
-      local unit = SE_GetUnit({ guid = value.guid })
-
-      if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
-        local distance = Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, target.guid)
-        if distance < d then
-          d = distance
-          UAV = unit
-        end
-      end
-    end
-  end
-
-  if UAV then
-    if UAV.mission then UAV.mission = '' end
-
-    UAV.course = { {
-      latitude = target.latitude,
-      longitude = target.longitude,
-      desiredSpeed = speed,
-      presetThrottle = 'Military'
-    } }
-
-    saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
-    return true
-  end
-
-  return false
-end
 
 local isWithinRange = function(distance, transmission)
-  return distance <= CONFIG.c.SIGINT.maxRange and
-      transmission.temp > CONFIG.c.SIGINT.maxCount
+  return distance <= CONFIG.c.SIGINT.maxRange and transmission.temp > CONFIG.c.SIGINT.maxCount
 end
 
 local function filterTargetsInArea(contacts, areas)
@@ -95,7 +45,7 @@ local function filterTargetsWithinRangeOfRadioSource(saveData, contacts)
         table.insert(targets, contact.guid)
 
         if not isTracking and tm.type == 'mobile' then
-          isTracking = trackTarget(saveData, units, CONFIG.platformDBID13, contact)
+          isTracking = TrackTarget(saveData, units, CONFIG.platformDBID13, contact)
         end
       end
     end
@@ -176,7 +126,7 @@ local filters = {
           table.insert(navalTargets, contact.guid)
 
           if not isTracking then
-            isTracking = trackTarget(saveData, units, CONFIG.platformDBID12, contact)
+            isTracking = TrackTarget(saveData, units, CONFIG.platformDBID12, contact)
           end
         end
       end
@@ -186,162 +136,62 @@ local filters = {
   end
 }
 
-local function shouldTakeoffBeforeStrike(q)
-  return (not q.hasLaunched) and q.takeoffTime ~= nil and q.missionStartTime ~= nil
-end
 
-local function shouldTakeoffAfterStrike(q)
-  return (not q.hasLaunched) and q.missionStartTime ~= nil
-end
+local function assignAllUnitsToStrikeMission(pkg)
+  local result = AssignEmbarkedUnitToStrikeMission(
+    pkg.striker.baseGUID,
+    pkg.striker.num,
+    pkg.striker.weaponDBID,
+    nil,
+    pkg.missionName,
+    false
+  )
 
-local function isAfterStartTime(time)
-  return ScenEdit_CurrentTime() > ParseDatetimeToTimestamp(time)
-end
-
-local function isH6N(q)
-  return not q.hasLaunched and q.unitDBID == CONFIG.platformDBID76
-end
-
-local function shouldEnterTargetArea(q)
-  return q.hasLaunched and not q.isFinished and q.takeoffTime ~= nil and q.missionStartTime ~= nil
-end
-
-local function shouldRTB(q)
-  return q.hasLaunched and not q.isFinished
-end
-
-local function handleReconQueue(saveData)
-  for _, q in ipairs(saveData.c.recon.queue) do
-    if shouldTakeoffBeforeStrike(q) and isAfterStartTime(q.takeoffTime) then
-      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
-
-      if units and #units > 0 then
-        q.unitGUID = units[1]
-        q.hasLaunched = true
-      end
-    elseif shouldTakeoffAfterStrike(q) and isAfterStartTime(q.missionStartTime) then
-      local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
-
-      if units and #units > 0 then
-        q.unitGUID = units[1]
-        q.hasLaunched = true
-        q.isFinished = true
-      end
-    elseif isH6N(q) and isAfterStartTime(q.takeoffTime) then
-      local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
-
-      if units and #units > 0 then
-        q.unitGUID = units[1]
-        q.hasLaunched = true
-      end
-    end
-
-    if shouldEnterTargetArea(q) and isAfterStartTime(q.missionStartTime) then
-      local unit = SE_GetUnit({ guid = q.unitGUID })
-
-      if unit then
-        ScenEdit_AssignUnitToMission(unit.guid, q.missionName)
-        q.isFinished = true
-      end
-    elseif shouldRTB(q) then
-      local unit = SE_GetUnit({ guid = q.unitGUID })
-
-      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
-        unit:RTB(true)
-        q.isFinished = true
-      end
-    end
-  end
-end
-
-local function handleStrikePackagesWithMission(package, contacts, filterFn, contactNum)
-  local assignAllUnitsToStrikeMission = function(pkg)
-    local result = AssignEmbarkedUnitToStrikeMission(
-      pkg.striker.baseGUID,
-      pkg.striker.num,
-      pkg.striker.weaponDBID,
+  if pkg.escort then
+    AssignEmbarkedUnitToStrikeMission(
+      pkg.escort.baseGUID,
+      pkg.escort.num,
+      pkg.escort.weaponDBID,
       nil,
       pkg.missionName,
-      false
+      true
+    )
+  end
+
+  if pkg.wildWeasel then
+    AssignEmbarkedUnitToStrikeMission(
+      pkg.wildWeasel.baseGUID,
+      pkg.wildWeasel.num,
+      pkg.wildWeasel.weaponDBID,
+      nil,
+      pkg.missionName,
+      true
+    )
+  end
+
+  if pkg.jammer then
+    local jammers = AssignEmbarkedUnitToStrikeMission(
+      pkg.jammer.baseGUID,
+      pkg.jammer.num,
+      0,
+      pkg.jammer.unitDBID,
+      pkg.missionName,
+      true
     )
 
-    if pkg.escort then
-      AssignEmbarkedUnitToStrikeMission(
-        pkg.escort.baseGUID,
-        pkg.escort.num,
-        pkg.escort.weaponDBID,
-        nil,
-        pkg.missionName,
-        true
-      )
-    end
-
-    if pkg.wildWeasel then
-      AssignEmbarkedUnitToStrikeMission(
-        pkg.wildWeasel.baseGUID,
-        pkg.wildWeasel.num,
-        pkg.wildWeasel.weaponDBID,
-        nil,
-        pkg.missionName,
-        true
-      )
-    end
-
-    if pkg.jammer then
-      AssignEmbarkedUnitToStrikeMission(
-        pkg.jammer.baseGUID,
-        pkg.jammer.num,
-        0,
-        pkg.jammer.unitDBID,
-        pkg.missionName,
-        true
-      )
-    end
-
-    if pkg.tanker then
-      local mission = ScenEdit_GetMission('China', pkg.tanker.missionName)
-      mission.isactive = true
-    end
-
-    if result == nil then return false end
-
-    return #result > 0
-  end
-
-  local mission = ScenEdit_GetMission('China', package.missionName)
-
-  if mission then
-    for _, guid in ipairs(mission.targetlist) do
-      local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
-
-      if contact and contact.BDA and contact.BDA['STRUCTURAL'] == 'Heavy damage' then
-        ScenEdit_RemoveUnitAsTarget({ contact.guid }, mission.name)
-      end
+    if jammers then
+      ScenEdit_SetEMCON('Unit', jammers[1], 'Radar=Passive;OECM=Active')
     end
   end
 
-  if contacts and filterFn and contactNum then
-    local fn = filterFn(package)
-    local filteredContacts = {}
-
-    for _, contact in ipairs(contacts) do
-      local result = fn(contact)
-      if result then
-        table.insert(filteredContacts, contact)
-      end
-    end
-
-    if #filteredContacts >= contactNum or (mission and #mission.targetlist > 0) then
-      for _, value in ipairs(filteredContacts) do
-        value.posture = 'H'
-        ScenEdit_AssignUnitAsTarget(value.guid, package.missionName)
-      end
-      return assignAllUnitsToStrikeMission(package)
-    end
-  else
-    return assignAllUnitsToStrikeMission(package)
+  if pkg.tanker then
+    local mission = ScenEdit_GetMission('China', pkg.tanker.missionName)
+    mission.isactive = true
   end
-  return false
+
+  if result == nil then return false end
+
+  return #result > 0
 end
 
 local function isPackagesFinished(packages)
@@ -444,7 +294,7 @@ end
 
 local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
-    if not FST.isFinished and isAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
+    if not FST.isFinished and IsAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
       local result = AttackContacts({
         contacts = FST.evaluatedTargetlist,
         qty = FST.ammoPerTarget,
@@ -468,7 +318,7 @@ local function strike(saveData, contacts)
       local allBatteriesInPosition = true
 
       for _, FST in ipairs(FSEM.FSTs) do
-        if not FST.isFinished and isAfterStartTime(FST.startTime) then
+        if not FST.isFinished and IsAfterStartTime(FST.startTime) then
           local evaluatedTargetlist = assessTargetsDamage(FST, FSEM)
 
           if CONFIG.isDevMode then
@@ -507,12 +357,47 @@ local function strike(saveData, contacts)
   end
 end
 
+
+local function handleStrikePackagesWithMission(package, wave, contacts)
+  local mission = ScenEdit_GetMission('China', package.missionName)
+  local evaluatedTargetlist = {}
+
+  if not mission then
+    mission = ScenEdit_AddMission('China', package.missionName, 'strike', { type = package.missionType })
+    ScenEdit_SetEMCON('Mission', package.missionName, 'Radar=Passive;OECM=Active')
+  end
+
+  if package.missionType == 'land' then
+    evaluatedTargetlist = assessTargetsDamage(package, wave)
+  end
+
+  if type(package.filterName) == 'string' and #package.filterName > 0 then
+    for _, contact in ipairs(contacts) do
+      local result = filterMakers[package.filterName](package)(contact)
+
+      if result then
+        table.insert(evaluatedTargetlist, contact.guid)
+      end
+    end
+  end
+
+  if #evaluatedTargetlist >= package.minTargetCount then
+    for _, guid in ipairs(evaluatedTargetlist) do
+      ScenEdit_AssignUnitAsTarget(guid, package.missionName)
+    end
+
+    return assignAllUnitsToStrikeMission(package)
+  end
+
+  return false
+end
+
 local function airStrike(saveData, contacts)
   for _, wave in pairs(saveData.c.air.ATO) do
     if not wave.hasLaunched and wave.isActivated then
       for _, package in ipairs(wave.packages) do
-        if not package.hasLaunched and isAfterStartTime(package.takeoffTime) then
-          local isAssigned = handleStrikePackagesWithMission(package, contacts, filterMakers[package.filterName], 1)
+        if not package.hasLaunched and IsAfterStartTime(package.takeoffTime) then
+          local isAssigned = handleStrikePackagesWithMission(package, wave, contacts)
 
           if isAssigned then
             package.hasLaunched = true
@@ -530,12 +415,11 @@ local function airStrike(saveData, contacts)
 end
 
 
-
 if saveData.c.recon.isActivated then
-  handleReconQueue(saveData)
+  HandleReconQueue(saveData)
 end
 
-if saveData.c.surface.lacm.isActivated then
+if saveData.c.surface.lacm.isActivated and IsAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
   for _, value in ipairs(SE_GetUnit({ unitname = 'CSG' }).group.unitlist) do
@@ -551,9 +435,10 @@ if saveData.c.surface.lacm.isActivated then
     batteries = ships,
     weaponDBID = CONFIG.c.surface.lacm.weaponDBID
   })
+  saveData.c.surface.lacm.isActivated = false
 end
 
-if saveData.c.subSurface.slcm.isActivated then
+if saveData.c.subSurface.slcm.isActivated and IsAfterStartTime(saveData.c.subSurface.slcm.startTime) then
   for _, unit in pairs(CONFIG.c.subSurface.slcm.submarines) do
     local actualUnit = SE_GetUnit({ side = 'China', unitname = unit.name })
 
@@ -573,6 +458,8 @@ if saveData.c.subSurface.slcm.isActivated then
     batteries = CONFIG.c.subSurface.slcm.submarines,
     weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
   })
+
+  saveData.c.subSurface.slcm.isActivated = false
 end
 
 if saveData.c.ground.isActivated then

@@ -24,15 +24,15 @@ if unit then
             actualUnit.mission = ''
           end
         end
+
+        if #mission.unitlist == 1 then
+          ScenEdit_DeleteMission(mission.side, mission.guid)
+        end
       end
     end
 
     unit.readytime = CONFIG.readytime
     unit.mission = ''
-
-    -- if unit.mission ~= nil and unit.mission.isactive and unit.mission.subtype == 'Land Strike' then
-    --     unit.mission.isactive = false
-    -- end
   end
 
   -- if unit.dbid == CONFIG.platformDBID2 then
