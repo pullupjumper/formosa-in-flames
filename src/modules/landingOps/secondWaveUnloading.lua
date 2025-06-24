@@ -1,60 +1,13 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 SafeCall = require("src.utils.utils").SafeCall
-
-function CalculateSphericalCenter(coords)
-  -- 檢查輸入是否有效
-  if not coords or #coords < 4 then
-    return nil, "需要至少4個座標點來形成四方形"
-  end
-
-  -- 初始化笛卡爾座標總和
-  local xSum = 0
-  local ySum = 0
-  local zSum = 0
-
-  -- 將經緯度轉換為笛卡爾座標並計算總和
-  for _, point in ipairs(coords) do
-    if not point.latitude or not point.longitude then
-      return nil, "每個座標點必須包含latitude和longitude屬性"
-    end
-
-    -- 將角度轉換為弧度
-    local latRad = math.rad(point.latitude)
-    local lonRad = math.rad(point.longitude)
-
-    -- 轉換到笛卡爾座標
-    local x = math.cos(latRad) * math.cos(lonRad)
-    local y = math.cos(latRad) * math.sin(lonRad)
-    local z = math.sin(latRad)
-
-    xSum = xSum + x
-    ySum = ySum + y
-    zSum = zSum + z
-  end
-
-  -- 計算平均值
-  local count = #coords
-  local xAvg = xSum / count
-  local yAvg = ySum / count
-  local zAvg = zSum / count
-
-  -- 將平均笛卡爾座標轉回經緯度
-  local hyp = math.sqrt(xAvg * xAvg + yAvg * yAvg)
-  local centerLat = math.deg(math.atan2(zAvg, hyp))
-  local centerLon = math.deg(math.atan2(yAvg, xAvg))
-
-  return {
-    latitude = centerLat,
-    longitude = centerLon
-  }
-end
+SecondWaveUnloading = {}
 
 ---comment
 ---@param zone any
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil
-function _createCourseForBarge(zone, unit)
+function SecondWaveUnloading._createCourseForBarge(zone, unit)
   local points, err = SafeCall("GameApi.ScenEdit_GetReferencePoints", GameApi.ScenEdit_GetReferencePoints,
     { side = "China", area = zone.offloadArea })
 
@@ -114,22 +67,48 @@ function _createCourseForBarge(zone, unit)
   return nil
 end
 
-function SecondWaveUnloading(CONFIG, saveData, units)
+---comment
+---@param zone any
+---@param unit CMO__Unit
+---@param bargeDest CMO__Waypoint[]
+---@return CMO__Waypoint[]|nil
+function SecondWaveUnloading._createCourseForRORO(zone, unit, bargeDest)
+  local destination, err = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
+    latitude = unit.latitude,
+    longitude = unit.longitude,
+    distance = zone.LSTSettings.course.distance,
+    bearing = zone.LSTSettings.course.bearing
+  })
+
+  if not destination then
+    Logger.error("Failed to calculate destination point: " .. err)
+    return nil
+  end
+
+  return { destination, bargeDest }
+end
+
+---comment
+---@param CONFIG SBJ__CONFIG
+---@param saveData SBJ__SaveData
+---@param units CMO__SideUnit
+---@return boolean
+function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
   local operationalZones = CONFIG.c.PHIBOP.operationalZones
   local roros = {}
   local barges = {}
 
   for _, item in ipairs(units) do
-    -- local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
-    local unit = GameApi.ScenEdit_GetUnit(item.guid)
-    -- if not unit then
-    --   Logger.error("Failed to get unit '" .. item.name .. "': " .. err)
-    --   return false
-    -- end
+    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+
+    if not unit then
+      Logger.error("Failed to get unit '" .. item.name .. "': " .. err)
+      return false
+    end
 
     for _, zone in ipairs(operationalZones) do
       if unit.name == 'Barge' and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
-        local destination = _createCourseForBarge(zone, unit)
+        local destination = SecondWaveUnloading._createCourseForBarge(zone, unit)
         unit.course = { destination }
         unit.manualSpeed = zone.LSTSettings.speed
         table.insert(barges, { unit = unit, zone = zone, dest = destination })
@@ -141,4 +120,78 @@ function SecondWaveUnloading(CONFIG, saveData, units)
       end
     end
   end
+
+  for _, item in ipairs(roros) do
+    for _, barge in ipairs(barges) do
+      if barge.unit:inArea(item.zone.LSTAnchorageArea) then
+        table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
+        item.unit.course = SecondWaveUnloading._createCourseForRORO(item.zone, item.unit, barge.dest)
+        item.unit.manualSpeed = item.zone.LSTSettings.speed
+      end
+    end
+  end
+
+  return true
 end
+
+---@param params SBJ__OffloadVehicles_Params
+---@return number|nil
+function SecondWaveUnloading.OffloadVehicles(params)
+  local ship = params.ship
+  if ship == nil or ship.IsDestroyed then return end
+  local ACVlocations = GenerateLocations({
+    initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
+    num = params.num,
+    bearing = params.bearing,
+    distance = params.distance,
+    firstDistance = params.firstDistance
+  })
+  local cargoList = {}
+  local count = 0
+  local resultCount = 0
+
+  for _, v in ipairs(ship.cargo[1].cargo) do
+    table.insert(cargoList, { guid = v.guid, dbid = v.dbid, name = v.name })
+    count = count + 1
+
+    if count == params.num then
+      break
+    end
+  end
+
+  for index, v in ipairs(cargoList) do
+    ship:deleteUnitCargo(v.guid)
+
+    local u, err = SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
+      side      = 'China',
+      type      = 'Facility',
+      latitude  = ACVlocations[index].latitude,
+      longitude = ACVlocations[index].longitude,
+      dbid      = v.dbid,
+      unitname  = v.name,
+    })
+
+    if not u then
+      Logger.error("Failed to add unit: " .. err)
+      return
+    end
+
+    -- local u = ScenEdit_AddUnit({
+    --   side      = 'China',
+    --   type      = 'Facility',
+    --   latitude  = ACVlocations[index].latitude,
+    --   longitude = ACVlocations[index].longitude,
+    --   dbid      = v.dbid,
+    --   unitname  = v.name,
+    -- })
+
+    -- if u then
+    --   resultCount = resultCount + 1
+    -- end
+    resultCount = resultCount + 1
+  end
+
+  return resultCount
+end
+
+return SecondWaveUnloading

@@ -4,27 +4,16 @@ GameApi = {}
 
 ---comment
 ---@param guid string -- The GUID of the unit
----@return CMO__Unit -- Returns the unit object associated with the given GUID or side
+---@return CMO__Unit|nil -- Returns the unit object associated with the given GUID or side
 function GameApi.ScenEdit_GetUnit(guid)
-  -- local result = ScenEdit_GetUnit({ guid = guid })
+  local result = ScenEdit_GetUnit({ guid = guid })
 
-  -- if result == nil then
-  --   result = ScenEdit_GetUnit({ unitname = guid })
-  -- end
+  if result == nil then
+    result = ScenEdit_GetUnit({ unitname = guid })
+  end
 
-  -- if result == nil then
-  --   error("Unit not found with guid: " .. tostring(guid))
-  -- end
-
-  -- return result
-  local result, err = SafeCall('GameApi.ScenEdit_GetUnit', ScenEdit_GetUnit, { guid = guid })
-
-  if not result then
-    result, err = SafeCall('GameApi.ScenEdit_GetUnit', ScenEdit_GetUnit, { unitname = guid })
-
-    if not result then
-      Logger.error('Failed to get unit ' .. guid .. ': ' .. err)
-    end
+  if result == nil then
+    error("Unit not found with guid: " .. tostring(guid))
   end
 
   return result
@@ -69,7 +58,7 @@ end
 ---comment
 ---@param side string -- The side of the contact
 ---@param contactId string -- The GUID of the contact
----@return CMO__Contact -- Returns the contact object associated with the given side and contact ID
+---@return CMO__Contact|nil -- Returns the contact object associated with the given side and contact ID
 function GameApi.ScenEdit_GetContact(side, contactId)
   local result = ScenEdit_GetContact({ side = side, guid = contactId })
 
@@ -82,7 +71,7 @@ end
 
 ---comment
 ---@param guid string -- The GUID of the loadout
----@return CMO__Loadout -- Returns the loadout object associated with the given GUID
+---@return CMO__Loadout|nil -- Returns the loadout object associated with the given GUID
 function GameApi.ScenEdit_GetLoadout(guid)
   local result = ScenEdit_GetLoadout({ Unitname = guid })
 
@@ -207,7 +196,7 @@ function GameApi.ScenEdit_AddMission(side, missionName, missionType, opts)
 end
 
 ---@param side string
----@return CMO__TableOfContacts
+---@return CMO__TableOfContacts|nil
 function GameApi.ScenEdit_GetContacts(side)
   local result = ScenEdit_GetContacts(side)
 
@@ -260,6 +249,19 @@ function GameApi.ScenEdit_GetReferencePoints(opts)
 
   if result == nil then
     error("Failed to get reference points with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param opts CMO__SetUnitDescriptor
+---@return CMO__Unit|nil
+function GameApi.ScenEdit_AddUnit(opts)
+  local result = ScenEdit_AddUnit(opts)
+
+  if result == nil then
+    error("Failed to add unit with opts: " .. tostring(opts))
   end
 
   return result

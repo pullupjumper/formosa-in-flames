@@ -1,3 +1,5 @@
+AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+
 local ship = ScenEdit_UnitX()
 
 if ship and (ship.dbid == CONFIG.platformDBID7
@@ -17,7 +19,7 @@ if ship and (ship.dbid == CONFIG.platformDBID7
 
   for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
     if ship:inArea(zone.ACV.area) then
-      local result = LaunchACV({
+      local result = AmphibiousAssault.LaunchACV({
         ship = ship,
         num = 5,
         bearing = zone.ACV.bearing + 90,

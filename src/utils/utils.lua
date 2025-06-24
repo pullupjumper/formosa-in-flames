@@ -105,10 +105,90 @@ function SafeCall(funcName, func, ...)
   return result
 end
 
+---comment
+---@param y number
+---@param x number
+---@return number
+function Atan2(y, x)
+  if x > 0 then
+    return math.atan(y / x)
+  elseif x < 0 then
+    if y >= 0 then
+      return math.atan(y / x) + math.pi
+    else
+      return math.atan(y / x) - math.pi
+    end
+  elseif x == 0 then
+    if y > 0 then
+      return math.pi / 2
+    elseif y < 0 then
+      return -math.pi / 2
+    else
+      return 0 -- undefined (0,0), default to 0
+    end
+  end
+
+  return 0
+end
+
+---comment
+---@param coords any
+---@return nil
+---@return string
+function CalculateSphericalCenter(coords)
+  -- 檢查輸入是否有效
+  if not coords or #coords < 4 then
+    return nil, "需要至少4個座標點來形成四方形"
+  end
+
+  -- 初始化笛卡爾座標總和
+  local xSum = 0
+  local ySum = 0
+  local zSum = 0
+
+  -- 將經緯度轉換為笛卡爾座標並計算總和
+  for _, point in ipairs(coords) do
+    if not point.latitude or not point.longitude then
+      return nil, "每個座標點必須包含latitude和longitude屬性"
+    end
+
+    -- 將角度轉換為弧度
+    local latRad = math.rad(point.latitude)
+    local lonRad = math.rad(point.longitude)
+
+    -- 轉換到笛卡爾座標
+    local x = math.cos(latRad) * math.cos(lonRad)
+    local y = math.cos(latRad) * math.sin(lonRad)
+    local z = math.sin(latRad)
+
+    xSum = xSum + x
+    ySum = ySum + y
+    zSum = zSum + z
+  end
+
+  -- 計算平均值
+  local count = #coords
+  local xAvg = xSum / count
+  local yAvg = ySum / count
+  local zAvg = zSum / count
+
+  -- 將平均笛卡爾座標轉回經緯度
+  local hyp = math.sqrt(xAvg * xAvg + yAvg * yAvg)
+  local centerLat = math.deg(Atan2(zAvg, hyp))
+  local centerLon = math.deg(Atan2(yAvg, xAvg))
+
+  return {
+    latitude = centerLat,
+    longitude = centerLon
+  }
+end
+
 return {
   RandomTxt = RandomTxt,
   GetCount = GetCount,
   InsertList = InsertList,
   ParseDatetimeToTimestamp = ParseDatetimeToTimestamp,
-  SafeCall = SafeCall
+  CalculateSphericalCenter = CalculateSphericalCenter,
+  SafeCall = SafeCall,
+  Atan2 = Atan2
 }

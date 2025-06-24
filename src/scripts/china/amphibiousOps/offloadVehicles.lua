@@ -1,3 +1,5 @@
+SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
+
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
@@ -20,7 +22,7 @@ if ship and ship.name == 'Barge' then
         local d = Tool_Range(roro.guid, ship.guid)
 
         if roro:inArea(zone.ACV.area) and ship:inArea(zone.ACV.area) and d < 1 then
-          OffloadVehicles({
+          SecondWaveUnloading.OffloadVehicles({
             ship = roro,
             num = 20,
             bearing = zone.ACV.bearing + 90,

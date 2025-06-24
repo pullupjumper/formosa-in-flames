@@ -1,3 +1,4 @@
+ShipMovement = require("modules/landingOps/shipMovement")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -427,7 +428,7 @@ end
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].targetlist <= 0 then
-  CalculateDestination(saveData)
+  ShipMovement.CalculateDestination(saveData)
   initAC(saveData)
   initTargetlist(saveData)
   initATO(saveData)

@@ -1,3 +1,5 @@
+---comment
+---@return table
 function CountUnitsInEachArea()
   local unitsFromChina = VP_GetSide({ Side = 'China' }).units
   local result = {}
@@ -871,3 +873,12 @@ function WCSSettingTable()
     end
   end
 end
+
+return {
+  CountUnitsInEachArea = CountUnitsInEachArea,
+  LandedUnitTable = LandedUnitTable,
+  C2Table = C2Table,
+  BtyStateTable = BtyStateTable,
+  MagazineInBasesTable = MagazineInBasesTable,
+  WCSSettingTable = WCSSettingTable
+}
