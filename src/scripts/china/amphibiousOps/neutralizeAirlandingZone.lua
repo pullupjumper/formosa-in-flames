@@ -1,33 +1,36 @@
-local contacts = ScenEdit_GetContacts('China')
-local ship = ScenEdit_UnitX()
+Utils = require("src.utils.utils")
+GameApi = require("src.utils.gameApi")
+Logger = require("src.utils.logger")
 
-if ship and ship.dbid == CONFIG.platformDBID48 then
-  -- local check = SE_GetUnit({ guid = ship.guid })
-  -- ScenEdit_SpecialMessage('China', ship.name)
+local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
 
-  if ship.group and contacts then
-    -- ScenEdit_SpecialMessage('China', ship.group.name)
+if not contacts then
+  Logger.error("Error in ScenEdit_GetContacts: " .. err)
+  return
+end
 
-    -- local filteredContacts = FilterContacts(contacts, function(contact)
-    --   return contact:inArea(CONFIG.c.PHIBOP.sag[ship.group.name].area)
-    --       and (contact.typed == 8)
-    -- end)
-    local filteredContacts = {}
+local ship, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
 
-    for _, contact in ipairs(contacts) do
-      if contact:inArea(CONFIG.c.PHIBOP.sag[ship.group.name].area) and (contact.typed == 8) then
-        table.insert(filteredContacts, contact.guid)
-      end
+if not ship then
+  Logger.error("Error in ScenEdit_UnitX: " .. err)
+  return
+end
+
+if ship and ship.group and ship.dbid == CONFIG.platformDBID48 then
+  local filteredContacts = {}
+
+  for _, contact in ipairs(contacts) do
+    if contact:inArea(CONFIG.c.PHIBOP.sag[ship.group.name].area) and (contact.typed == 8) then
+      table.insert(filteredContacts, contact.guid)
     end
+  end
 
-    if GetCount(filteredContacts) > 0 then
-      local launchedNum = AttackContacts({
-        contacts = filteredContacts,
-        qty = 440 // GetCount(filteredContacts),
-        batteries = { ship },
-        weaponDBID = 2691,
-      })
-      -- ScenEdit_SpecialMessage('China', launchedNum .. ' launched')
-    end
+  if Utils.GetCount(filteredContacts) > 0 then
+    AttackContacts({
+      contacts = filteredContacts,
+      qty = 440 // Utils.GetCount(filteredContacts),
+      batteries = { ship },
+      weaponDBID = 2691,
+    })
   end
 end

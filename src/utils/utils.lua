@@ -7,11 +7,12 @@
 --     evasion = math.random(90 * d, 120 * d)
 --   }
 -- end
+Utils = {}
 
 --- Generate a random string of uppercase letters
 ---@param numLetters number -- The number of letters to generate
 ---@return string -- A string containing random uppercase letters
-function RandomTxt(numLetters)
+function Utils.RandomTxt(numLetters)
   local totTxt = ""
   for i = 1, numLetters do
     totTxt = totTxt .. string.char(math.random(65, 90))
@@ -22,7 +23,7 @@ end
 --- Get the count of items in a list
 ---@param list table -- The list to count items in
 ---@return number -- The number of items in the list
-function GetCount(list)
+function Utils.GetCount(list)
   if list == nil then return 0 end
   local count = 0
 
@@ -37,8 +38,8 @@ end
 ---@param list table -- The list to insert into
 ---@param insertedList table -- The list of items to insert
 ---@return table -- The updated list with items inserted
-function InsertList(list, insertedList)
-  local count = GetCount(insertedList)
+function Utils.InsertList(list, insertedList)
+  local count = Utils.GetCount(insertedList)
 
   for i = 1, count, 1 do
     table.insert(list, insertedList[i])
@@ -50,7 +51,7 @@ end
 ---Parse a datetime string in the format "YYYY-MM-DD HH:MM:SS" to a UTC timestamp
 ---@param datetimeStr string -- The datetime string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return number -- The UTC timestamp corresponding to the datetime string
-function ParseDatetimeToTimestamp(datetimeStr)
+function Utils.ParseDatetimeToTimestamp(datetimeStr)
   local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
 
@@ -82,8 +83,8 @@ end
 ---@param ... any The arguments to pass to the function
 ---@return any|nil --The result of the function call, or nil if an error occurred
 ---@return string|nil --An error message if an error occurred, or nil if the call was successful
----Example usage: local result, err = SafeCall("MyFunction", MyFunction, arg1, arg2)
-function SafeCall(funcName, func, ...)
+---Example usage: local result, err = Utils.SafeCall("MyFunction", MyFunction, arg1, arg2)
+function Utils.SafeCall(funcName, func, ...)
   local args = { ... }
 
   local function errorHandler(err)
@@ -109,7 +110,7 @@ end
 ---@param y number
 ---@param x number
 ---@return number
-function Atan2(y, x)
+function Utils.Atan2(y, x)
   if x > 0 then
     return math.atan(y / x)
   elseif x < 0 then
@@ -135,7 +136,7 @@ end
 ---@param coords any
 ---@return nil
 ---@return string
-function CalculateSphericalCenter(coords)
+function Utils.CalculateSphericalCenter(coords)
   -- 檢查輸入是否有效
   if not coords or #coords < 4 then
     return nil, "需要至少4個座標點來形成四方形"
@@ -174,8 +175,8 @@ function CalculateSphericalCenter(coords)
 
   -- 將平均笛卡爾座標轉回經緯度
   local hyp = math.sqrt(xAvg * xAvg + yAvg * yAvg)
-  local centerLat = math.deg(Atan2(zAvg, hyp))
-  local centerLon = math.deg(Atan2(yAvg, xAvg))
+  local centerLat = math.deg(Utils.Atan2(zAvg, hyp))
+  local centerLon = math.deg(Utils.Atan2(yAvg, xAvg))
 
   return {
     latitude = centerLat,
@@ -183,12 +184,4 @@ function CalculateSphericalCenter(coords)
   }
 end
 
-return {
-  RandomTxt = RandomTxt,
-  GetCount = GetCount,
-  InsertList = InsertList,
-  ParseDatetimeToTimestamp = ParseDatetimeToTimestamp,
-  CalculateSphericalCenter = CalculateSphericalCenter,
-  SafeCall = SafeCall,
-  Atan2 = Atan2
-}
+return Utils

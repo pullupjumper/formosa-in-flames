@@ -1,4 +1,4 @@
-SafeCall = require("src.utils.utils").SafeCall
+Utils = require("src.utils.utils")
 Logger = require("src.utils.logger")
 GameApi = {}
 
@@ -265,6 +265,25 @@ function GameApi.ScenEdit_AddUnit(opts)
   end
 
   return result
+end
+
+---comment
+---@return CMO__Unit|nil
+function GameApi.ScenEdit_UnitX()
+  local result = ScenEdit_UnitX()
+
+  if result == nil then
+    error("Failed to get unitX")
+  end
+
+  return result
+end
+
+---comment
+---@param param CMO__HostUnit
+---@return boolean
+function GameApi.ScenEdit_HostUnitToParent(param)
+  return ScenEdit_HostUnitToParent(param)
 end
 
 return GameApi

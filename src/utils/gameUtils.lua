@@ -1,13 +1,13 @@
-SafeCall = require("src.utils.utils").SafeCall
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
+Utils = require("src.utils.utils")
 
 ---@param x_latitude number
 ---@param x_longitude number
 ---@param max_radius number
 ---@return CMO__Location
 function CircularRandomPosition(x_latitude, x_longitude, max_radius)
-  local randomisationCircle, errorMessage = SafeCall("GameApi.World_GetCircleFromPoint", GameApi
+  local randomisationCircle, errorMessage = Utils.SafeCall("GameApi.World_GetCircleFromPoint", GameApi
     .World_GetCircleFromPoint, {
       latitude = x_latitude,
       longitude = x_longitude,
@@ -45,12 +45,13 @@ function GenerateLocations(params)
       distanceTemp = params.firstDistance
     end
 
-    local newLocation, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
-      LATITUDE = locationTemp.latitude,
-      LONGITUDE = locationTemp.longitude,
-      BEARING = bearingTemp,
-      DISTANCE = distanceTemp
-    })
+    local newLocation, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
+      GameApi.World_GetPointFromBearing, {
+        LATITUDE = locationTemp.latitude,
+        LONGITUDE = locationTemp.longitude,
+        BEARING = bearingTemp,
+        DISTANCE = distanceTemp
+      })
 
     if errorMessage then
       Logger.error("Error in World_GetPointFromBearing: " .. tostring(errorMessage))
@@ -78,22 +79,24 @@ function NewArea(position, mode)
   if shape == 'circle' then
     local distance = mode.distance
     for i = 0, 359, 45 do
-      local location, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
-        latitude = position.latitude,
-        longitude = position.longitude,
-        distance = distance,
-        bearing = i
-      })
+      local location, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
+        GameApi.World_GetPointFromBearing, {
+          latitude = position.latitude,
+          longitude = position.longitude,
+          distance = distance,
+          bearing = i
+        })
 
       if errorMessage then
         Logger.error("Error in World_GetPointFromBearing (NewArea - circle): " .. tostring(errorMessage))
       end
 
-      local newRp, errorMessage = SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi.ScenEdit_AddReferencePoint, {
-        side = side,
-        latitude = location.latitude,
-        longitude = location.longitude
-      })
+      local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
+        .ScenEdit_AddReferencePoint, {
+          side = side,
+          latitude = location.latitude,
+          longitude = location.longitude
+        })
 
       if errorMessage then
         Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
@@ -108,22 +111,24 @@ function NewArea(position, mode)
     local distance = mode.distance
     for i = 0, 3 do
       local b = 45 + (90 * i) + bear_offset
-      local location, errorMessage = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
-        latitude = position.latitude,
-        longitude = position.longitude,
-        distance = distance,
-        bearing = b
-      })
+      local location, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
+        GameApi.World_GetPointFromBearing, {
+          latitude = position.latitude,
+          longitude = position.longitude,
+          distance = distance,
+          bearing = b
+        })
 
       if errorMessage then
         Logger.error("Error in World_GetPointFromBearing (NewArea - square): " .. tostring(errorMessage))
       end
 
-      local newRp, errorMessage = SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi.ScenEdit_AddReferencePoint, {
-        side = side,
-        latitude = location.latitude,
-        longitude = location.longitude
-      })
+      local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
+        .ScenEdit_AddReferencePoint, {
+          side = side,
+          latitude = location.latitude,
+          longitude = location.longitude
+        })
 
       if errorMessage then
         Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
@@ -167,7 +172,8 @@ function PrintBox(side, ...)
   local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
 
   -- 一次性輸出
-  local _, errorMessage = SafeCall("GameApi.ScenEdit_SpecialMessage", GameApi.ScenEdit_SpecialMessage, side, boxString)
+  local _, errorMessage = Utils.SafeCall("GameApi.ScenEdit_SpecialMessage", GameApi.ScenEdit_SpecialMessage, side,
+    boxString)
   if errorMessage then
     Logger.error("Error in ScenEdit_SpecialMessage: " .. tostring(errorMessage))
   end
@@ -176,13 +182,13 @@ end
 ---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return boolean
 function IsAfterStartTime(time)
-  local result, err = SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
+  local result, err = Utils.SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
 
   if err then
     Logger.error("Error in ScenEdit_CurrentTime: " .. err)
   end
 
-  return result > ParseDatetimeToTimestamp(time)
+  return result > Utils.ParseDatetimeToTimestamp(time)
 end
 
 return {

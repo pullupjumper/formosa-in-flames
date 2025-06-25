@@ -1,4 +1,5 @@
-ShipMovement = require("modules/landingOps/shipMovement")
+ShipMovement = require("src.modules.landingOps.shipMovement")
+Utils = require("src.utils.utils")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -167,7 +168,7 @@ end
 local function setupReconQueue(saveData)
   for _, item in pairs(saveData.c.air.ATO) do
     if item.reconUAVs then
-      InsertList(saveData.c.recon.queue, item.reconUAVs)
+      Utils.InsertList(saveData.c.recon.queue, item.reconUAVs)
     end
   end
 end
@@ -189,7 +190,7 @@ local function initATO(saveData)
       if package.takeoffTime == nil and index > 1 then
         package.takeoffTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
+          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
         )
       end
     end
@@ -213,7 +214,7 @@ local function initFSP(saveData)
       if FST.startTime == nil and index > 1 then
         FST.startTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          ParseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
+          Utils.ParseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
         )
       end
     end

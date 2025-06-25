@@ -1,8 +1,8 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
-SafeCall = require("src.utils.utils").SafeCall
+Utils = require("src.utils.utils")
 AssignEmbarkedUnitsToMissions = require("src.modules.assignMission").AssignEmbarkedUnitsToMissions
--- TransferCargo = require("src.modules.landingOps.landingOps").TransferCargo
+
 AmphibiousLogistics = {}
 
 
@@ -83,7 +83,7 @@ end
 ---@param loadoutDBID number
 ---@param cargoItems table<number, CargoItem>
 function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItems)
-  local base, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
 
   if not base then
     Logger.error("Failed to get base unit '" .. fromUnit .. "': " .. err)
@@ -95,10 +95,10 @@ function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid,
   local baseContainingCargo = base
 
   if platforms ~= nil then
-    local count = GetCount(cargoItems)
+    local count = Utils.GetCount(cargoItems)
 
     for k, v in ipairs(platforms) do
-      local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, v)
+      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, v)
 
       if not unit then
         Logger.error("Failed to get unit '" .. v .. "': " .. err)
@@ -144,7 +144,7 @@ function AmphibiousLogistics.GetUnitsInAnchorageArea(CONFIG, units)
   local isUnitMoving = false
 
   for _, item in ipairs(units) do
-    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
 
     if not unit then
       Logger.error("Failed to get unit '" .. item.guid .. "': " .. err)
@@ -184,7 +184,7 @@ end
 ---@param missionName string
 ---@return boolean
 function AmphibiousLogistics._handleCargoMission(platformType, zone, missionName)
-  local m, err = SafeCall(
+  local m, err = Utils.SafeCall(
     "GameApi.ScenEdit_AddMission",
     GameApi.ScenEdit_AddMission,
     "China",
@@ -198,7 +198,7 @@ function AmphibiousLogistics._handleCargoMission(platformType, zone, missionName
     return false
   end
 
-  local m, err = SafeCall(
+  local m, err = Utils.SafeCall(
     "GameApi.ScenEdit_SetMission",
     GameApi.ScenEdit_SetMission,
     "China",
@@ -211,7 +211,7 @@ function AmphibiousLogistics._handleCargoMission(platformType, zone, missionName
     return false
   end
 
-  local m, err = SafeCall(
+  local m, err = Utils.SafeCall(
     "GameApi.ScenEdit_SetDoctrine",
     GameApi.ScenEdit_SetDoctrine,
     { side = "China", mission = missionName },
@@ -371,7 +371,7 @@ function AmphibiousLogistics.RetransferCargos(CONFIG, units)
 
   for _, zone in ipairs(operationalZones) do
     for _, item in ipairs(units) do
-      local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
 
       if not unit then
         Logger.error("Failed to get unit '" .. item.name .. "': " .. err)

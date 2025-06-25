@@ -1,3 +1,5 @@
+Utils = require("src.utils.utils")
+
 local contacts = ScenEdit_GetContacts('China')
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -267,7 +269,7 @@ local function identifyEmTargets(saveData, contacts, FST)
       PrintBox('China', filterName .. '/' .. FST.name .. ': ' .. #targets)
     end
 
-    InsertList(evaluatedTargetlist, targets)
+    Utils.InsertList(evaluatedTargetlist, targets)
   end
 
   return evaluatedTargetlist
@@ -327,7 +329,7 @@ local function strike(saveData, contacts)
 
           if type(FST.filterNames) == "table" and #FST.filterNames > 0 then
             local emTargets = identifyEmTargets(saveData, contacts, FST)
-            InsertList(evaluatedTargetlist, emTargets)
+            Utils.InsertList(evaluatedTargetlist, emTargets)
           end
 
           FST.evaluatedTargetlist = evaluatedTargetlist

@@ -1,3 +1,5 @@
+Utils = require("src.utils.utils")
+
 function RemoveC2Facilities()
   local units = VP_GetSide({ name = 'China' }).units
 
@@ -29,7 +31,7 @@ function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName, un
       Lat = point.latitude,
       Lon = point.longitude,
       autodetectable = autodetectable,
-      unitname = unitname .. RandomTxt(2),
+      unitname = unitname .. Utils.RandomTxt(2),
     })
 
     if unit then
@@ -174,7 +176,7 @@ function AddEmbarkedUnits(embarkedUnits, base)
             side     = embarkedUnit.side,
             type     = embarkedUnit.type,
             dbid     = embarkedUnit.dbid,
-            unitname = embarkedUnit.name .. ' #' .. RandomTxt(2),
+            unitname = embarkedUnit.name .. ' #' .. Utils.RandomTxt(2),
             base     = base,
           })
         else
@@ -182,7 +184,7 @@ function AddEmbarkedUnits(embarkedUnits, base)
             side      = embarkedUnit.side,
             type      = embarkedUnit.type,
             dbid      = embarkedUnit.dbid,
-            unitname  = embarkedUnit.name .. ' #' .. RandomTxt(2),
+            unitname  = embarkedUnit.name .. ' #' .. Utils.RandomTxt(2),
             base      = base,
             loadoutid = loadout.loadoutId
           })

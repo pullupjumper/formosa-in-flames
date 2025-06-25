@@ -1,3 +1,5 @@
+Utils = require("src.utils.utils")
+
 function Reload(battery, ammunitionSection, weaponDBID)
   local group = SE_GetUnit({ guid = battery.guid })
   if group == nil then return end
@@ -133,7 +135,7 @@ end
 
 function ToFringPosition(battery, group)
   battery.state = CONFIG.batteryState.REPOSITIONING
-  local courseIdx = math.random(GetCount(battery.position.FP))
+  local courseIdx = math.random(Utils.GetCount(battery.position.FP))
   -- group.course = battery.position.FP[courseIdx].course
   -- group.manualSpeed = 30
 
@@ -238,7 +240,7 @@ end
 
 local function ammoSecToRL(section, group)
   section.state = CONFIG.batteryState.REPOSITIONING
-  -- group.course = { section.position.RL.course[GetCount(section.position.RL.course)] }
+  -- group.course = { section.position.RL.course[Utils.GetCount(section.position.RL.course)] }
   -- group.manualSpeed = 30
 
   for _, guid in ipairs(group.group.unitlist) do

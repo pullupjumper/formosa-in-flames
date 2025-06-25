@@ -5,7 +5,7 @@ This report details the unit tests performed on the `assignMission.lua` module.
 ## Test Setup
 
 *   **Test Framework:** Busted
-*   **Mocks:** `GameApi`, `Logger`, and `SafeCall` were mocked to ensure isolated and repeatable tests.
+*   **Mocks:** `GameApi`, `Logger`, and `Utils.SafeCall` were mocked to ensure isolated and repeatable tests.
 
 ## Test Execution
 

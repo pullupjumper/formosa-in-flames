@@ -1,3 +1,5 @@
+Utils = require("src.utils.utils")
+
 local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, saveData, data)
   local key = 'u'
   if side == 'China' then key = 'c' end
@@ -119,7 +121,7 @@ end
 --       if unit.dbid and unit.dbid == CONFIG.const.platformDBID46 then
 --         isEmitting = true
 --       else
---         local count = GetCount(unit.course)
+--         local count = Utils.GetCount(unit.course)
 --         local isLeavingRL = not isInArea(
 --           unit.course[count],
 --           value.position.RL.area,

@@ -1,6 +1,7 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
-SafeCall = require("src.utils.utils").SafeCall
+Utils = require("src.utils.utils")
+
 SecondWaveUnloading = {}
 
 ---comment
@@ -8,7 +9,7 @@ SecondWaveUnloading = {}
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil
 function SecondWaveUnloading._createCourseForBarge(zone, unit)
-  local points, err = SafeCall("GameApi.ScenEdit_GetReferencePoints", GameApi.ScenEdit_GetReferencePoints,
+  local points, err = Utils.SafeCall("GameApi.ScenEdit_GetReferencePoints", GameApi.ScenEdit_GetReferencePoints,
     { side = "China", area = zone.offloadArea })
 
   if not points then
@@ -16,10 +17,10 @@ function SecondWaveUnloading._createCourseForBarge(zone, unit)
     return nil
   end
 
-  local centerPoint = CalculateSphericalCenter(points)
+  local centerPoint = Utils.CalculateSphericalCenter(points)
 
   if centerPoint then
-    local d1, err = SafeCall(
+    local d1, err = Utils.SafeCall(
       "GameApi.Tool_Range",
       GameApi.Tool_Range,
       { latitude = unit.latitude, longitude = unit.longitude },
@@ -31,7 +32,7 @@ function SecondWaveUnloading._createCourseForBarge(zone, unit)
       return nil
     end
 
-    local b1, err = SafeCall(
+    local b1, err = Utils.SafeCall(
       "GameApi.Tool_Bearing",
       GameApi.Tool_Bearing,
       { latitude = unit.latitude, longitude = unit.longitude },
@@ -45,7 +46,7 @@ function SecondWaveUnloading._createCourseForBarge(zone, unit)
 
     local b2 = math.abs(zone.LSTSettings.course.bearing - b1)
     local d2 = d1 * math.cos(b2 * 2 * math.pi / 360)
-    local destination, err = SafeCall(
+    local destination, err = Utils.SafeCall(
       "GameApi.World_GetPointFromBearing",
       GameApi.World_GetPointFromBearing,
       {
@@ -73,7 +74,7 @@ end
 ---@param bargeDest CMO__Waypoint[]
 ---@return CMO__Waypoint[]|nil
 function SecondWaveUnloading._createCourseForRORO(zone, unit, bargeDest)
-  local destination, err = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
+  local destination, err = Utils.SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
     latitude = unit.latitude,
     longitude = unit.longitude,
     distance = zone.LSTSettings.course.distance,
@@ -99,11 +100,11 @@ function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
   local barges = {}
 
   for _, item in ipairs(units) do
-    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
 
     if not unit then
       Logger.error("Failed to get unit '" .. item.name .. "': " .. err)
-      return false
+      goto continue
     end
 
     for _, zone in ipairs(operationalZones) do
@@ -119,6 +120,8 @@ function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
         table.insert(roros, { unit = unit, zone = zone })
       end
     end
+
+    ::continue::
   end
 
   for _, item in ipairs(roros) do
@@ -162,7 +165,7 @@ function SecondWaveUnloading.OffloadVehicles(params)
   for index, v in ipairs(cargoList) do
     ship:deleteUnitCargo(v.guid)
 
-    local u, err = SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
+    local u, err = Utils.SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
       side      = 'China',
       type      = 'Facility',
       latitude  = ACVlocations[index].latitude,
@@ -176,22 +179,63 @@ function SecondWaveUnloading.OffloadVehicles(params)
       return
     end
 
-    -- local u = ScenEdit_AddUnit({
-    --   side      = 'China',
-    --   type      = 'Facility',
-    --   latitude  = ACVlocations[index].latitude,
-    --   longitude = ACVlocations[index].longitude,
-    --   dbid      = v.dbid,
-    --   unitname  = v.name,
-    -- })
-
-    -- if u then
-    --   resultCount = resultCount + 1
-    -- end
     resultCount = resultCount + 1
   end
 
   return resultCount
+end
+
+---comment
+---@param saveData SBJ__SaveData
+---@param ship CMO__Unit
+---@return boolean
+function SecondWaveUnloading.IsBridgeDestroyed(saveData, ship)
+  if saveData.c.PHIBOP.barges[ship.guid] and saveData.c.PHIBOP.barges[ship.guid].bridgeGUID then
+    local bridge, err = Utils.SafeCall(
+      "GameApi.ScenEdit_GetUnit",
+      GameApi.ScenEdit_GetUnit,
+      saveData.c.PHIBOP.barges[ship.guid].bridgeGUID
+    )
+
+    if not bridge then
+      Logger.log('Bridge is destroyed')
+      return true
+    end
+
+    return false
+  end
+
+  return true
+end
+
+---comment
+---@param saveData SBJ__SaveData
+---@param ship CMO__Unit
+---@return boolean
+function SecondWaveUnloading.HasExtendedBridge(saveData, ship)
+  return saveData.c.PHIBOP.barges[ship.guid].bridgeGUID ~= nil
+end
+
+---comment
+---@param CONFIG SBJ__CONFIG
+---@param barge CMO__Unit
+---@param roro CMO__Unit
+---@return table|nil
+function SecondWaveUnloading.GetBargeROROZone(CONFIG, barge, roro)
+  for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
+    local d, err = Utils.SafeCall("GameApi.Tool_Range", GameApi.Tool_Range, roro.guid, barge.guid)
+
+    if not d then
+      Logger.error("Error in Tool_Range: " .. err)
+      return nil
+    end
+
+    if roro:inArea(zone.ACV.area) and barge:inArea(zone.ACV.area) and d < 1 then
+      return zone
+    end
+  end
+
+  return nil
 end
 
 return SecondWaveUnloading

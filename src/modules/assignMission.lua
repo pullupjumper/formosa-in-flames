@@ -1,4 +1,4 @@
-SafeCall = require("src.utils.utils").SafeCall
+Utils = require("src.utils.utils")
 Logger = require("src.utils.logger")
 GameApi = require("src.utils.gameApi")
 
@@ -13,7 +13,7 @@ function _filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   ---@type string[]
   local platforms = baseUnit.embarkedUnits[platformType]
   for _, guid in ipairs(platforms) do
-    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
 
     if not unit then
       Logger.error("Failed to get unit '" .. guid .. "': " .. err)
@@ -44,7 +44,7 @@ function _processMissionAssignments(filteredPlatforms, mission)
     if count >= mission.num then break end
 
     if _canAssignUnitToMission(unit, mission) then
-      local success, err = SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
+      local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
         unit.guid, mission.name, false)
 
       if not success then
@@ -63,7 +63,7 @@ end
 ---@param platformDBID number The database ID of the platform to filter
 ---@param missions table<number, SBJ__MissionSettings> A list of missions to assign units to
 function AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
-  local base, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
 
   if not base then
     Logger.error("Failed to get base unit '" .. fromUnit .. "': " .. err)
@@ -81,7 +81,7 @@ end
 ---@param weaponDBID number The database ID of the weapon to filter by
 ---@return number The count of the specified weapon on the unit's loadout
 function _getWeaponCount(unitGuid, weaponDBID)
-  local loadout, err = SafeCall("GameApi.ScenEdit_GetLoadout", GameApi.ScenEdit_GetLoadout, unitGuid)
+  local loadout, err = Utils.SafeCall("GameApi.ScenEdit_GetLoadout", GameApi.ScenEdit_GetLoadout, unitGuid)
 
   if not loadout then
     Logger.error("Failed to get loadout for unit '" .. unitGuid .. "': " .. err)
@@ -117,7 +117,7 @@ end
 ---@return table<integer, string>|nil -- A list of assigned units
 function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   ---@type CMO__Unit
-  local airbase, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local airbase, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
   if not airbase then
     Logger.error("Failed to get airbase unit '" .. fromUnit .. "': " .. err)
     return nil -- 提前返回
@@ -126,7 +126,7 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
   if #airbase.embarkedUnits['Aircraft'] == 0 then return nil end
 
   ---@type CMO__Mission
-  local m, err = SafeCall("GameApi.ScenEdit_GetMission", GameApi.ScenEdit_GetMission, airbase.side, missionName)
+  local m, err = Utils.SafeCall("GameApi.ScenEdit_GetMission", GameApi.ScenEdit_GetMission, airbase.side, missionName)
   if not m then
     Logger.error("Failed to get mission '" .. missionName .. "' for side '" .. airbase.side .. "': " .. err)
     return nil -- 提前返回
@@ -141,7 +141,7 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
   local platforms = airbase.embarkedUnits.Aircraft
   for _, guid in ipairs(platforms) do
     ---@type CMO__Unit
-    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
     if not unit then
       Logger.error("Failed to get unit '" .. guid .. "': " .. err)
       goto continue_strike -- 跳過當前單位
@@ -150,7 +150,7 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
     local weaponNum = _getWeaponCount(unit.guid, weaponDBID)
     if _isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID) and count < num then
       ---@type boolean
-      local success, err = SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
+      local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
         unit.guid, missionName, isEscort)
 
       if not success then

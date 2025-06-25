@@ -1,6 +1,7 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
-SafeCall = require("src.utils.utils").SafeCall
+Utils = require("src.utils.utils")
+
 ShipMovement = {}
 
 ---@param unit CMO__Unit
@@ -12,7 +13,7 @@ function ShipMovement._moveShip(unit, location, speed, isTesting)
   unit.manualSpeed = speed
 
   if isTesting then
-    local result, err = SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
+    local result, err = Utils.SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
       guid = unit.guid,
       latitude = location.latitude,
       longitude = location.longitude,
@@ -73,7 +74,7 @@ end
 ---@param lon number|string
 ---@param bearing number
 function ShipMovement._setShipPosition(ship, lat, lon, bearing)
-  local result, err = SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
+  local result, err = Utils.SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
     guid = ship.guid,
     latitude = lat,
     longitude = lon,
@@ -91,7 +92,7 @@ end
 ---@param distance number
 ---@return CMO__Location
 function ShipMovement._getNextPosition(latitude, longitude, bearing, distance)
-  local point, err = SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
+  local point, err = Utils.SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
     LATITUDE = latitude,
     LONGITUDE = longitude,
     BEARING = bearing,
@@ -108,7 +109,7 @@ end
 ---@param group table<string, table>
 ---@param isTesting boolean
 function ShipMovement._handleSAG(group, isTesting)
-  local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, group.groupName)
+  local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, group.groupName)
 
   if not unit then
     Logger.error("Error in ScenEdit_GetUnit: " .. err)
@@ -122,7 +123,7 @@ function ShipMovement._handleSAG(group, isTesting)
     local type052d, type054a = 0, 0
 
     for _, u in ipairs(unit.group.unitlist) do
-      local ship, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, u)
+      local ship, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, u)
 
       if not ship then
         Logger.error("Error in ScenEdit_GetUnit: " .. err)
@@ -175,7 +176,7 @@ function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
   local allUnitsMoved = false
 
   for _, unitData in ipairs(units) do
-    local unit, err = SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, unitData.guid)
+    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, unitData.guid)
 
     if not unit then
       Logger.error('Failed to get unit ' .. unitData.guid .. ': ' .. err)
@@ -280,7 +281,7 @@ function ShipMovement.CalculateDestination(saveData)
         distance = shipSettings.verticalDistance
       })
 
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type075.locations,
         GenerateLocations({
           initialLocation = firstRp075,
@@ -288,7 +289,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071.locations,
         GenerateLocations({
           initialLocation = firstRp071,
@@ -296,7 +297,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type076.locations,
         GenerateLocations({
           initialLocation = firstRp076,
@@ -304,7 +305,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.barge.locations,
         GenerateLocations({
           initialLocation = firstRpBarge,
@@ -313,7 +314,7 @@ function ShipMovement.CalculateDestination(saveData)
           distance = shipSettings.horizontalDistance
         })
       )
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.roro.locations,
         GenerateLocations({
           initialLocation = firstRpRORO,
@@ -321,7 +322,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072iii.locations,
         GenerateLocations({
           initialLocation = firstRp072iii,
@@ -329,7 +330,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072a.locations,
         GenerateLocations({
           initialLocation = firstRp072a,
@@ -337,7 +338,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.ferry.locations,
         GenerateLocations({
           initialLocation = firstRpFerry,
@@ -345,7 +346,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type073a.locations,
         GenerateLocations({
           initialLocation = firstRp073a,
@@ -353,7 +354,7 @@ function ShipMovement.CalculateDestination(saveData)
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      InsertList(
+      Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
         GenerateLocations({
           initialLocation = firstRp071InLSTArea,

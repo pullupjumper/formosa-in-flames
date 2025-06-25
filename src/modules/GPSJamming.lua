@@ -1,3 +1,5 @@
+Utils = require("src.utils.utils")
+
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
 --     if isRepeatable == nil then isRepeatable = false end
 --     if isActive == nil then isActive = true end
@@ -60,7 +62,7 @@
 --         if weaponU and weaponU.dbid == wpn.dbid then
 --             if math.random(100) > wpn.jammingResistance then
 --                 if weaponU.course then
---                     local count = GetCount(weaponU.course)
+--                     local count = Utils.GetCount(weaponU.course)
 --                     local last_waypoint
 
 --                     if count == 0 then
