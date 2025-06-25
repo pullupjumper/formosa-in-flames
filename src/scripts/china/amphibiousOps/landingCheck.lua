@@ -1,6 +1,7 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 ShipMovement = require('src.modules.landingOps.shipMovement')
 AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
 AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
@@ -39,7 +40,7 @@ if saveData == nil then
 end
 
 
-if saveData.c.PHIBOP.isShipsStartedMoving and IsAfterStartTime(saveData.c.PHIBOP.startTime) then
+if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.IsAfterStartTime(saveData.c.PHIBOP.startTime) then
   local hasIssuedShipMovementOrder = ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
 
   if hasIssuedShipMovementOrder then

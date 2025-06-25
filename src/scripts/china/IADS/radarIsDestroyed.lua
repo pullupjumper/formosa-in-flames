@@ -1,3 +1,5 @@
+Logger = require("src.utils.logger")
+
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.radarDistance }
@@ -48,5 +50,5 @@ end
 
 if temp.unit ~= nil then
   ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-  PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated.')
+  Logger.log(tostring(temp.unit.name) .. '\'s radar is activated.')
 end

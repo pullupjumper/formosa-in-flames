@@ -1336,6 +1336,7 @@ CONFIG.c.PHIBOP.initialLocations = {
   },
 
 }
+---@type SBJ__OperationalZone[]
 CONFIG.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
@@ -1466,6 +1467,7 @@ CONFIG.c.PHIBOP.operationalZones = {
         distance = CONFIG.c.PHIBOP.shipSettings.transitDistance
       }
     },
+    ---@type SBJ__ACV
     ACV = {
       bearing = CONFIG.c.PHIBOP.shipSettings.heading.west.horizontal,
       distance = CONFIG.c.PHIBOP.shipSettings.ACVHorizontalDistance,
@@ -1494,6 +1496,7 @@ CONFIG.c.PHIBOP.operationalZones = {
     offloadArea = CONFIG.c.areas["OFFLOAD AREA/SISHU"],
     boat = {
       dbid = CONFIG.platformDBID1,
+      ---@type SBJ__LandingMission[]
       missions = {
         {
           name = 'LANDING/SISHU/1/1',

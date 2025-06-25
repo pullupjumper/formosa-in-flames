@@ -1,4 +1,5 @@
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
 --     if isRepeatable == nil then isRepeatable = false end
@@ -121,7 +122,7 @@ end
 
 -- function AddGPSJammingZones()
 --     for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
---         local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+--         local point = GameUtils.CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
 --         local unit = ScenEdit_AddUnit({
 --             type = 'Facility',
 --             unitname = jammer.name,
@@ -134,7 +135,7 @@ end
 
 --         if unit then
 --             ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
---             local area = NewArea(point, { side = 'China', shape = 'circle', distance = jammer.radius })
+--             local area = GameUtils.NewArea(point, { side = 'China', shape = 'circle', distance = jammer.radius })
 --             local zone = ScenEdit_AddZone('China', -925, { description = jammer.zoneName, area = area, })
 --             zone.enablers = { GNSS_GLONASS = true, GNSS_GPS = false, GNSS_BeiDou = true, GNSS_NavIC = true }
 --         end
@@ -145,7 +146,7 @@ function TryAddJammerUnit(jammer, attempt, max_attempts)
   attempt = attempt or 1
   max_attempts = max_attempts or 50
 
-  local point = CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+  local point = GameUtils.CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
   local unit = ScenEdit_AddUnit({
     type = 'Facility',
     unitname = jammer.name,
@@ -173,7 +174,7 @@ function AddGPSJammingZones()
     if unit and point then
       ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
-      local area = NewArea(point, {
+      local area = GameUtils.NewArea(point, {
         side = 'China',
         shape = 'circle',
         distance = jammer.radius

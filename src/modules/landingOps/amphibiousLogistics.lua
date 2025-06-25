@@ -89,8 +89,7 @@ function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid,
     Logger.error("Failed to get base unit '" .. fromUnit .. "': " .. err)
     return
   end
-  -- local base = ScenEdit_GetUnit({ guid = fromUnit })
-  -- if base == nil then return end
+
   local platforms = base.embarkedUnits[platformType]
   local baseContainingCargo = base
 
@@ -104,7 +103,6 @@ function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid,
         Logger.error("Failed to get unit '" .. v .. "': " .. err)
         return
       end
-      -- local unit = SE_GetUnit({ guid = v })
 
       if platformType == 'Aircraft' then
         if unit ~= nil and unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
@@ -150,7 +148,6 @@ function AmphibiousLogistics.GetUnitsInAnchorageArea(CONFIG, units)
       Logger.error("Failed to get unit '" .. item.guid .. "': " .. err)
       goto continue_filter -- 跳過當前單位
     end
-    -- local unit = SE_GetUnit({ guid = item.guid })
 
     if (unit and unit.dbid == CONFIG.platformDBID6
           or unit.dbid == CONFIG.platformDBID7
@@ -179,8 +176,8 @@ function AmphibiousLogistics.GetUnitsInAnchorageArea(CONFIG, units)
   return { units = unitsInAnchorageArea, isUnitMoving = isUnitMoving }
 end
 
----@param platformType string
----@param zone {boat: {zone:CMO__ReferencePoint[], settings:table, cargoItemsForTransfer:table}, tansportHelicopter: {zone:CMO__ReferencePoint[], settings:table, cargoItemsForTransfer:table}}
+---@param platformType string The type of platform to filter (e.g., 'tansportHelicopter', 'boat')
+---@param zone SBJ__OperationalZone
 ---@param missionName string
 ---@return boolean
 function AmphibiousLogistics._handleCargoMission(platformType, zone, missionName)

@@ -1,3 +1,4 @@
+GameUtils = require("src.utils.gameUtils")
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.radarDistance }
@@ -11,7 +12,7 @@ end
 --     for _, component in ipairs(unit.components) do
 --         if component['comp_dbid'] == CONFIG.sensorDBID13
 --             and component['comp_status'] == 'Destroyed' then
---             PrintBox(
+--             GameUtils.PrintBox(
 --                 'China',
 --                 unit.name .. '\'s jammer is destroyed',
 --                 'comp_dbid/' .. tostring(component['comp_dbid']),
@@ -44,7 +45,7 @@ for _, component in ipairs(unit.components) do
 				or component['comp_dbid'] == CONFIG.sensorDBID5
 				or component['comp_dbid'] == CONFIG.sensorDBID6)
 			and component['comp_status'] == 'Destroyed' then
-		PrintBox(
+		GameUtils.PrintBox(
 			'China',
 			unit.name .. '\'s radar is damaged',
 			'comp_dbid/' .. tostring(component['comp_dbid']),
@@ -86,5 +87,5 @@ end
 
 if temp.unit ~= nil then
 	ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-	PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
+	GameUtils.PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
 end

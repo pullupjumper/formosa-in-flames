@@ -1,11 +1,12 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 
 SecondWaveUnloading = {}
 
 ---comment
----@param zone any
+---@param zone SBJ__OperationalZone
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil
 function SecondWaveUnloading._createCourseForBarge(zone, unit)
@@ -69,7 +70,7 @@ function SecondWaveUnloading._createCourseForBarge(zone, unit)
 end
 
 ---comment
----@param zone any
+---@param zone SBJ__OperationalZone
 ---@param unit CMO__Unit
 ---@param bargeDest CMO__Waypoint[]
 ---@return CMO__Waypoint[]|nil
@@ -142,7 +143,7 @@ end
 function SecondWaveUnloading.OffloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
-  local ACVlocations = GenerateLocations({
+  local ACVlocations = GameUtils.GenerateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -220,7 +221,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
----@return table|nil
+---@return SBJ__OperationalZone|nil
 function SecondWaveUnloading.GetBargeROROZone(CONFIG, barge, roro)
   for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
     local d, err = Utils.SafeCall("GameApi.Tool_Range", GameApi.Tool_Range, roro.guid, barge.guid)

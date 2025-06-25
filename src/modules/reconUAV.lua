@@ -1,3 +1,5 @@
+GameUtils = require("src.utils.gameUtils")
+
 ---@param num number
 ---@param list table<number, CMO__Unit>
 function IsDestroyedOrRTB(list, num)
@@ -138,14 +140,14 @@ end
 
 function HandleReconQueue(saveData)
   for _, q in ipairs(saveData.c.recon.queue) do
-    if shouldTakeoffBeforeStrike(q) and IsAfterStartTime(q.takeoffTime) then
+    if shouldTakeoffBeforeStrike(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
       local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
         q.unitGUID = units[1]
         q.hasLaunched = true
       end
-    elseif shouldTakeoffAfterStrike(q) and IsAfterStartTime(q.missionStartTime) then
+    elseif shouldTakeoffAfterStrike(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
       local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
 
       if units and #units > 0 then
@@ -153,7 +155,7 @@ function HandleReconQueue(saveData)
         q.hasLaunched = true
         q.isFinished = true
       end
-    elseif isH6N(q) and IsAfterStartTime(q.takeoffTime) then
+    elseif isH6N(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
       local units = LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
@@ -162,7 +164,7 @@ function HandleReconQueue(saveData)
       end
     end
 
-    if shouldEnterTargetArea(q) and IsAfterStartTime(q.missionStartTime) then
+    if shouldEnterTargetArea(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
       local unit = SE_GetUnit({ guid = q.unitGUID })
 
       if unit then

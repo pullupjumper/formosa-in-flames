@@ -2,11 +2,13 @@ GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
 
+GameUtils = {}
+
 ---@param x_latitude number
 ---@param x_longitude number
 ---@param max_radius number
 ---@return CMO__Location
-function CircularRandomPosition(x_latitude, x_longitude, max_radius)
+function GameUtils.CircularRandomPosition(x_latitude, x_longitude, max_radius)
   local randomisationCircle, errorMessage = Utils.SafeCall("GameApi.World_GetCircleFromPoint", GameApi
     .World_GetCircleFromPoint, {
       latitude = x_latitude,
@@ -26,7 +28,7 @@ end
 ---Generate a list of locations based on parameters
 ---@param params SBJ__Location_Params
 ---@return table<integer, CMO__Location>
-function GenerateLocations(params)
+function GameUtils.GenerateLocations(params)
   local numTemp = params.num
   local bearingTemp = params.bearing
   local distanceTemp = 0
@@ -67,7 +69,7 @@ end
 ---@param position CMO__Location
 ---@param mode SBJ__AreaMode
 ---@return table<integer, CMO__ReferencePoint>|boolean
-function NewArea(position, mode)
+function GameUtils.NewArea(position, mode)
   local side = mode.side
   local shape = mode.shape
   if side == nil or shape == nil then return false end
@@ -142,7 +144,7 @@ end
 
 ---@param side string @The side the message is visible to (sidename may also be used in place of side)
 ---@param ... string @Variable number of string arguments to be printed inside the box
-function PrintBox(side, ...)
+function GameUtils.PrintBox(side, ...)
   -- 收集所有字串參數到陣列中
   local strings = { ... }
 
@@ -181,7 +183,7 @@ end
 
 ---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return boolean
-function IsAfterStartTime(time)
+function GameUtils.IsAfterStartTime(time)
   local result, err = Utils.SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
 
   if err then
@@ -191,10 +193,11 @@ function IsAfterStartTime(time)
   return result > Utils.ParseDatetimeToTimestamp(time)
 end
 
-return {
-  CircularRandomPosition = CircularRandomPosition,
-  GenerateLocations = GenerateLocations,
-  NewArea = NewArea,
-  PrintBox = PrintBox,
+-- return {
+--   CircularRandomPosition = CircularRandomPosition,
+--   GenerateLocations = GenerateLocations,
+--   NewArea = NewArea,
+--   PrintBox = PrintBox,
 
-}
+-- }
+return GameUtils

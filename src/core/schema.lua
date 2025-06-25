@@ -88,3 +88,45 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@class SBJ__CONFIG:table
 
 ---@class SBJ__SaveData:table
+
+---@class SBJ__ACV:table
+---@field bearing number
+---@field distance number
+---@field speed number
+---@field destination CMO__TableOfWaypoints
+---@field area string[]
+
+---@class SBJ__OperationalZone:table
+---@field name string
+---@field baseGUID string
+---@field anchorageArea string[]
+---@field LSTAnchorageArea string[]
+---@field area string[]
+---@field offloadArea string[]
+---@field boat table
+---@field tansportHelicopter table
+---@field attackHelicopter table
+---@field LSTSettings table
+---@field ACV SBJ__ACV
+---@field reconUAV table
+
+---@class SBJ__LandingMission:table
+---@field name string
+---@field loadoutId number
+---@field num number
+---@field startTime string
+
+---@class SBJ__CargoForTransfer:table
+---@field type075 SBJ__TransferCargoByLoadout[]
+---@field type071 SBJ__TransferCargoByLoadout[]
+
+---@class SBJ__TransferCargoByLoadout:table
+---@field loadoutId number
+---@field cargoItems SBJ__CargoList[]
+
+---@class SBJ__CargoList:SBJ__CargoItem[]
+
+---@class SBJ__CargoItem:table
+---@field type number
+---@field num number
+---@field dbid number

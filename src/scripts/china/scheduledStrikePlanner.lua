@@ -1,4 +1,5 @@
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 
 local contacts = ScenEdit_GetContacts('China')
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -266,7 +267,7 @@ local function identifyEmTargets(saveData, contacts, FST)
     local targets = filters[filterName](FST, contacts, saveData)
 
     if CONFIG.isDevMode then
-      PrintBox('China', filterName .. '/' .. FST.name .. ': ' .. #targets)
+      GameUtils.PrintBox('China', filterName .. '/' .. FST.name .. ': ' .. #targets)
     end
 
     Utils.InsertList(evaluatedTargetlist, targets)
@@ -296,7 +297,7 @@ end
 
 local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
-    if not FST.isFinished and IsAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
+    if not FST.isFinished and GameUtils.IsAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
       local result = AttackContacts({
         contacts = FST.evaluatedTargetlist,
         qty = FST.ammoPerTarget,
@@ -307,7 +308,7 @@ local function executeFireSupportTasks(FSEM)
         FST.isFinished = true
 
         if CONFIG.isDevMode then
-          PrintBox('China', FST.name .. '/Fired missiles: ' .. result)
+          GameUtils.PrintBox('China', FST.name .. '/Fired missiles: ' .. result)
         end
       end
     end
@@ -320,11 +321,11 @@ local function strike(saveData, contacts)
       local allBatteriesInPosition = true
 
       for _, FST in ipairs(FSEM.FSTs) do
-        if not FST.isFinished and IsAfterStartTime(FST.startTime) then
+        if not FST.isFinished and GameUtils.IsAfterStartTime(FST.startTime) then
           local evaluatedTargetlist = assessTargetsDamage(FST, FSEM)
 
           if CONFIG.isDevMode then
-            PrintBox('China', FST.name .. ': ' .. #evaluatedTargetlist)
+            GameUtils.PrintBox('China', FST.name .. ': ' .. #evaluatedTargetlist)
           end
 
           if type(FST.filterNames) == "table" and #FST.filterNames > 0 then
@@ -398,7 +399,7 @@ local function airStrike(saveData, contacts)
   for _, wave in pairs(saveData.c.air.ATO) do
     if not wave.hasLaunched and wave.isActivated then
       for _, package in ipairs(wave.packages) do
-        if not package.hasLaunched and IsAfterStartTime(package.takeoffTime) then
+        if not package.hasLaunched and GameUtils.IsAfterStartTime(package.takeoffTime) then
           local isAssigned = handleStrikePackagesWithMission(package, wave, contacts)
 
           if isAssigned then
@@ -421,7 +422,7 @@ if saveData.c.recon.isActivated then
   HandleReconQueue(saveData)
 end
 
-if saveData.c.surface.lacm.isActivated and IsAfterStartTime(saveData.c.surface.lacm.startTime) then
+if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
   for _, value in ipairs(SE_GetUnit({ unitname = 'CSG' }).group.unitlist) do
@@ -440,7 +441,7 @@ if saveData.c.surface.lacm.isActivated and IsAfterStartTime(saveData.c.surface.l
   saveData.c.surface.lacm.isActivated = false
 end
 
-if saveData.c.subSurface.slcm.isActivated and IsAfterStartTime(saveData.c.subSurface.slcm.startTime) then
+if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveData.c.subSurface.slcm.startTime) then
   for _, unit in pairs(CONFIG.c.subSurface.slcm.submarines) do
     local actualUnit = SE_GetUnit({ side = 'China', unitname = unit.name })
 

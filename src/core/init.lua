@@ -1,5 +1,6 @@
 ShipMovement = require("src.modules.landingOps.shipMovement")
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -8,7 +9,7 @@ Utils = require("src.utils.utils")
 
 --         if jammer and event == nil then
 --             if jammer.dbid == CONFIG.platformDBID25 then
---                 local jammingArea = NewArea(
+--                 local jammingArea = GameUtils.NewArea(
 --                     { latitude = jammer.latitude, longitude = jammer.longitude },
 --                     { side = 'China', distance = '15', shape = 'circle' }
 --                 )
@@ -177,7 +178,7 @@ local function initATO(saveData)
   for _, wave in pairs(saveData.c.air.ATO) do
     for index, package in ipairs(wave.packages) do
       if package.takeoffTime == nil and index == 1 then
-        PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
+        GameUtils.PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
       end
 
       if type(package.queryParams) == 'table' then
@@ -208,7 +209,7 @@ local function initFSP(saveData)
       end
 
       if FST.startTime == nil and index == 1 then
-        PrintBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
+        GameUtils.PrintBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
       end
 
       if FST.startTime == nil and index > 1 then

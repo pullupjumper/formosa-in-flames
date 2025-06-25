@@ -1,10 +1,11 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 AmphibiousAssault = {}
 
----@param mission {name: string, startTime: number}
+---@param mission SBJ__LandingMission
 ---@return boolean
 function AmphibiousAssault._setMissionStartTime(mission)
   local currentTime, err = Utils.SafeCall("GameApi.ScenEdit_CurrentTime", GameApi.ScenEdit_CurrentTime)
@@ -150,8 +151,7 @@ function AmphibiousAssault.LaunchACV(params)
   if ship == nil or ship.IsDestroyed then return end
 
   local destination = params.destination
-  -- local ACVlocations = GenerateACVLocations(params)
-  local ACVlocations = GenerateLocations({
+  local ACVlocations = GameUtils.GenerateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -178,15 +178,6 @@ function AmphibiousAssault.LaunchACV(params)
         Logger.error("Failed to add unit: " .. err)
         return
       end
-      -- local addedUnit = ScenEdit_AddUnit({
-      --   side = 'China',
-      --   type = 'Vehicle',
-      --   name = 'ZTD-05',
-      --   dbid = 240,
-      --   LATITUDE = ACVlocations[i].latitude,
-      --   LONGITUDE = ACVlocations[i].longitude,
-      -- })
-      -- if addedUnit == nil then return end
 
       local doctrine, err = Utils.SafeCall(
         "GameApi.ScenEdit_SetDoctrine",
@@ -199,7 +190,7 @@ function AmphibiousAssault.LaunchACV(params)
         Logger.error("Failed to set doctrine: " .. err)
         return
       end
-      -- ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+
       addedUnit.throttle = 'Full'
       addedUnit.course = destination
       index = i
@@ -222,15 +213,6 @@ function AmphibiousAssault.LaunchACV(params)
         Logger.error("Failed to add unit: " .. err)
         return
       end
-      -- local addedUnit = ScenEdit_AddUnit({
-      --   side = 'China',
-      --   type = 'Vehicle',
-      --   name = 'ZBD-05',
-      --   dbid = 241,
-      --   LATITUDE = ACVlocations[i].latitude,
-      --   LONGITUDE = ACVlocations[i].longitude,
-      -- })
-      -- if addedUnit == nil then return end
 
       local doctrine, err = Utils.SafeCall(
         "GameApi.ScenEdit_SetDoctrine",
@@ -243,7 +225,7 @@ function AmphibiousAssault.LaunchACV(params)
         Logger.error("Failed to set doctrine: " .. err)
         return
       end
-      -- ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+
       addedUnit.throttle = 'Full'
       addedUnit.course = destination
       count = count + 1
@@ -268,7 +250,7 @@ end
 ---comment
 ---@param CONFIG SBJ__CONFIG
 ---@param ship CMO__Unit
----@return table|nil
+---@return SBJ__OperationalZone|nil
 function AmphibiousAssault.GetShipZone(CONFIG, ship)
   for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
     if ship:inArea(zone.ACV.area) then

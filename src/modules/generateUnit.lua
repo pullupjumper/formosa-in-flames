@@ -1,4 +1,5 @@
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 
 function RemoveC2Facilities()
   local units = VP_GetSide({ name = 'China' }).units
@@ -22,7 +23,7 @@ function CreateRandomUnits(centerPoint, dbids, count, randomRadius, sideName, un
 
   local function TryCreateUnit(attempt, max_attempts)
     local dbid = dbids[math.random(#dbids)]
-    local point = CircularRandomPosition(centerPoint.lat, centerPoint.lon, randomRadius)
+    local point = GameUtils.CircularRandomPosition(centerPoint.lat, centerPoint.lon, randomRadius)
 
     local unit = ScenEdit_AddUnit({
       type = unitType,
@@ -624,7 +625,7 @@ end
 ---@param unit CMO__Unit
 ---@param embarkedUnits table<number, EmbarkedUnit>|nil
 function AddUnitsByRP(params, unit, embarkedUnits)
-  local locations = GenerateLocations(params)
+  local locations = GameUtils.GenerateLocations(params)
   local unitTemp = nil
 
   for k, v in ipairs(locations) do
@@ -653,7 +654,7 @@ function GetPointFromBearing(params)
   local bearing = params.bearing
   local distance = params.distance
 
-  return GenerateLocations({
+  return GameUtils.GenerateLocations({
     initialLocation = initialLocation,
     num = 2,
     bearing = bearing,

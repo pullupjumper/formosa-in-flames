@@ -1,6 +1,7 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
+GameUtils = require("src.utils.gameUtils")
 
 ShipMovement = {}
 
@@ -283,7 +284,7 @@ function ShipMovement.CalculateDestination(saveData)
 
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type075.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp075,
           num = area.num.type075,
           bearing = area.heading.horizontal,
@@ -291,7 +292,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp071,
           num = area.num.type071,
           bearing = area.heading.horizontal,
@@ -299,7 +300,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type076.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp076,
           num = area.num.type076,
           bearing = area.heading.horizontal,
@@ -307,7 +308,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.barge.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRpBarge,
           num = area.num.barge,
           bearing = area.heading.horizontal,
@@ -316,7 +317,7 @@ function ShipMovement.CalculateDestination(saveData)
       )
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.roro.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRpRORO,
           num = area.num.roro,
           bearing = area.heading.horizontal,
@@ -324,7 +325,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072iii.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp072iii,
           num = area.num.type072iii,
           bearing = area.heading.horizontal,
@@ -332,7 +333,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072a.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp072a,
           num = area.num.type072a,
           bearing = area.heading.horizontal,
@@ -340,7 +341,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.ferry.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRpFerry,
           num = area.num.ferry,
           bearing = area.heading.horizontal,
@@ -348,7 +349,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type073a.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp073a,
           num = area.num.type073a,
           bearing = area.heading.horizontal,
@@ -356,7 +357,7 @@ function ShipMovement.CalculateDestination(saveData)
         }))
       Utils.InsertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
-        GenerateLocations({
+        GameUtils.GenerateLocations({
           initialLocation = firstRp071InLSTArea,
           num = area.num.type071InLSTArea,
           bearing = area.heading.horizontal,
