@@ -1,15 +1,20 @@
 Utils = require("src.utils.utils")
 GameUtils = require("src.utils.gameUtils")
+Logger = require("src.utils.logger")
+GameApi = require("src.utils.gameApi")
+Recon = require("src.modules.strikePlanner.recon")
 
-local contacts = ScenEdit_GetContacts('China')
-local saveData = gKH.State.LoadTableFromKey("SaveData")
+local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
 
-if saveData == nil then
-  ScenEdit_SpecialMessage('China', 'saveData is nil')
+if not contacts then
+  Logger.error("Error in ScenEdit_GetContacts: " .. err)
   return
 end
 
-if contacts == nil then
+local saveData = gKH.State.LoadTableFromKey("SaveData")
+
+if saveData == nil then
+  Logger.error("saveData is nil")
   return
 end
 
@@ -48,7 +53,7 @@ local function filterTargetsWithinRangeOfRadioSource(saveData, contacts)
         table.insert(targets, contact.guid)
 
         if not isTracking and tm.type == 'mobile' then
-          isTracking = TrackTarget(saveData, units, CONFIG.platformDBID13, contact)
+          isTracking = Recon.TrackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
         end
       end
     end
@@ -129,7 +134,7 @@ local filters = {
           table.insert(navalTargets, contact.guid)
 
           if not isTracking then
-            isTracking = TrackTarget(saveData, units, CONFIG.platformDBID12, contact)
+            isTracking = Recon.TrackTarget(CONFIG, saveData, units, CONFIG.platformDBID12, contact)
           end
         end
       end
@@ -419,7 +424,7 @@ end
 
 
 if saveData.c.recon.isActivated then
-  HandleReconQueue(saveData)
+  Recon.HandleReconQueue(saveData)
 end
 
 if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c.surface.lacm.startTime) then

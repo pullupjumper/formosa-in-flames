@@ -88,6 +88,7 @@ end
 ---@param isEscort? boolean -- Whether the mission is an escort mission
 ---@return boolean -- Returns true if the unit was successfully assigned to the mission, false otherwise
 function GameApi.ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
+  isEscort = isEscort or false
   local result = ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
 
   if not result then
@@ -284,6 +285,22 @@ end
 ---@return boolean
 function GameApi.ScenEdit_HostUnitToParent(param)
   return ScenEdit_HostUnitToParent(param)
+end
+
+---comment
+---@param params CMO__UpdateUnit
+---@return CMO__Unit
+function GameApi.ScenEdit_UpdateUnit(params)
+  return ScenEdit_UpdateUnit(params)
+end
+
+---comment
+---@param objType string
+---@param name string
+---@param emcon string
+---@return boolean
+function GameApi.ScenEdit_SetEMCON(objType, name, emcon)
+  return ScenEdit_SetEMCON(objType, name, emcon)
 end
 
 return GameApi

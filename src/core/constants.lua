@@ -285,8 +285,8 @@ CONFIG.batteryState = {
 
 --Setup start time
 CONFIG.c.triggers = {
-  -- ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 02:40:00' },
-  ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 1:00:00' },
+  ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 02:40:00' },
+  -- ['(China) (Amphibious ops) start time'] = { startTime = '2027-06-09 1:00:00' },
   ['(China) (Surface/LACM) start time'] = { startTime = '2027-06-09 06:00:00' },
   ['(China) (Sub-surface/SLCM) start time'] = { startTime = '2027-06-09 06:30:00' },
 }
@@ -3462,8 +3462,8 @@ SaveData.c.air.ATO = {
         filterName = 'makeC2Filter',
         contactAge = 60 * 60,
         minTargetCount = 1,
-        takeoffTime = '2027-06-09 03:40:00',
-        -- takeoffTime = '2027-06-09 01:00:00'
+        -- takeoffTime = '2027-06-09 03:40:00',
+        takeoffTime = '2027-06-09 01:00:00'
       },
       {
         striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
