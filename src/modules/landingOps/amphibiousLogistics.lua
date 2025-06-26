@@ -1,7 +1,7 @@
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
-AssignEmbarkedUnitsToMissions = require("src.modules.assignMission").AssignEmbarkedUnitsToMissions
+AssignMission = require("src.modules.assignMission")
 
 AmphibiousLogistics = {}
 
@@ -280,19 +280,19 @@ function AmphibiousLogistics.TransferAndAssign(CONFIG, unitsInAnchorageArea)
           zone.tansportHelicopter.cargoItemsForTransfer.type075[2].loadoutId,
           zone.tansportHelicopter.cargoItemsForTransfer.type075[2].cargoItems
         )
-        AssignEmbarkedUnitsToMissions(
+        AssignMission.AssignEmbarkedUnitsToMissions(
           u.guid,
           'Boats',
           zone.boat.dbid,
           zone.boat.missions
         )
-        AssignEmbarkedUnitsToMissions(
+        AssignMission.AssignEmbarkedUnitsToMissions(
           u.guid,
           'Aircraft',
           zone.tansportHelicopter.dbid,
           zone.tansportHelicopter.missions
         )
-        AssignEmbarkedUnitsToMissions(
+        AssignMission.AssignEmbarkedUnitsToMissions(
           u.guid,
           'Aircraft',
           zone.attackHelicopter.dbid,
@@ -300,7 +300,7 @@ function AmphibiousLogistics.TransferAndAssign(CONFIG, unitsInAnchorageArea)
         )
 
         if zone.reconUAV then
-          AssignEmbarkedUnitsToMissions(
+          AssignMission.AssignEmbarkedUnitsToMissions(
             u.guid,
             'Aircraft',
             zone.reconUAV.dbid,
@@ -324,13 +324,13 @@ function AmphibiousLogistics.TransferAndAssign(CONFIG, unitsInAnchorageArea)
           zone.tansportHelicopter.cargoItemsForTransfer.type071[1].loadoutId,
           zone.tansportHelicopter.cargoItemsForTransfer.type071[1].cargoItems
         )
-        AssignEmbarkedUnitsToMissions(
+        AssignMission.AssignEmbarkedUnitsToMissions(
           u.guid,
           'Boats',
           zone.boat.dbid,
           zone.boat.missions
         )
-        AssignEmbarkedUnitsToMissions(
+        AssignMission.AssignEmbarkedUnitsToMissions(
           u.guid,
           'Aircraft',
           zone.tansportHelicopter.dbid,
@@ -348,7 +348,7 @@ function AmphibiousLogistics.TransferAndAssign(CONFIG, unitsInAnchorageArea)
       item.cargoItemsForTransfer[1].loadoutId,
       item.cargoItemsForTransfer[1].cargoItems
     )
-    AssignEmbarkedUnitsToMissions(
+    AssignMission.AssignEmbarkedUnitsToMissions(
       item.guid,
       'Aircraft',
       item.dbid,

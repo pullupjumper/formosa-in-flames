@@ -2,11 +2,13 @@ Utils = require("src.utils.utils")
 Logger = require("src.utils.logger")
 GameApi = require("src.utils.gameApi")
 
+AssignMission = {}
+
 ---@param baseUnit CMO__Unit The base unit with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')
 ---@param platformDBID number The database ID of the platform to filter
 ---@return table<integer, CMO__Unit> A list of filtered embarked units
-function _filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
+function AssignMission._filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   local filteredPlatforms = {}
   if baseUnit == nil or #baseUnit.embarkedUnits[platformType] == 0 then return filteredPlatforms end
 
@@ -32,18 +34,18 @@ end
 ---@param unit CMO__Unit The unit to check
 ---@param mission SBJ__MissionSettings The mission settings
 ---@return boolean True if the unit can be assigned to the mission, false otherwise
-function _canAssignUnitToMission(unit, mission)
+function AssignMission._canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
 end
 
 ---@param filteredPlatforms table<integer, CMO__Unit> A list of filtered embarked units
 ---@param mission SBJ__MissionSettings The mission to assign units to
-function _processMissionAssignments(filteredPlatforms, mission)
+function AssignMission._processMissionAssignments(filteredPlatforms, mission)
   local count = 0
   for _, unit in ipairs(filteredPlatforms) do
     if count >= mission.num then break end
 
-    if _canAssignUnitToMission(unit, mission) then
+    if AssignMission._canAssignUnitToMission(unit, mission) then
       local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
         unit.guid, mission.name, false)
 
@@ -62,7 +64,7 @@ end
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Ship')
 ---@param platformDBID number The database ID of the platform to filter
 ---@param missions table<number, SBJ__MissionSettings> A list of missions to assign units to
-function AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
+function AssignMission.AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
   local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
 
   if not base then
@@ -70,17 +72,17 @@ function AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, mis
     return -- 提前返回
   end
 
-  local filteredPlatforms = _filterEmbarkedPlatforms(base, platformType, platformDBID)
+  local filteredPlatforms = AssignMission._filterEmbarkedPlatforms(base, platformType, platformDBID)
 
   for _, mission in ipairs(missions) do
-    _processMissionAssignments(filteredPlatforms, mission)
+    AssignMission._processMissionAssignments(filteredPlatforms, mission)
   end
 end
 
 ---@param unitGuid string The GUID of the unit
 ---@param weaponDBID number The database ID of the weapon to filter by
 ---@return number The count of the specified weapon on the unit's loadout
-function _getWeaponCount(unitGuid, weaponDBID)
+function AssignMission._getWeaponCount(unitGuid, weaponDBID)
   local loadout, err = Utils.SafeCall("GameApi.ScenEdit_GetLoadout", GameApi.ScenEdit_GetLoadout, unitGuid)
 
   if not loadout then
@@ -104,7 +106,7 @@ end
 ---@param weaponNum number The number of specified weapons on the unit
 ---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
 ---@return boolean True if the unit is eligible for the strike mission, false otherwise
-function _isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID)
+function AssignMission._isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID)
   return unit.readytime_v == 0 and unit.mission == nil and (weaponNum > 0 or unit.dbid == unitDBID)
 end
 
@@ -115,7 +117,7 @@ end
 ---@param missionName string -- The name of the mission to assign units to
 ---@param isEscort boolean -- Whether the mission is an escort mission
 ---@return table<integer, string>|nil -- A list of assigned units
-function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
+function AssignMission.AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   ---@type CMO__Unit
   local airbase, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
   if not airbase then
@@ -147,8 +149,8 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
       goto continue_strike -- 跳過當前單位
     end
 
-    local weaponNum = _getWeaponCount(unit.guid, weaponDBID)
-    if _isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID) and count < num then
+    local weaponNum = AssignMission._getWeaponCount(unit.guid, weaponDBID)
+    if AssignMission._isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID) and count < num then
       ---@type boolean
       local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
         unit.guid, missionName, isEscort)
@@ -169,12 +171,4 @@ function AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, 
   return temp
 end
 
-return {
-  AssignEmbarkedUnitsToMissions = AssignEmbarkedUnitsToMissions,
-  AssignEmbarkedUnitToStrikeMission = AssignEmbarkedUnitToStrikeMission,
-  _filterEmbarkedPlatforms = _filterEmbarkedPlatforms,
-  _canAssignUnitToMission = _canAssignUnitToMission,
-  _processMissionAssignments = _processMissionAssignments,
-  _getWeaponCount = _getWeaponCount,
-  _isUnitEligibleForStrikeMission = _isUnitEligibleForStrikeMission
-}
+return AssignMission

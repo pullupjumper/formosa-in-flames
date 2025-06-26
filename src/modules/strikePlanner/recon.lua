@@ -1,6 +1,7 @@
 GameUtils = require("src.utils.gameUtils")
 GameApi = require("src.utils.gameApi")
 Utils = require("src.utils.utils")
+AssignMission = require("src.modules.assignMission")
 
 Recon = {}
 
@@ -125,7 +126,9 @@ function Recon.HandleReconQueue(saveData)
         q.hasLaunched = true
       end
     elseif Recon._shouldTakeoffAfterStrike(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
-      local units = AssignEmbarkedUnitToStrikeMission(q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false)
+      local units = AssignMission.AssignEmbarkedUnitToStrikeMission(
+        q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false
+      )
 
       if units and #units > 0 then
         q.unitGUID = units[1]

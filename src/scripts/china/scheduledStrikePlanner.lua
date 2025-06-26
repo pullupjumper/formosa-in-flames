@@ -4,6 +4,7 @@ Logger = require("src.utils.logger")
 GameApi = require("src.utils.gameApi")
 Recon = require("src.modules.strikePlanner.recon")
 AttackManager = require("src.modules.strikePlanner.attackManager")
+AssignMission = require("src.modules.assignMission")
 
 
 local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
@@ -148,7 +149,7 @@ local filters = {
 
 
 local function assignAllUnitsToStrikeMission(pkg)
-  local result = AssignEmbarkedUnitToStrikeMission(
+  local result = AssignMission.AssignEmbarkedUnitToStrikeMission(
     pkg.striker.baseGUID,
     pkg.striker.num,
     pkg.striker.weaponDBID,
@@ -158,7 +159,7 @@ local function assignAllUnitsToStrikeMission(pkg)
   )
 
   if pkg.escort then
-    AssignEmbarkedUnitToStrikeMission(
+    AssignMission.AssignEmbarkedUnitToStrikeMission(
       pkg.escort.baseGUID,
       pkg.escort.num,
       pkg.escort.weaponDBID,
@@ -169,7 +170,7 @@ local function assignAllUnitsToStrikeMission(pkg)
   end
 
   if pkg.wildWeasel then
-    AssignEmbarkedUnitToStrikeMission(
+    AssignMission.AssignEmbarkedUnitToStrikeMission(
       pkg.wildWeasel.baseGUID,
       pkg.wildWeasel.num,
       pkg.wildWeasel.weaponDBID,
@@ -180,7 +181,7 @@ local function assignAllUnitsToStrikeMission(pkg)
   end
 
   if pkg.jammer then
-    local jammers = AssignEmbarkedUnitToStrikeMission(
+    local jammers = AssignMission.AssignEmbarkedUnitToStrikeMission(
       pkg.jammer.baseGUID,
       pkg.jammer.num,
       0,
