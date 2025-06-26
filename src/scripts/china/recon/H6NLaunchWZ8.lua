@@ -1,4 +1,4 @@
-Recon = require('modules/strikePlanner/recon')
+Recon = require('src.modules.strikePlanner.recon')
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
@@ -9,12 +9,10 @@ if not unit then
   Logger.error("Failed to get unit: " .. err)
   return
 end
--- local unit = ScenEdit_UnitX()
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-  -- ScenEdit_SpecialMessage('China', 'saveData is nil')
   Logger.error("saveData is nil")
   return
 end

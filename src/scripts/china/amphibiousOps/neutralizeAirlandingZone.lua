@@ -1,6 +1,7 @@
 Utils = require("src.utils.utils")
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
+AttackManager = require("src.modules.strikePlanner.attackManager")
 
 local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
 
@@ -26,7 +27,7 @@ if ship and ship.group and ship.dbid == CONFIG.platformDBID48 then
   end
 
   if Utils.GetCount(filteredContacts) > 0 then
-    AttackContacts({
+    AttackManager.AttackContacts({
       contacts = filteredContacts,
       qty = 440 // Utils.GetCount(filteredContacts),
       batteries = { ship },

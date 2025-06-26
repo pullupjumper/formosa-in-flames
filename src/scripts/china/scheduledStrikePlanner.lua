@@ -3,6 +3,8 @@ GameUtils = require("src.utils.gameUtils")
 Logger = require("src.utils.logger")
 GameApi = require("src.utils.gameApi")
 Recon = require("src.modules.strikePlanner.recon")
+AttackManager = require("src.modules.strikePlanner.attackManager")
+
 
 local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
 
@@ -303,7 +305,7 @@ end
 local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
     if not FST.isFinished and GameUtils.IsAfterStartTime(FST.startTime) and #FST.evaluatedTargetlist > FST.minTargetCount then
-      local result = AttackContacts({
+      local result = AttackManager.AttackContacts({
         contacts = FST.evaluatedTargetlist,
         qty = FST.ammoPerTarget,
         batteries = FST.batteries,
@@ -437,7 +439,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c
     end
   end
 
-  AttackContacts({
+  AttackManager.AttackContacts({
     contacts = CONFIG.c.surface.lacm.targetlist,
     qty = 5,
     batteries = ships,
@@ -460,7 +462,7 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveDat
     end
   end
 
-  AttackContacts({
+  AttackManager.AttackContacts({
     contacts = CONFIG.c.subSurface.slcm.targetlist,
     qty = 8,
     batteries = CONFIG.c.subSurface.slcm.submarines,
