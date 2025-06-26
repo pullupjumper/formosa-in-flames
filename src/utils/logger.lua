@@ -23,7 +23,4 @@ function Logger.error(message)
   end
 end
 
--- return {
---   Logger = Logger
--- }
 return Logger

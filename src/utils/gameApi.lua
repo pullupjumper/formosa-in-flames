@@ -1,5 +1,3 @@
-Utils = require("src.utils.utils")
-Logger = require("src.utils.logger")
 GameApi = {}
 
 ---comment

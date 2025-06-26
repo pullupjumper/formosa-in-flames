@@ -295,8 +295,7 @@ function ProcessBatteries(saveData, platform, side, isRepositioningAutomatically
 end
 
 -- Handle automatic battery repositioning logic
-function HandleAutomaticBatteryRepositioning(saveData, platform, side, battery, group,
-                                             isRepositioningAutomatically)
+function HandleAutomaticBatteryRepositioning(saveData, platform, side, battery, group, isRepositioningAutomatically)
   local field = (side == 'China') and 'c' or 't'
   local platforms = saveData[field]['ground'][platform]
   local config = CONFIG[field]['ground'][platform]

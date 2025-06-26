@@ -1,5 +1,4 @@
 GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
 
 GameUtils = {}
@@ -18,7 +17,7 @@ function GameUtils.CircularRandomPosition(x_latitude, x_longitude, max_radius)
     })
 
   if errorMessage then
-    Logger.error("Error in World_GetCircleFromPoint: " .. tostring(errorMessage))
+    GameUtils.PrintBox('playerside', "[LOG] Error in World_GetCircleFromPoint: " .. tostring(errorMessage))
   end
 
   local randomisedPoint = randomisationCircle[math.random(1, #randomisationCircle)]
@@ -56,7 +55,7 @@ function GameUtils.GenerateLocations(params)
       })
 
     if errorMessage then
-      Logger.error("Error in World_GetPointFromBearing: " .. tostring(errorMessage))
+      GameUtils.PrintBox('playerside', "[LOG] Error in World_GetPointFromBearing: " .. tostring(errorMessage))
     end
 
     locationTemp = newLocation
@@ -90,7 +89,8 @@ function GameUtils.NewArea(position, mode)
         })
 
       if errorMessage then
-        Logger.error("Error in World_GetPointFromBearing (NewArea - circle): " .. tostring(errorMessage))
+        GameUtils.PrintBox('playerside',
+          "[LOG] Error in World_GetPointFromBearing (NewArea - circle): " .. tostring(errorMessage))
       end
 
       local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
@@ -101,7 +101,7 @@ function GameUtils.NewArea(position, mode)
         })
 
       if errorMessage then
-        Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
+        GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
       end
 
       if newRp then -- 只有在 newRp 有效時才插入
@@ -122,7 +122,8 @@ function GameUtils.NewArea(position, mode)
         })
 
       if errorMessage then
-        Logger.error("Error in World_GetPointFromBearing (NewArea - square): " .. tostring(errorMessage))
+        GameUtils.PrintBox('playerside',
+          "[LOG] Error in World_GetPointFromBearing (NewArea - square): " .. tostring(errorMessage))
       end
 
       local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
@@ -133,7 +134,7 @@ function GameUtils.NewArea(position, mode)
         })
 
       if errorMessage then
-        Logger.error("Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
+        GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
       end
       -- 這裡沒有對 rpTable 進行操作，所以不需要額外的 if newRp then 檢查
     end
@@ -177,7 +178,7 @@ function GameUtils.PrintBox(side, ...)
   local _, errorMessage = Utils.SafeCall("GameApi.ScenEdit_SpecialMessage", GameApi.ScenEdit_SpecialMessage, side,
     boxString)
   if errorMessage then
-    Logger.error("Error in ScenEdit_SpecialMessage: " .. tostring(errorMessage))
+    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SpecialMessage: " .. tostring(errorMessage))
   end
 end
 
@@ -187,17 +188,10 @@ function GameUtils.IsAfterStartTime(time)
   local result, err = Utils.SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
 
   if err then
-    Logger.error("Error in ScenEdit_CurrentTime: " .. err)
+    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_CurrentTime: " .. tostring(err))
   end
 
   return result > Utils.ParseDatetimeToTimestamp(time)
 end
 
--- return {
---   CircularRandomPosition = CircularRandomPosition,
---   GenerateLocations = GenerateLocations,
---   NewArea = NewArea,
---   PrintBox = PrintBox,
-
--- }
 return GameUtils
