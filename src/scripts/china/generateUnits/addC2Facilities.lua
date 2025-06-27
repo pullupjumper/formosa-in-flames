@@ -1,3 +1,4 @@
+gKH = require('src.core.gKH_State_Standalone')
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if not saveData then

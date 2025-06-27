@@ -1,4 +1,5 @@
 GameUtils = require("src.utils.gameUtils")
+CONFIG = require("src.core.constants")
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.radarDistance }

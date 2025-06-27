@@ -1,3 +1,4 @@
+CONFIG = require("src.core.constants")
 local unit = ScenEdit_UnitX()
 
 if unit then

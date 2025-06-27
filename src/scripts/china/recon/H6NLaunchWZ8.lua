@@ -1,3 +1,4 @@
+gKH = require('src.core.gKH_State_Standalone')
 Recon = require('src.modules.strikePlanner.recon')
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")

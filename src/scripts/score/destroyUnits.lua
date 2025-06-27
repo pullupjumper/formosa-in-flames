@@ -1,3 +1,5 @@
+gKH = require('src.core.gKH_State_Standalone')
+CONFIG = require("src.core.constants")
 local unit = ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 

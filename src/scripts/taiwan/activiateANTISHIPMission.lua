@@ -1,3 +1,4 @@
+gKH = require('src.core.gKH_State_Standalone')
 Utils = require("src.utils.utils")
 
 -- local unit = ScenEdit_UnitX()

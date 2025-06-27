@@ -1,6 +1,8 @@
 ShipMovement = require("src.modules.landingOps.shipMovement")
 Utils = require("src.utils.utils")
 GameUtils = require("src.utils.gameUtils")
+CONFIG = require("src.core.constants")
+SaveData = require("src.core.saveData")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })

@@ -1,6 +1,7 @@
 Utils = require("src.utils.utils")
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
+CONFIG = require("src.core.constants")
 AttackManager = require("src.modules.strikePlanner.attackManager")
 
 local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')

@@ -1,7 +1,9 @@
+gKH = require('src.core.gKH_State_Standalone')
 SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 GameApi = require("src.utils.gameApi")
 Logger = require("src.utils.logger")
 Utils = require("src.utils.utils")
+CONFIG = require("src.core.constants")
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 

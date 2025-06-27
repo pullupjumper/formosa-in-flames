@@ -237,3 +237,5 @@ function gKH.State.LoadTableFromKey(theKey, nolog)
 end
 
 print('gKH.State library successfully loaded.');
+
+return gKH

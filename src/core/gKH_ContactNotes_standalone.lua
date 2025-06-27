@@ -1,3 +1,4 @@
+gKH = require("src.core.gKH_State_Standalone")
 --[[
 --  gKH ContactNotes library functions
 --  Filename: ContactNotes.lua
@@ -238,3 +239,5 @@ end
 -- invoke bootstrapper to restore data and re-validate data --
 gKH.ContactNotes:bootstrap();
 print('ContactNotes library successfully loaded.');
+
+return gKH
