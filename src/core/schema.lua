@@ -66,10 +66,21 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field weaponDBID? number -- The weapon DBID to use for the attack, if not specified, the default weapon will be used
 ---@field side? string -- The side to use for the attack, if not specified, the side of the first battery will be used
 
----@class SBJ__MissionSettings:table
+---@class SBJ__MissionEntry:table
+---@field baseGUID string -- The GUID of the base to use for the mission
+---@field missionParams SBJ__MissionParams -- The parameters for the mission
+---@field unitCount number -- The number of units to assign to the mission
+---@field weaponDBID? number -- The weapon DBID to use for the mission
+---@field unitDBID? number -- The unit DBID to use for the mission
+---@field loadoutId? number -- The loadout ID to filter by, 0 for any loadout
+---@field startTime string -- The start time of the mission
+---@field endTime? string -- The end time of the mission
+
+---@class SBJ__MissionParams:table
 ---@field name string -- The name of the mission
----@field num number -- The number of units to assign to the mission
----@field loadoutId number -- The loadout ID to filter by, 0 for any loadout
+---@field side string -- The side of the mission
+---@field type string -- The type of the mission
+---@field opts CMO__Mission -- The options for the mission
 
 ---@class SBJ__GenerateMissilePaths_Params
 ---@field target_lat number 目標緯度
@@ -109,6 +120,52 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field LSTSettings table
 ---@field ACV SBJ__ACV
 ---@field reconUAV table
+
+---@class SBJ__Target:table
+---@field list string[]
+---@field evaluatedlist string[]
+---@field objs table
+---@field areas table
+---@field filterNames string[]
+---@field contactAge number
+---@field minTargetCount number
+---@field ammoPerTarget number
+
+---@class SBJ__Task:table
+---@field target SBJ__Target
+
+---@class SBJ__Package:SBJ__Task
+---@field striker SBJ__MissionEntry
+---@field escort SBJ__MissionEntry
+---@field wildWeasel SBJ__MissionEntry
+---@field jammer SBJ__MissionEntry
+---@field tanker SBJ__MissionEntry
+---@field reconUAV table
+---@field hasLaunched boolean
+
+---@class SBJ__FireSupportTask:SBJ__Task
+---@field name string
+---@field wpnSystem string
+---@field batteries SBJ__Battery[]
+---@field startTime string
+---@field isFinished boolean
+
+---@class SBJ__FireSupportExecutionMatrix:table
+---@field name string
+---@field isActivated boolean
+---@field isFirstWave boolean
+---@field strikeInterval number
+---@field reconUAVs table
+---@field allBatteriesInPosition boolean
+---@field isFinished boolean
+---@field FSTs SBJ__FireSupportTask[]
+
+---@class SBJ__FilterParams:table
+---@field CONFIG SBJ__CONFIG
+---@field saveData SBJ__SaveData
+---@field task SBJ__Task
+---@field contacts CMO__Contact[]
+---@field shouldTrack? boolean
 
 ---@class SBJ__LandingMission:table
 ---@field name string

@@ -8,29 +8,29 @@ if unit then
       or unit.dbid == CONFIG.platformDBID31
       or unit.dbid == CONFIG.platformDBID36
       or unit.dbid == CONFIG.platformDBID57 then
-    if unit.mission then
-      local mission = ScenEdit_GetMission('China', unit.mission.guid)
+    -- if unit.mission then
+    --   local mission = ScenEdit_GetMission('China', unit.mission.guid)
 
-      if mission then
-        for _, u in ipairs(mission.unitlist) do
-          local actualUnit = ScenEdit_GetUnit({ guid = u })
+    --   if mission then
+    --     for _, u in ipairs(mission.unitlist) do
+    --       local actualUnit = ScenEdit_GetUnit({ guid = u })
 
-          if actualUnit and actualUnit.dbid == CONFIG.platformDBID35 then
-            actualUnit:RTB(true)
-            actualUnit.mission = ''
-          end
+    --       if actualUnit and actualUnit.dbid == CONFIG.platformDBID35 then
+    --         actualUnit:RTB(true)
+    --         actualUnit.mission = ''
+    --       end
 
-          if actualUnit and actualUnit.loadoutdbid == 25378 then
-            actualUnit:RTB(true)
-            actualUnit.mission = ''
-          end
-        end
+    --       if actualUnit and actualUnit.loadoutdbid == 25378 then
+    --         actualUnit:RTB(true)
+    --         actualUnit.mission = ''
+    --       end
+    --     end
 
-        if #mission.unitlist == 1 then
-          ScenEdit_DeleteMission(mission.side, mission.guid)
-        end
-      end
-    end
+    --     if #mission.unitlist == 1 then
+    --       ScenEdit_DeleteMission(mission.side, mission.guid)
+    --     end
+    --   end
+    -- end
 
     unit.readytime = CONFIG.readytime
     unit.mission = ''

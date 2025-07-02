@@ -2,15 +2,16 @@ GameUtils = require("src.utils.gameUtils")
 GameApi = require("src.utils.gameApi")
 Utils = require("src.utils.utils")
 AssignMission = require("src.modules.assignMission")
+Logger = require("src.utils.logger")
 
 Recon = {}
 
 ---@param baseGUID string
 ---@param course CMO__TableOfWaypoints
----@param num number
+---@param unitCount number
 ---@param unitDBID number
 ---@param unitType string @ Aircraft or Boats
-function Recon.LaunchUnits(baseGUID, course, num, unitDBID, unitType)
+function Recon.LaunchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, baseGUID)
 
   if not base then
@@ -30,14 +31,14 @@ function Recon.LaunchUnits(baseGUID, course, num, unitDBID, unitType)
       goto continue
     end
 
-    if unit.dbid == unitDBID and unit.readytime_v == 0 and count < num then
+    if unit.dbid == unitDBID and unit.readytime_v == 0 and count < unitCount then
       unit:Launch(true)
       unit.course = course
       count = count + 1
       table.insert(temp, unit.guid)
     end
 
-    if count >= num then break end
+    if count >= unitCount then break end
     ::continue::
   end
 
@@ -119,7 +120,7 @@ end
 function Recon.HandleReconQueue(saveData)
   for _, q in ipairs(saveData.c.recon.queue) do
     if Recon._shouldTakeoffBeforeStrike(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
-      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
         q.unitGUID = units[1]
@@ -127,7 +128,7 @@ function Recon.HandleReconQueue(saveData)
       end
     elseif Recon._shouldTakeoffAfterStrike(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
       local units = AssignMission.AssignEmbarkedUnitToStrikeMission(
-        q.baseGUID, q.num, 0, q.unitDBID, q.missionName, false
+        q.baseGUID, q.unitCount, 0, q.unitDBID, q.missionName, false
       )
 
       if units and #units > 0 then
@@ -136,7 +137,7 @@ function Recon.HandleReconQueue(saveData)
         q.isFinished = true
       end
     elseif Recon._isH6N(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
-      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.num, q.unitDBID, 'Aircraft')
+      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
         q.unitGUID = units[1]

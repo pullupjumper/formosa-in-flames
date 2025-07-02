@@ -3,6 +3,7 @@ Utils = require("src.utils.utils")
 GameUtils = require("src.utils.gameUtils")
 CONFIG = require("src.core.constants")
 SaveData = require("src.core.saveData")
+TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -169,33 +170,70 @@ local function initSIGINT(saveData)
 end
 
 local function setupReconQueue(saveData)
-  for _, item in pairs(saveData.c.air.ATO) do
-    if item.reconUAVs then
-      Utils.InsertList(saveData.c.recon.queue, item.reconUAVs)
+  for _, wave in pairs(saveData.c.air.ATO) do
+    for _, package in ipairs(wave.packages) do
+      if package.reconUAV then
+        table.insert(saveData.c.recon.queue, package.reconUAV)
+      end
     end
+    -- if item.reconUAVs then
+    --   Utils.InsertList(saveData.c.recon.queue, item.reconUAVs)
+    -- end
   end
 end
 
 local function initATO(saveData)
   for _, wave in pairs(saveData.c.air.ATO) do
     for index, package in ipairs(wave.packages) do
-      if package.takeoffTime == nil and index == 1 then
-        GameUtils.PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
-      end
+      -- if package.takeoffTime == nil and index == 1 then
+      --   GameUtils.PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
+      -- end
 
-      if type(package.queryParams) == 'table' then
-        package.targetlist = SelectTargetsByQueryParams({
+      if type(package.target.objs) == 'table' then
+        package.target.list = TargetingProcess.SelectTargetsByQueryParams({
           targetlist = saveData.c.targetlist,
-          queryParams = package.queryParams
+          queryParams = package.target.objs
         })
       end
 
-      if package.takeoffTime == nil and index > 1 then
-        package.takeoffTime = os.date(
+      if package.striker.startTime == nil and index > 1 then
+        package.striker.startTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
+          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval
+        )
+        package.striker.endTime = os.date(
+          "%Y-%m-%d %I:%M:%S",
+          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval + 40 * 60
         )
       end
+
+      if package.striker.endTime == nil then
+        package.striker.endTime = os.date(
+          "%Y-%m-%d %I:%M:%S",
+          Utils.ParseDatetimeToTimestamp(package.striker.startTime) + 40 * 60
+        )
+      end
+
+      local roles = { "escort", "wildWeasel", "jammer" }
+      for _, role in ipairs(roles) do
+        if package[role] and package[role].startTime == nil then
+          package[role].startTime = os.date(
+            "%Y-%m-%d %I:%M:%S",
+            Utils.ParseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
+          )
+          package[role].endTime = os.date(
+            "%Y-%m-%d %I:%M:%S",
+            Utils.ParseDatetimeToTimestamp(package[role].startTime) + 45 * 60
+          )
+        end
+      end
+
+      -- if package.takeoffTime == nil and index > 1 then
+      --   package.takeoffTime = os.date(
+      --     "%Y-%m-%d %I:%M:%S",
+      --     Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
+      --   )
+      -- end
     end
   end
 end
@@ -203,10 +241,10 @@ end
 local function initFSP(saveData)
   for key, FSEM in pairs(saveData.c.ground.FSP) do
     for index, FST in ipairs(FSEM.FSTs) do
-      if type(FST.queryParams) == 'table' then
-        FST.targetlist = SelectTargetsByQueryParams({
+      if type(FST.target.objs) == 'table' then
+        FST.target.list = TargetingProcess.SelectTargetsByQueryParams({
           targetlist = saveData.c.targetlist,
-          queryParams = FST.queryParams
+          queryParams = FST.target.objs
         })
       end
 
@@ -386,7 +424,7 @@ local function initTargetlist(saveData)
 end
 
 local function initRunways(saveData)
-  local targetlist = SelectTargetsByQueryParams({
+  local targetlist = TargetingProcess.SelectTargetsByQueryParams({
     targetlist = saveData.c.targetlist,
     queryParams = {
       { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
@@ -431,7 +469,7 @@ end
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].targetlist <= 0 then
+if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].target.list <= 0 then
   ShipMovement.CalculateDestination(saveData)
   initAC(saveData)
   initTargetlist(saveData)

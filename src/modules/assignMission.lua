@@ -32,14 +32,14 @@ function AssignMission._filterEmbarkedPlatforms(baseUnit, platformType, platform
 end
 
 ---@param unit CMO__Unit The unit to check
----@param mission SBJ__MissionSettings The mission settings
+---@param mission SBJ__MissionEntry The mission settings
 ---@return boolean True if the unit can be assigned to the mission, false otherwise
 function AssignMission._canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
 end
 
 ---@param filteredPlatforms table<integer, CMO__Unit> A list of filtered embarked units
----@param mission SBJ__MissionSettings The mission to assign units to
+---@param mission SBJ__MissionEntry The mission to assign units to
 function AssignMission._processMissionAssignments(filteredPlatforms, mission)
   local count = 0
   for _, unit in ipairs(filteredPlatforms) do
@@ -63,7 +63,7 @@ end
 ---@param fromUnit string The unit guid with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Ship')
 ---@param platformDBID number The database ID of the platform to filter
----@param missions table<number, SBJ__MissionSettings> A list of missions to assign units to
+---@param missions table<number, SBJ__MissionEntry> A list of missions to assign units to
 function AssignMission.AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
   local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
 

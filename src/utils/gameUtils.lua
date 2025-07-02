@@ -194,4 +194,40 @@ function GameUtils.IsAfterStartTime(time)
   return result > Utils.ParseDatetimeToTimestamp(time)
 end
 
+---comment
+---@param side string
+---@param name string
+---@param type string
+---@param opts? CMO__Mission
+---@param emcon? string
+---@return CMO__Mission|nil
+function GameUtils.CreateMission(side, name, type, opts, emcon)
+  local mission, err = Utils.SafeCall("GameApi.ScenEdit_AddMission", GameApi.ScenEdit_AddMission, side, name, type, opts)
+
+  if not mission then
+    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddMission: " .. tostring(err))
+    return
+  end
+
+  if opts then
+    mission, err = Utils.SafeCall("GameApi.ScenEdit_SetMission", GameApi.ScenEdit_SetMission, side, name, opts)
+  end
+
+  if not mission then
+    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SetMission: " .. tostring(err))
+    return
+  end
+
+  if emcon then
+    local result, err = Utils.SafeCall("GameApi.ScenEdit_SetEMCON", GameApi.ScenEdit_SetEMCON, 'mission', name, emcon)
+
+    if not result then
+      GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SetEMCON: " .. tostring(err))
+      return
+    end
+  end
+
+  return mission
+end
+
 return GameUtils

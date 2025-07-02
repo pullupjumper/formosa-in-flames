@@ -301,4 +301,12 @@ function GameApi.ScenEdit_SetEMCON(objType, name, emcon)
   return ScenEdit_SetEMCON(objType, name, emcon)
 end
 
+---comment
+---@param AUNameOrIDOrTable string
+---@param MissionNameOrIDOrTable string
+---@return string[]
+function GameApi.ScenEdit_AssignUnitAsTarget(AUNameOrIDOrTable, MissionNameOrIDOrTable)
+  return ScenEdit_AssignUnitAsTarget(AUNameOrIDOrTable, MissionNameOrIDOrTable)
+end
+
 return GameApi

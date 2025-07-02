@@ -6,6 +6,8 @@ Logger = {}
 Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 
 -- 真正輸出的函式（自動判斷）
+---comment
+---@param message string
 function Logger.log(message)
   if Logger.inGame then
     GameUtils.PrintBox('playerside', "[LOG] " .. message) -- 在遊戲中使用 ScenEdit_SpecialMessage
@@ -14,7 +16,8 @@ function Logger.log(message)
   end
 end
 
--- 可選：錯誤輸出
+---comment
+---@param message string
 function Logger.error(message)
   if Logger.inGame then
     GameUtils.PrintBox('playerside', "[ERROR] " .. message) -- 在遊戲中使用 ScenEdit_SpecialMessage
