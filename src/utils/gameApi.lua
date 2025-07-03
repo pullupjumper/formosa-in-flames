@@ -1,4 +1,4 @@
-GameApi = {}
+local GameApi = {}
 
 ---comment
 ---@param guid string -- The GUID of the unit

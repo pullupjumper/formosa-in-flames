@@ -1,6 +1,6 @@
-GameUtils = require("src.utils.gameUtils")
+local GameUtils = require("src.utils.gameUtils")
 
-Logger = {}
+local Logger = {}
 
 -- 切換是否在遊戲中（由你在 main 中設置）
 Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"

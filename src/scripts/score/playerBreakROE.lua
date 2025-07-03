@@ -1,4 +1,4 @@
-CONFIG = require("src.core.constants")
+local CONFIG = require("src.core.constants")
 local unit = ScenEdit_UnitX()
 
 

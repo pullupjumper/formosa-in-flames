@@ -1,9 +1,9 @@
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-Utils = require("src.utils.utils")
-AssignMission = require("src.modules.assignMission")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+local AssignMission = require("src.modules.assignMission")
 
-AmphibiousLogistics = {}
+local AmphibiousLogistics = {}
 
 
 ---@param fromUnit CMO__Unit

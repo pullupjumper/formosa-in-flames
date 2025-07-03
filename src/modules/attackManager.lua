@@ -1,8 +1,8 @@
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
 
-AttackManager = {}
+local AttackManager = {}
 
 -- ---@param contact CMO__Contact
 -- ---@param qty number

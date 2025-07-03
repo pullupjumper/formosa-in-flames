@@ -1,5 +1,5 @@
-gKH = require('src.core.gKH_State_Standalone')
-Utils = require("src.utils.utils")
+local gKH = require('src.core.gKH_State_Standalone')
+local Utils = require("src.utils.utils")
 
 -- local unit = ScenEdit_UnitX()
 local contacts = ScenEdit_GetContacts('Taiwan')

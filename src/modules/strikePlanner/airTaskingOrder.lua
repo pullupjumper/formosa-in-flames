@@ -2,9 +2,9 @@
 -- This is the refactored version of the Air Tasking Order logic.
 -- It uses the StrikePackageProcessor to handle the lifecycle of each strike package.
 
-StrikePackageProcessor = require("src.modules.strikePlanner.strikePackageProcessor")
+local StrikePackageProcessor = require("src.modules.strikePlanner.strikePackageProcessor")
 
-AirTaskingOrder = {}
+local AirTaskingOrder = {}
 
 --- Checks if all packages in a wave have been launched.
 ---@param waveData table

@@ -1,10 +1,10 @@
-GameUtils = require("src.utils.gameUtils")
-GameApi = require("src.utils.gameApi")
-Utils = require("src.utils.utils")
-AssignMission = require("src.modules.assignMission")
-Logger = require("src.utils.logger")
+local GameUtils = require("src.utils.gameUtils")
+local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
+local AssignMission = require("src.modules.assignMission")
+local Logger = require("src.utils.logger")
 
-Recon = {}
+local Recon = {}
 
 ---@param baseGUID string
 ---@param course CMO__TableOfWaypoints

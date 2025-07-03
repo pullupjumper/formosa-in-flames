@@ -2,14 +2,14 @@
 -- This is a procedural processor module. It takes packageData and processes it
 -- in a single, sequential flow.
 
-Utils = require("src.utils.utils")
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-GameUtils = require("src.utils.gameUtils")
-TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
-AssignMission = require("src.modules.assignMission")
+local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local GameUtils = require("src.utils.gameUtils")
+local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local AssignMission = require("src.modules.assignMission")
 
-StrikePackageProcessor = {}
+local StrikePackageProcessor = {}
 
 --------------------------------------------------------------------------------
 -- Private Helper Functions

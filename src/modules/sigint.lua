@@ -1,4 +1,4 @@
-Utils = require("src.utils.utils")
+local Utils = require("src.utils.utils")
 
 local function getSIGINT(enemy_unit, notification, isEmitting, isShown, side, saveData, data)
   local key = 'u'

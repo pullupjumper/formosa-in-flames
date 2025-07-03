@@ -1,7 +1,7 @@
-CONFIG = require('src.core.constants')
+local CONFIG = require('src.core.constants')
 
 ---@class SBJ__SaveData
-SaveData = {}
+local SaveData = {}
 SaveData.c = {}
 SaveData.c.targetlist = {}
 SaveData.c.air = {}
@@ -1010,6 +1010,7 @@ SaveData.c.air.ATO = {
     --     hasLaunched = false
     --   },
     -- },
+    ---@type SBJ__Package[]
     packages = {
       {
         striker = {
@@ -1037,8 +1038,8 @@ SaveData.c.air.ATO = {
               FlightSize = 4,
               CheckOPAREA = false,
               CheckWWR = false,
-              prosecutionZone = { 'rp-73973', 'rp-73974', 'rp-73975', 'rp-73976', },
-              patrolZone = { 'rp-141079', 'rp-141080', },
+              prosecutionZone = CONFIG.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"],
             },
           },
           emcon = 'Radar=Passive;OECM=Active'
@@ -1058,8 +1059,8 @@ SaveData.c.air.ATO = {
               FlightSize = 4,
               CheckOPAREA = false,
               CheckWWR = false,
-              prosecutionZone = { 'rp-73973', 'rp-73974', 'rp-73975', 'rp-73976', },
-              patrolZone = { 'rp-141079', 'rp-141080', },
+              prosecutionZone = CONFIG.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"],
             },
           },
           emcon = 'Radar=Passive;OECM=Active'
@@ -1075,7 +1076,7 @@ SaveData.c.air.ATO = {
             name = 'JAMMING/AB/W/1',
             type = 'support',
             opts = {
-              zone = { 'rp-141079', 'rp-141080', },
+              zone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"],
             },
           },
           emcon = 'Radar=Passive;OECM=Active'
@@ -1126,254 +1127,799 @@ SaveData.c.air.ATO = {
       --   -- takeoffTime = '2027-06-09 03:40:00',
       --   takeoffTime = '2027-06-09 01:00:00'
       -- },
-      -- {
-      --   striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
-      --   escort = nil,
-      --   wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-      --   jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-      --   missionName = 'STRIKE/AB/C',
-      --   missionType = 'land',
-      --   targetlist = {},
-      --   queryParams = {
-      --     { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
-      --     { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } },
-      --   },
-      --   area = CONFIG.c.areas["OPAREA/CENTER"],
-      --   hasLaunched = false,
-      --   tanker = nil,
-      --   filterName = 'makeC2Filter',
-      --   contactAge = 60 * 60,
-      --   minTargetCount = 1,
-      --   takeoffTime = nil
-      -- },
-      -- {
-      --   striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, },
-      --   escort = nil,
-      --   wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
-      --   jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-      --   missionName = 'STRIKE/AB/N/1',
-      --   missionType = 'land',
-      --   targetlist = {},
-      --   queryParams = {
-      --     { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
-      --   },
-      --   area = CONFIG.c.areas["OPAREA/NORTH"],
-      --   hasLaunched = false,
-      --   tanker = nil,
-      --   filterName = 'makeC2Filter',
-      --   contactAge = 60 * 60,
-      --   minTargetCount = 1,
-      --   takeoffTime = nil
-      -- },
+      --[[
+      {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H5P44', weaponDBID = 2876, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
+        missionName = 'STRIKE/AB/C',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
+          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/CENTER"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = nil
+      },
+      {
+        striker = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F', weaponDBID = 2876, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQC4', weaponDBID = 2875, num = 8, },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
+        missionName = 'STRIKE/AB/N/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/NORTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = nil
+      },
+--]]
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMLLEF9H5P44',
+          weaponDBID = 2876,
+          unitCount = 12,
+          startTime = nil,
+          missionParams = { name = 'STRIKE/AB/C', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = 3413,
+          unitCount = 8,
+          -- startTime = '2027-06-09 01:00:00',
+          -- endTime = '2027-06-09 02:00:00',
+          missionParams = {
+            name = 'SWEAP/AB/C',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/CENTER/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/CENTER/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
+          weaponDBID = 2875,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/AB/C',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/CENTER/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/CENTER/PATROL"],
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          unitDBID = 4203,
+          weaponDBID = 0,
+          unitCount = 1,
+          missionParams = {
+            name = 'JAMMING/AB/C',
+            type = 'support',
+            opts = { zone = CONFIG.c.areas["SWEAP/CENTER/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
+            { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/CENTER"] },
+          filterNames = { 'FindC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = 2876,
+          unitCount = 12,
+          startTime = nil,
+          missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = 3413,
+          unitCount = 8,
+          missionParams = {
+            name = 'SWEAP/AB/N/1',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/NORTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/NORTH/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQC4',
+          weaponDBID = 2875,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/AB/N/1',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/NORTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/NORTH/PATROL"],
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          unitDBID = 4203,
+          weaponDBID = 0,
+          unitCount = 1,
+          missionParams = {
+            name = 'JAMMING/AB/N/1',
+            type = 'support',
+            opts = { zone = CONFIG.c.areas["SWEAP/NORTH/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/NORTH"] },
+          filterNames = { 'FindC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
     }
   },
-  -- ['STRIKE/AB/W/2'] = {
-  --   name = 'STRIKE/AB/W/2',
-  --   isActivated = true,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       missionName = 'STRIKE/AB/S/1',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = {
-  --         { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-  --         { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-  --       },
-  --       area = CONFIG.c.areas["OPAREA/SOUTH"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 04:40:00',
-  --     },
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       missionName = 'STRIKE/AB/N/1',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = {
-  --         { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
-  --       },
-  --       area = CONFIG.c.areas["OPAREA/NORTH"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = nil
-  --     },
-  --   }
-  -- },
-  -- ['STRIKE/AB/W/3'] = {
-  --   name = 'STRIKE/AB/W/3',
-  --   isActivated = true,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
-  --       jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
-  --       missionName = 'STRIKE/AB/S/2',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = {
-  --         { baseName = 'Pingtung South AB', subTypes = { 'Ammo Bunker' } },
-  --         { baseName = 'Tainan AB',         subTypes = { 'Ammo Bunker' } },
-  --         { baseName = 'Magong AB',         subTypes = { 'Ammo Bunker' } },
-  --       },
-  --       area = CONFIG.c.areas["OPAREA/SOUTH"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeC2Filter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 05:40:00',
-  --     },
-  --   }
-  -- },
-  -- ['STRIKE/AB/E/1'] = {
-  --   name = 'STRIKE/AB/E/1',
-  --   isActivated = true,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 80 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
-  --       jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
-  --       missionName = 'STRIKE/AB/JHI',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = {
-  --         { baseName = 'Jhihhang AB', subTypes = { 'Shelter' } },
-  --       },
-  --       area = CONFIG.c.areas["OPAREA/EAST"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = nil,
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 07:00:00',
-  --     },
-  --     {
-  --       striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
-  --       escort = nil,
-  --       wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
-  --       jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
-  --       missionName = 'STRIKE/AB/E',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = {
-  --         { baseName = 'Jiashan AB', subTypes = { 'Shelter' } },
-  --       },
-  --       area = CONFIG.c.areas["OPAREA/EAST"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = nil,
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = nil
-  --     },
-  --   }
-  -- },
-  -- ['ASUW/N/1'] = {
-  --   name = 'ASUW/N/1',
-  --   isActivated = true,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 8, },
-  --       escort = nil,
-  --       wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 8, },
-  --       missionName = 'ASUW/N',
-  --       missionType = 'sea',
-  --       targetlist = {},
-  --       queryParams = nil,
-  --       area = CONFIG.c.areas["OPAREA/D"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeNavalTargetFilter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 02:40:00'
-  --       -- takeoffTime = '2027-06-09 01:00:00'
-  --     }
-  --   },
-  -- },
-  -- ['AIR INTERCEPT/E/1'] = {
-  --   name = 'AIR INTERCEPT/E/1',
-  --   isActivated = true,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   reconUAVs = nil,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       missionName = 'AIR INTERCEPT/E',
-  --       missionType = 'air',
-  --       targetlist = {},
-  --       queryParams = nil,
-  --       area = CONFIG.c.areas["OPAREA/PACIFIC"],
-  --       hasLaunched = false,
-  --       tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
-  --       filterName = 'makeAirborneFilter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 06:40:00',
-  --       -- takeoffTime = '2027-06-09 01:00:00'
-  --     }
-  --   },
-  -- },
-  -- ['CAS/N/1'] = {
-  --   name = 'CAS/N/1',
-  --   isActivated = false,
-  --   isFirstWave = false,
-  --   haeLaunched = false,
-  --   strikeInterval = 30 * 60,
-  --   packages = {
-  --     {
-  --       striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3226, num = 8, },
-  --       escort = nil,
-  --       wildWeasel = nil,
-  --       jammer = nil,
-  --       missionName = 'CAS/N',
-  --       missionType = 'land',
-  --       targetlist = {},
-  --       queryParams = nil,
-  --       area = CONFIG.c.areas["LANDING/TAOYUAN"],
-  --       hasLaunched = false,
-  --       tanker = nil,
-  --       filterName = 'makeInfentryFilter',
-  --       contactAge = 60 * 60,
-  --       minTargetCount = 1,
-  --       takeoffTime = '2027-06-09 01:30:00'
-  --     },
-  --   }
-  -- },
+  ['STRIKE/AB/W/2'] = {
+    name = 'STRIKE/AB/W/2',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = '6Z8LM5-0HMLLEF9H7VDF', weaponDBID = 2107, num = 12, },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'STRIKE/AB/S/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+        },
+        area = CONFIG.c.areas["OPAREA/SOUTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 04:40:00',
+      },
+      {
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B8971MA', weaponDBID = 2107, num = 12, },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'STRIKE/AB/N/1',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/NORTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = nil
+      },
+    }
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMLLEF9H7VDF',
+          weaponDBID = 2107,
+          unitCount = 12,
+          startTime = '2027-06-09 04:40:00',
+          missionParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = nil,
+        wildWeasel = nil,
+        jammer = nil,
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+            { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/SOUTH"] },
+          filterNames = { 'FindC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMIJ7B8971MA',
+          weaponDBID = 2107,
+          unitCount = 12,
+          startTime = nil,
+          missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = nil,
+        wildWeasel = nil,
+        jammer = nil,
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/NORTH"] },
+          filterNames = { 'FindC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+    }
+  },
+  ['STRIKE/AB/W/3'] = {
+    name = 'STRIKE/AB/W/3',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', weaponDBID = 3077, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G', weaponDBID = 2875, num = 8, },
+        jammer = { baseGUID = 'X58F5H-0HN00TRR0Q1JQ', unitDBID = 4203, num = 1, },
+        missionName = 'STRIKE/AB/S/2',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Pingtung South AB', subTypes = { 'Ammo Bunker' } },
+          { baseName = 'Tainan AB',         subTypes = { 'Ammo Bunker' } },
+          { baseName = 'Magong AB',         subTypes = { 'Ammo Bunker' } },
+        },
+        area = CONFIG.c.areas["OPAREA/SOUTH"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeC2Filter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 05:40:00',
+      },
+    }
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          weaponDBID = 3077,
+          unitCount = 12,
+          startTime = '2027-06-09 05:40:00',
+          missionParams = { name = 'STRIKE/AB/S/2', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = 3413,
+          unitCount = 8,
+          missionParams = {
+            name = 'SWEAP/AB/S/2',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
+          weaponDBID = 2875,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/AB/S/2',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"],
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          unitDBID = 4203,
+          weaponDBID = 0,
+          unitCount = 1,
+          missionParams = {
+            name = 'JAMMING/AB/S/2',
+            type = 'support',
+            opts = { zone = CONFIG.c.areas["SWEAP/SOUTH/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Pingtung South AB', subTypes = { 'Ammo Bunker' } },
+            { baseName = 'Tainan AB',         subTypes = { 'Ammo Bunker' } },
+            { baseName = 'Magong AB',         subTypes = { 'Ammo Bunker' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/SOUTH"] },
+          filterNames = { 'FindC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+    }
+  },
+  ['STRIKE/AB/E/1'] = {
+    name = 'STRIKE/AB/E/1',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 80 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
+        jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
+        missionName = 'STRIKE/AB/JHI',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Jhihhang AB', subTypes = { 'Shelter' } },
+        },
+        area = CONFIG.c.areas["OPAREA/EAST"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = nil,
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 07:00:00',
+      },
+      {
+        striker = { baseGUID = 'CSG', weaponDBID = 3226, num = 12, },
+        escort = nil,
+        wildWeasel = { baseGUID = 'CSG', weaponDBID = 276, num = 8, },
+        jammer = { baseGUID = 'CSG', unitDBID = 4817, num = 1, },
+        missionName = 'STRIKE/AB/E',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = {
+          { baseName = 'Jiashan AB', subTypes = { 'Shelter' } },
+        },
+        area = CONFIG.c.areas["OPAREA/EAST"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = nil,
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = nil
+      },
+    }
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = 'CSG',
+          weaponDBID = 3226,
+          unitCount = 12,
+          startTime = '2027-06-09 07:00:00',
+          missionParams = { name = 'STRIKE/AB/JHI', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = 'CSG',
+          weaponDBID = 3413,
+          unitCount = 8,
+          missionParams = {
+            name = 'SWEAP/AB/JHI',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/JHI/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/JHI/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = 'CSG',
+          weaponDBID = 276,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/AB/JHI',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/JHI/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/JHI/PATROL"],
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'CSG',
+          unitDBID = 4817,
+          weaponDBID = 0,
+          unitCount = 1,
+          missionParams = {
+            name = 'JAMMING/AB/JHI',
+            type = 'support',
+            opts = { zone = CONFIG.c.areas["SWEAP/JHI/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Jhihhang AB', subTypes = { 'Shelter' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/EAST"] },
+          filterNames = nil,
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+      {
+        striker = {
+          baseGUID = 'CSG',
+          weaponDBID = 3226,
+          unitCount = 12,
+          startTime = nil,
+          missionParams = { name = 'STRIKE/AB/E', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = 3413,
+          unitCount = 8,
+          missionParams = {
+            name = 'SWEAP/AB/E',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/E/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/E/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = 'CSG',
+          weaponDBID = 276,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/AB/E',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = CONFIG.c.areas["SWEAP/E/PROSECUTION"],
+              patrolZone = CONFIG.c.areas["SWEAP/E/PATROL"],
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'CSG',
+          unitDBID = 4817,
+          weaponDBID = 0,
+          unitCount = 1,
+          missionParams = {
+            name = 'JAMMING/AB/E',
+            type = 'support',
+            opts = { zone = CONFIG.c.areas["SWEAP/E/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Jiashan AB', subTypes = { 'Shelter' } },
+          },
+          areas = { CONFIG.c.areas["OPAREA/EAST"] },
+          filterNames = nil,
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+    }
+  },
+  ['ASUW/N/1'] = {
+    name = 'ASUW/N/1',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2137, num = 8, },
+        escort = nil,
+        wildWeasel = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 2875, num = 8, },
+        missionName = 'ASUW/N',
+        missionType = 'sea',
+        targetlist = {},
+        queryParams = nil,
+        area = CONFIG.c.areas["OPAREA/D"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeNavalTargetFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 02:40:00'
+        -- takeoffTime = '2027-06-09 01:00:00'
+      }
+    },
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
+          weaponDBID = 2137,
+          unitCount = 8,
+          startTime = '2027-06-09 02:40:00',
+          missionParams = { name = 'ASUW/N', type = 'strike', opts = { type = 'sea' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = nil,
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
+          weaponDBID = 2875,
+          unitCount = 8,
+          missionParams = {
+            name = 'SEAD/ASUW/N',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              zone = CONFIG.c.areas["OPAREA/D"]
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = nil,
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = nil,
+          areas = { CONFIG.c.areas["OPAREA/D"] },
+          filterNames = { 'FindNavalTargets' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      }
+    },
+  },
+  ['AIR INTERCEPT/E/1'] = {
+    name = 'AIR INTERCEPT/E/1',
+    isActivated = true,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = '6Z8LM5-0HMIJ7B896RA9', weaponDBID = 3413, num = 6, },
+        escort = nil,
+        wildWeasel = nil,
+        missionName = 'AIR INTERCEPT/E',
+        missionType = 'air',
+        targetlist = {},
+        queryParams = nil,
+        area = CONFIG.c.areas["OPAREA/PACIFIC"],
+        hasLaunched = false,
+        tanker = { baseGUID = '', num = 3, units = {}, missionName = 'AAR' },
+        filterName = 'makeAirborneFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 06:40:00',
+        -- takeoffTime = '2027-06-09 01:00:00'
+      }
+    },
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMIJ7B896RA9',
+          weaponDBID = 3413,
+          unitCount = 6,
+          startTime = '2027-06-09 06:40:00',
+          missionParams = { name = 'AIR INTERCEPT/E', type = 'strike', opts = { type = 'aaw' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = nil,
+        wildWeasel = nil,
+        jammer = nil,
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = nil,
+          areas = { CONFIG.c.areas["OPAREA/PACIFIC"] },
+          filterNames = { 'FindAirborne' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      }
+    },
+  },
+  ['CAS/N/1'] = {
+    name = 'CAS/N/1',
+    isActivated = false,
+    isFirstWave = false,
+    haeLaunched = false,
+    strikeInterval = 30 * 60,
+    reconUAVs = nil,
+    --[[
+    packages = {
+      {
+        striker = { baseGUID = '6Z8LM5-0HMMJDEFRFJ4V', weaponDBID = 3226, num = 8, },
+        escort = nil,
+        wildWeasel = nil,
+        jammer = nil,
+        missionName = 'CAS/N',
+        missionType = 'land',
+        targetlist = {},
+        queryParams = nil,
+        area = CONFIG.c.areas["LANDING/TAOYUAN"],
+        hasLaunched = false,
+        tanker = nil,
+        filterName = 'makeInfentryFilter',
+        contactAge = 60 * 60,
+        minTargetCount = 1,
+        takeoffTime = '2027-06-09 01:30:00'
+      },
+    }
+--]]
+    packages = {
+      {
+        striker = {
+          baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
+          weaponDBID = 3226,
+          unitCount = 8,
+          startTime = '2027-06-09 01:30:00',
+          missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = nil,
+        wildWeasel = nil,
+        jammer = nil,
+        tanker = nil,
+        reconUAV = nil,
+        target = {
+          list = {},
+          objs = nil,
+          areas = { CONFIG.c.areas["LANDING/TAOYUAN"] },
+          filterNames = { 'FindInfantry' },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+    }
+  },
 }
+
 
 
 -- Amphibious ops

@@ -1,9 +1,9 @@
-FireSupportTaskProcessor = require("src.modules.strikePlanner.fireSupportTaskProcessor")
-AttackManager = require("src.modules.strikePlanner.attackManager")
-GameUtils = require("src.utils.gameUtils")
-Logger = require("src.utils.logger")
+local FireSupportTaskProcessor = require("src.modules.strikePlanner.fireSupportTaskProcessor")
+local AttackManager = require("src.modules.strikePlanner.attackManager")
+local GameUtils = require("src.utils.gameUtils")
+local Logger = require("src.utils.logger")
 
-FireSupportPlan = {}
+local FireSupportPlan = {}
 
 ---@param FSEM SBJ__FireSupportExecutionMatrix
 ---@return boolean

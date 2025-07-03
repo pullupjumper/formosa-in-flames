@@ -1,4 +1,4 @@
-gKH = require("src.core.gKH_State_Standalone")
+local gKH = require("src.core.gKH_State_Standalone")
 --[[
 --  gKH ContactNotes library functions
 --  Filename: ContactNotes.lua

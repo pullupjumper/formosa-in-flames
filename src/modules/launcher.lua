@@ -1,5 +1,5 @@
-Utils = require("src.utils.utils")
-GameUtils = require("src.utils.gameUtils")
+local Utils = require("src.utils.utils")
+local GameUtils = require("src.utils.gameUtils")
 
 function Reload(battery, ammunitionSection, weaponDBID)
   local group = SE_GetUnit({ guid = battery.guid })

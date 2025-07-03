@@ -1,10 +1,9 @@
-GameApi = require("src.utils.gameApi")
-Utils = require("src.utils.utils")
-Logger = require("src.utils.logger")
-Recon = require("src.modules.strikePlanner.recon")
-CONFIG = require("src.core.constants")
+local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
+local Logger = require("src.utils.logger")
+local Recon = require("src.modules.strikePlanner.recon")
 
-TargetingProcess = {}
+local TargetingProcess = {}
 
 
 ---comment

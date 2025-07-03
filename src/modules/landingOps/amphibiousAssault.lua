@@ -1,9 +1,9 @@
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-Utils = require("src.utils.utils")
-GameUtils = require("src.utils.gameUtils")
-AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
-AmphibiousAssault = {}
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+local GameUtils = require("src.utils.gameUtils")
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local AmphibiousAssault = {}
 
 ---@param mission SBJ__LandingMission
 ---@return boolean

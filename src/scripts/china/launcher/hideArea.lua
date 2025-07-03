@@ -1,5 +1,5 @@
-gKH = require('src.core.gKH_State_Standalone')
-CONFIG = require("src.core.constants")
+local gKH = require('src.core.gKH_State_Standalone')
+local CONFIG = require("src.core.constants")
 local unit = ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 local contacts = ScenEdit_GetContacts('Taiwan')

@@ -1,4 +1,4 @@
-Logger = require("src.utils.logger")
+local Logger = require("src.utils.logger")
 
 local unit = ScenEdit_UnitX()
 local units = VP_GetSide({ Side = 'China' }).units

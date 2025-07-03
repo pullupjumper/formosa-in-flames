@@ -7,7 +7,7 @@
 --     evasion = math.random(90 * d, 120 * d)
 --   }
 -- end
-Utils = {}
+local Utils = {}
 
 --- Generate a random string of uppercase letters
 ---@param numLetters number -- The number of letters to generate

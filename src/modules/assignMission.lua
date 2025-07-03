@@ -1,8 +1,8 @@
-Utils = require("src.utils.utils")
-Logger = require("src.utils.logger")
-GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
+local Logger = require("src.utils.logger")
+local GameApi = require("src.utils.gameApi")
 
-AssignMission = {}
+local AssignMission = {}
 
 ---@param baseUnit CMO__Unit The base unit with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')

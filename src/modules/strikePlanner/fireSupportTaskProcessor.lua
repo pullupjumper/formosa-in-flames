@@ -1,10 +1,10 @@
-Utils = require("src.utils.utils")
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-GameUtils = require("src.utils.gameUtils")
-TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local GameUtils = require("src.utils.gameUtils")
+local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 
-FireSupportTaskProcessor = {}
+local FireSupportTaskProcessor = {}
 
 ---@param CONFIG SBJ__CONFIG
 ---@param bettery SBJ__Battery

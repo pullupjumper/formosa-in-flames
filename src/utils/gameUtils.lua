@@ -1,7 +1,7 @@
-GameApi = require("src.utils.gameApi")
-Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
 
-GameUtils = {}
+local GameUtils = {}
 
 ---@param x_latitude number
 ---@param x_longitude number

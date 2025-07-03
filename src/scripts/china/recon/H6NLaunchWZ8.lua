@@ -1,8 +1,8 @@
-gKH = require('src.core.gKH_State_Standalone')
-Recon = require('src.modules.strikePlanner.recon')
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-Utils = require("src.utils.utils")
+local gKH = require('src.core.gKH_State_Standalone')
+local Recon = require('src.modules.strikePlanner.recon')
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
 
 local unit, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
 

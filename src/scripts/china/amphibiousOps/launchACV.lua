@@ -1,8 +1,8 @@
-AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-Utils = require("src.utils.utils")
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-CONFIG = require("src.core.constants")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local CONFIG = require("src.core.constants")
 
 local ship, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
 

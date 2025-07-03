@@ -1,5 +1,5 @@
 ---@class SBJ__CONFIG
-CONFIG = {}
+local CONFIG = {}
 CONFIG.isDevMode = true
 CONFIG.isSaved = true
 CONFIG.difficulty = 'normal'
@@ -131,6 +131,16 @@ CONFIG.c.areas = {
     'RP-156984', 'RP-156985', 'RP-156986', 'RP-156987'
   },
   ["OPAREA/EAST"] = { 'RP-156988', 'RP-156989', 'RP-156990', 'RP-156991', 'RP-156992', 'RP-156993' },
+  ["SWEAP/SOUTH/PROSECUTION"] = { 'rp-163362', 'rp-163363', 'rp-163364', 'rp-163365', },
+  ["SWEAP/SOUTH/PATROL"] = { 'rp-163366', 'rp-163367', },
+  ["SWEAP/CENTER/PROSECUTION"] = { 'rp-163338', 'rp-163339', 'rp-163340', 'rp-163341', },
+  ["SWEAP/CENTER/PATROL"] = { 'rp-163342', 'rp-163343', },
+  ["SWEAP/NORTH/PROSECUTION"] = { 'rp-163344', 'rp-163345', 'rp-163346', 'rp-163347', },
+  ["SWEAP/NORTH/PATROL"] = { 'rp-163348', 'rp-163349', },
+  ["SWEAP/JHI/PROSECUTION"] = { 'rp-163350', 'rp-163351', 'rp-163352', 'rp-163353', },
+  ["SWEAP/JHI/PATROL"] = { 'rp-163354', 'rp-163355', },
+  ["SWEAP/E/PROSECUTION"] = { 'rp-163356', 'rp-163357', 'rp-163358', 'rp-163359', },
+  ["SWEAP/E/PATROL"] = { 'rp-163360', 'rp-163161', },
 }
 
 CONFIG.t.areas = {
@@ -299,68 +309,47 @@ CONFIG.c.SIGINT.maxRange = 2.5
 
 -- IADS
 CONFIG.c.IADS.ratio = { C2 = 1.5, }
-CONFIG.c.IADS.C2FacilityDBIDs = {
-  319,
-  318,
-  115,
-  113
-}
+CONFIG.c.IADS.C2FacilityDBIDs = { 319, 318, 115, 113 }
 CONFIG.c.IADS.randomRadius = 10
 CONFIG.c.IADS.C2Settings = {
   {
     position = { lat = "N 25.30.05", lon = "E 119.30.41" },
-    areas = {
-      CONFIG.c.areas["OPAREA/FUZHOU"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/FUZHOU"], },
     areaName = 'Fuzhou'
   },
   {
     position = { lat = "N 25.19.12", lon = "E 119.06.36" },
-    areas = {
-      CONFIG.c.areas["OPAREA/PUTIAN"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/PUTIAN"], },
     areaName = 'Putian'
   },
   {
     position = { lat = "N 24.57.01", lon = "E 118.34.22" },
-    areas = {
-      CONFIG.c.areas["OPAREA/CHANGZHOU"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/CHANGZHOU"], },
     areaName = 'Changzhou'
   },
   {
     position = { lat = "N 24.43.19", lon = "E 118.12.29" },
-    areas = {
-      CONFIG.c.areas["OPAREA/XIAMEN"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/XIAMEN"], },
     areaName = 'Xiamen'
   },
   {
     position = { lat = "N 24.10.12", lon = "E 117.28.46" },
-    areas = {
-      CONFIG.c.areas["OPAREA/ZHANGZHOU"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/ZHANGZHOU"], },
     areaName = 'Zhangzhou'
   },
   {
     position = { lat = "N 23.39.17", lon = "E 116.41.26" },
-    areas = {
-      CONFIG.c.areas["OPAREA/SHANTOU"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/SHANTOU"], },
     areaName = 'Shantou'
   },
   {
     position = { lat = "N 23.08.19", lon = "E 115.22.49" },
-    areas = {
-      CONFIG.c.areas["OPAREA/SHANWEI"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/SHANWEI"], },
     areaName = 'Shanwei'
   },
   {
     position = { lat = "N 23.55.21", lon = "E 115.36.40" },
-    areas = {
-      CONFIG.c.areas["OPAREA/MEIZHOU"],
-    },
+    areas = { CONFIG.c.areas["OPAREA/MEIZHOU"], },
     areaName = 'Meizhou'
   },
 }

@@ -1,14 +1,14 @@
-gKH = require('src.core.gKH_State_Standalone')
-GameApi = require("src.utils.gameApi")
-Logger = require("src.utils.logger")
-Utils = require("src.utils.utils")
-GameUtils = require("src.utils.gameUtils")
-CONFIG = require("src.core.constants")
-ShipMovement = require('src.modules.landingOps.shipMovement')
-AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
-AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
-SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
-CountUnitsInEachArea = require('src.modules.unitStatusUI').CountUnitsInEachArea
+local gKH = require('src.core.gKH_State_Standalone')
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+local GameUtils = require("src.utils.gameUtils")
+local CONFIG = require("src.core.constants")
+local ShipMovement = require('src.modules.landingOps.shipMovement')
+local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
+local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
+local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
+local CountUnitsInEachArea = require('src.modules.unitStatusUI').CountUnitsInEachArea
 
 local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
 
