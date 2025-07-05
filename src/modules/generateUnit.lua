@@ -1,5 +1,6 @@
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local CONFIG = require("src.core.constants")
 
 function RemoveC2Facilities()
   local units = VP_GetSide({ name = 'China' }).units

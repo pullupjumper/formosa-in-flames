@@ -3,6 +3,7 @@ local Recon = require('src.modules.strikePlanner.recon')
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+local CONFIG = require("src.core.constants")
 
 local unit, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
 
@@ -12,6 +13,7 @@ if not unit then
 end
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
+
 
 if saveData == nil then
   Logger.error("saveData is nil")

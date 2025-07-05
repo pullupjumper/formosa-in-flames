@@ -1,5 +1,6 @@
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local CONFIG = require("src.core.constants")
 
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
 --     if isRepeatable == nil then isRepeatable = false end

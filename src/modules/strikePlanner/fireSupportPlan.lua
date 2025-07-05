@@ -2,6 +2,7 @@ local FireSupportTaskProcessor = require("src.modules.strikePlanner.fireSupportT
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
+local CONFIG = require("src.core.constants")
 
 local FireSupportPlan = {}
 

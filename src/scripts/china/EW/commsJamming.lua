@@ -1,5 +1,6 @@
 local gKH = require('src.core.gKH_State_Standalone')
 local saveData = gKH.State.LoadTableFromKey("SaveData")
+local CONFIG = require("src.core.constants")
 
 if saveData == nil then
   ScenEdit_SpecialMessage('China', 'saveData is nil')

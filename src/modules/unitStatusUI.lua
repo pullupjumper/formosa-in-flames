@@ -1,3 +1,5 @@
+local CONFIG = require("src.core.constants")
+
 ---comment
 ---@return table
 function CountUnitsInEachArea()

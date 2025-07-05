@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local AssignMission = require("src.modules.assignMission")
 local Logger = require("src.utils.logger")
+local CONFIG = require("src.core.constants")
 
 local Recon = {}
 

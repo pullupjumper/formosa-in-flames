@@ -49,15 +49,28 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field name string|nil
 ---@field bear_offset number|nil
 
----@class SBJ__Battery:table
----@field name string
+---@class SBJ__Position:table
+---@field course CMO__Location
+---@field area string[]
+
+---@class SBJ__Ammunition:table
 ---@field guid string
----@field reloadStartTime? number|nil @in seconds or nil
----@field state CONFIG.batteryState @ STATIC = 0, REPOSITIONING = 1, RELOAD = 2
----@field position table -- The position of the battery
+---@field wpnCurrent number
+---@field wpnDefault number
+
+---@class SBJ__AmmunitionSection:SBJ__Ammunition
+---@field name string
+---@field unitCount number
+---@field position SBJ__Position[]
+---@field reloadStartTime number|nil
+---@field state CONFIG.batteryState
+---@field ammunition string
+
+---@class SBJ__Battery:SBJ__AmmunitionSection
 ---@field weaponDBID number -- The weapon DBID to use for the battery
 ---@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
 ---@field ammunitionSection string -- The ammunition section guid to use for the battery
+
 
 ---@class SBJ__AttackContacts_Params:table
 ---@field contacts table<integer, string> -- A table of contact GUIDs to attack

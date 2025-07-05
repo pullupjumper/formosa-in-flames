@@ -1,3 +1,5 @@
+local CONFIG = require("src.core.constants")
+
 function WhenRunwayIsDamaged(side)
   local field = (side == 'China') and 'c' or 't'
   local unit = ScenEdit_UnitX()

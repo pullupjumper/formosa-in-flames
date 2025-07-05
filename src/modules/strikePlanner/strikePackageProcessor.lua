@@ -29,11 +29,6 @@ function StrikePackageProcessor._createMission(packageData, role)
   if not mission then
     Logger.log("Mission not found, creating: " .. packageData[role].missionParams.name)
 
-    -- if packageData[role].endTime then
-    --   packageData[role].missionParams.opts.endTime = packageData[role].endTime
-    --   packageData[role].missionParams.opts.startTime = packageData[role].startTime
-    -- end
-
     mission = GameUtils.CreateMission(
       "China",
       packageData[role].missionParams.name,
@@ -47,6 +42,27 @@ function StrikePackageProcessor._createMission(packageData, role)
       mission['OnDeactivateRTB'] = true
       mission['TakeOffTime'] = packageData[role].startTime
       mission['endtime'] = packageData[role].endTime
+
+      -- local bvrTypes = {
+      --   "Aircraft_5th_Generation",
+      --   "Aircraft_4th_Generation",
+      --   "Air_Contact_Unknown_Type"
+      -- }
+
+      -- if role == "wildWeasel" or role == "escort" then
+      --   for _, type in ipairs(bvrTypes) do
+      --     local wra, err = Utils.SafeCall(
+      --       "GameApi.ScenEdit_SetDoctrineWRA",
+      --       GameApi.ScenEdit_SetDoctrineWRA,
+      --       { mission = mission.guid, target_type = type, weapon_dbid = 3413 },
+      --       { 'inherit', 'inherit', '50ofmax', 'inherit' }
+      --     )
+
+      --     if not wra then
+      --       Logger.error("Error in ScenEdit_SetDoctrineWRA: " .. err)
+      --     end
+      --   end
+      -- end
     end
   end
 

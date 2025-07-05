@@ -1,5 +1,6 @@
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local CONFIG = require("src.core.constants")
 
 function Reload(battery, ammunitionSection, weaponDBID)
   local group = SE_GetUnit({ guid = battery.guid })
@@ -44,13 +45,6 @@ function Reload(battery, ammunitionSection, weaponDBID)
   end
 
   battery.reloadStartTime = nil
-
-  if CONFIG.isDevMode then
-    GameUtils.PrintBox('China',
-      'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
-    GameUtils.PrintBox('Taiwan',
-      'func/Reload/Remaining ammo of ammunitionSection/' .. tostring(ammunitionSection.wpnCurrent))
-  end
 end
 
 function SetReloadStartTime(battery, group, isRepositioningAutomatically)
@@ -266,288 +260,15 @@ local function ammoSecToRL(section, group)
 end
 
 
-function CheckBatteryState(saveData, platform, side, isRepositioningAutomatically)
-  -- Process all batteries
-  ProcessBatteries(saveData, platform, side, isRepositioningAutomatically)
-
-  -- Process all ammunition sections
-  ProcessAmmunitionSections(saveData, platform, side, isRepositioningAutomatically)
+-- Helper function: Find the area where a unit is located
+local function findUnitArea(unit, positions)
+  for _, p in pairs(positions) do
+    if unit:inArea(p.RL.area) then
+      return p.RL.area
+    end
+  end
+  return nil
 end
-
--- Process all batteries' states and actions
-function ProcessBatteries(saveData, platform, side, isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platformConfig = saveData[field]['ground'][platform]
-
-  for _, battery in pairs(platformConfig.batteries) do
-    local group = SE_GetUnit({ guid = battery.guid })
-    if not group then goto continue end
-
-    if isRepositioningAutomatically then
-      HandleAutomaticBatteryRepositioning(saveData, platform, side, battery, group,
-        isRepositioningAutomatically)
-    else
-      HandleManualBatteryReload(saveData, platform, side, battery, group, isRepositioningAutomatically)
-    end
-
-    ::continue::
-  end
-end
-
--- Handle automatic battery repositioning logic
-function HandleAutomaticBatteryRepositioning(saveData, platform, side, battery, group, isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platforms = saveData[field]['ground'][platform]
-  local config = CONFIG[field]['ground'][platform]
-  -- Handle STATIC state batteries
-  if battery.state == CONFIG.batteryState.STATIC then
-    if IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID) then
-      toRL(battery, group)
-    end
-  end
-
-  -- Handle RELOAD state batteries
-  if battery.state == CONFIG.batteryState.RELOAD then
-    -- Initialize reload start time if needed
-    if battery.reloadStartTime == nil then
-      battery.reloadStartTime = ScenEdit_CurrentTime() - config.reloadTime
-    end
-
-    -- Check if reload conditions are met
-    local elapsedTime = ScenEdit_CurrentTime() - battery.reloadStartTime
-    local result = IsMetWithAmmoTrucks(saveData, group, platform, isRepositioningAutomatically)
-    local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and
-      elapsedTime >= config.reloadTime and
-      result.isMet and
-      IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
-
-    -- Log debug information if dev mode is enabled
-    LogBatteryDebugInfo(battery, elapsedTime, result, isMoreThanReloadTime)
-
-    -- Perform reload if conditions are met
-    if isMoreThanReloadTime then
-      Reload(battery, platforms.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
-      toHA(battery, group)
-    end
-  end
-end
-
--- Handle manual battery reload logic
-function HandleManualBatteryReload(saveData, platform, side, battery, group, isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platforms = saveData[field]['ground'][platform]
-  local config = CONFIG[field]['ground'][platform]
-
-  -- Initialize reload start time if needed
-  if battery.reloadStartTime == nil then
-    battery.reloadStartTime = ScenEdit_CurrentTime() + config.reloadTime * 100
-  end
-
-  -- Check if reload conditions are met
-  local elapsedTime = ScenEdit_CurrentTime() - battery.reloadStartTime
-  local result = IsMetWithAmmoTrucks(saveData, group, platform, isRepositioningAutomatically)
-  local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and
-    elapsedTime >= config.reloadTime and
-    result.isMet and
-    IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
-
-  -- Perform reload if conditions are met
-  if isMoreThanReloadTime then
-    Reload(battery, platforms.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
-
-    if CONFIG.isDevMode then
-      ScenEdit_MsgBox('Missile reload is finished/' .. battery.name, 1)
-    end
-  end
-end
-
--- Log debug information for battery operations
-function LogBatteryDebugInfo(battery, elapsedTime, result, isMoreThanReloadTime)
-  if CONFIG.isDevMode then
-    GameUtils.PrintBox(
-      'China',
-      'func/CheckBatteryState',
-      'name:' .. battery.name,
-      'elapsedTime:' .. tostring(elapsedTime),
-      'isMet:' .. tostring(result.isMet),
-      'isMoreThanReloadTime:' .. tostring(isMoreThanReloadTime)
-    )
-  end
-end
-
--- Process all ammunition sections' states and actions
-function ProcessAmmunitionSections(saveData, platform, side, isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platforms = saveData[field]['ground'][platform]
-
-  for _, section in pairs(platforms.ammunitionSections) do
-    local group = SE_GetUnit({ guid = section.guid })
-    if not group then goto continue end
-
-    if isRepositioningAutomatically then
-      HandleAutomaticSectionRepositioning(saveData, platform, side, section, group,
-        isRepositioningAutomatically)
-    else
-      HandleManualSectionReload(saveData, platform, side, section, group, isRepositioningAutomatically)
-    end
-
-    ::continue::
-  end
-end
-
--- Handle automatic ammunition section repositioning logic
-function HandleAutomaticSectionRepositioning(saveData, platform, side, section, group,
-                                             isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platforms = saveData[field]['ground'][platform]
-  local config = CONFIG[field]['ground'][platform]
-
-  -- Handle STATIC state sections
-  if section.state == CONFIG.batteryState.STATIC then
-    if section.wpnCurrent == 0 and group:inArea(section.position.RL.area) then
-      toAHA(section, group)
-    end
-  end
-
-  -- Handle RELOAD state sections
-  if section.state == CONFIG.batteryState.RELOAD then
-    local elapsedTime = ScenEdit_CurrentTime() - section.reloadStartTime
-    local result = IsMetWithAmmo(saveData, group, platform, isRepositioningAutomatically)
-    local isMoreThanReloadTime = (section.reloadStartTime ~= nil and
-      elapsedTime >= config.reloadTime and
-      section.wpnCurrent == 0 and
-      result.isMet)
-
-    if isMoreThanReloadTime then
-      transload(section, platforms.ammunitions[section.ammunition])
-      ammoSecToRL(section, group)
-
-      if CONFIG.isDevMode then
-        ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
-      end
-    end
-  end
-end
-
--- Handle manual ammunition section reload logic
-function HandleManualSectionReload(saveData, platform, side, section, group, isRepositioningAutomatically)
-  local field = (side == 'China') and 'c' or 't'
-  local platforms = saveData[field]['ground'][platform]
-  local config = CONFIG[field]['ground'][platform]
-
-  -- Initialize reload start time if needed
-  if section.reloadStartTime == nil then
-    section.reloadStartTime = ScenEdit_CurrentTime() + config.reloadTime * 100
-  end
-
-  -- Check if reload conditions are met
-  local elapsedTime = ScenEdit_CurrentTime() - section.reloadStartTime
-  local result = IsMetWithAmmo(saveData, group, platform, isRepositioningAutomatically)
-  local isMoreThanReloadTime = (section.reloadStartTime ~= nil and
-    elapsedTime >= config.reloadTime and
-    section.wpnCurrent == 0 and
-    result.isMet)
-
-  -- Perform reload if conditions are met
-  if isMoreThanReloadTime then
-    transload(section, platforms.ammunitions[section.ammunition])
-
-    if CONFIG.isDevMode then
-      ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
-    end
-  end
-end
-
--- function IsMetWithAmmoTrucks(CONFIG, unit, platform, isRepositioningAutomatically)
---     local side = unit.side
---     local key = 't'
-
---     if side == 'China' then
---         key = 'c'
---     end
-
---     if unit.group then
---         local group = SE_GetUnit({ guid = unit.group.guid })
-
---         if group then
---             local field1 = 'batteries'
---             local field3 = 'ammunitionSections'
-
---             if string.find(group.name, 'Ammo') ~= nil or string.find(group.name, 'SUPP') ~= nil then
---                 field1 = 'ammunitionSections'
---                 field3 = 'batteries'
---             end
-
---             for _, battery in pairs(CONFIG[key].ground[platform][field1]) do
---                 local isTrue = true
-
---                 if isRepositioningAutomatically then
---                     isTrue = battery.state == CONFIG.batteryState.REPOSITIONING or
---                         battery.state == CONFIG.batteryState.RELOAD
---                 end
-
---                 if battery.guid == group.guid and isTrue then
---                     local area = nil
-
---                     for _, p in pairs(CONFIG[key].ground[platform].positions) do
---                         if unit:inArea(p.RL.area) then
---                             area = p.RL.area
---                             break
---                         end
---                     end
-
---                     for _, section in pairs(CONFIG[key].ground[platform][field3]) do
---                         local ammoSec = SE_GetUnit({ guid = section.guid })
-
---                         if ammoSec and area and ammoSec:inArea(area) then
---                             return { isMet = true, battery = battery }
---                         end
---                     end
---                 end
---             end
---         end
---     end
-
---     return { isMet = false, battery = nil }
--- end
-
--- function IsMetWithAmmo(CONFIG, unit, platform, isRepositioningAutomatically)
---     local side = unit.side
---     local key = 't'
-
---     if side == 'China' then
---         key = 'c'
---     end
-
---     if unit.group then
---         local group = SE_GetUnit({ guid = unit.group.guid })
-
---         if group then
---             for _, section in pairs(CONFIG[key].ground[platform].ammunitionSections) do
---                 local isTrue = true
-
---                 if isRepositioningAutomatically then
---                     isTrue = section.state == CONFIG.batteryState.REPOSITIONING or
---                         section.state == CONFIG.batteryState.RELOAD
---                 end
-
---                 if section.guid == group.guid and isTrue then
---                     local ammo = SE_GetUnit({ guid = section.ammunition })
-
---                     for _, p in pairs(CONFIG[key].ground[platform].positions) do
---                         local isMetWithAmmo = unit:inArea(p.AHA.area) and (ammo and ammo:inArea(p.AHA.area))
-
---                         if isMetWithAmmo then
---                             return { isMet = true, battery = section }
---                         end
---                     end
---                 end
---             end
---         end
---     end
-
---     return { isMet = false, battery = nil }
--- end
 
 -- Check if a unit has met with ammo trucks
 function IsMetWithAmmoTrucks(saveData, unit, platform, isRepositioningAutomatically)
@@ -587,7 +308,7 @@ function IsMetWithAmmoTrucks(saveData, unit, platform, isRepositioningAutomatica
     -- If matching group found and state is valid
     if battery.guid == group.guid and isStateValid then
       -- Find the area where unit is located
-      local area = FindUnitArea(unit, config.positions)
+      local area = findUnitArea(unit, config.positions)
       if not area then
         return { isMet = false, battery = nil }
       end
@@ -649,14 +370,179 @@ function IsMetWithAmmo(saveData, unit, platform, isRepositioningAutomatically)
   return { isMet = false, battery = nil }
 end
 
--- Helper function: Find the area where a unit is located
-function FindUnitArea(unit, positions)
-  for _, p in pairs(positions) do
-    if unit:inArea(p.RL.area) then
-      return p.RL.area
+-- Handle automatic battery repositioning logic
+local function handleAutomaticBatteryRepositioning(saveData, platform, side, battery, group, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platforms = saveData[field]['ground'][platform]
+  local config = CONFIG[field]['ground'][platform]
+  -- Handle STATIC state batteries
+  if battery.state == CONFIG.batteryState.STATIC then
+    if IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID) then
+      toRL(battery, group)
     end
   end
-  return nil
+
+  -- Handle RELOAD state batteries
+  if battery.state == CONFIG.batteryState.RELOAD then
+    -- Initialize reload start time if needed
+    if battery.reloadStartTime == nil then
+      battery.reloadStartTime = ScenEdit_CurrentTime() - config.reloadTime
+    end
+
+    -- Check if reload conditions are met
+    local elapsedTime = ScenEdit_CurrentTime() - battery.reloadStartTime
+    local result = IsMetWithAmmoTrucks(saveData, group, platform, isRepositioningAutomatically)
+    local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and
+      elapsedTime >= config.reloadTime and
+      result.isMet and
+      IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
+
+    -- Perform reload if conditions are met
+    if isMoreThanReloadTime then
+      Reload(battery, platforms.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
+      toHA(battery, group)
+    end
+  end
+end
+
+-- Handle manual battery reload logic
+local function handleManualBatteryReload(saveData, platform, side, battery, group, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platforms = saveData[field]['ground'][platform]
+  local config = CONFIG[field]['ground'][platform]
+
+  -- Initialize reload start time if needed
+  if battery.reloadStartTime == nil then
+    battery.reloadStartTime = ScenEdit_CurrentTime() + config.reloadTime * 100
+  end
+
+  -- Check if reload conditions are met
+  local elapsedTime = ScenEdit_CurrentTime() - battery.reloadStartTime
+  local result = IsMetWithAmmoTrucks(saveData, group, platform, isRepositioningAutomatically)
+  local isMoreThanReloadTime = (battery.reloadStartTime ~= nil and
+    elapsedTime >= config.reloadTime and
+    result.isMet and
+    IsLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
+
+  -- Perform reload if conditions are met
+  if isMoreThanReloadTime then
+    Reload(battery, platforms.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
+
+    if CONFIG.isDevMode then
+      ScenEdit_MsgBox('Missile reload is finished/' .. battery.name, 1)
+    end
+  end
+end
+
+
+-- Handle automatic ammunition section repositioning logic
+local function handleAutomaticSectionRepositioning(saveData, platform, side, section, group, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platforms = saveData[field]['ground'][platform]
+  local config = CONFIG[field]['ground'][platform]
+
+  -- Handle STATIC state sections
+  if section.state == CONFIG.batteryState.STATIC then
+    if section.wpnCurrent == 0 and group:inArea(section.position.RL.area) then
+      toAHA(section, group)
+    end
+  end
+
+  -- Handle RELOAD state sections
+  if section.state == CONFIG.batteryState.RELOAD then
+    local elapsedTime = ScenEdit_CurrentTime() - section.reloadStartTime
+    local result = IsMetWithAmmo(saveData, group, platform, isRepositioningAutomatically)
+    local isMoreThanReloadTime = (section.reloadStartTime ~= nil and
+      elapsedTime >= config.reloadTime and
+      section.wpnCurrent == 0 and
+      result.isMet)
+
+    if isMoreThanReloadTime then
+      transload(section, platforms.ammunitions[section.ammunition])
+      ammoSecToRL(section, group)
+
+      if CONFIG.isDevMode then
+        ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
+      end
+    end
+  end
+end
+
+-- Handle manual ammunition section reload logic
+local function handleManualSectionReload(saveData, platform, side, section, group, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platforms = saveData[field]['ground'][platform]
+  local config = CONFIG[field]['ground'][platform]
+
+  -- Initialize reload start time if needed
+  if section.reloadStartTime == nil then
+    section.reloadStartTime = ScenEdit_CurrentTime() + config.reloadTime * 100
+  end
+
+  -- Check if reload conditions are met
+  local elapsedTime = ScenEdit_CurrentTime() - section.reloadStartTime
+  local result = IsMetWithAmmo(saveData, group, platform, isRepositioningAutomatically)
+  local isMoreThanReloadTime = (section.reloadStartTime ~= nil and
+    elapsedTime >= config.reloadTime and
+    section.wpnCurrent == 0 and
+    result.isMet)
+
+  -- Perform reload if conditions are met
+  if isMoreThanReloadTime then
+    transload(section, platforms.ammunitions[section.ammunition])
+
+    if CONFIG.isDevMode then
+      ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
+    end
+  end
+end
+
+-- Process all ammunition sections' states and actions
+local function processAmmunitionSections(saveData, platform, side, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platforms = saveData[field]['ground'][platform]
+
+  for _, section in pairs(platforms.ammunitionSections) do
+    local group = SE_GetUnit({ guid = section.guid })
+    if not group then goto continue end
+
+    if isRepositioningAutomatically then
+      handleAutomaticSectionRepositioning(saveData, platform, side, section, group,
+        isRepositioningAutomatically)
+    else
+      handleManualSectionReload(saveData, platform, side, section, group, isRepositioningAutomatically)
+    end
+
+    ::continue::
+  end
+end
+
+-- Process all batteries' states and actions
+local function processBatteries(saveData, platform, side, isRepositioningAutomatically)
+  local field = (side == 'China') and 'c' or 't'
+  local platformConfig = saveData[field]['ground'][platform]
+
+  for _, battery in pairs(platformConfig.batteries) do
+    local group = SE_GetUnit({ guid = battery.guid })
+    if not group then goto continue end
+
+    if isRepositioningAutomatically then
+      handleAutomaticBatteryRepositioning(saveData, platform, side, battery, group,
+        isRepositioningAutomatically)
+    else
+      handleManualBatteryReload(saveData, platform, side, battery, group, isRepositioningAutomatically)
+    end
+
+    ::continue::
+  end
+end
+
+function CheckBatteryState(saveData, platform, side, isRepositioningAutomatically)
+  -- Process all batteries
+  processBatteries(saveData, platform, side, isRepositioningAutomatically)
+
+  -- Process all ammunition sections
+  processAmmunitionSections(saveData, platform, side, isRepositioningAutomatically)
 end
 
 function DestroyAmmoSecHandler(unit, side, platform, saveData)

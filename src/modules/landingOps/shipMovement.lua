@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local CONFIG = require("src.core.constants")
 
 local ShipMovement = {}
 
