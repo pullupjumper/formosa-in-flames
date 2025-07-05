@@ -1,6 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
-local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = {}
@@ -8,17 +6,15 @@ local AmphibiousAssault = {}
 ---@param mission SBJ__LandingMission
 ---@return boolean
 function AmphibiousAssault._setMissionStartTime(mission)
-  local currentTime, err = Utils.SafeCall("GameApi.ScenEdit_CurrentTime", GameApi.ScenEdit_CurrentTime)
+  local currentTime = GameApi.ScenEdit_CurrentTime()
   if not currentTime then
-    Logger.error("Error in ScenEdit_CurrentTime: " .. err)
     return false
   end
 
   local startTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + mission.startTime))
 
-  local m, err = Utils.SafeCall("GameApi.ScenEdit_GetMission", GameApi.ScenEdit_GetMission, "China", mission.name)
+  local m = GameApi.ScenEdit_GetMission("China", mission.name)
   if not m then
-    Logger.error("Error in ScenEdit_GetMission: " .. err)
     return false
   end
 
@@ -31,10 +27,9 @@ end
 ---@param saveData SBJ__SaveData
 ---@return boolean
 function AmphibiousAssault.SetLandingMissionStartTime(CONFIG, saveData)
-  local currentTime = Utils.SafeCall("GameApi.ScenEdit_CurrentTime", GameApi.ScenEdit_CurrentTime)
+  local currentTime = GameApi.ScenEdit_CurrentTime()
 
   if not currentTime then
-    Logger.error("Error in ScenEdit_CurrentTime")
     return false
   end
 
@@ -82,43 +77,35 @@ function AmphibiousAssault.SetCoursesForLSTs(CONFIG, units)
   local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
   for _, item in ipairs(units) do
-    -- local unit = SE_GetUnit({ guid = item.guid })
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+    local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if not unit then
-      Logger.error("Failed to get unit '" .. item.name .. "': " .. err)
-      goto continue
-    end
+    if unit then
+      for _, zone in ipairs(operationalZones) do
+        if unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
+          local destination = GameApi.World_GetPointFromBearing({
+            LATITUDE = unit.latitude,
+            LONGITUDE = unit.longitude,
+            BEARING = zone.LSTSettings.course.bearing,
+            DISTANCE = zone.LSTSettings.course.distance
+          })
 
-    for _, zone in ipairs(operationalZones) do
-      if unit and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
-        local destination, err = Utils.SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
-          LATITUDE = unit.latitude,
-          LONGITUDE = unit.longitude,
-          BEARING = zone.LSTSettings.course.bearing,
-          DISTANCE = zone.LSTSettings.course.distance
-        })
+          if not destination then
+            return false
+          end
 
-        if not destination then
-          Logger.error("Failed to get destination point: " .. err)
-          return false
-        end
-
-        if AmphibiousAssault._isLST(unit) then
-          unit.course = { destination }
-          unit.manualSpeed = zone.LSTSettings.speed
+          if AmphibiousAssault._isLST(unit) then
+            unit.course = { destination }
+            unit.manualSpeed = zone.LSTSettings.speed
+          end
         end
       end
     end
-
-    ::continue::
   end
 
   for _, group in pairs(CONFIG.c.PHIBOP.sag) do
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, group.groupName)
+    local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
     if not unit then
-      Logger.error("Failed to get unit '" .. group.groupName .. "': " .. err)
       return false
     end
 
@@ -165,7 +152,7 @@ function AmphibiousAssault.LaunchACV(params)
 
   if ztd > 0 then
     for i = 1, ztd, 1 do
-      local addedUnit, err = Utils.SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
+      local addedUnit = GameApi.ScenEdit_AddUnit({
         side = 'China',
         type = 'Vehicle',
         name = 'ZTD-05',
@@ -175,19 +162,12 @@ function AmphibiousAssault.LaunchACV(params)
       })
 
       if not addedUnit then
-        Logger.error("Failed to add unit: " .. err)
         return
       end
 
-      local doctrine, err = Utils.SafeCall(
-        "GameApi.ScenEdit_SetDoctrine",
-        GameApi.ScenEdit_SetDoctrine,
-        { guid = addedUnit.guid },
-        { automatic_evasion = 'no' }
-      )
+      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
 
       if not doctrine then
-        Logger.error("Failed to set doctrine: " .. err)
         return
       end
 
@@ -200,7 +180,7 @@ function AmphibiousAssault.LaunchACV(params)
 
   if zbd > 0 then
     for i = index + 1, index + zbd, 1 do
-      local addedUnit, err = Utils.SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
+      local addedUnit = GameApi.ScenEdit_AddUnit({
         side = 'China',
         type = 'Vehicle',
         name = 'ZBD-05',
@@ -210,19 +190,12 @@ function AmphibiousAssault.LaunchACV(params)
       })
 
       if not addedUnit then
-        Logger.error("Failed to add unit: " .. err)
         return
       end
 
-      local doctrine, err = Utils.SafeCall(
-        "GameApi.ScenEdit_SetDoctrine",
-        GameApi.ScenEdit_SetDoctrine,
-        { guid = addedUnit.guid },
-        { automatic_evasion = 'no' }
-      )
+      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
 
       if not doctrine then
-        Logger.error("Failed to set doctrine: " .. err)
         return
       end
 

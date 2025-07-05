@@ -10,10 +10,9 @@ local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 
 
-local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
+local contacts = GameApi.ScenEdit_GetContacts('China')
 
 if not contacts then
-  Logger.error("Error in ScenEdit_GetContacts: " .. err)
   return
 end
 

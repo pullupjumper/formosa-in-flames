@@ -112,49 +112,31 @@ end
 function TargetingProcess._filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, contacts)
   local targets = {}
   local isTracking = false
-  -- local units = VP_GetSide({ Side = 'China' }).units
 
-  local side, err = Utils.SafeCall("GameApi.VP_GetSide", GameApi.VP_GetSide, { side = 'China' })
+  local side = GameApi.VP_GetSide({ side = 'China' })
 
   if not side then
-    Logger.error("Error in VP_GetSide: " .. err)
     return
   end
 
   local units = side.units
 
   for _, guid in ipairs(contacts) do
-    local contact, err = Utils.SafeCall("GameApi.ScenEdit_GetContact", GameApi.ScenEdit_GetContact, 'China', guid)
+    local contact = GameApi.ScenEdit_GetContact('China', guid)
 
-    if not contact then
-      Logger.error("Error in ScenEdit_GetContact: " .. err)
-      goto continue
-    end
+    if contact then
+      for _, tm in pairs(saveData.c.SIGINT.transmissions) do
+        local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
-    for _, tm in pairs(saveData.c.SIGINT.transmissions) do
-      local distance = Utils.SafeCall(
-        'GameApi.Tool_Range',
-        GameApi.Tool_Range,
-        { latitude = tm.latitude, longitude = tm.longitude },
-        guid
-      )
+        if distance and TargetingProcess._isWithinRange(CONFIG, distance, tm) then
+          table.insert(targets, guid)
 
-      if not distance then
-        Logger.error("Error in Tool_Range: " .. err)
-        goto continue
-      end
-      -- local distance = Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
-
-      if TargetingProcess._isWithinRange(CONFIG, distance, tm) then
-        table.insert(targets, guid)
-
-        if not isTracking and tm.type == 'mobile' then
-          isTracking = Recon.TrackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
+          if not isTracking and tm.type == 'mobile' then
+            isTracking = Recon.TrackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
+          end
         end
       end
     end
-
-    ::continue::
   end
 
   return targets
@@ -174,8 +156,6 @@ function TargetingProcess.FindRadioDirection(opts)
   Utils.InsertList(targets, mobileTargets)
   Utils.InsertList(targets, c2Targets)
   local radioSource = TargetingProcess._filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, targets)
-  -- local targets = filterTargetsInArea(contacts, package.target.areas)
-  -- targets = TargetingProcess._filterTargetsWithinRangeOfRadioSource(saveData, targets, CONFIG)
   return radioSource
 end
 
@@ -191,10 +171,9 @@ function TargetingProcess.FindNavalTargets(opts)
   local navalTargets = {}
   local hasTracked = false
 
-  local side, err = Utils.SafeCall("GameApi.VP_GetSide", GameApi.VP_GetSide, { side = 'China' })
+  local side = GameApi.VP_GetSide({ side = 'China' })
 
   if not side then
-    Logger.error("Error in VP_GetSide: " .. err)
     return
   end
 
@@ -244,10 +223,10 @@ end
 ---@param isFirstWave boolean
 ---@return boolean
 function TargetingProcess.EvaluateTarget(target, contactAge, isFirstWave)
-  local actualUnit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, target.actualunitid)
+  local actualUnit = GameApi.ScenEdit_GetUnit(target.actualunitid)
 
   if not actualUnit then
-    Logger.error('Failed to get unit ' .. target.actualunitid .. ': ' .. err)
+    return false
   end
 
   local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
@@ -267,28 +246,18 @@ end
 function TargetingProcess.AssessTargetsDamage(task, isFirstWave)
   local evaluatedTargetlist = {}
 
-  if type(task.target.list) ~= 'table' and #task.target.list == 0 then
-    goto continue
+  if type(task.target.list) ~= 'table' or #task.target.list == 0 then
+    return evaluatedTargetlist
   end
 
   for _, guid in ipairs(task.target.list) do
-    local actualTarget, err = Utils.SafeCall(
-      "GameApi.ScenEdit_GetContact", GameApi.ScenEdit_GetContact, 'China', guid
-    )
+    local actualTarget = GameApi.ScenEdit_GetContact('China', guid)
 
-    if not actualTarget then
-      Logger.error('Failed to get contact ' .. guid .. ': ' .. err)
-      goto continue2
-    end
-
-    if TargetingProcess.EvaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
+    if actualTarget and TargetingProcess.EvaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)
     end
-
-    ::continue2::
   end
 
-  ::continue::
   return evaluatedTargetlist
 end
 

@@ -1,20 +1,17 @@
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local CONFIG = require("src.core.constants")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 
-local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
+local contacts = GameApi.ScenEdit_GetContacts('China')
 
 if not contacts then
-  Logger.error("Error in ScenEdit_GetContacts: " .. err)
   return
 end
 
-local ship, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
+local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
-  Logger.error("Error in ScenEdit_UnitX: " .. err)
   return
 end
 

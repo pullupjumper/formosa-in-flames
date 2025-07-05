@@ -1,8 +1,6 @@
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
 local AssignMission = require("src.modules.assignMission")
-local Logger = require("src.utils.logger")
 local CONFIG = require("src.core.constants")
 
 local Recon = {}
@@ -13,34 +11,31 @@ local Recon = {}
 ---@param unitDBID number
 ---@param unitType string @ Aircraft or Boats
 function Recon.LaunchUnits(baseGUID, course, unitCount, unitDBID, unitType)
-  local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, baseGUID)
+  local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
-    Logger.error("Failed to get base unit '" .. baseGUID .. "': " .. err)
     return
   end
 
   local count = 0
   local temp = {}
-  if #base.embarkedUnits[unitType] == 0 then return end
+  if #base.embarkedUnits[unitType] == 0 then
+    return
+  end
 
   for _, guid in ipairs(base.embarkedUnits[unitType]) do
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+    local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if not unit then
-      Logger.error("Failed to get unit '" .. guid .. "': " .. err)
-      goto continue
-    end
-
-    if unit.dbid == unitDBID and unit.readytime_v == 0 and count < unitCount then
+    if unit and unit.dbid == unitDBID and unit.readytime_v == 0 and count < unitCount then
       unit:Launch(true)
       unit.course = course
       count = count + 1
       table.insert(temp, unit.guid)
     end
 
-    if count >= unitCount then break end
-    ::continue::
+    if count >= unitCount then
+      break
+    end
   end
 
   return temp
@@ -50,7 +45,7 @@ end
 ---@param course CMO__TableOfWaypoints
 ---@return CMO__Unit|nil
 function Recon.LaunchWZ8(h6n, course)
-  local wz8, err = Utils.SafeCall("GameApi.ScenEdit_AddUnit", GameApi.ScenEdit_AddUnit, {
+  local wz8 = GameApi.ScenEdit_AddUnit({
     side = 'China',
     type = 'Aircraft',
     name = 'WZ-8',
@@ -64,32 +59,25 @@ function Recon.LaunchWZ8(h6n, course)
   })
 
   if not wz8 then
-    Logger.error("Failed to add WZ-8: " .. err)
     return
   end
 
   local arcT = { 'PB1', 'PB2', 'SB1', 'SB2', 'SMF1', 'PMF2' }
-  local updatedUnit, err = Utils.SafeCall(
-    "GameApi.ScenEdit_UpdateUnit",
-    GameApi.ScenEdit_UpdateUnit,
-    { guid = wz8.guid, mode = 'add_sensor', dbid = 4576, arc_detect = arcT, arc_track = arcT }
-  )
+  local updatedUnit = GameApi.ScenEdit_UpdateUnit({
+    guid = wz8.guid,
+    mode = 'add_sensor',
+    dbid = 4576,
+    arc_detect = arcT,
+    arc_track = arcT
+  })
 
   if not updatedUnit then
-    Logger.error("Failed to update WZ-8: " .. err)
     return
   end
 
-  local result, err = Utils.SafeCall(
-    "GameApi.ScenEdit_SetEMCON",
-    GameApi.ScenEdit_SetEMCON,
-    "Unit",
-    wz8.guid,
-    "Radar=Active"
-  )
+  local result = GameApi.ScenEdit_SetEMCON("Unit", wz8.guid, "Radar=Active")
 
-  if result == nil then
-    Logger.error("Failed to set EMCON: " .. err)
+  if not result then
     return
   end
 
@@ -147,30 +135,19 @@ function Recon.HandleReconQueue(saveData)
     end
 
     if Recon._shouldEnterTargetArea(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, q.unitGUID)
+      local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
-      if not unit then
-        Logger.error("Failed to get unit '" .. q.unitGUID .. "': " .. err)
-      else
-        local result, err = Utils.SafeCall(
-          "GameApi.ScenEdit_AssignUnitToMission",
-          GameApi.ScenEdit_AssignUnitToMission,
-          unit.guid,
-          q.missionName
-        )
+      if unit then
+        local result = GameApi.ScenEdit_AssignUnitToMission(unit.guid, q.missionName)
 
-        if not result then
-          Logger.error("Failed to assign unit to mission: " .. err)
-        else
+        if result then
           q.isFinished = true
         end
       end
     elseif Recon._shouldRTB(q) then
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, q.unitGUID)
+      local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
-      if not unit then
-        Logger.error("Failed to get unit '" .. q.unitGUID .. "': " .. err)
-      elseif #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
+      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
         unit:RTB(true)
         q.isFinished = true
       end
@@ -197,56 +174,37 @@ function Recon.TrackTarget(CONFIG, saveData, units, UAVDBID, target)
 
   for guid, value in pairs(saveData.c.recon.temp[type]) do
     if value.targetGUID == target.guid then
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+      local unit = GameApi.ScenEdit_GetUnit(guid)
 
-      if not unit then
-        Logger.error("Failed to get unit '" .. guid .. "': " .. err)
-        goto continue
+      if unit then
+        return true
       end
-
-      return true
     end
-
-    ::continue::
   end
 
   if UAV == nil then
     local d = 1000
 
     for _, value in ipairs(units) do
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, value.guid)
-
-      if not unit then
-        Logger.error("Failed to get unit '" .. value.guid .. "': " .. err)
-        goto continue
-      end
-      -- local unit = SE_GetUnit({ guid = value.guid })
+      local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
       if unit and unit.dbid == UAVDBID and unit.condition == 'Airborne' then
-        local distance, err = Utils.SafeCall(
-          "GameApi.Tool_Range",
-          GameApi.Tool_Range,
-          { latitude = unit.latitude, longitude = unit.longitude },
-          target.guid
+        local distance = GameApi.Tool_Range(
+          { latitude = unit.latitude, longitude = unit.longitude }, target.guid
         )
 
-        if not distance then
-          Logger.error("Failed to calculate range between points: " .. err)
-          goto continue
-        end
-
-        if distance < d then
+        if distance and distance < d then
           d = distance
           UAV = unit
         end
       end
-
-      ::continue::
     end
   end
 
   if UAV and #UAV.course == 0 then
-    if UAV.mission then UAV.mission = '' end
+    if UAV.mission then
+      UAV.mission = ''
+    end
 
     UAV.course = { {
       latitude = target.latitude,

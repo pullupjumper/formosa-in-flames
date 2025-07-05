@@ -1,13 +1,10 @@
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local CONFIG = require("src.core.constants")
 
-local ship, err = Utils.SafeCall("GameApi.ScenEdit_UnitX", GameApi.ScenEdit_UnitX)
+local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
-  Logger.error("Error in ScenEdit_UnitX: " .. err)
   return
 end
 
@@ -25,13 +22,12 @@ if AmphibiousAssault.IsFerryOrLST(CONFIG, ship) then
     })
 
     if count == 0 then
-      local result, err = Utils.SafeCall("GameApi.ScenEdit_HostUnitToParent", GameApi.ScenEdit_HostUnitToParent, {
+      local result = GameApi.ScenEdit_HostUnitToParent({
         HostedUnitNameOrID = ship.guid,
         SelectedBaseNameOrID = zone.baseGUID
       })
 
       if not result then
-        Logger.error("Error in ScenEdit_HostUnitToParent: " .. err)
         return
       end
 

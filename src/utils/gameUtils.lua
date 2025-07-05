@@ -8,16 +8,15 @@ local GameUtils = {}
 ---@param max_radius number
 ---@return CMO__Location
 function GameUtils.CircularRandomPosition(x_latitude, x_longitude, max_radius)
-  local randomisationCircle, errorMessage = Utils.SafeCall("GameApi.World_GetCircleFromPoint", GameApi
-    .World_GetCircleFromPoint, {
-      latitude = x_latitude,
-      longitude = x_longitude,
-      radius = (math.random(0, max_radius * 10) / 10),
-      numpoints = 72
-    })
+  local randomisationCircle = GameApi.World_GetCircleFromPoint({
+    latitude = x_latitude,
+    longitude = x_longitude,
+    radius = (math.random(0, max_radius * 10) / 10),
+    numpoints = 72
+  })
 
-  if errorMessage then
-    GameUtils.PrintBox('playerside', "[LOG] Error in World_GetCircleFromPoint: " .. tostring(errorMessage))
+  if not randomisationCircle then
+    return nil
   end
 
   local randomisedPoint = randomisationCircle[math.random(1, #randomisationCircle)]
@@ -46,16 +45,16 @@ function GameUtils.GenerateLocations(params)
       distanceTemp = params.firstDistance
     end
 
-    local newLocation, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
-      GameApi.World_GetPointFromBearing, {
-        LATITUDE = locationTemp.latitude,
-        LONGITUDE = locationTemp.longitude,
-        BEARING = bearingTemp,
-        DISTANCE = distanceTemp
-      })
+    local newLocation = GameApi.World_GetPointFromBearing({
+      LATITUDE = locationTemp.latitude,
+      LONGITUDE = locationTemp.longitude,
+      BEARING = bearingTemp,
+      DISTANCE = distanceTemp
+    })
 
-    if errorMessage then
-      GameUtils.PrintBox('playerside', "[LOG] Error in World_GetPointFromBearing: " .. tostring(errorMessage))
+    if not newLocation then
+      -- If one point fails, we probably should stop.
+      break
     end
 
     locationTemp = newLocation
@@ -80,63 +79,44 @@ function GameUtils.NewArea(position, mode)
   if shape == 'circle' then
     local distance = mode.distance
     for i = 0, 359, 45 do
-      local location, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
-        GameApi.World_GetPointFromBearing, {
-          latitude = position.latitude,
-          longitude = position.longitude,
-          distance = distance,
-          bearing = i
-        })
+      local location = GameApi.World_GetPointFromBearing({
+        latitude = position.latitude,
+        longitude = position.longitude,
+        distance = distance,
+        bearing = i
+      })
 
-      if errorMessage then
-        GameUtils.PrintBox('playerside',
-          "[LOG] Error in World_GetPointFromBearing (NewArea - circle): " .. tostring(errorMessage))
-      end
-
-      local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
-        .ScenEdit_AddReferencePoint, {
+      if location then
+        local newRp = GameApi.ScenEdit_AddReferencePoint({
           side = side,
           latitude = location.latitude,
           longitude = location.longitude
         })
 
-      if errorMessage then
-        GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
-      end
-
-      if newRp then -- 只有在 newRp 有效時才插入
-        a = a + 1
-        table.insert(rpTable, newRp.name)
+        if newRp then
+          a = a + 1
+          table.insert(rpTable, newRp.name)
+        end
       end
     end
   elseif shape == 'square' then
     local distance = mode.distance
     for i = 0, 3 do
       local b = 45 + (90 * i) + bear_offset
-      local location, errorMessage = Utils.SafeCall("GameApi.World_GetPointFromBearing",
-        GameApi.World_GetPointFromBearing, {
-          latitude = position.latitude,
-          longitude = position.longitude,
-          distance = distance,
-          bearing = b
-        })
+      local location = GameApi.World_GetPointFromBearing({
+        latitude = position.latitude,
+        longitude = position.longitude,
+        distance = distance,
+        bearing = b
+      })
 
-      if errorMessage then
-        GameUtils.PrintBox('playerside',
-          "[LOG] Error in World_GetPointFromBearing (NewArea - square): " .. tostring(errorMessage))
-      end
-
-      local newRp, errorMessage = Utils.SafeCall("GameApi.ScenEdit_AddReferencePoint", GameApi
-        .ScenEdit_AddReferencePoint, {
+      if location then
+        GameApi.ScenEdit_AddReferencePoint({
           side = side,
           latitude = location.latitude,
           longitude = location.longitude
         })
-
-      if errorMessage then
-        GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddReferencePoint: " .. tostring(errorMessage))
       end
-      -- 這裡沒有對 rpTable 進行操作，所以不需要額外的 if newRp then 檢查
     end
   end
 
@@ -175,20 +155,16 @@ function GameUtils.PrintBox(side, ...)
   local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
 
   -- 一次性輸出
-  local _, errorMessage = Utils.SafeCall("GameApi.ScenEdit_SpecialMessage", GameApi.ScenEdit_SpecialMessage, side,
-    boxString)
-  if errorMessage then
-    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SpecialMessage: " .. tostring(errorMessage))
-  end
+  GameApi.ScenEdit_SpecialMessage(side, boxString)
 end
 
 ---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return boolean
 function GameUtils.IsAfterStartTime(time)
-  local result, err = Utils.SafeCall("ScenEdit_CurrentTime", ScenEdit_CurrentTime)
+  local result = GameApi.ScenEdit_CurrentTime()
 
-  if err then
-    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_CurrentTime: " .. tostring(err))
+  if not result then
+    return false
   end
 
   return result > Utils.ParseDatetimeToTimestamp(time)
@@ -202,27 +178,24 @@ end
 ---@param emcon? string
 ---@return CMO__Mission|nil
 function GameUtils.CreateMission(side, name, type, opts, emcon)
-  local mission, err = Utils.SafeCall("GameApi.ScenEdit_AddMission", GameApi.ScenEdit_AddMission, side, name, type, opts)
+  local mission = GameApi.ScenEdit_AddMission(side, name, type, opts)
 
   if not mission then
-    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_AddMission: " .. tostring(err))
     return
   end
 
   if opts then
-    mission, err = Utils.SafeCall("GameApi.ScenEdit_SetMission", GameApi.ScenEdit_SetMission, side, name, opts)
+    mission = GameApi.ScenEdit_SetMission(side, name, opts)
   end
 
   if not mission then
-    GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SetMission: " .. tostring(err))
     return
   end
 
   if emcon then
-    local result, err = Utils.SafeCall("GameApi.ScenEdit_SetEMCON", GameApi.ScenEdit_SetEMCON, 'mission', name, emcon)
+    local result = GameApi.ScenEdit_SetEMCON('mission', name, emcon)
 
     if not result then
-      GameUtils.PrintBox('playerside', "[LOG] Error in ScenEdit_SetEMCON: " .. tostring(err))
       return
     end
   end

@@ -1,6 +1,5 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
-local Utils = require("src.utils.utils")
 
 local AttackManager = {}
 
@@ -213,16 +212,9 @@ function AttackManager._getWeaponInfo(unit, weaponDBID)
 
   -- Get currently assigned weapons
   local alreadyAllocatedWeapons = 0
-  local weaponAllocations, err = Utils.SafeCall(
-    "GameApi.ScenEdit_WeaponAllocation",
-    GameApi.ScenEdit_WeaponAllocation,
-    unit.guid,
-    '',
-    ''
-  )
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation(unit.guid, '', '')
 
-  if err then
-    Logger.error(err)
+  if not weaponAllocations then
     weaponAllocations = {}
   end
 
@@ -246,16 +238,9 @@ end
 function AttackManager._getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
-  local weaponAllocations, err = Utils.SafeCall(
-    "GameApi.ScenEdit_WeaponAllocation",
-    GameApi.ScenEdit_WeaponAllocation,
-    '',
-    contactGuid,
-    side
-  )
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation('', contactGuid, side)
 
-  if err then
-    Logger.error(err)
+  if not weaponAllocations then
     weaponAllocations = {}
   end
 
@@ -276,10 +261,9 @@ end
 ---@return boolean Whether the unit can fire
 function AttackManager._canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   -- Check if unit is on hold
-  local doctrine, err = Utils.SafeCall("GameApi.ScenEdit_GetDoctrine", GameApi.ScenEdit_GetDoctrine, unit.guid)
+  local doctrine = GameApi.ScenEdit_GetDoctrine(unit.guid)
 
-  if err then
-    Logger.error(err)
+  if not doctrine then
     return false
   end
 
@@ -331,11 +315,7 @@ function AttackManager._processUnitGroup(groupUnit, contact, totalAmmoRequested,
   end
 
   local guid = groupUnit.group.unitlist[grpIdx]
-  local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
-
-  if err then
-    Logger.error(err)
-  end
+  local unit = GameApi.ScenEdit_GetUnit(guid)
 
   if not unit then
     return true, 0 -- Unit not found, move to next, no weapons allocated
@@ -352,15 +332,11 @@ function AttackManager._processUnitGroup(groupUnit, contact, totalAmmoRequested,
     local ammoToAllocate = math.min(ammoNeeded, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result, err = Utils.SafeCall("GameApi.ScenEdit_AttackContact", GameApi.ScenEdit_AttackContact,
+    local result = GameApi.ScenEdit_AttackContact(
       guid,
       contact.guid,
       { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
-
-    if err then
-      Logger.error(err)
-    end
 
     if result then
       ammoAllocated = ammoToAllocate
@@ -392,15 +368,11 @@ function AttackManager._processSingleUnit(unit, contact, totalAmmoRequested, wea
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result, err = Utils.SafeCall("GameApi.ScenEdit_AttackContact", GameApi.ScenEdit_AttackContact,
+    local result = GameApi.ScenEdit_AttackContact(
       unit.guid,
       contact.guid,
       { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
-
-    if err then
-      Logger.error(err)
-    end
 
     if result then
       return { ammoAllocated = ammoToAllocate }
@@ -424,7 +396,7 @@ function AttackManager.AttackContact(contactGUID, ammoToAllocate, batteries, bty
   local attemptCount = 0
   local maxAttempts = 50
 
-  local contact, err = Utils.SafeCall("GameApi.ScenEdit_GetContact", GameApi.ScenEdit_GetContact, side, contactGUID)
+  local contact = GameApi.ScenEdit_GetContact(side, contactGUID)
 
   if contact == nil then
     Logger.error("AttackContact: Contact not found with GUID: " .. tostring(contactGUID))
@@ -435,21 +407,11 @@ function AttackManager.AttackContact(contactGUID, ammoToAllocate, batteries, bty
 
     -- Process each battery until we've allocated enough ammo or tried all batteries
     while btyIdx <= #batteries and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
-      local actualUnit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, batteries[btyIdx]
-        .guid)
+      local actualUnit = GameApi.ScenEdit_GetUnit(batteries[btyIdx].guid)
       local wpnDBID = weaponDBID or batteries[btyIdx].weaponDBID
 
-      if err then
-        Logger.error(err)
-      end
-
       if not actualUnit then
-        actualUnit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, batteries[btyIdx].name,
-          side)
-        if err then
-          Logger.error(err)
-        end
-        -- break -- Battery not found, exit loop
+        actualUnit = GameApi.ScenEdit_GetUnit(batteries[btyIdx].name, side)
         if not actualUnit then break end
       end
 

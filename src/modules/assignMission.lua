@@ -1,5 +1,3 @@
-local Utils = require("src.utils.utils")
-local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 
 local AssignMission = {}
@@ -15,18 +13,12 @@ function AssignMission._filterEmbarkedPlatforms(baseUnit, platformType, platform
   ---@type string[]
   local platforms = baseUnit.embarkedUnits[platformType]
   for _, guid in ipairs(platforms) do
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
+    local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if not unit then
-      Logger.error("Failed to get unit '" .. guid .. "': " .. err)
-      goto continue_filter -- 跳過當前單位
-    end
-
-    if unit.dbid == platformDBID then
+    if unit and unit.dbid == platformDBID then
       unit.manualSpeed = 'OFF'
       table.insert(filteredPlatforms, unit)
     end
-    ::continue_filter::
   end
   return filteredPlatforms
 end
@@ -46,17 +38,12 @@ function AssignMission._processMissionAssignments(filteredPlatforms, mission)
     if count >= mission.num then break end
 
     if AssignMission._canAssignUnitToMission(unit, mission) then
-      local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
-        unit.guid, mission.name, false)
+      local success = GameApi.ScenEdit_AssignUnitToMission(unit.guid, mission.name, false)
 
-      if not success then
-        Logger.error("Failed to assign unit '" .. unit.guid .. "' to mission '" .. mission.name .. "': " .. err)
-        goto continue_assignment -- 跳過當前單位
+      if success then
+        count = count + 1
       end
-
-      count = count + 1
     end
-    ::continue_assignment::
   end
 end
 
@@ -65,10 +52,9 @@ end
 ---@param platformDBID number The database ID of the platform to filter
 ---@param missions table<number, SBJ__MissionEntry> A list of missions to assign units to
 function AssignMission.AssignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
-  local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
   if not base then
-    Logger.error("Failed to get base unit '" .. fromUnit .. "': " .. err)
     return -- 提前返回
   end
 
@@ -83,10 +69,9 @@ end
 ---@param weaponDBID number The database ID of the weapon to filter by
 ---@return number The count of the specified weapon on the unit's loadout
 function AssignMission._getWeaponCount(unitGuid, weaponDBID)
-  local loadout, err = Utils.SafeCall("GameApi.ScenEdit_GetLoadout", GameApi.ScenEdit_GetLoadout, unitGuid)
+  local loadout = GameApi.ScenEdit_GetLoadout(unitGuid)
 
   if not loadout then
-    Logger.error("Failed to get loadout for unit '" .. unitGuid .. "': " .. err)
     return 0 -- 返回 0 表示沒有武器或獲取失敗
   end
 
@@ -119,18 +104,16 @@ end
 ---@return table<integer, string>|nil -- A list of assigned units
 function AssignMission.AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   ---@type CMO__Unit
-  local airbase, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local airbase = GameApi.ScenEdit_GetUnit(fromUnit)
   if not airbase then
-    Logger.error("Failed to get airbase unit '" .. fromUnit .. "': " .. err)
     return nil -- 提前返回
   end
 
   if #airbase.embarkedUnits['Aircraft'] == 0 then return nil end
 
   ---@type CMO__Mission
-  local m, err = Utils.SafeCall("GameApi.ScenEdit_GetMission", GameApi.ScenEdit_GetMission, airbase.side, missionName)
+  local m = GameApi.ScenEdit_GetMission(airbase.side, missionName)
   if not m then
-    Logger.error("Failed to get mission '" .. missionName .. "' for side '" .. airbase.side .. "': " .. err)
     return nil -- 提前返回
   end
 
@@ -143,29 +126,20 @@ function AssignMission.AssignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDB
   local platforms = airbase.embarkedUnits.Aircraft
   for _, guid in ipairs(platforms) do
     ---@type CMO__Unit
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, guid)
-    if not unit then
-      Logger.error("Failed to get unit '" .. guid .. "': " .. err)
-      goto continue_strike -- 跳過當前單位
-    end
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+    if unit then
+      local weaponNum = AssignMission._getWeaponCount(unit.guid, weaponDBID)
+      if AssignMission._isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID) and count < num then
+        ---@type boolean
+        local success = GameApi.ScenEdit_AssignUnitToMission(unit.guid, missionName, isEscort)
 
-    local weaponNum = AssignMission._getWeaponCount(unit.guid, weaponDBID)
-    if AssignMission._isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID) and count < num then
-      ---@type boolean
-      local success, err = Utils.SafeCall("GameApi.ScenEdit_AssignUnitToMission", GameApi.ScenEdit_AssignUnitToMission,
-        unit.guid, missionName, isEscort)
-
-      if not success then
-        Logger.error("Failed to assign unit '" .. unit.guid .. "' to mission '" .. missionName .. "': " .. err)
-        goto continue_strike -- 跳過當前單位
+        if success then
+          count = count + 1
+          table.insert(temp, unit.guid)
+          if count >= num then break end
+        end
       end
-
-      count = count + 1
-      table.insert(temp, unit.guid)
-      if count >= num then break end
     end
-
-    ::continue_strike::
   end
   if not m.isactive then m.isactive = true end
   return temp

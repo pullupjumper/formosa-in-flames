@@ -10,24 +10,21 @@ local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 local CountUnitsInEachArea = require('src.modules.unitStatusUI').CountUnitsInEachArea
 
-local contacts, err = Utils.SafeCall("GameApi.ScenEdit_GetContacts", GameApi.ScenEdit_GetContacts, 'China')
+local contacts = GameApi.ScenEdit_GetContacts('China')
 
 if not contacts then
-  Logger.error("Error in ScenEdit_GetContacts: " .. err)
   return
 end
 
-local currentTime, err = Utils.SafeCall("GameApi.ScenEdit_CurrentTime", GameApi.ScenEdit_CurrentTime)
+local currentTime = GameApi.ScenEdit_CurrentTime()
 
 if not currentTime then
-  Logger.error("Error in ScenEdit_CurrentTime: " .. err)
   return
 end
 
-local side, err = Utils.SafeCall("GameApi.VP_GetSide", GameApi.VP_GetSide, { side = 'China' })
+local side = GameApi.VP_GetSide({ side = 'China' })
 
 if not side then
-  Logger.error("Error in VP_GetSide: " .. err)
   return
 end
 
@@ -89,12 +86,7 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
     local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
 
     if hasLaunchedAmphibiousAssault then
-      local result, err = Utils.SafeCall("GameApi.ScenEdit_MsgBox", GameApi.ScenEdit_MsgBox, "Start air landing", 0)
-
-      if not result then
-        Logger.error("Error in ScenEdit_MsgBox: " .. err)
-      end
-
+      GameApi.ScenEdit_MsgBox("Start air landing", 0)
       saveData.c.PHIBOP.isWaitingForAmphibiousAssault = false
       saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = true
     end

@@ -341,7 +341,7 @@ setmetatable(GameApi, {
         local result, err = Utils.SafeCall('GameApi.' .. key, targetFunc, ...)
 
         if err then
-          Logger.Error(err)
+          Logger.error(err)
           return nil
         end
 

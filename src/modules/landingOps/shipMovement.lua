@@ -1,5 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local CONFIG = require("src.core.constants")
@@ -15,16 +14,12 @@ function ShipMovement._moveShip(unit, location, speed, isTesting)
   unit.manualSpeed = speed
 
   if isTesting then
-    local result, err = Utils.SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
+    GameApi.ScenEdit_SetUnit({
       guid = unit.guid,
       latitude = location.latitude,
       longitude = location.longitude,
       manualSpeed = 0
     })
-
-    if not result then
-      Logger.error("Error in ScenEdit_SetUnit: " .. err)
-    end
   end
 end
 
@@ -76,16 +71,12 @@ end
 ---@param lon number|string
 ---@param bearing number
 function ShipMovement._setShipPosition(ship, lat, lon, bearing)
-  local result, err = Utils.SafeCall("GameApi.ScenEdit_SetUnit", GameApi.ScenEdit_SetUnit, {
+  GameApi.ScenEdit_SetUnit({
     guid = ship.guid,
     latitude = lat,
     longitude = lon,
     heading = bearing,
   })
-
-  if not result then
-    Logger.error("Error in ScenEdit_SetUnit: " .. err)
-  end
 end
 
 ---@param latitude number|string
@@ -94,28 +85,21 @@ end
 ---@param distance number
 ---@return CMO__Location
 function ShipMovement._getNextPosition(latitude, longitude, bearing, distance)
-  local point, err = Utils.SafeCall("GameApi.World_GetPointFromBearing", GameApi.World_GetPointFromBearing, {
+  return GameApi.World_GetPointFromBearing({
     LATITUDE = latitude,
     LONGITUDE = longitude,
     BEARING = bearing,
     DISTANCE = distance,
   })
-
-  if not point then
-    Logger.error("Error in World_GetPointFromBearing: " .. err)
-  end
-
-  return point
 end
 
 ---@param group table<string, table>
 ---@param isTesting boolean
 function ShipMovement._handleSAG(group, isTesting)
-  local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, group.groupName)
+  local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
   if not unit then
-    Logger.error("Error in ScenEdit_GetUnit: " .. err)
-    goto continue
+    return
   end
 
   unit.course = group.to.archorageArea
@@ -125,44 +109,46 @@ function ShipMovement._handleSAG(group, isTesting)
     local type052d, type054a = 0, 0
 
     for _, u in ipairs(unit.group.unitlist) do
-      local ship, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, u)
+      local ship = GameApi.ScenEdit_GetUnit(u)
 
-      if not ship then
-        Logger.error("Error in ScenEdit_GetUnit: " .. err)
-        goto continue2
-      end
+      if ship then
+        if ship.dbid == CONFIG.platformDBID48 then
+          if type052d == 0 then
+            ShipMovement._setShipPosition(
+              ship,
+              group.to.archorageArea[count].lat,
+              group.to.archorageArea[count].lon,
+              group.to.heading
+            )
+          else
+            local point = ShipMovement._getNextPosition(
+              group.to.archorageArea[count].lat,
+              group.to.archorageArea[count].lon,
+              group.to.heading - 180,
+              1.5
+            )
+            if point then
+              ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+            end
+          end
 
-      if ship.dbid == CONFIG.platformDBID48 then
-        if type052d == 0 then
-          ShipMovement._setShipPosition(ship, group.to.archorageArea[count].lat, group.to.archorageArea[count].lon,
-            group.to.heading)
-        else
+          type052d = type052d + 1
+        elseif ship.dbid == CONFIG.platformDBID49 then
+          local angle = (type054a == 0) and -45 or 45
           local point = ShipMovement._getNextPosition(
             group.to.archorageArea[count].lat,
             group.to.archorageArea[count].lon,
-            group.to.heading - 180,
+            group.to.heading - angle,
             1.5
           )
-          ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+          if point then
+            ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+          end
+          type054a = type054a + 1
         end
-
-        type052d = type052d + 1
-      elseif ship.dbid == CONFIG.platformDBID49 then
-        local angle = (type054a == 0) and -45 or 45
-        local point = ShipMovement._getNextPosition(
-          group.to.archorageArea[count].lat,
-          group.to.archorageArea[count].lon,
-          group.to.heading - angle,
-          1.5
-        )
-        ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
-        type054a = type054a + 1
       end
-
-      ::continue2::
     end
   end
-  ::continue::
 end
 
 ---comment
@@ -178,52 +164,46 @@ function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
   local allUnitsMoved = false
 
   for _, unitData in ipairs(units) do
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, unitData.guid)
+    local unit = GameApi.ScenEdit_GetUnit(unitData.guid)
 
-    if not unit then
-      Logger.error('Failed to get unit ' .. unitData.guid .. ': ' .. err)
-      goto continue
-    end
+    if unit then
+      for _, item in ipairs(initialLocations) do
+        if unit:inArea(item.from.stagingArea) then
+          local result = calculations[item.name].result
+          local matched = false
 
-    for _, item in ipairs(initialLocations) do
-      if unit and unit:inArea(item.from.stagingArea) then
-        local result = calculations[item.name].result
-        local matched = false
-
-        for shipType, handler in pairs({
-          type075 = ShipMovement._handleShipType,
-          type076 = ShipMovement._handleShipType,
-          type072iii = ShipMovement._handleShipType,
-          type072a = ShipMovement._handleShipType,
-          type073a = ShipMovement._handleShipType,
-          type071 = ShipMovement._handle071,
-        }) do
-          if unit.dbid == result[shipType].dbid then
-            handler(unit, result, shipType, shipSettings, isTesting)
-            matched = true
-            break
-          end
-        end
-
-        if not matched then
-          for nameType, handler in pairs({
-            ferry = ShipMovement._handleNameType,
-            RORO = ShipMovement._handleNameType,
-            barge = ShipMovement._handleNameType,
+          for shipType, handler in pairs({
+            type075 = ShipMovement._handleShipType,
+            type076 = ShipMovement._handleShipType,
+            type072iii = ShipMovement._handleShipType,
+            type072a = ShipMovement._handleShipType,
+            type073a = ShipMovement._handleShipType,
+            type071 = ShipMovement._handle071,
           }) do
-            if unit.name == nameType:gsub("^%l", string.upper) then
-              handler(unit, result, nameType, shipSettings, isTesting)
+            if unit.dbid == result[shipType].dbid then
+              handler(unit, result, shipType, shipSettings, isTesting)
+              matched = true
               break
+            end
+          end
+
+          if not matched then
+            for nameType, handler in pairs({
+              ferry = ShipMovement._handleNameType,
+              RORO = ShipMovement._handleNameType,
+              barge = ShipMovement._handleNameType,
+            }) do
+              if unit.name == nameType:gsub("^%l", string.upper) then
+                handler(unit, result, nameType, shipSettings, isTesting)
+                break
+              end
             end
           end
         end
       end
     end
-
-    ::continue::
   end
 
-  -- 這裡可改用 handleSAG(group, isTesting) 模組化處理 SAG 群組移動
   for _, group in pairs(CONFIG.c.PHIBOP.sag) do
     ShipMovement._handleSAG(group, isTesting)
   end

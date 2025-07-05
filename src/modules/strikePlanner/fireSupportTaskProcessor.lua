@@ -29,21 +29,20 @@ function FireSupportTaskProcessor._shouldDeployToFiringPosition(CONFIG, saveData
   local allBatteriesInPosition = true
 
   for _, bty in ipairs(FST.batteries) do
-    local actualBty, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, bty.guid)
+    local actualBty = GameApi.ScenEdit_GetUnit(bty.guid)
 
     if not actualBty then
-      Logger.error("Failed to get unit '" .. bty.guid .. "': " .. err)
       allBatteriesInPosition = false
-    end
+    else
+      local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
 
-    local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
+      if FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, actualBty) then
+        ToFringPosition(bettery, actualBty)
+      end
 
-    if FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, actualBty) then
-      ToFringPosition(bettery, actualBty)
-    end
-
-    if FireSupportTaskProcessor._isNotBtyAtFiringPosition(CONFIG, bettery) then
-      allBatteriesInPosition = false
+      if FireSupportTaskProcessor._isNotBtyAtFiringPosition(CONFIG, bettery) then
+        allBatteriesInPosition = false
+      end
     end
   end
 

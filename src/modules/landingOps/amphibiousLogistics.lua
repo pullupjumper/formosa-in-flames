@@ -1,5 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local AssignMission = require("src.modules.assignMission")
 
@@ -44,10 +43,6 @@ function AmphibiousLogistics.DeleteCargo(fromUnit, cargoItem)
   local count = 0
   local resultCount = 0
 
-  -- if fromUnit == nil or (fromUnit.cargo[1].cargo == nil) then
-  --     return
-  -- end
-
   if fromUnit == nil or
       fromUnit.cargo == nil or
       cargoItem.num == 0 or
@@ -83,10 +78,9 @@ end
 ---@param loadoutDBID number
 ---@param cargoItems table<number, CargoItem>
 function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItems)
-  local base, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, fromUnit)
+  local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
   if not base then
-    Logger.error("Failed to get base unit '" .. fromUnit .. "': " .. err)
     return
   end
 
@@ -97,34 +91,31 @@ function AmphibiousLogistics.TransferCargo(fromUnit, platformType, platformDBid,
     local count = Utils.GetCount(cargoItems)
 
     for k, v in ipairs(platforms) do
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, v)
+      local unit = GameApi.ScenEdit_GetUnit(v)
 
-      if not unit then
-        Logger.error("Failed to get unit '" .. v .. "': " .. err)
-        return
-      end
-
-      if platformType == 'Aircraft' then
-        if unit ~= nil and unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
-          if count > 1 then
-            for _, item in ipairs(cargoItems[k]) do
-              AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
-            end
-          else
-            for _, item in ipairs(cargoItems[1]) do
-              AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+      if unit then
+        if platformType == 'Aircraft' then
+          if unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
+            if count > 1 then
+              for _, item in ipairs(cargoItems[k]) do
+                AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+              end
+            else
+              for _, item in ipairs(cargoItems[1]) do
+                AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+              end
             end
           end
-        end
-      else
-        if unit ~= nil and unit.dbid == platformDBid then
-          if count > 1 then
-            for _, item in ipairs(cargoItems[k]) do
-              AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
-            end
-          else
-            for _, item in ipairs(cargoItems[1]) do
-              AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+        else
+          if unit.dbid == platformDBid then
+            if count > 1 then
+              for _, item in ipairs(cargoItems[k]) do
+                AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+              end
+            else
+              for _, item in ipairs(cargoItems[1]) do
+                AmphibiousLogistics.UpdateCargo(baseContainingCargo, unit, item)
+              end
             end
           end
         end
@@ -142,14 +133,9 @@ function AmphibiousLogistics.GetUnitsInAnchorageArea(CONFIG, units)
   local isUnitMoving = false
 
   for _, item in ipairs(units) do
-    local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+    local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if not unit then
-      Logger.error("Failed to get unit '" .. item.guid .. "': " .. err)
-      goto continue_filter -- 跳過當前單位
-    end
-
-    if (unit and unit.dbid == CONFIG.platformDBID6
+    if unit and (unit.dbid == CONFIG.platformDBID6
           or unit.dbid == CONFIG.platformDBID7
           or unit.dbid == CONFIG.platformDBID8
           or unit.dbid == CONFIG.platformDBID9
@@ -169,8 +155,6 @@ function AmphibiousLogistics.GetUnitsInAnchorageArea(CONFIG, units)
         end
       end
     end
-
-    ::continue_filter::
   end
 
   return { units = unitsInAnchorageArea, isUnitMoving = isUnitMoving }
@@ -181,42 +165,21 @@ end
 ---@param missionName string
 ---@return boolean
 function AmphibiousLogistics._handleCargoMission(platformType, zone, missionName)
-  local m, err = Utils.SafeCall(
-    "GameApi.ScenEdit_AddMission",
-    GameApi.ScenEdit_AddMission,
-    "China",
-    missionName,
-    "Cargo",
-    { zone = zone[platformType].zone }
-  )
+  local m = GameApi.ScenEdit_AddMission("China", missionName, "Cargo", { zone = zone[platformType].zone })
 
   if not m then
-    Logger.error("Failed to add mission '" .. missionName .. "': " .. err)
     return false
   end
 
-  local m, err = Utils.SafeCall(
-    "GameApi.ScenEdit_SetMission",
-    GameApi.ScenEdit_SetMission,
-    "China",
-    missionName,
-    zone[platformType].settings
-  )
+  m = GameApi.ScenEdit_SetMission("China", missionName, zone[platformType].settings)
 
   if not m then
-    Logger.error("Failed to set mission '" .. missionName .. "': " .. err)
     return false
   end
 
-  local m, err = Utils.SafeCall(
-    "GameApi.ScenEdit_SetDoctrine",
-    GameApi.ScenEdit_SetDoctrine,
-    { side = "China", mission = missionName },
-    { automatic_evasion = false }
-  )
+  m = GameApi.ScenEdit_SetDoctrine({ side = "China", mission = missionName }, { automatic_evasion = false })
 
   if not m then
-    Logger.error("Failed to set doctrine for mission '" .. missionName .. "': " .. err)
     return false
   end
 
@@ -368,10 +331,9 @@ function AmphibiousLogistics.RetransferCargos(CONFIG, units)
 
   for _, zone in ipairs(operationalZones) do
     for _, item in ipairs(units) do
-      local unit, err = Utils.SafeCall("GameApi.ScenEdit_GetUnit", GameApi.ScenEdit_GetUnit, item.guid)
+      local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
       if not unit then
-        Logger.error("Failed to get unit '" .. item.name .. "': " .. err)
         return false
       end
 

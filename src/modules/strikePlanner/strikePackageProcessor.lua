@@ -20,11 +20,7 @@ local StrikePackageProcessor = {}
 ---@param role string
 ---@return boolean
 function StrikePackageProcessor._createMission(packageData, role)
-  local mission, err = Utils.SafeCall(
-    "GameApi.ScenEdit_GetMission",
-    GameApi.ScenEdit_GetMission,
-    "China", packageData[role].missionParams.name
-  )
+  local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionParams.name)
 
   if not mission then
     Logger.log("Mission not found, creating: " .. packageData[role].missionParams.name)
@@ -42,27 +38,6 @@ function StrikePackageProcessor._createMission(packageData, role)
       mission['OnDeactivateRTB'] = true
       mission['TakeOffTime'] = packageData[role].startTime
       mission['endtime'] = packageData[role].endTime
-
-      -- local bvrTypes = {
-      --   "Aircraft_5th_Generation",
-      --   "Aircraft_4th_Generation",
-      --   "Air_Contact_Unknown_Type"
-      -- }
-
-      -- if role == "wildWeasel" or role == "escort" then
-      --   for _, type in ipairs(bvrTypes) do
-      --     local wra, err = Utils.SafeCall(
-      --       "GameApi.ScenEdit_SetDoctrineWRA",
-      --       GameApi.ScenEdit_SetDoctrineWRA,
-      --       { mission = mission.guid, target_type = type, weapon_dbid = 3413 },
-      --       { 'inherit', 'inherit', '50ofmax', 'inherit' }
-      --     )
-
-      --     if not wra then
-      --       Logger.error("Error in ScenEdit_SetDoctrineWRA: " .. err)
-      --     end
-      --   end
-      -- end
     end
   end
 
@@ -172,14 +147,11 @@ function StrikePackageProcessor.Process(packageData, CONFIG, saveData, contacts,
   end
 
   -- 4. Assign targets to the striker mission
-  local targetsAssigned, err = Utils.SafeCall(
-    'GameApi.ScenEdit_AssignUnitAsTarget',
-    GameApi.ScenEdit_AssignUnitAsTarget,
+  local targetsAssigned = GameApi.ScenEdit_AssignUnitAsTarget(
     evaluatedTargetlist,
     packageData.striker.missionParams.name
   )
   if not targetsAssigned then
-    Logger.error("Error in ScenEdit_AssignUnitAsTarget: " .. err)
     return false
   end
   Logger.log("Targets assigned to mission " .. packageData.striker.missionParams.name)
