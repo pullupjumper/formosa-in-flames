@@ -19,7 +19,7 @@ function CountUnitsInEachArea()
       ['HMMWV'] = 0,
       ['ZBD-03'] = 0
     }
-    for index, value in ipairs(unitsFromChina) do
+    for _, value in ipairs(unitsFromChina) do
       local unit = SE_GetUnit({ guid = value.guid })
 
       if unit and unit:inArea(zone.area) then
@@ -330,7 +330,7 @@ function BtyStateTable(side)
 
   local createDataString = function(side, ...)
     local key = 't'
-    local types = { ... }
+    local wpnSystems = { ... }
 
     if side == 'China' then
       key = 'c'
@@ -338,25 +338,25 @@ function BtyStateTable(side)
 
     local rows = {}
 
-    for index, type in pairs(types) do
-      if saveData[key].ground[type].ammunitionSections then
-        for k, value in pairs(saveData[key].ground[type].ammunitionSections) do
+    for index, wpnSystem in pairs(wpnSystems) do
+      if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].ammunitionSections then
+        for k, value in pairs(saveData[key].ground[wpnSystem].ammunitionSections) do
           rows[k] = {}
         end
       end
     end
 
-    for index, type in pairs(types) do
-      if saveData[key].ground[type].batteries then
-        for _, bty in pairs(saveData[key].ground[type].batteries) do
+    for index, wpnSystem in pairs(wpnSystems) do
+      if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].batteries then
+        for _, bty in pairs(saveData[key].ground[wpnSystem].batteries) do
           local name = bty.name
           local status = ''
-          local remainingAmmoInVehicles = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
+          local remainingAmmoInVehicles = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
               .wpnCurrent
-          local ammoSec = saveData[key].ground[type].ammunitionSections[bty.ammunitionSection]
-          local reloadTime = CONFIG[key].ground[type].reloadTime / 60
-          local remainingAmmo = saveData[key].ground[type].ammunitions
-              [saveData[key].ground[type].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
+          local ammoSec = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
+          local reloadTime = CONFIG[key].ground[wpnSystem].reloadTime / 60
+          local remainingAmmo = saveData[key].ground[wpnSystem].ammunitions
+              [saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
           local reloadingRemainingTime = nil
           local transloadingRemainingTime = nil
 
@@ -401,7 +401,7 @@ function BtyStateTable(side)
           if side == 'China' then
             table.insert(rows[bty.ammunitionSection], {
               name = name,
-              type = type,
+              type = wpnSystem,
               status = status,
               remainingAmmoInVehicles = remainingAmmoInVehicles,
               remainingAmmo = remainingAmmo,
@@ -412,7 +412,7 @@ function BtyStateTable(side)
           else
             table.insert(rows[bty.ammunitionSection], {
               name = name,
-              type = type,
+              type = wpnSystem,
               remainingAmmoInVehicles = remainingAmmoInVehicles,
               remainingAmmo = remainingAmmo,
               reloadTimeForBty = reloadingRemainingTime,
@@ -578,7 +578,7 @@ function MagazineInBasesTable(side)
 
     local rows = {}
 
-    for index, item in ipairs(CONFIG[key].air.landBased.ACInfo) do
+    for index, item in ipairs(CONFIG[key].air.landBased.deployedACs) do
       local base = SE_GetUnit({ guid = item.baseGUID })
 
       if base and item.loadouts then

@@ -332,6 +332,20 @@ function realApi.ScenEdit_AddReloadsToUnit(CMO__Weapon2MountDescriptor)
   return ScenEdit_AddReloadsToUnit(CMO__Weapon2MountDescriptor)
 end
 
+---comment
+---@param SideOrGuid string
+---@param newScore number
+---@param reason? string
+function realApi.ScenEdit_SetScore(SideOrGuid, newScore, reason)
+  return ScenEdit_SetScore(SideOrGuid, newScore, reason)
+end
+
+---comment
+---@param side string
+function GameApi.ScenEdit_GetScore(side)
+  return ScenEdit_GetScore(side)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

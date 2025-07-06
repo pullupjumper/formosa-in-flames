@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local Launcher = require("src.modules.launcher")
 
 local FireSupportTaskProcessor = {}
 
@@ -11,7 +12,8 @@ local FireSupportTaskProcessor = {}
 ---@param group CMO__Unit
 ---@return boolean
 function FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, group)
-  return bettery.state == CONFIG.batteryState.HIDE and not IsLowAmmo(group, bettery.ammoThreshold, bettery.weaponDBID)
+  return bettery.state == CONFIG.batteryState.HIDE and
+      not Launcher.isLowAmmo(group, bettery.ammoThreshold, bettery.weaponDBID)
 end
 
 ---@param CONFIG SBJ__CONFIG
@@ -37,7 +39,7 @@ function FireSupportTaskProcessor._shouldDeployToFiringPosition(CONFIG, saveData
       local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
 
       if FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, actualBty) then
-        ToFringPosition(bettery, actualBty)
+        Launcher.toFringPosition(CONFIG, bettery, actualBty)
       end
 
       if FireSupportTaskProcessor._isNotBtyAtFiringPosition(CONFIG, bettery) then

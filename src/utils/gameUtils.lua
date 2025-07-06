@@ -6,7 +6,7 @@ local GameUtils = {}
 ---@param x_latitude number
 ---@param x_longitude number
 ---@param max_radius number
----@return CMO__Location
+---@return CMO__Location|nil
 function GameUtils.CircularRandomPosition(x_latitude, x_longitude, max_radius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
     latitude = x_latitude,

@@ -5,7 +5,7 @@
 請保持專業且用詞精確，適合台灣地區開發者閱讀。
 
 ## 專案概述
-此專案是用在一款戰爭模擬器Command: Modern Operations中，遊戲裡玩家可自定義scenario，並且讓玩家可用腳本語言lua來實作如敵軍AI等，模擬現實戰爭打擊情況。
+此專案是用在一款戰爭模擬器Command: Modern Operations中，遊戲裡玩家可自定義scenario，並且讓玩家可用腳本語言lua來實作如敵軍AI等，模擬現實戰爭打擊情況。遊戲本身有提供叫做Command Lua的API供玩家使用。
 
 # 專案結構
 /src/
@@ -13,3 +13,6 @@
   ├─ modules  #載入scenario時，引入的模組
   ├─ scripts  #事件觸發所執行的腳本
   └─ utils    #載入scenario時，引入的自定義工具模組
+
+# 單元測試
+使用Busted框架
