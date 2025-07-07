@@ -8,7 +8,7 @@ local ShipMovement = require('src.modules.landingOps.shipMovement')
 local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
 local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
-local CountUnitsInEachArea = require('src.modules.unitStatusUI').CountUnitsInEachArea
+local UnitStatusUI = require("src.modules.unitStatusUI")
 
 local contacts = GameApi.ScenEdit_GetContacts('China')
 
@@ -94,7 +94,7 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
 end
 
 if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
-  local result = CountUnitsInEachArea()
+  local result = UnitStatusUI.countUnitsInEachArea(CONFIG)
   local hasEstablishedBeachheads = Utils.GetCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1
 
   if hasEstablishedBeachheads then

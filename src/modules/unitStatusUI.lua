@@ -1,12 +1,20 @@
-local CONFIG = require("src.core.constants")
+local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
+local gKH = require('src.core.gKH_State_Standalone')
 
----comment
----@return table
-function CountUnitsInEachArea()
-  local unitsFromChina = VP_GetSide({ Side = 'China' }).units
+---@class UnitStatusUI
+---單位狀態使用者介面模組
+---提供各種軍事單位狀態的HTML表格顯示功能
+local UnitStatusUI = {}
+
+---統計各區域內不同類型單位的數量
+---@param config SBJ__CONFIG 配置表
+---@return table<string, table<string, number>> 回傳以區域名稱為鍵，單位類型計數為值的表格
+function UnitStatusUI.countUnitsInEachArea(config)
+  local unitsFromChina = GameApi.VP_GetSide({ Side = 'China' }).units
   local result = {}
 
-  for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
+  for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
     local item = {
       ['ZBD-05'] = 0,
       ['ZTD-05'] = 0,
@@ -20,46 +28,46 @@ function CountUnitsInEachArea()
       ['ZBD-03'] = 0
     }
     for _, value in ipairs(unitsFromChina) do
-      local unit = SE_GetUnit({ guid = value.guid })
+      local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
       if unit and unit:inArea(zone.area) then
-        if unit.dbid == CONFIG.platformDBID58 then
+        if unit.dbid == config.platformDBID58 then
           item['ZBD-05'] = item['ZBD-05'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID59 then
+        if unit.dbid == config.platformDBID59 then
           item['ZTD-05'] = item['ZTD-05'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID60 then
+        if unit.dbid == config.platformDBID60 then
           item['PLL-05'] = item['PLL-05'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID61 then
+        if unit.dbid == config.platformDBID61 then
           item['PLZ-96'] = item['PLZ-96'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID62 then
+        if unit.dbid == config.platformDBID62 then
           item['PGZ-09'] = item['PGZ-09'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID63 then
+        if unit.dbid == config.platformDBID63 then
           item['PGZ-95'] = item['PGZ-95'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID66 then
+        if unit.dbid == config.platformDBID66 then
           item['SA-15'] = item['SA-15'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID65 then
+        if unit.dbid == config.platformDBID65 then
           item['AirborneCorps'] = item['AirborneCorps'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID64 then
+        if unit.dbid == config.platformDBID64 then
           item['HMMWV'] = item['HMMWV'] + 1
         end
 
-        if unit.dbid == CONFIG.platformDBID39 then
+        if unit.dbid == config.platformDBID39 then
           item['ZBD-03'] = item['ZBD-03'] + 1
         end
       end
@@ -71,8 +79,10 @@ function CountUnitsInEachArea()
   return result
 end
 
-function LandedUnitTable()
-  local result = CountUnitsInEachArea()
+---顯示登陸單位統計表格的HTML對話框
+---@param config SBJ__CONFIG 配置表
+function UnitStatusUI.landedUnitTable(config)
+  local result = UnitStatusUI.countUnitsInEachArea(config)
 
   local HTMLTemplate = [[
     <!DOCTYPE html>
@@ -149,17 +159,23 @@ function LandedUnitTable()
 </html>
     ]]
   local msg = string.format(HTMLTemplate, gKH.json.stringify(result))
-  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
-function C2Table(side)
+---顯示指揮控制系統狀態表格的HTML對話框
+---@param side string 陣營名稱 ('China' 或 'Taiwan')
+function UnitStatusUI.c2Table(side)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
   if saveData == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+    Logger.error('saveData is nil')
     return
   end
 
+  ---創建C2系統狀態的JSON字串
+  ---@param side string 陣營名稱
+  ---@param ... string 系統類型列表
+  ---@return string JSON格式的狀態資料
   local createDataString = function(side, ...)
     local key = 't'
 
@@ -182,7 +198,7 @@ function C2Table(side)
           rows[type][item.guid]['SAM'] = {}
 
           for _, sam in pairs(item.SAM) do
-            local unit = SE_GetUnit({ guid = sam.guid })
+            local unit = GameApi.ScenEdit_GetUnit(sam.guid)
             local isDestroyed = unit == nil
             rows[type][item.guid]['SAM'][sam.guid] = {
               name = sam.name,
@@ -199,7 +215,7 @@ function C2Table(side)
           rows[type][item.guid]['radar'] = { name = item.name }
 
           for _, radar in pairs(item.radar) do
-            local unit = SE_GetUnit({ guid = radar.guid })
+            local unit = GameApi.ScenEdit_GetUnit(radar.guid)
             local isDestroyed = unit == nil
             rows[type][item.guid]['radar'][radar.guid] = {
               name = radar.name,
@@ -317,17 +333,24 @@ function C2Table(side)
     str = createDataString(side, 'ROCC', 'TAAOC')
   end
   local msg = string.format(HTMLTemplate, str)
-  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
-function BtyStateTable(side)
+---顯示砲兵連狀態表格的HTML對話框
+---@param side string 陣營名稱 ('China' 或 'Taiwan')
+---@param config SBJ__CONFIG 配置表
+function UnitStatusUI.btyStateTable(side, config)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
   if saveData == nil then
-    ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+    Logger.error('saveData is nil')
     return
   end
 
+  ---創建砲兵連狀態的JSON字串
+  ---@param side string 陣營名稱
+  ---@param ... string 武器系統類型列表
+  ---@return string JSON格式的砲兵連狀態資料
   local createDataString = function(side, ...)
     local key = 't'
     local wpnSystems = { ... }
@@ -354,7 +377,7 @@ function BtyStateTable(side)
           local remainingAmmoInVehicles = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
               .wpnCurrent
           local ammoSec = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
-          local reloadTime = CONFIG[key].ground[wpnSystem].reloadTime / 60
+          local reloadTime = config[key].ground[wpnSystem].reloadTime / 60
           local remainingAmmo = saveData[key].ground[wpnSystem].ammunitions
               [saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
           local reloadingRemainingTime = nil
@@ -371,7 +394,7 @@ function BtyStateTable(side)
           end
 
           if bty.reloadStartTime ~= nil then
-            reloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - bty.reloadStartTime) / 60) * 100 +
+            reloadingRemainingTime = math.floor(((GameApi.ScenEdit_CurrentTime() - bty.reloadStartTime) / 60) * 100 +
                   0.5) /
                 100
 
@@ -385,7 +408,7 @@ function BtyStateTable(side)
           end
 
           if ammoSec.reloadStartTime ~= nil then
-            transloadingRemainingTime = math.floor(((ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) *
+            transloadingRemainingTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) *
               100 +
               0.5) / 100
 
@@ -558,17 +581,16 @@ function BtyStateTable(side)
     ]]
   local str = createDataString(side, 'srbm', 'mlrs', 'glcm', 'ascm', 'mrbm')
   local msg = string.format(HTMLTemplate, str)
-  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
-function MagazineInBasesTable(side)
-  -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-  -- if CONFIG == nil then
-  --     ScenEdit_SpecialMessage('Taiwan', 'CONFIG == nil')
-  --     return
-  -- end
-
+---顯示基地彈藥庫存狀態表格的HTML對話框
+---@param side string 陣營名稱 ('China' 或 'Taiwan')
+---@param config SBJ__CONFIG 配置表
+function UnitStatusUI.magazineInBasesTable(side, config)
+  ---創建基地彈藥庫存的JSON字串
+  ---@param side string 陣營名稱
+  ---@return string JSON格式的彈藥庫存資料
   local createDataString = function(side)
     local key = 't'
 
@@ -578,8 +600,8 @@ function MagazineInBasesTable(side)
 
     local rows = {}
 
-    for index, item in ipairs(CONFIG[key].air.landBased.deployedACs) do
-      local base = SE_GetUnit({ guid = item.baseGUID })
+    for index, item in ipairs(config[key].air.landBased.deployedACs) do
+      local base = GameApi.ScenEdit_GetUnit(item.baseGUID)
 
       if base and item.loadouts then
         local obj = { name = item.name, wpns = {} }
@@ -678,18 +700,13 @@ function MagazineInBasesTable(side)
 
   local str = createDataString(side)
   local msg = string.format(HTMLTemplate, str)
-  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
-function WCSSettingTable()
-  local units = VP_GetSide({ Side = 'Taiwan' }).units
-  -- local CONFIG = gKH.State.LoadTableFromKey("CONFIG")
-
-  -- if CONFIG == nil then
-  --     print('CONFIG == nil')
-  --     ScenEdit_MsgBox('CONFIG == nil', 1)
-  --     return
-  -- end
+---顯示武器控制狀態設定表格的HTML對話框，允許設定EMCON狀態
+---@param config SBJ__CONFIG 配置表
+function UnitStatusUI.wcsSettingTable(config)
+  local units = GameApi.VP_GetSide({ Side = 'Taiwan' }).units
 
   local HTMLTemplate = [[
     <!DOCTYPE html>
@@ -747,7 +764,7 @@ function WCSSettingTable()
         }
 
         input[type="checkbox"]:checked::after {
-            content: '✔';
+            content: 'âœ"';
             position: absolute;
             color: #fff;
             left: 4px;
@@ -787,16 +804,16 @@ function WCSSettingTable()
     ]]
 
   local msg = string.format(HTMLTemplate)
-  local form = UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
+  local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 
   if form['pressed'] and form['pressed'] == 'Done' then
     if form['pac23'] and string.gsub(form['pac23'], "%'", "") == 'on' then
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID15 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID15 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
@@ -805,11 +822,11 @@ function WCSSettingTable()
       end
     else
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID15 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID15 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
@@ -820,11 +837,11 @@ function WCSSettingTable()
 
     if form['skybow3'] and string.gsub(form['skybow3'], "%'", "") == 'on' then
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID14 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID14 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
@@ -833,11 +850,11 @@ function WCSSettingTable()
       end
     else
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID14 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID14 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
@@ -848,11 +865,11 @@ function WCSSettingTable()
 
     if form['tc2'] and string.gsub(form['tc2'], "%'", "") == 'on' then
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID33 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID33 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
@@ -861,11 +878,11 @@ function WCSSettingTable()
       end
     else
       for index, value in ipairs(units) do
-        local unit = ScenEdit_GetUnit({ guid = value.guid })
+        local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == CONFIG.platformDBID33 then
-          ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
-          ScenEdit_SetUnitIntermittentEmissionConfig(
+        if unit and unit.dbid == config.platformDBID33 then
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             'Green',
             { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
@@ -876,11 +893,5 @@ function WCSSettingTable()
   end
 end
 
-return {
-  CountUnitsInEachArea = CountUnitsInEachArea,
-  LandedUnitTable = LandedUnitTable,
-  C2Table = C2Table,
-  BtyStateTable = BtyStateTable,
-  MagazineInBasesTable = MagazineInBasesTable,
-  WCSSettingTable = WCSSettingTable
-}
+---@return UnitStatusUI
+return UnitStatusUI

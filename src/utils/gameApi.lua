@@ -346,6 +346,24 @@ function GameApi.ScenEdit_GetScore(side)
   return ScenEdit_GetScore(side)
 end
 
+---comment
+---@param title string
+---@param htmlContent string
+---@param buttons table
+---@return table
+function realApi.UI_CallAdvancedHTMLDialog(title, htmlContent, buttons)
+  return UI_CallAdvancedHTMLDialog(title, htmlContent, buttons)
+end
+
+---comment
+---@param unitGuid string
+---@param emconState string
+---@param settings CMO__ConfigTable
+---@return boolean
+function realApi.ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState, settings)
+  return ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState, settings)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

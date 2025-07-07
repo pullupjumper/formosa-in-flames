@@ -648,21 +648,6 @@ function AddUnitsByRP(params, unit, embarkedUnits)
   end
 end
 
----@param params SBJ__Location_Params
----@return table<number, CMO__Location>
-function GetPointFromBearing(params)
-  local initialLocation = params.initialLocation
-  local bearing = params.bearing
-  local distance = params.distance
-
-  return GameUtils.GenerateLocations({
-    initialLocation = initialLocation,
-    num = 2,
-    bearing = bearing,
-    distance = distance
-  })[2]
-end
-
 function AddLandingShips()
   local initialLocations = CONFIG.c.PHIBOP.initialLocations
   local shipSettings = CONFIG.c.PHIBOP.shipSettings
@@ -671,45 +656,61 @@ function AddLandingShips()
   for _, item in ipairs(initialLocations) do
     for _, area in ipairs(item.from.areas) do
       local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-      local firstRp071 = GetPointFromBearing({
-        initialLocation = firstRp075,
+      local firstRp071 = World_GetPointFromBearing({
+        latitude = firstRp075.latitude,
+        longitude = firstRp075.longitude,
+        -- initialLocation = firstRp075,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
-      local firstRp076 = GetPointFromBearing({
-        initialLocation = firstRp071,
+      local firstRp076 = World_GetPointFromBearing({
+        latitude = firstRp071.latitude,
+        longitude = firstRp071.longitude,
+        -- initialLocation = firstRp071,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
-      local firstRpBarge = GetPointFromBearing({
-        initialLocation = firstRp076,
+      local firstRpBarge = World_GetPointFromBearing({
+        latitude = firstRp076.latitude,
+        longitude = firstRp076.longitude,
+        -- initialLocation = firstRp076,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
-      local firstRpRORO = GetPointFromBearing({
-        initialLocation = firstRpBarge,
+      local firstRpRORO = World_GetPointFromBearing({
+        latitude = firstRpBarge.latitude,
+        longitude = firstRpBarge.longitude,
+        -- initialLocation = firstRpBarge,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
-      local firstRp072a = GetPointFromBearing({
-        initialLocation = firstRpRORO,
+      local firstRp072a = World_GetPointFromBearing({
+        latitude = firstRpRORO.latitude,
+        longitude = firstRpRORO.longitude,
+        -- initialLocation = firstRpRORO,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
-      local firstRp072iii = GetPointFromBearing({
-        initialLocation = firstRp072a,
+      local firstRp072iii = World_GetPointFromBearing({
+        latitude = firstRp072a.latitude,
+        longitude = firstRp072a.longitude,
+        -- initialLocation = firstRp072a,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
 
-      local firstRpFerry = GetPointFromBearing({
-        initialLocation = firstRp072iii,
+      local firstRpFerry = World_GetPointFromBearing({
+        latitude = firstRp072iii.latitude,
+        longitude = firstRp072iii.longitude,
+        -- initialLocation = firstRp072iii,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
 
-      local firstRp073a = GetPointFromBearing({
-        initialLocation = firstRpFerry,
+      local firstRp073a = World_GetPointFromBearing({
+        latitude = firstRpFerry.latitude,
+        longitude = firstRpFerry.longitude,
+        -- initialLocation = firstRpFerry,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
