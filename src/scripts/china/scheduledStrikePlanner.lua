@@ -1,5 +1,4 @@
 local gKH = require('src.core.gKH_State_Standalone')
-local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")

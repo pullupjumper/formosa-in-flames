@@ -410,6 +410,19 @@ function realApi.ScenEdit_SetReferencePoint(opts)
   return result
 end
 
+---comment
+---@param opts CMO__DamageOptions
+---@return table<integer, CMO__UnitComponent_Return>|nil
+function realApi.ScenEdit_SetUnitDamage(opts)
+  local result = ScenEdit_SetUnitDamage(opts)
+
+  if not result then
+    error("Failed to set unit damage with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

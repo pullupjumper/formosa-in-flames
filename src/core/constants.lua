@@ -853,7 +853,7 @@ CONFIG.c.air.landBased.deployedACs = {
         dbid = 5014,
         name = '41st Air Bde',
         loadouts = {
-          { loadoutId = 28027, num = 12, missionName = 'CAP/W' },
+          { loadoutId = 28027, num = 12 },
         }
       },
     },
