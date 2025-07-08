@@ -4,6 +4,7 @@ local GameUtils = require("src.utils.gameUtils")
 local CONFIG = require("src.core.constants")
 local SaveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local UnitGenerator = require("src.modules.unitGenerator")
 -- local function initGPSJammers()
 --     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
 --         local jammer = SE_GetUnit({ guid = value.guid })
@@ -483,7 +484,8 @@ if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1]
   end
 
   if saveData.c.IADS.isActivated then
-    InitC2Facilities(saveData)
+    -- InitC2Facilities(saveData)
+    UnitGenerator.initC2Facilities(CONFIG, saveData)
   end
 
   if saveData.c.commsJamming.isActivated then

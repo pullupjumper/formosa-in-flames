@@ -185,7 +185,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field loadoutId number
 ---@field num number
 ---@field startTime string
-
+--------------------------------------------------------------------
 ---@class SBJ__CargoForTransfer:table
 ---@field type075 SBJ__TransferCargoByLoadout[]
 ---@field type071 SBJ__TransferCargoByLoadout[]
@@ -200,3 +200,51 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field type number
 ---@field num number
 ---@field dbid number
+
+------------------------------------------------------------------------
+---@class SBJ__Loadout:table
+---@field loadoutId number 彈藥配置ID
+---@field num number 單位數量
+
+---@class SBJ__EmbarkedUnit:table
+---@field side string 陣營名稱
+---@field type string 單位類型
+---@field name string 單位名稱
+---@field dbid number 單位數據庫ID
+---@field loadouts SBJ__Loadout[]|nil 單位彈藥配置
+
+---@class SBJ__ShipConfig:table
+---@field dbid number 數據庫ID
+---@field unitname string 單位名稱
+---@field distance number 距離
+---@field angle number 角度
+---@field embarkedUnits SBJ__EmbarkedUnit[]|nil 搭載單位
+---@field loadouts SBJ__Loadout[]|nil 彈藥配置
+
+---@class SBJ__ShipSettings:table
+---@field distanceBetweenLSTAndLPDArea string
+---@field horizontalDistance number
+---@field verticalDistance number
+---@field transitDistance number
+---@field shipSpeed number
+---@field heading table
+---@field ACVSpeed number
+---@field ACVTransitDistance number
+---@field ACVHorizontalDistance number
+
+---@class SBJ__RandomUnits:table
+---@field centerPoint {lat:number, lon:number}
+---@field randomRadius number
+---@field autodetectable boolean
+---@field unitname string
+---@field sideName string
+---@field unitType string
+---@field count number
+---@field dbids number[]
+
+---@class SBJ__FormationConfig:table
+---@field centerPoint {lat:number, lon:number}
+---@field heading number
+---@field groupName string
+---@field sideName string
+---@field unitTypes SBJ__ShipConfig[]

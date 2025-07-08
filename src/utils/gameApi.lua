@@ -364,6 +364,52 @@ function realApi.ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState
   return ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState, settings)
 end
 
+---comment
+---@param opts CMO__UnitSelector
+---@return boolean
+function realApi.ScenEdit_DeleteUnit(opts)
+  local result = ScenEdit_DeleteUnit(opts)
+
+  if not result then
+    error("Failed to delete unit with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param opts CMO__Weapon2MountDescriptor
+---@return number
+function realApi.ScenEdit_AddWeaponToUnitMagazine(opts)
+  local result = ScenEdit_AddWeaponToUnitMagazine(opts)
+
+  if not result then
+    error("Failed to add weapon to unit magazine with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param opts CMO__FillMagClass
+---@return table
+function realApi.ScenEdit_FillMagsForLoadout(opts)
+  return ScenEdit_FillMagsForLoadout(opts)
+end
+
+---comment
+---@param opts CMO__ReferencePointDescriptor
+---@return CMO__ReferencePoint|nil
+function realApi.ScenEdit_SetReferencePoint(opts)
+  local result = ScenEdit_SetReferencePoint(opts)
+
+  if not result then
+    error("Failed to set reference point with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
