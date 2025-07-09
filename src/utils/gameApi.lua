@@ -1,5 +1,7 @@
-local Logger = require("src.utils.logger")
+﻿local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+
+
 local realApi = {}
 local GameApi = {}
 
@@ -421,6 +423,23 @@ function realApi.ScenEdit_SetUnitDamage(opts)
   end
 
   return result
+end
+
+---comment
+---@param longitude number
+---@param latitude number
+---@param notification string
+---@param R number
+---@param G number
+---@param B number
+---@param showToAll boolean
+---@param persistent boolean
+---@param lifeTime number
+---@param fontSize number
+function realApi.ScenEdit_CreateBarkNotification_Geo(longitude, latitude, notification, R, G, B, showToAll, persistent,
+                                                     lifeTime, fontSize)
+  return ScenEdit_CreateBarkNotification_Geo(longitude, latitude, notification, R, G, B, showToAll, persistent, lifeTime,
+    fontSize)
 end
 
 setmetatable(GameApi, {

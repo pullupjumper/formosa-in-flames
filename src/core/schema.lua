@@ -50,8 +50,14 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field bear_offset number|nil
 
 ---@class SBJ__Position:table
----@field course CMO__Location
----@field area string[]
+---@field course CMO__TableOfWaypoints @Waypoints to area
+---@field area string[]  EX:{"rp-100","rp-101","rp-102","rp-103","rp-104"}
+
+---@class SBJ__OPAREAs:table
+---@field FP SBJ__Position
+---@field HA? SBJ__Position
+---@field AHA SBJ__Position
+---@field RL SBJ__Position
 
 ---@class SBJ__Ammunition:table
 ---@field guid string
@@ -61,7 +67,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@class SBJ__AmmunitionSection:SBJ__Ammunition
 ---@field name string
 ---@field unitCount number
----@field position SBJ__Position[]
+---@field position SBJ__OPAREAs
 ---@field reloadStartTime number|nil
 ---@field state CONFIG.batteryState
 ---@field ammunition string
@@ -70,7 +76,15 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field weaponDBID number -- The weapon DBID to use for the battery
 ---@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
 ---@field ammunitionSection string -- The ammunition section guid to use for the battery
+---@field msg string -- The message to display for the battery
 
+---@class SBJ__C2:table
+---@field name string
+---@field msg string
+---@field guid string
+---@field areas table<number, string[]>
+---@field SAM table
+---@field radar? table
 
 ---@class SBJ__AttackContacts_Params:table
 ---@field contacts table<integer, string> -- A table of contact GUIDs to attack
@@ -248,3 +262,36 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field groupName string
 ---@field sideName string
 ---@field unitTypes SBJ__ShipConfig[]
+
+
+---SIGINT detection configuration
+---@class SBJ__SIGINTConfig:table
+---@field detectionThreshold number minimum detection range
+---@field maxRange table maximum detection range {min, max}
+---@field decayRate number signal decay rate
+---@field randomFactor number random deviation factor
+---@field displayConfig SBJ__SIGINTDisplayData default display settings
+
+---Enhanced SIGINT detection result
+---@class SBJ__SIGINTResult:table
+---@field longitude number detected longitude
+---@field latitude number detected latitude
+---@field isDetected boolean whether signal is detected
+---@field confidence number detection confidence (0-1)
+---@field detectorId string|nil ID of detecting unit
+---@field timestamp number detection timestamp
+
+---Enhanced SIGINT display data configuration
+---@class SBJ__SIGINTDisplayData:table
+---@field R number|nil red value (default: 255)
+---@field G number|nil green value (default: 255)
+---@field B number|nil blue value (default: 255)
+---@field lifeTime number|nil display time (default: 4)
+---@field fontSize number|nil font size (default: 16)
+---@field showConfidence boolean|nil whether to show confidence level
+
+---Enhanced side configuration
+---@class SBJ__SideConfig:table
+---@field field string side field identifier ('c' or 'u')
+---@field enemySide string enemy side name
+---@field displayName string human-readable side name
