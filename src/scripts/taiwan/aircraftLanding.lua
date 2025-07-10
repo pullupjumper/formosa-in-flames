@@ -1,5 +1,6 @@
 local CONFIG = require("src.core.constants")
-local unit = ScenEdit_UnitX()
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
 
 -- for _, runway in ipairs(CONFIG.c.srbm.contingencyRunways) do
 --     local contact = ScenEdit_GetContact({ side = "China", guid = runway.base.guid })

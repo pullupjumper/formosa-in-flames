@@ -11,7 +11,7 @@ local UnitStatusUI = {}
 ---@param config SBJ__CONFIG 配置表
 ---@return table<string, table<string, number>> 回傳以區域名稱為鍵，單位類型計數為值的表格
 function UnitStatusUI.countUnitsInEachArea(config)
-  local unitsFromChina = GameApi.VP_GetSide({ Side = 'China' }).units
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local result = {}
 
   for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
@@ -706,7 +706,7 @@ end
 ---顯示武器控制狀態設定表格的HTML對話框，允許設定EMCON狀態
 ---@param config SBJ__CONFIG 配置表
 function UnitStatusUI.wcsSettingTable(config)
-  local units = GameApi.VP_GetSide({ Side = 'Taiwan' }).units
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
 
   local HTMLTemplate = [[
     <!DOCTYPE html>

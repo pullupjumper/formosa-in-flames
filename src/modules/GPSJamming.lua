@@ -1,6 +1,6 @@
-local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
-local CONFIG = require("src.core.constants")
+local GameApi = require("src.utils.gameApi")
+
+local GPSJamming = {}
 
 -- function UnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
 --     if isRepeatable == nil then isRepeatable = false end
@@ -101,25 +101,6 @@ local CONFIG = require("src.core.constants")
 --     end
 -- end
 
-function RemoveJammingZones()
-  local s = VP_GetSide({ name = 'China' })
-  if s == nil then return end
-
-  for _, zone in ipairs(s.standardzones) do
-    for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-      if zone.description == jammer.zoneName then
-        local myz = s:getstandardzone(zone.guid)
-
-        for _, area in ipairs(myz.area) do
-          ScenEdit_DeleteReferencePoint({ side = "China", name = area.name })
-        end
-
-        ScenEdit_RemoveZone('China', -925, { Description = myz.description })
-        ScenEdit_DeleteUnit({ side = "China", unitname = jammer.name })
-      end
-    end
-  end
-end
 
 -- function AddGPSJammingZones()
 --     for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
@@ -143,66 +124,15 @@ end
 --     end
 -- end
 
-function TryAddJammerUnit(jammer, attempt, max_attempts)
-  attempt = attempt or 1
-  max_attempts = max_attempts or 50
 
-  local point = GameUtils.CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
-  local unit = ScenEdit_AddUnit({
-    type = 'Facility',
-    unitname = jammer.name,
-    dbid = CONFIG.platformDBID25,
-    side = 'China',
-    Lat = point.latitude,
-    Lon = point.longitude,
-    autodetectable = false
-  })
-
-  if unit then
-    return unit, point
-  elseif attempt < max_attempts then
-    return TryAddJammerUnit(jammer, attempt + 1, max_attempts)
-  else
-    print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. jammer.name)
-    return nil, nil
-  end
-end
-
-function AddGPSJammingZones()
-  for _, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
-    local unit, point = TryAddJammerUnit(jammer)
-
-    if unit and point then
-      ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
-
-      local area = GameUtils.NewArea(point, {
-        side = 'China',
-        shape = 'circle',
-        distance = jammer.radius
-      })
-
-      local zone = ScenEdit_AddZone('China', -925, {
-        description = jammer.zoneName,
-        area = area
-      })
-
-      if zone then
-        zone.enablers = {
-          GNSS_GLONASS = true,
-          GNSS_GPS = false,
-          GNSS_BeiDou = true,
-          GNSS_NavIC = true
-        }
-      end
-    end
-  end
-end
-
-function TurnOffGPSEffectByUnit(unit)
-  local s = VP_GetSide({ name = 'China' })
+---comment
+---@param config SBJ__CONFIG
+---@param unit CMO__Unit
+function GPSJamming.turnOffGPSEffectByUnit(config, unit)
+  local s = GameApi.VP_GetSide({ name = 'China' })
   if s == nil then return end
 
-  for index, jammer in ipairs(CONFIG.c.GPSJamming.jammers) do
+  for _, jammer in ipairs(config.c.GPSJamming.jammers) do
     if unit.name ~= jammer.name then goto continue end
 
     for _, zone in ipairs(s.standardzones) do
@@ -215,3 +145,5 @@ function TurnOffGPSEffectByUnit(unit)
     ::continue::
   end
 end
+
+return GPSJamming

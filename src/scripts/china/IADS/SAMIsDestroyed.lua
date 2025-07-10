@@ -1,11 +1,12 @@
 local GameUtils = require("src.utils.gameUtils")
 local CONFIG = require("src.core.constants")
-local unit = ScenEdit_UnitX()
-local units = VP_GetSide({ Side = 'China' }).units
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
+local units = GameApi.VP_GetSide({ side = 'China' }).units
 local temp = { unit = nil, distance = CONFIG.radarDistance }
 
 if unit == nil then
-	ScenEdit_SpecialMessage('China', 'unit == nil')
+	GameApi.ScenEdit_SpecialMessage('China', 'unit == nil')
 	return
 end
 
@@ -58,9 +59,9 @@ end
 
 if isDestroyed then
 	for _, value in ipairs(units) do
-		local u = ScenEdit_GetUnit({ guid = value.guid })
+		local u = GameApi.ScenEdit_GetUnit(value.guid)
 		if u == nil then goto continue end
-		local distance = Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
+		local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
 		if u.dbid == CONFIG.platformDBID18
 				or u.dbid == CONFIG.platformDBID19
@@ -87,6 +88,6 @@ if isDestroyed then
 end
 
 if temp.unit ~= nil then
-	ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
+	GameApi.ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
 	GameUtils.PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
 end

@@ -29,8 +29,8 @@ end
 if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
-  for _, value in ipairs(SE_GetUnit({ unitname = 'CSG' }).group.unitlist) do
-    local unit = SE_GetUnit({ guid = value })
+  for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
+    local unit = GameApi.ScenEdit_GetUnit(value)
     if unit and unit.dbid == CONFIG.platformDBID51 then
       table.insert(ships, { guid = value, weaponDBID = CONFIG.c.surface.lacm.weaponDBID })
     end
@@ -47,7 +47,7 @@ end
 
 if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveData.c.subSurface.slcm.startTime) then
   for _, unit in pairs(CONFIG.c.subSurface.slcm.submarines) do
-    local actualUnit = SE_GetUnit({ side = 'China', unitname = unit.name })
+    local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
 
     if actualUnit then
       local course = { { latitude = actualUnit.latitude, longitude = actualUnit.longitude, presetDepth = 2 } }

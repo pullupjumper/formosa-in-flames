@@ -220,8 +220,8 @@ function ShipMovement.CalculateDestination(saveData)
 
   for _, item in ipairs(initialLocations) do
     for _, area in ipairs(item.to.areas) do
-      local firstRp075 = ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-      local firstRp071 = ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
+      local firstRp075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
+      local firstRp071 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
       local firstRp076 = GameApi.World_GetPointFromBearing({
         latitude = firstRp071.latitude,
         longitude = firstRp071.longitude,

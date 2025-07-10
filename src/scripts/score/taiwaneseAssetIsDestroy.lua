@@ -36,6 +36,14 @@ if unit then
       GameApi.ScenEdit_SpecialMessage('Taiwan', "An ammunition has been destoryed.")
     end
   end
+
+  if unit.type == 'Aircraft' then
+    if unit.dbid == CONFIG.platformDBID38 then
+      saveData.t.air.landBased.AEW[unit.guid] = nil
+    else
+      saveData.t.air.landBased.AC[unit.guid] = nil
+    end
+  end
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

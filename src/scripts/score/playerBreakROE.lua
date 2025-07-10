@@ -1,14 +1,15 @@
 local CONFIG = require("src.core.constants")
-local unit = ScenEdit_UnitX()
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
 
 
 if unit then
-  local score = ScenEdit_GetScore("Taiwan")
-  ScenEdit_SetScore(
+  local score = GameApi.ScenEdit_GetScore("Taiwan")
+  GameApi.ScenEdit_SetScore(
     "Taiwan", (score + CONFIG.s.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )
-  ScenEdit_SpecialMessage(
+  GameApi.ScenEdit_SpecialMessage(
     'Taiwan',
     'You have attacked first to cause a military esclaion.',
     { latitude = unit.latitude, longitude = unit.longitude }

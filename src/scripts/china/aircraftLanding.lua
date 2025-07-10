@@ -1,5 +1,6 @@
 local CONFIG = require("src.core.constants")
-local unit = ScenEdit_UnitX()
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
   if unit.dbid == CONFIG.platformDBID28

@@ -501,6 +501,35 @@ local function createShipFormation(formationConfig)
   return true
 end
 
+---嘗試創建噴射單位
+---@param config SBJ__CONFIG 配置參數
+---@param jammer table 噴射設備
+---@param attempt number|nil 嘗試次數
+---@param max_attempts number|nil 最大嘗試次數
+local function tryAddJammerUnit(config, jammer, attempt, max_attempts)
+  attempt = attempt or 1
+  max_attempts = max_attempts or 50
+
+  local point = GameUtils.CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+  local unit = GameApi.ScenEdit_AddUnit({
+    type = 'Facility',
+    unitname = jammer.name,
+    dbid = config.platformDBID25,
+    side = 'China',
+    Lat = point.latitude,
+    Lon = point.longitude,
+    autodetectable = false
+  })
+
+  if unit then
+    return unit, point
+  elseif attempt < max_attempts then
+    return tryAddJammerUnit(config, jammer, attempt + 1, max_attempts)
+  else
+    print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. jammer.name)
+    return nil, nil
+  end
+end
 
 -- ============================================================================
 -- 主要功能函數 - 重構後的版本
@@ -921,7 +950,7 @@ end
 ---@param config SBJ__CONFIG 配置對象
 ---@return boolean 是否成功
 function UnitGenerator.removeLandingShips(config)
-  local unitsFromChina = GameApi.VP_GetSide({ Side = 'China' }).units
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local removedCount = 0
 
   local landingShipDBIDs = {
@@ -951,6 +980,60 @@ function UnitGenerator.removeLandingShips(config)
 
   Logger.log(string.format("Removed %d landing ships", removedCount))
   return true
+end
+
+---移除 GPS干擾區域
+---@param config SBJ__CONFIG 配置對象
+function UnitGenerator.removeJammingZones(config)
+  local s = GameApi.VP_GetSide({ name = 'China' })
+  if s == nil then return end
+
+  for _, zone in ipairs(s.standardzones) do
+    for _, jammer in ipairs(config.c.GPSJamming.jammers) do
+      if zone.description == jammer.zoneName then
+        local myz = s:getstandardzone(zone.guid)
+
+        for _, area in ipairs(myz.area) do
+          GameApi.ScenEdit_DeleteReferencePoint({ side = "China", name = area.name })
+        end
+
+        GameApi.ScenEdit_RemoveZone('China', -925, { Description = myz.description })
+        GameApi.ScenEdit_DeleteUnit({ side = "China", unitname = jammer.name })
+      end
+    end
+  end
+end
+
+---comment
+---@param config SBJ__CONFIG
+function UnitGenerator.addGPSJammingZones(config)
+  for _, jammer in ipairs(config.c.GPSJamming.jammers) do
+    local unit, point = tryAddJammerUnit(config, jammer)
+
+    if unit and point then
+      GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+
+      local area = GameUtils.NewArea(point, {
+        side = 'China',
+        shape = 'circle',
+        distance = jammer.radius
+      })
+
+      local zone = GameApi.ScenEdit_AddZone('China', -925, {
+        description = jammer.zoneName,
+        area = area
+      })
+
+      if zone then
+        zone.enablers = {
+          GNSS_GLONASS = true,
+          GNSS_GPS = false,
+          GNSS_BeiDou = true,
+          GNSS_NavIC = true
+        }
+      end
+    end
+  end
 end
 
 return UnitGenerator

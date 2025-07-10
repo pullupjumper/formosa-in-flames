@@ -1,26 +1,27 @@
 local gKH = require('src.core.gKH_State_Standalone')
 local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
 
--- local unit = ScenEdit_UnitX()
-local contacts = ScenEdit_GetContacts('Taiwan')
-local event = ScenEdit_EventX()
+-- local unit = GameApi.ScenEdit_UnitX()
+local contacts = GameApi.ScenEdit_GetContacts('Taiwan')
+local event = GameApi.ScenEdit_EventX()
 local temp = {}
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function setAntiShipMissionStartTime()
-  local currentTime = ScenEdit_CurrentTime()
+  local currentTime = GameApi.ScenEdit_CurrentTime()
   local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
   local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
   local asuwAgainstACVStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 40 * 60))
-  ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/1').starttime = antiShipStartTime
-  ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/2').starttime = reconStartTime3
-  ScenEdit_GetMission('Taiwan', 'ASUW/ACV/W').starttime = asuwAgainstACVStartTime
-  ScenEdit_GetMission('Taiwan', 'ASUW/ACV/PENGHU').starttime = asuwAgainstACVStartTime
-  ScenEdit_GetMission('Taiwan', 'RECON/3').starttime = reconStartTime3
+  GameApi.ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/1').starttime = antiShipStartTime
+  GameApi.ScenEdit_GetMission('Taiwan', 'ASUW/SHIP/W/2').starttime = reconStartTime3
+  GameApi.ScenEdit_GetMission('Taiwan', 'ASUW/ACV/W').starttime = asuwAgainstACVStartTime
+  GameApi.ScenEdit_GetMission('Taiwan', 'ASUW/ACV/PENGHU').starttime = asuwAgainstACVStartTime
+  GameApi.ScenEdit_GetMission('Taiwan', 'RECON/3').starttime = reconStartTime3
 end
 
 if saveData == nil then
-  ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+  GameApi.ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
   return
 end
 
@@ -35,7 +36,7 @@ if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts 
     setAntiShipMissionStartTime()
     saveData.t.ground.ascm.test.isAntishipMissionActivated = true
     event.isActive = false
-    ScenEdit_MsgBox('Launch ANT-SHIP mission', 0)
+    GameApi.ScenEdit_MsgBox('Launch ANT-SHIP mission', 0)
   end
 end
 

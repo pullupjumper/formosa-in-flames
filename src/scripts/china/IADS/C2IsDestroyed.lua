@@ -1,16 +1,17 @@
 local gKH = require('src.core.gKH_State_Standalone')
-local unit = ScenEdit_UnitX()
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-  ScenEdit_SpecialMessage('China', 'saveData is nil')
+  GameApi.ScenEdit_SpecialMessage('China', 'saveData is nil')
   return
 end
 
 if unit and saveData.c.IADS.isActivated then
   if saveData.c.IADS.C2[unit.guid] then
     for _, data in pairs(saveData.c.IADS.C2[unit.guid].radar) do
-      local actualUnit = SE_GetUnit({ guid = data.guid })
+      local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
       if actualUnit == nil then goto continue end
       -- local OODA = GetOODA(CONFIG.c.IADS.ratio.C2)
@@ -22,14 +23,14 @@ if unit and saveData.c.IADS.isActivated then
       --     evasion = OODA.evasion
       -- }
       -- data.currOODA = actualUnit.OODA
-      SE_SetUnit({ guid = data.guid, outofcomms = true })
+      GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
       data.isOutOfComms = true
 
       ::continue::
     end
 
     for _, data in pairs(saveData.c.IADS.C2[unit.guid].SAM) do
-      local actualUnit = SE_GetUnit({ guid = data.guid })
+      local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
       if actualUnit == nil then goto continue end
       -- local OODA = GetOODA(CONFIG.c.IADS.ratio.C2)
@@ -41,7 +42,7 @@ if unit and saveData.c.IADS.isActivated then
       --     evasion = OODA.evasion
       -- }
       -- data.currOODA = actualUnit.
-      SE_SetUnit({ guid = data.guid, outofcomms = true })
+      GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
       data.isOutOfComms = true
 
       ::continue::

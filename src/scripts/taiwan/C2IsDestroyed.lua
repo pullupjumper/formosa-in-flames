@@ -1,16 +1,17 @@
 local gKH = require('src.core.gKH_State_Standalone')
-local unit = ScenEdit_UnitX()
+local GameApi = require("src.utils.gameApi")
+local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-  ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+  GameApi.ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
   return
 end
 
 if unit and saveData.t.IADS.isActivated then
   if saveData.t.IADS.ROCC[unit.guid] then
     for _, data in pairs(saveData.t.IADS.ROCC[unit.guid].radar) do
-      local actualUnit = SE_GetUnit({ guid = data.guid })
+      local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
       if actualUnit then
         -- local OODA = GetOODA(CONFIG.t.IADS.ratio.ROCC)
@@ -22,13 +23,13 @@ if unit and saveData.t.IADS.isActivated then
         --     evasion = OODA.evasion
         -- }
         -- data.currOODA = actualUnit.OODA
-        SE_SetUnit({ guid = data.guid, outofcomms = true })
+        GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
         data.isOutOfComms = true
       end
     end
 
     for _, data in pairs(saveData.t.IADS.ROCC[unit.guid].SAM) do
-      local actualUnit = SE_GetUnit({ guid = data.guid })
+      local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
       if actualUnit then
         -- local OODA = GetOODA(CONFIG.t.IADS.ratio.ROCC)
@@ -40,7 +41,7 @@ if unit and saveData.t.IADS.isActivated then
         --     evasion = OODA.evasion
         -- }
         -- data.currOODA = actualUnit.OODA
-        SE_SetUnit({ guid = data.guid, outofcomms = true })
+        GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
         data.isOutOfComms = true
       end
     end
@@ -48,7 +49,7 @@ if unit and saveData.t.IADS.isActivated then
 
   if saveData.t.IADS.TAAOC[unit.guid] then
     for _, data in pairs(saveData.t.IADS.TAAOC[unit.guid].SAM) do
-      local actualUnit = SE_GetUnit({ guid = data.guid })
+      local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
       if actualUnit then
         -- local OODA = GetOODA(CONFIG.t.IADS.ratio.TAAOC)
@@ -60,7 +61,7 @@ if unit and saveData.t.IADS.isActivated then
         --     evasion = OODA.evasion
         -- }
         -- data.currOODA = actualUnit.OODA
-        SE_SetUnit({ guid = data.guid, outofcomms = true })
+        GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
         data.isOutOfComms = true
       end
     end

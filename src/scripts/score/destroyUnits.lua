@@ -2,6 +2,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local CONFIG = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
+local GPSJamming = require("src.modules.GPSJamming")
 local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -68,7 +69,7 @@ if unit then
         (score + CONFIG.s.tel),
         "You have destroyed a GPS jammer."
       )
-      TurnOffGPSEffectByUnit(unit)
+      GPSJamming.turnOffGPSEffectByUnit(CONFIG, unit)
     elseif unit.dbid == CONFIG.platformDBID53 then
       Launcher.destroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'srbm', saveData)

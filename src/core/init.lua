@@ -1,6 +1,7 @@
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local GameApi = require("src.utils.gameApi")
 local CONFIG = require("src.core.constants")
 local SaveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
@@ -25,10 +26,10 @@ local UnitGenerator = require("src.modules.unitGenerator")
 -- end
 
 local function initC2(saveData)
-  local units = VP_GetSide({ Side = "Taiwan" }).units
+  local units = GameApi.VP_GetSide({ side = "Taiwan" }).units
 
   for _, unit in ipairs(units) do
-    local actualUnit = SE_GetUnit({ guid = unit.guid })
+    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
     for _, item in pairs(saveData.t.IADS.ROCC) do
       for _, area in ipairs(item.areas) do
@@ -90,10 +91,10 @@ local function initC2(saveData)
 end
 
 local function initCommsJammers(side, saveData)
-  local units = VP_GetSide({ Side = side }).units
+  local units = GameApi.VP_GetSide({ side = side }).units
 
   for _, unit in ipairs(units) do
-    local actualUnit = SE_GetUnit({ guid = unit.guid })
+    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
     if actualUnit and (actualUnit.dbid == CONFIG.platformDBID35 or actualUnit.dbid == CONFIG.platformDBID37) then
       table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
@@ -102,45 +103,39 @@ local function initCommsJammers(side, saveData)
 end
 
 local function initAC(saveData)
-  local units = VP_GetSide({ Side = 'Taiwan' }).units
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
 
   for _, unit in ipairs(units) do
-    local actualUnit = SE_GetUnit({ guid = unit.guid })
+    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
     if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == CONFIG.platformDBID38 then
-      table.insert(
-        saveData.t.air.landBased.AEW,
-        {
-          guid = actualUnit.guid,
-          OODA = actualUnit.OODA,
-          commsLevel = 40,
-          commsBase = 40,
-          commsThreshold = 30,
-          outofcomms = 0,
-        }
-      )
+      saveData.t.air.landBased.AEW[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
     elseif actualUnit and actualUnit.type == 'Aircraft' then
-      table.insert(
-        saveData.t.air.landBased.AC,
-        {
-          guid = actualUnit.guid,
-          OODA = actualUnit.OODA,
-          commsLevel = 40,
-          commsBase = 40,
-          commsThreshold = 30,
-          outofcomms = 0,
-        }
-      )
+      saveData.t.air.landBased.AC[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
     end
   end
 end
 
 local function initSIGINT(saveData)
-  local units = VP_GetSide({ Side = 'US' }).units
-  local unitsFromChina = VP_GetSide({ Side = 'China' }).units
+  local units = GameApi.VP_GetSide({ side = 'US' }).units
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
 
   for _, value in ipairs(units) do
-    local unit = SE_GetUnit({ guid = value.guid })
+    local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
     if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID45 then
       saveData.u.SIGINT.RA[unit.guid] = {
@@ -155,7 +150,7 @@ local function initSIGINT(saveData)
   end
 
   for _, value in ipairs(unitsFromChina) do
-    local unit = SE_GetUnit({ guid = value.guid })
+    local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
     if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID47 then
       saveData.c.SIGINT.RA[unit.guid] = {
@@ -264,7 +259,7 @@ local function initFSP(saveData)
 end
 
 local function initTargetlist(saveData)
-  local contacts = ScenEdit_GetContacts('China')
+  local contacts = GameApi.ScenEdit_GetContacts('China')
   local bases = {
     ['Jiashan AB'] = {},
     ['Hualien AB'] = {},
@@ -311,7 +306,7 @@ local function initTargetlist(saveData)
       for key, obj in pairs(bases) do
         if string.match(contact.type_description, "Runway %(%d+m%)") ~= nil or
             string.find(contact.type_description, 'Taxiway') ~= nil then
-          local d = Tool_Range(obj['location'], contact.guid)
+          local d = GameApi.Tool_Range(obj['location'], contact.guid)
 
           if d <= 1 then
             table.insert(targetlist, {
@@ -327,7 +322,7 @@ local function initTargetlist(saveData)
             string.find(contact.type_description, 'Hangar') ~= nil or
             string.find(contact.type_description, 'Tarmac') ~= nil or
             string.find(contact.type_description, 'Helipad') ~= nil then
-          local d = Tool_Range(obj['location'], contact.guid)
+          local d = GameApi.Tool_Range(obj['location'], contact.guid)
 
           if d <= 1 then
             table.insert(targetlist, {
@@ -341,7 +336,7 @@ local function initTargetlist(saveData)
 
         if string.find(contact.type_description, 'Ammo Bunker') ~= nil or
             string.find(contact.type_description, 'Ammo Revetment') ~= nil then
-          local d = Tool_Range(obj['location'], contact.guid)
+          local d = GameApi.Tool_Range(obj['location'], contact.guid)
 
           if d <= 1 then
             table.insert(targetlist, {
@@ -377,7 +372,7 @@ local function initTargetlist(saveData)
     for _, contact in ipairs(contacts) do
       for key, obj in pairs(ports) do
         if string.find(contact.type_description, 'Pier') ~= nil then
-          local d = Tool_Range(obj['location'], contact.guid)
+          local d = GameApi.Tool_Range(obj['location'], contact.guid)
 
           if d <= 1 then
             table.insert(targetlist, {
@@ -441,16 +436,16 @@ local function initRunways(saveData)
     },
   })
   for _, guid in ipairs(targetlist) do
-    local contact = ScenEdit_GetContact({ side = 'China', guid = guid })
+    local contact = GameApi.ScenEdit_GetContact('China', guid)
     if contact then
       table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
     end
   end
 
-  local units = VP_GetSide({ Side = 'China' }).units
+  local units = GameApi.VP_GetSide({ side = 'China' }).units
 
   for _, v in ipairs(units) do
-    local unit = SE_GetUnit({ guid = v.guid })
+    local unit = GameApi.ScenEdit_GetUnit(v.guid)
 
     if unit and (unit.dbid == 55
           or unit.dbid == 43
@@ -484,7 +479,6 @@ if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1]
   end
 
   if saveData.c.IADS.isActivated then
-    -- InitC2Facilities(saveData)
     UnitGenerator.initC2Facilities(CONFIG, saveData)
   end
 
@@ -502,10 +496,10 @@ if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1]
 
   if CONFIG.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
-    ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
+    GameApi.ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
   end
 else
-  ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')
+  GameApi.ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')
 end
 
 -- the following forces have been placed under your command:

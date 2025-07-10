@@ -442,6 +442,105 @@ function realApi.ScenEdit_CreateBarkNotification_Geo(longitude, latitude, notifi
     fontSize)
 end
 
+---comment
+---@param opts CMO__ReferencePointDescriptor
+---@return boolean
+function realApi.ScenEdit_DeleteReferencePoint(opts)
+  return ScenEdit_DeleteReferencePoint(opts)
+end
+
+---comment
+---@param side string
+---@param zoneType string
+---@param opts table
+---@return CMO__Zone
+function realApi.ScenEdit_RemoveZone(side, zoneType, opts)
+  return ScenEdit_RemoveZone(side, zoneType, opts)
+end
+
+---comment
+---@param side string
+---@param zoneType number
+---@param opts CMO__Zone
+---@return CMO__Zone|nil
+function realApi.ScenEdit_AddZone(side, zoneType, opts)
+  local result = ScenEdit_AddZone(side, zoneType, opts)
+
+  if not result then
+    error("Failed to add zone with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@return string
+function realApi.ScenEdit_PlayerSide()
+  return ScenEdit_PlayerSide()
+end
+
+---comment
+---@param eventName string
+---@return CMO__Event|nil
+function realApi.ScenEdit_GetEvent(eventName)
+  local result = ScenEdit_GetEvent(eventName)
+
+  if result == nil then
+    error("Failed to get event with name: " .. tostring(eventName))
+  end
+
+  return result
+end
+
+---comment
+---@param eventName string
+---@param opts CMO__EventUpdate
+---@return string|CMO__Event|nil
+function realApi.ScenEdit_SetEvent(eventName, opts)
+  local result = ScenEdit_SetEvent(eventName, opts)
+
+  if not result then
+    error("Failed to set event with opts: " .. tostring(opts))
+  end
+  return result
+end
+
+---comment
+---@param opts CMO__TriggerUpdate
+---@return table
+function realApi.ScenEdit_SetTrigger(opts)
+  return ScenEdit_SetTrigger(opts)
+end
+
+---comment
+---@param opts table
+---@return CMO__TCA_ReturnTable|nil
+function realApi.ScenEdit_SetAction(opts)
+  local result = ScenEdit_SetAction(opts)
+
+  if not result then
+    error("Failed to set action with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param eventName string
+---@param opts CMO__EventTCAUpdate
+---@return CMO__TCA_ReturnTable
+function realApi.ScenEdit_SetEventTrigger(eventName, opts)
+  return ScenEdit_SetEventTrigger(eventName, opts)
+end
+
+---comment
+---@param eventName string
+---@param opts CMO__EventTCAUpdate
+---@return CMO__TCA_ReturnTable
+function realApi.ScenEdit_SetEventAction(eventName, opts)
+  return ScenEdit_SetEventAction(eventName, opts)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
