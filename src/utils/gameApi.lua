@@ -547,7 +547,7 @@ setmetatable(GameApi, {
 
     if type(targetFunc) == 'function' then
       return function(...)
-        local result, err = Utils.SafeCall('GameApi.' .. key, targetFunc, ...)
+        local result, err = Utils.safeCall('GameApi.' .. key, targetFunc, ...)
 
         if err then
           Logger.error(err)

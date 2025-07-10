@@ -466,7 +466,7 @@ function SIGINT.handleSIGINT(config, saveData, side, units, isShown, sigintConfi
   end
 
   Logger.log(string.format("SIGINT processing: %d/%d units processed, %d detections",
-    processedCount, Utils.GetCount(units), detectedCount))
+    processedCount, Utils.getCount(units), detectedCount))
 
   return results
 end

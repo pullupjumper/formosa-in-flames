@@ -8,11 +8,11 @@ if not ship then
   return
 end
 
-if AmphibiousAssault.IsFerryOrLST(CONFIG, ship) then
-  local zone = AmphibiousAssault.GetShipZone(CONFIG, ship)
+if AmphibiousAssault.isFerryOrLST(CONFIG, ship) then
+  local zone = AmphibiousAssault.getShipZone(CONFIG, ship)
 
   if zone then
-    local count = AmphibiousAssault.LaunchACV({
+    local count = AmphibiousAssault.launchACV({
       ship = ship,
       num = 5,
       bearing = zone.ACV.bearing + 90,

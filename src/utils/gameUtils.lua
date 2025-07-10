@@ -7,7 +7,7 @@ local GameUtils = {}
 ---@param x_longitude number
 ---@param max_radius number
 ---@return CMO__Location|nil
-function GameUtils.CircularRandomPosition(x_latitude, x_longitude, max_radius)
+function GameUtils.circularRandomPosition(x_latitude, x_longitude, max_radius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
     latitude = x_latitude,
     longitude = x_longitude,
@@ -26,7 +26,7 @@ end
 ---Generate a list of locations based on parameters
 ---@param params SBJ__Location_Params
 ---@return table<integer, CMO__Location>
-function GameUtils.GenerateLocations(params)
+function GameUtils.generateLocations(params)
   local numTemp = params.num
   local bearingTemp = params.bearing
   local distanceTemp = 0
@@ -67,7 +67,7 @@ end
 ---@param position CMO__Location
 ---@param mode SBJ__AreaMode
 ---@return table<integer, CMO__ReferencePoint>|boolean
-function GameUtils.NewArea(position, mode)
+function GameUtils.newArea(position, mode)
   local side = mode.side
   local shape = mode.shape
   if side == nil or shape == nil then return false end
@@ -125,7 +125,7 @@ end
 
 ---@param side string @The side the message is visible to (sidename may also be used in place of side)
 ---@param ... string @Variable number of string arguments to be printed inside the box
-function GameUtils.PrintBox(side, ...)
+function GameUtils.printBox(side, ...)
   -- 收集所有字串參數到陣列中
   local strings = { ... }
 
@@ -160,14 +160,14 @@ end
 
 ---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return boolean
-function GameUtils.IsAfterStartTime(time)
+function GameUtils.isAfterStartTime(time)
   local result = GameApi.ScenEdit_CurrentTime()
 
   if not result then
     return false
   end
 
-  return result > Utils.ParseDatetimeToTimestamp(time)
+  return result > Utils.parseDatetimeToTimestamp(time)
 end
 
 ---comment
@@ -177,7 +177,7 @@ end
 ---@param opts? CMO__Mission
 ---@param emcon? string
 ---@return CMO__Mission|nil
-function GameUtils.CreateMission(side, name, type, opts, emcon)
+function GameUtils.createMission(side, name, type, opts, emcon)
   local mission = GameApi.ScenEdit_AddMission(side, name, type, opts)
 
   if not mission then

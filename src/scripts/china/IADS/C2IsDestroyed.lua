@@ -47,6 +47,8 @@ if unit and saveData.c.IADS.isActivated then
 
       ::continue::
     end
+
+    saveData.c.IADS.C2[unit.guid] = nil
   end
 end
 gKH.State.SaveTableToKey(saveData, "SaveData")

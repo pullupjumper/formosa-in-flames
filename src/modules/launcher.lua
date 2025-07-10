@@ -453,7 +453,7 @@ end
 ---@param group CMO__Unit 單位群組
 function Launcher.toFringPosition(CONFIG, battery, group)
   battery.state = CONFIG.batteryState.REPOSITIONING
-  local courseIdx = math.random(Utils.GetCount(battery.position.FP))
+  local courseIdx = math.random(Utils.getCount(battery.position.FP))
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)

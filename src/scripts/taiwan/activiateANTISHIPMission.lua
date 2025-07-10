@@ -32,7 +32,7 @@ if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts 
     end
   end
 
-  if Utils.GetCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
+  if Utils.getCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
     setAntiShipMissionStartTime()
     saveData.t.ground.ascm.test.isAntishipMissionActivated = true
     event.isActive = false

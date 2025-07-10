@@ -29,7 +29,7 @@ if unit then
         course = CONFIG.c.recon.courses.WZ8[1]
       end
 
-      local wz8 = Recon.LaunchWZ8(unit, course)
+      local wz8 = Recon.launchWZ8(unit, course)
 
       if wz8 then
         q.unitGUID = wz8.guid

@@ -10,7 +10,7 @@ local Recon = {}
 ---@param unitCount number
 ---@param unitDBID number
 ---@param unitType string @ Aircraft or Boats
-function Recon.LaunchUnits(baseGUID, course, unitCount, unitDBID, unitType)
+function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
@@ -44,7 +44,7 @@ end
 ---@param h6n CMO__Unit
 ---@param course CMO__TableOfWaypoints
 ---@return CMO__Unit|nil
-function Recon.LaunchWZ8(h6n, course)
+function Recon.launchWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
     side = 'China',
     type = 'Aircraft',
@@ -86,37 +86,37 @@ function Recon.LaunchWZ8(h6n, course)
   return wz8
 end
 
-function Recon._shouldTakeoffBeforeStrike(q)
+local function shouldTakeoffBeforeStrike(q)
   return (not q.hasLaunched) and q.takeoffTime ~= nil and q.missionStartTime ~= nil
 end
 
-function Recon._shouldTakeoffAfterStrike(q)
+local function shouldTakeoffAfterStrike(q)
   return (not q.hasLaunched) and q.missionStartTime ~= nil
 end
 
-function Recon._isH6N(q)
+local function isH6N(q)
   return not q.hasLaunched and q.unitDBID == CONFIG.platformDBID76
 end
 
-function Recon._shouldEnterTargetArea(q)
+local function shouldEnterTargetArea(q)
   return q.hasLaunched and not q.isFinished and q.takeoffTime ~= nil and q.missionStartTime ~= nil
 end
 
-function Recon._shouldRTB(q)
+local function shouldRTB(q)
   return q.hasLaunched and not q.isFinished
 end
 
-function Recon.HandleReconQueue(saveData)
+function Recon.handleReconQueue(saveData)
   for _, q in ipairs(saveData.c.recon.queue) do
-    if Recon._shouldTakeoffBeforeStrike(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
-      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
+    if shouldTakeoffBeforeStrike(q) and GameUtils.isAfterStartTime(q.takeoffTime) then
+      local units = Recon.launchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
         q.unitGUID = units[1]
         q.hasLaunched = true
       end
-    elseif Recon._shouldTakeoffAfterStrike(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
-      local units = AssignMission.AssignEmbarkedUnitToStrikeMission(
+    elseif shouldTakeoffAfterStrike(q) and GameUtils.isAfterStartTime(q.missionStartTime) then
+      local units = AssignMission.assignEmbarkedUnitToStrikeMission(
         q.baseGUID, q.unitCount, 0, q.unitDBID, q.missionName, false
       )
 
@@ -125,8 +125,8 @@ function Recon.HandleReconQueue(saveData)
         q.hasLaunched = true
         q.isFinished = true
       end
-    elseif Recon._isH6N(q) and GameUtils.IsAfterStartTime(q.takeoffTime) then
-      local units = Recon.LaunchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
+    elseif isH6N(q) and GameUtils.isAfterStartTime(q.takeoffTime) then
+      local units = Recon.launchUnits(q.baseGUID, q.course, q.unitCount, q.unitDBID, 'Aircraft')
 
       if units and #units > 0 then
         q.unitGUID = units[1]
@@ -134,7 +134,7 @@ function Recon.HandleReconQueue(saveData)
       end
     end
 
-    if Recon._shouldEnterTargetArea(q) and GameUtils.IsAfterStartTime(q.missionStartTime) then
+    if shouldEnterTargetArea(q) and GameUtils.isAfterStartTime(q.missionStartTime) then
       local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
       if unit then
@@ -144,7 +144,7 @@ function Recon.HandleReconQueue(saveData)
           q.isFinished = true
         end
       end
-    elseif Recon._shouldRTB(q) then
+    elseif shouldRTB(q) then
       local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
       if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
@@ -162,7 +162,7 @@ end
 ---@param UAVDBID number
 ---@param target CMO__Contact
 ---@return boolean
-function Recon.TrackTarget(CONFIG, saveData, units, UAVDBID, target)
+function Recon.trackTarget(CONFIG, saveData, units, UAVDBID, target)
   local UAV = nil
   local speed = 115
   local type = 'BZK005'

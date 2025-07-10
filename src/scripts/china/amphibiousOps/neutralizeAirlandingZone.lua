@@ -24,10 +24,10 @@ if ship and ship.group and ship.dbid == CONFIG.platformDBID48 then
     end
   end
 
-  if Utils.GetCount(filteredContacts) > 0 then
-    AttackManager.AttackContacts({
+  if Utils.getCount(filteredContacts) > 0 then
+    AttackManager.attackContacts({
       contacts = filteredContacts,
-      qty = 440 // Utils.GetCount(filteredContacts),
+      qty = 440 // Utils.getCount(filteredContacts),
       batteries = { ship },
       weaponDBID = 2691,
     })

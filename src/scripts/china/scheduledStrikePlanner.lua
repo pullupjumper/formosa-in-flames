@@ -23,10 +23,10 @@ if saveData == nil then
 end
 
 if saveData.c.recon.isActivated then
-  Recon.HandleReconQueue(saveData)
+  Recon.handleReconQueue(saveData)
 end
 
-if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c.surface.lacm.startTime) then
+if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
   for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
@@ -36,7 +36,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c
     end
   end
 
-  AttackManager.AttackContacts({
+  AttackManager.attackContacts({
     contacts = CONFIG.c.surface.lacm.targetlist,
     qty = 5,
     batteries = ships,
@@ -45,7 +45,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.IsAfterStartTime(saveData.c
   saveData.c.surface.lacm.isActivated = false
 end
 
-if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveData.c.subSurface.slcm.startTime) then
+if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
   for _, unit in pairs(CONFIG.c.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
 
@@ -59,7 +59,7 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveDat
     end
   end
 
-  AttackManager.AttackContacts({
+  AttackManager.attackContacts({
     contacts = CONFIG.c.subSurface.slcm.targetlist,
     qty = 8,
     batteries = CONFIG.c.subSurface.slcm.submarines,
@@ -70,11 +70,11 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.IsAfterStartTime(saveDat
 end
 
 if saveData.c.ground.isActivated then
-  FireSupportPlan.Strike(CONFIG, saveData, contacts)
+  FireSupportPlan.strike(CONFIG, saveData, contacts)
 end
 
 if saveData.c.air.isActivated then
-  AirTaskingOrder.AirStrike(CONFIG, saveData, contacts)
+  AirTaskingOrder.airStrike(CONFIG, saveData, contacts)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

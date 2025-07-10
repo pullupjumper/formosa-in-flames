@@ -47,7 +47,7 @@ for _, component in ipairs(unit.components) do
 				or component['comp_dbid'] == CONFIG.sensorDBID5
 				or component['comp_dbid'] == CONFIG.sensorDBID6)
 			and component['comp_status'] == 'Destroyed' then
-		GameUtils.PrintBox(
+		GameUtils.printBox(
 			'China',
 			unit.name .. '\'s radar is damaged',
 			'comp_dbid/' .. tostring(component['comp_dbid']),
@@ -89,5 +89,5 @@ end
 
 if temp.unit ~= nil then
 	GameApi.ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-	GameUtils.PrintBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
+	GameUtils.printBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
 end

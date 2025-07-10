@@ -19,13 +19,13 @@ local StrikePackageProcessor = {}
 ---@param packageData SBJ__Package
 ---@param role string
 ---@return boolean
-function StrikePackageProcessor._createMission(packageData, role)
+local function createMission(packageData, role)
   local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionParams.name)
 
   if not mission then
     Logger.log("Mission not found, creating: " .. packageData[role].missionParams.name)
 
-    mission = GameUtils.CreateMission(
+    mission = GameUtils.createMission(
       "China",
       packageData[role].missionParams.name,
       packageData[role].missionParams.type,
@@ -47,13 +47,13 @@ end
 --- Assigns all units in the package to their respective missions.
 ---@param packageData SBJ__Package
 ---@return boolean Returns true if the primary striker units were assigned.
-function StrikePackageProcessor._assignUnits(packageData)
+local function assignUnits(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
   local strikerAssigned = false
 
   for _, role in ipairs(roles) do
     if packageData[role] then
-      local result = AssignMission.AssignEmbarkedUnitToStrikeMission(
+      local result = AssignMission.assignEmbarkedUnitToStrikeMission(
         packageData[role].baseGUID,
         packageData[role].unitCount,
         packageData[role].weaponDBID,
@@ -77,12 +77,12 @@ end
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return string[]
-function StrikePackageProcessor._findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
+local function findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
   local evaluatedTargetlist = {}
 
   -- Assess fixed targets (from mission plan)
   if packageData.striker.missionParams.opts.type == "land" then
-    evaluatedTargetlist = TargetingProcess.AssessTargetsDamage(packageData, isFirstWave)
+    evaluatedTargetlist = TargetingProcess.assessTargetsDamage(packageData, isFirstWave)
   end
 
   -- Find dynamic targets (based on filters)
@@ -95,7 +95,7 @@ function StrikePackageProcessor._findTargets(packageData, CONFIG, saveData, cont
           contacts = contacts,
           task = packageData -- Pass packageData as 'task' for compatibility
         })
-        Utils.InsertList(evaluatedTargetlist, filteredTargets)
+        Utils.insertList(evaluatedTargetlist, filteredTargets)
       else
         Logger.error("TargetingProcess filter not found: " .. name)
       end
@@ -117,9 +117,9 @@ end
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return boolean hasLaunched
-function StrikePackageProcessor.Process(packageData, CONFIG, saveData, contacts, isFirstWave)
+function StrikePackageProcessor.process(packageData, CONFIG, saveData, contacts, isFirstWave)
   -- 1. Check if it's time to start
-  if not (packageData.escort and GameUtils.IsAfterStartTime(packageData.escort.startTime)) then
+  if not (packageData.escort and GameUtils.isAfterStartTime(packageData.escort.startTime)) then
     return false
   end
 
@@ -127,7 +127,7 @@ function StrikePackageProcessor.Process(packageData, CONFIG, saveData, contacts,
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
   for _, role in ipairs(roles) do
     if packageData[role] then
-      local missionCreated = StrikePackageProcessor._createMission(packageData, role)
+      local missionCreated = createMission(packageData, role)
       if role == 'striker' and not missionCreated then
         Logger.error("Critical failure: Could not create striker mission. Aborting package.")
         return false -- Abort the entire process if the main mission fails
@@ -137,7 +137,7 @@ function StrikePackageProcessor.Process(packageData, CONFIG, saveData, contacts,
   Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
 
   -- 3. Find targets
-  local evaluatedTargetlist = StrikePackageProcessor._findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
+  local evaluatedTargetlist = findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
   Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < packageData.target.minTargetCount then
@@ -157,7 +157,7 @@ function StrikePackageProcessor.Process(packageData, CONFIG, saveData, contacts,
   Logger.log("Targets assigned to mission " .. packageData.striker.missionParams.name)
 
   -- 5. Assign units to all missions
-  if StrikePackageProcessor._assignUnits(packageData) then
+  if assignUnits(packageData) then
     Logger.log(packageData.striker.missionParams.name .. " status -> LAUNCHED. Package has been launched.")
     return true -- Success
   else

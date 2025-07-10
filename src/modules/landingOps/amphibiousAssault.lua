@@ -5,7 +5,7 @@ local AmphibiousAssault = {}
 
 ---@param mission SBJ__LandingMission
 ---@return boolean
-function AmphibiousAssault._setMissionStartTime(mission)
+local function setMissionStartTime(mission)
   local currentTime = GameApi.ScenEdit_CurrentTime()
   if not currentTime then
     return false
@@ -26,7 +26,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@return boolean
-function AmphibiousAssault.SetLandingMissionStartTime(CONFIG, saveData)
+function AmphibiousAssault.setLandingMissionStartTime(CONFIG, saveData)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   if not currentTime then
@@ -38,19 +38,19 @@ function AmphibiousAssault.SetLandingMissionStartTime(CONFIG, saveData)
 
   for _, zone in ipairs(operationalZones) do
     for _, mission in ipairs(zone.tansportHelicopter.missions) do
-      if not AmphibiousAssault._setMissionStartTime(mission) then
+      if not setMissionStartTime(mission) then
         return false
       end
     end
 
     for _, mission in ipairs(zone.boat.missions) do
-      if not AmphibiousAssault._setMissionStartTime(mission) then
+      if not setMissionStartTime(mission) then
         return false
       end
     end
 
     for _, mission in ipairs(zone.attackHelicopter.missions) do
-      if not AmphibiousAssault._setMissionStartTime(mission) then
+      if not setMissionStartTime(mission) then
         return false
       end
     end
@@ -62,7 +62,7 @@ end
 ---comment
 ---@param unit CMO__Unit
 ---@return boolean
-function AmphibiousAssault._isLST(unit)
+local function isLST(unit)
   if unit.name ~= 'RORO' and unit.name ~= 'Barge' then
     return true
   end
@@ -73,7 +73,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param units CMO__SideUnit[]
 ---@return boolean
-function AmphibiousAssault.SetCoursesForLSTs(CONFIG, units)
+function AmphibiousAssault.setCoursesForLSTs(CONFIG, units)
   local operationalZones = CONFIG.c.PHIBOP.operationalZones
 
   for _, item in ipairs(units) do
@@ -93,7 +93,7 @@ function AmphibiousAssault.SetCoursesForLSTs(CONFIG, units)
             return false
           end
 
-          if AmphibiousAssault._isLST(unit) then
+          if isLST(unit) then
             unit.course = { destination }
             unit.manualSpeed = zone.LSTSettings.speed
           end
@@ -119,7 +119,7 @@ end
 ---@param contacts CMO__Contact
 ---@param area CMO__ReferencePoint[]
 ---@return integer
-function AmphibiousAssault.CountContactsInArea(contacts, area)
+function AmphibiousAssault.countContactsInArea(contacts, area)
   local filteredContacts = {}
 
   for _, contact in ipairs(contacts) do
@@ -133,20 +133,20 @@ end
 
 ---@param params SBJ__ACVLocation_Params
 ---@return number|nil
-function AmphibiousAssault.LaunchACV(params)
+function AmphibiousAssault.launchACV(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
 
   local destination = params.destination
-  local ACVlocations = GameUtils.GenerateLocations({
+  local ACVlocations = GameUtils.generateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
     distance = params.distance
   })
 
-  local zbd = AmphibiousLogistics.DeleteCargo(ship, { type = 2, num = params.num, dbid = 241 })
-  local ztd = AmphibiousLogistics.DeleteCargo(ship, { type = 2, num = params.num - zbd, dbid = 240 })
+  local zbd = AmphibiousLogistics.deleteCargo(ship, { type = 2, num = params.num, dbid = 241 })
+  local ztd = AmphibiousLogistics.deleteCargo(ship, { type = 2, num = params.num - zbd, dbid = 240 })
   local index = 0
   local count = 0
 
@@ -212,7 +212,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param ship CMO__Unit
 ---@return boolean
-function AmphibiousAssault.IsFerryOrLST(CONFIG, ship)
+function AmphibiousAssault.isFerryOrLST(CONFIG, ship)
   return (ship.dbid == CONFIG.platformDBID7
     or ship.dbid == CONFIG.platformDBID8
     or ship.dbid == CONFIG.platformDBID9
@@ -224,7 +224,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param ship CMO__Unit
 ---@return SBJ__OperationalZone|nil
-function AmphibiousAssault.GetShipZone(CONFIG, ship)
+function AmphibiousAssault.getShipZone(CONFIG, ship)
   for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
     if ship:inArea(zone.ACV.area) then
       return zone

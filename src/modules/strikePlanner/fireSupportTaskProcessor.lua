@@ -11,7 +11,7 @@ local FireSupportTaskProcessor = {}
 ---@param bettery SBJ__Battery
 ---@param group CMO__Unit
 ---@return boolean
-function FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, group)
+local function isBtyReady(CONFIG, bettery, group)
   return bettery.state == CONFIG.batteryState.HIDE and
       not Launcher.isLowAmmo(group, bettery.ammoThreshold, bettery.weaponDBID)
 end
@@ -19,7 +19,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param bettery SBJ__Battery
 ---@return boolean
-function FireSupportTaskProcessor._isNotBtyAtFiringPosition(CONFIG, bettery)
+local function isNotBtyAtFiringPosition(CONFIG, bettery)
   return bettery.state ~= CONFIG.batteryState.STATIC
 end
 
@@ -27,7 +27,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param FST SBJ__FireSupportTask
 ---@return boolean
-function FireSupportTaskProcessor._shouldDeployToFiringPosition(CONFIG, saveData, FST)
+local function shouldDeployToFiringPosition(CONFIG, saveData, FST)
   local allBatteriesInPosition = true
 
   for _, bty in ipairs(FST.batteries) do
@@ -38,11 +38,11 @@ function FireSupportTaskProcessor._shouldDeployToFiringPosition(CONFIG, saveData
     else
       local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
 
-      if FireSupportTaskProcessor._isBtyReady(CONFIG, bettery, actualBty) then
+      if isBtyReady(CONFIG, bettery, actualBty) then
         Launcher.toFringPosition(CONFIG, bettery, actualBty)
       end
 
-      if FireSupportTaskProcessor._isNotBtyAtFiringPosition(CONFIG, bettery) then
+      if isNotBtyAtFiringPosition(CONFIG, bettery) then
         allBatteriesInPosition = false
       end
     end
@@ -58,8 +58,8 @@ end
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return string[]
-function FireSupportTaskProcessor._findTargets(task, CONFIG, saveData, contacts, isFirstWave)
-  local evaluatedTargetlist = TargetingProcess.AssessTargetsDamage(task, isFirstWave)
+local function findTargets(task, CONFIG, saveData, contacts, isFirstWave)
+  local evaluatedTargetlist = TargetingProcess.assessTargetsDamage(task, isFirstWave)
 
   -- Find dynamic targets (based on filters)
   if type(task.target.filterNames) == "table" and #task.target.filterNames > 0 then
@@ -71,7 +71,7 @@ function FireSupportTaskProcessor._findTargets(task, CONFIG, saveData, contacts,
           contacts = contacts,
           task = task -- Pass packageData as 'task' for compatibility
         })
-        Utils.InsertList(evaluatedTargetlist, filteredTargets)
+        Utils.insertList(evaluatedTargetlist, filteredTargets)
         Logger.log(name .. " found " .. #filteredTargets .. " targets.")
       else
         Logger.error("TargetingProcess filter not found: " .. name)
@@ -89,12 +89,12 @@ end
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return boolean
-function FireSupportTaskProcessor.Process(FST, CONFIG, saveData, contacts, isFirstWave)
-  if FST.isFinished or not GameUtils.IsAfterStartTime(FST.startTime) then
+function FireSupportTaskProcessor.process(FST, CONFIG, saveData, contacts, isFirstWave)
+  if FST.isFinished or not GameUtils.isAfterStartTime(FST.startTime) then
     return false
   end
 
-  local evaluatedTargetlist = FireSupportTaskProcessor._findTargets(FST, CONFIG, saveData, contacts, isFirstWave)
+  local evaluatedTargetlist = findTargets(FST, CONFIG, saveData, contacts, isFirstWave)
   Logger.log(FST.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < FST.target.minTargetCount then
@@ -102,7 +102,7 @@ function FireSupportTaskProcessor.Process(FST, CONFIG, saveData, contacts, isFir
     return false
   end
 
-  if not FireSupportTaskProcessor._shouldDeployToFiringPosition(CONFIG, saveData, FST) then
+  if not shouldDeployToFiringPosition(CONFIG, saveData, FST) then
     Logger.log("Batteries not at firing position for " .. FST.name)
     return false
   end

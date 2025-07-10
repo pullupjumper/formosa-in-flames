@@ -9,7 +9,7 @@ local ShipMovement = {}
 ---@param location CMO__Location
 ---@param speed number
 ---@param isTesting boolean
-function ShipMovement._moveShip(unit, location, speed, isTesting)
+local function moveShip(unit, location, speed, isTesting)
   unit.course = { location }
   unit.manualSpeed = speed
 
@@ -28,10 +28,10 @@ end
 ---@param shipType string
 ---@param shipSettings table<string, number>
 ---@param isTesting boolean
-function ShipMovement._handleShipType(unit, resultTable, shipType, shipSettings, isTesting)
+local function handleShipType(unit, resultTable, shipType, shipSettings, isTesting)
   local index = resultTable[shipType].locationIndex
   local location = resultTable[shipType].locations[index]
-  ShipMovement._moveShip(unit, location, shipSettings.shipSpeed, isTesting)
+  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
   resultTable[shipType].locationIndex = index + 1
 end
 
@@ -40,11 +40,11 @@ end
 ---@param nameType string
 ---@param shipSettings table<string, number>
 ---@param isTesting boolean
-function ShipMovement._handleNameType(unit, resultTable, nameType, shipSettings, isTesting)
+local function handleNameType(unit, resultTable, nameType, shipSettings, isTesting)
   nameType = string.lower(nameType)
   local index = resultTable[nameType].locationIndex
   local location = resultTable[nameType].locations[index]
-  ShipMovement._moveShip(unit, location, shipSettings.shipSpeed, isTesting)
+  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
   resultTable[nameType].locationIndex = index + 1
 end
 
@@ -53,7 +53,7 @@ end
 ---@param shipType string
 ---@param shipSettings table<string, number>
 ---@param isTesting boolean
-function ShipMovement._handle071(unit, resultTable, shipType, shipSettings, isTesting)
+local function handle071(unit, resultTable, shipType, shipSettings, isTesting)
   local index = resultTable.type071.locationIndex
   local len = #resultTable.type071.locations
   local location
@@ -62,7 +62,7 @@ function ShipMovement._handle071(unit, resultTable, shipType, shipSettings, isTe
   else
     location = resultTable.type071.locations[index]
   end
-  ShipMovement._moveShip(unit, location, shipSettings.shipSpeed, isTesting)
+  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
   resultTable.type071.locationIndex = index + 1
 end
 
@@ -70,7 +70,7 @@ end
 ---@param lat number|string
 ---@param lon number|string
 ---@param bearing number
-function ShipMovement._setShipPosition(ship, lat, lon, bearing)
+local function setShipPosition(ship, lat, lon, bearing)
   GameApi.ScenEdit_SetUnit({
     guid = ship.guid,
     latitude = lat,
@@ -84,7 +84,7 @@ end
 ---@param bearing number
 ---@param distance number
 ---@return CMO__Location
-function ShipMovement._getNextPosition(latitude, longitude, bearing, distance)
+local function getNextPosition(latitude, longitude, bearing, distance)
   return GameApi.World_GetPointFromBearing({
     LATITUDE = latitude,
     LONGITUDE = longitude,
@@ -95,7 +95,7 @@ end
 
 ---@param group table<string, table>
 ---@param isTesting boolean
-function ShipMovement._handleSAG(group, isTesting)
+local function handleSAG(group, isTesting)
   local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
   if not unit then
@@ -114,35 +114,35 @@ function ShipMovement._handleSAG(group, isTesting)
       if ship then
         if ship.dbid == CONFIG.platformDBID48 then
           if type052d == 0 then
-            ShipMovement._setShipPosition(
+            setShipPosition(
               ship,
               group.to.archorageArea[count].lat,
               group.to.archorageArea[count].lon,
               group.to.heading
             )
           else
-            local point = ShipMovement._getNextPosition(
+            local point = getNextPosition(
               group.to.archorageArea[count].lat,
               group.to.archorageArea[count].lon,
               group.to.heading - 180,
               1.5
             )
             if point then
-              ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+              setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
             end
           end
 
           type052d = type052d + 1
         elseif ship.dbid == CONFIG.platformDBID49 then
           local angle = (type054a == 0) and -45 or 45
-          local point = ShipMovement._getNextPosition(
+          local point = getNextPosition(
             group.to.archorageArea[count].lat,
             group.to.archorageArea[count].lon,
             group.to.heading - angle,
             1.5
           )
           if point then
-            ShipMovement._setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+            setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
           end
           type054a = type054a + 1
         end
@@ -156,7 +156,7 @@ end
 ---@param CONFIG SBJ__CONFIG
 ---@param units CMO__SideUnit
 ---@return boolean
-function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
+function ShipMovement.moveToStagingArea(saveData, CONFIG, units)
   local shipSettings = CONFIG.c.PHIBOP.shipSettings
   local initialLocations = CONFIG.c.PHIBOP.initialLocations
   local calculations = saveData.c.PHIBOP.calculations
@@ -173,12 +173,12 @@ function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
           local matched = false
 
           for shipType, handler in pairs({
-            type075 = ShipMovement._handleShipType,
-            type076 = ShipMovement._handleShipType,
-            type072iii = ShipMovement._handleShipType,
-            type072a = ShipMovement._handleShipType,
-            type073a = ShipMovement._handleShipType,
-            type071 = ShipMovement._handle071,
+            type075 = handleShipType,
+            type076 = handleShipType,
+            type072iii = handleShipType,
+            type072a = handleShipType,
+            type073a = handleShipType,
+            type071 = handle071,
           }) do
             if unit.dbid == result[shipType].dbid then
               handler(unit, result, shipType, shipSettings, isTesting)
@@ -189,9 +189,9 @@ function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
 
           if not matched then
             for nameType, handler in pairs({
-              ferry = ShipMovement._handleNameType,
-              RORO = ShipMovement._handleNameType,
-              barge = ShipMovement._handleNameType,
+              ferry = handleNameType,
+              RORO = handleNameType,
+              barge = handleNameType,
             }) do
               if unit.name == nameType:gsub("^%l", string.upper) then
                 handler(unit, result, nameType, shipSettings, isTesting)
@@ -205,7 +205,7 @@ function ShipMovement.MoveToStagingArea(saveData, CONFIG, units)
   end
 
   for _, group in pairs(CONFIG.c.PHIBOP.sag) do
-    ShipMovement._handleSAG(group, isTesting)
+    handleSAG(group, isTesting)
   end
 
   allUnitsMoved = true
@@ -214,7 +214,7 @@ end
 
 ---comment
 ---@param saveData SBJ__SaveData
-function ShipMovement.CalculateDestination(saveData)
+function ShipMovement.calculateDestination(saveData)
   local initialLocations = CONFIG.c.PHIBOP.initialLocations
   local shipSettings = CONFIG.c.PHIBOP.shipSettings
 
@@ -279,82 +279,82 @@ function ShipMovement.CalculateDestination(saveData)
         distance = shipSettings.verticalDistance
       })
 
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type075.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp075,
           num = area.num.type075,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp071,
           num = area.num.type071,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type076.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp076,
           num = area.num.type076,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.barge.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRpBarge,
           num = area.num.barge,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         })
       )
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.roro.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRpRORO,
           num = area.num.roro,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072iii.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp072iii,
           num = area.num.type072iii,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type072a.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp072a,
           num = area.num.type072a,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.ferry.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRpFerry,
           num = area.num.ferry,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type073a.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp073a,
           num = area.num.type073a,
           bearing = area.heading.horizontal,
           distance = shipSettings.horizontalDistance
         }))
-      Utils.InsertList(
+      Utils.insertList(
         saveData.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
-        GameUtils.GenerateLocations({
+        GameUtils.generateLocations({
           initialLocation = firstRp071InLSTArea,
           num = area.num.type071InLSTArea,
           bearing = area.heading.horizontal,

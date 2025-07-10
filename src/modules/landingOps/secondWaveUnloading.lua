@@ -9,14 +9,14 @@ local SecondWaveUnloading = {}
 ---@param zone SBJ__OperationalZone
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil
-function SecondWaveUnloading._createCourseForBarge(zone, unit)
+local function createCourseForBarge(zone, unit)
   local points = GameApi.ScenEdit_GetReferencePoints({ side = "China", area = zone.offloadArea })
 
   if not points then
     return nil
   end
 
-  local centerPoint = Utils.CalculateSphericalCenter(points)
+  local centerPoint = Utils.calculateSphericalCenter(points)
 
   if centerPoint then
     local d1 = GameApi.Tool_Range({ latitude = unit.latitude, longitude = unit.longitude }, centerPoint)
@@ -55,7 +55,7 @@ end
 ---@param unit CMO__Unit
 ---@param bargeDest CMO__Waypoint[]
 ---@return CMO__Waypoint[]|nil
-function SecondWaveUnloading._createCourseForRORO(zone, unit, bargeDest)
+local function createCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
@@ -75,7 +75,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param units CMO__SideUnit
 ---@return boolean
-function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
+function SecondWaveUnloading.startSecondWaveUnloading(CONFIG, saveData, units)
   local operationalZones = CONFIG.c.PHIBOP.operationalZones
   local roros = {}
   local barges = {}
@@ -86,7 +86,7 @@ function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
     if unit then
       for _, zone in ipairs(operationalZones) do
         if unit.name == 'Barge' and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
-          local destination = SecondWaveUnloading._createCourseForBarge(zone, unit)
+          local destination = createCourseForBarge(zone, unit)
           if destination then
             unit.course = { destination }
             unit.manualSpeed = zone.LSTSettings.speed
@@ -106,7 +106,7 @@ function SecondWaveUnloading.StartSecondWaveUnloading(CONFIG, saveData, units)
     for _, barge in ipairs(barges) do
       if barge.unit:inArea(item.zone.LSTAnchorageArea) then
         table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
-        local course = SecondWaveUnloading._createCourseForRORO(item.zone, item.unit, barge.dest)
+        local course = createCourseForRORO(item.zone, item.unit, barge.dest)
         if course then
           item.unit.course = course
           item.unit.manualSpeed = item.zone.LSTSettings.speed
@@ -120,10 +120,10 @@ end
 
 ---@param params SBJ__OffloadVehicles_Params
 ---@return number|nil
-function SecondWaveUnloading.OffloadVehicles(params)
+function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
-  local ACVlocations = GameUtils.GenerateLocations({
+  local ACVlocations = GameUtils.generateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -169,7 +169,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
 ---@return boolean
-function SecondWaveUnloading.IsBridgeDestroyed(saveData, ship)
+function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
   if saveData.c.PHIBOP.barges[ship.guid] and saveData.c.PHIBOP.barges[ship.guid].bridgeGUID then
     local bridge = GameApi.ScenEdit_GetUnit(saveData.c.PHIBOP.barges[ship.guid].bridgeGUID)
 
@@ -188,7 +188,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
 ---@return boolean
-function SecondWaveUnloading.HasExtendedBridge(saveData, ship)
+function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
   return saveData.c.PHIBOP.barges[ship.guid].bridgeGUID ~= nil
 end
 
@@ -197,7 +197,7 @@ end
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
 ---@return SBJ__OperationalZone|nil
-function SecondWaveUnloading.GetBargeROROZone(CONFIG, barge, roro)
+function SecondWaveUnloading.getBargeROROZone(CONFIG, barge, roro)
   for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
     local d = GameApi.Tool_Range(roro.guid, barge.guid)
 

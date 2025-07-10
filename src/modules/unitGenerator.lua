@@ -99,7 +99,7 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGuid)
           side = embarkedUnit.side,
           type = embarkedUnit.type,
           dbid = embarkedUnit.dbid,
-          unitname = embarkedUnit.name .. ' #' .. Utils.RandomTxt(2),
+          unitname = embarkedUnit.name .. ' #' .. Utils.randomTxt(2),
           base = baseGuid,
         }
 
@@ -122,7 +122,7 @@ end
 ---@param unit CMO__SetUnitDescriptor 單位描述符
 ---@param embarkedUnits SBJ__EmbarkedUnit[]|nil 搭載單位
 local function addUnitsByRP(params, unit, embarkedUnits)
-  local locations = GameUtils.GenerateLocations(params)
+  local locations = GameUtils.generateLocations(params)
 
   for _, location in ipairs(locations) do
     unit.latitude = location.latitude
@@ -409,7 +409,7 @@ local function createRandomUnits(config)
 
   for i = 1, config.count do
     local dbid = config.dbids[math.random(#config.dbids)]
-    local point = GameUtils.CircularRandomPosition(
+    local point = GameUtils.circularRandomPosition(
       config.centerPoint.lat,
       config.centerPoint.lon,
       config.randomRadius
@@ -422,7 +422,7 @@ local function createRandomUnits(config)
       Lat = point.latitude,
       Lon = point.longitude,
       autodetectable = config.autodetectable,
-      unitname = config.unitname .. Utils.RandomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH),
+      unitname = config.unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH),
     }
 
     local unit = tryCreateUnit(unitDescriptor)
@@ -510,7 +510,7 @@ local function tryAddJammerUnit(config, jammer, attempt, max_attempts)
   attempt = attempt or 1
   max_attempts = max_attempts or 50
 
-  local point = GameUtils.CircularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
+  local point = GameUtils.circularRandomPosition(jammer.point.lat, jammer.point.lon, jammer.randomRadius)
   local unit = GameApi.ScenEdit_AddUnit({
     type = 'Facility',
     unitname = jammer.name,
@@ -1013,7 +1013,7 @@ function UnitGenerator.addGPSJammingZones(config)
     if unit and point then
       GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
-      local area = GameUtils.NewArea(point, {
+      local area = GameUtils.newArea(point, {
         side = 'China',
         shape = 'circle',
         distance = jammer.radius

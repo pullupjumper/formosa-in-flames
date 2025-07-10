@@ -8,7 +8,7 @@ local FireSupportPlan = {}
 
 ---@param FSEM SBJ__FireSupportExecutionMatrix
 ---@return boolean
-function FireSupportPlan._isFSEMFinished(FSEM)
+local function isFSEMFinished(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
     if not FST.isFinished then
       return false
@@ -20,10 +20,10 @@ end
 
 ---comment
 ---@param FSEM SBJ__FireSupportExecutionMatrix
-function FireSupportPlan._executeFireSupportTasks(FSEM)
+local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
-    if not FST.isFinished and GameUtils.IsAfterStartTime(FST.startTime) and #FST.target.evaluatedlist >= FST.target.minTargetCount then
-      local result = AttackManager.AttackContacts({
+    if not FST.isFinished and GameUtils.isAfterStartTime(FST.startTime) and #FST.target.evaluatedlist >= FST.target.minTargetCount then
+      local result = AttackManager.attackContacts({
         contacts = FST.target.evaluatedlist,
         qty = FST.target.ammoPerTarget,
         batteries = FST.batteries,
@@ -43,13 +43,13 @@ end
 ---@param CONFIG table
 ---@param saveData table
 ---@param contacts CMO__Contact[]
-function FireSupportPlan.Strike(CONFIG, saveData, contacts)
+function FireSupportPlan.strike(CONFIG, saveData, contacts)
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     local allBatteriesInPosition = true
 
     if not FSEM.isFinished and FSEM.isActivated then
       for _, FST in ipairs(FSEM.FSTs) do
-        local isInFiringPosition = FireSupportTaskProcessor.Process(
+        local isInFiringPosition = FireSupportTaskProcessor.process(
           FST, CONFIG, saveData, contacts, FSEM.isFirstWave
         )
 
@@ -64,10 +64,10 @@ function FireSupportPlan.Strike(CONFIG, saveData, contacts)
 
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     if not FSEM.isFinished and FSEM.isActivated and FSEM.allBatteriesInPosition then
-      FireSupportPlan._executeFireSupportTasks(FSEM)
+      executeFireSupportTasks(FSEM)
     end
 
-    if FireSupportPlan._isFSEMFinished(FSEM) then
+    if isFSEMFinished(FSEM) then
       FSEM.isFinished = true
     end
   end

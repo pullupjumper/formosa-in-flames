@@ -185,7 +185,7 @@ local AttackManager = {}
 ---@param unit CMO__Unit The unit to check
 ---@param weaponDBID number|nil Specific weapon DBID to look for
 ---@return table Weapon information
-function AttackManager._getWeaponInfo(unit, weaponDBID)
+local function getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0
   local maxWeaponCapacity = 0
   local mountDBID = unit.mounts[1]['mount_dbid']
@@ -235,7 +235,7 @@ end
 ---@param contactGuid string The target contact's unique identifier
 ---@param side string The attacking side's name
 ---@return number Total ammunition currently allocated to attack this target
-function AttackManager._getAmmoAllocatedForTarget(contactGuid, side)
+local function getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
   local weaponAllocations = GameApi.ScenEdit_WeaponAllocation('', contactGuid, side)
@@ -259,7 +259,7 @@ end
 ---@param weaponInfo table Weapon information
 ---@param totalAmmoRequested number Total amount of ammunition requested for attack
 ---@return boolean Whether the unit can fire
-function AttackManager._canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
+local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   -- Check if unit is on hold
   local doctrine = GameApi.ScenEdit_GetDoctrine(unit.guid)
 
@@ -286,7 +286,7 @@ function AttackManager._canUnitFire(unit, contact, weaponInfo, totalAmmoRequeste
   end
 
   -- Check if total weapons already allocated to this target meets requirements
-  local totalAmmoAlreadyAllocatedForTarget = AttackManager._getAmmoAllocatedForTarget(contact.guid, unit.side)
+  local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
     Logger.log('func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
@@ -305,7 +305,7 @@ end
 ---@param grpIdx number Current group index
 ---@return boolean Whether to advance to next battery
 ---@return number Number of weapons allocated
-function AttackManager._processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlreadyAllocated, weaponDBID, grpIdx)
+local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlreadyAllocated, weaponDBID, grpIdx)
   local ammoAllocated = 0
   local advanceBattery = false
 
@@ -322,11 +322,11 @@ function AttackManager._processUnitGroup(groupUnit, contact, totalAmmoRequested,
   end
 
   -- Find weapon info and check availability
-  local weaponInfo = AttackManager._getWeaponInfo(unit, weaponDBID)
+  local weaponInfo = getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
-  if AttackManager._canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
+  if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
     -- Determine how many weapons to allocate for this attack
     local ammoNeeded = totalAmmoRequested - ammoAlreadyAllocated
     local ammoToAllocate = math.min(ammoNeeded, weaponInfo.availableWeapons)
@@ -357,13 +357,13 @@ end
 ---@param totalAmmoRequested number Total amount of ammunition requested for this attack
 ---@param weaponDBID number Specific weapon DBID to use
 ---@return table Results including allocated weapons
-function AttackManager._processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
+local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
-  local weaponInfo = AttackManager._getWeaponInfo(unit, weaponDBID)
+  local weaponInfo = getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
-  if AttackManager._canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
+  if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
     -- Determine how many weapons to allocate for this attack
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
 
@@ -390,7 +390,7 @@ end
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
 ---@param side string The side to use for the attack, default is 'China'
 ---@return table Results including next indices and number of weapons launched
-function AttackManager.AttackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, weaponDBID, side)
+function AttackManager.attackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
   local totalAmmoAllocated = 0
   local attemptCount = 0
@@ -418,7 +418,7 @@ function AttackManager.AttackContact(contactGUID, ammoToAllocate, batteries, bty
       -- Handle differently based on whether it's a group or individual unit
       if actualUnit.group then
         -- Track if we need to advance to next battery
-        local advanceBattery, ammoAllocated = AttackManager._processUnitGroup(
+        local advanceBattery, ammoAllocated = processUnitGroup(
           actualUnit, contact, ammoToAllocate, totalAmmoAllocated, wpnDBID, grpIdx
         )
 
@@ -442,7 +442,7 @@ function AttackManager.AttackContact(contactGUID, ammoToAllocate, batteries, bty
         end
       else
         -- Handle single unit
-        local unitResult = AttackManager._processSingleUnit(actualUnit, contact, ammoToAllocate, wpnDBID)
+        local unitResult = processSingleUnit(actualUnit, contact, ammoToAllocate, wpnDBID)
         totalAmmoAllocated = totalAmmoAllocated + unitResult.ammoAllocated
         attemptCount = attemptCount + 1
 
@@ -463,7 +463,7 @@ end
 
 ---@param opts SBJ__AttackContacts_Params
 ---@return number Total number of ammunition launched across all contacts
-function AttackManager.AttackContacts(opts)
+function AttackManager.attackContacts(opts)
   local result = { btyIdx = 1, grpIdx = 1, launchedNum = 0 }
   local totalLaunchedNum = 0
   local contacts = opts.contacts or {}
@@ -473,7 +473,7 @@ function AttackManager.AttackContacts(opts)
   local side = opts.side or 'China'
 
   for _, contact in ipairs(contacts) do
-    result = AttackManager.AttackContact(
+    result = AttackManager.attackContact(
       contact,
       qty,
       batteries,

@@ -9,7 +9,7 @@ local TargetingProcess = {}
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]
-function TargetingProcess.FindInfantry(opts)
+function TargetingProcess.findInfantry(opts)
   local contacts = opts.contacts
   local task = opts.task
   local targets = {}
@@ -28,7 +28,7 @@ end
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]
-function TargetingProcess.FindAirborne(opts)
+function TargetingProcess.findAirborne(opts)
   local contacts = opts.contacts
   local task = opts.task
   local CONFIG = opts.CONFIG
@@ -53,7 +53,7 @@ end
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]
-function TargetingProcess.AnalyzeEmissions(opts)
+function TargetingProcess.analyzeEmissions(opts)
   local contacts = opts.contacts
   local task = opts.task
   local CONFIG = opts.CONFIG
@@ -81,14 +81,14 @@ end
 ---@param distance number
 ---@param transmission table
 ---@return boolean
-function TargetingProcess._isWithinRange(CONFIG, distance, transmission)
+local function isWithinRange(CONFIG, distance, transmission)
   return distance <= CONFIG.c.SIGINT.maxRange and transmission.temp > CONFIG.c.SIGINT.maxCount
 end
 
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]
-function TargetingProcess.FindMobileTargets(opts)
+function TargetingProcess.findMobileTargets(opts)
   local contacts = opts.contacts
   local task = opts.task
   local targets = {}
@@ -109,7 +109,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param contacts string[]
 ---@return string[]|nil
-function TargetingProcess._filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, contacts)
+local function filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, contacts)
   local targets = {}
   local isTracking = false
 
@@ -128,11 +128,11 @@ function TargetingProcess._filterTargetsWithinRangeOfRadioSource(CONFIG, saveDat
       for _, tm in pairs(saveData.c.SIGINT.transmissions) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
-        if distance and TargetingProcess._isWithinRange(CONFIG, distance, tm) then
+        if distance and isWithinRange(CONFIG, distance, tm) then
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.TrackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
+            isTracking = Recon.trackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
           end
         end
       end
@@ -145,24 +145,24 @@ end
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]|nil
-function TargetingProcess.FindRadioDirection(opts)
+function TargetingProcess.findRadioDirection(opts)
   local contacts = opts.contacts
   local saveData = opts.saveData
   local task = opts.task
   local CONFIG = opts.CONFIG
   local targets = {}
-  local mobileTargets = TargetingProcess.FindMobileTargets({ contacts = contacts, task = task })
-  local c2Targets = TargetingProcess.FindC2({ contacts = contacts, task = task })
-  Utils.InsertList(targets, mobileTargets)
-  Utils.InsertList(targets, c2Targets)
-  local radioSource = TargetingProcess._filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, targets)
+  local mobileTargets = TargetingProcess.findMobileTargets({ contacts = contacts, task = task })
+  local c2Targets = TargetingProcess.findC2({ contacts = contacts, task = task })
+  Utils.insertList(targets, mobileTargets)
+  Utils.insertList(targets, c2Targets)
+  local radioSource = filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, targets)
   return radioSource
 end
 
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]|nil
-function TargetingProcess.FindNavalTargets(opts)
+function TargetingProcess.findNavalTargets(opts)
   local shouldTrack = opts.shouldTrack or false
   local contacts = opts.contacts
   local saveData = opts.saveData
@@ -186,7 +186,7 @@ function TargetingProcess.FindNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.TrackTarget(CONFIG, saveData, side.units, CONFIG.platformDBID12, contact)
+          hasTracked = Recon.trackTarget(CONFIG, saveData, side.units, CONFIG.platformDBID12, contact)
           Logger.log("hasTracked: " .. tostring(hasTracked))
         end
       end
@@ -199,7 +199,7 @@ end
 ---comment
 ---@param opts SBJ__FilterParams
 ---@return string[]
-function TargetingProcess.FindC2(opts)
+function TargetingProcess.findC2(opts)
   local contacts = opts.contacts
   local task = opts.task
   local targets = {}
@@ -222,7 +222,7 @@ end
 ---@param contactAge number
 ---@param isFirstWave boolean
 ---@return boolean
-function TargetingProcess.EvaluateTarget(target, contactAge, isFirstWave)
+function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
   local actualUnit = GameApi.ScenEdit_GetUnit(target.actualunitid)
 
   if not actualUnit then
@@ -243,7 +243,7 @@ end
 ---@param task SBJ__Task
 ---@param isFirstWave boolean
 ---@return string[]
-function TargetingProcess.AssessTargetsDamage(task, isFirstWave)
+function TargetingProcess.assessTargetsDamage(task, isFirstWave)
   local evaluatedTargetlist = {}
 
   if type(task.target.list) ~= 'table' or #task.target.list == 0 then
@@ -253,7 +253,7 @@ function TargetingProcess.AssessTargetsDamage(task, isFirstWave)
   for _, guid in ipairs(task.target.list) do
     local actualTarget = GameApi.ScenEdit_GetContact('China', guid)
 
-    if actualTarget and TargetingProcess.EvaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
+    if actualTarget and TargetingProcess.evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)
     end
   end
@@ -261,7 +261,7 @@ function TargetingProcess.AssessTargetsDamage(task, isFirstWave)
   return evaluatedTargetlist
 end
 
-function TargetingProcess.SelectTargetsByQueryParams(opts)
+function TargetingProcess.selectTargetsByQueryParams(opts)
   local targetlist = opts.targetlist
   local queryParams = opts.queryParams
   local selectedTargetlist = {}

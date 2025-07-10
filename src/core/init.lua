@@ -186,7 +186,7 @@ local function initATO(saveData)
       -- end
 
       if type(package.target.objs) == 'table' then
-        package.target.list = TargetingProcess.SelectTargetsByQueryParams({
+        package.target.list = TargetingProcess.selectTargetsByQueryParams({
           targetlist = saveData.c.targetlist,
           queryParams = package.target.objs
         })
@@ -195,18 +195,18 @@ local function initATO(saveData)
       if package.striker.startTime == nil and index > 1 then
         package.striker.startTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval
+          Utils.parseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval
         )
         package.striker.endTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval + 40 * 60
+          Utils.parseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval + 40 * 60
         )
       end
 
       if package.striker.endTime == nil then
         package.striker.endTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          Utils.ParseDatetimeToTimestamp(package.striker.startTime) + 40 * 60
+          Utils.parseDatetimeToTimestamp(package.striker.startTime) + 40 * 60
         )
       end
 
@@ -215,11 +215,11 @@ local function initATO(saveData)
         if package[role] and package[role].startTime == nil then
           package[role].startTime = os.date(
             "%Y-%m-%d %I:%M:%S",
-            Utils.ParseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
+            Utils.parseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
           )
           package[role].endTime = os.date(
             "%Y-%m-%d %I:%M:%S",
-            Utils.ParseDatetimeToTimestamp(package[role].startTime) + 45 * 60
+            Utils.parseDatetimeToTimestamp(package[role].startTime) + 45 * 60
           )
         end
       end
@@ -238,20 +238,20 @@ local function initFSP(saveData)
   for key, FSEM in pairs(saveData.c.ground.FSP) do
     for index, FST in ipairs(FSEM.FSTs) do
       if type(FST.target.objs) == 'table' then
-        FST.target.list = TargetingProcess.SelectTargetsByQueryParams({
+        FST.target.list = TargetingProcess.selectTargetsByQueryParams({
           targetlist = saveData.c.targetlist,
           queryParams = FST.target.objs
         })
       end
 
       if FST.startTime == nil and index == 1 then
-        GameUtils.PrintBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
+        GameUtils.printBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
       end
 
       if FST.startTime == nil and index > 1 then
         FST.startTime = os.date(
           "%Y-%m-%d %I:%M:%S",
-          Utils.ParseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
+          Utils.parseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
         )
       end
     end
@@ -420,7 +420,7 @@ local function initTargetlist(saveData)
 end
 
 local function initRunways(saveData)
-  local targetlist = TargetingProcess.SelectTargetsByQueryParams({
+  local targetlist = TargetingProcess.selectTargetsByQueryParams({
     targetlist = saveData.c.targetlist,
     queryParams = {
       { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
@@ -466,7 +466,7 @@ end
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].target.list <= 0 then
-  ShipMovement.CalculateDestination(saveData)
+  ShipMovement.calculateDestination(saveData)
   initAC(saveData)
   initTargetlist(saveData)
   initATO(saveData)
