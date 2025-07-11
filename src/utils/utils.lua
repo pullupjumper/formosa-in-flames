@@ -133,13 +133,12 @@ function Utils.atan2(y, x)
 end
 
 ---comment
----@param coords any
----@return nil
----@return string
+---@param coords table<number,{latitude: number, longitude: number}>
+---@return {latitude: number, longitude: number}|nil
 function Utils.calculateSphericalCenter(coords)
   -- 檢查輸入是否有效
   if not coords or #coords < 4 then
-    return nil, "需要至少4個座標點來形成四方形"
+    return nil
   end
 
   -- 初始化笛卡爾座標總和
@@ -150,7 +149,7 @@ function Utils.calculateSphericalCenter(coords)
   -- 將經緯度轉換為笛卡爾座標並計算總和
   for _, point in ipairs(coords) do
     if not point.latitude or not point.longitude then
-      return nil, "每個座標點必須包含latitude和longitude屬性"
+      return nil
     end
 
     -- 將角度轉換為弧度

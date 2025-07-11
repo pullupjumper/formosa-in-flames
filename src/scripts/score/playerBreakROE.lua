@@ -1,4 +1,5 @@
 local config = require("src.core.constants")
+local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
@@ -9,11 +10,7 @@ if unit then
     "Taiwan", (score + config.s.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )
-  GameApi.ScenEdit_SpecialMessage(
-    'Taiwan',
-    'You have attacked first to cause a military esclaion.',
-    { latitude = unit.latitude, longitude = unit.longitude }
-  )
+  Logger.log('You have attacked first to cause a military esclaion.')
 end
 -- ScenEdit_SpecialMessage('Taiwan', 'enter')
 -- if unit then

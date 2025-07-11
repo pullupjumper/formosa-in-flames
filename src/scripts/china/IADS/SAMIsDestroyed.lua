@@ -1,4 +1,4 @@
-local GameUtils = require("src.utils.gameUtils")
+local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
@@ -6,34 +6,9 @@ local units = GameApi.VP_GetSide({ side = 'China' }).units
 local temp = { unit = nil, distance = config.radarDistance }
 
 if unit == nil then
-	GameApi.ScenEdit_SpecialMessage('China', 'unit == nil')
+	Logger.error('unit == nil')
 	return
 end
-
--- if unit.dbid == CONFIG.platformDBID25 then
---     for _, component in ipairs(unit.components) do
---         if component['comp_dbid'] == CONFIG.sensorDBID13
---             and component['comp_status'] == 'Destroyed' then
---             GameUtils.PrintBox(
---                 'China',
---                 unit.name .. '\'s jammer is destroyed',
---                 'comp_dbid/' .. tostring(component['comp_dbid']),
---                 'comp_status/' .. tostring(component['comp_status'])
---             )
-
---             for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
---                 if unit.guid == value.guid then
---                     local event = ScenEdit_GetEvent(value.eventName)
-
---                     if event then
---                         event.isActive = false
---                         ScenEdit_SpecialMessage('China', tostring(event.eventName) .. ' is deactivated')
---                     end
---                 end
---             end
---         end
---     end
--- end
 
 local latitude = unit.latitude
 local longitude = unit.longitude
@@ -47,12 +22,9 @@ for _, component in ipairs(unit.components) do
 				or component['comp_dbid'] == config.sensorDBID5
 				or component['comp_dbid'] == config.sensorDBID6)
 			and component['comp_status'] == 'Destroyed' then
-		GameUtils.printBox(
-			'China',
-			unit.name .. '\'s radar is damaged',
-			'comp_dbid/' .. tostring(component['comp_dbid']),
-			'comp_status/' .. tostring(component['comp_status'])
-		)
+		Logger.log(unit.name ..
+		'\'s radar is damaged - comp_dbid/' ..
+		tostring(component['comp_dbid']) .. ', comp_status/' .. tostring(component['comp_status']))
 		isDestroyed = true
 	end
 end
@@ -89,5 +61,5 @@ end
 
 if temp.unit ~= nil then
 	GameApi.ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-	GameUtils.printBox('China', tostring(temp.unit.name) .. '\'s radar is activated')
+	Logger.log(tostring(temp.unit.name) .. '\'s radar is activated')
 end

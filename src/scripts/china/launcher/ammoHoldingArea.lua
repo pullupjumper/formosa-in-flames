@@ -1,4 +1,5 @@
 local gKH = require('src.core.gKH_State_Standalone')
+local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.constants")
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -7,7 +8,7 @@ local unit = GameApi.ScenEdit_UnitX()
 
 
 if saveData == nil then
-  GameApi.ScenEdit_SpecialMessage('China', 'saveData is nil')
+  Logger.error('saveData is nil')
   return
 end
 

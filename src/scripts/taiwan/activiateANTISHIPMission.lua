@@ -1,8 +1,8 @@
 local gKH = require('src.core.gKH_State_Standalone')
+local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 
--- local unit = GameApi.ScenEdit_UnitX()
 local contacts = GameApi.ScenEdit_GetContacts('Taiwan')
 local event = GameApi.ScenEdit_EventX()
 local temp = {}
@@ -21,12 +21,12 @@ local function setAntiShipMissionStartTime()
 end
 
 if saveData == nil then
-  GameApi.ScenEdit_SpecialMessage('Taiwan', 'saveData is nil')
+  Logger.error('saveData is nil')
   return
 end
 
 if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
-  for index, value in ipairs(contacts) do
+  for _, value in ipairs(contacts) do
     if value:inArea(saveData.t.ground.ascm.test.nai1) and value.typed == 2 then
       table.insert(temp, value)
     end

@@ -7,7 +7,7 @@ local units = GameApi.VP_GetSide({ side = 'China' }).units
 local temp = { unit = nil, distance = config.radarDistance }
 
 if unit == nil then
-  GameApi.ScenEdit_SpecialMessage('China', 'unit == nil')
+  Logger.error('unit == nil')
   return
 end
 

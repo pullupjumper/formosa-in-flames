@@ -39,14 +39,14 @@ config.u = {}
 config.u.SIGINT = {}
 config.s = {}
 config.c.areas = {
-  ["OPAREA/FUZHOU"] = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
+  ["OPAREA/FUZHOU"] = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
   ["OPAREA/PUTIAN"] = { 'RP-156577', 'RP-156578', 'RP-156579', 'RP-156580', },
   ["OPAREA/CHANGZHOU"] = { 'RP-156581', 'RP-156582', 'RP-156583', 'RP-156584', },
   ["OPAREA/XIAMEN"] = { 'RP-156585', 'RP-156586', 'RP-156587', 'RP-156588', },
   ["OPAREA/ZHANGZHOU"] = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
   ["OPAREA/SHANTOU"] = { 'RP-156589', 'RP-156590', 'RP-156591', 'RP-156592', },
   ["OPAREA/SHANWEI"] = { 'RP-156593', 'RP-156594', 'RP-156595', 'RP-156596', },
-  ["OPAREA/MEIZHOU"] = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
+  ["OPAREA/MEIZHOU"] = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
   ["RL/PINGTAN"] = { 'RP-114443', 'RP-114444', 'RP-114445', 'RP-114446' },
   ["HA/PINGTAN"] = { 'RP-114439', 'RP-114440', 'RP-114441', 'RP-114442' },
   ["FP1/PINGTAN"] = { 'RP-44264', 'RP-44265', 'RP-44266', 'RP-44267' },
@@ -313,7 +313,7 @@ config.c.IADS.C2FacilityDBIDs = { 319, 318, 115, 113 }
 config.c.IADS.randomRadius = 10
 config.c.IADS.C2Settings = {
   {
-    position = { lat = "N 25.30.05", lon = "E 119.30.41" },
+    position = { lat = "N 25.30.37", lon = "E 119.30.54" },
     areas = { config.c.areas["OPAREA/FUZHOU"], },
     areaName = 'Fuzhou'
   },
@@ -348,7 +348,7 @@ config.c.IADS.C2Settings = {
     areaName = 'Shanwei'
   },
   {
-    position = { lat = "N 23.55.21", lon = "E 115.36.40" },
+    position = { lat = "N 24.06.12", lon = "E 116.05.36" },
     areas = { config.c.areas["OPAREA/MEIZHOU"], },
     areaName = 'Meizhou'
   },

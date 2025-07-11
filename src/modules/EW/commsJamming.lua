@@ -57,56 +57,56 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
   return math.floor(comm_bonif)
 end
 
-local function commsJamming(affectedUnit, jammer, jammedNum)
-  if affectedUnit.isOutOfComms then
-    if affectedUnit.outofcomms <= math.random(15, 25) then
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
-      affectedUnit.outofcomms = affectedUnit.outofcomms + 1
-    else
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-      affectedUnit.outofcomms = 0
-      affectedUnit.isOutOfComms = false
-    end
-  elseif affectedUnit.isOutOfComms == false then
-    local actualAffectedUnit = GameApi.ScenEdit_GetUnit(affectedUnit.guid)
+-- local function commsJamming(config, saveData, affectedUnit, jammer, jammedNum)
+--   if affectedUnit.isOutOfComms then
+--     if affectedUnit.outofcomms <= math.random(15, 25) then
+--       GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
+--       affectedUnit.outofcomms = affectedUnit.outofcomms + 1
+--     else
+--       GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+--       affectedUnit.outofcomms = 0
+--       affectedUnit.isOutOfComms = false
+--     end
+--   elseif affectedUnit.isOutOfComms == false then
+--     local actualAffectedUnit = GameApi.ScenEdit_GetUnit(affectedUnit.guid)
 
-    if actualAffectedUnit and actualAffectedUnit.outOfComms then
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-      affectedUnit.outofcomms = 0
-    end
-  end
+--     if actualAffectedUnit and actualAffectedUnit.outOfComms then
+--       GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+--       affectedUnit.outofcomms = 0
+--     end
+--   end
 
-  if jammer and jammer.condition == 'Airborne' and jammer.jammer then
-    if affectedUnit.isOutOfComms == false then
-      if affectedUnit.outofcomms < math.random(5, 10) and affectedUnit.outofcomms >= 0 and jammedNum < config.c.commsJamming.limit then
-        local d = GameApi.Tool_Range(jammer.guid, affectedUnit.guid)
-        local n = 1 * math.sqrt(1 - (d ^ 1.9 / config.c.commsJamming.range ^ 1.8))
+--   if jammer and jammer.condition == 'Airborne' and jammer.jammer then
+--     if affectedUnit.isOutOfComms == false then
+--       if affectedUnit.outofcomms < math.random(5, 10) and affectedUnit.outofcomms >= 0 and jammedNum < config.c.commsJamming.limit then
+--         local d = GameApi.Tool_Range(jammer.guid, affectedUnit.guid)
+--         local n = 1 * math.sqrt(1 - (d ^ 1.9 / config.c.commsJamming.range ^ 1.8))
 
-        if n == n and n > (math.random() / 2) then
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
-          affectedUnit.outofcomms = affectedUnit.outofcomms + 1
-          affectedUnit.isOutOfComms = true
-          jammedNum = jammedNum + 1
-        else
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-          affectedUnit.outofcomms = 0
-          affectedUnit.isOutOfComms = false
-          jammedNum = jammedNum + 1
-        end
-      elseif affectedUnit.outofcomms < 0 then
-        GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-        affectedUnit.isOutOfComms = false
-        affectedUnit.outofcomms = affectedUnit.outofcomms + 1
-      else
-        GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-        affectedUnit.isOutOfComms = false
-        affectedUnit.outofcomms = math.random(-5, -1)
-      end
-    end
-  end
+--         if n == n and n > (math.random() / 2) then
+--           GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
+--           affectedUnit.outofcomms = affectedUnit.outofcomms + 1
+--           affectedUnit.isOutOfComms = true
+--           jammedNum = jammedNum + 1
+--         else
+--           GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+--           affectedUnit.outofcomms = 0
+--           affectedUnit.isOutOfComms = false
+--           jammedNum = jammedNum + 1
+--         end
+--       elseif affectedUnit.outofcomms < 0 then
+--         GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+--         affectedUnit.isOutOfComms = false
+--         affectedUnit.outofcomms = affectedUnit.outofcomms + 1
+--       else
+--         GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
+--         affectedUnit.isOutOfComms = false
+--         affectedUnit.outofcomms = math.random(-5, -1)
+--       end
+--     end
+--   end
 
-  return jammedNum
-end
+--   return jammedNum
+-- end
 
 ---comment
 ---@param config SBJ__CONFIG

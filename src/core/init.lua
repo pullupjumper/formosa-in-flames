@@ -2,6 +2,7 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
 local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
@@ -272,7 +273,7 @@ local function initFSP(saveData)
       end
 
       if FST.startTime == nil and index == 1 then
-        GameUtils.printBox('China', 'No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
+        Logger.error('No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
       end
 
       if FST.startTime == nil and index > 1 then
@@ -527,10 +528,10 @@ if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1]
 
   if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
-    GameApi.ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
+    Logger.log('Init data and save.')
   end
 else
-  GameApi.ScenEdit_SpecialMessage('Taiwan', 'Does not init data.')
+  Logger.log('Does not init data.')
 end
 
 -- the following forces have been placed under your command:
