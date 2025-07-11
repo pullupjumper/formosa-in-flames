@@ -1,5 +1,5 @@
 local UnitGenerator = require('src.modules.unitGenerator')
-local CONFIG = require('src.core.constants')
+local config = require('src.core.constants')
 local Logger = require("src.utils.logger")
 local gKH = require('src.core.gKH_State_Standalone')
 
@@ -11,10 +11,10 @@ if not saveData then
 end
 
 -- 使用新的 unitGenerator API
-UnitGenerator.removeC2Facilities(CONFIG)
-UnitGenerator.addC2Facilities(CONFIG)
+UnitGenerator.removeC2Facilities(config)
+UnitGenerator.addC2Facilities(config)
 
 -- 使用新的 initC2Facilities 函數
-UnitGenerator.initC2Facilities(CONFIG, saveData)
+UnitGenerator.initC2Facilities(config, saveData)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

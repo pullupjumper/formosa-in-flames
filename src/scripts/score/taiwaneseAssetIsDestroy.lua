@@ -1,5 +1,5 @@
 local gKH = require('src.core.gKH_State_Standalone')
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local unit = GameApi.ScenEdit_UnitX()
@@ -14,22 +14,22 @@ if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
   if unit.type == 'Facility' then
-    if unit.dbid == CONFIG.platformDBID26 then
+    if unit.dbid == config.platformDBID26 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.undergroundShelterIsDestroyed),
+        (score + config.s.undergroundShelterIsDestroyed),
         "Underground shelter has been destoryed"
       )
     end
 
-    if unit.dbid == CONFIG.platformDBID50 then
+    if unit.dbid == config.platformDBID50 then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
       GameApi.ScenEdit_SpecialMessage('Taiwan', "An ammunition section has been destoryed.")
     end
 
-    if unit.dbid == CONFIG.platformDBID53 then
+    if unit.dbid == config.platformDBID53 then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
@@ -38,10 +38,14 @@ if unit then
   end
 
   if unit.type == 'Aircraft' then
-    if unit.dbid == CONFIG.platformDBID38 then
+    if unit.dbid == config.platformDBID38 then
       saveData.t.air.landBased.AEW[unit.guid] = nil
     else
       saveData.t.air.landBased.AC[unit.guid] = nil
+    end
+
+    if unit.dbid == config.platformDBID45 then
+      saveData.u.SIGINT.RA[unit.guid] = nil
     end
   end
 end

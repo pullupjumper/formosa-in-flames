@@ -1,5 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local CONFIG = require("src.core.constants")
 
 local CommsJamming = {}
 
@@ -79,9 +78,9 @@ local function commsJamming(affectedUnit, jammer, jammedNum)
 
   if jammer and jammer.condition == 'Airborne' and jammer.jammer then
     if affectedUnit.isOutOfComms == false then
-      if affectedUnit.outofcomms < math.random(5, 10) and affectedUnit.outofcomms >= 0 and jammedNum < CONFIG.c.commsJamming.limit then
+      if affectedUnit.outofcomms < math.random(5, 10) and affectedUnit.outofcomms >= 0 and jammedNum < config.c.commsJamming.limit then
         local d = GameApi.Tool_Range(jammer.guid, affectedUnit.guid)
-        local n = 1 * math.sqrt(1 - (d ^ 1.9 / CONFIG.c.commsJamming.range ^ 1.8))
+        local n = 1 * math.sqrt(1 - (d ^ 1.9 / config.c.commsJamming.range ^ 1.8))
 
         if n == n and n > (math.random() / 2) then
           GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })

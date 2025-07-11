@@ -1,6 +1,6 @@
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local GameApi = require("src.utils.gameApi")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local ship = GameApi.ScenEdit_UnitX()
 
@@ -8,8 +8,8 @@ if not ship then
   return
 end
 
-if AmphibiousAssault.isFerryOrLST(CONFIG, ship) then
-  local zone = AmphibiousAssault.getShipZone(CONFIG, ship)
+if AmphibiousAssault.isFerryOrLST(config, ship) then
+  local zone = AmphibiousAssault.getShipZone(config, ship)
 
   if zone then
     local count = AmphibiousAssault.launchACV({

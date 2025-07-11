@@ -23,10 +23,10 @@ local function setMissionStartTime(mission)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@return boolean
-function AmphibiousAssault.setLandingMissionStartTime(CONFIG, saveData)
+function AmphibiousAssault.setLandingMissionStartTime(config, saveData)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   if not currentTime then
@@ -34,7 +34,7 @@ function AmphibiousAssault.setLandingMissionStartTime(CONFIG, saveData)
   end
 
   saveData.c.PHIBOP.airlandingMissionStartTime = currentTime
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+  local operationalZones = config.c.PHIBOP.operationalZones
 
   for _, zone in ipairs(operationalZones) do
     for _, mission in ipairs(zone.tansportHelicopter.missions) do
@@ -70,11 +70,11 @@ local function isLST(unit)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param units CMO__SideUnit[]
 ---@return boolean
-function AmphibiousAssault.setCoursesForLSTs(CONFIG, units)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function AmphibiousAssault.setCoursesForLSTs(config, units)
+  local operationalZones = config.c.PHIBOP.operationalZones
 
   for _, item in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(item.guid)
@@ -102,7 +102,7 @@ function AmphibiousAssault.setCoursesForLSTs(CONFIG, units)
     end
   end
 
-  for _, group in pairs(CONFIG.c.PHIBOP.sag) do
+  for _, group in pairs(config.c.PHIBOP.sag) do
     local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
     if not unit then
@@ -209,23 +209,23 @@ function AmphibiousAssault.launchACV(params)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param ship CMO__Unit
 ---@return boolean
-function AmphibiousAssault.isFerryOrLST(CONFIG, ship)
-  return (ship.dbid == CONFIG.platformDBID7
-    or ship.dbid == CONFIG.platformDBID8
-    or ship.dbid == CONFIG.platformDBID9
-    or ship.dbid == CONFIG.platformDBID10
+function AmphibiousAssault.isFerryOrLST(config, ship)
+  return (ship.dbid == config.platformDBID7
+    or ship.dbid == config.platformDBID8
+    or ship.dbid == config.platformDBID9
+    or ship.dbid == config.platformDBID10
     or ship.name == 'Ferry')
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param ship CMO__Unit
 ---@return SBJ__OperationalZone|nil
-function AmphibiousAssault.getShipZone(CONFIG, ship)
-  for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
+function AmphibiousAssault.getShipZone(config, ship)
+  for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
     if ship:inArea(zone.ACV.area) then
       return zone
     end

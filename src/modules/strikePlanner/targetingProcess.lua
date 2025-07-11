@@ -31,14 +31,14 @@ end
 function TargetingProcess.findAirborne(opts)
   local contacts = opts.contacts
   local task = opts.task
-  local CONFIG = opts.CONFIG
+  local config = opts.config
   local targets = {}
 
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if contact.emissions and contact.emissions[1] then
         local emission = contact.emissions[1]['sensor_dbid']
-        if (emission == CONFIG.sensorDBID7 or emission == CONFIG.sensorDBID8) and
+        if (emission == config.sensorDBID7 or emission == config.sensorDBID8) and
             contact.typed == 0 and
             contact:inArea(area) then
           table.insert(targets, contact.guid)
@@ -56,17 +56,17 @@ end
 function TargetingProcess.analyzeEmissions(opts)
   local contacts = opts.contacts
   local task = opts.task
-  local CONFIG = opts.CONFIG
+  local config = opts.config
   local SAMTargets = {}
 
   for _, area in ipairs(task.target.areas) do
     for _, c in ipairs(contacts) do
       local isSensor = c.emissions and
-          (c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID9 or
-            c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID10 or
-            c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID11 or
-            c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID12 or
-            c.emissions[1]['sensor_dbid'] == CONFIG.sensorDBID14)
+          (c.emissions[1]['sensor_dbid'] == config.sensorDBID9 or
+            c.emissions[1]['sensor_dbid'] == config.sensorDBID10 or
+            c.emissions[1]['sensor_dbid'] == config.sensorDBID11 or
+            c.emissions[1]['sensor_dbid'] == config.sensorDBID12 or
+            c.emissions[1]['sensor_dbid'] == config.sensorDBID14)
       local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
       if c:inArea(area) and isSAM then table.insert(SAMTargets, c.guid) end
@@ -77,12 +77,12 @@ function TargetingProcess.analyzeEmissions(opts)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param distance number
 ---@param transmission table
 ---@return boolean
-local function isWithinRange(CONFIG, distance, transmission)
-  return distance <= CONFIG.c.SIGINT.maxRange and transmission.temp > CONFIG.c.SIGINT.maxCount
+local function isWithinRange(config, distance, transmission)
+  return distance <= config.c.SIGINT.maxRange and transmission.temp > config.c.SIGINT.maxCount
 end
 
 ---comment
@@ -105,11 +105,11 @@ function TargetingProcess.findMobileTargets(opts)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param contacts string[]
 ---@return string[]|nil
-local function filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, contacts)
+local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
   local isTracking = false
 
@@ -128,11 +128,11 @@ local function filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, contacts)
       for _, tm in pairs(saveData.c.SIGINT.transmissions) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
-        if distance and isWithinRange(CONFIG, distance, tm) then
+        if distance and isWithinRange(config, distance, tm) then
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.trackTarget(CONFIG, saveData, units, CONFIG.platformDBID13, contact)
+            isTracking = Recon.trackTarget(config, saveData, units, config.platformDBID13, contact)
           end
         end
       end
@@ -149,13 +149,13 @@ function TargetingProcess.findRadioDirection(opts)
   local contacts = opts.contacts
   local saveData = opts.saveData
   local task = opts.task
-  local CONFIG = opts.CONFIG
+  local config = opts.config
   local targets = {}
   local mobileTargets = TargetingProcess.findMobileTargets({ contacts = contacts, task = task })
   local c2Targets = TargetingProcess.findC2({ contacts = contacts, task = task })
   Utils.insertList(targets, mobileTargets)
   Utils.insertList(targets, c2Targets)
-  local radioSource = filterTargetsWithinRangeOfRadioSource(CONFIG, saveData, targets)
+  local radioSource = filterTargetsWithinRangeOfRadioSource(config, saveData, targets)
   return radioSource
 end
 
@@ -167,7 +167,7 @@ function TargetingProcess.findNavalTargets(opts)
   local contacts = opts.contacts
   local saveData = opts.saveData
   local task = opts.task
-  local CONFIG = opts.CONFIG
+  local config = opts.config
   local navalTargets = {}
   local hasTracked = false
 
@@ -186,7 +186,7 @@ function TargetingProcess.findNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.trackTarget(CONFIG, saveData, side.units, CONFIG.platformDBID12, contact)
+          hasTracked = Recon.trackTarget(config, saveData, side.units, config.platformDBID12, contact)
           Logger.log("hasTracked: " .. tostring(hasTracked))
         end
       end

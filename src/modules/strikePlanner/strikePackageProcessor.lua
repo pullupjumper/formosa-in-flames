@@ -72,12 +72,12 @@ end
 
 --- Finds and evaluates potential targets for the package.
 ---@param packageData SBJ__Package
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return string[]
-local function findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
+local function findTargets(packageData, config, saveData, contacts, isFirstWave)
   local evaluatedTargetlist = {}
 
   -- Assess fixed targets (from mission plan)
@@ -90,7 +90,7 @@ local function findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
     for _, name in ipairs(packageData.target.filterNames) do
       if TargetingProcess[name] then
         local filteredTargets = TargetingProcess[name]({
-          CONFIG = CONFIG,
+          config = config,
           saveData = saveData,
           contacts = contacts,
           task = packageData -- Pass packageData as 'task' for compatibility
@@ -112,12 +112,12 @@ end
 --- This is the main entry point. It takes a packageData table and executes
 --- the entire launch sequence for it.
 ---@param packageData SBJ__Package The pure data table from saveData
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
 ---@param isFirstWave boolean
 ---@return boolean hasLaunched
-function StrikePackageProcessor.process(packageData, CONFIG, saveData, contacts, isFirstWave)
+function StrikePackageProcessor.process(packageData, config, saveData, contacts, isFirstWave)
   -- 1. Check if it's time to start
   if not (packageData.escort and GameUtils.isAfterStartTime(packageData.escort.startTime)) then
     return false
@@ -137,7 +137,7 @@ function StrikePackageProcessor.process(packageData, CONFIG, saveData, contacts,
   Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
 
   -- 3. Find targets
-  local evaluatedTargetlist = findTargets(packageData, CONFIG, saveData, contacts, isFirstWave)
+  local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
   Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < packageData.target.minTargetCount then

@@ -2,7 +2,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local Recon = require("src.modules.strikePlanner.recon")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
@@ -31,22 +31,22 @@ if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c
 
   for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(value)
-    if unit and unit.dbid == CONFIG.platformDBID51 then
-      table.insert(ships, { guid = value, weaponDBID = CONFIG.c.surface.lacm.weaponDBID })
+    if unit and unit.dbid == config.platformDBID51 then
+      table.insert(ships, { guid = value, weaponDBID = config.c.surface.lacm.weaponDBID })
     end
   end
 
   AttackManager.attackContacts({
-    contacts = CONFIG.c.surface.lacm.targetlist,
+    contacts = config.c.surface.lacm.targetlist,
     qty = 5,
     batteries = ships,
-    weaponDBID = CONFIG.c.surface.lacm.weaponDBID
+    weaponDBID = config.c.surface.lacm.weaponDBID
   })
   saveData.c.surface.lacm.isActivated = false
 end
 
 if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
-  for _, unit in pairs(CONFIG.c.subSurface.slcm.submarines) do
+  for _, unit in pairs(config.c.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
 
     if actualUnit then
@@ -60,21 +60,21 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveDat
   end
 
   AttackManager.attackContacts({
-    contacts = CONFIG.c.subSurface.slcm.targetlist,
+    contacts = config.c.subSurface.slcm.targetlist,
     qty = 8,
-    batteries = CONFIG.c.subSurface.slcm.submarines,
-    weaponDBID = CONFIG.c.subSurface.slcm.weaponDBID
+    batteries = config.c.subSurface.slcm.submarines,
+    weaponDBID = config.c.subSurface.slcm.weaponDBID
   })
 
   saveData.c.subSurface.slcm.isActivated = false
 end
 
 if saveData.c.ground.isActivated then
-  FireSupportPlan.strike(CONFIG, saveData, contacts)
+  FireSupportPlan.strike(config, saveData, contacts)
 end
 
 if saveData.c.air.isActivated then
-  AirTaskingOrder.airStrike(CONFIG, saveData, contacts)
+  AirTaskingOrder.airStrike(config, saveData, contacts)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

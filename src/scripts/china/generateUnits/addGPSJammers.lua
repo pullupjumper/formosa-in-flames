@@ -1,8 +1,8 @@
 local UnitGenerator = require('src.modules.unitGenerator')
-local CONFIG = require('src.core.constants')
+local config = require('src.core.constants')
 local Logger = require("src.utils.logger")
 
-UnitGenerator.removeJammingZones(CONFIG)
-UnitGenerator.addGPSJammingZones(CONFIG)
+UnitGenerator.removeJammingZones(config)
+UnitGenerator.addGPSJammingZones(config)
 
 Logger.log("Successfully added GPS jammers")

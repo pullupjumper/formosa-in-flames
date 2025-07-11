@@ -1,14 +1,14 @@
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
-  if unit.dbid == CONFIG.platformDBID28
-      or unit.dbid == CONFIG.platformDBID29
-      or unit.dbid == CONFIG.platformDBID30
-      or unit.dbid == CONFIG.platformDBID31
-      or unit.dbid == CONFIG.platformDBID36
-      or unit.dbid == CONFIG.platformDBID57 then
+  if unit.dbid == config.platformDBID28
+      or unit.dbid == config.platformDBID29
+      or unit.dbid == config.platformDBID30
+      or unit.dbid == config.platformDBID31
+      or unit.dbid == config.platformDBID36
+      or unit.dbid == config.platformDBID57 then
     -- if unit.mission then
     --   local mission = ScenEdit_GetMission('China', unit.mission.guid)
 
@@ -33,7 +33,7 @@ if unit then
     --   end
     -- end
 
-    unit.readytime = CONFIG.readytime
+    unit.readytime = config.readytime
     unit.mission = ''
   end
 

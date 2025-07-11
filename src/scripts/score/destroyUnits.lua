@@ -1,8 +1,8 @@
 local gKH = require('src.core.gKH_State_Standalone')
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
-local GPSJamming = require("src.modules.GPSJamming")
+local GPSJamming = require("src.modules.EW.GPSJamming")
 local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -15,85 +15,99 @@ if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
   if unit.type == 'Aircraft' then
-    if unit.condition == 'Parked' and unit.dbid == CONFIG.platformDBID5 then
+    if unit.condition == 'Parked' and unit.dbid == config.platformDBID5 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.destroyingAircraftOnTheGround),
+        (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed an helicopter on the ground."
       )
-    elseif unit.dbid == CONFIG.platformDBID12 or unit.dbid == CONFIG.platformDBID13 then
+    elseif unit.dbid == config.platformDBID47 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.uav),
+        (score + config.s.destroyingAircraftOnTheGround),
+        "Destroyed a recon aircraft."
+      )
+      saveData.c.SIGINT.RA[unit.guid] = nil
+    elseif unit.dbid == config.platformDBID35 or unit.dbid == config.platformDBID37 then
+      GameApi.ScenEdit_SetScore(
+        "Taiwan",
+        (score + config.s.destroyingAircraftOnTheGround),
+        "Destroyed a communications jammer."
+      )
+      saveData.c.commsJamming.jammers[unit.guid] = nil
+    elseif unit.dbid == config.platformDBID12 or unit.dbid == config.platformDBID13 then
+      GameApi.ScenEdit_SetScore(
+        "Taiwan",
+        (score + config.s.uav),
         "Destroyed a recon UAV."
       )
     end
   end
 
   if unit.type == 'Ship' then
-    if unit.dbid == CONFIG.platformDBID7
-        or unit.dbid == CONFIG.platformDBID8
-        or unit.dbid == CONFIG.platformDBID9
-        or unit.dbid == CONFIG.platformDBID10 then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + CONFIG.s.lst), "You have destroyed a ship (LST).")
-    elseif unit.dbid == CONFIG.platformDBID6 then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + CONFIG.s.lhd), "You have destroyed a ship (LHD).")
-    elseif unit.dbid == CONFIG.platformDBID11 then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + CONFIG.s.cv), "You have destroyed a carrier.")
+    if unit.dbid == config.platformDBID7
+        or unit.dbid == config.platformDBID8
+        or unit.dbid == config.platformDBID9
+        or unit.dbid == config.platformDBID10 then
+      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.lst), "You have destroyed a ship (LST).")
+    elseif unit.dbid == config.platformDBID6 then
+      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.lhd), "You have destroyed a ship (LHD).")
+    elseif unit.dbid == config.platformDBID11 then
+      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.cv), "You have destroyed a carrier.")
     else
-      GameApi.ScenEdit_SetScore("Taiwan", (score + CONFIG.s.ddg), "You have destroyed a ship.")
+      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.ddg), "You have destroyed a ship.")
     end
   end
 
   if unit.type == 'Submarine' then
     GameApi.ScenEdit_SetScore(
       "Taiwan",
-      (score + CONFIG.s.sub),
+      (score + config.s.sub),
       "You have destroyed a submarine."
     )
   end
 
   if unit.type == 'Facility' then
-    if unit.dbid == CONFIG.platformDBID22 or
-        unit.dbid == CONFIG.platformDBID24 or
+    if unit.dbid == config.platformDBID22 or
+        unit.dbid == config.platformDBID24 or
         string.find(unit.name, 'DF') or
         string.find(unit.name, 'CJ') then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.tel),
+        (score + config.s.tel),
         "You have destroyed a TEL."
       )
-    elseif unit.dbid == CONFIG.platformDBID25 then
+    elseif unit.dbid == config.platformDBID25 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.tel),
+        (score + config.s.tel),
         "You have destroyed a GPS jammer."
       )
-      GPSJamming.turnOffGPSEffectByUnit(CONFIG, unit)
-    elseif unit.dbid == CONFIG.platformDBID53 then
+      GPSJamming.turnOffGPSEffectByUnit(config, unit)
+    elseif unit.dbid == config.platformDBID53 then
       Launcher.destroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'glcm', saveData)
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.destroyingAmmo),
+        (score + config.s.destroyingAmmo),
         "You have destroyed a ammo revetment."
       )
-    elseif unit.dbid == CONFIG.platformDBID50 then
+    elseif unit.dbid == config.platformDBID50 then
       Launcher.destroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'glcm', saveData)
       GameApi.ScenEdit_SetScore(
         "Taiwan",
-        (score + CONFIG.s.destroyingAmmoTruck),
+        (score + config.s.destroyingAmmoTruck),
         "You have destroyed an ammunition truck."
       )
     else
-      for _, DBID in ipairs(CONFIG.c.IADS.C2FacilityDBIDs) do
+      for _, DBID in ipairs(config.c.IADS.C2FacilityDBIDs) do
         if unit.dbid == DBID and not saveData.c.IADS.C2[unit.guid] then
           GameApi.ScenEdit_SetScore(
             "Taiwan",
-            (score + CONFIG.s.destroyingCivilianFacility),
+            (score + config.s.destroyingCivilianFacility),
             "Destruction of civilian facilities"
           )
         end

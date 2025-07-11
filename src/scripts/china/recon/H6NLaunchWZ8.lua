@@ -2,7 +2,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local Recon = require('src.modules.strikePlanner.recon')
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local unit = GameApi.ScenEdit_UnitX()
 
@@ -24,9 +24,9 @@ if unit then
       local course = nil
 
       if q.isTracking then
-        course = CONFIG.c.recon.courses.WZ8[2]
+        course = config.c.recon.courses.WZ8[2]
       else
-        course = CONFIG.c.recon.courses.WZ8[1]
+        course = config.c.recon.courses.WZ8[1]
       end
 
       local wz8 = Recon.launchWZ8(unit, course)

@@ -20,10 +20,10 @@ end
 
 --- The main entry point for air strikes.
 --- It iterates through waves and packages, handing off the processing to the processor.
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
-function AirTaskingOrder.airStrike(CONFIG, saveData, contacts)
+function AirTaskingOrder.airStrike(config, saveData, contacts)
   if not saveData or not saveData.c or not saveData.c.air or not saveData.c.air.ATO then
     -- Guard against missing data
     return
@@ -35,7 +35,7 @@ function AirTaskingOrder.airStrike(CONFIG, saveData, contacts)
         if not packageData.hasLaunched then
           -- The processor handles the entire sequence for a package in one go.
           -- It returns true if the package was successfully launched.
-          local launched = StrikePackageProcessor.process(packageData, CONFIG, saveData, contacts, waveData.isFirstWave)
+          local launched = StrikePackageProcessor.process(packageData, config, saveData, contacts, waveData.isFirstWave)
           if launched then
             packageData.hasLaunched = true
             -- As per original logic, break after one successful launch to process

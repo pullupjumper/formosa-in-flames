@@ -2,8 +2,8 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
-local CONFIG = require("src.core.constants")
-local SaveData = require("src.core.saveData")
+local config = require("src.core.constants")
+local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
 -- local function initGPSJammers()
@@ -25,7 +25,10 @@ local UnitGenerator = require("src.modules.unitGenerator")
 --     end
 -- end
 
-local function initC2(saveData)
+---Initialize Command and Control systems for Taiwan IADS
+---@param config SBJ__CONFIG
+---@param saveData SBJ__SaveData
+local function initC2(config, saveData)
   local units = GameApi.VP_GetSide({ side = "Taiwan" }).units
 
   for _, unit in ipairs(units) do
@@ -34,7 +37,7 @@ local function initC2(saveData)
     for _, item in pairs(saveData.t.IADS.ROCC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == CONFIG.platformDBID14 or actualUnit.dbid == CONFIG.platformDBID15 then
+          if actualUnit.dbid == config.platformDBID14 or actualUnit.dbid == config.platformDBID15 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -48,10 +51,10 @@ local function initC2(saveData)
             saveData.t.IADS.ROCC[item.guid].SAM[actualUnit.guid] = data
           end
 
-          if actualUnit.dbid == CONFIG.platformDBID41
-              or actualUnit.dbid == CONFIG.platformDBID42
-              or actualUnit.dbid == CONFIG.platformDBID43
-              or actualUnit.dbid == CONFIG.platformDBID44 then
+          if actualUnit.dbid == config.platformDBID41
+              or actualUnit.dbid == config.platformDBID42
+              or actualUnit.dbid == config.platformDBID43
+              or actualUnit.dbid == config.platformDBID44 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -71,7 +74,7 @@ local function initC2(saveData)
     for _, item in pairs(saveData.t.IADS.TAAOC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == CONFIG.platformDBID33 or actualUnit.dbid == CONFIG.platformDBID34 then
+          if actualUnit.dbid == config.platformDBID33 or actualUnit.dbid == config.platformDBID34 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -90,25 +93,40 @@ local function initC2(saveData)
   end
 end
 
-local function initCommsJammers(side, saveData)
+---Initialize communications jammers for the specified side
+---@param config SBJ__CONFIG
+---@param saveData SBJ__SaveData
+---@param side string The side name (e.g., 'China')
+local function initCommsJammers(config, saveData, side)
   local units = GameApi.VP_GetSide({ side = side }).units
 
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and (actualUnit.dbid == CONFIG.platformDBID35 or actualUnit.dbid == CONFIG.platformDBID37) then
-      table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
+    if actualUnit and (actualUnit.dbid == config.platformDBID35 or actualUnit.dbid == config.platformDBID37) then
+      -- table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
+      saveData.c.commsJamming.jammers[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
     end
   end
 end
 
-local function initAC(saveData)
+---Initialize aircraft units for Taiwan air operations
+---@param config SBJ__CONFIG
+---@param saveData SBJ__SaveData
+local function initAC(config, saveData)
   local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
 
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == CONFIG.platformDBID38 then
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platformDBID38 then
       saveData.t.air.landBased.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
@@ -130,14 +148,17 @@ local function initAC(saveData)
   end
 end
 
-local function initSIGINT(saveData)
+---Initialize SIGINT (Signals Intelligence) units for US and China
+---@param config SBJ__CONFIG
+---@param saveData SBJ__SaveData
+local function initSIGINT(config, saveData)
   local units = GameApi.VP_GetSide({ side = 'US' }).units
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
 
   for _, value in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID45 then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platformDBID45 then
       saveData.u.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
@@ -152,7 +173,7 @@ local function initSIGINT(saveData)
   for _, value in ipairs(unitsFromChina) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == CONFIG.platformDBID47 then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platformDBID47 then
       saveData.c.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
@@ -165,6 +186,8 @@ local function initSIGINT(saveData)
   end
 end
 
+---Setup reconnaissance queue from air tasking orders
+---@param saveData SBJ__SaveData
 local function setupReconQueue(saveData)
   for _, wave in pairs(saveData.c.air.ATO) do
     for _, package in ipairs(wave.packages) do
@@ -178,6 +201,8 @@ local function setupReconQueue(saveData)
   end
 end
 
+---Initialize Air Tasking Orders (ATO) with timing and target assignments
+---@param saveData SBJ__SaveData
 local function initATO(saveData)
   for _, wave in pairs(saveData.c.air.ATO) do
     for index, package in ipairs(wave.packages) do
@@ -234,6 +259,8 @@ local function initATO(saveData)
   end
 end
 
+---Initialize Fire Support Plans (FSP) and Fire Support Tasks
+---@param saveData SBJ__SaveData
 local function initFSP(saveData)
   for key, FSEM in pairs(saveData.c.ground.FSP) do
     for index, FST in ipairs(FSEM.FSTs) do
@@ -258,6 +285,8 @@ local function initFSP(saveData)
   end
 end
 
+---Initialize target list by scanning contacts and categorizing them
+---@param saveData SBJ__SaveData
 local function initTargetlist(saveData)
   local contacts = GameApi.ScenEdit_GetContacts('China')
   local bases = {
@@ -419,6 +448,8 @@ local function initTargetlist(saveData)
   saveData.c.targetlist = targetlist
 end
 
+---Initialize runway repair targets for both Taiwan and China
+---@param saveData SBJ__SaveData
 local function initRunways(saveData)
   local targetlist = TargetingProcess.selectTargetsByQueryParams({
     targetlist = saveData.c.targetlist,
@@ -459,15 +490,15 @@ local function initRunways(saveData)
   end
 end
 
-if CONFIG.isSaved then
-  gKH.State.SaveTableToKey(SaveData, "SaveData")
+if config.isSaved then
+  gKH.State.SaveTableToKey(saveData, "SaveData")
 end
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1].target.list <= 0 then
   ShipMovement.calculateDestination(saveData)
-  initAC(saveData)
+  initAC(config, saveData)
   initTargetlist(saveData)
   initATO(saveData)
   initFSP(saveData)
@@ -475,26 +506,26 @@ if saveData ~= nil and #saveData.c.ground.FSP['STRIKE/INFRASTRUCTURE/1'].FSTs[1]
 
 
   if saveData.t.IADS.isActivated then
-    initC2(saveData)
+    initC2(config, saveData)
   end
 
   if saveData.c.IADS.isActivated then
-    UnitGenerator.initC2Facilities(CONFIG, saveData)
+    UnitGenerator.initC2Facilities(config, saveData)
   end
 
   if saveData.c.commsJamming.isActivated then
-    initCommsJammers('China', saveData)
+    initCommsJammers(config, saveData, 'China')
   end
 
   if saveData.u.SIGINT.isActivated then
-    initSIGINT(saveData)
+    initSIGINT(config, saveData)
   end
 
   if saveData.c.recon.isActivated then
     setupReconQueue(saveData)
   end
 
-  if CONFIG.isDevMode then
+  if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
     GameApi.ScenEdit_SpecialMessage('Taiwan', 'Init data and save.')
   end

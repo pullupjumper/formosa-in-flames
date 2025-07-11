@@ -1,7 +1,7 @@
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local AssignMission = require("src.modules.assignMission")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local Recon = {}
 
@@ -95,7 +95,7 @@ local function shouldTakeoffAfterStrike(q)
 end
 
 local function isH6N(q)
-  return not q.hasLaunched and q.unitDBID == CONFIG.platformDBID76
+  return not q.hasLaunched and q.unitDBID == config.platformDBID76
 end
 
 local function shouldEnterTargetArea(q)
@@ -147,7 +147,7 @@ function Recon.handleReconQueue(saveData)
     elseif shouldRTB(q) then
       local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
-      if unit and #unit.course == 0 and unit.dbid == CONFIG.platformDBID12 and not q.isTracking then
+      if unit and #unit.course == 0 and unit.dbid == config.platformDBID12 and not q.isTracking then
         unit:RTB(true)
         q.isFinished = true
       end
@@ -156,18 +156,18 @@ function Recon.handleReconQueue(saveData)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param units CMO__SideUnit
 ---@param UAVDBID number
 ---@param target CMO__Contact
 ---@return boolean
-function Recon.trackTarget(CONFIG, saveData, units, UAVDBID, target)
+function Recon.trackTarget(config, saveData, units, UAVDBID, target)
   local UAV = nil
   local speed = 115
   local type = 'BZK005'
 
-  if UAVDBID == CONFIG.platformDBID12 then
+  if UAVDBID == config.platformDBID12 then
     speed = 3300
     type = 'WZ8'
   end

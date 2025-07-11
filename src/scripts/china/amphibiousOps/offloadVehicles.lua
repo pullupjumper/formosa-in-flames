@@ -2,7 +2,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -28,7 +28,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, 
     type      = 'Facility',
     latitude  = ship.latitude,
     longitude = ship.longitude,
-    dbid      = CONFIG.platformDBID71,
+    dbid      = config.platformDBID71,
     unitname  = 'bridge',
   })
 
@@ -44,7 +44,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.isBridgeDestroyed(saveData, 
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
     if roro then
-      local zone = SecondWaveUnloading.getBargeROROZone(CONFIG, ship, roro)
+      local zone = SecondWaveUnloading.getBargeROROZone(config, ship, roro)
 
       if zone then
         SecondWaveUnloading.offloadVehicles({

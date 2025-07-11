@@ -2,7 +2,7 @@ local FireSupportTaskProcessor = require("src.modules.strikePlanner.fireSupportT
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local FireSupportPlan = {}
 
@@ -32,7 +32,7 @@ local function executeFireSupportTasks(FSEM)
       if result > 0 then
         FST.isFinished = true
 
-        if CONFIG.isDevMode then
+        if config.isDevMode then
           Logger.log('Fired ' .. result .. ' missiles for ' .. FST.name)
         end
       end
@@ -40,17 +40,17 @@ local function executeFireSupportTasks(FSEM)
   end
 end
 
----@param CONFIG table
----@param saveData table
+---@param config SBJ__CONFIG
+---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
-function FireSupportPlan.strike(CONFIG, saveData, contacts)
+function FireSupportPlan.strike(config, saveData, contacts)
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     local allBatteriesInPosition = true
 
     if not FSEM.isFinished and FSEM.isActivated then
       for _, FST in ipairs(FSEM.FSTs) do
         local isInFiringPosition = FireSupportTaskProcessor.process(
-          FST, CONFIG, saveData, contacts, FSEM.isFirstWave
+          FST, config, saveData, contacts, FSEM.isFirstWave
         )
 
         if not isInFiringPosition then

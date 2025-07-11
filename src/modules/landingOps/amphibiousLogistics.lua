@@ -124,26 +124,26 @@ function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid,
   end
 end
 
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param units CMO__SideUnit
 ---@return table<string, table>
-function AmphibiousLogistics.getUnitsInAnchorageArea(CONFIG, units)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
+  local operationalZones = config.c.PHIBOP.operationalZones
   local unitsInAnchorageArea = {}
   local isUnitMoving = false
 
   for _, item in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if unit and (unit.dbid == CONFIG.platformDBID6
-          or unit.dbid == CONFIG.platformDBID7
-          or unit.dbid == CONFIG.platformDBID8
-          or unit.dbid == CONFIG.platformDBID9
-          or unit.dbid == CONFIG.platformDBID10
-          or unit.dbid == CONFIG.platformDBID32
-          or unit.dbid == CONFIG.platformDBID54
-          or unit.dbid == CONFIG.platformDBID56
-          or unit.dbid == CONFIG.platformDBID72) then
+    if unit and (unit.dbid == config.platformDBID6
+          or unit.dbid == config.platformDBID7
+          or unit.dbid == config.platformDBID8
+          or unit.dbid == config.platformDBID9
+          or unit.dbid == config.platformDBID10
+          or unit.dbid == config.platformDBID32
+          or unit.dbid == config.platformDBID54
+          or unit.dbid == config.platformDBID56
+          or unit.dbid == config.platformDBID72) then
       if unit.unitstate ~= 'Unassigned' then
         isUnitMoving = true
         break
@@ -186,10 +186,10 @@ local function handleCargoMission(platformType, zone, missionName)
   return true
 end
 
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@return boolean
-function AmphibiousLogistics.createCargoMissions(CONFIG)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function AmphibiousLogistics.createCargoMissions(config)
+  local operationalZones = config.c.PHIBOP.operationalZones
 
   for _, zone in ipairs(operationalZones) do
     for _, mission in ipairs(zone.boat.missions) do
@@ -212,15 +212,15 @@ function AmphibiousLogistics.createCargoMissions(CONFIG)
   return true
 end
 
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param unitsInAnchorageArea table<integer, CMO__Unit>
 ---@return boolean
-function AmphibiousLogistics.transferAndAssign(CONFIG, unitsInAnchorageArea)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function AmphibiousLogistics.transferAndAssign(config, unitsInAnchorageArea)
+  local operationalZones = config.c.PHIBOP.operationalZones
 
   for _, zone in ipairs(operationalZones) do
     for _, u in ipairs(unitsInAnchorageArea) do
-      if (u.dbid == CONFIG.platformDBID6 or u.dbid == CONFIG.platformDBID54) and
+      if (u.dbid == config.platformDBID6 or u.dbid == config.platformDBID54) and
           u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
@@ -272,7 +272,7 @@ function AmphibiousLogistics.transferAndAssign(CONFIG, unitsInAnchorageArea)
         end
       end
 
-      if u.dbid == CONFIG.platformDBID7 and u:inArea(zone.anchorageArea) then
+      if u.dbid == config.platformDBID7 and u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Boats',
@@ -303,7 +303,7 @@ function AmphibiousLogistics.transferAndAssign(CONFIG, unitsInAnchorageArea)
     end
   end
 
-  for _, item in ipairs(CONFIG.c.PHIBOP.transportAircraft) do
+  for _, item in ipairs(config.c.PHIBOP.transportAircraft) do
     AmphibiousLogistics.transferCargo(
       item.guid,
       'Aircraft',
@@ -323,11 +323,11 @@ function AmphibiousLogistics.transferAndAssign(CONFIG, unitsInAnchorageArea)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param units CMO__SideUnit
 ---@return boolean
-function AmphibiousLogistics.retransferCargos(CONFIG, units)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function AmphibiousLogistics.retransferCargos(config, units)
+  local operationalZones = config.c.PHIBOP.operationalZones
 
   for _, zone in ipairs(operationalZones) do
     for _, item in ipairs(units) do
@@ -337,7 +337,7 @@ function AmphibiousLogistics.retransferCargos(CONFIG, units)
         return false
       end
 
-      if unit and (unit.dbid == CONFIG.platformDBID6 or unit.dbid == CONFIG.platformDBID54) then
+      if unit and (unit.dbid == config.platformDBID6 or unit.dbid == config.platformDBID54) then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',
@@ -361,7 +361,7 @@ function AmphibiousLogistics.retransferCargos(CONFIG, units)
         )
       end
 
-      if unit and unit.dbid == CONFIG.platformDBID7 then
+      if unit and unit.dbid == config.platformDBID7 then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',

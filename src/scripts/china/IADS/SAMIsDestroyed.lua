@@ -1,9 +1,9 @@
 local GameUtils = require("src.utils.gameUtils")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 local units = GameApi.VP_GetSide({ side = 'China' }).units
-local temp = { unit = nil, distance = CONFIG.radarDistance }
+local temp = { unit = nil, distance = config.radarDistance }
 
 if unit == nil then
 	GameApi.ScenEdit_SpecialMessage('China', 'unit == nil')
@@ -40,12 +40,12 @@ local longitude = unit.longitude
 local isDestroyed = false
 
 for _, component in ipairs(unit.components) do
-	if (component['comp_dbid'] == CONFIG.sensorDBID1
-				or component['comp_dbid'] == CONFIG.sensorDBID2
-				or component['comp_dbid'] == CONFIG.sensorDBID3
-				or component['comp_dbid'] == CONFIG.sensorDBID4
-				or component['comp_dbid'] == CONFIG.sensorDBID5
-				or component['comp_dbid'] == CONFIG.sensorDBID6)
+	if (component['comp_dbid'] == config.sensorDBID1
+				or component['comp_dbid'] == config.sensorDBID2
+				or component['comp_dbid'] == config.sensorDBID3
+				or component['comp_dbid'] == config.sensorDBID4
+				or component['comp_dbid'] == config.sensorDBID5
+				or component['comp_dbid'] == config.sensorDBID6)
 			and component['comp_status'] == 'Destroyed' then
 		GameUtils.printBox(
 			'China',
@@ -63,17 +63,17 @@ if isDestroyed then
 		if u == nil then goto continue end
 		local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-		if u.dbid == CONFIG.platformDBID18
-				or u.dbid == CONFIG.platformDBID19
-				or u.dbid == CONFIG.platformDBID20
-				or u.dbid == CONFIG.platformDBID21 then
+		if u.dbid == config.platformDBID18
+				or u.dbid == config.platformDBID19
+				or u.dbid == config.platformDBID20
+				or u.dbid == config.platformDBID21 then
 			for i, component in ipairs(u.components) do
-				if (component['comp_dbid'] == CONFIG.sensorDBID1
-							or component['comp_dbid'] == CONFIG.sensorDBID2
-							or component['comp_dbid'] == CONFIG.sensorDBID3
-							or component['comp_dbid'] == CONFIG.sensorDBID4
-							or component['comp_dbid'] == CONFIG.sensorDBID5
-							or component['comp_dbid'] == CONFIG.sensorDBID6)
+				if (component['comp_dbid'] == config.sensorDBID1
+							or component['comp_dbid'] == config.sensorDBID2
+							or component['comp_dbid'] == config.sensorDBID3
+							or component['comp_dbid'] == config.sensorDBID4
+							or component['comp_dbid'] == config.sensorDBID5
+							or component['comp_dbid'] == config.sensorDBID6)
 						and component['comp_status'] ~= 'Destroyed' then
 					if distance < temp.distance and unit.guid ~= u.guid then
 						temp.unit = u

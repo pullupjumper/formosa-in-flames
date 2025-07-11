@@ -188,7 +188,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field FSTs SBJ__FireSupportTask[]
 
 ---@class SBJ__FilterParams:table
----@field CONFIG SBJ__CONFIG
+---@field config SBJ__CONFIG
 ---@field saveData SBJ__SaveData
 ---@field task SBJ__Task
 ---@field contacts CMO__Contact[]

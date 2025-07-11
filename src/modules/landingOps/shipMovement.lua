@@ -1,7 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 
 local ShipMovement = {}
 
@@ -112,7 +112,7 @@ local function handleSAG(group, isTesting)
       local ship = GameApi.ScenEdit_GetUnit(u)
 
       if ship then
-        if ship.dbid == CONFIG.platformDBID48 then
+        if ship.dbid == config.platformDBID48 then
           if type052d == 0 then
             setShipPosition(
               ship,
@@ -133,7 +133,7 @@ local function handleSAG(group, isTesting)
           end
 
           type052d = type052d + 1
-        elseif ship.dbid == CONFIG.platformDBID49 then
+        elseif ship.dbid == config.platformDBID49 then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
             group.to.archorageArea[count].lat,
@@ -153,12 +153,12 @@ end
 
 ---comment
 ---@param saveData SBJ__SaveData
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param units CMO__SideUnit
 ---@return boolean
-function ShipMovement.moveToStagingArea(saveData, CONFIG, units)
-  local shipSettings = CONFIG.c.PHIBOP.shipSettings
-  local initialLocations = CONFIG.c.PHIBOP.initialLocations
+function ShipMovement.moveToStagingArea(saveData, config, units)
+  local shipSettings = config.c.PHIBOP.shipSettings
+  local initialLocations = config.c.PHIBOP.initialLocations
   local calculations = saveData.c.PHIBOP.calculations
   local isTesting = saveData.c.PHIBOP.isTesting
   local allUnitsMoved = false
@@ -204,7 +204,7 @@ function ShipMovement.moveToStagingArea(saveData, CONFIG, units)
     end
   end
 
-  for _, group in pairs(CONFIG.c.PHIBOP.sag) do
+  for _, group in pairs(config.c.PHIBOP.sag) do
     handleSAG(group, isTesting)
   end
 
@@ -215,8 +215,8 @@ end
 ---comment
 ---@param saveData SBJ__SaveData
 function ShipMovement.calculateDestination(saveData)
-  local initialLocations = CONFIG.c.PHIBOP.initialLocations
-  local shipSettings = CONFIG.c.PHIBOP.shipSettings
+  local initialLocations = config.c.PHIBOP.initialLocations
+  local shipSettings = config.c.PHIBOP.shipSettings
 
   for _, item in ipairs(initialLocations) do
     for _, area in ipairs(item.to.areas) do

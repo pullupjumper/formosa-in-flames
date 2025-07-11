@@ -71,12 +71,12 @@ local function createCourseForRORO(zone, unit, bargeDest)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param units CMO__SideUnit
 ---@return boolean
-function SecondWaveUnloading.startSecondWaveUnloading(CONFIG, saveData, units)
-  local operationalZones = CONFIG.c.PHIBOP.operationalZones
+function SecondWaveUnloading.startSecondWaveUnloading(config, saveData, units)
+  local operationalZones = config.c.PHIBOP.operationalZones
   local roros = {}
   local barges = {}
 
@@ -193,12 +193,12 @@ function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
 end
 
 ---comment
----@param CONFIG SBJ__CONFIG
+---@param config SBJ__CONFIG
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
 ---@return SBJ__OperationalZone|nil
-function SecondWaveUnloading.getBargeROROZone(CONFIG, barge, roro)
-  for _, zone in ipairs(CONFIG.c.PHIBOP.operationalZones) do
+function SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+  for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
     local d = GameApi.Tool_Range(roro.guid, barge.guid)
 
     if d and roro:inArea(zone.ACV.area) and barge:inArea(zone.ACV.area) and d < 1 then

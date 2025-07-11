@@ -3,7 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local ShipMovement = require('src.modules.landingOps.shipMovement')
 local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
 local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
@@ -40,7 +40,7 @@ end
 
 
 if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.PHIBOP.startTime) then
-  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(saveData, CONFIG, units)
+  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(saveData, config, units)
 
   if hasIssuedShipMovementOrder then
     saveData.c.PHIBOP.isWaitingForShipArrival = true
@@ -49,12 +49,12 @@ if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveDat
 end
 
 if saveData.c.PHIBOP.isWaitingForShipArrival then
-  local result = AmphibiousLogistics.getUnitsInAnchorageArea(CONFIG, units)
+  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
   local hasArrived = Utils.getCount(result.units) > 15 and not result.isUnitMoving
 
   if hasArrived then
-    local creatingCompleted = AmphibiousLogistics.createCargoMissions(CONFIG)
-    local transferingCompleted = AmphibiousLogistics.transferAndAssign(CONFIG, result.units)
+    local creatingCompleted = AmphibiousLogistics.createCargoMissions(config)
+    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config, result.units)
     local hasAssignedAndTransfered = creatingCompleted and transferingCompleted
 
     if hasAssignedAndTransfered then
@@ -67,7 +67,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
 end
 
 if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
-  local initialLocations = CONFIG.c.PHIBOP.initialLocations
+  local initialLocations = config.c.PHIBOP.initialLocations
   local elapsedTime = 0
   local amphibiousAssaultStartTime = saveData.c.PHIBOP.amphibiousAssaultStartTime
 
@@ -77,12 +77,12 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
 
   local contactCount = AmphibiousAssault.countContactsInArea(contacts, initialLocations[1].airLandingZone)
   local isContactCountLessThan = contactCount < initialLocations[1].numOfContactsInAirLandingZone
-  local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= CONFIG.c.PHIBOP.periodOfTime
+  local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= config.c.PHIBOP.periodOfTime
   local shouldLaunchAmphibiousAssault = isContactCountLessThan or isTimeExceeded
 
   if shouldLaunchAmphibiousAssault then
-    local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(CONFIG, saveData)
-    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(CONFIG, units)
+    local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config, units)
     local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
 
     if hasLaunchedAmphibiousAssault then
@@ -94,11 +94,11 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
 end
 
 if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
-  local result = UnitStatusUI.countUnitsInEachArea(CONFIG)
+  local result = UnitStatusUI.countUnitsInEachArea(config)
   local hasEstablishedBeachheads = Utils.getCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1
 
   if hasEstablishedBeachheads then
-    local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(CONFIG, saveData, units)
+    local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(config, saveData, units)
 
     if hasStartedSecondWaveUnloading then
       saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
@@ -111,7 +111,7 @@ if saveData.c.PHIBOP.airlandingMissionStartTime ~= nil then
   local isTimeExceeded = elapsedTime >= (3600 * 2)
 
   if isTimeExceeded then
-    local hasTransfered = AmphibiousLogistics.retransferCargos(CONFIG, units)
+    local hasTransfered = AmphibiousLogistics.retransferCargos(config, units)
 
     if hasTransfered then
       saveData.c.PHIBOP.airlandingMissionStartTime = currentTime

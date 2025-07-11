@@ -1,4 +1,4 @@
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
@@ -13,5 +13,5 @@ local unit = GameApi.ScenEdit_UnitX()
 --     end
 -- end
 
-unit.readytime = CONFIG.readytime
+unit.readytime = config.readytime
 -- unit.mission = ''

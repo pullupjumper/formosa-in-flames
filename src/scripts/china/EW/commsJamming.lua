@@ -1,8 +1,8 @@
 local gKH = require('src.core.gKH_State_Standalone')
 local saveData = gKH.State.LoadTableFromKey("SaveData")
-local CONFIG = require("src.core.constants")
+local config = require("src.core.constants")
 local Logger = require("src.utils.logger")
-local CommsJamming = require("src.modules.commsJamming")
+local CommsJamming = require("src.modules.EW.commsJamming")
 
 if saveData == nil then
   Logger.error("saveData is nil")
@@ -63,7 +63,7 @@ if saveData.c.commsJamming.isActivated then
   --     end
   --   end
   -- end
-  CommsJamming.handleCommsJamming(CONFIG, saveData)
+  CommsJamming.handleCommsJamming(config, saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
