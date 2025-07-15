@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(python cleanup_ato.py)",
+      "Bash(cd \"D:\\codes\\lua\\CMOScripts\\formosa-in-flames\")",
+      "Bash(rm cleanup_ato.py)",
+      "Bash(grep -n \"baseGUID\\s*=\" src/core/constants.lua src/core/saveData.lua)",
+      "Bash(grep:*)",
+      "Bash(grep -A 5 -B 5 \"baseGUID = ''6Z8LM5-0HMIJ3QGCRQ2G''\" src/core/constants.lua)"
+    ],
+    "deny": []
+  }
+}

@@ -179,116 +179,151 @@ config.t.areas = {
   groundAscmTestNai2 = { 'RP-7787', 'RP-7788', 'RP-7789', 'RP-7790' },
 }
 
-config.platformDBID1 = 2149  -- 726a
-config.platformDBID2 = 3708  -- Z-18
-config.platformDBID3 = 2511  -- 724
-config.platformDBID4 = 2930  -- Ka-52k
-config.platformDBID5 = 5856  -- Z-10
-config.platformDBID6 = 3153  -- 075
-config.platformDBID7 = 2006  -- 071
-config.platformDBID8 = 4683  -- 072III
-config.platformDBID9 = 4602  -- 072A
-config.platformDBID10 = 2925 -- 073A
-config.platformDBID11 = 3187 -- 002
-config.platformDBID12 = 6642 -- WZ-8
-config.platformDBID13 = 3309 -- BZK-005
-config.platformDBID14 = 391  -- Customed TK-3
-config.platformDBID15 = 2227 -- PAC-3
-config.platformDBID16 = 2537 -- JY-26
-config.platformDBID17 = 2538 -- YLC-8B
-config.platformDBID18 = 3281 -- HQ-22
-config.platformDBID19 = 386  -- S-300
-config.platformDBID20 = 2442 -- S-400
-config.platformDBID21 = 1277 -- HQ-12
-config.platformDBID22 = 4324 -- PHL-16
-config.platformDBID23 = 624  -- Supply
-config.platformDBID24 = 3126 -- PHL-03
-config.platformDBID25 = 4582 -- GPS Jammer
-config.platformDBID26 = 1376 -- underground shelter
-config.platformDBID27 = 322  -- weapon storage facility
-config.platformDBID28 = 5014 -- J-20
-config.platformDBID29 = 4926 -- J-16
-config.platformDBID30 = 4652 -- Su-30
-config.platformDBID31 = 1731 -- H-6K
-config.platformDBID32 = 4601 -- 072a
-config.platformDBID33 = 4141 -- TC-2
-config.platformDBID34 = 1092 -- Skyguard
-config.platformDBID35 = 4203 -- Y-9
-config.platformDBID36 = 4454 -- J-35
-config.platformDBID37 = 4817 -- J-15D
-config.platformDBID38 = 2095 -- E-2K
-config.platformDBID39 = 317  -- ZBD-03
-config.platformDBID40 = 2503 -- II-76
-config.platformDBID41 = 960  -- FPS-117
-config.platformDBID42 = 1057 -- TPS-43F
-config.platformDBID43 = 1363 -- HR-3000
-config.platformDBID44 = 1362 -- GE-592
-config.platformDBID45 = 5832 -- RC-135V
-config.platformDBID46 = 3730 -- C2
-config.platformDBID47 = 7064 -- Y-9DZ
-config.platformDBID48 = 3587 -- 052d
-config.platformDBID49 = 2714 -- 054a
-config.platformDBID50 = 2086 -- Ammo Truck
-config.platformDBID51 = 3883 -- 055
-config.platformDBID52 = 2980 -- Type901
-config.platformDBID53 = 320  -- Ammo
-config.platformDBID54 = 4876 -- 076
-config.platformDBID55 = 4962 -- GJ-11
-config.platformDBID56 = 2566 -- Ferry
-config.platformDBID57 = 7419 -- J-10C
-config.platformDBID58 = 241  -- ZBD-05
-config.platformDBID59 = 240  -- ZTD-05
-config.platformDBID60 = 318  -- PLL-05
-config.platformDBID61 = 319  -- PLZ-96
-config.platformDBID62 = 2876 -- PGZ-09
-config.platformDBID63 = 758  -- PGZ-95
-config.platformDBID64 = 2034 -- HMMWV
-config.platformDBID65 = 2806 -- MC
-config.platformDBID66 = 2162 -- SA-15
-config.platformDBID67 = 430  -- M977
-config.platformDBID69 = 236  -- ZBD-04
-config.platformDBID70 = 245  -- ZTZ-96A
-config.platformDBID71 = 4122 -- Bridge
-config.platformDBID72 = 4925 -- Barge
-config.platformDBID73 = 2155 -- Kidd
-config.platformDBID74 = 4149 -- Kang Ding
-config.platformDBID75 = 906  -- S-70C
-config.platformDBID76 = 7136 -- H-6N
-config.platformDBID77 = 665  -- 093B
-config.platformDBID78 = 177  -- Bunker (Sector Control Station)
-config.platformDBID79 = 3301 -- Y-8Q Cub
-config.platformDBID80 = 3683 -- KJ-500
-config.platformDBID81 = 823  -- HY-6U Badger
-config.platformDBID82 = 6098 -- J-15
-config.platformDBID83 = 3707 -- Z-18F Sea Eagle
-config.platformDBID84 = 3303 -- Z-18J
-config.platformDBID85 = 4902 -- Ka-28
-config.platformDBID86 = 3795 -- IDF Fighter
-config.platformDBID87 = 3962 -- F-16V BLK20
-config.platformDBID88 = 2126 -- AH-1W
-config.platformDBID89 = 2825 -- P-3C
-config.platformDBID90 = 4755 -- C-130HE
-config.platformDBID91 = 6889 -- F-16V BLK70
-config.platformDBID92 = 6039 -- MQ-9B
-config.platformDBID93 = 175  -- Mirage 2000 Fighter
-config.platformDBID94 = 2419 -- AH-64E
-config.platformDBID95 = 5035 -- Chung Shyang II
-config.platformDBID96 = 3441 -- Ta Chiang
 
-config.sensorDBID1 = 2788    -- S-300 Tombstone
-config.sensorDBID2 = 4155    -- S-400 Grave Stone
-config.sensorDBID3 = 3396    -- HQ-12 China H-200
-config.sensorDBID4 = 6123    -- HQ-22 China H-200 Improved
-config.sensorDBID5 = 3204    -- S-300 Cheese Board
-config.sensorDBID6 = 5054    -- S-400 Cheese Board
-config.sensorDBID7 = 6847    -- P-3C SeaVue
-config.sensorDBID8 = 2938    -- E-2K
-config.sensorDBID9 = 6366    -- TK-3
-config.sensorDBID10 = 282    -- TK-3
-config.sensorDBID11 = 919    -- TK-2
-config.sensorDBID12 = 2498   -- PAC-3
-config.sensorDBID13 = 2539   -- GPS Jammer
-config.sensorDBID14 = 6381   -- TC-2
+
+-- Base GUIDs - 基地識別碼
+config.baseGUID1 = '6Z8LM5-0HMLLL9B5QBF0'  -- Huizhou Pingtan AB (PLAAF)
+config.baseGUID2 = '6Z8LM5-0HMLLEF9H5P44'  -- Shantou Waisha AB (PLAAF)
+config.baseGUID3 = 'X58F5H-0HN00TRR0Q1JQ'  -- Zhangpu AAB
+config.baseGUID4 = '6Z8LM5-0HMIJ3QGCRQ2G'  -- Zhangzhou-Longxi AB (PLAAF)
+config.baseGUID5 = '6Z8LM5-0HMIJ3QGCRQ5F'  -- Huian AAB
+config.baseGUID6 = '6Z8LM5-0HMIJ3QGCRQC4'  -- Longtian AAB
+config.baseGUID7 = '6Z8LM5-0HMLLEF9H7VDF'  -- Xingning AB (PLAAF)
+config.baseGUID8 = '6Z8LM5-0HMMJDEFRFJ4V'  -- Shuimen AAB (PLAAF)
+config.baseGUID9 = '6Z8LM5-0HMIJ7B8971MA'  -- Anqing AB (PLAAF)
+config.baseGUID10 = '6Z8LM5-0HMIJ7B896RA9' -- Wuhu AB (PLAAF)
+config.baseGUID11 = 'X58F5H-0HMRAQFR07T2V' -- Liuan AB
+config.baseGUID12 = '6Z8LM5-0HMMNGU6J8P2N' -- Pingtan Port (Amphibious Ops)
+config.baseGUID13 = '6Z8LM5-0HMJV6AONGLAU' -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
+config.baseGUID14 = '6Z8LM5-0HMIHS2L949R0' -- Ching Chuang Kang AB (Taiwan)
+config.baseGUID15 = '6Z8LM5-0HMIJ3QGCHSUB' -- Chiayi AB (Taiwan)
+config.baseGUID16 = '6Z8LM5-0HMIJ3QGCHVVS' -- Tainan AB (Taiwan)
+config.baseGUID17 = '6Z8LM5-0HMISSTNL3T8K' -- Magong AB (Taiwan)
+config.baseGUID18 = 'IC8B0X-0HN37BVOG0T9O' -- Guiren AAB (Taiwan)
+config.baseGUID19 = 'IC8B0X-0HNCTPETEF6GG' -- Pingtung North AB (Taiwan)
+config.baseGUID20 = '6Z8LM5-0HMIJ3QGCI3V3' -- Taitung/Jhihhang AB (Taiwan)
+config.baseGUID21 = '6Z8LM5-0HMIJ3QGCI783' -- Jiashan AB (Taiwan)
+config.baseGUID22 = '6Z8LM5-0HMIK08HEK556' -- Hsinchu AB (Taiwan)
+config.baseGUID23 = 'IC8B0X-0HN3ADVRF2U7P' -- Longtan AAB (Taiwan)
+config.baseGUID24 = '6Z8LM5-0HMJ1GE4HSIU5' -- Taoyuan International Airport (Taiwan)
+config.baseGUID25 = 'X58F5H-0HMU28MM77N82' -- Rende Emergency Highway Strip (Taiwan)
+config.baseGUID26 = 'X58F5H-0HMU28MM7836P' -- Madou Emergency Highway Strip (Taiwan)
+config.baseGUID27 = 'X58F5H-0HMU28MM78J9P' -- Minxiong Emergency Highway Strip (Taiwan)
+config.baseGUID28 = 'IC8B0X-0HN81FNLB6M8Q' -- Tainan Field Airdrome (Taiwan)
+config.baseGUID29 = 'IC8B0X-0HN81FNLB2OPJ' -- Hsinchu Field Airdrome (Taiwan)
+config.baseGUID30 = 'X58F5H-0HMSMDQJ7LEUI' -- Port of Keelung (Taiwan)
+config.baseGUID31 = 'IC8B0X-0HNCTPETEF6F9' -- Pingtung South AB (Taiwan)
+
+config.platformDBID1 = 2149                -- 726a
+config.platformDBID2 = 3708                -- Z-18
+config.platformDBID3 = 2511                -- 724
+config.platformDBID4 = 2930                -- Ka-52k
+config.platformDBID5 = 5856                -- Z-10
+config.platformDBID6 = 3153                -- 075
+config.platformDBID7 = 2006                -- 071
+config.platformDBID8 = 4683                -- 072III
+config.platformDBID9 = 4602                -- 072A
+config.platformDBID10 = 2925               -- 073A
+config.platformDBID11 = 3187               -- 002
+config.platformDBID12 = 6642               -- WZ-8
+config.platformDBID13 = 3309               -- BZK-005
+config.platformDBID14 = 391                -- Customed TK-3
+config.platformDBID15 = 2227               -- PAC-3
+config.platformDBID16 = 2537               -- JY-26
+config.platformDBID17 = 2538               -- YLC-8B
+config.platformDBID18 = 3281               -- HQ-22
+config.platformDBID19 = 386                -- S-300
+config.platformDBID20 = 2442               -- S-400
+config.platformDBID21 = 1277               -- HQ-12
+config.platformDBID22 = 4324               -- PHL-16
+config.platformDBID23 = 624                -- Supply
+config.platformDBID24 = 3126               -- PHL-03
+config.platformDBID25 = 4582               -- GPS Jammer
+config.platformDBID26 = 1376               -- underground shelter
+config.platformDBID27 = 322                -- weapon storage facility
+config.platformDBID28 = 5014               -- J-20
+config.platformDBID29 = 4926               -- J-16
+config.platformDBID30 = 4652               -- Su-30
+config.platformDBID31 = 1731               -- H-6K
+config.platformDBID32 = 4601               -- 072a
+config.platformDBID33 = 4141               -- TC-2
+config.platformDBID34 = 1092               -- Skyguard
+config.platformDBID35 = 4203               -- Y-9
+config.platformDBID36 = 4454               -- J-35
+config.platformDBID37 = 4817               -- J-15D
+config.platformDBID38 = 2095               -- E-2K
+config.platformDBID39 = 317                -- ZBD-03
+config.platformDBID40 = 2503               -- II-76
+config.platformDBID41 = 960                -- FPS-117
+config.platformDBID42 = 1057               -- TPS-43F
+config.platformDBID43 = 1363               -- HR-3000
+config.platformDBID44 = 1362               -- GE-592
+config.platformDBID45 = 5832               -- RC-135V
+config.platformDBID46 = 3730               -- C2
+config.platformDBID47 = 7064               -- Y-9DZ
+config.platformDBID48 = 3587               -- 052d
+config.platformDBID49 = 2714               -- 054a
+config.platformDBID50 = 2086               -- Ammo Truck
+config.platformDBID51 = 3883               -- 055
+config.platformDBID52 = 2980               -- Type901
+config.platformDBID53 = 320                -- Ammo
+config.platformDBID54 = 4876               -- 076
+config.platformDBID55 = 4962               -- GJ-11
+config.platformDBID56 = 2566               -- Ferry
+config.platformDBID57 = 7419               -- J-10C
+config.platformDBID58 = 241                -- ZBD-05
+config.platformDBID59 = 240                -- ZTD-05
+config.platformDBID60 = 318                -- PLL-05
+config.platformDBID61 = 319                -- PLZ-96
+config.platformDBID62 = 2876               -- PGZ-09
+config.platformDBID63 = 758                -- PGZ-95
+config.platformDBID64 = 2034               -- HMMWV
+config.platformDBID65 = 2806               -- MC
+config.platformDBID66 = 2162               -- SA-15
+config.platformDBID67 = 430                -- M977
+config.platformDBID69 = 236                -- ZBD-04
+config.platformDBID70 = 245                -- ZTZ-96A
+config.platformDBID71 = 4122               -- Bridge
+config.platformDBID72 = 4925               -- Barge
+config.platformDBID73 = 2155               -- Kidd
+config.platformDBID74 = 4149               -- Kang Ding
+config.platformDBID75 = 906                -- S-70C
+config.platformDBID76 = 7136               -- H-6N
+config.platformDBID77 = 665                -- 093B
+config.platformDBID78 = 177                -- Bunker (Sector Control Station)
+config.platformDBID79 = 3301               -- Y-8Q Cub
+config.platformDBID80 = 3683               -- KJ-500
+config.platformDBID81 = 823                -- HY-6U Badger
+config.platformDBID82 = 6098               -- J-15
+config.platformDBID83 = 3707               -- Z-18F Sea Eagle
+config.platformDBID84 = 3303               -- Z-18J
+config.platformDBID85 = 4902               -- Ka-28
+config.platformDBID86 = 3795               -- IDF Fighter
+config.platformDBID87 = 3962               -- F-16V BLK20
+config.platformDBID88 = 2126               -- AH-1W
+config.platformDBID89 = 2825               -- P-3C
+config.platformDBID90 = 4755               -- C-130HE
+config.platformDBID91 = 6889               -- F-16V BLK70
+config.platformDBID92 = 6039               -- MQ-9B
+config.platformDBID93 = 175                -- Mirage 2000 Fighter
+config.platformDBID94 = 2419               -- AH-64E
+config.platformDBID95 = 5035               -- Chung Shyang II
+config.platformDBID96 = 3441               -- Ta Chiang
+
+config.sensorDBID1 = 2788                  -- S-300 Tombstone
+config.sensorDBID2 = 4155                  -- S-400 Grave Stone
+config.sensorDBID3 = 3396                  -- HQ-12 China H-200
+config.sensorDBID4 = 6123                  -- HQ-22 China H-200 Improved
+config.sensorDBID5 = 3204                  -- S-300 Cheese Board
+config.sensorDBID6 = 5054                  -- S-400 Cheese Board
+config.sensorDBID7 = 6847                  -- P-3C SeaVue
+config.sensorDBID8 = 2938                  -- E-2K
+config.sensorDBID9 = 6366                  -- TK-3
+config.sensorDBID10 = 282                  -- TK-3
+config.sensorDBID11 = 919                  -- TK-2
+config.sensorDBID12 = 2498                 -- PAC-3
+config.sensorDBID13 = 2539                 -- GPS Jammer
+config.sensorDBID14 = 6381                 -- TC-2
 
 
 config.loadoutDBID1 = 30568  -- Ka-52 攻擊直升機武器配置
@@ -297,11 +332,11 @@ config.loadoutDBID3 = 18367  -- Z-18 運輸直升機載貨配置 1
 config.loadoutDBID4 = 18365  -- Z-18 運輸直升機載貨配置 2
 config.loadoutDBID5 = 25504  -- II-76 運輸機載貨配置
 config.loadoutDBID6 = 27825  -- GJ-11 攻擊無人機武器配置
-config.loadoutDBID7 = 26233  -- J-16 AKD-88 反輻射飛彈 X 2
+config.loadoutDBID7 = 26233  -- J-16 AKD-88 巡弋飛彈 X 2
 config.loadoutDBID8 = 28027  -- J-20 PL-15 空對空飛彈 X 4
-config.loadoutDBID9 = 25378  -- Su-30 YJ-91 反艦飛彈 X 2
+config.loadoutDBID9 = 25378  -- Su-30 YJ-91 反輻射飛彈 X 2
 config.loadoutDBID10 = 27636 -- Y-8Q 反潛巡邏機配置
-config.loadoutDBID11 = 25380 -- Su-30 KAB-1500 制導炸彈 X 2
+config.loadoutDBID11 = 25380 -- Su-30 KAB-1500 導引炸彈 X 2
 config.loadoutDBID12 = 21678 -- Y-9 運輸機載貨配置
 config.loadoutDBID13 = 33464 -- Y-9DZ 電子情報收集配置
 config.loadoutDBID14 = 17495 -- BZK-005 無人機偵察配置
@@ -309,11 +344,11 @@ config.loadoutDBID15 = 33615 -- H-6K YJ-63 巡航飛彈 X 4
 config.loadoutDBID16 = 21743 -- J-16 YJ-83 反艦飛彈 X 2
 config.loadoutDBID17 = 18300 -- KJ-500 預警機配置
 config.loadoutDBID18 = 8811  -- HY-6U 空中加油機配置
-config.loadoutDBID19 = 25595 -- J-10C LS-6-500 制導炸彈 X 2
+config.loadoutDBID19 = 25595 -- J-10C LS-6-500 導引炸彈 X 2
 config.loadoutDBID20 = 8792  -- H-6N 運輸配置
 config.loadoutDBID21 = 845   -- Z-18F 反潛直升機配置
-config.loadoutDBID22 = 9677  -- Su-30 YJ-91 反艦飛彈 X 4
-config.loadoutDBID23 = 34294 -- J-10C LS-6-500 制導炸彈 X 4
+config.loadoutDBID22 = 9677  -- J-15 YJ-91 反輻射飛彈 X 4
+config.loadoutDBID23 = 34294 -- J-15 LS-6-500 導引炸彈 X 4
 config.loadoutDBID24 = 18368 -- Z-18F 航母反潛配置
 config.loadoutDBID25 = 17471 -- Z-18J 航母預警配置
 config.loadoutDBID26 = 25212 -- J-15D 電子戰配置
@@ -322,13 +357,13 @@ config.loadoutDBID28 = 19104 -- IDF 戰機萬劍彈 X 2
 config.loadoutDBID29 = 22798 -- F-16V BLK20 標準戰鬥配置
 config.loadoutDBID30 = 22785 -- F-16V BLK20 AMRAAM 空對空飛彈 X 4
 config.loadoutDBID31 = 22789 -- F-16V BLK20 魚叉反艦飛彈 X 2
-config.loadoutDBID32 = 22790 -- F-16V BLK20 GBU 制導炸彈 X 2
+config.loadoutDBID32 = 22790 -- F-16V BLK20 GBU 導引炸彈 X 2
 config.loadoutDBID33 = 7347  -- AH-1W 地獄火飛彈 X 8
 config.loadoutDBID34 = 14639 -- S-70C 運輸配置
 config.loadoutDBID35 = 13537 -- P-3C 反潛巡邏配置
 config.loadoutDBID36 = 25876 -- C-130HE 運輸配置
 config.loadoutDBID37 = 33012 -- F-16V BLK70 SLAM-ER 飛彈 X 2
-config.loadoutDBID38 = 9479  -- F-16V BLK70 JDAM 制導炸彈 X 4
+config.loadoutDBID38 = 9479  -- F-16V BLK70 JDAM 導引炸彈 X 4
 config.loadoutDBID39 = 9326  -- F-16V BLK70 HARM 反輻射飛彈 X 2
 config.loadoutDBID40 = 9481  -- F-16V BLK70 JSOW 滑翔炸彈 X 4
 config.loadoutDBID41 = 32059 -- E-2K 預警機配置
@@ -337,28 +372,28 @@ config.loadoutDBID43 = 15213 -- AH-64E 地獄火飛彈 X 16
 config.loadoutDBID44 = 28116 -- MQ-9B 偵察無人機配置
 
 
-config.weaponDBID1 = 4472   -- PHL-16 多管火箭炮
-config.weaponDBID2 = 2122   -- CJ-10 地射巡航飛彈
-config.weaponDBID3 = 2142   -- DF-11A 短程彈道飛彈
-config.weaponDBID4 = 4511   -- DF-15B 短程彈道飛彈
-config.weaponDBID5 = 2145   -- DF-16 短程彈道飛彈
-config.weaponDBID6 = 40     -- CSS-6 短程彈道飛彈
-config.weaponDBID7 = 2105   -- DF-21D 中程彈道飛彈
-config.weaponDBID8 = 4058   -- YJ-18A 艦射陸攻巡航飛彈
-config.weaponDBID9 = 3716   -- YJ-18 潛射陸攻巡航飛彈
-config.weaponDBID10 = 2876  -- KAB-1500 空對地制導炸彈
-config.weaponDBID11 = 3413  -- PL-15 空對空飛彈
-config.weaponDBID12 = 2875  -- YJ-91 反輻射飛彈
-config.weaponDBID13 = 2107  -- YJ-63 空射巡航飛彈
-config.weaponDBID14 = 3077  -- KAB-1500 制導炸彈
-config.weaponDBID15 = 3226  -- LS-6-500 制導炸彈
-config.weaponDBID16 = 276   -- YJ-91 反艦飛彈
-config.weaponDBID17 = 2137  -- YJ-83 反艦飛彈
-config.weaponDBID18 = 2948  -- RT-2000 多管火箭炮
-config.weaponDBID19 = 1717  -- ATACMS 短程彈道飛彈
-config.weaponDBID20 = 3228  -- 雄風 IIE 陸射巡航飛彈
-config.weaponDBID21 = 1133  -- 雄風 II 反艦飛彈
-config.weaponDBID22 = 905   -- 計分系統武器
+config.weaponDBID1 = 4472  -- PHL-16 多管火箭炮
+config.weaponDBID2 = 2122  -- CJ-10 地射巡航飛彈
+config.weaponDBID3 = 2142  -- DF-11A 短程彈道飛彈
+config.weaponDBID4 = 4511  -- DF-15B 短程彈道飛彈
+config.weaponDBID5 = 2145  -- DF-16 短程彈道飛彈
+config.weaponDBID6 = 40    -- CSS-6 短程彈道飛彈
+config.weaponDBID7 = 2105  -- DF-21D 中程彈道飛彈
+config.weaponDBID8 = 4058  -- YJ-18A 艦射陸攻巡航飛彈
+config.weaponDBID9 = 3716  -- YJ-18 潛射陸攻巡航飛彈
+config.weaponDBID10 = 2876 -- AKD-88 空對地巡弋炸彈
+config.weaponDBID11 = 3413 -- PL-15 空對空飛彈
+config.weaponDBID12 = 2875 -- YJ-91 反輻射飛彈
+config.weaponDBID13 = 2107 -- YJ-63 空射巡航飛彈
+config.weaponDBID14 = 3077 -- KAB-1500 導引炸彈
+config.weaponDBID15 = 3226 -- LS-6-500 導引炸彈
+config.weaponDBID16 = 276  -- YJ-91 反艦飛彈
+config.weaponDBID17 = 2137 -- YJ-83 反艦飛彈
+config.weaponDBID18 = 2948 -- RT-2000 多管火箭炮
+config.weaponDBID19 = 1717 -- ATACMS 短程彈道飛彈
+config.weaponDBID20 = 3228 -- 雄風 IIE 陸射巡航飛彈
+config.weaponDBID21 = 1133 -- 雄風 II 反艦飛彈
+config.weaponDBID22 = 905  -- 計分系統武器
 
 
 config.radarDistance = 70
@@ -787,8 +822,8 @@ config.c.ground.mrbm.reloadTime = 5 * 60
 
 -- Recon
 config.c.recon.bases = {
-  H6N = { guid = 'X58F5H-0HMRAQFR07T2V' },
-  BZK005 = { guid = '6Z8LM5-0HMIJ3QGCRQC4' }
+  H6N = { guid = config.baseGUID11 },
+  BZK005 = { guid = config.baseGUID6 }
 }
 config.c.recon.contactAge = 15 * 60
 config.c.recon.courses = {
@@ -819,7 +854,7 @@ config.c.recon.courses = {
 config.c.air.landBased.deployedACs = {
   {
     name = 'Huizhou Pingtan AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMLLL9B5QBF0',
+    baseGUID = config.baseGUID1,
     embarkedUnits = {
       {
         side = 'China',
@@ -834,7 +869,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Shantou Waisha AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMLLEF9H5P44',
+    baseGUID = config.baseGUID2,
     embarkedUnits = {
       {
         side = 'China',
@@ -852,7 +887,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Zhangpu AAB',
-    baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+    baseGUID = config.baseGUID3,
     embarkedUnits = {
       {
         side = 'China',
@@ -897,7 +932,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Zhangzhou-Longxi AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
+    baseGUID = config.baseGUID4,
     embarkedUnits = {
       {
         side = 'China',
@@ -915,7 +950,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Huian AAB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+    baseGUID = config.baseGUID5,
     embarkedUnits = {
       {
         side = 'China',
@@ -943,7 +978,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Longtian AAB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCRQC4',
+    baseGUID = config.baseGUID6,
     embarkedUnits = {
       {
         side = 'China',
@@ -970,7 +1005,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Xingning AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMLLEF9H7VDF',
+    baseGUID = config.baseGUID7,
     embarkedUnits = {
       {
         side = 'China',
@@ -988,7 +1023,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Shuimen AAB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
+    baseGUID = config.baseGUID8,
     embarkedUnits = {
       {
         side = 'China',
@@ -1044,7 +1079,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Anqing AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMIJ7B8971MA',
+    baseGUID = config.baseGUID9,
     embarkedUnits = {
       {
         side = 'China',
@@ -1062,7 +1097,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Wuhu AB (PLAAF)',
-    baseGUID = '6Z8LM5-0HMIJ7B896RA9',
+    baseGUID = config.baseGUID10,
     embarkedUnits = {
       {
         side = 'China',
@@ -1080,7 +1115,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Liuan AB',
-    baseGUID = 'X58F5H-0HMRAQFR07T2V',
+    baseGUID = config.baseGUID11,
     embarkedUnits = {
       {
         side = 'China',
@@ -1408,7 +1443,7 @@ config.c.PHIBOP.initialLocations = {
 config.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
-    baseGUID = '6Z8LM5-0HMMNGU6J8P2N',
+    baseGUID = config.baseGUID12,
     anchorageArea = config.c.areas["ANCH AREA/TAOYUAN"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/TAOYUAN"],
     area = config.c.areas["CAS/E"],
@@ -1556,8 +1591,8 @@ config.c.PHIBOP.operationalZones = {
     }
   },
   {
-    name = "Sishu",
-    baseGUID = '6Z8LM5-0HMJV6AONGLAU',
+    name = 'Sishu',
+    baseGUID = config.baseGUID13,
     anchorageArea = config.c.areas["ANCH AREA/SISHU"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/SISHU"],
     area = config.c.areas["CAS/S"],
@@ -1693,8 +1728,8 @@ config.c.PHIBOP.operationalZones = {
     }
   },
   {
-    name = "Penghu",
-    baseGUID = '6Z8LM5-0HMJV6AONGLAU',
+    name = 'Penghu',
+    baseGUID = config.baseGUID13,
     anchorageArea = config.c.areas["ANCH AREA/PENGHU"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/PENGHU"],
     area = config.c.areas["CAS/PENGHU"],
@@ -1832,7 +1867,7 @@ config.c.PHIBOP.operationalZones = {
 config.c.PHIBOP.transportAircraft = {
   {
     name = 'Zhangpu AAB',
-    guid = 'X58F5H-0HN00TRR0Q1JQ',
+    guid = config.baseGUID3,
     dbid = config.platformDBID40,
     missions = {
       {
@@ -2366,7 +2401,7 @@ config.t.air.landBased.wpnNum = 8
 config.t.air.landBased.deployedACs = {
   {
     name = 'Ching Chuang Kang AB',
-    baseGUID = '6Z8LM5-0HMIHS2L949R0',
+    baseGUID = config.baseGUID14,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2384,7 +2419,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Chiayi AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCHSUB',
+    baseGUID = config.baseGUID15,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2404,7 +2439,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Tainan AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCHVVS',
+    baseGUID = config.baseGUID16,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2422,7 +2457,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Magong AB',
-    baseGUID = '6Z8LM5-0HMISSTNL3T8K',
+    baseGUID = config.baseGUID17,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2440,7 +2475,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Guiren AAB',
-    baseGUID = 'IC8B0X-0HN37BVOG0T9O',
+    baseGUID = config.baseGUID18,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2458,7 +2493,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Pingtung North AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCI1GF',
+    baseGUID = config.baseGUID19,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2473,7 +2508,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Pingtung South AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCI1GF',
+    baseGUID = config.baseGUID31,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2497,7 +2532,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Taitung/Jhihhang AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCI3V3',
+    baseGUID = config.baseGUID20,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2518,7 +2553,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Jiashan AB',
-    baseGUID = '6Z8LM5-0HMIJ3QGCI783',
+    baseGUID = config.baseGUID21,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2547,7 +2582,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Hsinchu AB',
-    baseGUID = '6Z8LM5-0HMIK08HEK556',
+    baseGUID = config.baseGUID22,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2566,7 +2601,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Longtan AAB',
-    baseGUID = 'IC8B0X-0HN3ADVRF2U7P',
+    baseGUID = config.baseGUID23,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2584,7 +2619,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Taoyuan International Airport',
-    baseGUID = '6Z8LM5-0HMJ1GE4HSIU5',
+    baseGUID = config.baseGUID24,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2599,14 +2634,14 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Rende Emergency Highway Strip',
-    baseGUID = 'X58F5H-0HMU28MM77N82',
+    baseGUID = config.baseGUID25,
     loadouts = {
       { loadoutId = config.loadoutDBID28, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
     name = 'Madou Emergency Highway Strip',
-    baseGUID = 'X58F5H-0HMU28MM7836P',
+    baseGUID = config.baseGUID26,
     loadouts = {
       { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
       { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
@@ -2615,7 +2650,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Minxiong Emergency Highway Strip',
-    baseGUID = 'X58F5H-0HMU28MM78J9P',
+    baseGUID = config.baseGUID27,
     loadouts = {
       { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
       { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
@@ -2624,14 +2659,14 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Tainan Field Airdrome',
-    baseGUID = 'IC8B0X-0HN81FNLB6M8Q',
+    baseGUID = config.baseGUID28,
     loadouts = {
       { loadoutId = config.loadoutDBID33, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
     name = 'Hsinchu Field Airdrome ',
-    baseGUID = 'IC8B0X-0HN81FNLB2OPJ',
+    baseGUID = config.baseGUID29,
     loadouts = {
       { loadoutId = config.loadoutDBID43, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
@@ -2682,7 +2717,7 @@ config.t.surface.sag = {
 config.t.surface.deployedShips = {
   {
     name = 'Port of Keelung',
-    baseGUID = 'X58F5H-0HMSMDQJ7LEUI',
+    baseGUID = config.baseGUID30,
     embarkedUnits = {
       {
         side = 'Taiwan',
