@@ -1,6 +1,5 @@
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
@@ -207,10 +206,6 @@ end
 local function initATO(saveData)
   for _, wave in pairs(saveData.c.air.ATO) do
     for index, package in ipairs(wave.packages) do
-      -- if package.takeoffTime == nil and index == 1 then
-      --   GameUtils.PrintBox('China', 'No takeoff time for ' .. wave.name .. ' package ' .. index)
-      -- end
-
       if type(package.target.objs) == 'table' then
         package.target.list = TargetingProcess.selectTargetsByQueryParams({
           targetlist = saveData.c.targetlist,
@@ -243,19 +238,15 @@ local function initATO(saveData)
             "%Y-%m-%d %I:%M:%S",
             Utils.parseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
           )
+        end
+
+        if package[role] and package[role].endTime == nil then
           package[role].endTime = os.date(
             "%Y-%m-%d %I:%M:%S",
             Utils.parseDatetimeToTimestamp(package[role].startTime) + 45 * 60
           )
         end
       end
-
-      -- if package.takeoffTime == nil and index > 1 then
-      --   package.takeoffTime = os.date(
-      --     "%Y-%m-%d %I:%M:%S",
-      --     Utils.ParseDatetimeToTimestamp(wave.packages[index - 1].takeoffTime) + wave.strikeInterval
-      --   )
-      -- end
     end
   end
 end

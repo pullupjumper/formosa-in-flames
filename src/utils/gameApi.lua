@@ -541,6 +541,13 @@ function realApi.ScenEdit_SetEventAction(eventName, opts)
   return ScenEdit_SetEventAction(eventName, opts)
 end
 
+---comment
+---@param opts CMO__LoadoutInfo
+---@return boolean
+function realApi.ScenEdit_SetLoadout(opts)
+  return ScenEdit_SetLoadout(opts)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

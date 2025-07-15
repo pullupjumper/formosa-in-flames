@@ -201,7 +201,7 @@ config.platformDBID19 = 386  -- S-300
 config.platformDBID20 = 2442 -- S-400
 config.platformDBID21 = 1277 -- HQ-12
 config.platformDBID22 = 4324 -- PHL-16
-config.platformDBID23 = 624  -- supply
+config.platformDBID23 = 624  -- Supply
 config.platformDBID24 = 3126 -- PHL-03
 config.platformDBID25 = 4582 -- GPS Jammer
 config.platformDBID26 = 1376 -- underground shelter
@@ -211,8 +211,8 @@ config.platformDBID29 = 4926 -- J-16
 config.platformDBID30 = 4652 -- Su-30
 config.platformDBID31 = 1731 -- H-6K
 config.platformDBID32 = 4601 -- 072a
-config.platformDBID33 = 4141 -- 劍二
-config.platformDBID34 = 1092 -- skyguard
+config.platformDBID33 = 4141 -- TC-2
+config.platformDBID34 = 1092 -- Skyguard
 config.platformDBID35 = 4203 -- Y-9
 config.platformDBID36 = 4454 -- J-35
 config.platformDBID37 = 4817 -- J-15D
@@ -230,11 +230,11 @@ config.platformDBID48 = 3587 -- 052d
 config.platformDBID49 = 2714 -- 054a
 config.platformDBID50 = 2086 -- Ammo Truck
 config.platformDBID51 = 3883 -- 055
-config.platformDBID52 = 2980 -- 901
-config.platformDBID53 = 320  -- ammo
+config.platformDBID52 = 2980 -- Type901
+config.platformDBID53 = 320  -- Ammo
 config.platformDBID54 = 4876 -- 076
 config.platformDBID55 = 4962 -- GJ-11
-config.platformDBID56 = 2566 -- ferry
+config.platformDBID56 = 2566 -- Ferry
 config.platformDBID57 = 7419 -- J-10C
 config.platformDBID58 = 241  -- ZBD-05
 config.platformDBID59 = 240  -- ZTD-05
@@ -242,14 +242,13 @@ config.platformDBID60 = 318  -- PLL-05
 config.platformDBID61 = 319  -- PLZ-96
 config.platformDBID62 = 2876 -- PGZ-09
 config.platformDBID63 = 758  -- PGZ-95
-config.platformDBID64 = 2034 -- 悍馬車
+config.platformDBID64 = 2034 -- HMMWV
 config.platformDBID65 = 2806 -- MC
 config.platformDBID66 = 2162 -- SA-15
 config.platformDBID67 = 430  -- M977
-config.platformDBID68 = 2034 -- 悍馬車
 config.platformDBID69 = 236  -- ZBD-04
 config.platformDBID70 = 245  -- ZTZ-96A
-config.platformDBID71 = 4122 -- bridge
+config.platformDBID71 = 4122 -- Bridge
 config.platformDBID72 = 4925 -- Barge
 config.platformDBID73 = 2155 -- Kidd
 config.platformDBID74 = 4149 -- Kang Ding
@@ -257,6 +256,24 @@ config.platformDBID75 = 906  -- S-70C
 config.platformDBID76 = 7136 -- H-6N
 config.platformDBID77 = 665  -- 093B
 config.platformDBID78 = 177  -- Bunker (Sector Control Station)
+config.platformDBID79 = 3301 -- Y-8Q Cub
+config.platformDBID80 = 3683 -- KJ-500
+config.platformDBID81 = 823  -- HY-6U Badger
+config.platformDBID82 = 6098 -- J-15
+config.platformDBID83 = 3707 -- Z-18F Sea Eagle
+config.platformDBID84 = 3303 -- Z-18J
+config.platformDBID85 = 4902 -- Ka-28
+config.platformDBID86 = 3795 -- IDF Fighter
+config.platformDBID87 = 3962 -- F-16V BLK20
+config.platformDBID88 = 2126 -- AH-1W
+config.platformDBID89 = 2825 -- P-3C
+config.platformDBID90 = 4755 -- C-130HE
+config.platformDBID91 = 6889 -- F-16V BLK70
+config.platformDBID92 = 6039 -- MQ-9B
+config.platformDBID93 = 175  -- Mirage 2000 Fighter
+config.platformDBID94 = 2419 -- AH-64E
+config.platformDBID95 = 5035 -- Chung Shyang II
+config.platformDBID96 = 3441 -- Ta Chiang
 
 config.sensorDBID1 = 2788    -- S-300 Tombstone
 config.sensorDBID2 = 4155    -- S-400 Grave Stone
@@ -274,12 +291,74 @@ config.sensorDBID13 = 2539   -- GPS Jammer
 config.sensorDBID14 = 6381   -- TC-2
 
 
-config.loadoutDBID1 = 30568 -- ka-52
-config.loadoutDBID2 = 31490 -- z-10
-config.loadoutDBID3 = 18367 -- z-18
-config.loadoutDBID4 = 18365 -- z-18
-config.loadoutDBID5 = 25504 -- II-76
-config.loadoutDBID6 = 27825 -- GJ-11
+config.loadoutDBID1 = 30568  -- Ka-52 攻擊直升機武器配置
+config.loadoutDBID2 = 31490  -- Z-10 攻擊直升機武器配置
+config.loadoutDBID3 = 18367  -- Z-18 運輸直升機載貨配置 1
+config.loadoutDBID4 = 18365  -- Z-18 運輸直升機載貨配置 2
+config.loadoutDBID5 = 25504  -- II-76 運輸機載貨配置
+config.loadoutDBID6 = 27825  -- GJ-11 攻擊無人機武器配置
+config.loadoutDBID7 = 26233  -- J-16 AKD-88 反輻射飛彈 X 2
+config.loadoutDBID8 = 28027  -- J-20 PL-15 空對空飛彈 X 4
+config.loadoutDBID9 = 25378  -- Su-30 YJ-91 反艦飛彈 X 2
+config.loadoutDBID10 = 27636 -- Y-8Q 反潛巡邏機配置
+config.loadoutDBID11 = 25380 -- Su-30 KAB-1500 制導炸彈 X 2
+config.loadoutDBID12 = 21678 -- Y-9 運輸機載貨配置
+config.loadoutDBID13 = 33464 -- Y-9DZ 電子情報收集配置
+config.loadoutDBID14 = 17495 -- BZK-005 無人機偵察配置
+config.loadoutDBID15 = 33615 -- H-6K YJ-63 巡航飛彈 X 4
+config.loadoutDBID16 = 21743 -- J-16 YJ-83 反艦飛彈 X 2
+config.loadoutDBID17 = 18300 -- KJ-500 預警機配置
+config.loadoutDBID18 = 8811  -- HY-6U 空中加油機配置
+config.loadoutDBID19 = 25595 -- J-10C LS-6-500 制導炸彈 X 2
+config.loadoutDBID20 = 8792  -- H-6N 運輸配置
+config.loadoutDBID21 = 845   -- Z-18F 反潛直升機配置
+config.loadoutDBID22 = 9677  -- Su-30 YJ-91 反艦飛彈 X 4
+config.loadoutDBID23 = 34294 -- J-10C LS-6-500 制導炸彈 X 4
+config.loadoutDBID24 = 18368 -- Z-18F 航母反潛配置
+config.loadoutDBID25 = 17471 -- Z-18J 航母預警配置
+config.loadoutDBID26 = 25212 -- J-15D 電子戰配置
+config.loadoutDBID27 = 13926 -- Ka-28 航母反潛直升機配置
+config.loadoutDBID28 = 19104 -- IDF 戰機萬劍彈 X 2
+config.loadoutDBID29 = 22798 -- F-16V BLK20 標準戰鬥配置
+config.loadoutDBID30 = 22785 -- F-16V BLK20 AMRAAM 空對空飛彈 X 4
+config.loadoutDBID31 = 22789 -- F-16V BLK20 魚叉反艦飛彈 X 2
+config.loadoutDBID32 = 22790 -- F-16V BLK20 GBU 制導炸彈 X 2
+config.loadoutDBID33 = 7347  -- AH-1W 地獄火飛彈 X 8
+config.loadoutDBID34 = 14639 -- S-70C 運輸配置
+config.loadoutDBID35 = 13537 -- P-3C 反潛巡邏配置
+config.loadoutDBID36 = 25876 -- C-130HE 運輸配置
+config.loadoutDBID37 = 33012 -- F-16V BLK70 SLAM-ER 飛彈 X 2
+config.loadoutDBID38 = 9479  -- F-16V BLK70 JDAM 制導炸彈 X 4
+config.loadoutDBID39 = 9326  -- F-16V BLK70 HARM 反輻射飛彈 X 2
+config.loadoutDBID40 = 9481  -- F-16V BLK70 JSOW 滑翔炸彈 X 4
+config.loadoutDBID41 = 32059 -- E-2K 預警機配置
+config.loadoutDBID42 = 5732  -- 幻象2000 MICA 飛彈 X 4
+config.loadoutDBID43 = 15213 -- AH-64E 地獄火飛彈 X 16
+config.loadoutDBID44 = 28116 -- MQ-9B 偵察無人機配置
+
+
+config.weaponDBID1 = 4472   -- PHL-16 多管火箭炮
+config.weaponDBID2 = 2122   -- CJ-10 地射巡航飛彈
+config.weaponDBID3 = 2142   -- DF-11A 短程彈道飛彈
+config.weaponDBID4 = 4511   -- DF-15B 短程彈道飛彈
+config.weaponDBID5 = 2145   -- DF-16 短程彈道飛彈
+config.weaponDBID6 = 40     -- CSS-6 短程彈道飛彈
+config.weaponDBID7 = 2105   -- DF-21D 中程彈道飛彈
+config.weaponDBID8 = 4058   -- YJ-18A 艦射陸攻巡航飛彈
+config.weaponDBID9 = 3716   -- YJ-18 潛射陸攻巡航飛彈
+config.weaponDBID10 = 2876  -- KAB-1500 空對地制導炸彈
+config.weaponDBID11 = 3413  -- PL-15 空對空飛彈
+config.weaponDBID12 = 2875  -- YJ-91 反輻射飛彈
+config.weaponDBID13 = 2107  -- YJ-63 空射巡航飛彈
+config.weaponDBID14 = 3077  -- KAB-1500 制導炸彈
+config.weaponDBID15 = 3226  -- LS-6-500 制導炸彈
+config.weaponDBID16 = 276   -- YJ-91 反艦飛彈
+config.weaponDBID17 = 2137  -- YJ-83 反艦飛彈
+config.weaponDBID18 = 2948  -- RT-2000 多管火箭炮
+config.weaponDBID19 = 1717  -- ATACMS 短程彈道飛彈
+config.weaponDBID20 = 3228  -- 雄風 IIE 陸射巡航飛彈
+config.weaponDBID21 = 1133  -- 雄風 II 反艦飛彈
+config.weaponDBID22 = 905   -- 計分系統武器
 
 
 config.radarDistance = 70
@@ -745,10 +824,10 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 3301,
+        dbid = config.platformDBID79,
         name = '1st Naval AF Div',
         loadouts = {
-          { loadoutId = 27636, num = 3, missionName = 'ASW/PATROL AC' },
+          { loadoutId = config.loadoutDBID10, num = 3, missionName = 'ASW/PATROL AC' },
         }
       }
     }
@@ -760,15 +839,15 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 4926,
+        dbid = config.platformDBID29,
         name = '7th Air Bde',
         loadouts = {
-          { loadoutId = 26233, num = 24 },
+          { loadoutId = config.loadoutDBID7, num = 24 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 26233, num = 24 }, --AKD-88 X 2
+      { loadoutId = config.loadoutDBID7, num = 24 }, --AKD-88 X 2
     }
   },
   {
@@ -778,42 +857,42 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 4652,
+        dbid = config.platformDBID30,
         name = '804th Air Bde',
         loadouts = {
-          { loadoutId = 25380, num = 12 },
+          { loadoutId = config.loadoutDBID11, num = 12 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 4203,
+        dbid = config.platformDBID35,
         name = '60th Air Reg',
         loadouts = {
-          { loadoutId = 21678, num = 3 },
+          { loadoutId = config.loadoutDBID12, num = 3 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 2503,
+        dbid = config.platformDBID40,
         name = '39th Air Reg',
         loadouts = {
-          { loadoutId = 25504, num = 3 },
+          { loadoutId = config.loadoutDBID5, num = 3 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 7064,
+        dbid = config.platformDBID47,
         name = '60th Air Reg',
         loadouts = {
-          { loadoutId = 33464, num = 3, missionName = 'SIGINT' },
+          { loadoutId = config.loadoutDBID13, num = 3, missionName = 'SIGINT' },
         }
       },
     },
     loadouts = {
-      { loadoutId = 25380, num = 12 }, --KAB-1500 X 2
+      { loadoutId = config.loadoutDBID11, num = 12 }, --KAB-1500 X 2
     }
   },
   {
@@ -823,15 +902,15 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 4652,
+        dbid = config.platformDBID30,
         name = '804th Air Bde',
         loadouts = {
-          { loadoutId = 25378, num = 24 },
+          { loadoutId = config.loadoutDBID9, num = 24 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 25378, num = 24 }, --YJ-91 X 2
+      { loadoutId = config.loadoutDBID9, num = 24 }, --YJ-91 X 2
     }
   },
   {
@@ -841,25 +920,25 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 4926,
+        dbid = config.platformDBID29,
         name = '40th Air Bde',
         loadouts = {
-          { loadoutId = 26233, num = 12 },
+          { loadoutId = config.loadoutDBID7, num = 12 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 5014,
+        dbid = config.platformDBID28,
         name = '41st Air Bde',
         loadouts = {
-          { loadoutId = 28027, num = 12 },
+          { loadoutId = config.loadoutDBID8, num = 12 },
         }
       },
     },
     loadouts = {
-      { loadoutId = 28027, num = 12 }, --PL-15 X 4
-      { loadoutId = 26233, num = 12 }, --AKD-88 X 2
+      { loadoutId = config.loadoutDBID8, num = 12 }, --PL-15 X 4
+      { loadoutId = config.loadoutDBID7, num = 12 }, --AKD-88 X 2
     }
   },
   {
@@ -869,24 +948,24 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 3309,
+        dbid = config.platformDBID13,
         name = 'PLARF UAV Reg',
         loadouts = {
-          { loadoutId = 17495, num = 6 },
+          { loadoutId = config.loadoutDBID14, num = 6 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 4652,
+        dbid = config.platformDBID30,
         name = '804th Air Bde',
         loadouts = {
-          { loadoutId = 25378, num = 8 },
+          { loadoutId = config.loadoutDBID9, num = 8 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 25378, num = 8 }, --YJ-91 X 2
+      { loadoutId = config.loadoutDBID9, num = 8 }, --YJ-91 X 2
     }
   },
   {
@@ -896,15 +975,15 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 1731,
+        dbid = config.platformDBID31,
         name = '29th Air Reg',
         loadouts = {
-          { loadoutId = 33615, num = 12 },
+          { loadoutId = config.loadoutDBID15, num = 12 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 33615, num = 12 }, --YJ-63 X 4
+      { loadoutId = config.loadoutDBID15, num = 12 }, --YJ-63 X 4
     }
   },
   {
@@ -914,53 +993,53 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 4652,
+        dbid = config.platformDBID30,
         name = '804th Air Bde',
         loadouts = {
-          { loadoutId = 25378, num = 8 },
+          { loadoutId = config.loadoutDBID9, num = 8 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 4926,
+        dbid = config.platformDBID29,
         name = '40th Air Bde',
         loadouts = {
-          { loadoutId = 21743, num = 8 },
+          { loadoutId = config.loadoutDBID16, num = 8 },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 3683,
+        dbid = config.platformDBID80,
         name = '75th Air Reg',
         loadouts = {
-          { loadoutId = 18300, num = 3, missionName = 'AEW/N' },
+          { loadoutId = config.loadoutDBID17, num = 3, missionName = 'AEW/N' },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 823,
+        dbid = config.platformDBID81,
         name = '23rd Air Reg',
         loadouts = {
-          { loadoutId = 8811, num = 3, missionName = 'AAR' },
+          { loadoutId = config.loadoutDBID18, num = 3, missionName = 'AAR' },
         }
       },
       {
         side = 'China',
         type = 'Air',
-        dbid = 7419,
+        dbid = config.platformDBID57,
         name = '25th Air Bde',
         loadouts = {
-          { loadoutId = 25595, num = 8 },
+          { loadoutId = config.loadoutDBID19, num = 8 },
         }
       },
     },
     loadouts = {
-      { loadoutId = 25378, num = 8 }, --YJ-91 X 2
-      { loadoutId = 21743, num = 8 }, --YJ-83 X 2
-      { loadoutId = 25595, num = 8 }, --LS-6-500 X 2
+      { loadoutId = config.loadoutDBID9,  num = 8 }, --YJ-91 X 2
+      { loadoutId = config.loadoutDBID16, num = 8 }, --YJ-83 X 2
+      { loadoutId = config.loadoutDBID19, num = 8 }, --LS-6-500 X 2
     }
   },
   {
@@ -970,15 +1049,15 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 1731,
+        dbid = config.platformDBID31,
         name = '28th Air Reg',
         loadouts = {
-          { loadoutId = 33615, num = 12 },
+          { loadoutId = config.loadoutDBID15, num = 12 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 33615, num = 12 }, --YJ-63 X 4
+      { loadoutId = config.loadoutDBID15, num = 12 }, --YJ-63 X 4
     }
   },
   {
@@ -988,15 +1067,15 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 5014,
+        dbid = config.platformDBID28,
         name = '9th Air Bde',
         loadouts = {
-          { loadoutId = 28027, num = 12 },
+          { loadoutId = config.loadoutDBID8, num = 12 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 28027, num = 12 }, --PL-15 X 4
+      { loadoutId = config.loadoutDBID8, num = 12 }, --PL-15 X 4
     }
   },
   {
@@ -1006,10 +1085,10 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = 7136,
+        dbid = config.platformDBID76,
         name = '107th Air Reg',
         loadouts = {
-          { loadoutId = 8792, num = 4 },
+          { loadoutId = config.loadoutDBID20, num = 4 },
         }
       }
     }
@@ -1031,7 +1110,7 @@ config.c.PHIBOP.cargoList = {
     { type = 2, num = 12, dbid = config.platformDBID61 }, -- PLZ-96 12
     { type = 3, num = 3,  dbid = config.platformDBID62 }, -- PGZ-09 3
     { type = 3, num = 1,  dbid = config.platformDBID63 }, -- PGZ-95 1
-    { type = 3, num = 30, dbid = config.platformDBID68 }, -- 悍馬車 30
+    { type = 3, num = 30, dbid = config.platformDBID64 }, -- 悍馬車 30
     { type = 3, num = 76, dbid = config.platformDBID65 }, -- MC 76
   },
   ---@type table<number, CargoItem>
@@ -1104,7 +1183,7 @@ config.c.PHIBOP.cargoListForTransfer = {
     { type = 3, num = 2, dbid = config.platformDBID65 }, -- MC -- 075/071 Z-18
   },
   airAssaultGroup2 = {
-    { type = 3, num = 1, dbid = config.platformDBID68 }, -- 悍馬車
+    { type = 3, num = 1, dbid = config.platformDBID64 }, -- 悍馬車
   },
   airAssaultGroup3 = {
     { type = 2, num = 3, dbid = config.platformDBID39 }, -- II-76 ZBD-03
@@ -1754,7 +1833,7 @@ config.c.PHIBOP.transportAircraft = {
   {
     name = 'Zhangpu AAB',
     guid = 'X58F5H-0HN00TRR0Q1JQ',
-    dbid = 2503,
+    dbid = config.platformDBID40,
     missions = {
       {
         name = 'AIRLANDING/PENGHU/2/2',
@@ -1862,7 +1941,7 @@ config.c.PHIBOP.sag = {
 }
 
 -- Land strike from
-config.c.surface.lacm.weaponDBID = 4058
+config.c.surface.lacm.weaponDBID = config.weaponDBID8
 config.c.surface.lacm.csg = {
   groupName = 'CSG',
   unitList = {
@@ -1872,44 +1951,44 @@ config.c.surface.lacm.csg = {
         {
           side = 'China',
           type = 'Air',
-          dbid = 6098,
+          dbid = config.platformDBID82,
           name = '2nd Carrier Air Wing',
           loadouts = {
-            { loadoutId = 9677,  num = 16 },
-            { loadoutId = 34294, num = 24 },
+            { loadoutId = config.loadoutDBID22, num = 16 },
+            { loadoutId = config.loadoutDBID23, num = 24 },
           }
         },
         {
           side = 'China',
           type = 'Air',
-          dbid = 3707,
+          dbid = config.platformDBID83,
           name = '10th Naval Air Bde',
           loadouts = {
-            { loadoutId = 18368, num = 6, missionName = 'ASW/CSG' },
+            { loadoutId = config.loadoutDBID24, num = 6, missionName = 'ASW/CSG' },
           }
         },
         {
           side = 'China',
           type = 'Air',
-          dbid = 3303,
+          dbid = config.platformDBID84,
           name = '10th Naval Air Bde',
           loadouts = {
-            { loadoutId = 17471, num = 3, missionName = 'AEW/CSG' },
+            { loadoutId = config.loadoutDBID25, num = 3, missionName = 'AEW/CSG' },
           }
         },
         {
           side = 'China',
           type = 'Air',
-          dbid = 4817,
+          dbid = config.platformDBID37,
           name = '2nd Carrier Air Wing',
           loadouts = {
-            { loadoutId = 25212, num = 3, },
+            { loadoutId = config.loadoutDBID26, num = 3, },
           }
         },
       },
       loadouts = {
-        { loadoutId = 34294, num = 24, }, -- LS-6-500 X 4
-        { loadoutId = 9677,  num = 16, }, -- YJ-91 X 4
+        { loadoutId = config.loadoutDBID23, num = 24, }, -- LS-6-500 X 4
+        { loadoutId = config.loadoutDBID22, num = 16, }, -- YJ-91 X 4
       }
     },
     type055 = {
@@ -1918,10 +1997,10 @@ config.c.surface.lacm.csg = {
         {
           side = 'China',
           type = 'Air',
-          dbid = 4902,
+          dbid = config.platformDBID85,
           name = '10th Naval Air Bde',
           loadouts = {
-            { loadoutId = 13926, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = config.loadoutDBID27, num = 1, missionName = 'ASW/CSG' },
           }
         },
       }
@@ -1932,10 +2011,10 @@ config.c.surface.lacm.csg = {
         {
           side = 'China',
           type = 'Air',
-          dbid = 4902,
+          dbid = config.platformDBID85,
           name = '10th Naval Air Bde',
           loadouts = {
-            { loadoutId = 13926, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = config.loadoutDBID27, num = 1, missionName = 'ASW/CSG' },
           }
         },
       }
@@ -1946,10 +2025,10 @@ config.c.surface.lacm.csg = {
         {
           side = 'China',
           type = 'Air',
-          dbid = 3707,
+          dbid = config.platformDBID83,
           name = '10th Naval Air Bde',
           loadouts = {
-            { loadoutId = 18368, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = config.loadoutDBID24, num = 1, missionName = 'ASW/CSG' },
           }
         },
       }
@@ -1975,7 +2054,7 @@ config.c.surface.lacm.targetlist = {
 
 
 -- SLCM
-config.c.subSurface.slcm.weaponDBID = 3716
+config.c.subSurface.slcm.weaponDBID = config.weaponDBID9
 config.c.subSurface.slcm.submarines = {
   {
     name = "407",
@@ -2292,15 +2371,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 3795,
+        dbid = config.platformDBID86,
         name = '3rd Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 19104, num = 8 },
+          { loadoutId = config.loadoutDBID28, num = 8 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 19104, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { loadoutId = config.loadoutDBID28, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
@@ -2310,17 +2389,17 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 3962,
+        dbid = config.platformDBID87,
         name = '4th Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 22798, num = 8 },
+          { loadoutId = config.loadoutDBID29, num = 8 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 22785, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { loadoutId = 22789, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { loadoutId = 22790, num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { loadoutId = config.loadoutDBID32, num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
@@ -2330,15 +2409,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 3795,
+        dbid = config.platformDBID86,
         name = '1st Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 19104, num = 4 },
+          { loadoutId = config.loadoutDBID28, num = 4 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 19104, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { loadoutId = config.loadoutDBID28, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
@@ -2348,15 +2427,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 3795,
+        dbid = config.platformDBID86,
         name = '1st Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 19104, num = 4 },
+          { loadoutId = config.loadoutDBID28, num = 4 },
         }
       }
     },
     loadouts = {
-      { loadoutId = 19104, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { loadoutId = config.loadoutDBID28, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
@@ -2366,15 +2445,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 2126,
+        dbid = config.platformDBID88,
         name = '603rd Air Cavalry Bde',
         loadouts = {
-          { loadoutId = 7347, num = 8, missionName = 'ASUW/ACV/PENGHU' },
+          { loadoutId = config.loadoutDBID33, num = 8, missionName = 'ASUW/ACV/PENGHU' },
         }
       }
     },
     loadouts = {
-      { loadoutId = 7347, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { loadoutId = config.loadoutDBID33, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
@@ -2384,61 +2463,34 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 2095,
+        dbid = config.platformDBID38,
         name = '6th Mixed Wing',
         loadouts = {
-          { loadoutId = 14639, num = 3, missionName = 'FERRY/2' },
+          { loadoutId = config.loadoutDBID34, num = 3, missionName = 'FERRY/2' },
         }
       },
-      -- {
-      --   side = 'Taiwan',
-      --   type = 'Air',
-      --   dbid = 2825,
-      --   name = '6th Mixed Wing',
-      --   loadouts = {
-      --     { loadoutId = 13537, num = 3, missionName = 'ASW/E' },
-      --   }
-      -- },
-      -- {
-      --   side = 'Taiwan',
-      --   type = 'Air',
-      --   dbid = 4755,
-      --   name = '6th Mixed Wing',
-      --   loadouts = {
-      --     { loadoutId = 25876, num = 1, missionName = 'FERRY/2' },
-      --   }
-      -- },
     }
   },
   {
     name = 'Pingtung South AB',
     baseGUID = '6Z8LM5-0HMIJ3QGCI1GF',
     embarkedUnits = {
-      -- {
-      --   side = 'Taiwan',
-      --   type = 'Air',
-      --   dbid = 2095,
-      --   name = '6th Mixed Wing',
-      --   loadouts = {
-      --     { loadoutId = 14639, num = 3, missionName = 'FERRY/2' },
-      --   }
-      -- },
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 2825,
+        dbid = config.platformDBID89,
         name = '6th Mixed Wing',
         loadouts = {
-          { loadoutId = 13537, num = 3, missionName = 'ASW/E' },
+          { loadoutId = config.loadoutDBID35, num = 3, missionName = 'ASW/E' },
         }
       },
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 4755,
+        dbid = config.platformDBID90,
         name = '6th Mixed Wing',
         loadouts = {
-          { loadoutId = 25876, num = 1, missionName = 'FERRY/2' },
+          { loadoutId = config.loadoutDBID36, num = 1, missionName = 'FERRY/2' },
         }
       },
     }
@@ -2450,18 +2502,18 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 6889,
+        dbid = config.platformDBID91,
         name = '7th Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 33012, num = 8, missionName = 'FERRY/3' },
+          { loadoutId = config.loadoutDBID37, num = 8, missionName = 'FERRY/3' },
         }
       }
     },
     loadouts = {
-      { loadoutId = 33012, num = config.t.air.landBased.wpnNum }, --SLAMER X 2
-      { loadoutId = 9479,  num = config.t.air.landBased.wpnNum }, --JDAM X 4
-      { loadoutId = 9326,  num = config.t.air.landBased.wpnNum }, --HARM X 2
-      { loadoutId = 9481,  num = config.t.air.landBased.wpnNum }, --JSOW X 4
+      { loadoutId = config.loadoutDBID37, num = config.t.air.landBased.wpnNum }, --SLAMER X 2
+      { loadoutId = config.loadoutDBID38, num = config.t.air.landBased.wpnNum }, --JDAM X 4
+      { loadoutId = config.loadoutDBID39, num = config.t.air.landBased.wpnNum }, --HARM X 2
+      { loadoutId = config.loadoutDBID40, num = config.t.air.landBased.wpnNum }, --JSOW X 4
     }
   },
   {
@@ -2471,26 +2523,26 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 6039,
+        dbid = config.platformDBID92,
         name = '5th Tactical Mixed Wing',
         loadouts = {
-          { loadoutId = 32059, num = 3, missionName = 'AEW/S' },
+          { loadoutId = config.loadoutDBID41, num = 3, missionName = 'AEW/S' },
         }
       },
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 3962,
+        dbid = config.platformDBID87,
         name = '5th Tactical Mixed Wing',
         loadouts = {
-          { loadoutId = 22789, num = 8, },
+          { loadoutId = config.loadoutDBID31, num = 8, },
         }
       }
     },
     loadouts = {
-      { loadoutId = 22785, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { loadoutId = 22789, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { loadoutId = 22790, num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { loadoutId = config.loadoutDBID32, num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
@@ -2500,15 +2552,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 175,
+        dbid = config.platformDBID93,
         name = '2nd Tactical Fighter Wing',
         loadouts = {
-          { loadoutId = 5732, num = 8, },
+          { loadoutId = config.loadoutDBID42, num = 8, },
         }
       }
     },
     loadouts = {
-      { loadoutId = 5732, num = config.t.air.landBased.wpnNum }, --MICA X 4
+      { loadoutId = config.loadoutDBID42, num = config.t.air.landBased.wpnNum }, --MICA X 4
 
     }
   },
@@ -2519,15 +2571,15 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 2419,
+        dbid = config.platformDBID94,
         name = '601st Air Cavalry Bde',
         loadouts = {
-          { loadoutId = 15213, num = 8, missionName = 'ASUW/ACV/W' },
+          { loadoutId = config.loadoutDBID43, num = 8, missionName = 'ASUW/ACV/W' },
         }
       }
     },
     loadouts = {
-      { loadoutId = 15213, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { loadoutId = config.loadoutDBID43, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
   },
   {
@@ -2537,10 +2589,10 @@ config.t.air.landBased.deployedACs = {
       {
         side = 'Taiwan',
         type = 'Air',
-        dbid = 5035,
+        dbid = config.platformDBID95,
         name = '1st Maritime Tactical Recon Sqn',
         loadouts = {
-          { loadoutId = 28116, num = 3, missionName = 'RECON/3' },
+          { loadoutId = config.loadoutDBID44, num = 3, missionName = 'RECON/3' },
         }
       }
     }
@@ -2549,39 +2601,39 @@ config.t.air.landBased.deployedACs = {
     name = 'Rende Emergency Highway Strip',
     baseGUID = 'X58F5H-0HMU28MM77N82',
     loadouts = {
-      { loadoutId = 19104, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { loadoutId = config.loadoutDBID28, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
     name = 'Madou Emergency Highway Strip',
     baseGUID = 'X58F5H-0HMU28MM7836P',
     loadouts = {
-      { loadoutId = 22785, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { loadoutId = 22789, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { loadoutId = 22790, num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { loadoutId = config.loadoutDBID32, num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
     name = 'Minxiong Emergency Highway Strip',
     baseGUID = 'X58F5H-0HMU28MM78J9P',
     loadouts = {
-      { loadoutId = 22785, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { loadoutId = 22789, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { loadoutId = 22790, num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { loadoutId = config.loadoutDBID30, num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { loadoutId = config.loadoutDBID31, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { loadoutId = config.loadoutDBID32, num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
     name = 'Tainan Field Airdrome',
     baseGUID = 'IC8B0X-0HN81FNLB6M8Q',
     loadouts = {
-      { loadoutId = 7347, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { loadoutId = config.loadoutDBID33, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
     name = 'Hsinchu Field Airdrome ',
     baseGUID = 'IC8B0X-0HN81FNLB2OPJ',
     loadouts = {
-      { loadoutId = 15213, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { loadoutId = config.loadoutDBID43, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
   },
 }
@@ -2599,7 +2651,7 @@ config.t.surface.sag = {
             dbid = config.platformDBID75,
             name = '2nd ASW Aviation Grp',
             loadouts = {
-              { loadoutId = 845, num = 2 },
+              { loadoutId = config.loadoutDBID21, num = 2 },
             }
           },
         },
@@ -2613,7 +2665,7 @@ config.t.surface.sag = {
             dbid = config.platformDBID75,
             name = '2nd ASW Aviation Grp',
             loadouts = {
-              { loadoutId = 845, num = 1 },
+              { loadoutId = config.loadoutDBID21, num = 1 },
             }
           },
         }
@@ -2635,7 +2687,7 @@ config.t.surface.deployedShips = {
       {
         side = 'Taiwan',
         type = 'Ship',
-        dbid = 3441,
+        dbid = config.platformDBID96,
         name = '131st Fleet',
         loadouts = {
           { loadoutId = 0, num = 6 },
@@ -2664,7 +2716,7 @@ config.s.infantry = -3
 config.s.sub = 15
 config.s.uav = 20
 config.s.tel = 20
-config.s.weaponDBID = 905
+config.s.weaponDBID = config.weaponDBID22
 config.s.attackBeforeTheHHour = -1000
 config.s.undergroundShelterIsDestroyed = -200
 config.s.destroyingCivilianFacility = -100

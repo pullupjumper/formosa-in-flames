@@ -145,7 +145,7 @@ saveData.c.ground.mlrs.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.mlrs.positions.pingtan,
-    weaponDBID = 4472,
+    weaponDBID = config.weaponDBID1,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOERV4D'
   },
@@ -156,7 +156,7 @@ saveData.c.ground.mlrs.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.mlrs.positions.chinchew,
-    weaponDBID = 4472,
+    weaponDBID = config.weaponDBID1,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9'
   },
@@ -196,7 +196,7 @@ saveData.c.ground.glcm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.glcm.positions.brigade635,
-    weaponDBID = 2122,
+    weaponDBID = config.weaponDBID2,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVG88'
   },
@@ -313,7 +313,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade615,
-    weaponDBID = 2142,
+    weaponDBID = config.weaponDBID3,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D'
   },
@@ -324,7 +324,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade614,
-    weaponDBID = 2142,
+    weaponDBID = config.weaponDBID3,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG'
   },
@@ -335,7 +335,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade636,
-    weaponDBID = 4511,
+    weaponDBID = config.weaponDBID4,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1'
   },
@@ -346,7 +346,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade616,
-    weaponDBID = 2145,
+    weaponDBID = config.weaponDBID5,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN'
   },
@@ -357,7 +357,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade613,
-    weaponDBID = 40,
+    weaponDBID = config.weaponDBID6,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC'
   },
@@ -368,7 +368,7 @@ saveData.c.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.srbm.positions.brigade617,
-    weaponDBID = 4511,
+    weaponDBID = config.weaponDBID4,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P'
   },
@@ -404,7 +404,7 @@ saveData.c.ground.mrbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.c.ground.mrbm.positions.brigade624,
-    weaponDBID = 2105,
+    weaponDBID = config.weaponDBID7,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HNCOR6HG2KF9'
   },
@@ -738,7 +738,8 @@ saveData.c.ground.FSP = {
 }
 
 
--- Air tasking order
+-- Air tasking order (OLD VERSION - COMMENTED OUT)
+--[[
 saveData.c.air.isActivated = true
 saveData.c.air.ATO = {
   ['STRIKE/AB/W/1'] = {
@@ -782,21 +783,23 @@ saveData.c.air.ATO = {
     --     hasLaunched = false
     --   },
     -- },
+
     ---@type SBJ__Package[]
-    packages = {
-      {
-        striker = {
-          baseGUID = '6Z8LM5-0HMLLEF9H5P44',
-          weaponDBID = 2876,
-          unitCount = 12,
-          startTime = '2027-06-09 01:20:00',
-          -- endTime = '2027-06-09 02:00:00',
-          missionParams = { name = 'STRIKE/AB/W/1', type = 'strike', opts = { type = 'land' }, },
-          emcon = 'Radar=Passive;OECM=Active'
-        },
+    -- packages = {
+    --   ---@type SBJ__Package
+    --   {
+    --     striker = {
+    --       baseGUID = '6Z8LM5-0HMLLEF9H5P44',
+    --       weaponDBID = 2876,
+    --       unitCount = 12,
+    --       startTime = '2027-06-09 01:20:00',
+    --       -- endTime = '2027-06-09 02:00:00',
+    --       missionParams = { name = 'STRIKE/AB/W/1', type = 'strike', opts = { type = 'land' }, },
+    --       emcon = 'Radar=Passive;OECM=Active'
+    --     },
         escort = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           -- startTime = '2027-06-09 01:00:00',
           -- endTime = '2027-06-09 02:00:00',
@@ -818,7 +821,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
-          weaponDBID = 2875,
+          weaponDBID = config.weaponDBID12,
           unitCount = 8,
           -- startTime = '2027-06-09 01:00:00',
           -- endTime = '2027-06-09 02:00:00',
@@ -839,7 +842,100 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
-          unitDBID = 4203,
+          unitDBID = config.platformDBID35,
+          weaponDBID = 0,
+          unitCount = 1,
+          -- startTime = '2027-06-09 01:00:00',
+          -- endTime = '2027-06-09 02:00:00',
+          missionParams = {
+            name = 'JAMMING/AB/W/1',
+            type = 'support',
+            opts = {
+              zone = config.c.areas["SWEAP/SOUTH/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = {
+          baseGUID = config.c.recon.bases.BZK005.guid,
+          unitDBID = config.platformDBID13,
+          unitGUID = nil,
+          missionName = 'RECON/1',
+          course = { { lat = 'N 25.27.28', lon = 'E 120.46.09', } },
+          unitCount = 1,
+          takeoffTime = '2027-06-09 01:00:00',
+          missionStartTime = '2027-06-09 01:30:00',
+          hasLaunched = false
+        },
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+            { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          },
+          areas = { config.c.areas["OPAREA/SOUTH"] },
+          filterNames = { 'findC2', },
+          contactAge = 60 * 60,
+          minTargetCount = 1,
+        },
+        hasLaunched = false,
+      },
+        striker = {
+          baseGUID = '6Z8LM5-0HMLLEF9H5P44',
+          weaponDBID = config.weaponDBID10,
+          unitCount = 12,
+          startTime = '2027-06-09 01:20:00',
+          -- endTime = '2027-06-09 02:00:00',
+          missionParams = { name = 'STRIKE/AB/W/1', type = 'strike', opts = { type = 'land' }, },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = config.weaponDBID11,
+          unitCount = 8,
+          -- startTime = '2027-06-09 01:00:00',
+          -- endTime = '2027-06-09 02:00:00',
+          missionParams = {
+            name = 'SWEAP/AB/W/1',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              -- onDeactivateDelete = true,
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = config.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = config.c.areas["SWEAP/SOUTH/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
+          weaponDBID = config.weaponDBID12,
+          unitCount = 8,
+          -- startTime = '2027-06-09 01:00:00',
+          -- endTime = '2027-06-09 02:00:00',
+          missionParams = {
+            name = 'SEAD/AB/W/1',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = config.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = config.c.areas["SWEAP/SOUTH/PATROL"],
+            },
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          unitDBID = config.platformDBID35,
           weaponDBID = 0,
           unitCount = 1,
           -- startTime = '2027-06-09 01:00:00',
@@ -881,7 +977,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMLLEF9H5P44',
-          weaponDBID = 2876,
+          weaponDBID = config.weaponDBID10,
           unitCount = 12,
           startTime = nil,
           missionParams = { name = 'STRIKE/AB/C', type = 'strike', opts = { type = 'land' } },
@@ -889,7 +985,7 @@ saveData.c.air.ATO = {
         },
         escort = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           -- startTime = '2027-06-09 01:00:00',
           -- endTime = '2027-06-09 02:00:00',
@@ -911,7 +1007,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
-          weaponDBID = 2875,
+          weaponDBID = config.weaponDBID12,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/AB/C',
@@ -930,7 +1026,7 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
-          unitDBID = 4203,
+          unitDBID = config.platformDBID35,
           weaponDBID = 0,
           unitCount = 1,
           missionParams = {
@@ -958,7 +1054,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 2876,
+          weaponDBID = config.weaponDBID10,
           unitCount = 12,
           startTime = nil,
           missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
@@ -966,7 +1062,7 @@ saveData.c.air.ATO = {
         },
         escort = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           missionParams = {
             name = 'SWEAP/AB/N/1',
@@ -986,7 +1082,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQC4',
-          weaponDBID = 2875,
+          weaponDBID = config.weaponDBID12,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/AB/N/1',
@@ -1005,7 +1101,7 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
-          unitDBID = 4203,
+          unitDBID = config.platformDBID35,
           weaponDBID = 0,
           unitCount = 1,
           missionParams = {
@@ -1042,7 +1138,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMLLEF9H7VDF',
-          weaponDBID = 2107,
+          weaponDBID = config.weaponDBID13,
           unitCount = 12,
           startTime = '2027-06-09 04:40:00',
           missionParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
@@ -1069,7 +1165,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMIJ7B8971MA',
-          weaponDBID = 2107,
+          weaponDBID = config.weaponDBID13,
           unitCount = 12,
           startTime = nil,
           missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
@@ -1105,7 +1201,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
-          weaponDBID = 3077,
+          weaponDBID = config.weaponDBID14,
           unitCount = 12,
           startTime = '2027-06-09 05:40:00',
           missionParams = { name = 'STRIKE/AB/S/2', type = 'strike', opts = { type = 'land' } },
@@ -1113,7 +1209,7 @@ saveData.c.air.ATO = {
         },
         escort = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           missionParams = {
             name = 'SWEAP/AB/S/2',
@@ -1133,7 +1229,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
-          weaponDBID = 2875,
+          weaponDBID = config.weaponDBID12,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/AB/S/2',
@@ -1152,7 +1248,7 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
-          unitDBID = 4203,
+          unitDBID = config.platformDBID35,
           weaponDBID = 0,
           unitCount = 1,
           missionParams = {
@@ -1191,7 +1287,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = 'CSG',
-          weaponDBID = 3226,
+          weaponDBID = config.weaponDBID15,
           unitCount = 12,
           startTime = '2027-06-09 07:00:00',
           missionParams = { name = 'STRIKE/AB/JHI', type = 'strike', opts = { type = 'land' } },
@@ -1199,7 +1295,7 @@ saveData.c.air.ATO = {
         },
         escort = {
           baseGUID = 'CSG',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           missionParams = {
             name = 'SWEAP/AB/JHI',
@@ -1219,7 +1315,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = 'CSG',
-          weaponDBID = 276,
+          weaponDBID = config.weaponDBID16,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/AB/JHI',
@@ -1238,7 +1334,7 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'CSG',
-          unitDBID = 4817,
+          unitDBID = config.platformDBID37,
           weaponDBID = 0,
           unitCount = 1,
           missionParams = {
@@ -1265,7 +1361,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = 'CSG',
-          weaponDBID = 3226,
+          weaponDBID = config.weaponDBID15,
           unitCount = 12,
           startTime = nil,
           missionParams = { name = 'STRIKE/AB/E', type = 'strike', opts = { type = 'land' } },
@@ -1273,7 +1369,7 @@ saveData.c.air.ATO = {
         },
         escort = {
           baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 8,
           missionParams = {
             name = 'SWEAP/AB/E',
@@ -1293,7 +1389,7 @@ saveData.c.air.ATO = {
         },
         wildWeasel = {
           baseGUID = 'CSG',
-          weaponDBID = 276,
+          weaponDBID = config.weaponDBID16,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/AB/E',
@@ -1312,7 +1408,7 @@ saveData.c.air.ATO = {
         },
         jammer = {
           baseGUID = 'CSG',
-          unitDBID = 4817,
+          unitDBID = config.platformDBID37,
           weaponDBID = 0,
           unitCount = 1,
           missionParams = {
@@ -1349,7 +1445,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
-          weaponDBID = 2137,
+          weaponDBID = config.weaponDBID17,
           unitCount = 8,
           startTime = '2027-06-09 02:40:00',
           missionParams = { name = 'ASUW/N', type = 'strike', opts = { type = 'sea' } },
@@ -1358,7 +1454,7 @@ saveData.c.air.ATO = {
         escort = nil,
         wildWeasel = {
           baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
-          weaponDBID = 2875,
+          weaponDBID = config.weaponDBID12,
           unitCount = 8,
           missionParams = {
             name = 'SEAD/ASUW/N',
@@ -1400,7 +1496,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMIJ7B896RA9',
-          weaponDBID = 3413,
+          weaponDBID = config.weaponDBID11,
           unitCount = 6,
           startTime = '2027-06-09 06:40:00',
           missionParams = { name = 'AIR INTERCEPT/E', type = 'strike', opts = { type = 'aaw' } },
@@ -1434,7 +1530,7 @@ saveData.c.air.ATO = {
       {
         striker = {
           baseGUID = '6Z8LM5-0HMMJDEFRFJ4V',
-          weaponDBID = 3226,
+          weaponDBID = config.weaponDBID15,
           unitCount = 8,
           startTime = '2027-06-09 01:30:00',
           missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
@@ -1457,6 +1553,122 @@ saveData.c.air.ATO = {
       },
     }
   },
+}
+--]]
+
+-- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
+saveData.c.air.isActivated = true
+saveData.c.air.ATO = {
+  ['STRIKE/AB/W/1'] = {
+    name = 'STRIKE/AB/W/1',
+    isActivated = true,
+    isFirstWave = true,
+    hasLaunched = false,
+    strikeInterval = 30 * 60,
+    packages = {
+      {
+        timeToReady = 5, -- 此 package 的武器掛載準備時間（分鐘）
+        loadoutStatus = {
+          isLoadoutInitiated = false,
+          loadoutInitiatedTime = nil,
+          expectedReadyTime = nil,
+          loadoutStartTime = nil
+        },
+        striker = {
+          baseGUID = '6Z8LM5-0HMLLEF9H5P44',
+          weaponDBID = config.weaponDBID10,
+          unitDBID = config.platformDBID29,
+          unitCount = 12,
+          loadoutID = config.loadoutDBID7,
+          startTime = '2027-06-09 01:25:00',
+          missionParams = { name = 'STRIKE/AB/W/1', type = 'strike', opts = { type = 'land' } },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        escort = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+          weaponDBID = config.weaponDBID11,
+          unitDBID = config.platformDBID28,
+          unitCount = 8,
+          loadoutID = config.loadoutDBID8,
+          -- startTime = '2027-06-09 01:05:00',
+          missionParams = {
+            name = 'SWEAP/AB/W/1',
+            type = 'patrol',
+            opts = {
+              type = 'aaw',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = config.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = config.c.areas["SWEAP/SOUTH/PATROL"]
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        wildWeasel = {
+          baseGUID = '6Z8LM5-0HMIJ3QGCRQ2G',
+          weaponDBID = config.weaponDBID12,
+          unitDBID = config.platformDBID30,
+          unitCount = 8,
+          loadoutID = config.loadoutDBID9,
+          -- startTime = '2027-06-09 01:05:00',
+          missionParams = {
+            name = 'SEAD/AB/W/1',
+            type = 'patrol',
+            opts = {
+              type = 'sead',
+              OneThirdRule = false,
+              FlightSize = 4,
+              CheckOPAREA = false,
+              CheckWWR = false,
+              prosecutionZone = config.c.areas["SWEAP/SOUTH/PROSECUTION"],
+              patrolZone = config.c.areas["SWEAP/SOUTH/PATROL"]
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        jammer = {
+          baseGUID = 'X58F5H-0HN00TRR0Q1JQ',
+          unitDBID = config.platformDBID35,
+          weaponDBID = 0,
+          unitCount = 1,
+          loadoutID = nil, -- Electronic warfare aircraft
+          -- startTime = '2027-06-09 01:05:00', -- 與護航機同時出發
+          missionParams = {
+            name = 'JAMMING/AB/W/1',
+            type = 'support',
+            opts = { zone = config.c.areas["SWEAP/SOUTH/PATROL"] }
+          },
+          emcon = 'Radar=Passive;OECM=Active'
+        },
+        tanker = nil,
+        reconUAV = {
+          baseGUID = config.c.recon.bases.BZK005.guid,
+          unitDBID = config.platformDBID13,
+          unitGUID = nil,
+          missionName = 'RECON/1',
+          course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
+          unitCount = 1,
+          takeoffTime = '2027-06-09 01:00:00',
+          missionStartTime = '2027-06-09 01:30:00',
+          hasLaunched = false
+        },
+        target = {
+          list = {},
+          objs = {
+            { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+            { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } }
+          },
+          areas = { config.c.areas["OPAREA/SOUTH"] },
+          filterNames = { 'findC2' },
+          contactAge = 60 * 60,
+          minTargetCount = 1
+        },
+        hasLaunched = false
+      }
+    }
+  }
 }
 
 
@@ -1571,7 +1783,7 @@ saveData.t.ground.mlrs.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.mlrs.positions.pingzhen,
-    weaponDBID = 2948,
+    weaponDBID = config.weaponDBID18,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7RT1I581BB'
   },
@@ -1608,7 +1820,7 @@ saveData.t.ground.srbm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.srbm.positions.dadu,
-    weaponDBID = 1717,
+    weaponDBID = config.weaponDBID19,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS'
   },
@@ -1662,7 +1874,7 @@ saveData.t.ground.glcm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.glcm.positions.quanxi,
-    weaponDBID = 3228,
+    weaponDBID = config.weaponDBID20,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT'
   },
@@ -1673,7 +1885,7 @@ saveData.t.ground.glcm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.glcm.positions.neipu,
-    weaponDBID = 3228,
+    weaponDBID = config.weaponDBID20,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC'
   }
@@ -1728,7 +1940,7 @@ saveData.t.ground.ascm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.ascm.positions.luzhu,
-    weaponDBID = 1133,
+    weaponDBID = config.weaponDBID21,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
   },
@@ -1739,7 +1951,7 @@ saveData.t.ground.ascm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.ascm.positions.luzhu,
-    weaponDBID = 1133,
+    weaponDBID = config.weaponDBID21,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
   },
@@ -1750,7 +1962,7 @@ saveData.t.ground.ascm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.ascm.positions.dong,
-    weaponDBID = 1133,
+    weaponDBID = config.weaponDBID21,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
   },
@@ -1761,7 +1973,7 @@ saveData.t.ground.ascm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.ascm.positions.dong,
-    weaponDBID = 1133,
+    weaponDBID = config.weaponDBID21,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
   },
@@ -1772,7 +1984,7 @@ saveData.t.ground.ascm.batteries = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     position = config.t.ground.ascm.positions.luzhu,
-    weaponDBID = 1133,
+    weaponDBID = config.weaponDBID21,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
   },
