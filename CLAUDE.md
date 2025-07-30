@@ -4,91 +4,118 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Lua scripting project for Command: Modern Operations (CMO), a military simulation game. The project simulates war scenarios with custom AI logic for enemy forces and complex military operations including air tasking orders, fire support plans, amphibious operations, and electronic warfare.
+This is a **Command: Modern Operations (CMO)** military simulation scenario written in **Lua**. The project simulates a Taiwan Strait conflict with sophisticated systems for air operations, electronic warfare, amphibious assaults, and multi-faction coordination (China, Taiwan, US).
 
-## Development Commands
+## Essential Commands
 
 ### Testing
 ```bash
-# Run unit tests using Busted framework
-busted test/
+# Run all tests (from test directory)
+busted
+
+# Run specific test file
+busted modules/assignMission_spec.lua
 ```
 
-### Code Processing
+### Build and Deployment
 ```bash
-# Clean and process Lua scripts (removes require statements and module exports)
+# Process Lua modules for deployment (removes requires, cleans modules)
 python tools/clean_lua_scripts.py
 ```
 
-## Architecture
+### Development Mode
+Set `config.isDevMode = true` in `src/core/constants.lua` for development features including console logging.
 
-### Directory Structure
-- **src/** - Main source code (development version with modules)
-- **slim/** - Processed code (deployment version without require statements)
-- **test/** - Unit tests using Busted framework
-- **tools/** - Build and processing utilities
-- **references/** - Reference materials and prototypes
+## Architecture Overview
 
-### Core Components
+### Core System Design
+The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Configuration is centralized in `src/core/constants.lua` using nested namespaces (`.c`, `.t`, `.u`, `.s` for different factions).
 
-#### Core System (`src/core/`)
-- **init.lua** - Main initialization script that sets up all game systems
-- **constants.lua** - Configuration and platform database IDs for different military units
-- **saveData.lua** - Persistent data schema for game state
-- **schema.lua** - Data structure definitions
-- **gKH_*.lua** - External game state management libraries
+### Key Architectural Patterns
 
-#### Modules (`src/modules/`)
-- **assignMission.lua** - Unit mission assignment logic
-- **attackManager.lua** - Combat engagement coordination
-- **unitGenerator.lua** - Dynamic unit creation and placement
-- **strikePlanner/** - Air operation planning and execution
-- **landingOps/** - Amphibious assault operations
-- **EW/** - Electronic warfare (GPS jamming, SIGINT, communications jamming)
+**API Abstraction Layer**: All CMO game API calls are wrapped in `src/utils/gameApi.lua` with comprehensive error handling and retry logic. Never call CMO APIs directly - always use the wrapper functions.
 
-#### Scripts (`src/scripts/`)
-Event-driven scripts organized by faction:
-- **china/** - Chinese forces AI and operations
-- **taiwan/** - Taiwanese forces AI and operations  
-- **us/** - US forces operations
-- **score/** - Victory condition and scoring logic
+**Type Safety**: Extensive use of LuaLS annotations with project-specific type prefixes:
+- `SBJ__*` for project-specific types
+- `CMO__*` for game API types
+- All public functions must have `---@param` and `---@return` annotations
 
-#### Utilities (`src/utils/`)
-- **gameApi.lua** - Command Lua API wrappers
-- **gameUtils.lua** - Game-specific utility functions
-- **utils.lua** - General utility functions
-- **logger.lua** - Logging system
+**Error Handling Strategy**: Use `Utils.safeCall()` wrapper for all critical operations. Log errors with context using the bilingual `Logger` module which automatically detects game vs. development environment.
 
-### Key Patterns
+**Configuration Management**: 
+- All platform DBIDs, base GUIDs, and operational parameters are constants in `src/core/constants.lua`
+- Use structured namespacing: `config.c.*` (China), `config.t.*` (Taiwan), `config.u.*` (US), `config.s.*` (shared)
+- Never hardcode military platform IDs or coordinates
 
-#### Module Architecture
-- Modules use local tables with function definitions
-- Functions are defined as `ModuleName.functionName = function()`
-- Modules return table with public interface
-- The build process removes require statements for deployment
+### Module Organization
 
-#### Game Integration
-- Uses Command Lua API through gameApi.lua wrappers
-- Event-driven architecture with scheduled operations
-- Persistent state management through gKH libraries
-- Unit identification via database IDs (dbid) from constants.lua
+**Core Systems** (`src/core/`):
+- `init.lua` - Main entry point and system orchestration
+- `constants.lua` - Centralized configuration (platform DBIDs, base GUIDs, operational areas)
+- `schema.lua` - Type definitions with LuaLS annotations
+- `saveData.lua` - Persistent state management
 
-#### Error Handling
-- SafeCall pattern for error handling with Utils.SafeCall()
-- Comprehensive logging through Logger module
-- Defensive programming for missing units/contacts
+**Utilities** (`src/utils/`):
+- `gameApi.lua` - **Critical**: CMO API wrapper with error handling - use for all API calls
+- `gameUtils.lua` - Higher-level game operations (positioning, missions, formations)
+- `logger.lua` - Bilingual logging system (auto-detects game/dev environment)
 
-#### Testing
-- Unit tests with Busted framework in test/ directory
-- Mock game API for isolated testing
-- Test coverage for core modules like assignMission
+**Feature Modules** (`src/modules/`):
+- `unitGenerator.lua` - Unit creation with formation logic and cleanup
+- `assignMission.lua` - Mission assignment and management
+- `attackManager.lua` - Combat coordination
 
-## Important Development Notes
+**Specialized Subsystems**:
+- `src/modules/strikePlanner/` - Air Tasking Orders (ATO), fire support, reconnaissance
+- `src/modules/strikePlanner/dynamicFireSupportPlan.lua` - **Dynamic Fire Support Planning** with BDA-based automated FSEM creation
+- `src/modules/EW/` - Electronic warfare (GPS jamming, SIGINT, comms jamming)  
+- `src/modules/landingOPs/` - Amphibious assault coordination and logistics
 
-- The slim/ directory contains processed code without require statements for game deployment
-- Platform DBIDs in constants.lua map to specific military unit types in the game
-- The game state is persisted using gKH.State.SaveTableToKey/LoadTableFromKey
-- Event scripts are triggered by game events and execute specific tactical operations
-## AI Assistant Guidelines
+**Faction Scripts** (`src/scripts/`): Event handlers organized by faction (china/, taiwan/, us/).
 
-You are a professional programmer proficient in various programming languages and frameworks. Please respond in Traditional Chinese, avoiding Simplified Chinese and China-specific terminology. Maintain professionalism with precise terminology suitable for Taiwan developers.
+## Critical Development Guidelines
+
+### Unit and Formation Management
+- Always use formation constants (`FORMATION.ANGLES`, `FORMATION.DISTANCES`) for consistent positioning
+- Implement cleanup functions before creating new units to prevent duplicates
+- Use retry logic for unit creation operations due to CMO API timing constraints
+
+### Military Simulation Concepts
+The codebase implements sophisticated military concepts:
+- **Air Tasking Orders (ATO)** with timing synchronization
+- **Strike Package coordination** with escort and SEAD missions
+- **Formation flying** with geometric positioning algorithms
+- **Amphibious Operations** with multi-wave landing coordination
+- **Electronic Warfare** including GPS and communications jamming
+
+### API Usage Patterns
+- Wrap all `ScenEdit_*` calls in `GameAPI.*` equivalents
+- Validate API responses before proceeding with operations
+- Use descriptive unit names following military conventions
+- Implement fallback behaviors for API failures
+
+### Configuration Changes
+- Modify `src/core/constants.lua` for all platform DBIDs, coordinates, and operational parameters
+- **Dynamic Fire Support Plan**: Configure `config.c.ground.dynamicFSP` for recon schedules and FSEM templates
+- Test configuration changes in development mode before deployment
+- Use structured validation for configuration parameters
+
+### Testing Approach
+- Unit tests located in `test/modules/` using Busted framework
+- Mock game APIs comprehensively for isolated testing
+- Test critical modules like `assignMission.lua` and `unitGenerator.lua`
+- Run tests before deployment: `busted` from test directory
+
+The project demonstrates professional-grade Lua programming applied to complex military simulation, combining modern software practices with deep domain expertise in modern warfare concepts. 
+
+## New Features
+
+### Dynamic Fire Support Plan (2024)
+A sophisticated BDA-based automated fire support system that:
+- Monitors reconnaissance schedules and automatically triggers target evaluation
+- Supports both fixed targets (airfields, ports) and dynamic targets (radars, SAMs)
+- Creates Fire Support Execution Matrices (FSEM) based on real-time intelligence
+- Integrates seamlessly with existing fire support planning systems
+- Uses weapon system allocation with conflict avoidance
+- Configured via `config.c.ground.dynamicFSP` in constants.lua
+- See `docs/DynamicFireSupportPlan.md` for detailed documentation

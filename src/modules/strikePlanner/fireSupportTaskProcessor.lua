@@ -94,20 +94,20 @@ function FireSupportTaskProcessor.process(FST, config, saveData, contacts, isFir
     return false
   end
 
-  local evaluatedTargetlist = findTargets(FST, config, saveData, contacts, isFirstWave)
-  Logger.log(FST.name .. " found " .. #evaluatedTargetlist .. " targets.")
+  -- local evaluatedTargetlist = findTargets(FST, config, saveData, contacts, isFirstWave)
+  -- Logger.log(FST.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
-  if #evaluatedTargetlist < FST.target.minTargetCount then
-    Logger.log("Not enough targets found for " .. FST.name .. ". Need " .. FST.target.minTargetCount)
-    return false
-  end
+  -- if #evaluatedTargetlist < FST.target.minTargetCount then
+  --   Logger.log("Not enough targets found for " .. FST.name .. ". Need " .. FST.target.minTargetCount)
+  --   return false
+  -- end
 
   if not shouldDeployToFiringPosition(config, saveData, FST) then
     Logger.log("Batteries not at firing position for " .. FST.name)
     return false
   end
 
-  FST.target.evaluatedlist = evaluatedTargetlist
+  -- FST.target.evaluatedlist = evaluatedTargetlist
   return true
 end
 

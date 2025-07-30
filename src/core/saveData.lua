@@ -13,6 +13,7 @@ saveData.c.ground.srbm = {}
 saveData.c.ground.mrbm = {}
 saveData.c.ground.glcm = {}
 saveData.c.ground.ascm = {}
+saveData.c.ground.dynamicFSP = {}
 saveData.c.surface = {}
 saveData.c.surface.lacm = {}
 saveData.c.subSurface = {}
@@ -436,305 +437,305 @@ saveData.c.recon.queue = {
 -- Fire support plan
 saveData.c.ground.isActivated = true
 saveData.c.ground.FSP = {
-  ['STRIKE/INFRASTRUCTURE/1'] = {
-    name = 'STRIKE/INFRASTRUCTURE/1',
-    isActivated = true,
-    isFirstWave = true,
-    strikeInterval = 0 * 60,
-    reconUAVs = nil,
-    allBatteriesInPosition = false,
-    isFinished = false,
-    -- Fire support task
-    ---@type SBJ__FireSupportTask[]
-    FSTs = {
-      {
-        name = 'RADAR',
-        wpnSystem = 'SRBM',
-        batteries = {
-          {
-            name = '614th Bde',
-            guid = 'X58F5H-0HN1LQGRV8HNQ',
-            weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
-          },
-          {
-            name = '613rd Bde',
-            guid = 'X58F5H-0HN1G2DEBC7O8',
-            weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.srbm.contactAge,
-          minTargetCount = 4,
-          ammoPerTarget = 3
-        },
-        startTime = '2027-06-09 01:00:00',
-        isFinished = false
-      },
-      {
-        name = 'RUNWAY',
-        wpnSystem = 'SRBM',
-        batteries = {
-          {
-            name = '636th Bde',
-            guid = 'IC8B0X-0HN822OHANPB3',
-            weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
-          },
-          {
-            name = '617th Bde',
-            guid = 'IC8B0X-0HN822OHANRHI',
-            weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.srbm.contactAge,
-          minTargetCount = 4,
-          ammoPerTarget = 4
-        },
-        startTime = nil,
-        isFinished = false
-      },
-      {
-        name = 'PORT',
-        wpnSystem = 'SRBM',
-        batteries = {
-          {
-            name = '615th Bde',
-            guid = 'X58F5H-0HN1G2IFLNKG9',
-            weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLNKG9'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = 'Port of Keelung', subTypes = { 'Pier' } },
-            { baseName = 'Suao Port',       subTypes = { 'Pier' } },
-            { baseName = 'Kaohsiung Port',  subTypes = { 'Pier' } },
-            { baseName = 'Magong Port',     subTypes = { 'Pier' } },
-            { baseName = nil,               subTypes = { 'ASM' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.srbm.contactAge,
-          minTargetCount = 4,
-          ammoPerTarget = 2
-        },
-        startTime = nil,
-        isFinished = false
-      },
-      {
-        name = 'SHELTER',
-        wpnSystem = 'SRBM',
-        batteries = {
-          {
-            name = '616th Bde',
-            guid = 'X58F5H-0HN1G2IFLF6QE',
-            weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-            { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-            { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-            { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.srbm.contactAge,
-          minTargetCount = 4,
-          ammoPerTarget = 2
-        },
-        startTime = nil,
-        isFinished = false
-      },
-    }
-  },
-  ['STRIKE/C2/1'] = {
-    name = 'STRIKE/C2/1',
-    isActivated = true,
-    isFirstWave = false,
-    strikeInterval = 0 * 60,
-    reconUAVs = nil,
-    isFinished = false,
-    allBatteriesInPosition = false,
-    -- Fire support task
-    ---@type SBJ__FireSupportTask[]
-    FSTs = {
-      {
-        name = 'PINGTAN',
-        wpnSystem = 'MLRS',
-        batteries = {
-          {
-            name = '1st Bn, 1st Rockets Arty Bde',
-            guid = 'IC8B0X-0HND05GGU36EN',
-            weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HND05GGU36EN'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {},
-          areas = { config.c.areas["OPAREA/NORTH"] },
-          filterNames = { 'analyzeEmissions', 'findRadioDirection' },
-          contactAge = config.c.ground.mlrs.contactAge,
-          minTargetCount = 2,
-          ammoPerTarget = 8
-        },
-        startTime = '2027-06-09 01:30:00',
-        -- startTime =  '2027-06-09 03:10:00'
-        isFinished = false
-      },
-      {
-        name = 'CHINCHEW',
-        wpnSystem = 'MLRS',
-        batteries = {
-          {
-            name = '6th Bn, 73rd Arty Bde',
-            guid = 'IC8B0X-0HNBRRE2PRQAL',
-            weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HNBRRE2PRQAL'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {},
-          areas = { config.c.areas["OPAREA/CENTER"] },
-          filterNames = { 'analyzeEmissions', 'findRadioDirection' },
-          contactAge = config.c.ground.mlrs.contactAge,
-          minTargetCount = 2,
-          ammoPerTarget = 8
-        },
-        startTime = nil,
-        isFinished = false
-      },
-    }
-  },
-  ['STRIKE/HELIPAD'] = {
-    name = 'STRIKE/HELIPAD',
-    isActivated = true,
-    isFirstWave = true,
-    strikeInterval = 60 * 60,
-    reconUAVs = nil,
-    isFinished = false,
-    allBatteriesInPosition = false,
-    -- Fire support task
-    FSTs = {
-      {
-        name = 'HELIPAD',
-        wpnSystem = 'GLCM',
-        batteries = {
-          {
-            name = '635th Bde',
-            guid = '6Z8LM5-0HMN97ERAUODK',
-            weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = 'Guiren AAB',  subTypes = { 'Helipad' } },
-            { baseName = 'Longtan AAB', subTypes = { 'Helipad' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.glcm.contactAge,
-          minTargetCount = 1,
-          ammoPerTarget = 2
-        },
-        -- startTime = '2027-06-09 05:30:00',
-        startTime = '2027-06-09 02:00:00',
-        isFinished = false
-      },
-      {
-        name = 'EMERGENCY HIGHWAY STRIP',
-        wpnSystem = 'GLCM',
-        batteries = {
-          {
-            name = '635th Bde',
-            guid = '6Z8LM5-0HMN97ERAUODK',
-            weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {
-            { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-            { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          },
-          areas = {},
-          filterNames = nil,
-          contactAge = config.c.ground.glcm.contactAge,
-          minTargetCount = 1,
-          ammoPerTarget = 4
-        },
-        startTime = nil,
-        isFinished = false
-      },
-    }
-  },
-  ['ANTISHIP/EAST'] = {
-    name = 'ANTISHIP/EAST',
-    isActivated = true,
-    isFirstWave = false,
-    strikeInterval = 0 * 60,
-    reconUAVs = nil,
-    isFinished = false,
-    allBatteriesInPosition = false,
-    -- Fire support task
-    FSTs = {
-      {
-        name = 'ANTISHIP',
-        wpnSystem = 'MRBM',
-        batteries = {
-          {
-            name = '624th Bde',
-            guid = 'IC8B0X-0HNCOR6HG2JE1',
-            weaponDBID = saveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
-          }
-        },
-        target = {
-          list = {},
-          evaluatedlist = {},
-          objs = {},
-          areas = { config.c.areas["OPAREA/PACIFIC"] },
-          filterNames = { 'findNavalTargets' },
-          contactAge = config.c.ground.mrbm.contactAge,
-          minTargetCount = 1,
-          ammoPerTarget = 6
-        },
-        startTime = '2027-06-09 02:10:00',
-        isFinished = false
-      },
-    }
-  }
+  -- ['STRIKE/INFRASTRUCTURE/1'] = {
+  --   name = 'STRIKE/INFRASTRUCTURE/1',
+  --   isActivated = true,
+  --   isFirstWave = true,
+  --   strikeInterval = 0 * 60,
+  --   reconUAVs = nil,
+  --   allBatteriesInPosition = false,
+  --   isFinished = false,
+  --   -- Fire support task
+  --   ---@type SBJ__FireSupportTask[]
+  --   FSTs = {
+  --     {
+  --       name = 'RADAR',
+  --       wpnSystem = 'SRBM',
+  --       batteries = {
+  --         {
+  --           name = '614th Bde',
+  --           guid = 'X58F5H-0HN1LQGRV8HNQ',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
+  --         },
+  --         {
+  --           name = '613rd Bde',
+  --           guid = 'X58F5H-0HN1G2DEBC7O8',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.srbm.contactAge,
+  --         minTargetCount = 4,
+  --         ammoPerTarget = 3
+  --       },
+  --       startTime = '2027-06-09 01:00:00',
+  --       isFinished = false
+  --     },
+  --     {
+  --       name = 'RUNWAY',
+  --       wpnSystem = 'SRBM',
+  --       batteries = {
+  --         {
+  --           name = '636th Bde',
+  --           guid = 'IC8B0X-0HN822OHANPB3',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+  --         },
+  --         {
+  --           name = '617th Bde',
+  --           guid = 'IC8B0X-0HN822OHANRHI',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.srbm.contactAge,
+  --         minTargetCount = 4,
+  --         ammoPerTarget = 4
+  --       },
+  --       startTime = nil,
+  --       isFinished = false
+  --     },
+  --     {
+  --       name = 'PORT',
+  --       wpnSystem = 'SRBM',
+  --       batteries = {
+  --         {
+  --           name = '615th Bde',
+  --           guid = 'X58F5H-0HN1G2IFLNKG9',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLNKG9'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = 'Port of Keelung', subTypes = { 'Pier' } },
+  --           { baseName = 'Suao Port',       subTypes = { 'Pier' } },
+  --           { baseName = 'Kaohsiung Port',  subTypes = { 'Pier' } },
+  --           { baseName = 'Magong Port',     subTypes = { 'Pier' } },
+  --           { baseName = nil,               subTypes = { 'ASM' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.srbm.contactAge,
+  --         minTargetCount = 4,
+  --         ammoPerTarget = 2
+  --       },
+  --       startTime = nil,
+  --       isFinished = false
+  --     },
+  --     {
+  --       name = 'SHELTER',
+  --       wpnSystem = 'SRBM',
+  --       batteries = {
+  --         {
+  --           name = '616th Bde',
+  --           guid = 'X58F5H-0HN1G2IFLF6QE',
+  --           weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+  --           { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+  --           { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+  --           { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.srbm.contactAge,
+  --         minTargetCount = 4,
+  --         ammoPerTarget = 2
+  --       },
+  --       startTime = nil,
+  --       isFinished = false
+  --     },
+  --   }
+  -- },
+  -- ['STRIKE/C2/1'] = {
+  --   name = 'STRIKE/C2/1',
+  --   isActivated = true,
+  --   isFirstWave = false,
+  --   strikeInterval = 0 * 60,
+  --   reconUAVs = nil,
+  --   isFinished = false,
+  --   allBatteriesInPosition = false,
+  --   -- Fire support task
+  --   ---@type SBJ__FireSupportTask[]
+  --   FSTs = {
+  --     {
+  --       name = 'PINGTAN',
+  --       wpnSystem = 'MLRS',
+  --       batteries = {
+  --         {
+  --           name = '1st Bn, 1st Rockets Arty Bde',
+  --           guid = 'IC8B0X-0HND05GGU36EN',
+  --           weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HND05GGU36EN'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {},
+  --         areas = { config.c.areas["OPAREA/NORTH"] },
+  --         filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+  --         contactAge = config.c.ground.mlrs.contactAge,
+  --         minTargetCount = 2,
+  --         ammoPerTarget = 8
+  --       },
+  --       startTime = '2027-06-09 01:30:00',
+  --       -- startTime =  '2027-06-09 03:10:00'
+  --       isFinished = false
+  --     },
+  --     {
+  --       name = 'CHINCHEW',
+  --       wpnSystem = 'MLRS',
+  --       batteries = {
+  --         {
+  --           name = '6th Bn, 73rd Arty Bde',
+  --           guid = 'IC8B0X-0HNBRRE2PRQAL',
+  --           weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HNBRRE2PRQAL'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {},
+  --         areas = { config.c.areas["OPAREA/CENTER"] },
+  --         filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+  --         contactAge = config.c.ground.mlrs.contactAge,
+  --         minTargetCount = 2,
+  --         ammoPerTarget = 8
+  --       },
+  --       startTime = nil,
+  --       isFinished = false
+  --     },
+  --   }
+  -- },
+  -- ['STRIKE/HELIPAD'] = {
+  --   name = 'STRIKE/HELIPAD',
+  --   isActivated = true,
+  --   isFirstWave = true,
+  --   strikeInterval = 60 * 60,
+  --   reconUAVs = nil,
+  --   isFinished = false,
+  --   allBatteriesInPosition = false,
+  --   -- Fire support task
+  --   FSTs = {
+  --     {
+  --       name = 'HELIPAD',
+  --       wpnSystem = 'GLCM',
+  --       batteries = {
+  --         {
+  --           name = '635th Bde',
+  --           guid = '6Z8LM5-0HMN97ERAUODK',
+  --           weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = 'Guiren AAB',  subTypes = { 'Helipad' } },
+  --           { baseName = 'Longtan AAB', subTypes = { 'Helipad' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.glcm.contactAge,
+  --         minTargetCount = 1,
+  --         ammoPerTarget = 2
+  --       },
+  --       -- startTime = '2027-06-09 05:30:00',
+  --       startTime = '2027-06-09 02:00:00',
+  --       isFinished = false
+  --     },
+  --     {
+  --       name = 'EMERGENCY HIGHWAY STRIP',
+  --       wpnSystem = 'GLCM',
+  --       batteries = {
+  --         {
+  --           name = '635th Bde',
+  --           guid = '6Z8LM5-0HMN97ERAUODK',
+  --           weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {
+  --           { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --           { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+  --         },
+  --         areas = {},
+  --         filterNames = nil,
+  --         contactAge = config.c.ground.glcm.contactAge,
+  --         minTargetCount = 1,
+  --         ammoPerTarget = 4
+  --       },
+  --       startTime = nil,
+  --       isFinished = false
+  --     },
+  --   }
+  -- },
+  -- ['ANTISHIP/EAST'] = {
+  --   name = 'ANTISHIP/EAST',
+  --   isActivated = true,
+  --   isFirstWave = false,
+  --   strikeInterval = 0 * 60,
+  --   reconUAVs = nil,
+  --   isFinished = false,
+  --   allBatteriesInPosition = false,
+  --   -- Fire support task
+  --   FSTs = {
+  --     {
+  --       name = 'ANTISHIP',
+  --       wpnSystem = 'MRBM',
+  --       batteries = {
+  --         {
+  --           name = '624th Bde',
+  --           guid = 'IC8B0X-0HNCOR6HG2JE1',
+  --           weaponDBID = saveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
+  --         }
+  --       },
+  --       target = {
+  --         list = {},
+  --         evaluatedlist = {},
+  --         objs = {},
+  --         areas = { config.c.areas["OPAREA/PACIFIC"] },
+  --         filterNames = { 'findNavalTargets' },
+  --         contactAge = config.c.ground.mrbm.contactAge,
+  --         minTargetCount = 1,
+  --         ammoPerTarget = 6
+  --       },
+  --       startTime = '2027-06-09 02:10:00',
+  --       isFinished = false
+  --     },
+  --   }
+  -- }
 }
 
 -- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
@@ -1964,4 +1965,460 @@ saveData.u.SIGINT.transmissions = {
 }
 
 -- ScenEdit_SetLoadout({unitname='5th Tactical Mixed Wing #1', LoadoutID=22790, TimeToReady_Minutes=90})
+
+-- Dynamic Fire Support Plan
+saveData.c.ground.dynamicFSP.enabled = true
+saveData.c.ground.dynamicFSP.reconSchedule = {
+  {
+    -- time = "2027-06-09 02:14:00",
+    time = "2027-06-09 01:00:00",
+    type = "satellite", -- Large-scale reconnaissance (satellite)
+    delay = 0,          -- Trigger assessment after 5 minutes
+    executed = false,   -- Execution status flag
+    fsemTemplate = {
+      name = "INFRASTRUCTURE/1",
+      strikeInterval = 0, -- 10-minute interval,
+      isFirstWave = true,
+      FSTs = {
+        {
+          name = 'RADAR',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '614th Bde',
+              guid = 'X58F5H-0HN1LQGRV8HNQ',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
+            },
+            {
+              name = '613rd Bde',
+              guid = 'X58F5H-0HN1G2DEBC7O8',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 4,
+            ammoPerTarget = 3
+          },
+        },
+        {
+          name = 'RUNWAY',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '636th Bde',
+              guid = 'IC8B0X-0HN822OHANPB3',
+              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+            },
+            {
+              name = '617th Bde',
+              guid = 'IC8B0X-0HN822OHANRHI',
+              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 4,
+            ammoPerTarget = 4
+          },
+        },
+        {
+          name = 'PORT',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '615th Bde',
+              guid = 'X58F5H-0HN1G2IFLNKG9',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLNKG9'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Port of Keelung', subTypes = { 'Pier' } },
+              { baseName = 'Suao Port',       subTypes = { 'Pier' } },
+              { baseName = 'Kaohsiung Port',  subTypes = { 'Pier' } },
+              { baseName = 'Magong Port',     subTypes = { 'Pier' } },
+              { baseName = nil,               subTypes = { 'ASM' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 4,
+            ammoPerTarget = 2
+          },
+        },
+        {
+          name = 'SHELTER',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '616th Bde',
+              guid = 'X58F5H-0HN1G2IFLF6QE',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 4,
+            ammoPerTarget = 2
+          },
+        },
+      }
+    }
+  },
+  {
+    -- time = "2027-06-09 03:00:00",
+    time = "2027-06-09 02:14:00",
+    type = "satellite",
+    delay = 0,
+    executed = false,
+    fsemTemplate = {
+      name = "INFRASTRUCTURE/2",
+      strikeInterval = 0,
+      isFirstWave = false,
+      FSTs = {
+        {
+          name = 'RADAR',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '614th Bde',
+              guid = 'X58F5H-0HN1LQGRV8HNQ',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
+            },
+            {
+              name = '613rd Bde',
+              guid = 'X58F5H-0HN1G2DEBC7O8',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 3
+          },
+        },
+        {
+          name = 'RUNWAY',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '636th Bde',
+              guid = 'IC8B0X-0HN822OHANPB3',
+              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+            },
+            {
+              name = '617th Bde',
+              guid = 'IC8B0X-0HN822OHANRHI',
+              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Hualien AB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Taitung/Jhihhang AB',     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Ching Chuang Kang AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Chiayi AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Tainan AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Pingtung South AB',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Pingtung North AB',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Magong AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Hsinchu AB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Taitung/Jhihhang AB',     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Guiren AAB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Longtan AAB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Gangshan AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Taipei Songshan Airport', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 4
+          },
+        },
+        {
+          name = 'PORT',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '615th Bde',
+              guid = 'X58F5H-0HN1G2IFLNKG9',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLNKG9'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Port of Keelung',          subTypes = { 'Pier' } },
+              { baseName = 'Suao Port',                subTypes = { 'Pier' } },
+              { baseName = 'Kaohsiung Port',           subTypes = { 'Pier' } },
+              { baseName = 'Magong Port',              subTypes = { 'Pier' } },
+              { baseName = 'HuangGang Fishing Harbor', subTypes = { 'Terminal' } },
+              { baseName = 'Donggang Wharf',           subTypes = { 'Terminal' } },
+              { baseName = nil,                        subTypes = { 'ASM' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 2
+          },
+        },
+        {
+          name = 'SHELTER',
+          wpnSystem = 'SRBM',
+          batteries = {
+            {
+              name = '616th Bde',
+              guid = 'X58F5H-0HN1G2IFLF6QE',
+              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Pingtung North AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Hsinchu AB',           subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Gangshan AB',          subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+              { baseName = 'Tainan AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.srbm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 2
+          },
+        },
+      }
+    }
+  },
+  {
+    -- time = "2027-06-09 03:00:00",
+    time = "2027-06-09 02:14:00",
+    type = "satellite",
+    delay = 0,
+    executed = false,
+    fsemTemplate = {
+      name = "ANTISHIP/1",
+      strikeInterval = 0,
+      isFirstWave = false,
+      FSTs = {
+        {
+          name = "ANTISHIP",
+          wpnSystem = "MRBM",
+          batteries = {
+            {
+              name = '624th Bde',
+              guid = 'IC8B0X-0HNCOR6HG2JE1',
+              weaponDBID = saveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {},
+            areas = { config.c.areas["OPAREA/PACIFIC"] },
+            filterNames = { "findNavalTargets" },
+            contactAge = config.c.ground.mrbm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 6
+          },
+        }
+      }
+    }
+  },
+  {
+    -- time = "2027-06-09 03:00:00",
+    time = "2027-06-09 02:14:00",
+    type = "satellite",
+    delay = 0,
+    executed = false,
+    fsemTemplate = {
+      name = "C2/1",
+      strikeInterval = 0,
+      isFirstWave = false,
+      FSTs = {
+        {
+          name = 'PINGTAN',
+          wpnSystem = 'MLRS',
+          batteries = {
+            {
+              name = '1st Bn, 1st Rockets Arty Bde',
+              guid = 'IC8B0X-0HND05GGU36EN',
+              weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HND05GGU36EN'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {},
+            areas = { config.c.areas["OPAREA/NORTH"] },
+            filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+            contactAge = config.c.ground.mlrs.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 8
+          },
+        },
+        {
+          name = 'CHINCHEW',
+          wpnSystem = 'MLRS',
+          batteries = {
+            {
+              name = '6th Bn, 73rd Arty Bde',
+              guid = 'IC8B0X-0HNBRRE2PRQAL',
+              weaponDBID = saveData.c.ground.mlrs.batteries['IC8B0X-0HNBRRE2PRQAL'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {},
+            areas = { config.c.areas["OPAREA/CENTER"] },
+            filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+            contactAge = config.c.ground.mlrs.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 8
+          },
+        },
+      }
+    }
+  },
+  {
+    time = "2027-06-09 05:44:00",
+    type = "satellite",
+    delay = 180,
+    executed = false,
+    fsemTemplate = {
+      name = "HELIPAD/1",
+      strikeInterval = 0,
+      isFirstWave = true,
+      FSTs = {
+        {
+          name = 'HELIPAD',
+          wpnSystem = 'GLCM',
+          batteries = {
+            {
+              name = '635th Bde',
+              guid = '6Z8LM5-0HMN97ERAUODK',
+              weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Guiren AAB',  subTypes = { 'Helipad' } },
+              { baseName = 'Longtan AAB', subTypes = { 'Helipad' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.glcm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 2
+          },
+        },
+        {
+          name = 'EMERGENCY HIGHWAY STRIP',
+          wpnSystem = 'GLCM',
+          batteries = {
+            {
+              name = '635th Bde',
+              guid = '6Z8LM5-0HMN97ERAUODK',
+              weaponDBID = saveData.c.ground.glcm.batteries['6Z8LM5-0HMN97ERAUODK'].weaponDBID
+            }
+          },
+          target = {
+            list = {},
+            evaluatedlist = {},
+            objs = {
+              { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+              { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+            },
+            areas = {},
+            filterNames = nil,
+            contactAge = config.c.ground.glcm.contactAge,
+            minTargetCount = 1,
+            ammoPerTarget = 4
+          },
+        },
+      }
+    }
+  },
+  {
+    time = "2027-06-09 08:04:00",
+    type = "satellite",
+    delay = 300,
+    executed = false,
+    fsemTemplate = {
+      name = "DYNAMIC/SATELLITE/BDA/2",
+      strikeInterval = 0, -- 15-minute interval,
+      isFirstWave = false,
+      FSTs = {}
+    }
+  },
+  {
+    time = "2027-06-09 11:25:00",
+    type = "satellite",
+    delay = 300,
+    executed = false,
+    fsemTemplate = {
+      name = "DYNAMIC/SATELLITE/BDA/2",
+      strikeInterval = 0, -- 15-minute interval,
+      isFirstWave = false,
+      FSTs = {}
+    }
+  }
+}
+
 return saveData

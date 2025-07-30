@@ -7,6 +7,7 @@ local Recon = require("src.modules.strikePlanner.recon")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
+local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
 
 
 local contacts = GameApi.ScenEdit_GetContacts('China')
@@ -20,6 +21,11 @@ local saveData = gKH.State.LoadTableFromKey("SaveData")
 if saveData == nil then
   Logger.error("saveData is nil")
   return
+end
+
+-- 動態火力支援計畫 - 檢查偵察時程並執行BDA評估
+if saveData.c.ground.dynamicFSP and saveData.c.ground.dynamicFSP.enabled then
+  DynamicFireSupportPlan.execute(config, saveData, contacts)
 end
 
 if saveData.c.recon.isActivated then

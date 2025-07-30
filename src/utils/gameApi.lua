@@ -1,4 +1,4 @@
-﻿local Logger = require("src.utils.logger")
+local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
 

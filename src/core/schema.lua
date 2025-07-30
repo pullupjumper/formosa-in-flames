@@ -295,3 +295,39 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field field string side field identifier ('c' or 'u')
 ---@field enemySide string enemy side name
 ---@field displayName string human-readable side name
+
+---Dynamic Fire Support Plan Types
+---@class SBJ__ReconScheduleEntry
+---@field time string 偵察時間 "2027-06-09 14:30:00"
+---@field type string 偵察類型 "satellite" | "aircraft"
+---@field delay number 延遲觸發時間（秒）
+---@field executed boolean 是否已執行
+---@field fsemTemplate SBJ__FsemTemplate FSEM模板
+
+---@class SBJ__FsemTemplate
+---@field name string FSEM名稱
+---@field isFirstWave boolean 是否為第一波攻擊
+---@field strikeInterval number 打擊間隔時間（秒）
+---@field FSTs SBJ__FstTemplate[] FST模板陣列
+
+---@class SBJ__FstTemplate
+---@field name string FST名稱
+---@field target SBJ__TargetTemplate 目標配置
+---@field wpnSystem string 武器系統類型
+---@field batteries SBJ__Battery[] 電池/火力單位陣列
+
+---@class SBJ__TargetTemplate
+---@field objs table[]? 目標物件陣列（固定目標使用）
+---@field areas string[] 作戰區域
+---@field filterNames string[]? 篩選函數名稱（動態目標使用）
+---@field contactAge number 聯絡人有效時間（秒）
+---@field minTargetCount number 最小目標數量閾值
+---@field ammoPerTarget number 每目標彈藥數量
+
+---@class SBJ__DynamicFSPConfig
+---@field enabled boolean 是否啟用動態火力支援計畫
+---@field reconSchedule SBJ__ReconScheduleEntry[] 偵察時程表
+
+---@class SBJ__BatteryAssignment
+---@field guid string 火力單位GUID
+---@field battery table 火力單位資料

@@ -123,41 +123,6 @@ function GameUtils.newArea(position, mode)
   return (rpTable)
 end
 
----@param side string @The side the message is visible to (sidename may also be used in place of side)
----@param ... string @Variable number of string arguments to be printed inside the box
-function GameUtils.printBox(side, ...)
-  -- 收集所有字串參數到陣列中
-  local strings = { ... }
-
-  -- 找出最長字串的長度
-  local maxLen = 0
-  for _, str in ipairs(strings) do
-    if #str > maxLen then
-      maxLen = #str
-    end
-  end
-
-  -- 計算邊框寬度
-  local width = 70
-
-  -- 構建頂部和底部邊框：連續的 -
-  local border = string.rep("-", width)
-
-  -- 構建中間行
-  local middleLines = {}
-  for _, str in ipairs(strings) do
-    -- 構建中間行：| 空格 字串
-    local middle = "| " .. str
-    table.insert(middleLines, middle)
-  end
-
-  -- 組合成一個單一的字串
-  local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
-
-  -- 一次性輸出
-  GameApi.ScenEdit_SpecialMessage(side, boxString)
-end
-
 ---@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return boolean
 function GameUtils.isAfterStartTime(time)

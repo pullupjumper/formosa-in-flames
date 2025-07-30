@@ -819,7 +819,6 @@ config.c.ground.mrbm.positions = {
 config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
 
-
 -- Recon
 config.c.recon.bases = {
   H6N = { guid = config.baseGUID11 },

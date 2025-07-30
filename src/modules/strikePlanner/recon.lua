@@ -151,6 +151,20 @@ function Recon.handleReconQueue(saveData)
         unit:RTB(true)
         q.isFinished = true
       end
+
+      if unit and #unit.course == 0 and unit.dbid == config.platformDBID12 and q.isTracking then
+        local targetGUID = saveData.c.recon.temp['WZ8'][unit.guid].targetGUID
+        local target = GameApi.ScenEdit_GetContact('China', targetGUID)
+
+        if target then
+          unit.course = { {
+            latitude = target.latitude,
+            longitude = target.longitude,
+            desiredSpeed = 3300,
+            presetThrottle = 'Military'
+          } }
+        end
+      end
     end
   end
 end
@@ -201,17 +215,26 @@ function Recon.trackTarget(config, saveData, units, UAVDBID, target)
     end
   end
 
-  if UAV and #UAV.course == 0 then
+  -- if UAV and #UAV.course == 0 then
+  --   if UAV.mission then
+  --     UAV.mission = ''
+  --   end
+
+  --   UAV.course = { {
+  --     latitude = target.latitude,
+  --     longitude = target.longitude,
+  --     desiredSpeed = speed,
+  --     presetThrottle = 'Military'
+  --   } }
+
+  --   saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
+  --   return true
+  -- end
+
+  if UAV then
     if UAV.mission then
       UAV.mission = ''
     end
-
-    UAV.course = { {
-      latitude = target.latitude,
-      longitude = target.longitude,
-      desiredSpeed = speed,
-      presetThrottle = 'Military'
-    } }
 
     saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
     return true
