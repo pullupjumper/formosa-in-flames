@@ -1878,9 +1878,7 @@ saveData.t.IADS.ROCC = {
     name = 'ROCC/North',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJKIF',
-    areas = {
-      config.t.areas["OPAREA/3RD"],
-    },
+    areas = { config.t.areas["OPAREA/3RD"], },
     SAM = {},
     radar = {}
   },
@@ -1896,9 +1894,7 @@ saveData.t.IADS.ROCC = {
     name = 'ROCC/South',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJL2M',
-    areas = {
-      config.t.areas["OPAREA/4TH"],
-    },
+    areas = { config.t.areas["OPAREA/4TH"], },
     SAM = {},
     radar = {}
   },
@@ -1908,36 +1904,28 @@ saveData.t.IADS.TAAOC = {
     name = 'TAAOC/3rd OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKTVU7',
-    areas = {
-      config.t.areas["OPAREA/3RD"],
-    },
+    areas = { config.t.areas["OPAREA/3RD"], },
     SAM = {},
   },
   ['IC8B0X-0HN41D1QKU1ED'] = {
     name = 'TAAOC/5th OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU1ED',
-    areas = {
-      config.t.areas["OPAREA/5TH"],
-    },
+    areas = { config.t.areas["OPAREA/5TH"], },
     SAM = {},
   },
   ['IC8B0X-0HN41D1QKU0JP'] = {
     name = 'TAAOC/4th OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU0JP',
-    areas = {
-      config.t.areas["OPAREA/4TH"],
-    },
+    areas = { config.t.areas["OPAREA/4TH"], },
     SAM = {},
   },
   ['IC8B0X-0HNC27TV5Q0AS'] = {
     name = 'TAAOC/2nd OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC27TV5Q0AS',
-    areas = {
-      config.t.areas["OPAREA/2ND"],
-    },
+    areas = { config.t.areas["OPAREA/2ND"], },
     SAM = {},
   },
 }
