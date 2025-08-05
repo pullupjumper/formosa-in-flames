@@ -141,6 +141,7 @@ config.c.areas = {
   ["SWEAP/JHI/PATROL"] = { 'rp-163354', 'rp-163355', },
   ["SWEAP/E/PROSECUTION"] = { 'rp-163356', 'rp-163357', 'rp-163358', 'rp-163359', },
   ["SWEAP/E/PATROL"] = { 'rp-163360', 'rp-163161', },
+  ['AAR/E'] = { 'RP-44509', 'RP-44510', 'RP-44511', 'RP-44512', },
 }
 
 config.t.areas = {

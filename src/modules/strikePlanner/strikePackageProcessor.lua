@@ -61,6 +61,7 @@ local function isTimeToStartLoadout(packageData)
   end
 
   -- 將時間戳轉回字串格式供 GameUtils.isAfterStartTime() 使用
+  ---@type string
   local loadoutStartTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.loadoutStartTime)
   return GameUtils.isAfterStartTime(loadoutStartTimeStr)
 end
@@ -162,6 +163,7 @@ local function isLoadoutReady(packageData)
 
   -- 如果 loadout 已準備完成
   if loadoutStatus.isLoadoutInitiated and loadoutStatus.expectedReadyTime then
+    ---@type string
     local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
     return GameUtils.isAfterStartTime(expectedReadyTimeStr)
   end
@@ -230,7 +232,7 @@ end
 ---@param packageData SBJ__Package
 ---@return boolean Returns true if the primary striker units were assigned.
 local function assignUnits(packageData)
-  local roles = { "striker", "escort", "wildWeasel", "jammer" }
+  local roles = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
   local strikerAssigned = false
 
   for _, role in ipairs(roles) do
@@ -316,16 +318,19 @@ function StrikePackageProcessor.process(packageData, config, saveData, contacts,
   end
 
   -- 4. 建立所有任務 - 攻擊任務是關鍵
-  local roles = { "striker", "escort", "wildWeasel", "jammer" }
+  local roles = { "tanker", "striker", "escort", "wildWeasel", "jammer", }
+
   for _, role in ipairs(roles) do
     if packageData[role] then
       local missionCreated = createMission(packageData, role)
+
       if role == 'striker' and not missionCreated then
         Logger.error("Critical failure: Could not create striker mission. Aborting package.")
         return false -- 如果主要任務建立失敗，中止整個流程
       end
     end
   end
+
   Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
 
   -- 5. 尋找目標
@@ -343,9 +348,11 @@ function StrikePackageProcessor.process(packageData, config, saveData, contacts,
     evaluatedTargetlist,
     packageData.striker.missionParams.name
   )
+
   if not targetsAssigned then
     return false
   end
+
   Logger.log("Targets assigned to mission " .. packageData.striker.missionParams.name)
 
   -- 7. 將單位分配給所有任務

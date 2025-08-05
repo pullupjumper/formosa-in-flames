@@ -1473,14 +1473,42 @@ saveData.c.air.ATO = {
           unitDBID = config.platformDBID28,
           unitCount = 6,
           loadoutID = config.loadoutDBID8,
-          startTime = '2027-06-09 06:40:00',
-          missionParams = { name = 'AIR INTERCEPT/E', type = 'strike', opts = { type = 'aaw' } },
+          -- startTime = '2027-06-09 06:40:00',
+          startTime = '2027-06-09 01:05:00',
+          missionParams = {
+            name = 'AIR INTERCEPT/E',
+            type = 'strike',
+            opts = {
+              type = 'aaw',
+              TankerUsage = 1,
+              TankerMissionList = { 'AAR/E' },
+              FuelQtyToStartLookingForTanker_airborne = 65,
+              MaxReceiversInQueuePerTanker_airborne = 2,
+              LaunchMissionWithoutTankersInPlace = true
+            }
+          },
           emcon = 'Radar=Passive;OECM=Active'
         },
         escort = nil,
         wildWeasel = nil,
         jammer = nil,
-        tanker = nil,
+        tanker = {
+          baseGUID = config.baseGUID8,
+          unitDBID = config.platformDBID81,
+          weaponDBID = 0,
+          unitCount = 3,
+          loadoutID = nil,
+          missionParams = {
+            name = 'AAR/E',
+            type = 'support',
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 1,
+              zone = config.c.areas["AAR/E"]
+            }
+          },
+          emcon = 'Radar=Passive;OECM=Passive'
+        },
         reconUAV = nil,
         target = {
           list = {},

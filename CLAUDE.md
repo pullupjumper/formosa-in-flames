@@ -20,7 +20,7 @@ busted modules/assignMission_spec.lua
 ### Build and Deployment
 ```bash
 # Process Lua modules for deployment (removes requires, cleans modules)
-python tools/clean_lua_scripts.py
+python tools/build_lua_scenario.py
 ```
 
 ### Development Mode

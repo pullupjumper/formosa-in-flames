@@ -229,15 +229,29 @@ local function initATO(saveData)
           "%Y-%m-%d %I:%M:%S",
           Utils.parseDatetimeToTimestamp(package.striker.startTime) + 40 * 60
         )
+
+        if package.tanker then
+          package.striker.endTime = os.date(
+            "%Y-%m-%d %I:%M:%S",
+            Utils.parseDatetimeToTimestamp(package.striker.startTime) + 120 * 60
+          )
+        end
       end
 
-      local roles = { "escort", "wildWeasel", "jammer" }
+      local roles = { "escort", "wildWeasel", "jammer", "tanker" }
       for _, role in ipairs(roles) do
         if package[role] and package[role].startTime == nil then
           package[role].startTime = os.date(
             "%Y-%m-%d %I:%M:%S",
             Utils.parseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
           )
+
+          if role == "tanker" then
+            package[role].startTime = os.date(
+              "%Y-%m-%d %I:%M:%S",
+              Utils.parseDatetimeToTimestamp(package.striker.startTime) - 0 * 60
+            )
+          end
         end
 
         if package[role] and package[role].endTime == nil then
@@ -245,6 +259,13 @@ local function initATO(saveData)
             "%Y-%m-%d %I:%M:%S",
             Utils.parseDatetimeToTimestamp(package[role].startTime) + 45 * 60
           )
+
+          if role == "tanker" then
+            package[role].endTime = os.date(
+              "%Y-%m-%d %I:%M:%S",
+              Utils.parseDatetimeToTimestamp(package[role].startTime) + 120 * 60
+            )
+          end
         end
       end
     end
