@@ -233,8 +233,7 @@ local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedT
           startTime = os.date("!%Y-%m-%d %H:%M:%S", fsemStartTime + (fstIndex * fsemTemplate.strikeInterval)),
           isFinished = false,
           target = {
-            list = {},
-            evaluatedlist = targets,
+            list = targets,
             objs = fstTemplate.target.objs or {},
             areas = fstTemplate.target.areas or {},
             filterNames = fstTemplate.target.filterNames,

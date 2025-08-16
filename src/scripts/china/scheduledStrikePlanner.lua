@@ -82,11 +82,11 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveDat
 end
 
 if saveData.c.ground.isActivated then
-  FireSupportPlan.strike(config, saveData, contacts)
+  FireSupportPlan.strike(config, saveData)
 end
 
 if saveData.c.air.isActivated then
-  AirTaskingOrder.airStrike(config, saveData, contacts)
+  AirTaskingOrder.airStrike(saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
