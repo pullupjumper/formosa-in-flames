@@ -169,6 +169,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@field tanker SBJ__MissionEntry
 ---@field reconUAV table
 ---@field hasLaunched boolean
+---@field loadoutStatus table
 
 ---@class SBJ__FireSupportTask:SBJ__Task
 ---@field name string
@@ -331,3 +332,19 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@class SBJ__BatteryAssignment
 ---@field guid string 火力單位GUID
 ---@field battery table 火力單位資料
+
+---Dynamic ATO Insertion Types
+---@class SBJ__ATOTemplate
+---@field name string ATO波次名稱
+---@field targetType string 目標類型 ("STRIKE", "SEAD", etc.)
+---@field isFirstWave boolean 是否為第一波攻擊
+---@field strikeInterval number 打擊間隔時間（秒）
+---@field packages SBJ__ATOPackage[] ATO套件陣列
+
+---@class SBJ__ATOPackage:SBJ__Task
+---@field striker SBJ__MissionEntry? 主攻擊機配置
+---@field escort SBJ__MissionEntry? 護航機配置
+---@field wildWeasel SBJ__MissionEntry? 野鼬配置
+---@field jammer SBJ__MissionEntry? 干擾機配置
+---@field tanker SBJ__MissionEntry? 加油機配置
+---@field timeToReady number? 準備時間（分鐘）

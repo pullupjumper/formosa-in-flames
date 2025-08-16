@@ -183,4 +183,29 @@ function Utils.calculateSphericalCenter(coords)
   }
 end
 
+--- Deep copy a table recursively
+---@param original table The table to deep copy
+---@return table -- A deep copy of the original table
+function Utils.deepCopy(original)
+  if type(original) ~= 'table' then
+    return original
+  end
+
+  local copy = {}
+  for key, value in pairs(original) do
+    copy[Utils.deepCopy(key)] = Utils.deepCopy(value)
+  end
+
+  return copy
+end
+
+--- Round timestamp to nearest minutes interval
+---@param timestamp number The timestamp to round
+---@param minutes number The minute interval to round to (e.g., 5 for 5-minute intervals)
+---@return number -- The rounded timestamp
+function Utils.roundToNearestMinutes(timestamp, minutes)
+  local secondsInInterval = minutes * 60
+  return math.ceil(timestamp / secondsInInterval) * secondsInInterval
+end
+
 return Utils

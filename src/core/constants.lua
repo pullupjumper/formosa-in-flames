@@ -398,7 +398,8 @@ config.weaponDBID22 = 905  -- 計分系統武器
 
 
 config.radarDistance = 70
-config.readytime = 3600 * 1.5
+-- config.readytime = 3600 * 1.5
+config.readytime = 5 * 60
 ---@enum CONFIG.batteryState
 --- Battery states for the ground units
 config.batteryState = {

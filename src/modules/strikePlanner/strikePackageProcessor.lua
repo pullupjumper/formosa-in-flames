@@ -33,9 +33,10 @@ local function calculateLoadoutStartTime(packageData)
   end
 
   -- 取得 package 層級的 timeToReady
-  local timeToReady = packageData.timeToReady or 90 -- 預設 90 分鐘
-  local timeToReadySeconds = timeToReady * 60
-  local loadoutStartTime = earliestStartTime - timeToReadySeconds
+  local timeToReady = packageData.timeToReady or (9 * 60)
+  -- local timeToReadySeconds = timeToReady * 60
+  -- local loadoutStartTime = earliestStartTime - timeToReadySeconds
+  local loadoutStartTime = earliestStartTime - timeToReady
 
   return loadoutStartTime
 end
@@ -70,7 +71,7 @@ end
 ---@param packageData SBJ__Package
 local function initiateLoadoutForPackage(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
-  local timeToReady = packageData.timeToReady or 90 -- 預設 90 分鐘
+  local timeToReady = packageData.timeToReady or (9 * 60)
 
   Logger.log("Starting loadout for package: " .. packageData.striker.missionParams.name)
 
@@ -105,13 +106,13 @@ local function initiateLoadoutForPackage(packageData)
               local result = GameApi.ScenEdit_SetLoadout({
                 unitname = unit.name,
                 LoadoutID = loadoutID,
-                TimeToReady_Minutes = timeToReady
+                TimeToReady_Minutes = timeToReady / 60
               })
 
               if result then
                 unitsProcessed = unitsProcessed + 1
                 Logger.log(string.format(
-                  "Setting loadout for %s (DBID:%d, %s %d/%d) with ID %d, ready in %d minutes",
+                  "Setting loadout for %s (DBID:%d, %s %d/%d) with ID %d, ready in %d seconds",
                   unit.name, unit.dbid, role, unitsProcessed, unitCount, loadoutID, timeToReady
                 ))
               else
@@ -145,7 +146,7 @@ local function initiateLoadoutForPackage(packageData)
   local loadoutStatus = packageData.loadoutStatus
   loadoutStatus.isLoadoutInitiated = true
   loadoutStatus.loadoutInitiatedTime = currentTime
-  loadoutStatus.expectedReadyTime = currentTime + (timeToReady * 60)
+  loadoutStatus.expectedReadyTime = currentTime + timeToReady
 
   local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
   Logger.log("All loadouts initiated, expected ready at: " .. expectedReadyTimeStr)
@@ -334,7 +335,8 @@ function StrikePackageProcessor.process(packageData, config, saveData, contacts,
   Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
 
   -- 5. 尋找目標
-  local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
+  -- local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
+  local evaluatedTargetlist = packageData.target.list
   Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < packageData.target.minTargetCount then

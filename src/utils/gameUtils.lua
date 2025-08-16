@@ -123,7 +123,7 @@ function GameUtils.newArea(position, mode)
   return (rpTable)
 end
 
----@param time string @A string in the format "YYYY-MM-DD HH:MM:SS"
+---@param time string|number @A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
 ---@return boolean
 function GameUtils.isAfterStartTime(time)
   local result = GameApi.ScenEdit_CurrentTime()
@@ -132,7 +132,16 @@ function GameUtils.isAfterStartTime(time)
     return false
   end
 
-  return result > Utils.parseDatetimeToTimestamp(time)
+  local targetTimestamp
+  if type(time) == "string" then
+    targetTimestamp = Utils.parseDatetimeToTimestamp(time)
+  elseif type(time) == "number" then
+    targetTimestamp = time
+  else
+    error("Invalid time parameter type. Expected string or number, got " .. type(time))
+  end
+
+  return result >= targetTimestamp
 end
 
 ---comment

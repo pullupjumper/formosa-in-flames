@@ -8,6 +8,7 @@ local AttackManager = require("src.modules.strikePlanner.attackManager")
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
+local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
 
 
 local contacts = GameApi.ScenEdit_GetContacts('China')
@@ -26,6 +27,11 @@ end
 -- 動態火力支援計畫 - 檢查偵察時程並執行BDA評估
 if saveData.c.ground.dynamicFSP and saveData.c.ground.dynamicFSP.enabled then
   DynamicFireSupportPlan.execute(config, saveData, contacts)
+end
+
+-- 動態ATO插入 - 根據偵察結果自動生成和插入空中任務
+if saveData.c.air.dynamicATO and saveData.c.air.dynamicATO.enabled then
+  DynamicATOInsertion.process(config, saveData, contacts)
 end
 
 if saveData.c.recon.isActivated then
