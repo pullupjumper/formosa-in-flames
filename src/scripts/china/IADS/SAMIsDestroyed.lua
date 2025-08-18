@@ -15,16 +15,16 @@ local longitude = unit.longitude
 local isDestroyed = false
 
 for _, component in ipairs(unit.components) do
-	if (component['comp_dbid'] == config.sensorDBID1
-				or component['comp_dbid'] == config.sensorDBID2
-				or component['comp_dbid'] == config.sensorDBID3
-				or component['comp_dbid'] == config.sensorDBID4
-				or component['comp_dbid'] == config.sensorDBID5
-				or component['comp_dbid'] == config.sensorDBID6)
+	if (component['comp_dbid'] == config.sensor.S300_TOMBSTONE
+				or component['comp_dbid'] == config.sensor.S400_GRAVE_STONE
+				or component['comp_dbid'] == config.sensor.HQ12_H200
+				or component['comp_dbid'] == config.sensor.HQ22_H200_IMPROVED
+				or component['comp_dbid'] == config.sensor.S300_CHEESE_BOARD
+				or component['comp_dbid'] == config.sensor.S400_CHEESE_BOARD)
 			and component['comp_status'] == 'Destroyed' then
 		Logger.log(unit.name ..
-		'\'s radar is damaged - comp_dbid/' ..
-		tostring(component['comp_dbid']) .. ', comp_status/' .. tostring(component['comp_status']))
+			'\'s radar is damaged - comp_dbid/' ..
+			tostring(component['comp_dbid']) .. ', comp_status/' .. tostring(component['comp_status']))
 		isDestroyed = true
 	end
 end
@@ -40,12 +40,12 @@ if isDestroyed then
 				or u.dbid == config.platform.S_400
 				or u.dbid == config.platform.HQ_12 then
 			for i, component in ipairs(u.components) do
-				if (component['comp_dbid'] == config.sensorDBID1
-							or component['comp_dbid'] == config.sensorDBID2
-							or component['comp_dbid'] == config.sensorDBID3
-							or component['comp_dbid'] == config.sensorDBID4
-							or component['comp_dbid'] == config.sensorDBID5
-							or component['comp_dbid'] == config.sensorDBID6)
+				if (component['comp_dbid'] == config.sensor.S300_TOMBSTONE
+							or component['comp_dbid'] == config.sensor.S400_GRAVE_STONE
+							or component['comp_dbid'] == config.sensor.HQ12_H200
+							or component['comp_dbid'] == config.sensor.HQ22_H200_IMPROVED
+							or component['comp_dbid'] == config.sensor.S300_CHEESE_BOARD
+							or component['comp_dbid'] == config.sensor.S400_CHEESE_BOARD)
 						and component['comp_status'] ~= 'Destroyed' then
 					if distance < temp.distance and unit.guid ~= u.guid then
 						temp.unit = u

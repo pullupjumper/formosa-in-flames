@@ -313,20 +313,22 @@ config.platform = {
   TA_CHIANG = 3441,
 }
 
-config.sensorDBID1 = 2788  -- S-300 Tombstone
-config.sensorDBID2 = 4155  -- S-400 Grave Stone
-config.sensorDBID3 = 3396  -- HQ-12 China H-200
-config.sensorDBID4 = 6123  -- HQ-22 China H-200 Improved
-config.sensorDBID5 = 3204  -- S-300 Cheese Board
-config.sensorDBID6 = 5054  -- S-400 Cheese Board
-config.sensorDBID7 = 6847  -- P-3C SeaVue
-config.sensorDBID8 = 2938  -- E-2K AN/APS-145
-config.sensorDBID9 = 6366  -- TK-3 Long Mountain
-config.sensorDBID10 = 282  -- TK-3 Long White 2
-config.sensorDBID11 = 919  -- TK-2 CS/MPG-25
-config.sensorDBID12 = 2498 -- PAC-3 AN/MPQ-65
-config.sensorDBID13 = 2539 -- GPS Jammer
-config.sensorDBID14 = 6381 -- TC-2 CS/MPQ-90
+config.sensor = {
+  S300_TOMBSTONE = 2788,
+  S400_GRAVE_STONE = 4155,
+  HQ12_H200 = 3396,
+  HQ22_H200_IMPROVED = 6123,
+  S300_CHEESE_BOARD = 3204,
+  S400_CHEESE_BOARD = 5054,
+  P3C_SEAVUE = 6847,
+  E2K_APS145 = 2938,
+  TK3_LONG_MOUNTAIN = 6366,
+  TK3_LONG_WHITE_2 = 282,
+  TK2_CS_MPG25 = 919,
+  PAC3_MPQ65 = 2498,
+  GPS_JAMMER = 2539,
+  TC2_CS_MPQ90 = 6381,
+}
 
 
 config.loadoutDBID1 = 30568  -- Ka-52 攻擊直升機武器配置
@@ -1147,8 +1149,8 @@ config.c.PHIBOP.cargoList = {
     { type = 2, num = 12, dbid = config.platform.PLZ_96 }, -- PLZ-96 12
     { type = 3, num = 3,  dbid = config.platform.PGZ_09 }, -- PGZ-09 3
     { type = 3, num = 1,  dbid = config.platform.PGZ_95 }, -- PGZ-95 1
-    { type = 3, num = 30, dbid = config.platform.HMMWV }, -- 悍馬車 30
-    { type = 3, num = 76, dbid = config.platform.MC }, -- MC 76
+    { type = 3, num = 30, dbid = config.platform.HMMWV },  -- 悍馬車 30
+    { type = 3, num = 76, dbid = config.platform.MC },     -- MC 76
   },
   ---@type table<number, CargoItem>
   type071 = {
@@ -1156,8 +1158,8 @@ config.c.PHIBOP.cargoList = {
     { type = 2, num = 12, dbid = config.platform.PLZ_96 }, -- PLZ-96 12
     { type = 3, num = 3,  dbid = config.platform.PGZ_09 }, -- PGZ-09 3
     { type = 3, num = 1,  dbid = config.platform.PGZ_95 }, -- PGZ-95 1
-    { type = 3, num = 2,  dbid = config.platform.SA_15 }, -- SA-15 2
-    { type = 3, num = 22, dbid = config.platform.MC }  -- MC
+    { type = 3, num = 2,  dbid = config.platform.SA_15 },  -- SA-15 2
+    { type = 3, num = 22, dbid = config.platform.MC }      -- MC
   },
   ---@type table<number, CargoItem>
   type072iii = {
@@ -1183,14 +1185,14 @@ config.c.PHIBOP.cargoList = {
   },
   ---@type table<number, CargoItem>
   barge = {
-    { type = 2, num = 28, dbid = config.platform.ZBD_04 }, -- ZBD-04
+    { type = 2, num = 28, dbid = config.platform.ZBD_04 },  -- ZBD-04
     { type = 2, num = 28, dbid = config.platform.ZTZ_96A }, -- ZTZ-96A
-    { type = 2, num = 9,  dbid = config.platform.PLL_05 }, -- PLL-05
-    { type = 3, num = 2,  dbid = config.platform.PGZ_95 }, -- PGZ-95
-    { type = 3, num = 1,  dbid = config.platform.PGZ_09 }, -- PGZ-09
-    { type = 2, num = 7,  dbid = config.platform.PLZ_96 }, -- PLZ-07/PLZ-96
-    { type = 3, num = 1,  dbid = config.platform.SA_15 }, -- SA-15
-    { type = 2, num = 4,  dbid = config.platform.M977 }, -- M977
+    { type = 2, num = 9,  dbid = config.platform.PLL_05 },  -- PLL-05
+    { type = 3, num = 2,  dbid = config.platform.PGZ_95 },  -- PGZ-95
+    { type = 3, num = 1,  dbid = config.platform.PGZ_09 },  -- PGZ-09
+    { type = 2, num = 7,  dbid = config.platform.PLZ_96 },  -- PLZ-07/PLZ-96
+    { type = 3, num = 1,  dbid = config.platform.SA_15 },   -- SA-15
+    { type = 2, num = 4,  dbid = config.platform.M977 },    -- M977
   }
 }
 config.c.PHIBOP.cargoListForTransfer = {

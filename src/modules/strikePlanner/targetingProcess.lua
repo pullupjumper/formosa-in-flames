@@ -38,7 +38,7 @@ function TargetingProcess.findAirborne(opts)
     for _, contact in ipairs(contacts) do
       if contact.emissions and contact.emissions[1] then
         local emission = contact.emissions[1]['sensor_dbid']
-        if (emission == config.sensorDBID7 or emission == config.sensorDBID8) and
+        if (emission == config.sensor.P3C_SEAVUE or emission == config.sensor.E2K_APS145) and
             contact.typed == 0 and
             contact:inArea(area) then
           table.insert(targets, contact.guid)
@@ -62,11 +62,11 @@ function TargetingProcess.analyzeEmissions(opts)
   for _, area in ipairs(task.target.areas) do
     for _, c in ipairs(contacts) do
       local isSensor = c.emissions and
-          (c.emissions[1]['sensor_dbid'] == config.sensorDBID9 or
-            c.emissions[1]['sensor_dbid'] == config.sensorDBID10 or
-            c.emissions[1]['sensor_dbid'] == config.sensorDBID11 or
-            c.emissions[1]['sensor_dbid'] == config.sensorDBID12 or
-            c.emissions[1]['sensor_dbid'] == config.sensorDBID14)
+          (c.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_MOUNTAIN or
+            c.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_WHITE_2 or
+            c.emissions[1]['sensor_dbid'] == config.sensor.TK2_CS_MPG25 or
+            c.emissions[1]['sensor_dbid'] == config.sensor.PAC3_MPQ65 or
+            c.emissions[1]['sensor_dbid'] == config.sensor.TC2_CS_MPQ90)
       local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
       if c:inArea(area) and isSAM then table.insert(SAMTargets, c.guid) end
