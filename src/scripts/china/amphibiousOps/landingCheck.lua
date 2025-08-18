@@ -81,7 +81,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
                 weaponDBID = config.weaponDBID15,
                 unitDBID = config.platform.J_10C,
                 unitCount = 8,
-                loadoutID = config.loadoutDBID19,
+                loadoutID = config.loadout.J10C_LS_6_500,
                 -- startTime = '2027-06-09 01:30:00',
                 missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
                 emcon = 'Radar=Passive;OECM=Active'

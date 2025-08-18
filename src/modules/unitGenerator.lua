@@ -226,8 +226,8 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 075',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
@@ -236,7 +236,7 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 071',
       cargo = cargoList.type071,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 4 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 4 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
@@ -245,9 +245,9 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 076',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.GJ_11,     loadouts = { { loadoutId = config.loadoutDBID6, num = 8 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.GJ_11,     loadouts = { { loadoutId = config.loadout.GJ11_ATTACK, num = 8 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
