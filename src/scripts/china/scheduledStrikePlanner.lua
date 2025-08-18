@@ -43,7 +43,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c
 
   for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(value)
-    if unit and unit.dbid == config.platformDBID51 then
+    if unit and unit.dbid == config.platform.TYPE_055 then
       table.insert(ships, { guid = value, weaponDBID = config.c.surface.lacm.weaponDBID })
     end
   end

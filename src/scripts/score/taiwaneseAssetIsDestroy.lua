@@ -15,7 +15,7 @@ if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
   if unit.type == 'Facility' then
-    if unit.dbid == config.platformDBID26 then
+    if unit.dbid == config.platform.UNDERGROUND_SHELTER then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.undergroundShelterIsDestroyed),
@@ -23,14 +23,14 @@ if unit then
       )
     end
 
-    if unit.dbid == config.platformDBID50 then
+    if unit.dbid == config.platform.AMMO_TRUCK then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
       Logger.log("An ammunition section has been destoryed.")
     end
 
-    if unit.dbid == config.platformDBID53 then
+    if unit.dbid == config.platform.AMMO then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
@@ -39,13 +39,13 @@ if unit then
   end
 
   if unit.type == 'Aircraft' then
-    if unit.dbid == config.platformDBID38 then
+    if unit.dbid == config.platform.E_2K then
       saveData.t.air.landBased.AEW[unit.guid] = nil
     else
       saveData.t.air.landBased.AC[unit.guid] = nil
     end
 
-    if unit.dbid == config.platformDBID45 then
+    if unit.dbid == config.platform.RC_135V then
       saveData.u.SIGINT.RA[unit.guid] = nil
     end
   end

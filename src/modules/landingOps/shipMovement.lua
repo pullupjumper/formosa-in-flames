@@ -112,7 +112,7 @@ local function handleSAG(group, isTesting)
       local ship = GameApi.ScenEdit_GetUnit(u)
 
       if ship then
-        if ship.dbid == config.platformDBID48 then
+        if ship.dbid == config.platform.TYPE_052D then
           if type052d == 0 then
             setShipPosition(
               ship,
@@ -133,7 +133,7 @@ local function handleSAG(group, isTesting)
           end
 
           type052d = type052d + 1
-        elseif ship.dbid == config.platformDBID49 then
+        elseif ship.dbid == config.platform.TYPE_054A then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
             group.to.archorageArea[count].lat,

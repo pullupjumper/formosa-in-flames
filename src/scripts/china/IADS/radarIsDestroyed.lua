@@ -19,7 +19,7 @@ for _, value in ipairs(units) do
   if u == nil then goto continue end
   local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-  if (u.dbid == config.platformDBID16 or u.dbid == config.platformDBID17) then
+  if (u.dbid == config.platform.JY_26 or u.dbid == config.platform.YLC_8B) then
     if distance < temp.distance then
       temp.unit = u
       temp.distance = distance
@@ -36,10 +36,10 @@ if temp.unit == nil then
 
     local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-    if u.dbid == config.platformDBID18
-        or u.dbid == config.platformDBID19
-        or u.dbid == config.platformDBID20
-        or u.dbid == config.platformDBID21 then
+    if u.dbid == config.platform.HQ_22
+        or u.dbid == config.platform.S_300
+        or u.dbid == config.platform.S_400
+        or u.dbid == config.platform.HQ_12 then
       if distance < temp.distance then
         temp.unit = u
         temp.distance = distance

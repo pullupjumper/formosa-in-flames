@@ -135,15 +135,15 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
   for _, item in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if unit and (unit.dbid == config.platformDBID6
-          or unit.dbid == config.platformDBID7
-          or unit.dbid == config.platformDBID8
-          or unit.dbid == config.platformDBID9
-          or unit.dbid == config.platformDBID10
-          or unit.dbid == config.platformDBID32
-          or unit.dbid == config.platformDBID54
-          or unit.dbid == config.platformDBID56
-          or unit.dbid == config.platformDBID72) then
+    if unit and (unit.dbid == config.platform.TYPE_075
+          or unit.dbid == config.platform.TYPE_071
+          or unit.dbid == config.platform.TYPE_072III
+          or unit.dbid == config.platform.TYPE_072A
+          or unit.dbid == config.platform.TYPE_073A
+          or unit.dbid == config.platform.TYPE_072A_2
+          or unit.dbid == config.platform.TYPE_076
+          or unit.dbid == config.platform.FERRY
+          or unit.dbid == config.platform.BARGE) then
       if unit.unitstate ~= 'Unassigned' then
         isUnitMoving = true
         break
@@ -220,7 +220,7 @@ function AmphibiousLogistics.transferAndAssign(config, unitsInAnchorageArea)
 
   for _, zone in ipairs(operationalZones) do
     for _, u in ipairs(unitsInAnchorageArea) do
-      if (u.dbid == config.platformDBID6 or u.dbid == config.platformDBID54) and
+      if (u.dbid == config.platform.TYPE_075 or u.dbid == config.platform.TYPE_076) and
           u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
@@ -272,7 +272,7 @@ function AmphibiousLogistics.transferAndAssign(config, unitsInAnchorageArea)
         end
       end
 
-      if u.dbid == config.platformDBID7 and u:inArea(zone.anchorageArea) then
+      if u.dbid == config.platform.TYPE_071 and u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Boats',
@@ -337,7 +337,7 @@ function AmphibiousLogistics.retransferCargos(config, units)
         return false
       end
 
-      if unit and (unit.dbid == config.platformDBID6 or unit.dbid == config.platformDBID54) then
+      if unit and (unit.dbid == config.platform.TYPE_075 or unit.dbid == config.platform.TYPE_076) then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',
@@ -361,7 +361,7 @@ function AmphibiousLogistics.retransferCargos(config, units)
         )
       end
 
-      if unit and unit.dbid == config.platformDBID7 then
+      if unit and unit.dbid == config.platform.TYPE_071 then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',

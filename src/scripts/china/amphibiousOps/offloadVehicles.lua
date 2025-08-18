@@ -28,7 +28,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, 
     type      = 'Facility',
     latitude  = ship.latitude,
     longitude = ship.longitude,
-    dbid      = config.platformDBID71,
+    dbid      = config.platform.BRIDGE,
     unitname  = 'bridge',
   })
 

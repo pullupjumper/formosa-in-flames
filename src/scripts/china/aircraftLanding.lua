@@ -3,12 +3,12 @@ local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
-  if unit.dbid == config.platformDBID28
-      or unit.dbid == config.platformDBID29
-      or unit.dbid == config.platformDBID30
-      or unit.dbid == config.platformDBID31
-      or unit.dbid == config.platformDBID36
-      or unit.dbid == config.platformDBID57 then
+  if unit.dbid == config.platform.J_20
+      or unit.dbid == config.platform.J_16
+      or unit.dbid == config.platform.SU_30
+      or unit.dbid == config.platform.H_6K
+      or unit.dbid == config.platform.J_35
+      or unit.dbid == config.platform.J_10C then
     -- if unit.mission then
     --   local mission = ScenEdit_GetMission('China', unit.mission.guid)
 
@@ -16,7 +16,7 @@ if unit then
     --     for _, u in ipairs(mission.unitlist) do
     --       local actualUnit = ScenEdit_GetUnit({ guid = u })
 
-    --       if actualUnit and actualUnit.dbid == CONFIG.platformDBID35 then
+    --       if actualUnit and actualUnit.dbid == config.platform.Y_9 then
     --         actualUnit:RTB(true)
     --         actualUnit.mission = ''
     --       end
@@ -37,7 +37,7 @@ if unit then
     unit.mission = ''
   end
 
-  -- if unit.dbid == CONFIG.platformDBID2 then
+  -- if unit.dbid == config.platform.Z_18 then
   --     ScenEdit_SpecialMessage('China', tostring(unit.base.guid) .. tostring(unit.name))
   --     -- updateCargo(unit.base, unit, CONFIG.c.landingOperation.cargoItemForTransferForHelicapter)
 

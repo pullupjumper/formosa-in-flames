@@ -222,41 +222,41 @@ end
 local function createShipsByType(config, position, area, item, shipSettings, cargoList, shipType)
   local shipConfigs = {
     type075 = {
-      dbid = config.platformDBID6,
+      dbid = config.platform.TYPE_075,
       name = 'Type 075',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID2, loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID5, loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platformDBID1, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     type071 = {
-      dbid = config.platformDBID7,
+      dbid = config.platform.TYPE_071,
       name = 'Type 071',
       cargo = cargoList.type071,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID2, loadouts = { { loadoutId = config.loadoutDBID3, num = 4 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platformDBID1, loadouts = { { loadoutId = 0, num = 4 } } }
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 4 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
     type076 = {
-      dbid = config.platformDBID54,
+      dbid = config.platform.TYPE_076,
       name = 'Type 076',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID2,  loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID5,  loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platformDBID55, loadouts = { { loadoutId = config.loadoutDBID6, num = 8 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platformDBID1,  loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadoutDBID3, num = 6 }, { loadoutId = config.loadoutDBID4, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadoutDBID2, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.GJ_11,     loadouts = { { loadoutId = config.loadoutDBID6, num = 8 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
-    barge = { dbid = config.platformDBID72, name = 'Barge', cargo = nil, embarkedUnits = nil },
-    roro = { dbid = config.platformDBID56, name = 'RORO', cargo = cargoList.barge, embarkedUnits = nil },
-    type072a = { dbid = config.platformDBID9, name = 'Type 072A', cargo = cargoList.type072a, embarkedUnits = nil },
-    type072iii = { dbid = config.platformDBID8, name = 'Type 072III', cargo = cargoList.type072iii, embarkedUnits = nil },
-    ferry = { dbid = config.platformDBID56, name = 'Ferry', cargo = cargoList.ferry, embarkedUnits = nil },
-    type073a = { dbid = config.platformDBID10, name = 'Type 073A', cargo = cargoList.type073a, embarkedUnits = nil }
+    barge = { dbid = config.platform.BARGE, name = 'Barge', cargo = nil, embarkedUnits = nil },
+    roro = { dbid = config.platform.FERRY, name = 'RORO', cargo = cargoList.barge, embarkedUnits = nil },
+    type072a = { dbid = config.platform.TYPE_072A, name = 'Type 072A', cargo = cargoList.type072a, embarkedUnits = nil },
+    type072iii = { dbid = config.platform.TYPE_072III, name = 'Type 072III', cargo = cargoList.type072iii, embarkedUnits = nil },
+    ferry = { dbid = config.platform.FERRY, name = 'Ferry', cargo = cargoList.ferry, embarkedUnits = nil },
+    type073a = { dbid = config.platform.TYPE_073A, name = 'Type 073A', cargo = cargoList.type073a, embarkedUnits = nil }
   }
 
   local shipConfig = shipConfigs[shipType]
@@ -295,28 +295,28 @@ local function getSAGShipConfiguration(config, side)
   if side == 'China' then
     return {
       {
-        dbid = config.platformDBID48,
+        dbid = config.platform.TYPE_052D,
         unitname = '052D',
         distance = 0,
         angle = 0,
         embarkedUnits = nil
       },
       {
-        dbid = config.platformDBID49,
+        dbid = config.platform.TYPE_054A,
         unitname = '054A',
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.LEFT,
         embarkedUnits = nil
       },
       {
-        dbid = config.platformDBID49,
+        dbid = config.platform.TYPE_054A,
         unitname = '054A',
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.RIGHT,
         embarkedUnits = nil
       },
       {
-        dbid = config.platformDBID48,
+        dbid = config.platform.TYPE_052D,
         unitname = '052D',
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.REAR,
@@ -326,21 +326,21 @@ local function getSAGShipConfiguration(config, side)
   else -- Taiwan
     return {
       {
-        dbid = config.platformDBID73,
+        dbid = config.platform.KIDD,
         unitname = 'Keelung',
         distance = 0,
         angle = 0,
         embarkedUnits = nil -- 搭載單位在創建時單獨處理
       },
       {
-        dbid = config.platformDBID74,
+        dbid = config.platform.KANG_DING,
         unitname = 'KangDing',
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.LEFT,
         embarkedUnits = nil
       },
       {
-        dbid = config.platformDBID74,
+        dbid = config.platform.KANG_DING,
         unitname = 'KangDing',
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.RIGHT,
@@ -514,7 +514,7 @@ local function tryAddJammerUnit(config, jammer, attempt, max_attempts)
   local unit = GameApi.ScenEdit_AddUnit({
     type = 'Facility',
     unitname = jammer.name,
-    dbid = config.platformDBID25,
+    dbid = config.platform.GPS_JAMMER,
     side = 'China',
     Lat = point.latitude,
     Lon = point.longitude,
@@ -729,7 +729,7 @@ function UnitGenerator.addSubmarines(config, side)
 
     local addedUnit = createRandomUnits({
       centerPoint = unit.from.startingPoint,
-      dbids = { config.platformDBID77 },
+      dbids = { config.platform.TYPE_093B },
       count = 1,
       randomRadius = config.c.subSurface.slcm.randomRadius,
       sideName = side,
@@ -812,10 +812,10 @@ function UnitGenerator.initC2Facilities(config, saveData)
       for _, area in ipairs(item.areas) do
         if actualUnit and actualUnit:inArea(area) then
           -- SAM 系統
-          if (actualUnit.dbid == config.platformDBID18 or
-                actualUnit.dbid == config.platformDBID19 or
-                actualUnit.dbid == config.platformDBID20 or
-                actualUnit.dbid == config.platformDBID21) and
+          if (actualUnit.dbid == config.platform.HQ_22 or
+                actualUnit.dbid == config.platform.S_300 or
+                actualUnit.dbid == config.platform.S_400 or
+                actualUnit.dbid == config.platform.HQ_12) and
               not string.find(actualUnit.name, 'DECOY') then
             saveData.c.IADS.C2[c2Guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
@@ -829,7 +829,7 @@ function UnitGenerator.initC2Facilities(config, saveData)
           end
 
           -- 雷達系統
-          if actualUnit.dbid == config.platformDBID16 or actualUnit.dbid == config.platformDBID17 then
+          if actualUnit.dbid == config.platform.JY_26 or actualUnit.dbid == config.platform.YLC_8B then
             saveData.c.IADS.C2[c2Guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -954,15 +954,15 @@ function UnitGenerator.removeLandingShips(config)
   local removedCount = 0
 
   local landingShipDBIDs = {
-    config.platformDBID6,  -- Type 075
-    config.platformDBID7,  -- Type 071
-    config.platformDBID8,  -- Type 072III
-    config.platformDBID9,  -- Type 072A
-    config.platformDBID10, -- Type 073A
-    config.platformDBID32, -- Type 072a
-    config.platformDBID54, -- Type 076
-    config.platformDBID56, -- Ferry/RORO
-    config.platformDBID72  -- Barge
+    config.platform.TYPE_075,
+    config.platform.TYPE_071,
+    config.platform.TYPE_072III,
+    config.platform.TYPE_072A,
+    config.platform.TYPE_073A,
+    config.platform.TYPE_072A_2,
+    config.platform.TYPE_076,
+    config.platform.FERRY,
+    config.platform.BARGE
   }
 
   for _, u in ipairs(unitsFromChina) do

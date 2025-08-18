@@ -213,10 +213,10 @@ end
 ---@param ship CMO__Unit
 ---@return boolean
 function AmphibiousAssault.isFerryOrLST(config, ship)
-  return (ship.dbid == config.platformDBID7
-    or ship.dbid == config.platformDBID8
-    or ship.dbid == config.platformDBID9
-    or ship.dbid == config.platformDBID10
+  return (ship.dbid == config.platform.TYPE_071
+    or ship.dbid == config.platform.TYPE_072III
+    or ship.dbid == config.platform.TYPE_072A
+    or ship.dbid == config.platform.TYPE_073A
     or ship.name == 'Ferry')
 end
 

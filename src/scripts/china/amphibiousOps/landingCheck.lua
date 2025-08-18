@@ -79,7 +79,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
               striker = {
                 baseGUID = config.baseGUID8,
                 weaponDBID = config.weaponDBID15,
-                unitDBID = config.platformDBID57,
+                unitDBID = config.platform.J_10C,
                 unitCount = 8,
                 loadoutID = config.loadoutDBID19,
                 -- startTime = '2027-06-09 01:30:00',

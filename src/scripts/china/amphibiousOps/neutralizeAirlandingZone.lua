@@ -15,7 +15,7 @@ if not ship then
   return
 end
 
-if ship and ship.group and ship.dbid == config.platformDBID48 then
+if ship and ship.group and ship.dbid == config.platform.TYPE_052D then
   local filteredContacts = {}
 
   for _, contact in ipairs(contacts) do

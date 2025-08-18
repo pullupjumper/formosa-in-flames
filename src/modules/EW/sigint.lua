@@ -182,11 +182,11 @@ end
 ---@return string reason reason for emission status
 local function isUnitEmitting(config, unit, unitData, enemySide)
   -- Check for specific platform types that always emit
-  if unit.dbid == config.platformDBID46 then
+  if unit.dbid == config.platform.C2 then
     return true, "Platform type 46 (always emitting)"
   end
 
-  if unit.dbid == config.platformDBID78 then
+  if unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
     return true, "Platform type 78 (always emitting)"
   end
 

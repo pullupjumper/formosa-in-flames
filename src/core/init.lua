@@ -13,7 +13,7 @@ local UnitGenerator = require("src.modules.unitGenerator")
 --         local event = ScenEdit_GetEvent(eventName)
 
 --         if jammer and event == nil then
---             if jammer.dbid == CONFIG.platformDBID25 then
+--             if jammer.dbid == config.platform.GPS_JAMMER then
 --                 local jammingArea = GameUtils.NewArea(
 --                     { latitude = jammer.latitude, longitude = jammer.longitude },
 --                     { side = 'China', distance = '15', shape = 'circle' }
@@ -37,7 +37,7 @@ local function initC2(config, saveData)
     for _, item in pairs(saveData.t.IADS.ROCC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platformDBID14 or actualUnit.dbid == config.platformDBID15 then
+          if actualUnit.dbid == config.platform.CUSTOMED_TK_3 or actualUnit.dbid == config.platform.PAC_3 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -51,10 +51,10 @@ local function initC2(config, saveData)
             saveData.t.IADS.ROCC[item.guid].SAM[actualUnit.guid] = data
           end
 
-          if actualUnit.dbid == config.platformDBID41
-              or actualUnit.dbid == config.platformDBID42
-              or actualUnit.dbid == config.platformDBID43
-              or actualUnit.dbid == config.platformDBID44 then
+          if actualUnit.dbid == config.platform.FPS_117
+              or actualUnit.dbid == config.platform.TPS_43F
+              or actualUnit.dbid == config.platform.HR_3000
+              or actualUnit.dbid == config.platform.GE_592 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -74,7 +74,7 @@ local function initC2(config, saveData)
     for _, item in pairs(saveData.t.IADS.TAAOC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platformDBID33 or actualUnit.dbid == config.platformDBID34 then
+          if actualUnit.dbid == config.platform.TC_2 or actualUnit.dbid == config.platform.SKYGUARD then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -103,7 +103,7 @@ local function initCommsJammers(config, saveData, side)
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and (actualUnit.dbid == config.platformDBID35 or actualUnit.dbid == config.platformDBID37) then
+    if actualUnit and (actualUnit.dbid == config.platform.Y_9 or actualUnit.dbid == config.platform.J_15D) then
       -- table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
       saveData.c.commsJamming.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
@@ -126,7 +126,7 @@ local function initAC(config, saveData)
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platformDBID38 then
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E_2K then
       saveData.t.air.landBased.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
@@ -158,7 +158,7 @@ local function initSIGINT(config, saveData)
   for _, value in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platformDBID45 then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC_135V then
       saveData.u.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
@@ -173,7 +173,7 @@ local function initSIGINT(config, saveData)
   for _, value in ipairs(unitsFromChina) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platformDBID47 then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y_9DZ then
       saveData.c.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
@@ -546,9 +546,9 @@ if saveData ~= nil and #saveData.c.ground.dynamicFSP.reconSchedule[1].fsemTempla
   if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
     Logger.log('Init data and save.')
+  else
+    Logger.log('Does not init data.')
   end
-else
-  Logger.log('Does not init data.')
 end
 
 -- the following forces have been placed under your command:
