@@ -183,37 +183,42 @@ config.t.areas = {
 
 
 -- Base GUIDs - 基地識別碼
-config.baseGUID1 = '6Z8LM5-0HMLLL9B5QBF0'  -- Huizhou Pingtan AB (PLAAF)
-config.baseGUID2 = '6Z8LM5-0HMLLEF9H5P44'  -- Shantou Waisha AB (PLAAF)
-config.baseGUID3 = 'X58F5H-0HN00TRR0Q1JQ'  -- Zhangpu AAB
-config.baseGUID4 = '6Z8LM5-0HMIJ3QGCRQ2G'  -- Zhangzhou-Longxi AB (PLAAF)
-config.baseGUID5 = '6Z8LM5-0HMIJ3QGCRQ5F'  -- Huian AAB
-config.baseGUID6 = '6Z8LM5-0HMIJ3QGCRQC4'  -- Longtian AAB
-config.baseGUID7 = '6Z8LM5-0HMLLEF9H7VDF'  -- Xingning AB (PLAAF)
-config.baseGUID8 = '6Z8LM5-0HMMJDEFRFJ4V'  -- Shuimen AAB (PLAAF)
-config.baseGUID9 = '6Z8LM5-0HMIJ7B8971MA'  -- Anqing AB (PLAAF)
-config.baseGUID10 = '6Z8LM5-0HMIJ7B896RA9' -- Wuhu AB (PLAAF)
-config.baseGUID11 = 'X58F5H-0HMRAQFR07T2V' -- Liuan AB
-config.baseGUID12 = '6Z8LM5-0HMMNGU6J8P2N' -- Pingtan Port (Amphibious Ops)
-config.baseGUID13 = '6Z8LM5-0HMJV6AONGLAU' -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
-config.baseGUID14 = '6Z8LM5-0HMIHS2L949R0' -- Ching Chuang Kang AB (Taiwan)
-config.baseGUID15 = '6Z8LM5-0HMIJ3QGCHSUB' -- Chiayi AB (Taiwan)
-config.baseGUID16 = '6Z8LM5-0HMIJ3QGCHVVS' -- Tainan AB (Taiwan)
-config.baseGUID17 = '6Z8LM5-0HMISSTNL3T8K' -- Magong AB (Taiwan)
-config.baseGUID18 = 'IC8B0X-0HN37BVOG0T9O' -- Guiren AAB (Taiwan)
-config.baseGUID19 = 'IC8B0X-0HNCTPETEF6GG' -- Pingtung North AB (Taiwan)
-config.baseGUID20 = '6Z8LM5-0HMIJ3QGCI3V3' -- Taitung/Jhihhang AB (Taiwan)
-config.baseGUID21 = '6Z8LM5-0HMIJ3QGCI783' -- Jiashan AB (Taiwan)
-config.baseGUID22 = '6Z8LM5-0HMIK08HEK556' -- Hsinchu AB (Taiwan)
-config.baseGUID23 = 'IC8B0X-0HN3ADVRF2U7P' -- Longtan AAB (Taiwan)
-config.baseGUID24 = '6Z8LM5-0HMJ1GE4HSIU5' -- Taoyuan International Airport (Taiwan)
-config.baseGUID25 = 'X58F5H-0HMU28MM77N82' -- Rende Emergency Highway Strip (Taiwan)
-config.baseGUID26 = 'X58F5H-0HMU28MM7836P' -- Madou Emergency Highway Strip (Taiwan)
-config.baseGUID27 = 'X58F5H-0HMU28MM78J9P' -- Minxiong Emergency Highway Strip (Taiwan)
-config.baseGUID28 = 'IC8B0X-0HN81FNLB6M8Q' -- Tainan Field Airdrome (Taiwan)
-config.baseGUID29 = 'IC8B0X-0HN81FNLB2OPJ' -- Hsinchu Field Airdrome (Taiwan)
-config.baseGUID30 = 'X58F5H-0HMSMDQJ7LEUI' -- Port of Keelung (Taiwan)
-config.baseGUID31 = 'IC8B0X-0HNCTPETEF6F9' -- Pingtung South AB (Taiwan)
+config.base = {
+  -- China Bases (PLAAF / PLAN)
+  HUIZHOU_PINGTAN_AB     = '6Z8LM5-0HMLLL9B5QBF0', -- Huizhou Pingtan AB (PLAAF)
+  SHANTOU_WAISHA_AB      = '6Z8LM5-0HMLLEF9H5P44', -- Shantou Waisha AB (PLAAF)
+  ZHANGPU_AAB            = 'X58F5H-0HN00TRR0Q1JQ', -- Zhangpu AAB
+  ZHANGZHOU_LONGXI_AB    = '6Z8LM5-0HMIJ3QGCRQ2G', -- Zhangzhou-Longxi AB (PLAAF)
+  HUIAN_AAB              = '6Z8LM5-0HMIJ3QGCRQ5F', -- Huian AAB
+  LONGTIAN_AAB           = '6Z8LM5-0HMIJ3QGCRQC4', -- Longtian AAB
+  XINGNING_AB            = '6Z8LM5-0HMLLEF9H7VDF', -- Xingning AB (PLAAF)
+  SHUIMEN_AAB            = '6Z8LM5-0HMMJDEFRFJ4V', -- Shuimen AAB (PLAAF)
+  ANQING_AB              = '6Z8LM5-0HMIJ7B8971MA', -- Anqing AB (PLAAF)
+  WUHU_AB                = '6Z8LM5-0HMIJ7B896RA9', -- Wuhu AB (PLAAF)
+  LIUAN_AB               = 'X58F5H-0HMRAQFR07T2V', -- Liuan AB
+  PINGTAN_PORT           = '6Z8LM5-0HMMNGU6J8P2N', -- Pingtan Port (Amphibious Ops)
+  KWANG_CHOW_WAN_NB      = '6Z8LM5-0HMJV6AONGLAU', -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
+
+  -- Taiwan Bases
+  CHING_CHUANG_KANG_AB   = '6Z8LM5-0HMIHS2L949R0', -- Ching Chuang Kang AB (Taiwan)
+  CHIAYI_AB              = '6Z8LM5-0HMIJ3QGCHSUB', -- Chiayi AB (Taiwan)
+  TAINAN_AB              = '6Z8LM5-0HMIJ3QGCHVVS', -- Tainan AB (Taiwan)
+  MAGONG_AB              = '6Z8LM5-0HMISSTNL3T8K', -- Magong AB (Taiwan)
+  GUIREN_AAB             = 'IC8B0X-0HN37BVOG0T9O', -- Guiren AAB (Taiwan)
+  PINGTUNG_NORTH_AB      = 'IC8B0X-0HNCTPETEF6GG', -- Pingtung North AB (Taiwan)
+  TAITUNG_JHIHHANG_AB    = '6Z8LM5-0HMIJ3QGCI3V3', -- Taitung/Jhihhang AB (Taiwan)
+  JIASHAN_AB             = '6Z8LM5-0HMIJ3QGCI783', -- Jiashan AB (Taiwan)
+  HSINCHU_AB             = '6Z8LM5-0HMIK08HEK556', -- Hsinchu AB (Taiwan)
+  LONGTAN_AAB            = 'IC8B0X-0HN3ADVRF2U7P', -- Longtan AAB (Taiwan)
+  TAOYUAN_AIRPORT        = '6Z8LM5-0HMJ1GE4HSIU5', -- Taoyuan International Airport (Taiwan)
+  RENDE_STRIP            = 'X58F5H-0HMU28MM77N82', -- Rende Emergency Highway Strip (Taiwan)
+  MADOU_STRIP            = 'X58F5H-0HMU28MM7836P', -- Madou Emergency Highway Strip (Taiwan)
+  MINXIONG_STRIP         = 'X58F5H-0HMU28MM78J9P', -- Minxiong Emergency Highway Strip (Taiwan)
+  TAINAN_FIELD_AIRDROME  = 'IC8B0X-0HN81FNLB6M8Q', -- Tainan Field Airdrome (Taiwan)
+  HSINCHU_FIELD_AIRDROME = 'IC8B0X-0HN81FNLB2OPJ', -- Hsinchu Field Airdrome (Taiwan)
+  PORT_OF_KEELUNG        = 'X58F5H-0HMSMDQJ7LEUI', -- Port of Keelung (Taiwan)
+  PINGTUNG_SOUTH_AB      = 'IC8B0X-0HNCTPETEF6F9', -- Pingtung South AB (Taiwan)
+}
 
 config.platform = {
   TYPE_726A = 2149,
@@ -379,28 +384,28 @@ config.loadout = {
 
 
 config.weapon = {
-  FD280 = 4472,        -- FD280 多管火箭炮
-  CJ10 = 2122,         -- CJ-10 地射巡弋飛彈
-  DF11A = 2142,        -- DF-11A 短程彈道飛彈
-  DF16A = 4511,        -- DF-16A 短程彈道飛彈
-  DF15C = 2145,        -- DF-15C 短程彈道飛彈
-  DF15B = 40,          -- DF-15B 短程彈道飛彈
-  DF21D = 2105,        -- DF-21D 中程彈道飛彈
-  YJ18A_LACM = 4058,   -- YJ-18A 艦射陸攻巡弋飛彈
-  YJ18_SLCM = 3716,    -- YJ-18 潛射陸攻巡弋飛彈
-  AKD88 = 2876,        -- AKD-88 空對地巡弋飛彈
-  PL15 = 3413,         -- PL-15 空對空飛彈
-  YJ91_ARM = 2875,     -- YJ-91 反輻射飛彈
-  YJ63 = 2107,         -- YJ-63 空射巡弋飛彈
-  KAB1500 = 3077,      -- KAB-1500 導引炸彈
-  LS_6_500 = 3226,     -- LS-6-500 導引炸彈
-  YJ91_ASM = 276,      -- YJ-91 反艦飛彈
-  YJ83 = 2137,         -- YJ-83 反艦飛彈
-  MK45_AMLRS = 2948,   -- MK45 AMLRS 多管火箭炮
-  ATACMS = 1717,       -- ATACMS 短程彈道飛彈
-  HF2E = 3228,         -- HF-2E 陸射巡弋飛彈
-  HF2 = 1133,          -- HF-2 反艦飛彈
-  MK48_TORPEDO = 905,  -- MK-48 魚雷
+  FD280 = 4472,       -- FD280 多管火箭炮
+  CJ10 = 2122,        -- CJ-10 地射巡弋飛彈
+  DF11A = 2142,       -- DF-11A 短程彈道飛彈
+  DF16A = 4511,       -- DF-16A 短程彈道飛彈
+  DF15C = 2145,       -- DF-15C 短程彈道飛彈
+  DF15B = 40,         -- DF-15B 短程彈道飛彈
+  DF21D = 2105,       -- DF-21D 中程彈道飛彈
+  YJ18A_LACM = 4058,  -- YJ-18A 艦射陸攻巡弋飛彈
+  YJ18_SLCM = 3716,   -- YJ-18 潛射陸攻巡弋飛彈
+  AKD88 = 2876,       -- AKD-88 空對地巡弋飛彈
+  PL15 = 3413,        -- PL-15 空對空飛彈
+  YJ91_ARM = 2875,    -- YJ-91 反輻射飛彈
+  YJ63 = 2107,        -- YJ-63 空射巡弋飛彈
+  KAB1500 = 3077,     -- KAB-1500 導引炸彈
+  LS_6_500 = 3226,    -- LS-6-500 導引炸彈
+  YJ91_ASM = 276,     -- YJ-91 反艦飛彈
+  YJ83 = 2137,        -- YJ-83 反艦飛彈
+  MK45_AMLRS = 2948,  -- MK45 AMLRS 多管火箭炮
+  ATACMS = 1717,      -- ATACMS 短程彈道飛彈
+  HF2E = 3228,        -- HF-2E 陸射巡弋飛彈
+  HF2 = 1133,         -- HF-2 反艦飛彈
+  MK48_TORPEDO = 905, -- MK-48 魚雷
 }
 
 
@@ -830,8 +835,8 @@ config.c.ground.mrbm.reloadTime = 5 * 60
 
 -- Recon
 config.c.recon.bases = {
-  H6N = { guid = config.baseGUID11 },
-  BZK005 = { guid = config.baseGUID6 }
+  H6N = { guid = config.base.LIUAN_AB },
+  BZK005 = { guid = config.base.LONGTIAN_AAB }
 }
 config.c.recon.contactAge = 15 * 60
 config.c.recon.courses = {
@@ -862,7 +867,7 @@ config.c.recon.courses = {
 config.c.air.landBased.deployedACs = {
   {
     name = 'Huizhou Pingtan AB (PLAAF)',
-    baseGUID = config.baseGUID1,
+    baseGUID = config.base.HUIZHOU_PINGTAN_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -877,7 +882,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Shantou Waisha AB (PLAAF)',
-    baseGUID = config.baseGUID2,
+    baseGUID = config.base.SHANTOU_WAISHA_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -895,7 +900,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Zhangpu AAB',
-    baseGUID = config.baseGUID3,
+    baseGUID = config.base.ZHANGPU_AAB,
     embarkedUnits = {
       {
         side = 'China',
@@ -940,7 +945,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Zhangzhou-Longxi AB (PLAAF)',
-    baseGUID = config.baseGUID4,
+    baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -958,7 +963,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Huian AAB',
-    baseGUID = config.baseGUID5,
+    baseGUID = config.base.HUIAN_AAB,
     embarkedUnits = {
       {
         side = 'China',
@@ -986,7 +991,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Longtian AAB',
-    baseGUID = config.baseGUID6,
+    baseGUID = config.base.LONGTIAN_AAB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1013,7 +1018,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Xingning AB (PLAAF)',
-    baseGUID = config.baseGUID7,
+    baseGUID = config.base.XINGNING_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1031,7 +1036,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Shuimen AAB (PLAAF)',
-    baseGUID = config.baseGUID8,
+    baseGUID = config.base.SHUIMEN_AAB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1087,7 +1092,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Anqing AB (PLAAF)',
-    baseGUID = config.baseGUID9,
+    baseGUID = config.base.ANQING_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1105,7 +1110,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Wuhu AB (PLAAF)',
-    baseGUID = config.baseGUID10,
+    baseGUID = config.base.WUHU_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1123,7 +1128,7 @@ config.c.air.landBased.deployedACs = {
   },
   {
     name = 'Liuan AB',
-    baseGUID = config.baseGUID11,
+    baseGUID = config.base.LIUAN_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -1451,7 +1456,7 @@ config.c.PHIBOP.initialLocations = {
 config.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
-    baseGUID = config.baseGUID12,
+    baseGUID = config.base.PINGTAN_PORT,
     anchorageArea = config.c.areas["ANCH AREA/TAOYUAN"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/TAOYUAN"],
     area = config.c.areas["CAS/E"],
@@ -1599,7 +1604,7 @@ config.c.PHIBOP.operationalZones = {
   },
   {
     name = 'Sishu',
-    baseGUID = config.baseGUID13,
+    baseGUID = config.base.KWANG_CHOW_WAN_NB,
     anchorageArea = config.c.areas["ANCH AREA/SISHU"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/SISHU"],
     area = config.c.areas["CAS/S"],
@@ -1736,7 +1741,7 @@ config.c.PHIBOP.operationalZones = {
   },
   {
     name = 'Penghu',
-    baseGUID = config.baseGUID13,
+    baseGUID = config.base.KWANG_CHOW_WAN_NB,
     anchorageArea = config.c.areas["ANCH AREA/PENGHU"],
     LSTAnchorageArea = config.c.areas["LST ANCH AREA/PENGHU"],
     area = config.c.areas["CAS/PENGHU"],
@@ -1874,7 +1879,7 @@ config.c.PHIBOP.operationalZones = {
 config.c.PHIBOP.transportAircraft = {
   {
     name = 'Zhangpu AAB',
-    guid = config.baseGUID3,
+    guid = config.base.ZHANGPU_AAB,
     dbid = config.platform.II_76,
     missions = {
       {
@@ -2408,7 +2413,7 @@ config.t.air.landBased.wpnNum = 8
 config.t.air.landBased.deployedACs = {
   {
     name = 'Ching Chuang Kang AB',
-    baseGUID = config.baseGUID14,
+    baseGUID = config.base.CHING_CHUANG_KANG_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2426,7 +2431,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Chiayi AB',
-    baseGUID = config.baseGUID15,
+    baseGUID = config.base.CHIAYI_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2446,7 +2451,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Tainan AB',
-    baseGUID = config.baseGUID16,
+    baseGUID = config.base.TAINAN_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2464,7 +2469,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Magong AB',
-    baseGUID = config.baseGUID17,
+    baseGUID = config.base.MAGONG_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2482,7 +2487,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Guiren AAB',
-    baseGUID = config.baseGUID18,
+    baseGUID = config.base.GUIREN_AAB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2500,7 +2505,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Pingtung North AB',
-    baseGUID = config.baseGUID19,
+    baseGUID = config.base.PINGTUNG_NORTH_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2515,7 +2520,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Pingtung South AB',
-    baseGUID = config.baseGUID31,
+    baseGUID = config.base.PINGTUNG_SOUTH_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2539,7 +2544,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Taitung/Jhihhang AB',
-    baseGUID = config.baseGUID20,
+    baseGUID = config.base.TAITUNG_JHIHHANG_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2560,7 +2565,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Jiashan AB',
-    baseGUID = config.baseGUID21,
+    baseGUID = config.base.JIASHAN_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2589,7 +2594,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Hsinchu AB',
-    baseGUID = config.baseGUID22,
+    baseGUID = config.base.HSINCHU_AB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2608,7 +2613,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Longtan AAB',
-    baseGUID = config.baseGUID23,
+    baseGUID = config.base.LONGTAN_AAB,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2626,7 +2631,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Taoyuan International Airport',
-    baseGUID = config.baseGUID24,
+    baseGUID = config.base.TAOYUAN_AIRPORT,
     embarkedUnits = {
       {
         side = 'Taiwan',
@@ -2641,14 +2646,14 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Rende Emergency Highway Strip',
-    baseGUID = config.baseGUID25,
+    baseGUID = config.base.RENDE_STRIP,
     loadouts = {
       { loadoutId = config.loadout.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
     name = 'Madou Emergency Highway Strip',
-    baseGUID = config.baseGUID26,
+    baseGUID = config.base.MADOU_STRIP,
     loadouts = {
       { loadoutId = config.loadout.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
       { loadoutId = config.loadout.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
@@ -2657,7 +2662,7 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Minxiong Emergency Highway Strip',
-    baseGUID = config.baseGUID27,
+    baseGUID = config.base.MINXIONG_STRIP,
     loadouts = {
       { loadoutId = config.loadout.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
       { loadoutId = config.loadout.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
@@ -2666,14 +2671,14 @@ config.t.air.landBased.deployedACs = {
   },
   {
     name = 'Tainan Field Airdrome',
-    baseGUID = config.baseGUID28,
+    baseGUID = config.base.TAINAN_FIELD_AIRDROME,
     loadouts = {
       { loadoutId = config.loadout.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
     name = 'Hsinchu Field Airdrome ',
-    baseGUID = config.baseGUID29,
+    baseGUID = config.base.HSINCHU_FIELD_AIRDROME,
     loadouts = {
       { loadoutId = config.loadout.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
@@ -2724,7 +2729,7 @@ config.t.surface.sag = {
 config.t.surface.deployedShips = {
   {
     name = 'Port of Keelung',
-    baseGUID = config.baseGUID30,
+    baseGUID = config.base.PORT_OF_KEELUNG,
     embarkedUnits = {
       {
         side = 'Taiwan',

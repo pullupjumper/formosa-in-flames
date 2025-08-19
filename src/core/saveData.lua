@@ -421,7 +421,7 @@ saveData.c.recon.temp = {
 }
 saveData.c.recon.queue = {
   {
-    baseGUID = config.baseGUID11,
+    baseGUID = config.base.LIUAN_AB,
     unitDBID = config.platform.H_6N,
     unitGUID = nil,
     missionName = nil,
@@ -460,7 +460,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID2,
+  --         baseGUID = config.base.SHANTOU_WAISHA_AB,
   --         weaponDBID = config.weapon.AKD88,
   --         unitDBID = config.platform.J_16,
   --         unitCount = 12,
@@ -470,7 +470,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       escort = {
-  --         baseGUID = config.baseGUID5,
+  --         baseGUID = config.base.HUIAN_AAB,
   --         weaponDBID = config.weapon.PL15,
   --         unitDBID = config.platform.J_20,
   --         unitCount = 8,
@@ -492,7 +492,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       wildWeasel = {
-  --         baseGUID = config.baseGUID4,
+  --         baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
   --         weaponDBID = config.weapon.YJ91_ARM,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 8,
@@ -514,7 +514,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       jammer = {
-  --         baseGUID = config.baseGUID3,
+  --         baseGUID = config.base.ZHANGPU_AAB,
   --         unitDBID = config.platform.Y_9,
   --         weaponDBID = 0,
   --         unitCount = 1,
@@ -561,7 +561,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID2,
+  --         baseGUID = config.base.SHANTOU_WAISHA_AB,
   --         weaponDBID = config.weapon.AKD88,
   --         unitDBID = config.platform.J_16,
   --         unitCount = 12,
@@ -571,7 +571,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       escort = {
-  --         baseGUID = config.baseGUID5,
+  --         baseGUID = config.base.HUIAN_AAB,
   --         weaponDBID = config.weapon.PL15,
   --         unitDBID = config.platform.J_20,
   --         unitCount = 8,
@@ -592,7 +592,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       wildWeasel = {
-  --         baseGUID = config.baseGUID4,
+  --         baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
   --         weaponDBID = config.weapon.YJ91_ARM,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 8,
@@ -613,7 +613,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       jammer = {
-  --         baseGUID = config.baseGUID3,
+  --         baseGUID = config.base.ZHANGPU_AAB,
   --         unitDBID = config.platform.Y_9,
   --         weaponDBID = 0,
   --         unitCount = 1,
@@ -649,7 +649,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID5,
+  --         baseGUID = config.base.HUIAN_AAB,
   --         weaponDBID = config.weapon.AKD88,
   --         unitDBID = config.platform.J_16,
   --         unitCount = 12,
@@ -659,7 +659,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       escort = {
-  --         baseGUID = config.baseGUID5,
+  --         baseGUID = config.base.HUIAN_AAB,
   --         weaponDBID = config.weapon.PL15,
   --         unitDBID = config.platform.J_20,
   --         unitCount = 8,
@@ -680,7 +680,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       wildWeasel = {
-  --         baseGUID = config.baseGUID6,
+  --         baseGUID = config.base.LONGTIAN_AAB,
   --         weaponDBID = config.weapon.YJ91_ARM,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 8,
@@ -701,7 +701,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       jammer = {
-  --         baseGUID = config.baseGUID3,
+  --         baseGUID = config.base.ZHANGPU_AAB,
   --         unitDBID = config.platform.Y_9,
   --         weaponDBID = 0,
   --         unitCount = 1,
@@ -745,7 +745,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID7,
+  --         baseGUID = config.base.XINGNING_AB,
   --         weaponDBID = config.weapon.YJ63,
   --         unitDBID = config.platform.H_6K,
   --         unitCount = 12,
@@ -781,7 +781,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID9,
+  --         baseGUID = config.base.ANQING_AB,
   --         weaponDBID = config.weapon.YJ63,
   --         unitDBID = config.platform.H_6K,
   --         unitCount = 12,
@@ -825,7 +825,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID3,
+  --         baseGUID = config.base.ZHANGPU_AAB,
   --         weaponDBID = config.weapon.KAB1500,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 12,
@@ -835,7 +835,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       escort = {
-  --         baseGUID = config.baseGUID5,
+  --         baseGUID = config.base.HUIAN_AAB,
   --         weaponDBID = config.weapon.PL15,
   --         unitDBID = config.platform.J_20,
   --         unitCount = 8,
@@ -856,7 +856,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       wildWeasel = {
-  --         baseGUID = config.baseGUID4,
+  --         baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
   --         weaponDBID = config.weapon.YJ91_ARM,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 8,
@@ -877,7 +877,7 @@ saveData.c.air.ATO = {
   --         emcon = 'Radar=Passive;OECM=Active'
   --       },
   --       jammer = {
-  --         baseGUID = config.baseGUID3,
+  --         baseGUID = config.base.ZHANGPU_AAB,
   --         unitDBID = config.platform.Y_9,
   --         weaponDBID = 0,
   --         unitCount = 1,
@@ -1108,7 +1108,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID8,
+  --         baseGUID = config.base.SHUIMEN_AAB,
   --         weaponDBID = config.weapon.YJ83,
   --         unitDBID = config.platform.J_16,
   --         unitCount = 8,
@@ -1119,7 +1119,7 @@ saveData.c.air.ATO = {
   --       },
   --       escort = nil,
   --       wildWeasel = {
-  --         baseGUID = config.baseGUID8,
+  --         baseGUID = config.base.SHUIMEN_AAB,
   --         weaponDBID = config.weapon.YJ91_ARM,
   --         unitDBID = config.platform.SU_30,
   --         unitCount = 8,
@@ -1169,7 +1169,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID10,
+  --         baseGUID = config.base.WUHU_AB,
   --         weaponDBID = config.weapon.PL15,
   --         unitDBID = config.platform.J_20,
   --         unitCount = 6,
@@ -1194,7 +1194,7 @@ saveData.c.air.ATO = {
   --       wildWeasel = nil,
   --       jammer = nil,
   --       tanker = {
-  --         baseGUID = config.baseGUID8,
+  --         baseGUID = config.base.SHUIMEN_AAB,
   --         unitDBID = config.platform.HY_6U_BADGER,
   --         weaponDBID = 0,
   --         unitCount = 3,
@@ -1239,7 +1239,7 @@ saveData.c.air.ATO = {
   --         loadoutStartTime = nil
   --       },
   --       striker = {
-  --         baseGUID = config.baseGUID8,
+  --         baseGUID = config.base.SHUIMEN_AAB,
   --         weaponDBID = config.weapon.LS_6_500,
   --         unitDBID = config.platform.J_10C,
   --         unitCount = 8,
@@ -2148,7 +2148,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --       {
   --         timeToReady = config.readytime,
   --         striker = {
-  --           baseGUID = config.baseGUID2,
+  --           baseGUID = config.base.SHANTOU_WAISHA_AB,
   --           weaponDBID = config.weapon.AKD88,
   --           unitDBID = config.platform.J_16,
   --           unitCount = 12,
@@ -2158,7 +2158,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         escort = {
-  --           baseGUID = config.baseGUID5,
+  --           baseGUID = config.base.HUIAN_AAB,
   --           weaponDBID = config.weapon.PL15,
   --           unitDBID = config.platform.J_20,
   --           unitCount = 8,
@@ -2180,7 +2180,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         wildWeasel = {
-  --           baseGUID = config.baseGUID4,
+  --           baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
   --           weaponDBID = config.weapon.YJ91_ARM,
   --           unitDBID = config.platform.SU_30,
   --           unitCount = 8,
@@ -2202,7 +2202,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         jammer = {
-  --           baseGUID = config.baseGUID3,
+  --           baseGUID = config.base.ZHANGPU_AAB,
   --           unitDBID = config.platform.Y_9,
   --           weaponDBID = 0,
   --           unitCount = 1,
@@ -2242,7 +2242,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --       {
   --         timeToReady = config.readytime,
   --         striker = {
-  --           baseGUID = config.baseGUID2,
+  --           baseGUID = config.base.SHANTOU_WAISHA_AB,
   --           weaponDBID = config.weapon.AKD88,
   --           unitDBID = config.platform.J_16,
   --           unitCount = 12,
@@ -2252,7 +2252,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         escort = {
-  --           baseGUID = config.baseGUID5,
+  --           baseGUID = config.base.HUIAN_AAB,
   --           weaponDBID = config.weapon.PL15,
   --           unitDBID = config.platform.J_20,
   --           unitCount = 8,
@@ -2273,7 +2273,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         wildWeasel = {
-  --           baseGUID = config.baseGUID4,
+  --           baseGUID = config.base.ZHANGZHOU_LONGXI_AB,
   --           weaponDBID = config.weapon.YJ91_ARM,
   --           unitDBID = config.platform.SU_30,
   --           unitCount = 8,
@@ -2294,7 +2294,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         jammer = {
-  --           baseGUID = config.baseGUID3,
+  --           baseGUID = config.base.ZHANGPU_AAB,
   --           unitDBID = config.platform.Y_9,
   --           weaponDBID = 0,
   --           unitCount = 1,
@@ -2323,7 +2323,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --       {
   --         timeToReady = config.readytime,
   --         striker = {
-  --           baseGUID = config.baseGUID5,
+  --           baseGUID = config.base.HUIAN_AAB,
   --           weaponDBID = config.weapon.AKD88,
   --           unitDBID = config.platform.J_16,
   --           unitCount = 12,
@@ -2333,7 +2333,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         escort = {
-  --           baseGUID = config.baseGUID5,
+  --           baseGUID = config.base.HUIAN_AAB,
   --           weaponDBID = config.weapon.PL15,
   --           unitDBID = config.platform.J_20,
   --           unitCount = 8,
@@ -2354,7 +2354,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         wildWeasel = {
-  --           baseGUID = config.baseGUID6,
+  --           baseGUID = config.base.LONGTIAN_AAB,
   --           weaponDBID = config.weapon.YJ91_ARM,
   --           unitDBID = config.platform.SU_30,
   --           unitCount = 8,
@@ -2375,7 +2375,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --           emcon = 'Radar=Passive;OECM=Active'
   --         },
   --         jammer = {
-  --           baseGUID = config.baseGUID3,
+  --           baseGUID = config.base.ZHANGPU_AAB,
   --           unitDBID = config.platform.Y_9,
   --           weaponDBID = 0,
   --           unitCount = 1,
@@ -2417,7 +2417,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --     packages = {
   --       timeToReady = config.readytime,
   --       striker = {
-  --         baseGUID = config.baseGUID7,
+  --         baseGUID = config.base.XINGNING_AB,
   --         weaponDBID = config.weapon.YJ63,
   --         unitDBID = config.platform.H_6K,
   --         unitCount = 12,
@@ -2447,7 +2447,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --     {
   --       timeToReady = config.readytime,
   --       striker = {
-  --         baseGUID = config.baseGUID9,
+  --         baseGUID = config.base.ANQING_AB,
   --         weaponDBID = config.weapon.YJ63,
   --         unitDBID = config.platform.H_6K,
   --         unitCount = 12,
@@ -2489,7 +2489,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --       {
   --         timeToReady = config.readytime,
   --         striker = {
-  --           baseGUID = config.baseGUID10,
+  --           baseGUID = config.base.WUHU_AB,
   --           weaponDBID = config.weapon.PL15,
   --           unitDBID = config.platform.J_20,
   --           unitCount = 6,
@@ -2514,7 +2514,7 @@ saveData.c.air.dynamicATO.reconSchedule = {
   --         wildWeasel = nil,
   --         jammer = nil,
   --         tanker = {
-  --           baseGUID = config.baseGUID8,
+  --           baseGUID = config.base.SHUIMEN_AAB,
   --           unitDBID = config.platform.HY_6U_BADGER,
   --           weaponDBID = 0,
   --           unitCount = 3,
