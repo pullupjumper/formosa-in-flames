@@ -378,28 +378,30 @@ config.loadout = {
 }
 
 
-config.weaponDBID1 = 4472  -- FD280 多管火箭炮
-config.weaponDBID2 = 2122  -- CJ-10 地射巡弋飛彈
-config.weaponDBID3 = 2142  -- DF-11A 短程彈道飛彈
-config.weaponDBID4 = 4511  -- DF-16A 短程彈道飛彈
-config.weaponDBID5 = 2145  -- DF-15C 短程彈道飛彈
-config.weaponDBID6 = 40    -- DF-15B 短程彈道飛彈
-config.weaponDBID7 = 2105  -- DF-21D 中程彈道飛彈
-config.weaponDBID8 = 4058  -- YJ-18A 艦射陸攻巡弋飛彈
-config.weaponDBID9 = 3716  -- YJ-18 潛射陸攻巡弋飛彈
-config.weaponDBID10 = 2876 -- AKD-88 空對地巡弋飛彈
-config.weaponDBID11 = 3413 -- PL-15 空對空飛彈
-config.weaponDBID12 = 2875 -- YJ-91 反輻射飛彈
-config.weaponDBID13 = 2107 -- YJ-63 空射巡弋飛彈
-config.weaponDBID14 = 3077 -- KAB-1500 導引炸彈
-config.weaponDBID15 = 3226 -- LS-6-500 導引炸彈
-config.weaponDBID16 = 276  -- YJ-91 反艦飛彈
-config.weaponDBID17 = 2137 -- YJ-83 反艦飛彈
-config.weaponDBID18 = 2948 -- MK45 AMLRS 多管火箭炮
-config.weaponDBID19 = 1717 -- ATACMS 短程彈道飛彈
-config.weaponDBID20 = 3228 -- HF-2E 陸射巡弋飛彈
-config.weaponDBID21 = 1133 -- HF-2 反艦飛彈
-config.weaponDBID22 = 905  -- MK-48 魚雷
+config.weapon = {
+  FD280 = 4472,        -- FD280 多管火箭炮
+  CJ10 = 2122,         -- CJ-10 地射巡弋飛彈
+  DF11A = 2142,        -- DF-11A 短程彈道飛彈
+  DF16A = 4511,        -- DF-16A 短程彈道飛彈
+  DF15C = 2145,        -- DF-15C 短程彈道飛彈
+  DF15B = 40,          -- DF-15B 短程彈道飛彈
+  DF21D = 2105,        -- DF-21D 中程彈道飛彈
+  YJ18A_LACM = 4058,   -- YJ-18A 艦射陸攻巡弋飛彈
+  YJ18_SLCM = 3716,    -- YJ-18 潛射陸攻巡弋飛彈
+  AKD88 = 2876,        -- AKD-88 空對地巡弋飛彈
+  PL15 = 3413,         -- PL-15 空對空飛彈
+  YJ91_ARM = 2875,     -- YJ-91 反輻射飛彈
+  YJ63 = 2107,         -- YJ-63 空射巡弋飛彈
+  KAB1500 = 3077,      -- KAB-1500 導引炸彈
+  LS_6_500 = 3226,     -- LS-6-500 導引炸彈
+  YJ91_ASM = 276,      -- YJ-91 反艦飛彈
+  YJ83 = 2137,         -- YJ-83 反艦飛彈
+  MK45_AMLRS = 2948,   -- MK45 AMLRS 多管火箭炮
+  ATACMS = 1717,       -- ATACMS 短程彈道飛彈
+  HF2E = 3228,         -- HF-2E 陸射巡弋飛彈
+  HF2 = 1133,          -- HF-2 反艦飛彈
+  MK48_TORPEDO = 905,  -- MK-48 魚雷
+}
 
 
 config.radarDistance = 70
@@ -1981,7 +1983,7 @@ config.c.PHIBOP.sag = {
 }
 
 -- Land strike from
-config.c.surface.lacm.weaponDBID = config.weaponDBID8
+config.c.surface.lacm.weaponDBID = config.weapon.YJ18A_LACM
 config.c.surface.lacm.csg = {
   groupName = 'CSG',
   unitList = {
@@ -2094,7 +2096,7 @@ config.c.surface.lacm.targetlist = {
 
 
 -- SLCM
-config.c.subSurface.slcm.weaponDBID = config.weaponDBID9
+config.c.subSurface.slcm.weaponDBID = config.weapon.YJ18_SLCM
 config.c.subSurface.slcm.submarines = {
   {
     name = "407",
@@ -2756,7 +2758,7 @@ config.s.infantry = -3
 config.s.sub = 15
 config.s.uav = 20
 config.s.tel = 20
-config.s.weaponDBID = config.weaponDBID22
+config.s.weaponDBID = config.weapon.MK48_TORPEDO
 config.s.attackBeforeTheHHour = -1000
 config.s.undergroundShelterIsDestroyed = -200
 config.s.destroyingCivilianFacility = -100

@@ -70,7 +70,7 @@ config.c.ground.dynamicFSP = {
     ammoPerTarget = 2            -- 每目標彈藥數量
   },
   weaponSystem = "mlrs",         -- 武器系統類型
-  weaponDBID = config.weaponDBID1  -- 武器DBID
+  weaponDBID = config.weapon.FD280  -- 武器DBID
 }
 ```
 
@@ -179,7 +179,7 @@ busted
 ## 注意事項
 
 1. **偵察時程設定**：確保時間格式正確，使用 "YYYY-MM-DD HH:MM:SS" 格式
-2. **武器系統配置**：確保 weaponDBID 與實際武器匹配
+2. **武器系統配置**：確保 `weaponDBID` 使用 `config.weapon` 中的定義與實際武器匹配
 3. **作戰區域**：使用 constants.lua 中定義的區域名稱
 4. **目標閾值**：根據實際戰術需求設定 minTargetCount
 5. **執行狀態**：系統會自動管理執行狀態，避免手動修改 executed 欄位

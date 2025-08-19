@@ -78,7 +78,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
               timeToReady = config.readytime,
               striker = {
                 baseGUID = config.baseGUID8,
-                weaponDBID = config.weaponDBID15,
+                weaponDBID = config.weapon.LS_6_500,
                 unitDBID = config.platform.J_10C,
                 unitCount = 8,
                 loadoutID = config.loadout.J10C_LS_6_500,

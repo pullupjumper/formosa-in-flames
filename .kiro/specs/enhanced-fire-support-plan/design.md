@@ -134,12 +134,12 @@ local fstTemplate = {
     {
       name = '636th Bde',
       guid = 'IC8B0X-0HN822OHANPB3',
-      weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+      weaponDBID = config.weapon.DF16A
     },
     {
       name = '617th Bde', 
       guid = 'IC8B0X-0HN822OHANRHI',
-      weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+      weaponDBID = config.weapon.DF16A
     }
   },
   target = {
@@ -184,7 +184,7 @@ local executedFST = {
 local batteryTemplate = {
   name = '636th Bde',     -- 顯示名稱
   guid = 'IC8B0X-0HN822OHANPB3', -- 遊戲中的唯一ID
-  weaponDBID = 'dynamically_resolved' -- 從saveData中解析
+  weaponDBID = 'dynamically_resolved' -- 從 saveData 中解析，例如：config.weapon.DF15B
 }
 ```
 ```
@@ -223,12 +223,12 @@ saveData.c.ground.dynamicFSP.reconSchedule = {
             {
               name = '636th Bde',
               guid = 'IC8B0X-0HN822OHANPB3',
-              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANPB3'].weaponDBID
+              weaponDBID = config.weapon.DF16A
             },
             {
               name = '617th Bde',
               guid = 'IC8B0X-0HN822OHANRHI',
-              weaponDBID = saveData.c.ground.srbm.batteries['IC8B0X-0HN822OHANRHI'].weaponDBID
+              weaponDBID = config.weapon.DF16A
             }
           },
           target = {
@@ -253,7 +253,7 @@ saveData.c.ground.dynamicFSP.reconSchedule = {
             {
               name = '616th Bde',
               guid = 'X58F5H-0HN1G2IFLF6QE',
-              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2IFLF6QE'].weaponDBID
+              weaponDBID = config.weapon.DF15C
             }
           },
           target = {
@@ -291,12 +291,12 @@ saveData.c.ground.dynamicFSP.reconSchedule = {
             {
               name = '614th Bde',
               guid = 'X58F5H-0HN1LQGRV8HNQ',
-              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1LQGRV8HNQ'].weaponDBID
+              weaponDBID = config.weapon.DF11A
             },
             {
               name = '613rd Bde',
               guid = 'X58F5H-0HN1G2DEBC7O8',
-              weaponDBID = saveData.c.ground.srbm.batteries['X58F5H-0HN1G2DEBC7O8'].weaponDBID
+              weaponDBID = config.weapon.DF15B
             }
           },
           target = {
@@ -332,7 +332,7 @@ saveData.c.ground.dynamicFSP.reconSchedule = {
             {
               name = '624th Bde',
               guid = 'IC8B0X-0HNCOR6HG2JE1',
-              weaponDBID = saveData.c.ground.mrbm.batteries['IC8B0X-0HNCOR6HG2JE1'].weaponDBID
+              weaponDBID = config.weapon.DF21D
             }
           },
           target = {
