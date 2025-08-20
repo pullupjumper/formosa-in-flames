@@ -132,7 +132,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.trackTarget(config, saveData, units, config.platform.BZK_005, contact)
+            isTracking = Recon.trackTarget(config, saveData, units, config.platform.BZK005, contact)
           end
         end
       end
@@ -186,7 +186,7 @@ function TargetingProcess.findNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.trackTarget(config, saveData, side.units, config.platform.WZ_8, contact)
+          hasTracked = Recon.trackTarget(config, saveData, side.units, config.platform.WZ8, contact)
           Logger.log("hasTracked: " .. tostring(hasTracked))
         end
       end

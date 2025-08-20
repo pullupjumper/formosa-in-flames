@@ -79,7 +79,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
               striker = {
                 baseGUID = config.base.SHUIMEN_AAB,
                 weaponDBID = config.weapon.LS_6_500,
-                unitDBID = config.platform.J_10C,
+                unitDBID = config.platform.J10C,
                 unitCount = 8,
                 loadoutID = config.loadout.J10C_LS_6_500,
                 -- startTime = '2027-06-09 01:30:00',
@@ -94,7 +94,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
               target = {
                 list = {},
                 objs = nil,
-                areas = { config.c.areas["LANDING/TAOYUAN"] },
+                areas = { config.c.area.LANDING_TAOYUAN },
                 filterNames = { 'findInfantry' },
                 contactAge = 60 * 60,
                 minTargetCount = 1

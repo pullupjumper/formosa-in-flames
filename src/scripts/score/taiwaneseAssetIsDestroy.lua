@@ -39,13 +39,13 @@ if unit then
   end
 
   if unit.type == 'Aircraft' then
-    if unit.dbid == config.platform.E_2K then
+    if unit.dbid == config.platform.E2K then
       saveData.t.air.landBased.AEW[unit.guid] = nil
     else
       saveData.t.air.landBased.AC[unit.guid] = nil
     end
 
-    if unit.dbid == config.platform.RC_135V then
+    if unit.dbid == config.platform.RC135V then
       saveData.u.SIGINT.RA[unit.guid] = nil
     end
   end

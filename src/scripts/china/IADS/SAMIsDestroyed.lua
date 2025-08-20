@@ -35,10 +35,10 @@ if isDestroyed then
 		if u == nil then goto continue end
 		local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, u.guid)
 
-		if u.dbid == config.platform.HQ_22
-				or u.dbid == config.platform.S_300
-				or u.dbid == config.platform.S_400
-				or u.dbid == config.platform.HQ_12 then
+		if u.dbid == config.platform.HQ22
+				or u.dbid == config.platform.S300
+				or u.dbid == config.platform.S400
+				or u.dbid == config.platform.HQ12 then
 			for i, component in ipairs(u.components) do
 				if (component['comp_dbid'] == config.sensor.S300_TOMBSTONE
 							or component['comp_dbid'] == config.sensor.S400_GRAVE_STONE

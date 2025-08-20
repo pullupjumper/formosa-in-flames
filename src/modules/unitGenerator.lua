@@ -226,8 +226,8 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 075',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z10,       loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
@@ -236,7 +236,7 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 071',
       cargo = cargoList.type071,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 4 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 4 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
@@ -245,9 +245,9 @@ local function createShipsByType(config, position, area, item, shipSettings, car
       name = 'Type 076',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_18,      loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z_10,      loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
-        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.GJ_11,     loadouts = { { loadoutId = config.loadout.GJ11_ATTACK, num = 8 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.Z10,       loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = item.names[1], dbid = config.platform.GJ11,      loadouts = { { loadoutId = config.loadout.GJ11_RECON, num = 8 } } },
         { side = 'China', type = 'ship',     name = 'Warbird',     dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
@@ -812,10 +812,10 @@ function UnitGenerator.initC2Facilities(config, saveData)
       for _, area in ipairs(item.areas) do
         if actualUnit and actualUnit:inArea(area) then
           -- SAM 系統
-          if (actualUnit.dbid == config.platform.HQ_22 or
-                actualUnit.dbid == config.platform.S_300 or
-                actualUnit.dbid == config.platform.S_400 or
-                actualUnit.dbid == config.platform.HQ_12) and
+          if (actualUnit.dbid == config.platform.HQ22 or
+                actualUnit.dbid == config.platform.S300 or
+                actualUnit.dbid == config.platform.S400 or
+                actualUnit.dbid == config.platform.HQ12) and
               not string.find(actualUnit.name, 'DECOY') then
             saveData.c.IADS.C2[c2Guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
@@ -829,7 +829,7 @@ function UnitGenerator.initC2Facilities(config, saveData)
           end
 
           -- 雷達系統
-          if actualUnit.dbid == config.platform.JY_26 or actualUnit.dbid == config.platform.YLC_8B then
+          if actualUnit.dbid == config.platform.JY26 or actualUnit.dbid == config.platform.YLC8B then
             saveData.c.IADS.C2[c2Guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,

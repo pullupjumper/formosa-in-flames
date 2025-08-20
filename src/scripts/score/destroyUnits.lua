@@ -16,27 +16,27 @@ if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
   if unit.type == 'Aircraft' then
-    if unit.condition == 'Parked' and unit.dbid == config.platform.Z_10 then
+    if unit.condition == 'Parked' and unit.dbid == config.platform.Z10 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed an helicopter on the ground."
       )
-    elseif unit.dbid == config.platform.Y_9DZ then
+    elseif unit.dbid == config.platform.Y9DZ then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed a recon aircraft."
       )
       saveData.c.SIGINT.RA[unit.guid] = nil
-    elseif unit.dbid == config.platform.Y_9 or unit.dbid == config.platform.J_15D then
+    elseif unit.dbid == config.platform.Y9 or unit.dbid == config.platform.J15D then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed a communications jammer."
       )
       saveData.c.commsJamming.jammers[unit.guid] = nil
-    elseif unit.dbid == config.platform.WZ_8 or unit.dbid == config.platform.BZK_005 then
+    elseif unit.dbid == config.platform.WZ8 or unit.dbid == config.platform.BZK005 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.uav),
@@ -44,7 +44,7 @@ if unit then
       )
       local type = 'BZK005'
 
-      if unit.dbid == config.platform.WZ_8 then
+      if unit.dbid == config.platform.WZ8 then
         type = 'WZ8'
       end
 
@@ -86,8 +86,8 @@ if unit then
   end
 
   if unit.type == 'Facility' then
-    if unit.dbid == config.platform.PHL_16 or
-        unit.dbid == config.platform.PHL_03 or
+    if unit.dbid == config.platform.PHL16 or
+        unit.dbid == config.platform.PHL03 or
         string.find(unit.name, 'DF') or
         string.find(unit.name, 'CJ') then
       GameApi.ScenEdit_SetScore(

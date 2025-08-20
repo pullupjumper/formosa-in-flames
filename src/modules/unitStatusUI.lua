@@ -31,31 +31,31 @@ function UnitStatusUI.countUnitsInEachArea(config)
       local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
       if unit and unit:inArea(zone.area) then
-        if unit.dbid == config.platform.ZBD_05 then
+        if unit.dbid == config.platform.ZBD05 then
           item['ZBD-05'] = item['ZBD-05'] + 1
         end
 
-        if unit.dbid == config.platform.ZTD_05 then
+        if unit.dbid == config.platform.ZTD05 then
           item['ZTD-05'] = item['ZTD-05'] + 1
         end
 
-        if unit.dbid == config.platform.PLL_05 then
+        if unit.dbid == config.platform.PLL05 then
           item['PLL-05'] = item['PLL-05'] + 1
         end
 
-        if unit.dbid == config.platform.PLZ_96 then
+        if unit.dbid == config.platform.PLZ96 then
           item['PLZ-96'] = item['PLZ-96'] + 1
         end
 
-        if unit.dbid == config.platform.PGZ_09 then
+        if unit.dbid == config.platform.PGZ09 then
           item['PGZ-09'] = item['PGZ-09'] + 1
         end
 
-        if unit.dbid == config.platform.PGZ_95 then
+        if unit.dbid == config.platform.PGZ95 then
           item['PGZ-95'] = item['PGZ-95'] + 1
         end
 
-        if unit.dbid == config.platform.SA_15 then
+        if unit.dbid == config.platform.SA15 then
           item['SA-15'] = item['SA-15'] + 1
         end
 
@@ -67,7 +67,7 @@ function UnitStatusUI.countUnitsInEachArea(config)
           item['HMMWV'] = item['HMMWV'] + 1
         end
 
-        if unit.dbid == config.platform.ZBD_03 then
+        if unit.dbid == config.platform.ZBD03 then
           item['ZBD-03'] = item['ZBD-03'] + 1
         end
       end
@@ -811,7 +811,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.PAC_3 then
+        if unit and unit.dbid == config.platform.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -824,7 +824,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.PAC_3 then
+        if unit and unit.dbid == config.platform.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -839,7 +839,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.CUSTOMED_TK_3 then
+        if unit and unit.dbid == config.platform.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -852,7 +852,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.CUSTOMED_TK_3 then
+        if unit and unit.dbid == config.platform.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -867,7 +867,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.TC_2 then
+        if unit and unit.dbid == config.platform.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -880,7 +880,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.TC_2 then
+        if unit and unit.dbid == config.platform.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,

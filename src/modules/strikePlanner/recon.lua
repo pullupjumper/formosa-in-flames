@@ -95,7 +95,7 @@ local function shouldTakeoffAfterStrike(q)
 end
 
 local function isH6N(q)
-  return not q.hasLaunched and q.unitDBID == config.platform.H_6N
+  return not q.hasLaunched and q.unitDBID == config.platform.H6N
 end
 
 local function shouldEnterTargetArea(q)
@@ -147,12 +147,12 @@ function Recon.handleReconQueue(saveData)
     elseif shouldRTB(q) then
       local unit = GameApi.ScenEdit_GetUnit(q.unitGUID)
 
-      if unit and #unit.course == 0 and unit.dbid == config.platform.WZ_8 and not q.isTracking then
+      if unit and #unit.course == 0 and unit.dbid == config.platform.WZ8 and not q.isTracking then
         unit:RTB(true)
         q.isFinished = true
       end
 
-      if unit and #unit.course == 0 and unit.dbid == config.platform.WZ_8 and q.isTracking then
+      if unit and #unit.course == 0 and unit.dbid == config.platform.WZ8 and q.isTracking then
         local targetGUID = saveData.c.recon.temp['WZ8'][unit.guid].targetGUID
         local target = GameApi.ScenEdit_GetContact('China', targetGUID)
 
@@ -181,7 +181,7 @@ function Recon.trackTarget(config, saveData, units, UAVDBID, target)
   local speed = 115
   local type = 'BZK005'
 
-  if UAVDBID == config.platform.WZ_8 then
+  if UAVDBID == config.platform.WZ8 then
     speed = 3300
     type = 'WZ8'
   end

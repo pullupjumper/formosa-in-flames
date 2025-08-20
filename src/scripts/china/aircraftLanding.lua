@@ -3,12 +3,12 @@ local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
-  if unit.dbid == config.platform.J_20
-      or unit.dbid == config.platform.J_16
-      or unit.dbid == config.platform.SU_30
-      or unit.dbid == config.platform.H_6K
-      or unit.dbid == config.platform.J_35
-      or unit.dbid == config.platform.J_10C then
+  if unit.dbid == config.platform.J20
+      or unit.dbid == config.platform.J16
+      or unit.dbid == config.platform.SU30
+      or unit.dbid == config.platform.H6K
+      or unit.dbid == config.platform.J35
+      or unit.dbid == config.platform.J10C then
     -- if unit.mission then
     --   local mission = ScenEdit_GetMission('China', unit.mission.guid)
 

@@ -37,7 +37,7 @@ local function initC2(config, saveData)
     for _, item in pairs(saveData.t.IADS.ROCC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.CUSTOMED_TK_3 or actualUnit.dbid == config.platform.PAC_3 then
+          if actualUnit.dbid == config.platform.CUSTOMED_TK3 or actualUnit.dbid == config.platform.PAC3 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -51,10 +51,10 @@ local function initC2(config, saveData)
             saveData.t.IADS.ROCC[item.guid].SAM[actualUnit.guid] = data
           end
 
-          if actualUnit.dbid == config.platform.FPS_117
-              or actualUnit.dbid == config.platform.TPS_43F
-              or actualUnit.dbid == config.platform.HR_3000
-              or actualUnit.dbid == config.platform.GE_592 then
+          if actualUnit.dbid == config.platform.FPS117
+              or actualUnit.dbid == config.platform.TPS43F
+              or actualUnit.dbid == config.platform.HR3000
+              or actualUnit.dbid == config.platform.GE592 then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -74,7 +74,7 @@ local function initC2(config, saveData)
     for _, item in pairs(saveData.t.IADS.TAAOC) do
       for _, area in ipairs(item.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.TC_2 or actualUnit.dbid == config.platform.SKYGUARD then
+          if actualUnit.dbid == config.platform.TC2 or actualUnit.dbid == config.platform.SKY_GUARD then
             local data = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -103,7 +103,7 @@ local function initCommsJammers(config, saveData, side)
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and (actualUnit.dbid == config.platform.Y_9 or actualUnit.dbid == config.platform.J_15D) then
+    if actualUnit and (actualUnit.dbid == config.platform.Y9 or actualUnit.dbid == config.platform.J15D) then
       -- table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
       saveData.c.commsJamming.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
@@ -126,7 +126,7 @@ local function initAC(config, saveData)
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E_2K then
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E2K then
       saveData.t.air.landBased.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
@@ -158,7 +158,7 @@ local function initSIGINT(config, saveData)
   for _, value in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC_135V then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC135V then
       saveData.u.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
@@ -173,7 +173,7 @@ local function initSIGINT(config, saveData)
   for _, value in ipairs(unitsFromChina) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y_9DZ then
+    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y9DZ then
       saveData.c.SIGINT.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
