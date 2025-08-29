@@ -279,10 +279,11 @@ end
 ---@param isFirstWave boolean
 ---@return table validPackages Array of valid packages with targets
 local function processATOTemplateWithValidation(config, saveData, contacts, atoTemplate, isFirstWave)
+  local copyPackages = Utils.deepCopy(atoTemplate.packages)
   local validPackages = {}
   local assignedAircraft = collectAssignedAircraft(saveData)
 
-  for packageIndex, packageData in ipairs(atoTemplate.packages) do
+  for packageIndex, packageData in ipairs(copyPackages) do
     -- Step 1: Process targets
     local strikeTargets = processPackageTargets(packageData, contacts, config, saveData, isFirstWave, packageIndex)
 
@@ -433,6 +434,7 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
     wildWeasel = packageData.wildWeasel,
     jammer = packageData.jammer,
     tanker = packageData.tanker,
+    reconUAV = packageData.reconUAV,
     target = packageData.target
   }
 end

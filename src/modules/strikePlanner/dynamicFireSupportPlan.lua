@@ -273,12 +273,15 @@ local function processReconSchedule(config, saveData, contacts, reconEntry)
     return false
   end
 
+  -- Create deep copy to avoid modifying original template
+  local copyFSTs = Utils.deepCopy(reconEntry.fsemTemplate.FSTs)
+
   -- Create actual FSEM from template
   local evaluatedTargets = {}
   local hasValidTargets = false
 
   -- Process FST templates one by one
-  for _, fstTemplate in ipairs(reconEntry.fsemTemplate.FSTs) do
+  for _, fstTemplate in ipairs(copyFSTs) do
     local fstTargets = processFST(config, saveData, contacts, fstTemplate, reconEntry.fsemTemplate.isFirstWave)
 
     if fstTargets and #fstTargets >= fstTemplate.target.minTargetCount then
@@ -294,8 +297,12 @@ local function processReconSchedule(config, saveData, contacts, reconEntry)
 
   -- If valid targets exist, create and insert FSEM
   if hasValidTargets then
+    -- Create a copy of fsemTemplate with the copied FSTs
+    local modifiedTemplate = Utils.deepCopy(reconEntry.fsemTemplate)
+    modifiedTemplate.FSTs = copyFSTs
+
     return createFSEMFromTemplate(
-      config, saveData, reconEntry.fsemTemplate, evaluatedTargets
+      config, saveData, modifiedTemplate, evaluatedTargets
     )
   else
     Logger.log("Insufficient targets for follow-up strikes, skipping FSEM creation")

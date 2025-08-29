@@ -7,7 +7,7 @@ local Logger = require("src.utils.logger")
 local UnitGenerator = {}
 
 -- ============================================================================
--- 常數定義 - 提高可讀性，消除魔術數字
+-- Constants definition - Improve readability, eliminate magic numbers
 -- ============================================================================
 
 local FORMATION = {
@@ -29,15 +29,15 @@ local UNIT_CREATION = {
 }
 
 -- ============================================================================
--- 基礎工具函數 - 最底層的工具函數
+-- Basic utility functions - Lowest level utility functions
 -- ============================================================================
 
----計算編隊位置
----@param centerPoint {lat: number, lon: number} 中心點座標 {lat: number, lon: number}
----@param heading number 航向角度
----@param distance number 距離
----@param angle number 角度偏移
----@return table|nil 計算後的位置 {latitude: number, longitude: number}
+---Calculate formation position
+---@param centerPoint {lat: number, lon: number} Center point coordinates {lat: number, lon: number}
+---@param heading number Heading angle
+---@param distance number Distance
+---@param angle number Angle offset
+---@return table|nil Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
     LATITUDE = centerPoint.lat,
@@ -47,10 +47,10 @@ local function calculateFormationPosition(centerPoint, heading, distance, angle)
   })
 end
 
----批量刪除群組中的單位
----@param groupName string 群組名稱
----@param sideName string 陣營名稱
----@return boolean 是否成功清理
+---Batch delete units in group
+---@param groupName string Group name
+---@param sideName string Side name
+---@return boolean Whether cleanup was successful
 local function cleanupExistingGroup(groupName, sideName)
   local group = GameApi.ScenEdit_GetUnit(groupName)
   if group and group.group and group.group.unitlist then
@@ -61,10 +61,10 @@ local function cleanupExistingGroup(groupName, sideName)
   return true
 end
 
----嘗試創建單個單位（帶重試機制）
----@param unitDescriptor CMO__SetUnitDescriptor 單位描述符
----@param maxAttempts number|nil 最大嘗試次數
----@return CMO__Unit|nil 創建的單位
+---Attempt to create a single unit (with retry mechanism)
+---@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
+---@param maxAttempts number|nil Maximum number of attempts
+---@return CMO__Unit|nil Created unit
 local function tryCreateUnit(unitDescriptor, maxAttempts)
   maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
 
@@ -84,13 +84,13 @@ end
 
 
 -- ============================================================================
--- 單位管理函數 - 處理單位創建和搭載
+-- Unit management functions - Handle unit creation and embarking
 -- ============================================================================
 
 
----添加搭載單位（高級版本，支持任務分配）
----@param embarkedUnits SBJ__EmbarkedUnit[] 搭載單位列表
----@param baseGuid string 基地單位 GUID
+---Add embarked units (advanced version, supports mission assignment)
+---@param embarkedUnits SBJ__EmbarkedUnit[] List of embarked units
+---@param baseGuid string Base unit GUID
 local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGuid)
   for _, embarkedUnit in ipairs(embarkedUnits) do
     for _, loadout in ipairs(embarkedUnit.loadouts) do
@@ -117,10 +117,10 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGuid)
   end
 end
 
----按參考點添加單位
----@param params SBJ__Location_Params 位置參數
----@param unit CMO__SetUnitDescriptor 單位描述符
----@param embarkedUnits SBJ__EmbarkedUnit[]|nil 搭載單位
+---Add units by reference point
+---@param params SBJ__Location_Params Location parameters
+---@param unit CMO__SetUnitDescriptor Unit descriptor
+---@param embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
 local function addUnitsByRP(params, unit, embarkedUnits)
   local locations = GameUtils.generateLocations(params)
 
@@ -143,11 +143,11 @@ local function addUnitsByRP(params, unit, embarkedUnits)
   end
 end
 
----計算船隻位置
----@param firstRp CMO__Location 第一個參考點
----@param verticalHeading number 垂直航向
----@param verticalDistance number 垂直距離
----@return table<string, CMO__Location> 各類型船隻的位置
+---Calculate ship positions
+---@param firstRp CMO__Location First reference point
+---@param verticalHeading number Vertical heading
+---@param verticalDistance number Vertical distance
+---@return table<string, CMO__Location> Positions of various ship types
 local function calculateShipPositions(firstRp, verticalHeading, verticalDistance)
   local positions = {}
 
@@ -211,14 +211,14 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
   return positions
 end
 
----按類型創建船隻
----@param config SBJ__CONFIG 配置對象
----@param position CMO__Location 位置
----@param area table 區域配置
----@param item table 項目配置
----@param shipSettings SBJ__ShipSettings 船隻設置
----@param cargoList table 貨物列表
----@param shipType string 船隻類型
+---Create ships by type
+---@param config SBJ__CONFIG Configuration object
+---@param position CMO__Location Position
+---@param area table Area configuration
+---@param item table Item configuration
+---@param shipSettings SBJ__ShipSettings Ship settings
+---@param cargoList table Cargo list
+---@param shipType string Ship type
 local function createShipsByType(config, position, area, item, shipSettings, cargoList, shipType)
   local shipConfigs = {
     type075 = {
@@ -283,14 +283,14 @@ local function createShipsByType(config, position, area, item, shipSettings, car
 end
 
 -- ============================================================================
--- 編隊配置工廠 - 配置驅動的設計
+-- Formation configuration factory - Configuration-driven design
 -- ============================================================================
 
 
----獲取 SAG 編隊配置
----@param config SBJ__CONFIG 配置對象
----@param side string 陣營名稱 ('China' | 'Taiwan')
----@return SBJ__ShipConfig[] 船隻配置列表
+---Get SAG formation configuration
+---@param config SBJ__CONFIG Configuration object
+---@param side string Side name ('China' | 'Taiwan')
+---@return SBJ__ShipConfig[] Ship configuration list
 local function getSAGShipConfiguration(config, side)
   if side == 'China' then
     return {
@@ -330,7 +330,7 @@ local function getSAGShipConfiguration(config, side)
         unitname = 'Keelung',
         distance = 0,
         angle = 0,
-        embarkedUnits = nil -- 搭載單位在創建時單獨處理
+        embarkedUnits = nil -- Embarked units handled separately during creation
       },
       {
         dbid = config.platform.KANG_DING,
@@ -350,9 +350,9 @@ local function getSAGShipConfiguration(config, side)
   end
 end
 
----獲取 CSG 編隊配置
----@param config SBJ__CONFIG 配置對象
----@return SBJ__ShipConfig[] CSG 船隻配置列表
+---Get CSG formation configuration
+---@param config SBJ__CONFIG Configuration object
+---@return SBJ__ShipConfig[] CSG ship configuration list
 local function getCSGShipConfiguration(config)
   return {
     {
@@ -401,9 +401,9 @@ local function getCSGShipConfiguration(config)
   }
 end
 
----創建隨機位置的單位
----@param config SBJ__RandomUnits 配置參數
----@return CMO__Unit|CMO__Unit[] 創建的單位
+---Create units at random positions
+---@param config SBJ__RandomUnits Configuration parameters
+---@return CMO__Unit|CMO__Unit[] Created units
 local function createRandomUnits(config)
   local units = {}
 
@@ -437,16 +437,16 @@ local function createRandomUnits(config)
   return units
 end
 
----創建編隊船隻
----@param formationConfig SBJ__FormationConfig 編隊配置
----@return boolean 是否成功
+---Create formation ships
+---@param formationConfig SBJ__FormationConfig Formation configuration
+---@return boolean Whether successful
 local function createShipFormation(formationConfig)
-  -- 清理現有群組
+  -- Clean up existing group
   cleanupExistingGroup(formationConfig.groupName, formationConfig.sideName)
 
   local createdUnits = {}
 
-  -- 創建各個位置的船隻
+  -- Create ships at various positions
   for _, shipConfig in ipairs(formationConfig.shipTypes) do
     local position = calculateFormationPosition(
       formationConfig.centerPoint,
@@ -475,12 +475,12 @@ local function createShipFormation(formationConfig)
     if unit then
       table.insert(createdUnits, unit)
 
-      -- 添加搭載單位
+      -- Add embarked units
       if shipConfig.embarkedUnits then
         addEmbarkedUnitsAdvanced(shipConfig.embarkedUnits, unit.guid)
       end
 
-      -- 添加彈藥配置（針對航母等）
+      -- Add ammunition configuration (for carriers, etc.)
       if shipConfig.loadouts then
         for _, loadout in ipairs(shipConfig.loadouts) do
           GameApi.ScenEdit_FillMagsForLoadout({
@@ -501,11 +501,11 @@ local function createShipFormation(formationConfig)
   return true
 end
 
----嘗試創建噴射單位
----@param config SBJ__CONFIG 配置參數
----@param jammer table 噴射設備
----@param attempt number|nil 嘗試次數
----@param max_attempts number|nil 最大嘗試次數
+---Attempt to create jammer unit
+---@param config SBJ__CONFIG Configuration parameters
+---@param jammer table Jammer equipment
+---@param attempt number|nil Attempt count
+---@param max_attempts number|nil Maximum attempts
 local function tryAddJammerUnit(config, jammer, attempt, max_attempts)
   attempt = attempt or 1
   max_attempts = max_attempts or 50
@@ -532,12 +532,12 @@ local function tryAddJammerUnit(config, jammer, attempt, max_attempts)
 end
 
 -- ============================================================================
--- 主要功能函數 - 重構後的版本
+-- Main functionality functions - Refactored version
 -- ============================================================================
 
----移除 C2 設施
----@param config SBJ__CONFIG 配置對象
----@return boolean 是否成功
+---Remove C2 facilities
+---@param config SBJ__CONFIG Configuration object
+---@return boolean Whether successful
 function UnitGenerator.removeC2Facilities(config)
   local units = GameApi.VP_GetSide({ name = 'China' }).units
   local removedCount = 0
@@ -559,9 +559,9 @@ function UnitGenerator.removeC2Facilities(config)
   return true
 end
 
----添加 C2 設施
----@param config SBJ__CONFIG 配置對象
----@return boolean 是否成功
+---Add C2 facilities
+---@param config SBJ__CONFIG Configuration object
+---@return boolean Whether successful
 function UnitGenerator.addC2Facilities(config)
   for _, setting in ipairs(config.c.IADS.C2Settings) do
     local units = createRandomUnits({
@@ -585,10 +585,10 @@ function UnitGenerator.addC2Facilities(config)
   return true
 end
 
----創建 SAG 編隊
----@param config SBJ__CONFIG 配置對象
----@param side string 陣營名稱
----@return boolean 是否成功
+---Create SAG formations
+---@param config SBJ__CONFIG Configuration object
+---@param side string Side name
+---@return boolean Whether successful
 function UnitGenerator.createSAGs(config, side)
   local sagConfigs = (side == 'China') and config.c.PHIBOP.sag or config.t.surface.sag
 
@@ -607,7 +607,7 @@ function UnitGenerator.createSAGs(config, side)
       return false
     end
 
-    -- 單獨處理搭載單位（針對台灣）
+    -- Handle embarked units separately (for Taiwan)
     if side == 'Taiwan' then
       local group = GameApi.ScenEdit_GetUnit(sagConfig.groupName)
       if group and group.group and group.group.unitlist then
@@ -624,13 +624,13 @@ function UnitGenerator.createSAGs(config, side)
       end
     end
 
-    -- 設置雷達狀態
+    -- Set radar status
     local group = GameApi.ScenEdit_GetUnit(sagConfig.groupName)
     if group then
       GameApi.ScenEdit_SetEMCON('Unit', group.guid, 'Radar=Active')
     end
 
-    -- 設置任務（針對台灣）
+    -- Set mission (for Taiwan)
     if side == 'Taiwan' and sagConfig.missionName then
       local kidd = GameApi.ScenEdit_GetUnit(sagConfig.groupName)
       if kidd then
@@ -643,9 +643,9 @@ function UnitGenerator.createSAGs(config, side)
   return true
 end
 
----創建 CSG 編隊
----@param config SBJ__CONFIG 配置對象
----@return boolean 是否成功
+---Create CSG formation
+---@param config SBJ__CONFIG Configuration object
+---@return boolean Whether successful
 function UnitGenerator.createCSG(config)
   local formationConfig = {
     centerPoint = config.c.surface.lacm.csg.from.startingPoint,
@@ -661,7 +661,7 @@ function UnitGenerator.createCSG(config)
     return false
   end
 
-  -- 設置參考點
+  -- Set reference points
   local csg = GameApi.ScenEdit_GetUnit(config.c.surface.lacm.csg.groupName)
   if csg then
     local referenceAreas = {
@@ -686,10 +686,10 @@ function UnitGenerator.createCSG(config)
   return true
 end
 
----添加部署在港口的船隻
----@param config SBJ__CONFIG 配置對象
----@param side string 陣營名稱
----@return boolean 是否成功
+---Add ships deployed at ports
+---@param config SBJ__CONFIG Configuration object
+---@param side string Side name
+---@return boolean Whether successful
 function UnitGenerator.addDeployedShipsAtPort(config, side)
   local field = (side == 'China') and 'c' or 't'
 
@@ -711,13 +711,13 @@ function UnitGenerator.addDeployedShipsAtPort(config, side)
   return true
 end
 
----添加潛艇
----@param config SBJ__CONFIG 配置對象
----@param side string 陣營名稱
----@return boolean 是否成功
+---Add submarines
+---@param config SBJ__CONFIG Configuration object
+---@param side string Side name
+---@return boolean Whether successful
 function UnitGenerator.addSubmarines(config, side)
   if side ~= 'China' then
-    return true -- 目前只支持中國潛艇
+    return true -- Currently only supports Chinese submarines
   end
 
   for _, unit in pairs(config.c.subSurface.slcm.submarines) do
@@ -741,7 +741,7 @@ function UnitGenerator.addSubmarines(config, side)
     if addedUnit then
       addedUnit.course = unit.course
 
-      -- 移除默認武器並添加指定武器
+      -- Remove default weapons and add specified weapons
       GameApi.ScenEdit_AddReloadsToUnit({
         side = side,
         guid = addedUnit.guid,
@@ -766,10 +766,10 @@ function UnitGenerator.addSubmarines(config, side)
   return true
 end
 
----初始化 C2 設施
----@param config SBJ__CONFIG 配置對象
----@param saveData SBJ__SaveData 保存數據
----@return boolean 是否成功
+---Initialize C2 facilities
+---@param config SBJ__CONFIG Configuration object
+---@param saveData SBJ__SaveData Save data
+---@return boolean Whether successful
 function UnitGenerator.initC2Facilities(config, saveData)
   local units = GameApi.VP_GetSide({ name = 'China' }).units
   saveData.c.IADS.C2 = {}
@@ -804,14 +804,14 @@ function UnitGenerator.initC2Facilities(config, saveData)
     end
   end
 
-  -- 初始化 SAM 和雷達系統
+  -- Initialize SAM and radar systems
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
     for c2Guid, item in pairs(saveData.c.IADS.C2) do
       for _, area in ipairs(item.areas) do
         if actualUnit and actualUnit:inArea(area) then
-          -- SAM 系統
+          -- SAM systems
           if (actualUnit.dbid == config.platform.HQ22 or
                 actualUnit.dbid == config.platform.S300 or
                 actualUnit.dbid == config.platform.S400 or
@@ -828,7 +828,7 @@ function UnitGenerator.initC2Facilities(config, saveData)
             }
           end
 
-          -- 雷達系統
+          -- Radar systems
           if actualUnit.dbid == config.platform.JY26 or actualUnit.dbid == config.platform.YLC8B then
             saveData.c.IADS.C2[c2Guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
@@ -849,10 +849,10 @@ function UnitGenerator.initC2Facilities(config, saveData)
   return true
 end
 
----添加飛機
----@param config SBJ__CONFIG 配置對象
----@param side string 陣營名稱
----@return boolean 是否成功
+---Add aircraft
+---@param config SBJ__CONFIG Configuration object
+---@param side string Side name
+---@return boolean Whether successful
 function UnitGenerator.addAircraft(config, side)
   local key = (side == 'China') and 'c' or 't'
 
@@ -890,9 +890,9 @@ function UnitGenerator.addAircraft(config, side)
   return true
 end
 
----移除基地的彈藥庫
----@param baseGUID string 基地 GUID
----@return boolean 是否成功
+---Remove base magazines
+---@param baseGUID string Base GUID
+---@return boolean Whether successful
 function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
@@ -912,11 +912,11 @@ function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
   return true
 end
 
--- addEmbarkedUnitsAdvanced 已在上面定義
+-- addEmbarkedUnitsAdvanced already defined above
 
----添加登陸艦
----@param config SBJ__CONFIG 配置對象
----@return boolean 是否成功
+---Add landing ships
+---@param config SBJ__CONFIG Configuration object
+---@return boolean Whether successful
 function UnitGenerator.addLandingShips(config)
   local initialLocations = config.c.PHIBOP.initialLocations
   local shipSettings = config.c.PHIBOP.shipSettings
@@ -926,10 +926,10 @@ function UnitGenerator.addLandingShips(config)
     for _, area in ipairs(item.from.areas) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
 
-      -- 計算各種船隻的起始位置
+      -- Calculate starting positions for various ships
       local positions = calculateShipPositions(firstRp075, area.heading.vertical, shipSettings.verticalDistance)
 
-      -- 創建各類型船隻
+      -- Create various ship types
       createShipsByType(config, positions.type075, area, item, shipSettings, cargoList, 'type075')
       createShipsByType(config, positions.type071, area, item, shipSettings, cargoList, 'type071')
       createShipsByType(config, positions.type076, area, item, shipSettings, cargoList, 'type076')
@@ -946,9 +946,9 @@ function UnitGenerator.addLandingShips(config)
   return true
 end
 
----移除登陸艦
----@param config SBJ__CONFIG 配置對象
----@return boolean 是否成功
+---Remove landing ships
+---@param config SBJ__CONFIG Configuration object
+---@return boolean Whether successful
 function UnitGenerator.removeLandingShips(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local removedCount = 0
@@ -982,8 +982,8 @@ function UnitGenerator.removeLandingShips(config)
   return true
 end
 
----移除 GPS干擾區域
----@param config SBJ__CONFIG 配置對象
+---Remove GPS jamming zones
+---@param config SBJ__CONFIG Configuration object
 function UnitGenerator.removeJammingZones(config)
   local s = GameApi.VP_GetSide({ name = 'China' })
   if s == nil then return end

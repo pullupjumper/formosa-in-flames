@@ -5,10 +5,10 @@ local Launcher = {}
 
 -- Private functions
 
----尋找單位所在的區域
----@param unit CMO__Unit 單位物件
----@param positions SBJ__Position[] 位置資訊表
----@return string[]|nil 區域名稱或 nil
+---Find the area where the unit is located
+---@param unit CMO__Unit Unit object
+---@param positions SBJ__Position[] Position information table
+---@return string[]|nil Area name or nil
 local function findUnitArea(unit, positions)
   for _, p in pairs(positions) do
     if unit:inArea(p.RL.area) then
@@ -20,15 +20,15 @@ local function findUnitArea(unit, positions)
 end
 
 
--- 私有輔助函數
----設定單位的移動和武器管制狀態
----@param unit CMO__Unit 單位物件
----@param throttle string 油門設定 (例如 'Flank', 'Stop')
----@param speed number 速度
----@param course CMO__TableOfWaypoints|nil 航線點
----@param holdPosition boolean 是否保持陣位
----@param wcs number|nil 武器管制狀態 (1: Free, 2: Hold)
----@param formation table|nil 編隊設定
+-- Private helper functions
+---Set unit movement and weapon control status
+---@param unit CMO__Unit Unit object
+---@param throttle string Throttle setting (e.g. 'Flank', 'Stop')
+---@param speed number Speed
+---@param course CMO__TableOfWaypoints|nil Waypoints
+---@param holdPosition boolean Whether to hold position
+---@param wcs number|nil Weapon control status (1: Free, 2: Hold)
+---@param formation table|nil Formation settings
 local function setUnitProperties(unit, throttle, speed, course, holdPosition, wcs, formation)
   if not unit then return end
 
@@ -51,10 +51,10 @@ local function setUnitProperties(unit, throttle, speed, course, holdPosition, wc
 end
 
 
----命令砲兵營移動至再裝填點 (RL)
+---Command artillery battery to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
 local function toRL(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
 
@@ -64,10 +64,10 @@ local function toRL(config, battery, group)
   end
 end
 
----命令砲兵營移動至隱蔽區 (HA)
+---Command artillery battery to move to hide area (HA)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
 local function toHA(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
 
@@ -77,10 +77,10 @@ local function toHA(config, battery, group)
   end
 end
 
----命令彈藥分隊移動至彈藥儲放區 (AHA)
+---Command ammunition section to move to ammunition storage area (AHA)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSection 彈藥分隊物件
----@param group CMO__Unit 單位群組
+---@param section SBJ__AmmunitionSection Ammunition section object
+---@param group CMO__Unit Unit group
 local function toAHA(config, section, group)
   section.state = config.batteryState.REPOSITIONING
 
@@ -90,9 +90,9 @@ local function toAHA(config, section, group)
   end
 end
 
----從彈藥庫轉運彈藥至彈藥分隊
----@param section SBJ__AmmunitionSection 彈藥分隊物件
----@param ammunition SBJ__Ammunition 彈藥庫物件
+---Transfer ammunition from ammunition depot to ammunition section
+---@param section SBJ__AmmunitionSection Ammunition section object
+---@param ammunition SBJ__Ammunition Ammunition depot object
 local function transload(section, ammunition)
   if ammunition.wpnCurrent > 0 and section.wpnCurrent < section.wpnDefault then
     if ammunition.wpnCurrent >= section.wpnDefault then
@@ -107,10 +107,10 @@ local function transload(section, ammunition)
   section.reloadStartTime = nil
 end
 
----命令彈藥分隊移動至再裝填點 (RL)
+---Command ammunition section to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSection 彈藥分隊物件
----@param group CMO__Unit 單位群組
+---@param section SBJ__AmmunitionSection Ammunition section object
+---@param group CMO__Unit Unit group
 local function ammoSecToRL(config, section, group)
   section.state = config.batteryState.REPOSITIONING
 
@@ -120,7 +120,7 @@ local function ammoSecToRL(config, section, group)
   end
 end
 
----處理砲兵營的自動化重新部署邏輯
+---Handle automatic artillery battery repositioning logic
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -159,7 +159,7 @@ local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, 
   end
 end
 
----處理砲兵營的手動再裝填邏輯
+---Handle manual artillery battery reload logic
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -193,7 +193,7 @@ local function handleManualBatteryReload(config, saveData, wpnSystem, side, batt
   end
 end
 
----處理彈藥分隊的自動化重新部署邏輯
+---Handle automatic ammunition section repositioning logic
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -231,7 +231,7 @@ local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, 
   end
 end
 
----處理彈藥分隊的手動再裝填邏輯
+---Handle manual ammunition section reload logic
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -264,7 +264,7 @@ local function handleManualSectionReload(config, saveData, wpnSystem, side, sect
   end
 end
 
----處理所有彈藥分隊的狀態和行動
+---Handle status and actions of all ammunition sections
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -287,7 +287,7 @@ local function processAmmunitionSections(config, saveData, wpnSystem, side, isAu
   end
 end
 
----處理所有砲兵營的狀態和行動
+---Handle status and actions of all artillery batteries
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -311,10 +311,10 @@ end
 
 -- Public functions
 
----為砲兵營執行再裝填
----@param battery SBJ__Battery 砲兵營物件
----@param ammunitionSection SBJ__AmmunitionSection 彈藥分隊物件
----@param weaponDBID number 武器資料庫 ID
+---Execute reload for artillery battery
+---@param battery SBJ__Battery Artillery battery object
+---@param ammunitionSection SBJ__AmmunitionSection Ammunition section object
+---@param weaponDBID number Weapon database ID
 function Launcher.reload(battery, ammunitionSection, weaponDBID)
   local group = GameApi.ScenEdit_GetUnit(battery.guid)
   if not group then return end
@@ -360,11 +360,11 @@ function Launcher.reload(battery, ammunitionSection, weaponDBID)
   battery.reloadStartTime = nil
 end
 
----設定砲兵營開始再裝填時間
+---Set artillery battery reload start time
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
----@param isAuto boolean 是否為自動模式
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
+---@param isAuto boolean Whether in automatic mode
 function Launcher.setReloadStartTime(config, battery, group, isAuto)
   battery.state = config.batteryState.RELOAD
   battery.reloadStartTime = GameApi.ScenEdit_CurrentTime()
@@ -378,10 +378,10 @@ function Launcher.setReloadStartTime(config, battery, group, isAuto)
   end
 end
 
----設定砲兵營的武器管制狀態為自由開火
+---Set artillery battery weapon control status to free fire
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
 function Launcher.setWCSToFree(config, battery, group)
   battery.state = config.batteryState.STATIC
 
@@ -394,10 +394,10 @@ function Launcher.setWCSToFree(config, battery, group)
   end
 end
 
----設定砲兵營的狀態為隱蔽
+---Set artillery battery status to hide
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
 function Launcher.setStateToHIDE(config, battery, group)
   battery.state = config.batteryState.HIDE
 
@@ -410,11 +410,11 @@ function Launcher.setStateToHIDE(config, battery, group)
   end
 end
 
----檢查單位/群組的彈藥是否低於指定百分比
----@param group CMO__Unit 單位或群組物件
----@param percentage number 百分比閾值
----@param weaponDBID number 武器資料庫 ID
----@return boolean 是否為低彈藥量
+---Check if unit/group ammunition is below specified percentage
+---@param group CMO__Unit Unit or group object
+---@param percentage number Percentage threshold
+---@param weaponDBID number Weapon database ID
+---@return boolean Whether it is low ammunition
 function Launcher.isLowAmmo(group, percentage, weaponDBID)
   local totalWpnCurrentNum = 0
   local totalWpnDefaultNum = 0
@@ -447,10 +447,10 @@ function Launcher.isLowAmmo(group, percentage, weaponDBID)
   return currentPercentage <= percentage
 end
 
----命令砲兵營移動至射擊陣地 (FP)
+---Command artillery battery to move to firing position (FP)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery 砲兵營物件
----@param group CMO__Unit 單位群組
+---@param battery SBJ__Battery Artillery battery object
+---@param group CMO__Unit Unit group
 function Launcher.toFringPosition(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
   local courseIdx = math.random(Utils.getCount(battery.position.FP))
@@ -464,7 +464,7 @@ function Launcher.toFringPosition(config, battery, group)
   end
 end
 
----檢查砲兵營是否已與彈藥車會合
+---Check if artillery battery has met with ammunition trucks
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
@@ -512,7 +512,7 @@ function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
   return { isMet = false, battery = nil }
 end
 
----檢查彈藥分隊是否已與彈藥庫會合
+---Check if ammunition section has met with ammunition depot
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
@@ -553,7 +553,7 @@ function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
   return { isMet = false, battery = nil }
 end
 
----檢查所有砲兵營和彈藥分隊的狀態，並觸發相應的行動
+---Check status of all artillery batteries and ammunition sections, and trigger corresponding actions
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
@@ -564,10 +564,10 @@ function Launcher.checkBatteryState(config, saveData, wpnSystem, side, isAuto)
   processAmmunitionSections(config, saveData, wpnSystem, side, isAuto)
 end
 
----處理彈藥分隊單位被摧毀時的邏輯
----@param unit CMO__Unit 被摧毀的單位
----@param side string 陣營
----@param wpnSystem string 平台類型
+---Handle logic when ammunition section unit is destroyed
+---@param unit CMO__Unit Destroyed unit
+---@param side string Side
+---@param wpnSystem string Platform type
 ---@param saveData SBJ__SaveData
 function Launcher.destroyAmmoSecHandler(unit, side, wpnSystem, saveData)
   local field = (side == 'China') and 'c' or 't'

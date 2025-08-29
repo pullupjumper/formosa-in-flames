@@ -1,6 +1,6 @@
 local Logger = {}
 
--- 切換是否在遊戲中（由你在 main 中設置）
+-- Toggle whether in game (set by you in main)
 Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 
 
@@ -8,10 +8,10 @@ Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 ---@param side string @The side the message is visible to (sidename may also be used in place of side)
 ---@param ... string @Variable number of string arguments to be printed inside the box
 local function printBox(side, ...)
-  -- 收集所有字串參數到陣列中
+  -- Collect all string parameters into array
   local strings = { ... }
 
-  -- 找出最長字串的長度
+  -- Find the length of the longest string
   local maxLen = 0
   for _, str in ipairs(strings) do
     if #str > maxLen then
@@ -19,35 +19,35 @@ local function printBox(side, ...)
     end
   end
 
-  -- 計算邊框寬度
+  -- Calculate border width
   local width = 70
 
-  -- 構建頂部和底部邊框：連續的 -
+  -- Build top and bottom border: continuous -
   local border = string.rep("-", width)
 
-  -- 構建中間行
+  -- Build middle lines
   local middleLines = {}
   for _, str in ipairs(strings) do
-    -- 構建中間行：| 空格 字串
+    -- Build middle line: | space string
     local middle = "| " .. str
     table.insert(middleLines, middle)
   end
 
-  -- 組合成一個單一的字串
+  -- Combine into a single string
   local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
 
-  -- 一次性輸出
+  -- Output all at once
   ScenEdit_SpecialMessage(side, boxString)
 end
 
--- 真正輸出的函式（自動判斷）
+-- Actual output function (automatic detection)
 ---comment
 ---@param message string
 function Logger.log(message)
   if Logger.inGame then
     printBox('playerside', "[LOG] " .. message)
   else
-    print("[LOG] " .. message) -- 開發階段用
+    print("[LOG] " .. message) -- For development stage
   end
 end
 

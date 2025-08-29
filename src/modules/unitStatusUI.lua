@@ -3,13 +3,13 @@ local Logger = require("src.utils.logger")
 local gKH = require('src.core.gKH_State_Standalone')
 
 ---@class UnitStatusUI
----單位狀態使用者介面模組
----提供各種軍事單位狀態的HTML表格顯示功能
+---Unit status user interface module
+---Provides HTML table display functionality for various military unit statuses
 local UnitStatusUI = {}
 
----統計各區域內不同類型單位的數量
----@param config SBJ__CONFIG 配置表
----@return table<string, table<string, number>> 回傳以區域名稱為鍵，單位類型計數為值的表格
+---Count units of different types in each area
+---@param config SBJ__CONFIG Configuration table
+---@return table<string, table<string, number>> Returns table with area names as keys and unit type counts as values
 function UnitStatusUI.countUnitsInEachArea(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local result = {}
@@ -79,8 +79,8 @@ function UnitStatusUI.countUnitsInEachArea(config)
   return result
 end
 
----顯示登陸單位統計表格的HTML對話框
----@param config SBJ__CONFIG 配置表
+---Display HTML dialog for landing unit statistics table
+---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.landedUnitTable(config)
   local result = UnitStatusUI.countUnitsInEachArea(config)
 
@@ -162,8 +162,8 @@ function UnitStatusUI.landedUnitTable(config)
   local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
----顯示指揮控制系統狀態表格的HTML對話框
----@param side string 陣營名稱 ('China' 或 'Taiwan')
+---Display HTML dialog for command and control system status table
+---@param side string Side name ('China' or 'Taiwan')
 function UnitStatusUI.c2Table(side)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -172,10 +172,10 @@ function UnitStatusUI.c2Table(side)
     return
   end
 
-  ---創建C2系統狀態的JSON字串
-  ---@param side string 陣營名稱
-  ---@param ... string 系統類型列表
-  ---@return string JSON格式的狀態資料
+  ---Create JSON string for C2 system status
+  ---@param side string Side name
+  ---@param ... string System type list
+  ---@return string JSON formatted status data
   local createDataString = function(side, ...)
     local key = 't'
 
@@ -336,9 +336,9 @@ function UnitStatusUI.c2Table(side)
   local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
----顯示砲兵連狀態表格的HTML對話框
----@param side string 陣營名稱 ('China' 或 'Taiwan')
----@param config SBJ__CONFIG 配置表
+---Display HTML dialog for artillery battery status table
+---@param side string Side name ('China' or 'Taiwan')
+---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.btyStateTable(side, config)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -347,10 +347,10 @@ function UnitStatusUI.btyStateTable(side, config)
     return
   end
 
-  ---創建砲兵連狀態的JSON字串
-  ---@param side string 陣營名稱
-  ---@param ... string 武器系統類型列表
-  ---@return string JSON格式的砲兵連狀態資料
+  ---Create JSON string for artillery battery status
+  ---@param side string Side name
+  ---@param ... string Weapon system type list
+  ---@return string JSON formatted artillery battery status data
   local createDataString = function(side, ...)
     local key = 't'
     local wpnSystems = { ... }
@@ -584,13 +584,13 @@ function UnitStatusUI.btyStateTable(side, config)
   local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
----顯示基地彈藥庫存狀態表格的HTML對話框
----@param side string 陣營名稱 ('China' 或 'Taiwan')
----@param config SBJ__CONFIG 配置表
+---Display HTML dialog for base ammunition inventory status table
+---@param side string Side name ('China' or 'Taiwan')
+---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.magazineInBasesTable(side, config)
-  ---創建基地彈藥庫存的JSON字串
-  ---@param side string 陣營名稱
-  ---@return string JSON格式的彈藥庫存資料
+  ---Create JSON string for base ammunition inventory
+  ---@param side string Side name
+  ---@return string JSON formatted ammunition inventory data
   local createDataString = function(side)
     local key = 't'
 
@@ -703,8 +703,8 @@ function UnitStatusUI.magazineInBasesTable(side, config)
   local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 end
 
----顯示武器控制狀態設定表格的HTML對話框，允許設定EMCON狀態
----@param config SBJ__CONFIG 配置表
+---Display HTML dialog for weapon control status settings table, allows EMCON status configuration
+---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.wcsSettingTable(config)
   local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
 

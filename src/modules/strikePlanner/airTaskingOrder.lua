@@ -259,9 +259,11 @@ local function assignUnits(packageData)
 end
 
 --- Processes a single strike package through its complete lifecycle
+---@param config SBJ__CONFIG The config table from configData
+---@param saveData SBJ__SaveData The save data table
 ---@param packageData SBJ__Package The pure data table from saveData
 ---@return boolean hasLaunched
-local function processPackage(packageData)
+local function processPackage(config, saveData, packageData)
   -- 1. 檢查是否到達武器掛載開始時間
   if not isTimeToStartLoadout(packageData) then
     return false -- 還沒到開始掛載的時間
@@ -293,6 +295,30 @@ local function processPackage(packageData)
   end
 
   Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
+
+  if packageData.reconUAV then
+    if not packageData.reconUAV.takeoffTime then
+      if packageData.reconUAV.unitDBID == config.platform.BZK005 then
+        local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 10 * 60
+        local missionStartTime = takeoffTime + 30 * 60
+        packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
+        packageData.reconUAV.missionStartTime = os.date("!%Y-%m-%d %H:%M:%S", missionStartTime)
+        Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
+        Logger.log("Recon UAV mission start time set to: " .. packageData.reconUAV.missionStartTime)
+      end
+
+      if packageData.reconUAV.unitDBID == config.platform.H6N then
+        local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 30 * 60
+        packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
+        Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
+      end
+    end
+
+    local copyReconUAV = Utils.deepCopy(packageData.reconUAV)
+    copyReconUAV.hasLaunched = false
+    table.insert(saveData.c.recon.queue, copyReconUAV)
+    Logger.log("Recon UAV added to queue.")
+  end
 
   -- 5. 尋找目標
   -- local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
@@ -346,8 +372,9 @@ end
 
 --- The main entry point for air strikes.
 --- It iterates through waves and packages, handing off the processing to the processor.
+---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
-function AirTaskingOrder.airStrike(saveData)
+function AirTaskingOrder.airStrike(config, saveData)
   if not saveData or not saveData.c or not saveData.c.air or not saveData.c.air.ATO then
     -- Guard against missing data
     return
@@ -359,7 +386,7 @@ function AirTaskingOrder.airStrike(saveData)
         if not packageData.hasLaunched then
           -- Process the entire sequence for a package in one go.
           -- Returns true if the package was successfully launched.
-          local launched = processPackage(packageData)
+          local launched = processPackage(config, saveData, packageData)
           if launched then
             packageData.hasLaunched = true
             -- As per original logic, break after one successful launch to process

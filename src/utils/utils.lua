@@ -59,7 +59,7 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
     error('Invalid datetime format: ' .. tostring(datetimeStr))
   end
 
-  -- 先轉成 UTC table
+  -- First convert to UTC table
   local utcTable = {
     year = tonumber(year),
     month = tonumber(month),
@@ -70,8 +70,8 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
     isdst = false,
   }
 
-  -- 算出 timestamp：我們要它是 UTC → 所以先用 os.time(utcTable) 當成本地時間
-  -- 然後補回 offset，就會得到真正的 UTC timestamp
+  -- Calculate timestamp: we want it to be UTC → so first use os.time(utcTable) as local time
+  -- Then add back offset to get the real UTC timestamp
   local localTimestamp = os.time(utcTable)
   local tzOffset = os.difftime(os.time(), os.time(os.date("!*t")))
   return localTimestamp - tzOffset + (16 * 3600)
@@ -99,7 +99,7 @@ function Utils.safeCall(funcName, func, ...)
   local ok, result = xpcall(function() return func(table.unpack(args)) end, errorHandler)
 
   if not ok then
-    -- print(result)  -- result 是完整錯誤 + 行號堆疊
+    -- print(result)  -- result is complete error + line number stack
     return nil, result
   end
 
@@ -136,27 +136,27 @@ end
 ---@param coords table<number,{latitude: number, longitude: number}>
 ---@return {latitude: number, longitude: number}|nil
 function Utils.calculateSphericalCenter(coords)
-  -- 檢查輸入是否有效
+  -- Check if input is valid
   if not coords or #coords < 4 then
     return nil
   end
 
-  -- 初始化笛卡爾座標總和
+  -- Initialize Cartesian coordinate sums
   local xSum = 0
   local ySum = 0
   local zSum = 0
 
-  -- 將經緯度轉換為笛卡爾座標並計算總和
+  -- Convert latitude/longitude to Cartesian coordinates and calculate sum
   for _, point in ipairs(coords) do
     if not point.latitude or not point.longitude then
       return nil
     end
 
-    -- 將角度轉換為弧度
+    -- Convert angles to radians
     local latRad = math.rad(point.latitude)
     local lonRad = math.rad(point.longitude)
 
-    -- 轉換到笛卡爾座標
+    -- Convert to Cartesian coordinates
     local x = math.cos(latRad) * math.cos(lonRad)
     local y = math.cos(latRad) * math.sin(lonRad)
     local z = math.sin(latRad)
@@ -166,13 +166,13 @@ function Utils.calculateSphericalCenter(coords)
     zSum = zSum + z
   end
 
-  -- 計算平均值
+  -- Calculate average values
   local count = #coords
   local xAvg = xSum / count
   local yAvg = ySum / count
   local zAvg = zSum / count
 
-  -- 將平均笛卡爾座標轉回經緯度
+  -- Convert average Cartesian coordinates back to latitude/longitude
   local hyp = math.sqrt(xAvg * xAvg + yAvg * yAvg)
   local centerLat = math.deg(Utils.atan2(zAvg, hyp))
   local centerLon = math.deg(Utils.atan2(yAvg, xAvg))

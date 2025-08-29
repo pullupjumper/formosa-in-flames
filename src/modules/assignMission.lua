@@ -55,7 +55,7 @@ function AssignMission.assignEmbarkedUnitsToMissions(fromUnit, platformType, pla
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
   if not base then
-    return -- 提前返回
+    return -- Early return
   end
 
   local filteredPlatforms = filterEmbarkedPlatforms(base, platformType, platformDBID)
@@ -72,7 +72,7 @@ local function getWeaponCount(unitGuid, weaponDBID)
   local loadout = GameApi.ScenEdit_GetLoadout(unitGuid)
 
   if not loadout then
-    return 0 -- 返回 0 表示沒有武器或獲取失敗
+    return 0 -- Return 0 indicates no weapons or retrieval failed
   end
 
   local weaponNum = 0
@@ -106,7 +106,7 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDB
   ---@type CMO__Unit
   local airbase = GameApi.ScenEdit_GetUnit(fromUnit)
   if not airbase then
-    return nil -- 提前返回
+    return nil -- Early return
   end
 
   if #airbase.embarkedUnits['Aircraft'] == 0 then return nil end
@@ -114,7 +114,7 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDB
   ---@type CMO__Mission
   local m = GameApi.ScenEdit_GetMission(airbase.side, missionName)
   if not m then
-    return nil -- 提前返回
+    return nil -- Early return
   end
 
   m.isactive = false

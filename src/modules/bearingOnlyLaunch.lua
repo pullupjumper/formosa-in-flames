@@ -1,13 +1,13 @@
 local math = require("math")
 
--- 地球半徑（海浬）
+-- Earth radius (nautical miles)
 local R = 3440.065
 
--- 角度與弧度轉換
+-- Angle and radian conversion
 local function deg2rad(d) return d * math.pi / 180 end
 local function rad2deg(r) return r * 180 / math.pi end
 
--- 根據起點、方位角、距離計算目的地
+-- Calculate destination based on starting point, bearing, and distance
 local function destination_point(lat, lon, bearing_deg, distance_nm)
   local bearing = deg2rad(bearing_deg)
   local lat1 = deg2rad(lat)
@@ -22,7 +22,7 @@ local function destination_point(lat, lon, bearing_deg, distance_nm)
   return rad2deg(lat2), rad2deg(lon2)
 end
 
--- 計算兩點距離（海浬）
+-- Calculate distance between two points (nautical miles)
 local function haversine_nm(lat1, lon1, lat2, lon2)
   local dlat = deg2rad(lat2 - lat1)
   local dlon = deg2rad(lon2 - lon1)
@@ -32,7 +32,7 @@ local function haversine_nm(lat1, lon1, lat2, lon2)
   return R * c
 end
 
--- 檢查路徑是否穿越雷達圓形區（近似用中點）
+-- Check if path crosses radar circular area (approximated using midpoint)
 local function intersects_radar_circle(lat1, lon1, lat2, lon2, radar_lat, radar_lon, radar_range_nm)
   local mid_lat = (lat1 + lat2) / 2
   local mid_lon = (lon1 + lon2) / 2
@@ -41,9 +41,9 @@ local function intersects_radar_circle(lat1, lon1, lat2, lon2, radar_lat, radar_
 end
 
 
--- 主函式
----@param params SBJ__GenerateMissilePaths_Params 生成飛彈路徑的參數
----@return table<integer, SBJ__MissilePath> 返回飛彈路徑列表
+-- Main function
+---@param params SBJ__GenerateMissilePaths_Params Parameters for generating missile paths
+---@return table<integer, SBJ__MissilePath> Returns missile path list
 ---Example:
 -- local paths = Generate_missile_paths({
 --   target_lat = 34.0,
@@ -63,7 +63,7 @@ end
 --     launcher_lat = u.latitude,
 --     launcher_lon = u.longitude,
 --     radar_range = 7,
---     radar_dir = 0,         -- 敵雷達朝向（例如朝西南，對我方）
+--     radar_dir = 0,         -- Enemy radar direction (e.g. facing southwest, towards us)
 --     radar_fov = 120,
 --     missile_count = 8,
 --     missile_speed_kts = 1600,
@@ -92,7 +92,7 @@ function Generate_missile_paths(params)
   local max_range = params.missile_range_nm or 100
 
   for i = 1, count do
-    local angle = ((i - 1) / count) * 360 -- 平均分布角度
+    local angle = ((i - 1) / count) * 360 -- Evenly distributed angles
 
     local dist_mult = 1.5
     local max_attempts = 10
@@ -113,13 +113,13 @@ function Generate_missile_paths(params)
         break
       end
 
-      dist_mult = dist_mult + 0.5 -- 向外推
+      dist_mult = dist_mult + 0.5 -- Push outward
     end
 
     if valid then
       local total_distance = haversine_nm(launcher_lat, launcher_lon, wp_lat, wp_lon) +
           haversine_nm(wp_lat, wp_lon, target_lat, target_lon)
-      local flight_time = total_distance / speed * 3600 -- 秒
+      local flight_time = total_distance / speed * 3600 -- seconds
       table.insert(result, {
         waypoints = {
           { lat = wp_lat, lon = wp_lon }

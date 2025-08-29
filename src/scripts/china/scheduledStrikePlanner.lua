@@ -86,7 +86,7 @@ if saveData.c.ground.isActivated then
 end
 
 if saveData.c.air.isActivated then
-  AirTaskingOrder.airStrike(saveData)
+  AirTaskingOrder.airStrike(config, saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
