@@ -201,103 +201,6 @@ local function setupReconQueue(saveData)
   end
 end
 
----Initialize Air Tasking Orders (ATO) with timing and target assignments
----@param saveData SBJ__SaveData
-local function initATO(saveData)
-  for _, wave in pairs(saveData.c.air.ATO) do
-    for index, package in ipairs(wave.packages) do
-      if type(package.target.objs) == 'table' then
-        package.target.list = TargetingProcess.selectTargetsByQueryParams({
-          targetlist = saveData.c.targetlist,
-          queryParams = package.target.objs
-        })
-      end
-
-      if package.striker.startTime == nil and index > 1 then
-        package.striker.startTime = os.date(
-          "%Y-%m-%d %I:%M:%S",
-          Utils.parseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval
-        )
-        package.striker.endTime = os.date(
-          "%Y-%m-%d %I:%M:%S",
-          Utils.parseDatetimeToTimestamp(wave.packages[index - 1].striker.startTime) + wave.strikeInterval + 40 * 60
-        )
-      end
-
-      if package.striker.endTime == nil then
-        package.striker.endTime = os.date(
-          "%Y-%m-%d %I:%M:%S",
-          Utils.parseDatetimeToTimestamp(package.striker.startTime) + 40 * 60
-        )
-
-        if package.tanker then
-          package.striker.endTime = os.date(
-            "%Y-%m-%d %I:%M:%S",
-            Utils.parseDatetimeToTimestamp(package.striker.startTime) + 120 * 60
-          )
-        end
-      end
-
-      local roles = { "escort", "wildWeasel", "jammer", "tanker" }
-      for _, role in ipairs(roles) do
-        if package[role] and package[role].startTime == nil then
-          package[role].startTime = os.date(
-            "%Y-%m-%d %I:%M:%S",
-            Utils.parseDatetimeToTimestamp(package.striker.startTime) - 20 * 60
-          )
-
-          if role == "tanker" then
-            package[role].startTime = os.date(
-              "%Y-%m-%d %I:%M:%S",
-              Utils.parseDatetimeToTimestamp(package.striker.startTime) - 0 * 60
-            )
-          end
-        end
-
-        if package[role] and package[role].endTime == nil then
-          package[role].endTime = os.date(
-            "%Y-%m-%d %I:%M:%S",
-            Utils.parseDatetimeToTimestamp(package[role].startTime) + 45 * 60
-          )
-
-          if role == "tanker" then
-            package[role].endTime = os.date(
-              "%Y-%m-%d %I:%M:%S",
-              Utils.parseDatetimeToTimestamp(package[role].startTime) + 120 * 60
-            )
-          end
-        end
-      end
-    end
-  end
-end
-
----Initialize Fire Support Plans (FSP) and Fire Support Tasks
----@param saveData SBJ__SaveData
-local function initFSP(saveData)
-  for key, FSEM in pairs(saveData.c.ground.FSP) do
-    for index, FST in ipairs(FSEM.FSTs) do
-      if type(FST.target.objs) == 'table' then
-        FST.target.list = TargetingProcess.selectTargetsByQueryParams({
-          targetlist = saveData.c.targetlist,
-          queryParams = FST.target.objs
-        })
-      end
-
-      if FST.startTime == nil and index == 1 then
-        Logger.error('No start time for ' .. FSEM.name .. ' Fire Support Task ' .. index)
-      end
-
-      if FST.startTime == nil and index > 1 then
-        FST.startTime = os.date(
-          "%Y-%m-%d %I:%M:%S",
-          Utils.parseDatetimeToTimestamp(FSEM.FSTs[index - 1].startTime) + FSEM.strikeInterval
-        )
-      end
-    end
-  end
-end
-
 ---Initialize target list by scanning contacts and categorizing them
 ---@param saveData SBJ__SaveData
 local function initTargetlist(saveData)
@@ -514,14 +417,11 @@ end
 
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if saveData ~= nil and #saveData.c.ground.dynamicFSP.reconSchedule[1].fsemTemplate.FSTs[1].target.list <= 0 then
+if saveData ~= nil and #saveData.c.targetlist <= 0 then
   ShipMovement.calculateDestination(saveData)
   initAC(config, saveData)
   initTargetlist(saveData)
-  initATO(saveData)
-  initFSP(saveData)
   initRunways(saveData)
-
 
   if saveData.t.IADS.isActivated then
     initC2(config, saveData)

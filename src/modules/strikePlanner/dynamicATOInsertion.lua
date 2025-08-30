@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
+local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
 ---@class DynamicATOInsertion
 local DynamicATOInsertion = {}
@@ -305,28 +306,6 @@ local function processATOTemplateWithValidation(config, saveData, contacts, atoT
   return validPackages
 end
 
----Generate unique wave name with dynamic prefix
----@param waveType string Type of the wave (e.g., "STRIKE", "SEAD")
----@param saveData SBJ__SaveData
----@return string uniqueWaveName
-local function generateDynamicWaveName(waveType, saveData)
-  local sequence = 1
-  local baseName = "DYNAMIC/SATELLITE/" .. waveType
-
-  if not saveData.c.air.dynamicATO.generatedWaves then
-    saveData.c.air.dynamicATO.generatedWaves = {}
-  end
-
-  -- Find next available sequence number
-  local waveName
-  repeat
-    waveName = baseName .. "/" .. sequence
-    sequence = sequence + 1
-  until not saveData.c.air.dynamicATO.generatedWaves[waveName] and not saveData.c.air.ATO[waveName]
-
-  return waveName
-end
-
 ---Calculate mission timing for a package
 ---@param packageData table Package configuration
 ---@param packageIndex number Index of the package
@@ -442,14 +421,19 @@ end
 ---Insert ATO wave into saveData maintaining data structure integrity
 ---@param saveData SBJ__SaveData
 ---@param packageTemplate SBJ__ATOTemplate
+---@param reconType string Reconnaissance type from the recon entry
 ---@return boolean success
-local function insertATOWave(saveData, packageTemplate)
+local function insertATOWave(saveData, packageTemplate, reconType)
   if not saveData.c.air.ATO then
     Logger.error("ATO structure not initialized")
     return false
   end
 
-  local waveName = generateDynamicWaveName(packageTemplate.targetType, saveData)
+  local waveName = DynamicOperationsUtils.generateUniqueAirOperationName(
+    packageTemplate.targetType, 
+    reconType,
+    saveData
+  )
 
   -- Create wave structure
   local newWave = {
@@ -478,81 +462,90 @@ local function insertATOWave(saveData, packageTemplate)
 
   -- Insert into ATO and track
   saveData.c.air.ATO[waveName] = newWave
-  saveData.c.air.dynamicATO.generatedWaves[waveName] = true
+  DynamicOperationsUtils.registerGeneratedOperation("air", waveName, saveData)
   return true
 end
 
----Process reconnaissance schedule and generate ATO waves
+---Process reconnaissance schedule and generate ATO waves for air operations
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
 ---@return boolean success True if any recon event was processed successfully, false otherwise
 local function processReconSchedule(config, saveData, contacts)
-  local reconSchedule = saveData.c.air.dynamicATO.reconSchedule
+  local reconSchedule = saveData.c.dynamicOperations.reconSchedule
   if not reconSchedule or #reconSchedule == 0 then
     Logger.log("No reconnaissance schedule found")
+    return false
+  end
+
+  -- Filter air operations that need processing
+  local airOperations = DynamicOperationsUtils.filterOperationsByType(reconSchedule, "air")
+
+  if #airOperations == 0 then
+    Logger.log("No air operations pending")
     return false
   end
 
   local anyProcessed = false
   local anyTriggered = false
 
-  for _, reconEvent in ipairs(reconSchedule) do
-    if not reconEvent.executed then
-      local scheduledTimestamp = Utils.parseDatetimeToTimestamp(reconEvent.time)
+  for _, item in ipairs(airOperations) do
+    local reconEntry = item.reconEntry
+    local operation = item.operation
 
-      if reconEvent.delay then
-        scheduledTimestamp = scheduledTimestamp + reconEvent.delay
-      end
+    local scheduledTimestamp = Utils.parseDatetimeToTimestamp(reconEntry.time)
 
-      if GameUtils.isAfterStartTime(scheduledTimestamp) then
-        anyTriggered = true
-        Logger.log(
-          "Reconnaissance trigger activated: " ..
-          reconEvent.type .. " at timestamp " ..
-          tostring(scheduledTimestamp)
+    if reconEntry.delay then
+      scheduledTimestamp = scheduledTimestamp + reconEntry.delay
+    end
+
+    if GameUtils.isAfterStartTime(scheduledTimestamp) then
+      anyTriggered = true
+      Logger.log(
+        "Air reconnaissance trigger activated: " ..
+        reconEntry.type .. " at timestamp " ..
+        tostring(scheduledTimestamp)
+      )
+
+      if operation.template then
+        local validPackages = processATOTemplateWithValidation(
+          config,
+          saveData,
+          contacts,
+          operation.template,
+          operation.template.isFirstWave
         )
 
-        if reconEvent.packageTemplate then
-          local validPackages = processATOTemplateWithValidation(
-            config,
-            saveData,
-            contacts,
-            reconEvent.packageTemplate,
-            reconEvent.packageTemplate.isFirstWave
+        if #validPackages > 0 then
+          local totalValidTargets = 0
+          local modifiedTemplate = Utils.deepCopy(operation.template)
+          modifiedTemplate.packages = {}
+
+          for _, validPackage in ipairs(validPackages) do
+            totalValidTargets = totalValidTargets + #(validPackage.target.list or {})
+            table.insert(modifiedTemplate.packages, validPackage)
+          end
+
+          Logger.log(
+            "Found " .. #validPackages .. " valid packages out of " ..
+            #operation.template.packages .. " total packages (" ..
+            totalValidTargets .. " targets)"
           )
 
-          if #validPackages > 0 then
-            local totalValidTargets = 0
-            local modifiedTemplate = Utils.deepCopy(reconEvent.packageTemplate)
-            modifiedTemplate.packages = {}
+          local success = insertATOWave(saveData, modifiedTemplate, reconEntry.type)
 
-            for _, validPackage in ipairs(validPackages) do
-              totalValidTargets = totalValidTargets + #(validPackage.target.list or {})
-              table.insert(modifiedTemplate.packages, validPackage)
-            end
-
+          if success then
+            DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
+            anyProcessed = true
             Logger.log(
-              "Found " .. #validPackages .. " valid packages out of " ..
-              #reconEvent.packageTemplate.packages .. " total packages (" ..
-              totalValidTargets .. " targets)"
+              "Dynamic ATO wave successfully inserted: " .. operation.template.name ..
+              " with " .. #validPackages .. " packages"
             )
-
-            local success = insertATOWave(saveData, modifiedTemplate)
-
-            if success then
-              reconEvent.executed = true
-              anyProcessed = true
-              Logger.log(
-                "Dynamic ATO wave successfully inserted: " .. reconEvent.packageTemplate.name ..
-                " with " .. #validPackages .. " packages"
-              )
-            else
-              Logger.error("Failed to insert dynamic ATO wave: " .. reconEvent.packageTemplate.name)
-            end
           else
-            Logger.log("No valid packages found, ATO generation skipped")
+            Logger.error("Failed to insert dynamic ATO wave: " .. operation.template.name)
           end
+        else
+          Logger.log("No valid packages found, ATO generation skipped")
         end
       end
     end
@@ -578,13 +571,13 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     return false
   end
 
-  -- Check if dynamicATO is configured and enabled
-  if not saveData.c.air.dynamicATO then
+  -- Check if dynamicOperations is configured and enabled
+  if not saveData.c.dynamicOperations then
     return false
   end
 
-  if not saveData.c.air.dynamicATO.enabled then
-    Logger.log("Dynamic ATO not enabled, skipping")
+  if not saveData.c.dynamicOperations.enabled then
+    Logger.log("Dynamic Operations not enabled, skipping")
     return false
   end
 
@@ -596,7 +589,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     return false
   end
 
-  saveData.c.air.dynamicATO.lastEvaluationTime = currentTime
+  saveData.c.dynamicOperations.lastEvaluationTime = currentTime
 
   -- Process reconnaissance schedule
   return processReconSchedule(config, saveData, contacts)

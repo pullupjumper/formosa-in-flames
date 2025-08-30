@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local Launcher = require("src.modules.launcher")
+local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
 ---@class DynamicFireSupportPlan
 local DynamicFireSupportPlan = {}
@@ -186,6 +187,9 @@ local function insertFSEM(saveData, newFSEM)
   -- Add new FSEM to the end of FSP sequence
   saveData.c.ground.FSP[newFSEM.name] = newFSEM
 
+  -- Register the generated operation name
+  DynamicOperationsUtils.registerGeneratedOperation("ground", newFSEM.name, saveData)
+
   Logger.log("Successfully inserted dynamic FSEM: " .. newFSEM.name .. ", FST count: " .. #newFSEM.FSTs)
   return true
 end
@@ -195,15 +199,21 @@ end
 ---@param saveData SBJ__SaveData
 ---@param fsemTemplate SBJ__FsemTemplate
 ---@param evaluatedTargets table<string, CMO__Contact[]>
+---@param reconType string Reconnaissance type from the recon entry
 ---@return boolean success
-local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedTargets)
+local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedTargets, reconType)
   -- Calculate FSEM execution time
   local currentTime = GameApi.ScenEdit_CurrentTime()
   local fsemStartTime = currentTime
 
+  -- Generate unique FSEM name based on template name
+  local fsemName = DynamicOperationsUtils.generateUniqueGroundOperationName(
+    fsemTemplate.name:match("([^/]+)") or fsemTemplate.name, reconType, saveData
+  )
+
   -- Create new FSEM structure
   local newFSEM = {
-    name = fsemTemplate.name,
+    name = fsemName,
     isActivated = true,
     isFinished = false,
     isFirstWave = fsemTemplate.isFirstWave,
@@ -266,15 +276,16 @@ end
 ---@param saveData SBJ__SaveData
 ---@param contacts CMO__Contact[]
 ---@param reconEntry SBJ__ReconScheduleEntry
+---@param operation table Ground operation from reconEntry
 ---@return boolean success
-local function processReconSchedule(config, saveData, contacts, reconEntry)
-  if not reconEntry.fsemTemplate or not reconEntry.fsemTemplate.FSTs then
-    Logger.error("Reconnaissance schedule entry missing FSEM template")
+local function processReconSchedule(config, saveData, contacts, reconEntry, operation)
+  if not operation.template or not operation.template.FSTs then
+    Logger.error("Ground operation missing FSEM template")
     return false
   end
 
   -- Create deep copy to avoid modifying original template
-  local copyFSTs = Utils.deepCopy(reconEntry.fsemTemplate.FSTs)
+  local copyFSTs = Utils.deepCopy(operation.template.FSTs)
 
   -- Create actual FSEM from template
   local evaluatedTargets = {}
@@ -282,7 +293,7 @@ local function processReconSchedule(config, saveData, contacts, reconEntry)
 
   -- Process FST templates one by one
   for _, fstTemplate in ipairs(copyFSTs) do
-    local fstTargets = processFST(config, saveData, contacts, fstTemplate, reconEntry.fsemTemplate.isFirstWave)
+    local fstTargets = processFST(config, saveData, contacts, fstTemplate, operation.template.isFirstWave)
 
     if fstTargets and #fstTargets >= fstTemplate.target.minTargetCount then
       evaluatedTargets[fstTemplate.name] = fstTargets
@@ -298,11 +309,11 @@ local function processReconSchedule(config, saveData, contacts, reconEntry)
   -- If valid targets exist, create and insert FSEM
   if hasValidTargets then
     -- Create a copy of fsemTemplate with the copied FSTs
-    local modifiedTemplate = Utils.deepCopy(reconEntry.fsemTemplate)
+    local modifiedTemplate = Utils.deepCopy(operation.template)
     modifiedTemplate.FSTs = copyFSTs
 
     return createFSEMFromTemplate(
-      config, saveData, modifiedTemplate, evaluatedTargets
+      config, saveData, modifiedTemplate, evaluatedTargets, reconEntry.type
     )
   else
     Logger.log("Insufficient targets for follow-up strikes, skipping FSEM creation")
@@ -318,39 +329,47 @@ end
 ---@param contacts CMO__Contact[] Contact data passed from event script
 ---@return boolean success Whether execution was successful
 function DynamicFireSupportPlan.execute(config, saveData, contacts)
-  -- Check if dynamic FSP feature is enabled
-  if not saveData.c.ground.dynamicFSP or not saveData.c.ground.dynamicFSP.enabled then
+  -- Check if dynamic operations feature is enabled
+  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.enabled then
     return false
   end
 
   local currentTime = GameApi.ScenEdit_CurrentTime()
   local hasExecutedAny = false
 
-  -- Process each entry in reconnaissance schedule
-  for _, reconEntry in ipairs(saveData.c.ground.dynamicFSP.reconSchedule) do
-    -- Check if already executed
-    if not reconEntry.executed then
-      local reconTime = Utils.parseDatetimeToTimestamp(reconEntry.time)
-      local triggerTime = reconTime + reconEntry.delay
+  -- Filter ground operations that need processing
+  local groundOperations = DynamicOperationsUtils.filterOperationsByType(
+    saveData.c.dynamicOperations.reconSchedule, "ground"
+  )
+  
+  if #groundOperations == 0 then
+    return false
+  end
 
-      -- Check if trigger time is reached (reconnaissance completed + delay)
-      if currentTime >= triggerTime then
-        Logger.log("Starting reconnaissance schedule processing: " ..
-          reconEntry.time .. " (type: " .. reconEntry.type .. ")")
+  -- Process each ground operation
+  for _, item in ipairs(groundOperations) do
+    local reconEntry = item.reconEntry
+    local operation = item.operation
+    
+    local reconTime = Utils.parseDatetimeToTimestamp(reconEntry.time)
+    local triggerTime = reconTime + reconEntry.delay
 
-        -- Process this reconnaissance schedule entry
-        local success = processReconSchedule(
-          config, saveData, contacts, reconEntry
-        )
+    -- Check if trigger time is reached (reconnaissance completed + delay)
+    if currentTime >= triggerTime then
+      Logger.log("Starting ground reconnaissance schedule processing: " ..
+        reconEntry.time .. " (type: " .. reconEntry.type .. ")")
 
-        if success then
-          -- Mark as executed to avoid repeated execution
-          reconEntry.executed = true
-          hasExecutedAny = true
-          Logger.log("Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time)
-        else
-          Logger.error("Failed to execute dynamic FSP, reconnaissance time: " .. reconEntry.time)
-        end
+      -- Process this reconnaissance schedule entry
+      local success = processReconSchedule(
+        config, saveData, contacts, reconEntry, operation
+      )
+
+      if success then
+        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
+        hasExecutedAny = true
+        Logger.log("Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time)
+      else
+        Logger.error("Failed to execute dynamic FSP, reconnaissance time: " .. reconEntry.time)
       end
     end
   end

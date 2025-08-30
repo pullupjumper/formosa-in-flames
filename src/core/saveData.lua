@@ -8,6 +8,7 @@ saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
 saveData.c.air.dynamicATO = {}
+saveData.c.dynamicOperations = {}
 saveData.c.ground = {}
 saveData.c.ground.mlrs = {}
 saveData.c.ground.srbm = {}
@@ -857,134 +858,102 @@ saveData.u.SIGINT.transmissions = {
   -- },
 }
 
-
--- Dynamic Fire Support Plan
-saveData.c.ground.dynamicFSP.enabled = true
-saveData.c.ground.dynamicFSP.reconSchedule = {
-  {
-    -- time = "2027-06-09 02:14:00",
-    time = "2027-06-09 01:00:00",
-    type = "satellite", -- Large-scale reconnaissance (satellite)
-    delay = 0,          -- Trigger assessment after 5 minutes
-    executed = false,   -- Execution status flag
-    fsemTemplate = {
-      name = "INFRASTRUCTURE/1",
-      strikeInterval = 0, -- 10-minute interval,
-      isFirstWave = true,
-      FSTs = config.c.FSEMTemplate.STRIKE_INFRASTRUCTURE_1
-    }
-  },
-  {
-    -- time = "2027-06-09 03:00:00",
-    time = "2027-06-09 02:14:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    fsemTemplate = {
-      name = "INFRASTRUCTURE/2",
-      strikeInterval = 0,
-      isFirstWave = false,
-      FSTs = config.c.FSEMTemplate.STRIKE_INFRASTRUCTURE_2
-    }
-  },
-  {
-    -- time = "2027-06-09 03:00:00",
-    time = "2027-06-09 02:14:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    fsemTemplate = {
-      name = "ANTISHIP/1",
-      strikeInterval = 0,
-      isFirstWave = false,
-      FSTs = config.c.FSEMTemplate.ANTISHIP
-    }
-  },
-  {
-    -- time = "2027-06-09 03:00:00",
-    time = "2027-06-09 02:14:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    fsemTemplate = {
-      name = "C2/1",
-      strikeInterval = 0,
-      isFirstWave = false,
-      FSTs = config.c.FSEMTemplate.STRIKE_C2
-    }
-  },
-  {
-    time = "2027-06-09 05:44:00",
-    type = "satellite",
-    delay = 180,
-    executed = false,
-    fsemTemplate = {
-      name = "HELIPAD/1",
-      strikeInterval = 0,
-      isFirstWave = true,
-      FSTs = config.c.FSEMTemplate.STRIKE_HELIPAD
-    }
-  },
-  {
-    time = "2027-06-09 08:04:00",
-    type = "satellite",
-    delay = 300,
-    executed = false,
-    fsemTemplate = {
-      name = "DYNAMIC/SATELLITE/BDA/2",
-      strikeInterval = 0, -- 15-minute interval,
-      isFirstWave = false,
-      FSTs = {}
-    }
-  },
-  {
-    time = "2027-06-09 11:25:00",
-    type = "satellite",
-    delay = 300,
-    executed = false,
-    fsemTemplate = {
-      name = "DYNAMIC/SATELLITE/BDA/2",
-      strikeInterval = 0, -- 15-minute interval,
-      isFirstWave = false,
-      FSTs = {}
-    }
-  }
+-- Dynamic Operations (unified reconnaissance schedule)
+saveData.c.dynamicOperations.enabled = true
+saveData.c.dynamicOperations.lastEvaluationTime = nil
+saveData.c.dynamicOperations.generatedOperations = {
+  air = {},   -- Track generated air operations
+  ground = {} -- Track generated ground operations
 }
-
-
-
--- Dynamic ATO Insertion
-saveData.c.air.dynamicATO.enabled = true
-saveData.c.air.dynamicATO.reconSchedule = {
-  -- Example reconnaissance schedule entry
-  ---@type SBJ__ATOTemplate
+saveData.c.dynamicOperations.reconSchedule = {
   {
     -- time = "2027-06-09 02:14:00",
     time = "2027-06-09 01:00:00",
-    type = "satellite", -- or "aircraft"
-    delay = 0,          -- evaluation delay in seconds
+    type = "satellite",
+    delay = 0,
     executed = false,
-    packageTemplate = {
-      name = "STRIKE/AB/W/1",
-      targetType = "STRIKE",
-      isFirstWave = true,
-      strikeInterval = 30 * 60,
-      ---@type SBJ__ATOPackage[]
-      packages = config.c.packageTemplate.STRIKE_AB_W_1
+    operations = {
+      {
+        type = "air",
+        executed = false,
+        template = {
+          name = "STRIKE/AB/W/1",
+          targetType = "STRIKE",
+          isFirstWave = true,
+          strikeInterval = 30 * 60,
+          packages = config.c.packageTemplate.STRIKE_AB_W_1
+        }
+      },
+      {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "INFRASTRUCTURE/1",
+          strikeInterval = 0,
+          isFirstWave = true,
+          FSTs = config.c.FSEMTemplate.STRIKE_INFRASTRUCTURE_1
+        }
+      },
+      {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "HELIPAD/1",
+          strikeInterval = 0,
+          isFirstWave = true,
+          FSTs = config.c.FSEMTemplate.STRIKE_HELIPAD
+        }
+      }
     }
   },
   {
     -- time = "2027-06-09 03:00:00",
     time = "2027-06-09 02:14:00",
-    ype = "satellite", -- or "aircraft"
-    delay = 0,         -- evaluation delay in seconds
+    type = "satellite",
+    delay = 0,
     executed = false,
-    packageTemplate = {
-      name = "STRIKE/AB/W/2",
-      targetType = "STRIKE",
-      isFirstWave = true,
-      strikeInterval = 30 * 60,
-      packages = config.c.packageTemplate.STRIKE_AB_W_2
+    operations = {
+      {
+        type = "air",
+        executed = false,
+        template = {
+          name = "STRIKE/AB/W/2",
+          targetType = "STRIKE",
+          isFirstWave = false,
+          strikeInterval = 30 * 60,
+          packages = config.c.packageTemplate.STRIKE_AB_W_2
+        }
+      },
+      {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "INFRASTRUCTURE/2",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSEMTemplate.STRIKE_INFRASTRUCTURE_2
+        }
+      },
+      {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "ANTISHIP/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSEMTemplate.ANTISHIP
+        }
+      },
+      {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "C2/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSEMTemplate.STRIKE_C2
+        }
+      }
     }
   },
   {
@@ -993,12 +962,18 @@ saveData.c.air.dynamicATO.reconSchedule = {
     type = "satellite",
     delay = 0,
     executed = false,
-    packageTemplate = {
-      name = "AIR INTERCEPT/E",
-      targetType = "STRIKE",
-      isFirstWave = true,
-      strikeInterval = 30 * 60,
-      packages = config.c.packageTemplate.AIR_INTERCEPT_E
+    operations = {
+      {
+        type = "air",
+        executed = false,
+        template = {
+          name = "AIR INTERCEPT/E",
+          targetType = "STRIKE",
+          isFirstWave = true,
+          strikeInterval = 30 * 60,
+          packages = config.c.packageTemplate.AIR_INTERCEPT_E
+        }
+      }
     }
   },
   {
@@ -1006,24 +981,22 @@ saveData.c.air.dynamicATO.reconSchedule = {
     type = "satellite",
     delay = 0,
     executed = false,
-    packageTemplate = {}
+    operations = {}
   },
   {
     time = "2027-06-09 08:04:00",
     type = "satellite",
     delay = 0,
     executed = false,
-    packageTemplate = {}
+    operations = {}
   },
   {
     time = "2027-06-09 11:25:00",
     type = "satellite",
     delay = 0,
     executed = false,
-    packageTemplate = {}
+    operations = {}
   }
 }
-saveData.c.air.dynamicATO.generatedWaves = {}
-saveData.c.air.dynamicATO.lastEvaluationTime = nil
 
 return saveData

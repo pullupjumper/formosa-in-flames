@@ -24,15 +24,22 @@ if saveData == nil then
   return
 end
 
--- 動態火力支援計畫 - 檢查偵察時程並執行BDA評估
-if saveData.c.ground.dynamicFSP and saveData.c.ground.dynamicFSP.enabled then
+-- 動態作戰計畫 - 統一處理偵察排程和各種打擊手段
+if saveData.c.dynamicOperations and saveData.c.dynamicOperations.enabled then
+  -- 執行地面火力支援作戰
   DynamicFireSupportPlan.execute(config, saveData, contacts)
-end
-
--- 動態ATO插入 - 根據偵察結果自動生成和插入空中任務
-if saveData.c.air.dynamicATO and saveData.c.air.dynamicATO.enabled then
+  -- 執行空中作戰任務
   DynamicATOInsertion.process(config, saveData, contacts)
 end
+
+-- 保留舊版本的相容性支援
+-- if saveData.c.ground.dynamicFSP and saveData.c.ground.dynamicFSP.enabled then
+--   DynamicFireSupportPlan.execute(config, saveData, contacts)
+-- end
+
+-- if saveData.c.air.dynamicATO and saveData.c.air.dynamicATO.enabled then
+--   DynamicATOInsertion.process(config, saveData, contacts)
+-- end
 
 if saveData.c.recon.isActivated then
   Recon.handleReconQueue(saveData)
