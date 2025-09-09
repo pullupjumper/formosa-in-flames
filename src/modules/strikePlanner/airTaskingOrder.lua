@@ -37,8 +37,6 @@ local function calculateLoadoutStartTime(packageData)
 
   -- 取得 package 層級的 timeToReady
   local timeToReady = packageData.timeToReady or (9 * 60)
-  -- local timeToReadySeconds = timeToReady * 60
-  -- local loadoutStartTime = earliestStartTime - timeToReadySeconds
   local loadoutStartTime = earliestStartTime - timeToReady
 
   return loadoutStartTime
@@ -226,6 +224,10 @@ local function createMission(packageData, role)
       mission['OnDeactivateRTB'] = true
       mission['TakeOffTime'] = packageData[role].startTime
       mission['endtime'] = packageData[role].endTime
+
+      if packageData[role].timeOnStation then
+        mission['TimeOnTargetStation'] = packageData[role].timeOnStation
+      end
     end
   end
 
@@ -298,9 +300,22 @@ local function processPackage(config, saveData, packageData)
 
   if packageData.reconUAV then
     if not packageData.reconUAV.takeoffTime then
+      local takeoffTime = 0
+      local missionStartTime = 0
+
       if packageData.reconUAV.unitDBID == config.platform.BZK005 then
-        local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 10 * 60
-        local missionStartTime = takeoffTime + 30 * 60
+        if packageData.reconUAV.missionName == 'RECON/1' then
+          takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
+              config.c.ground.srbm.reloadTime - config.c.recon.flightTime.BZK005_RECON_1
+          missionStartTime = takeoffTime + config.c.recon.flightTime.BZK005_RECON_1
+        elseif packageData.reconUAV.missionName == 'RECON/2' then
+          takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
+              config.c.ground.srbm.reloadTime - config.c.recon.flightTime.BZK005_RECON_2
+          missionStartTime = takeoffTime + config.c.recon.flightTime.BZK005_RECON_2
+        end
+        -- takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm
+        --     .reloadTime - 10 * 60
+        -- local missionStartTime = takeoffTime + 30 * 60
         packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
         packageData.reconUAV.missionStartTime = os.date("!%Y-%m-%d %H:%M:%S", missionStartTime)
         Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
@@ -308,7 +323,9 @@ local function processPackage(config, saveData, packageData)
       end
 
       if packageData.reconUAV.unitDBID == config.platform.H6N then
-        local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 30 * 60
+        -- local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 30 * 60
+        takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
+            config.c.ground.srbm.reloadTime - config.c.recon.flightTime.H6N_RECON
         packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
         Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
       end

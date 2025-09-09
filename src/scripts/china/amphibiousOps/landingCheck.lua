@@ -63,42 +63,21 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
       saveData.c.PHIBOP.amphibiousAssaultStartTime = currentTime
       -- saveData.c.air.ATO['CAS/N/1'].isActivated = true
       local time = os.date("%Y-%m-%d %H:%M:%S", currentTime)
-      table.insert(saveData.c.air.dynamicATO.reconSchedule, {
+      table.insert(saveData.c.dynamicOperations.reconSchedule, {
         time = time,
         type = "reconUAV",
         delay = 0,
         executed = false,
-        packageTemplate = {
-          name = "'CAS/N/1",
-          targetType = "infantry",
-          isFirstWave = true,
-          strikeInterval = 0 * 60,
-          packages = {
-            {
-              timeToReady = config.readytime,
-              striker = {
-                baseGUID = config.base.SHUIMEN_AAB,
-                weaponDBID = config.weapon.LS_6_500,
-                unitDBID = config.platform.J10C,
-                unitCount = 8,
-                loadoutID = config.loadout.J10C_LS_6_500,
-                -- startTime = '2027-06-09 01:30:00',
-                missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
-                emcon = 'Radar=Passive;OECM=Active'
-              },
-              escort = nil,
-              wildWeasel = nil,
-              jammer = nil,
-              tanker = nil,
-              reconUAV = nil,
-              target = {
-                list = {},
-                objs = nil,
-                areas = { config.c.area.LANDING_TAOYUAN },
-                filterNames = { 'findInfantry' },
-                contactAge = 60 * 60,
-                minTargetCount = 1
-              },
+        operations = {
+          {
+            type = "air",
+            executed = false,
+            template = {
+              name = "CAS/N/1",
+              targetType = "infantry",
+              isFirstWave = true,
+              strikeInterval = 0 * 60,
+              packages = config.c.packageTemplate.CAS_N_1
             }
           }
         }

@@ -143,6 +143,7 @@ config.c.area = {
   TARGET_AREA_JIASHAN_PROSECUTION = { 'rp-163356', 'rp-163357', 'rp-163358', 'rp-163359', },
   TARGET_AREA_JIASHAN_PATROL = { 'rp-163360', 'rp-163161', },
   AAR_PATROL = { 'RP-44509', 'RP-44510', 'RP-44511', 'RP-44512', },
+  AAR_PATROL_2 = { 'RP-181270', 'RP-181271', 'RP-181272', 'RP-181273', },
 }
 
 
@@ -199,7 +200,10 @@ config.base = {
   LIUAN_AB               = 'X58F5H-0HMRAQFR07T2V', -- Liuan AB
   PINGTAN_PORT           = '6Z8LM5-0HMMNGU6J8P2N', -- Pingtan Port (Amphibious Ops)
   KWANG_CHOW_WAN_NB      = '6Z8LM5-0HMJV6AONGLAU', -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
-
+  TAIZHOU_AB             = 'IC8B0X-0HNFDVSDK067T', -- Taizhou AB
+  WUYISHAN_AB            = 'IC8B0X-0HNFDVSDK0AM9', -- Wuyishan AB
+  RUGOA_AB               = 'X58F5H-0HN201E9DHM1C', -- Rugoa AB
+  XIAHGTANG_AB           = '6Z8LM5-0HMIJ7B89707I', -- Xiahgtang AB (PLAAF)
   -- Taiwan Bases
   CHING_CHUANG_KANG_AB   = '6Z8LM5-0HMIHS2L949R0', -- Ching Chuang Kang AB (Taiwan)
   CHIAYI_AB              = '6Z8LM5-0HMIJ3QGCHSUB', -- Chiayi AB (Taiwan)
@@ -222,6 +226,7 @@ config.base = {
 }
 
 config.platform = {
+  J16D = 4632,
   TYPE_726A = 2149,
   Z18 = 3708,
   TYPE_724 = 2511,
@@ -344,6 +349,8 @@ config.loadout = {
   IL76_TRANSPORT = 25504,
   GJ11_RECON = 27825,
   J16_AKD88 = 26233,
+  J16_YJ91 = 21747,
+  J16D_OECM = 25444,
   J20_PL15 = 28027,
   SU30_YJ91 = 25378,
   Y8Q_ASW = 27636,
@@ -482,9 +489,27 @@ config.c.IADS.C2Settings = {
 }
 
 -- Comms Jamming
-config.c.commsJamming.limit = 12
-config.c.commsJamming.range = 150
+config.c.commsJamming.limit = 6
+config.c.commsJamming.range = 75
 config.c.commsJamming.initialComms = -20
+config.c.commsJamming.baseJammingPower = -120
+config.c.commsJamming.distanceExponent = 1.04
+config.c.commsJamming.effectivenessFormula = { base = 1.9, range = 1.8 }
+config.c.commsJamming.aewSupport = {
+  close = 400,  -- < 100nm
+  medium = 350, -- < 200nm
+  far = 250,    -- < 300nm
+  distant = 150 -- < 400nm
+}
+config.c.commsJamming.recoveryTime = { min = 15, max = 25 }
+config.c.commsJamming.jammingTime = { min = 5, max = 10 }
+config.c.commsJamming.cooldownTime = { min = -5, max = -1 }
+config.c.commsJamming.randomVariance = {
+  close = { min = -1, max = 1 },
+  medium = { min = -3, max = 3 },
+  far = { min = -6, max = 6 },
+  distant = { min = -10, max = 10 }
+}
 
 -- GPS Jamming
 config.c.GPSJamming.jammers = {
@@ -840,26 +865,93 @@ config.c.recon.bases = {
 config.c.recon.contactAge = 15 * 60
 config.c.recon.courses = {
   WZ8 = {
+    -- {
+    --   { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- },
+    -- {
+    --   { lat = 'N 25.08.36', lon = 'E 122.40.26', desiredAltitude = 30480, desiredSpeed = 3300 },
+    --   { lat = 'N 21.21.28', lon = 'E 121.20.36', desiredAltitude = 30480, desiredSpeed = 3300 },
+    -- },
     {
-      { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
-    },
-    {
-      { lat = 'N 25.08.36', lon = 'E 122.40.26', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 21.21.28', lon = 'E 121.20.36', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.59.45', lon = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.01.38', lon = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 21.55.32', lon = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 22.41.05', lon = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 22.57.13', lon = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 23.28.13', lon = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 24.15.54', lon = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
+      { lat = 'N 25.14.02', lon = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
     }
   },
   H6N = {
     { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
     { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
   }
+}
+config.c.recon.template = {
+  BZK005_RECON_1 = {
+    baseGUID = config.base.LONGTIAN_AAB,
+    unitDBID = config.platform.BZK005,
+    unitGUID = nil,
+    missionName = 'RECON/1',
+    course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
+    unitCount = 1,
+    -- takeoffTime = '2027-06-09 01:00:00',
+    takeoffTime = nil,
+    -- missionStartTime = '2027-06-09 01:30:00',
+    missionStartTime = nil,
+  },
+  BZK005_RECON_2 = {
+    baseGUID = config.base.SHANTOU_WAISHA_AB,
+    unitDBID = config.platform.BZK005,
+    unitGUID = nil,
+    missionName = 'RECON/2',
+    course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
+    unitCount = 1,
+    -- takeoffTime = '2027-06-09 01:00:00',
+    takeoffTime = nil,
+    -- missionStartTime = '2027-06-09 01:30:00',
+    missionStartTime = nil,
+  },
+  -- WZ8_RECON_EAST_WATER = {
+  --   baseGUID = config.base.LIUAN_AB,
+  --   unitDBID = config.platform.H6N,
+  --   unitGUID = nil,
+  --   missionName = nil,
+  --   course = config.c.recon.courses.H6N,
+  --   unitCount = 1,
+  --   -- takeoffTime = '2027-06-09 01:20:00',
+  --   -- takeoffTime = '2027-06-09 01:00:00',
+  --   missionStartTime = nil,
+  --   -- hasLaunched = false,
+  --   isTracking = true
+  -- },
+  WZ8_RECON_ISLAND = {
+    baseGUID = config.base.LIUAN_AB,
+    unitDBID = config.platform.H6N,
+    unitGUID = nil,
+    missionName = nil,
+    course = config.c.recon.courses.H6N,
+    unitCount = 1,
+    -- takeoffTime = '2027-06-09 01:20:00',
+    -- takeoffTime = '2027-06-09 01:00:00',
+    missionStartTime = nil,
+    -- hasLaunched = false,
+    isTracking = true
+  },
+}
+config.c.recon.flightTime = {
+  BZK005_RECON_1 = 60 * 60,
+  BZK005_RECON_2 = 120 * 60,
+  H6N_RECON = 65 * 60,
 }
 
 -- Aircraft deployment
@@ -891,7 +983,16 @@ config.c.air.landBased.deployedACs = {
         loadouts = {
           { loadoutId = config.loadout.J16_AKD88, num = 24 },
         }
-      }
+      },
+      {
+        side = 'China',
+        type = 'Air',
+        dbid = config.platform.BZK005,
+        name = '60th Det, PLARF UAV Reg',
+        loadouts = {
+          { loadoutId = config.loadout.BZK005_RECON, num = 6 },
+        }
+      },
     },
     loadouts = {
       { loadoutId = config.loadout.J16_AKD88, num = 24 }, --AKD-88 X 2
@@ -996,7 +1097,7 @@ config.c.air.landBased.deployedACs = {
         side = 'China',
         type = 'Air',
         dbid = config.platform.BZK005,
-        name = 'PLARF UAV Reg',
+        name = '62nd Det, PLARF UAV Reg',
         loadouts = {
           { loadoutId = config.loadout.BZK005_RECON, num = 6 },
         }
@@ -1070,7 +1171,7 @@ config.c.air.landBased.deployedACs = {
         dbid = config.platform.HY6U_BADGER,
         name = '23rd Air Reg',
         loadouts = {
-          { loadoutId = config.loadout.HY6U_AAR, num = 3, missionName = 'AAR' },
+          { loadoutId = config.loadout.HY6U_AAR, num = 8, },
         }
       },
       {
@@ -1140,6 +1241,80 @@ config.c.air.landBased.deployedACs = {
       }
     }
   },
+  {
+    name = 'Taizhou AB (PLAAF)',
+    baseGUID = config.base.TAIZHOU_AB,
+    embarkedUnits = {
+      {
+        side = 'China',
+        type = 'Air',
+        dbid = config.platform.SU30,
+        name = '94th Air Bde',
+        loadouts = {
+          { loadoutId = config.loadout.SU30_YJ91, num = 12 },
+        }
+      }
+    },
+    loadouts = {
+      { loadoutId = config.loadout.SU30_YJ91, num = 12 }, --YJ-91 X 4
+    }
+  },
+  {
+    name = 'Rugoa AB (PLAAF)',
+    baseGUID = config.base.RUGOA_AB,
+    embarkedUnits = {
+      {
+        side = 'China',
+        type = 'Air',
+        dbid = config.platform.J16,
+        name = '7th Air Bde',
+        loadouts = {
+          { loadoutId = config.loadout.J16_AKD88, num = 12 },
+          { loadoutId = config.loadout.J16_YJ91,  num = 12 },
+        }
+      }
+    },
+    loadouts = {
+      { loadoutId = config.loadout.J16_AKD88, num = 12 }, --AKD-88 X 4
+      { loadoutId = config.loadout.J16_YJ91,  num = 12 }, --YJ-91 X 4
+    }
+  },
+  {
+    name = 'Nanchang Xiangtang AB (PLAAF)',
+    baseGUID = config.base.XIAHGTANG_AB,
+    embarkedUnits = {
+      {
+        side = 'China',
+        type = 'Air',
+        dbid = config.platform.J16D,
+        name = '40th Air Bde',
+        loadouts = {
+          { loadoutId = config.loadout.J16D_OECM, num = 8 },
+        }
+      }
+    },
+    loadouts = {
+      { loadoutId = config.loadout.J16D_OECM, num = 8 },
+    }
+  }
+  -- {
+  --   name = 'Wuyishan AB',
+  --   baseGUID = config.base.WUYISHAN_AB,
+  --   embarkedUnits = {
+  --     {
+  --       side = 'China',
+  --       type = 'Air',
+  --       dbid = config.platform.J20,
+  --       name = '41st Air Bde',
+  --       loadouts = {
+  --         { loadoutId = config.loadout.J20_PL15, num = 12 },
+  --       }
+  --     }
+  --   },
+  --   loadouts = {
+  --     { loadoutId = config.loadout.J20_PL15, num = 12 }, --PL-15 X 4
+  --   }
+  -- }
 }
 
 -- Amphibious ops
@@ -2174,7 +2349,6 @@ config.c.subSurface.slcm.randomRadius = 20
 config.c.repairRunway.percentagePerHour = 3
 
 
-
 config.c.FSEMTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
@@ -2431,25 +2605,8 @@ config.c.FSEMTemplate = {
       target = {
         list = {},
         objs = {
-          { baseName = 'Guiren AAB',  subTypes = { 'Helipad' } },
-          { baseName = 'Longtan AAB', subTypes = { 'Helipad' } },
-        },
-        areas = {},
-        filterNames = nil,
-        contactAge = config.c.ground.glcm.contactAge,
-        minTargetCount = 1,
-        ammoPerTarget = 2
-      },
-    },
-    {
-      name = 'EMERGENCY HIGHWAY STRIP',
-      wpnSystem = 'GLCM',
-      batteries = {
-        { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK', weaponDBID = config.weapon.CJ10 }
-      },
-      target = {
-        list = {},
-        objs = {
+          { baseName = 'Guiren AAB',                       subTypes = { 'Helipad' } },
+          { baseName = 'Longtan AAB',                      subTypes = { 'Helipad' } },
           { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
           { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
           { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
@@ -2461,7 +2618,7 @@ config.c.FSEMTemplate = {
         ammoPerTarget = 4
       },
     },
-  }
+  },
 }
 
 config.c.packageTemplate = {
@@ -2486,7 +2643,7 @@ config.c.packageTemplate = {
         loadoutID = config.loadout.J20_PL15,
         -- startTime = '2027-06-09 01:05:00',
         missionParams = {
-          name = 'SWEAP/AB/W/1',
+          name = 'SWEEP/AB/W/1',
           type = 'patrol',
           opts = {
             type = 'aaw',
@@ -2537,18 +2694,7 @@ config.c.packageTemplate = {
         emcon = 'Radar=Passive;OECM=Active'
       },
       tanker = nil,
-      reconUAV = {
-        baseGUID = config.c.recon.bases.BZK005.guid,
-        unitDBID = config.platform.BZK005,
-        unitGUID = nil,
-        missionName = 'RECON/1',
-        course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
-        unitCount = 1,
-        -- takeoffTime = '2027-06-09 01:00:00',
-        takeoffTime = nil,
-        -- missionStartTime = '2027-06-09 01:30:00',
-        missionStartTime = nil,
-      },
+      reconUAV = config.c.recon.template.BZK005_RECON_1,
       target = {
         list = {},
         objs = {
@@ -2580,7 +2726,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
         missionParams = {
-          name = 'SWEAP/AB/C',
+          name = 'SWEEP/AB/C',
           type = 'patrol',
           opts = {
             type = 'aaw',
@@ -2661,7 +2807,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
         missionParams = {
-          name = 'SWEAP/AB/N/1',
+          name = 'SWEEP/AB/N/1',
           type = 'patrol',
           opts = {
             type = 'aaw',
@@ -2803,7 +2949,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
         missionParams = {
-          name = 'SWEAP/AB/S/2',
+          name = 'SWEEP/AB/S/2',
           type = 'patrol',
           opts = {
             type = 'aaw',
@@ -2866,6 +3012,124 @@ config.c.packageTemplate = {
         minTargetCount = 1
       },
       hasLaunched = false
+    }
+  },
+  STRIKE_AB_W_AAR_1 = {
+    {
+      timeToReady = config.readytime,
+      striker = {
+        baseGUID = config.base.RUGOA_AB,
+        weaponDBID = config.weapon.AKD88,
+        unitDBID = config.platform.J16,
+        unitCount = 12,
+        loadoutID = config.loadout.J16_AKD88,
+        startTime = nil,
+        missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
+        emcon = 'Radar=Passive;OECM=Active'
+      },
+      escort = {
+        baseGUID = config.base.WUHU_AB,
+        weaponDBID = config.weapon.PL15,
+        unitDBID = config.platform.J20,
+        unitCount = 4,
+        loadoutID = config.loadout.J20_PL15,
+        missionParams = {
+          name = 'SWEEP/AB/N/1',
+          type = 'patrol',
+          opts = {
+            type = 'aaw',
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = config.c.area.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = config.c.area.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { 'AAR/E' },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 2,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = 'Radar=Passive;OECM=Active'
+      },
+      wildWeasel = {
+        baseGUID = config.base.RUGOA_AB,
+        weaponDBID = config.weapon.YJ91_ASM,
+        unitDBID = config.platform.J16,
+        unitCount = 4,
+        loadoutID = config.loadout.J16_YJ91,
+        missionParams = {
+          name = 'SEAD/AB/N/1',
+          type = 'patrol',
+          opts = {
+            type = 'sead',
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = config.c.area.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = config.c.area.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { 'AAR/E' },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 2,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = 'Radar=Passive;OECM=Active'
+      },
+      jammer = {
+        baseGUID = config.base.XIAHGTANG_AB,
+        unitDBID = config.platform.J16D,
+        weaponDBID = 0,
+        unitCount = 1,
+        loadoutID = nil,
+        missionParams = {
+          name = 'JAMMING/AB/N/1',
+          type = 'support',
+          opts = {
+            zone = config.c.area.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { 'AAR/E' },
+            FuelQtyToStartLookingForTanker_airborne = 90,
+            MaxReceiversInQueuePerTanker_airborne = 2,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = 'Radar=Passive;OECM=Active'
+      },
+      tanker = {
+        baseGUID = config.base.SHUIMEN_AAB,
+        unitDBID = config.platform.HY6U_BADGER,
+        weaponDBID = 0,
+        unitCount = 4,
+        loadoutID = nil,
+        missionParams = {
+          name = 'AAR/E',
+          type = 'support',
+          opts = {
+            OneThirdRule = false,
+            FlightSize = 1,
+            zone = config.c.area.AAR_PATROL_2
+          }
+        },
+        emcon = 'Radar=Passive;OECM=Passive'
+      },
+      reconUAV = nil,
+      target = {
+        list = {},
+        objs = {
+          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } }
+        },
+        areas = { config.c.area.AREA_OF_OPS_NORTH },
+        filterNames = {},
+        contactAge = 60 * 60,
+        minTargetCount = 1
+      },
     }
   },
   AIR_INTERCEPT_E = {

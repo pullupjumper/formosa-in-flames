@@ -1,5 +1,4 @@
 local ShipMovement = require("src.modules.landingOps.shipMovement")
-local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
@@ -103,8 +102,9 @@ local function initCommsJammers(config, saveData, side)
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    if actualUnit and (actualUnit.dbid == config.platform.Y9 or actualUnit.dbid == config.platform.J15D) then
-      -- table.insert(saveData.c.commsJamming.jammers, { guid = actualUnit.guid })
+    if actualUnit and (actualUnit.dbid == config.platform.Y9 or
+          actualUnit.dbid == config.platform.J15D or
+          actualUnit.dbid == config.platform.J16D) then
       saveData.c.commsJamming.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,

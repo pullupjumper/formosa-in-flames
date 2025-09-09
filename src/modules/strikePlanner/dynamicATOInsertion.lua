@@ -10,10 +10,10 @@ local DynamicATOInsertion = {}
 
 -- Time constants
 local TIME_CONSTANTS = {
-  ESCORT_ADVANCE_TIME = 20 * 60, -- 護航提前20分鐘
-  MISSION_DURATION = 40 * 60,    -- 一般任務持續40分鐘
-  TANKER_DURATION = 120 * 60,    -- 加油機任務持續120分鐘
-  TANKER_ADVANCE_TIME = 0 * 60   -- 加油機提前0分鐘
+  ESCORT_ADVANCE_TIME = 20 * 60, -- Escort advance 20 minutes
+  MISSION_DURATION = 40 * 60,    -- General mission duration 40 minutes
+  TANKER_DURATION = 120 * 60,    -- Tanker mission duration 120 minutes
+  TANKER_ADVANCE_TIME = 0 * 60   -- Tanker advance 0 minutes
 }
 
 -- Local helper functions (private)
@@ -104,9 +104,35 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   return availableCount
 end
 
+---Validate aircraft availability for a specific role
+---@param roleData table Role configuration (striker/escort/wildWeasel)
+---@param roleName string Role name for error messages
+---@param packageIndex number Package index for error messages
+---@param assignedAircraft table<string, number> Currently assigned aircraft
+---@return boolean isValid, string|nil errorMessage
+local function validateAircraftRole(roleData, roleName, packageIndex, assignedAircraft)
+  if not roleData then
+    return true, nil
+  end
+
+  local baseGUID = roleData.baseGUID
+  local requiredCount = roleData.unitCount or 0
+  local assignedCount = assignedAircraft[baseGUID] or 0
+  local requiredUnitDBID = roleData.unitDBID
+
+  local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
+  if availableCount - assignedCount < requiredCount then
+    return false, "Package " .. packageIndex .. " insufficient " .. roleName .. " aircraft at base " ..
+        (baseGUID or "unknown") .. " (available: " .. availableCount ..
+        ", assigned: " .. assignedCount .. ", required: " .. requiredCount .. ")"
+  end
+
+  return true, nil
+end
+
 ---Check if individual package has sufficient targets and resources
 ---@param packageData table Package configuration
----@param packageTargets CMO__Contact[] Targets found for this package
+---@param packageTargets string[] Target GUIDs found for this package
 ---@param packageIndex number Index of the package
 ---@param assignedAircraft table<string, number> Currently assigned aircraft
 ---@return boolean isValid, string reason
@@ -124,48 +150,17 @@ local function validateIndividualPackage(packageData, packageTargets, packageInd
         targetCount .. " < " .. minTargetCount .. ")"
   end
 
-  -- Check striker availability
-  if packageData.striker then
-    local baseGUID = packageData.striker.baseGUID
-    local requiredCount = packageData.striker.unitCount or 0
-    local assignedCount = assignedAircraft[baseGUID] or 0
-    local requiredUnitDBID = packageData.striker.unitDBID
+  -- Check aircraft availability for all roles
+  local roles = {
+    { data = packageData.striker,    name = "striker" },
+    { data = packageData.escort,     name = "escort" },
+    { data = packageData.wildWeasel, name = "SEAD" }
+  }
 
-    local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
-    if availableCount - assignedCount < requiredCount then
-      return false, "Package " .. packageIndex .. " insufficient striker aircraft at base " ..
-          (baseGUID or "unknown") .. " (available: " .. availableCount ..
-          ", assigned: " .. assignedCount .. ", required: " .. requiredCount .. ")"
-    end
-  end
-
-  -- Check escort availability
-  if packageData.escort then
-    local baseGUID = packageData.escort.baseGUID
-    local requiredCount = packageData.escort.unitCount or 0
-    local assignedCount = assignedAircraft[baseGUID] or 0
-    local requiredUnitDBID = packageData.escort.unitDBID
-
-    local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
-    if availableCount - assignedCount < requiredCount then
-      return false, "Package " .. packageIndex .. " insufficient escort aircraft at base " ..
-          (baseGUID or "unknown") .. " (available: " .. availableCount ..
-          ", assigned: " .. assignedCount .. ", required: " .. requiredCount .. ")"
-    end
-  end
-
-  -- Check wildWeasel availability
-  if packageData.wildWeasel then
-    local baseGUID = packageData.wildWeasel.baseGUID
-    local requiredCount = packageData.wildWeasel.unitCount or 0
-    local assignedCount = assignedAircraft[baseGUID] or 0
-    local requiredUnitDBID = packageData.wildWeasel.unitDBID
-
-    local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
-    if availableCount - assignedCount < requiredCount then
-      return false, "Package " .. packageIndex .. " insufficient SEAD aircraft at base " ..
-          (baseGUID or "unknown") .. " (available: " .. availableCount ..
-          ", assigned: " .. assignedCount .. ", required: " .. requiredCount .. ")"
+  for _, role in ipairs(roles) do
+    local isValid, errorMessage = validateAircraftRole(role.data, role.name, packageIndex, assignedAircraft)
+    if not isValid then
+      return false, errorMessage
     end
   end
 
@@ -179,7 +174,7 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param packageIndex number Package index for logging
----@return CMO__Contact[] targets
+---@return string[] targets Target GUIDs
 local function processDynamicTargets(packageData, contacts, config, saveData, packageIndex)
   local strikeTargets = {}
 
@@ -221,7 +216,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param isFirstWave boolean
 ---@param packageIndex number Package index for logging
----@return CMO__Contact[] targets
+---@return string[] targets Target GUIDs
 local function processFixedTargets(packageData, saveData, isFirstWave, packageIndex)
   local strikeTargets = {}
 
@@ -252,7 +247,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param isFirstWave boolean
 ---@param packageIndex number Package index for logging
----@return CMO__Contact[] targets Found targets for this package
+---@return string[] targets Target GUIDs found for this package
 local function processPackageTargets(packageData, contacts, config, saveData, isFirstWave, packageIndex)
   local strikeTargets = {}
 
@@ -306,6 +301,65 @@ local function processATOTemplateWithValidation(config, saveData, contacts, atoT
   return validPackages
 end
 
+---Calculate support advance time based on furthest base distance
+---@param packageData table Package configuration containing all support roles and targets
+---@return number advanceTime Time in seconds based on furthest support base
+local function calculateSupportAdvanceTime(packageData)
+  -- Fallback to constant if calculation fails
+  if not packageData or not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
+    Logger.log("Invalid support advance time calculation - missing packageData or targets")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  local targetGUIDs = packageData.target.list
+
+  -- Collect all support bases
+  local supportBases = {}
+  if packageData.escort and packageData.escort.baseGUID then
+    table.insert(supportBases, { role = "escort", baseGUID = packageData.escort.baseGUID })
+  end
+  if packageData.wildWeasel and packageData.wildWeasel.baseGUID then
+    table.insert(supportBases, { role = "wildWeasel", baseGUID = packageData.wildWeasel.baseGUID })
+  end
+  if packageData.jammer and packageData.jammer.baseGUID then
+    table.insert(supportBases, { role = "jammer", baseGUID = packageData.jammer.baseGUID })
+  end
+
+  -- If no support bases found, return default
+  if #supportBases == 0 then
+    Logger.log("No support bases found for advance time calculation")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  -- Find the furthest base
+  local maxDistance = 0
+  local furthestBase = nil
+
+  for _, base in ipairs(supportBases) do
+    local distance = GameApi.Tool_Range(base.baseGUID, targetGUIDs[1])
+    if distance and distance > maxDistance then
+      maxDistance = distance
+      furthestBase = base
+    end
+  end
+
+  -- Validate distance calculation
+  if not furthestBase or maxDistance <= 0 then
+    Logger.log("Invalid distance calculated between support bases and target")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
+  local flightTime = (maxDistance / 480) * 3600
+
+  Logger.log(string.format(
+    "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
+    flightTime / 60, maxDistance, furthestBase.role
+  ))
+
+  return math.ceil(flightTime) -- Round up to nearest second
+end
+
 ---Calculate mission timing for a package
 ---@param packageData table Package configuration
 ---@param packageIndex number Index of the package
@@ -318,9 +372,13 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   -- Calculate striker timing
   if not packageData.striker.startTime then
     if packageIndex == 1 then
-      -- 檢查是否有支援角色
+      -- Check if there are support roles
       local hasSupportRoles = packageData.escort or packageData.wildWeasel or packageData.jammer
-      local advanceTime = hasSupportRoles and TIME_CONSTANTS.ESCORT_ADVANCE_TIME or 0
+      local advanceTime = 0
+
+      if hasSupportRoles then
+        advanceTime = calculateSupportAdvanceTime(packageData)
+      end
 
       ---@type string
       timing.strikerStart = os.date(
@@ -346,22 +404,67 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   return timing
 end
 
+---Calculate striker flight time to target
+---@param packageData table Package data containing striker and target info
+---@return number flightTime Flight time in seconds
+local function calculateStrikerFlightTime(packageData)
+  if not packageData.striker or not packageData.striker.baseGUID or
+      not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
+    Logger.log("Invalid striker flight time calculation - using fallback duration")
+    return TIME_CONSTANTS.MISSION_DURATION -- fallback to constant
+  end
+
+  local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1])
+  if not distance or distance <= 0 then
+    Logger.log("Invalid distance calculated for striker flight time - using fallback duration")
+    return TIME_CONSTANTS.MISSION_DURATION -- fallback
+  end
+
+  -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
+  local flightTime = (distance / 480) * 3600
+
+  Logger.log(string.format(
+    "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
+    flightTime / 60, distance
+  ))
+
+  return math.ceil(flightTime)
+end
+
 ---Calculate support role timing (escort, wildWeasel, jammer, tanker)
----@param strikerStartTime string Striker start time
 ---@param role string Role name
+---@param packageData table Package data for timing calculation
 ---@return table roleTiming Start and end times for the role
-local function calculateRoleTiming(strikerStartTime, role)
-  local strikerTimestamp = Utils.parseDatetimeToTimestamp(strikerStartTime)
+local function calculateRoleTiming(role, packageData)
+  local strikerTimestamp = Utils.parseDatetimeToTimestamp(packageData.striker.startTime)
   local timing = {}
 
   -- Calculate start time based on role
-  local advanceTime = (role == "tanker") and TIME_CONSTANTS.TANKER_ADVANCE_TIME or TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  local advanceTime
+  if role == "tanker" then
+    advanceTime = TIME_CONSTANTS.TANKER_ADVANCE_TIME
+  else
+    -- Calculate dynamic support advance time if targets available
+    advanceTime = calculateSupportAdvanceTime(packageData)
+  end
   ---@type string
   timing.startTime = os.date("%Y-%m-%d %H:%M:%S", strikerTimestamp - advanceTime)
 
-  -- Calculate end time based on role
+  -- Calculate end time based on new duration logic
   local startTimestamp = Utils.parseDatetimeToTimestamp(timing.startTime)
-  local duration = (role == "tanker") and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
+  local strikerFlightTime = calculateStrikerFlightTime(packageData)
+  local duration = advanceTime + strikerFlightTime
+
+  if role == 'escort' or role == 'wildWeasel' or role == 'jammer' then
+    local onStationTimestemp = startTimestamp + advanceTime + 10 * 60
+    timing.timeOnStation = os.date("%Y-%m-%d %H:%M:%S", onStationTimestemp)
+  end
+
+  -- For tanker, still use the original logic
+  if role == "tanker" then
+    duration = TIME_CONSTANTS.TANKER_DURATION
+  end
+
   timing.endTime = os.date("%Y-%m-%d %H:%M:%S", startTimestamp + duration)
 
   return timing
@@ -390,9 +493,13 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   for _, role in ipairs(supportRoles) do
     if packageData[role] then
       if not packageData[role].startTime or not packageData[role].endTime then
-        local roleTiming = calculateRoleTiming(packageData.striker.startTime, role)
+        local roleTiming = calculateRoleTiming(role, packageData)
         packageData[role].startTime = packageData[role].startTime or roleTiming.startTime
         packageData[role].endTime = packageData[role].endTime or roleTiming.endTime
+
+        if roleTiming.timeOnStation then
+          packageData[role].timeOnStation = roleTiming.timeOnStation
+        end
       end
     end
   end
@@ -430,7 +537,7 @@ local function insertATOWave(saveData, packageTemplate, reconType)
   end
 
   local waveName = DynamicOperationsUtils.generateUniqueAirOperationName(
-    packageTemplate.targetType, 
+    packageTemplate.name,
     reconType,
     saveData
   )

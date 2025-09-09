@@ -873,6 +873,17 @@ saveData.c.dynamicOperations.reconSchedule = {
     delay = 0,
     executed = false,
     operations = {
+      -- {
+      --   type = "air",
+      --   executed = false,
+      --   template = {
+      --     name = "STRIKE/AB/W/1",
+      --     targetType = "STRIKE",
+      --     isFirstWave = true,
+      --     strikeInterval = 30 * 60,
+      --     packages = config.c.packageTemplate.STRIKE_AB_W_1
+      --   }
+      -- },
       {
         type = "air",
         executed = false,
@@ -881,7 +892,7 @@ saveData.c.dynamicOperations.reconSchedule = {
           targetType = "STRIKE",
           isFirstWave = true,
           strikeInterval = 30 * 60,
-          packages = config.c.packageTemplate.STRIKE_AB_W_1
+          packages = config.c.packageTemplate.STRIKE_AB_W_AAR_1
         }
       },
       {

@@ -10,13 +10,13 @@ function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
   if not reconEntry.operations then
     return true
   end
-  
+
   for _, operation in ipairs(reconEntry.operations) do
     if not operation.executed then
       return false
     end
   end
-  
+
   reconEntry.executed = true
   Logger.log("Reconnaissance entry at " .. reconEntry.time .. " fully completed")
   return true
@@ -28,7 +28,7 @@ function DynamicOperationsUtils.updateReconScheduleStatus(saveData)
   if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconSchedule then
     return
   end
-  
+
   for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconSchedule) do
     if not reconEntry.executed then
       DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
@@ -42,7 +42,7 @@ end
 ---@return table[] filteredOperations Array of matching operations with their parent entries
 function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationType)
   local filteredOperations = {}
-  
+
   for _, reconEntry in ipairs(reconSchedule) do
     if not reconEntry.executed and reconEntry.operations then
       for _, operation in ipairs(reconEntry.operations) do
@@ -55,7 +55,7 @@ function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationT
       end
     end
   end
-  
+
   return filteredOperations
 end
 
@@ -66,10 +66,10 @@ end
 function DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, success)
   operation.executed = true
   operation.executionResult = success
-  
-  Logger.log("Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") .. 
-             " for reconnaissance at " .. reconEntry.time)
-  
+
+  Logger.log("Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") ..
+    " for reconnaissance at " .. reconEntry.time)
+
   -- Check if all operations in this reconnaissance entry are now completed
   DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
 end
@@ -92,8 +92,8 @@ function DynamicOperationsUtils.generateUniqueAirOperationName(operationType, re
   repeat
     operationName = baseName .. "/" .. sequence
     sequence = sequence + 1
-  until not saveData.c.dynamicOperations.generatedOperations.air[operationName] and 
-        not (saveData.c.air.ATO and saveData.c.air.ATO[operationName])
+  until not saveData.c.dynamicOperations.generatedOperations.air[operationName] and
+    not (saveData.c.air.ATO and saveData.c.air.ATO[operationName])
 
   return operationName
 end
@@ -117,7 +117,7 @@ function DynamicOperationsUtils.generateUniqueGroundOperationName(operationType,
     operationName = baseName .. "/" .. sequence
     sequence = sequence + 1
   until not saveData.c.dynamicOperations.generatedOperations.ground[operationName] and
-        not (saveData.c.ground.FSP and saveData.c.ground.FSP[operationName])
+    not (saveData.c.ground.FSP and saveData.c.ground.FSP[operationName])
 
   return operationName
 end

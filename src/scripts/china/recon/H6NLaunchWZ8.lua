@@ -23,11 +23,12 @@ if unit then
     if q.unitGUID == unit.guid then
       local course = nil
 
-      if q.isTracking then
-        course = config.c.recon.courses.WZ8[2]
-      else
-        course = config.c.recon.courses.WZ8[1]
-      end
+      -- if q.isTracking then
+      --   course = config.c.recon.courses.WZ8[2]
+      -- else
+      --   course = config.c.recon.courses.WZ8[1]
+      -- end
+      course = config.c.recon.courses.WZ8[1]
 
       local wz8 = Recon.launchWZ8(unit, course)
 

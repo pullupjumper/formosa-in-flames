@@ -49,9 +49,9 @@ function Recon.launchWZ8(h6n, course)
     side = 'China',
     type = 'Aircraft',
     name = 'WZ-8',
-    dbid = 6642,
-    LATITUDE = h6n.latitude,
-    LONGITUDE = h6n.longitude,
+    dbid = config.platform.WZ8,
+    latitude = h6n.latitude,
+    longitude = h6n.longitude,
     loadoutid = 32885,
     altitude = 20574,
     heading = 180,
@@ -189,10 +189,7 @@ function Recon.trackTarget(config, saveData, units, UAVDBID, target)
   for guid, value in pairs(saveData.c.recon.temp[type]) do
     if value.targetGUID == target.guid then
       local unit = GameApi.ScenEdit_GetUnit(guid)
-
-      if unit then
-        return true
-      end
+      if unit then return true end
     end
   end
 
@@ -215,27 +212,8 @@ function Recon.trackTarget(config, saveData, units, UAVDBID, target)
     end
   end
 
-  -- if UAV and #UAV.course == 0 then
-  --   if UAV.mission then
-  --     UAV.mission = ''
-  --   end
-
-  --   UAV.course = { {
-  --     latitude = target.latitude,
-  --     longitude = target.longitude,
-  --     desiredSpeed = speed,
-  --     presetThrottle = 'Military'
-  --   } }
-
-  --   saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
-  --   return true
-  -- end
-
   if UAV then
-    if UAV.mission then
-      UAV.mission = ''
-    end
-
+    if UAV.mission then UAV.mission = '' end
     saveData.c.recon.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
     return true
   end
