@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Lua",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "C:\\Users\\Toda\\AppData\\Local\\Programs\\lua-5.4.2\\bin\\lua54.exe",
+            "args": ["${file}"],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

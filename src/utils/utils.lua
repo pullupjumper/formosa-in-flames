@@ -208,4 +208,21 @@ function Utils.roundToNearestMinutes(timestamp, minutes)
   return math.ceil(timestamp / secondsInInterval) * secondsInInterval
 end
 
+--- Format datetime string to separated date and time components
+---@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
+---@return {date: string, time: string} -- Object with date in "YYYY/MM/DD" format and time in "HH:MM:SS" format
+function Utils.formatDateTime(datetimeStr)
+  local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
+  local year, month, day, hour, min, sec = datetimeStr:match(pattern)
+
+  if not (year and month and day and hour and min and sec) then
+    error('Invalid datetime format: ' .. tostring(datetimeStr))
+  end
+
+  return {
+    date = string.format("%s/%s/%s", year, month, day),
+    time = string.format("%s:%s:%s", hour, min, sec)
+  }
+end
+
 return Utils

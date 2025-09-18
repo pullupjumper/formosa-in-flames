@@ -8,6 +8,13 @@
 ---Example: ScenEdit_WeaponAllocation('attackerGUID', 'contactGUID', '') supply attacker and contact GUIDs to see salvos generated between the 2
 function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID) end
 
+---Create a new flight plan
+---@param side string @The mission side
+---@param missionName string @The mission name/guid
+---@param opts table @The options for the flight plan
+---@return table<number, any> @ Returns all the flights on the mission. Currently only returns the first flight, will be fixed in a upcoming release.
+function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
+
 ---@class CMO__Zone:table
 ---@field guid string @The GUID of the zone. READ ONLY.
 ---@field type string @ the type of the zone 'NoNavZone' = 0 | 'ExclusionZone' = 1

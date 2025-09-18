@@ -111,47 +111,47 @@ end
 
 ---Apply communication jamming effects to a unit with pre-calculated distance
 ---@param config SBJ__CONFIG
----@param affectedUnit table The unit being jammed
----@param jammer table The jamming unit
+---@param affectedUnitData table The unit being jammed
+---@param jammer CMO__Unit The jamming unit
 ---@param distance number Pre-calculated distance between jammer and unit
 ---@return boolean success Whether jamming was successfully applied
-local function commsJammingWithDistance(config, affectedUnit, jammer, distance)
+local function commsJammingWithDistance(config, affectedUnitData, jammer, distance)
   if jammer and jammer.condition == 'Airborne' and jammer.jammer then
-    if affectedUnit.isOutOfComms == false then
-      if affectedUnit.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnit.outofcomms >= 0 then
+    if affectedUnitData.isOutOfComms == false then
+      if affectedUnitData.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitData.outofcomms >= 0 then
         local effectiveness = 1 * math.sqrt(
           1 - (distance ^ config.c.commsJamming.effectivenessFormula.base /
             config.c.commsJamming.range ^ config.c.commsJamming.effectivenessFormula.range)
         )
 
         if effectiveness == effectiveness and effectiveness > (math.random() / 2) then
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = true })
-          affectedUnit.outofcomms = affectedUnit.outofcomms + 1
-          affectedUnit.isOutOfComms = true
+          GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = true })
+          affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
+          affectedUnitData.isOutOfComms = true
           Logger.log(
-            "CommsJamming: Unit " .. affectedUnit.guid .. " successfully jammed by " ..
+            "CommsJamming: Unit " .. affectedUnitData.guid .. " successfully jammed by " ..
             jammer.guid .. " (distance: " .. math.floor(distance) ..
             "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
           )
           return true
         else
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-          affectedUnit.outofcomms = 0
-          affectedUnit.isOutOfComms = false
+          GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+          affectedUnitData.outofcomms = 0
+          affectedUnitData.isOutOfComms = false
           Logger.log(
-            "CommsJamming: Unit " .. affectedUnit.guid .. " jamming attempt failed (distance: " ..
+            "CommsJamming: Unit " .. affectedUnitData.guid .. " jamming attempt failed (distance: " ..
             math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
           )
           return true
         end
-      elseif affectedUnit.outofcomms < 0 then
-        GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-        affectedUnit.isOutOfComms = false
-        affectedUnit.outofcomms = affectedUnit.outofcomms + 1
+      elseif affectedUnitData.outofcomms < 0 then
+        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+        affectedUnitData.isOutOfComms = false
+        affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
       else
-        GameApi.ScenEdit_SetUnit({ guid = affectedUnit.guid, outofcomms = false })
-        affectedUnit.isOutOfComms = false
-        affectedUnit.outofcomms = math.random(
+        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+        affectedUnitData.isOutOfComms = false
+        affectedUnitData.outofcomms = math.random(
           config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
         )
       end

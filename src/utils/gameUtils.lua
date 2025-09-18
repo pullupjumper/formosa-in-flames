@@ -124,8 +124,9 @@ function GameUtils.newArea(position, mode)
 end
 
 ---@param time string|number @A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
+---@param advanceSeconds? number @Optional seconds to advance the check time (makes condition trigger earlier)
 ---@return boolean
-function GameUtils.isAfterStartTime(time)
+function GameUtils.isAfterStartTime(time, advanceSeconds)
   local result = GameApi.ScenEdit_CurrentTime()
 
   if not result then
@@ -139,6 +140,11 @@ function GameUtils.isAfterStartTime(time)
     targetTimestamp = time
   else
     error("Invalid time parameter type. Expected string or number, got " .. type(time))
+  end
+
+  -- Apply advance seconds if provided (subtract from target to make condition trigger earlier)
+  if advanceSeconds and type(advanceSeconds) == "number" then
+    targetTimestamp = targetTimestamp - advanceSeconds
   end
 
   return result >= targetTimestamp
@@ -159,11 +165,11 @@ function GameUtils.createMission(side, name, type, opts, emcon)
   end
 
   if opts then
-    mission = GameApi.ScenEdit_SetMission(side, name, opts)
-  end
+    local result = GameApi.ScenEdit_SetMission(side, name, opts)
 
-  if not mission then
-    return
+    if not result then
+      return
+    end
   end
 
   if emcon then

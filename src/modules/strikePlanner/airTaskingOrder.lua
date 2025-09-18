@@ -10,6 +10,8 @@ local AssignMission = require("src.modules.assignMission")
 
 local AirTaskingOrder = {}
 
+local ADVANCE_SECONDS = 180
+
 --------------------------------------------------------------------------------
 -- Strike Package Processing Functions (integrated from strikePackageProcessor)
 --------------------------------------------------------------------------------
@@ -65,7 +67,7 @@ local function isTimeToStartLoadout(packageData)
   -- 將時間戳轉回字串格式供 GameUtils.isAfterStartTime() 使用
   ---@type string
   local loadoutStartTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.loadoutStartTime)
-  return GameUtils.isAfterStartTime(loadoutStartTimeStr)
+  return GameUtils.isAfterStartTime(loadoutStartTimeStr, ADVANCE_SECONDS)
 end
 
 --- 為整個 package 的所有機群設定武器掛載
@@ -222,7 +224,11 @@ local function createMission(packageData, role)
     if mission and packageData[role].endTime then
       mission['OnDeactivateDelete'] = true
       mission['OnDeactivateRTB'] = true
-      mission['TakeOffTime'] = packageData[role].startTime
+
+      if packageData[role].startTime then
+        mission['TakeOffTime'] = packageData[role].startTime
+      end
+
       mission['endtime'] = packageData[role].endTime
 
       if packageData[role].timeOnStation then
@@ -251,6 +257,10 @@ local function assignUnits(packageData)
         packageData[role].missionParams.name,
         false
       )
+      if role ~= 'tanker' and role ~= 'striker' then
+        GameApi.ScenEdit_CreateMissionFlightPlan('China', packageData[role].missionParams.name, {})
+      end
+
       if role == "striker" and result and #result > 0 then
         strikerAssigned = true
       end
@@ -278,7 +288,7 @@ local function processPackage(config, saveData, packageData)
 
   -- 3. 檢查最早機群是否到達出擊時間
   local earliestRole = findEarliestRole(packageData)
-  if not (earliestRole and GameUtils.isAfterStartTime(earliestRole.startTime)) then
+  if not (earliestRole and GameUtils.isAfterStartTime(earliestRole.startTime, ADVANCE_SECONDS)) then
     return false -- 最早機群還沒到出擊時間
   end
 

@@ -441,29 +441,33 @@ local function calculateRoleTiming(role, packageData)
 
   -- Calculate start time based on role
   local advanceTime
-  if role == "tanker" then
-    advanceTime = TIME_CONSTANTS.TANKER_ADVANCE_TIME
-  else
-    -- Calculate dynamic support advance time if targets available
-    advanceTime = calculateSupportAdvanceTime(packageData)
-  end
+  -- if role == "tanker" then
+  --   advanceTime = TIME_CONSTANTS.TANKER_ADVANCE_TIME
+  -- else
+  --   -- Calculate dynamic support advance time if targets available
+  --   advanceTime = calculateSupportAdvanceTime(packageData)
+  -- end
+  advanceTime = calculateSupportAdvanceTime(packageData)
   ---@type string
-  timing.startTime = os.date("%Y-%m-%d %H:%M:%S", strikerTimestamp - advanceTime)
+  -- timing.startTime = os.date("%Y-%m-%d %H:%M:%S", strikerTimestamp - advanceTime + (packageData.timeToReady or 5))
+  timing.startTime = os.date(
+    "%Y-%m-%d %H:%M:%S",
+    Utils.roundToNearestMinutes(strikerTimestamp - advanceTime + (packageData.timeToReady or 5), 5) + 60 * 2
+  )
 
-  -- Calculate end time based on new duration logic
   local startTimestamp = Utils.parseDatetimeToTimestamp(timing.startTime)
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = advanceTime + strikerFlightTime
 
-  if role == 'escort' or role == 'wildWeasel' or role == 'jammer' then
-    local onStationTimestemp = startTimestamp + advanceTime + 10 * 60
-    timing.timeOnStation = os.date("%Y-%m-%d %H:%M:%S", onStationTimestemp)
-  end
+  -- if role == 'escort' or role == 'wildWeasel' or role == 'jammer' then
+  --   local onStationTimestemp = startTimestamp + advanceTime + 10 * 60
+  --   timing.timeOnStation = os.date("%Y-%m-%d %H:%M:%S", onStationTimestemp)
+  -- end
 
   -- For tanker, still use the original logic
-  if role == "tanker" then
-    duration = TIME_CONSTANTS.TANKER_DURATION
-  end
+  -- if role == "tanker" then
+  --   duration = TIME_CONSTANTS.TANKER_DURATION
+  -- end
 
   timing.endTime = os.date("%Y-%m-%d %H:%M:%S", startTimestamp + duration)
 
@@ -494,12 +498,16 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
     if packageData[role] then
       if not packageData[role].startTime or not packageData[role].endTime then
         local roleTiming = calculateRoleTiming(role, packageData)
-        packageData[role].startTime = packageData[role].startTime or roleTiming.startTime
+
+        if role ~= "tanker" then
+          packageData[role].startTime = packageData[role].startTime or roleTiming.startTime
+        end
+
         packageData[role].endTime = packageData[role].endTime or roleTiming.endTime
 
-        if roleTiming.timeOnStation then
-          packageData[role].timeOnStation = roleTiming.timeOnStation
-        end
+        -- if roleTiming.timeOnStation then
+        --   packageData[role].timeOnStation = roleTiming.timeOnStation
+        -- end
       end
     end
   end

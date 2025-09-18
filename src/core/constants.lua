@@ -490,7 +490,7 @@ config.c.IADS.C2Settings = {
 
 -- Comms Jamming
 config.c.commsJamming.limit = 6
-config.c.commsJamming.range = 75
+config.c.commsJamming.range = 50
 config.c.commsJamming.initialComms = -20
 config.c.commsJamming.baseJammingPower = -120
 config.c.commsJamming.distanceExponent = 1.04
@@ -3047,7 +3047,7 @@ config.c.packageTemplate = {
             TankerUsage = 1,
             TankerMissionList = { 'AAR/E' },
             FuelQtyToStartLookingForTanker_airborne = 85,
-            MaxReceiversInQueuePerTanker_airborne = 2,
+            MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
@@ -3074,7 +3074,7 @@ config.c.packageTemplate = {
             TankerUsage = 1,
             TankerMissionList = { 'AAR/E' },
             FuelQtyToStartLookingForTanker_airborne = 85,
-            MaxReceiversInQueuePerTanker_airborne = 2,
+            MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
@@ -3094,8 +3094,8 @@ config.c.packageTemplate = {
             zone = config.c.area.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { 'AAR/E' },
-            FuelQtyToStartLookingForTanker_airborne = 90,
-            MaxReceiversInQueuePerTanker_airborne = 2,
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
@@ -3113,7 +3113,7 @@ config.c.packageTemplate = {
           type = 'support',
           opts = {
             OneThirdRule = false,
-            FlightSize = 1,
+            FlightSize = 4,
             zone = config.c.area.AAR_PATROL_2
           }
         },

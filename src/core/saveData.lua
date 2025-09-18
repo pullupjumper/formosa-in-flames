@@ -65,22 +65,6 @@ saveData.c.IADS.C2 = {
   --     radar = {},
   --     SAM = {},
   -- },
-  -- ['IC8B0X-0HN84DHD12B7R'] = {
-  --     name = '#B C2/IADS',
-  --     msg = 'Radio source, C2/IADS',
-  --     guid = 'IC8B0X-0HN84DHD12B7R',
-  --     area = { 'RP-85134', 'RP-85135', 'RP-85136', 'RP-85137', },
-  --     radar = {},
-  --     SAM = {},
-  -- },
-  -- ['IC8B0X-0HN84DHD12B41'] = {
-  --     name = '#C C2/IADS',
-  --     msg = 'Radio source, C2/IADS',
-  --     guid = 'IC8B0X-0HN84DHD12B41',
-  --     area = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
-  --     radar = {},
-  --     SAM = {},
-  -- },
 }
 
 -- Comms jamming

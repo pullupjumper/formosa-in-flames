@@ -542,6 +542,15 @@ function realApi.ScenEdit_SetEventAction(eventName, opts)
 end
 
 ---comment
+---@param side string
+---@param missionName string
+---@param opts table
+---@return table
+function realApi.ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
+  return ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
+end
+
+---comment
 ---@param opts CMO__LoadoutInfo
 ---@return boolean
 function realApi.ScenEdit_SetLoadout(opts)
