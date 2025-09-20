@@ -5,6 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
+local IADS = require("src.modules.IADS")
 
 if saveData == nil then
   Logger.error('saveData is nil')
@@ -21,20 +22,27 @@ if unit then
         (score + config.s.undergroundShelterIsDestroyed),
         "Underground shelter has been destoryed"
       )
-    end
-
-    if unit.dbid == config.platform.AMMO_TRUCK then
+    elseif unit.dbid == config.platform.AMMO_TRUCK then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
       Logger.log("An ammunition section has been destoryed.")
-    end
-
-    if unit.dbid == config.platform.AMMO then
+    elseif unit.dbid == config.platform.AMMO then
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
       Logger.log("An ammunition has been destoryed.")
+    elseif unit.dbid == config.platform.FPS117 or
+        unit.dbid == config.platform.TPS43F or
+        unit.dbid == config.platform.HR3000 or
+        unit.dbid == config.platform.GE592 then
+      IADS.clearUnitData(saveData, 'Taiwan', 'ROCC', 'radar', unit)
+    elseif unit.dbid == config.platform.CUSTOMED_TK3 or unit.dbid == config.platform.PAC3 then
+      IADS.clearUnitData(saveData, 'Taiwan', 'ROCC', 'SAM', unit)
+    elseif unit.dbid == config.platform.TC2 or unit.dbid == config.platform.SKY_GUARD then
+      IADS.clearUnitData(saveData, 'Taiwan', 'TAAOC', 'SAM', unit)
+    elseif unit.dbid == config.platform.C2 or unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
+      IADS.disruptC2Communications(saveData, 'Taiwan', unit)
     end
   end
 

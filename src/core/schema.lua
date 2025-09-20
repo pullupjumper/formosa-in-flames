@@ -11,9 +11,15 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---Create a new flight plan
 ---@param side string @The mission side
 ---@param missionName string @The mission name/guid
----@param opts table @The options for the flight plan
+---@param opts CMO__FlightPlanOptions @The options for the flight plan
 ---@return table<number, any> @ Returns all the flights on the mission. Currently only returns the first flight, will be fixed in a upcoming release.
 function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
+
+---@class CMO__FlightPlanOptions:table
+---@field DATEONTARGET string @ The mission time on target day, YYYY/MM/DD
+---@field TIMEONTARGET string @ The mission time on target, HH:MM:SS
+---@field TAKEOFFDATE string @ The takeoff date, YYYY/MM/DD
+---@field TAKEOFFTIME string @ The takeoff time, HH:MM:SS
 
 ---@class CMO__Zone:table
 ---@field guid string @The GUID of the zone. READ ONLY.
