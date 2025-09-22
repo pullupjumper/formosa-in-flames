@@ -11,7 +11,7 @@ local IADS = {}
 --- @param C2Type string Command and control type ('C2', 'ROCC', 'TAAOC')
 --- @param type string Unit type ('radar' or 'SAM')
 --- @param C2 CMO__Unit Destroyed command and control node
-local function setToOutOfComms(saveData, side, C2Type, type, C2)
+local function disableUnitsUnderC2Node(saveData, side, C2Type, type, C2)
   for _, data in pairs(saveData[side].IADS[C2Type][C2.guid][type]) do
     local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
 
@@ -27,7 +27,7 @@ end
 --- @param side string Side name ('China' or other)
 --- @return string _side Side abbreviation ('c' or 't')
 --- @return string C2Type Command and control type ('C2' or 'ROCC')
-local function getFieldBySide(side)
+local function getSideConfiguration(side)
   local _side, C2Type
 
   if side == 'China' then
@@ -46,13 +46,13 @@ end
 --- @param saveData SBJ__SaveData Game save data table
 --- @param side string Side name
 --- @param C2 CMO__Unit Destroyed command and control node
-function IADS.disruptC2Communications(saveData, side, C2)
-  local _side, C2Type = getFieldBySide(side)
+function IADS.processC2Disruption(saveData, side, C2)
+  local _side, C2Type = getSideConfiguration(side)
 
   -- Handle main command and control node
   if saveData[_side].IADS[C2Type][C2.guid] then
-    setToOutOfComms(saveData, _side, C2Type, 'radar', C2)
-    setToOutOfComms(saveData, _side, C2Type, 'SAM', C2)
+    disableUnitsUnderC2Node(saveData, _side, C2Type, 'radar', C2)
+    disableUnitsUnderC2Node(saveData, _side, C2Type, 'SAM', C2)
     saveData[_side].IADS[C2Type][C2.guid] = nil
     Logger.log(C2.name .. '\'s C2 is destroyed')
   end
@@ -60,7 +60,7 @@ function IADS.disruptC2Communications(saveData, side, C2)
   -- Additional handling for Taiwan's Tactical Air Operations Center (TAAOC)
   if _side == 't' then
     if saveData[_side].IADS.TAAOC[C2.guid] then
-      setToOutOfComms(saveData, _side, 'TAAOC', 'SAM', C2)
+      disableUnitsUnderC2Node(saveData, _side, 'TAAOC', 'SAM', C2)
       saveData[_side].IADS.TAAOC[C2.guid] = nil
       Logger.log(C2.name .. '\'s TAAOC is destroyed')
     end
@@ -74,8 +74,8 @@ end
 --- @param C2Type string Command and control type ('C2' or 'ROCC' or 'TAAOC')
 --- @param type string Unit type ('radar' or 'SAM')
 --- @param destroyedUnit CMO__Unit Destroyed unit
-function IADS.clearUnitData(saveData, side, C2Type, type, destroyedUnit)
-  local _side = getFieldBySide(side)
+function IADS.removeDestroyedUnitDataFromIADS(saveData, side, C2Type, type, destroyedUnit)
+  local _side = getSideConfiguration(side)
 
   -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
   for _, item in pairs(saveData[_side].IADS[C2Type]) do

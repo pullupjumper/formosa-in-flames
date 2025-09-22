@@ -3,9 +3,9 @@ local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
+local IADS = require("src.modules.IADS")
 local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
-local IADS = require("src.modules.IADS")
 
 if saveData == nil then
   Logger.error('saveData is nil')
@@ -36,13 +36,13 @@ if unit then
         unit.dbid == config.platform.TPS43F or
         unit.dbid == config.platform.HR3000 or
         unit.dbid == config.platform.GE592 then
-      IADS.clearUnitData(saveData, 'Taiwan', 'ROCC', 'radar', unit)
+      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'ROCC', 'radar', unit)
     elseif unit.dbid == config.platform.CUSTOMED_TK3 or unit.dbid == config.platform.PAC3 then
-      IADS.clearUnitData(saveData, 'Taiwan', 'ROCC', 'SAM', unit)
+      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'ROCC', 'SAM', unit)
     elseif unit.dbid == config.platform.TC2 or unit.dbid == config.platform.SKY_GUARD then
-      IADS.clearUnitData(saveData, 'Taiwan', 'TAAOC', 'SAM', unit)
+      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'TAAOC', 'SAM', unit)
     elseif unit.dbid == config.platform.C2 or unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
-      IADS.disruptC2Communications(saveData, 'Taiwan', unit)
+      IADS.processC2Disruption(saveData, 'Taiwan', unit)
     end
   end
 

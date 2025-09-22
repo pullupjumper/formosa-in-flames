@@ -126,10 +126,10 @@ if unit then
         unit.dbid == config.platform.S300 or
         unit.dbid == config.platform.S400 or
         unit.dbid == config.platform.HQ12 then
-      IADS.clearUnitData(saveData, 'China', 'C2', 'SAM', unit)
+      IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'SAM', unit)
       IADS.activateNearestRadar(config, units, unit)
     elseif unit.dbid == config.platform.JY26 or unit.dbid == config.platform.YLC8B then
-      IADS.clearUnitData(saveData, 'China', 'C2', 'radar', unit)
+      IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'radar', unit)
       IADS.activateNearestRadar(config, units, unit)
     else
       for _, DBID in ipairs(config.c.IADS.C2FacilityDBIDs) do
@@ -140,7 +140,7 @@ if unit then
             "Destruction of civilian facilities"
           )
         elseif unit.dbid == DBID and saveData.c.IADS.C2[unit.guid] then
-          IADS.disruptC2Communications(saveData, 'China', unit)
+          IADS.processC2Disruption(saveData, 'China', unit)
         end
       end
     end
