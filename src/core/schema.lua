@@ -361,3 +361,10 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field jammer SBJ__MissionEntry? 干擾機配置
 ---@field tanker SBJ__MissionEntry? 加油機配置
 ---@field timeToReady number? 準備時間（分鐘）
+
+---@class SBJ__GPSJammerData:table
+---@field name string
+---@field zoneName string
+---@field point CMO__Location
+---@field randomRadius number
+---@field radius number

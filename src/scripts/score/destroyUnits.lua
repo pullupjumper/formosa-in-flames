@@ -103,7 +103,8 @@ if unit then
         (score + config.s.tel),
         "You have destroyed a GPS jammer."
       )
-      GPSJamming.turnOffGPSEffectByUnit(config, unit)
+      -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
+      GPSJamming.removeJammingZoneByUnit(config, 'China', unit)
     elseif unit.dbid == config.platform.AMMO then
       Launcher.destroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'srbm', saveData)

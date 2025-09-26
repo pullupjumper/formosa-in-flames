@@ -202,7 +202,7 @@ config.base = {
   KWANG_CHOW_WAN_NB      = '6Z8LM5-0HMJV6AONGLAU', -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
   TAIZHOU_AB             = 'IC8B0X-0HNFDVSDK067T', -- Taizhou AB
   WUYISHAN_AB            = 'IC8B0X-0HNFDVSDK0AM9', -- Wuyishan AB
-  RUGOA_AB               = 'X58F5H-0HN201E9DHM1C', -- Rugoa AB
+  RUGAO_AB               = 'X58F5H-0HN201E9DHM1C', -- Rugao AB
   XIAHGTANG_AB           = '6Z8LM5-0HMIJ7B89707I', -- Xiahgtang AB (PLAAF)
   -- Taiwan Bases
   CHING_CHUANG_KANG_AB   = '6Z8LM5-0HMIHS2L949R0', -- Ching Chuang Kang AB (Taiwan)
@@ -412,6 +412,11 @@ config.weapon = {
   HF2E = 3228,        -- HF-2E Anti-Ship Cruise Missile
   HF2 = 1133,         -- HF-2 Anti-Ship Missile
   MK48_TORPEDO = 905, -- MK-48 Torpedo
+  HARPOON_II = 816,   -- Harpoon II
+  JSOW = 826,         -- JSOW
+  WAN_CHIEN = 3026,   -- Wan Chien
+  SLAMER = 452,       -- SLAMER
+  JDAM = 554,         -- JDAM
 }
 
 
@@ -513,8 +518,27 @@ config.c.commsJamming.randomVariance = {
 
 -- GPS Jamming
 config.c.GPSJamming.jammers = {
-  { zoneName = 'JAMMING ZONE/1', name = '1st Bn, 1st ECM Bde', point = { lat = 'N 25.28.17', lon = 'E 119.35.17' }, randomRadius = 20, radius = 14 },
-  { zoneName = 'JAMMING ZONE/2', name = '2nd Bn, 1st ECM Bde', point = { lat = 'N 24.43.49', lon = 'E 118.29.41' }, randomRadius = 20, radius = 14 },
+  ['1st Bn, 1st ECM Bde'] = {
+    zoneName = 'JAMMING ZONE/1',
+    name = '1st Bn, 1st ECM Bde',
+    point = { lat = 'N 25.28.17', lon = 'E 119.35.17' },
+    randomRadius = 20,
+    radius = 14
+  },
+  ['2nd Bn, 1st ECM Bde'] = {
+    zoneName = 'JAMMING ZONE/2',
+    name = '2nd Bn, 1st ECM Bde',
+    point = { lat = 'N 24.43.49', lon = 'E 118.29.41' },
+    randomRadius = 20,
+    radius = 14
+  },
+}
+config.c.GPSJamming.GPSGuidedWeapons = {
+  { dbid = config.weapon.JDAM,       jammingResistance = 50 },
+  { dbid = config.weapon.WAN_CHIEN,  jammingResistance = 50 },
+  { dbid = config.weapon.HARPOON_II, jammingResistance = 50 },
+  { dbid = config.weapon.JSOW,       jammingResistance = 50 },
+  { dbid = config.weapon.SLAMER,     jammingResistance = 50 },
 }
 
 -- MLRS
@@ -1260,8 +1284,8 @@ config.c.air.landBased.deployedACs = {
     }
   },
   {
-    name = 'Rugoa AB (PLAAF)',
-    baseGUID = config.base.RUGOA_AB,
+    name = 'Rugao AB (PLAAF)',
+    baseGUID = config.base.RUGAO_AB,
     embarkedUnits = {
       {
         side = 'China',
@@ -3018,7 +3042,7 @@ config.c.packageTemplate = {
     {
       timeToReady = config.readytime,
       striker = {
-        baseGUID = config.base.RUGOA_AB,
+        baseGUID = config.base.RUGAO_AB,
         weaponDBID = config.weapon.AKD88,
         unitDBID = config.platform.J16,
         unitCount = 12,
@@ -3055,7 +3079,7 @@ config.c.packageTemplate = {
         emcon = 'Radar=Passive;OECM=Active'
       },
       wildWeasel = {
-        baseGUID = config.base.RUGOA_AB,
+        baseGUID = config.base.RUGAO_AB,
         weaponDBID = config.weapon.YJ91_ASM,
         unitDBID = config.platform.J16,
         unitCount = 4,

@@ -3,15 +3,15 @@ local Utils = require("src.utils.utils")
 
 local GameUtils = {}
 
----@param x_latitude number
----@param x_longitude number
----@param max_radius number
+---@param xLatitude number
+---@param xLongitude number
+---@param maxRadius number
 ---@return CMO__Location|nil
-function GameUtils.circularRandomPosition(x_latitude, x_longitude, max_radius)
+function GameUtils.circularRandomPosition(xLatitude, xLongitude, maxRadius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
-    latitude = x_latitude,
-    longitude = x_longitude,
-    radius = (math.random(0, max_radius * 10) / 10),
+    latitude = xLatitude,
+    longitude = xLongitude,
+    radius = (math.random(0, maxRadius * 10) / 10),
     numpoints = 72
   })
 
@@ -181,6 +181,121 @@ function GameUtils.createMission(side, name, type, opts, emcon)
   end
 
   return mission
+end
+
+--- Creates, updates, or removes a "Unit Enters Area" event trigger in the CMO scenario
+--- This function sets up an event system that executes a Lua script when units matching
+--- a filter enter or exit a specified area during the simulation
+---@param name string Event name (must be unique within the scenario)
+---@param FilterType table Unit filter criteria (e.g., side name, unit type, or complex filter)
+---@param area table Reference point area or area table defining the trigger zone
+---@param script string Lua script code to execute when the event triggers
+---@param mode string Operation mode: 'add' (create new), 'update' (modify existing), 'remove' (delete)
+---@param exit boolean If true, triggers when units EXIT the area; if false, triggers on ENTER
+---@param isRepeatable boolean If true, event can trigger multiple times; if false, triggers only once
+---@param isActive boolean If true, event is immediately active; if false, event is dormant
+---@return boolean True if operation succeeded, false if any API call failed
+function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
+  -- Set default parameter values
+  if isRepeatable == nil then isRepeatable = false end
+  if isActive == nil then isActive = true end
+  if exit == nil then exit = false end
+
+  if mode == 'add' then
+    -- Create the trigger component that monitors unit movement
+    local result = GameApi.ScenEdit_SetTrigger({
+      description = name .. '',
+      mode = 'add',
+      type = 'UnitEntersArea',
+      TargetFilter = FilterType,
+      Area = area,
+      ExitArea = exit -- Controls whether this triggers on enter (false) or exit (true)
+    })
+
+    if not result then
+      return false
+    end
+
+    -- Create the action component that executes the specified Lua script
+    local actionResult = GameApi.ScenEdit_SetAction({
+      mode = 'add',
+      type = 'LuaScript',
+      name = name .. '',
+      ScriptText = script
+    })
+
+    if not actionResult then
+      return false
+    end
+
+    -- Create the event and link the trigger and action together
+    GameApi.ScenEdit_SetEvent(name, { mode = 'add', IsRepeatable = isRepeatable, isActive = isActive, isShown = true })
+    GameApi.ScenEdit_SetEventTrigger(name, { mode = 'add', name = name .. '' })
+    GameApi.ScenEdit_SetEventAction(name, { mode = 'add', name = name .. '' })
+  elseif mode == 'update' then
+    -- Update existing trigger if new area parameters are provided
+    if area ~= nil then
+      GameApi.ScenEdit_SetTrigger({
+        description = name .. '',
+        mode = 'update',
+        type = 'UnitEntersArea',
+        TargetFilter = FilterType,
+        Area = area,
+        ExitArea = exit
+      })
+    end
+    -- Update existing action if new script is provided
+    if script ~= nil then
+      GameApi.ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name .. '', ScriptText = script })
+    end
+  elseif mode == 'remove' then
+    -- Remove all components of the event system
+
+    GameApi.ScenEdit_SetEvent(name, { mode = 'remove' })
+    GameApi.ScenEdit_SetTrigger({ description = name .. '', mode = 'remove' })
+    GameApi.ScenEdit_SetAction({ description = name .. '', mode = 'remove' })
+  end
+
+  return true
+end
+
+---Attempts to add a unit to the scenario with retry logic and random positioning
+---This function tries to create a unit at a randomized position within a circular area.
+---If unit creation fails (e.g., due to terrain constraints or API issues), it retries
+---with different random positions up to the specified maximum attempts.
+---@param config SBJ__CONFIG Configuration object (currently unused but reserved for future parameters)
+---@param name string Unique name for the unit to be created
+---@param lat number Latitude coordinate of the center point for unit placement
+---@param lon number Longitude coordinate of the center point for unit placement
+---@param randomRadius number Maximum distance in nautical miles from center point for random placement
+---@param unitDBID number Database ID of the unit type to create (must be valid CMO platform DBID)
+---@param attempt? number Current attempt number (used internally for recursion, defaults to 1)
+---@param max_attempts? number Maximum number of placement attempts before giving up (defaults to 50)
+---@return CMO__Unit|nil unit The created unit object if successful, nil if all attempts failed
+---@return CMO__Location|nil point The final position where unit was placed, nil if creation failed
+function GameUtils.tryAddUnit(config, name, lat, lon, randomRadius, unitDBID, attempt, max_attempts)
+  attempt = attempt or 1
+  max_attempts = max_attempts or 50
+
+  local point = GameUtils.circularRandomPosition(lat, lon, randomRadius)
+  local unit = GameApi.ScenEdit_AddUnit({
+    type = 'Facility',
+    unitname = name,
+    dbid = unitDBID,
+    side = 'China',
+    Lat = point.latitude,
+    Lon = point.longitude,
+    autodetectable = false
+  })
+
+  if unit then
+    return unit, point
+  elseif attempt < max_attempts then
+    return GameUtils.tryAddUnit(config, name, lat, lon, randomRadius, unitDBID, attempt + 1, max_attempts)
+  else
+    print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. name)
+    return nil, nil
+  end
 end
 
 return GameUtils
