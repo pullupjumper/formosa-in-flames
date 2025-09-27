@@ -95,7 +95,7 @@ end
 ---Updates weapon control status and emission settings based on user selection
 ---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.wcsSettingTable(config)
-  local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
 
   local HTMLTemplate = [[
     <!DOCTYPE html>

@@ -119,7 +119,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
     return
   end
 
-  local units = side.units
+  -- local units = side.units
 
   for _, guid in ipairs(contacts) do
     local contact = GameApi.ScenEdit_GetContact('China', guid)
@@ -132,7 +132,9 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.trackTarget(config, saveData, units, config.platform.BZK005, contact)
+            isTracking = Recon.trackTarget(
+              config, saveData, side:unitsBy(config.unitType.AIRCRAFT), config.platform.BZK005, contact
+            )
           end
         end
       end
@@ -186,7 +188,9 @@ function TargetingProcess.findNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.trackTarget(config, saveData, side.units, config.platform.WZ8, contact)
+          hasTracked = Recon.trackTarget(
+            config, saveData, side:unitsBy(config.unitType.AIRCRAFT), config.platform.WZ8, contact
+          )
           Logger.log("hasTracked: " .. tostring(hasTracked))
         end
       end

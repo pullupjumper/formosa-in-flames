@@ -7,7 +7,9 @@ local GPSJamming = require("src.modules.EW.GPSJamming")
 local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 local IADS = require("src.modules.IADS")
-local units = GameApi.VP_GetSide({ side = 'China' }).units
+-- local units = GameApi.VP_GetSide({ side = 'China' }).units
+local side = GameApi.VP_GetSide({ side = 'China' })
+
 
 if saveData == nil then
   Logger.error('saveData is nil')
@@ -128,10 +130,18 @@ if unit then
         unit.dbid == config.platform.S400 or
         unit.dbid == config.platform.HQ12 then
       IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'SAM', unit)
-      IADS.activateNearestRadar(config, units, unit)
+      IADS.activateNearestRadar(
+        config,
+        side:unitsBy(config.unitType.FACILITY, config.fixedFacilityCategory.MOBILE_VEHICLE),
+        unit
+      )
     elseif unit.dbid == config.platform.JY26 or unit.dbid == config.platform.YLC8B then
       IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'radar', unit)
-      IADS.activateNearestRadar(config, units, unit)
+      IADS.activateNearestRadar(
+        config,
+        side:unitsBy(config.unitType.FACILITY, config.fixedFacilityCategory.MOBILE_VEHICLE),
+        unit
+      )
     else
       for _, DBID in ipairs(config.c.IADS.C2FacilityDBIDs) do
         if unit.dbid == DBID and not saveData.c.IADS.C2[unit.guid] then

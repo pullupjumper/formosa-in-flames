@@ -28,7 +28,7 @@ if not side then
   return
 end
 
-local units = side.units
+-- local units = side.units
 
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -40,7 +40,7 @@ end
 
 
 if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.PHIBOP.startTime) then
-  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(saveData, config, units)
+  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(saveData, config, side:unitsBy(config.unitType.SHIP))
 
   if hasIssuedShipMovementOrder then
     saveData.c.PHIBOP.isWaitingForShipArrival = true
@@ -49,7 +49,7 @@ if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveDat
 end
 
 if saveData.c.PHIBOP.isWaitingForShipArrival then
-  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
+  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, side:unitsBy(config.unitType.SHIP))
   local hasArrived = Utils.getCount(result.units) > 15 and not result.isUnitMoving
 
   if hasArrived then
@@ -102,7 +102,9 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
 
   if shouldLaunchAmphibiousAssault then
     local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
-    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config, units)
+    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(
+      config, side:unitsBy(config.unitType.SHIP)
+    )
     local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
 
     if hasLaunchedAmphibiousAssault then
@@ -118,7 +120,9 @@ if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
   local hasEstablishedBeachheads = Utils.getCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1
 
   if hasEstablishedBeachheads then
-    local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(config, saveData, units)
+    local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(
+      config, saveData, side:unitsBy(config.unitType.SHIP)
+    )
 
     if hasStartedSecondWaveUnloading then
       saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
@@ -131,7 +135,7 @@ if saveData.c.PHIBOP.airlandingMissionStartTime ~= nil then
   local isTimeExceeded = elapsedTime >= (3600 * 2)
 
   if isTimeExceeded then
-    local hasTransfered = AmphibiousLogistics.retransferCargos(config, units)
+    local hasTransfered = AmphibiousLogistics.retransferCargos(config, side:unitsBy(config.unitType.SHIP))
 
     if hasTransfered then
       saveData.c.PHIBOP.airlandingMissionStartTime = currentTime

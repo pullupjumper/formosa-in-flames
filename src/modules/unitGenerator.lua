@@ -539,7 +539,7 @@ end
 ---@param config SBJ__CONFIG Configuration object
 ---@return boolean Whether successful
 function UnitGenerator.removeC2Facilities(config)
-  local units = GameApi.VP_GetSide({ name = 'China' }).units
+  local units = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   local removedCount = 0
 
   for _, u in ipairs(units) do
@@ -771,7 +771,7 @@ end
 ---@param saveData SBJ__SaveData Save data
 ---@return boolean Whether successful
 function UnitGenerator.initC2Facilities(config, saveData)
-  local units = GameApi.VP_GetSide({ name = 'China' }).units
+  local units = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   saveData.c.IADS.C2 = {}
 
   for _, setting in ipairs(config.c.IADS.C2Settings) do
@@ -950,7 +950,7 @@ end
 ---@param config SBJ__CONFIG Configuration object
 ---@return boolean Whether successful
 function UnitGenerator.removeLandingShips(config)
-  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
   local removedCount = 0
 
   local landingShipDBIDs = {

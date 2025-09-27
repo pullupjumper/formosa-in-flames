@@ -419,6 +419,46 @@ config.weapon = {
   JDAM = 554,         -- JDAM
 }
 
+config.unitType = {
+  AIRCRAFT = '1',
+  SHIP = '2',
+  SUBMARINE = '3',
+  FACILITY = '4',
+  AIMPOINT = '5',
+  WEAPON = '6',
+  SATELLITE = '7',
+  GROUND_UNIT = '8'
+}
+
+config.aircraftCategory = {
+  NONE = 1001,
+  FIXED_WING = 2001,
+  FIXED_WING_CARRIER_CAPABLE = 2002,
+  HELICOPTER = 2003,
+  TILTROTOR = 2004,
+  AIRSHIP = 2006,
+  SEAPLANE = 2007,
+  AMPHIBIAN = 2008
+}
+
+config.fixedFacilityCategory = {
+  NONE = 1001,
+  RUNWAY = 2001,
+  RUNWAY_GRADE_TAXIWAY = 2002,
+  RUNWAY_ACCESS_POINT = 2003,
+  BUILDING_SURFACE = 3001,
+  BUILDING_REVETED = 3002,
+  BUILDING_BUNKER = 3003,
+  BUILDING_UNDERGROUND = 3004,
+  STRUCTURE_OPEN = 3005,
+  STRUCTURE_REVETED = 3006,
+  UNDERWATER = 4001,
+  MOBILE_VEHICLE = 5001,
+  MOBILE_PERSONNEL = 5002,
+  AEROSTAT_MOORING = 6001,
+  AIR_BASE = 9001
+}
+
 
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5

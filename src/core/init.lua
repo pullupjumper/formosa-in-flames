@@ -28,7 +28,7 @@ local UnitGenerator = require("src.modules.unitGenerator")
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 local function initC2(config, saveData)
-  local units = GameApi.VP_GetSide({ side = "Taiwan" }).units
+  local units = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(config.unitType.FACILITY)
 
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
@@ -97,7 +97,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param side string The side name (e.g., 'China')
 local function initCommsJammers(config, saveData, side)
-  local units = GameApi.VP_GetSide({ side = side }).units
+  local units = GameApi.VP_GetSide({ side = side }):unitsBy(config.unitType.AIRCRAFT)
 
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
@@ -121,7 +121,7 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 local function initAC(config, saveData)
-  local units = GameApi.VP_GetSide({ side = 'Taiwan' }).units
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
 
   for _, unit in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
@@ -152,8 +152,8 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 local function initSIGINT(config, saveData)
-  local units = GameApi.VP_GetSide({ side = 'US' }).units
-  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
+  local units = GameApi.VP_GetSide({ side = 'US' }):unitsBy(config.unitType.AIRCRAFT)
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
 
   for _, value in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(value.guid)
@@ -394,7 +394,7 @@ local function initRunways(saveData)
     end
   end
 
-  local units = GameApi.VP_GetSide({ side = 'China' }).units
+  local units = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.FACILITY)
 
   for _, v in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(v.guid)
