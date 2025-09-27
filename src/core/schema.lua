@@ -123,18 +123,18 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field opts CMO__Mission -- The options for the mission
 
 ---@class SBJ__GenerateMissilePaths_Params
----@field target_lat number 目標緯度
----@field target_lon number 目標經度
----@field launcher_lat number 發射器緯度
----@field launcher_lon number 發射器經度
----@field radar_range number 雷達範圍（海浬）
----@field missile_count number|nil 飛彈數量，預設為 5
----@field missile_speed_kts number|nil 飛彈速度（節），預設為 600
----@field missile_range_nm number|nil 飛彈最大射程（海浬），預設為 100
+---@field target_lat number Target latitude
+---@field target_lon number Target longitude
+---@field launcher_lat number Launcher latitude
+---@field launcher_lon number Launcher longitude
+---@field radar_range number Radar range (nautical miles)
+---@field missile_count number|nil Number of missiles, default is 5
+---@field missile_speed_kts number|nil Missile speed (knots), default is 600
+---@field missile_range_nm number|nil Maximum missile range (nautical miles), default is 100
 
 ---@class SBJ__MissilePath
----@field waypoints table<integer, CMO__Location> 飛彈路徑點列表
----@field launch_time number 發射時間（UTC 時間戳）
+---@field waypoints table<integer, CMO__Location> Missile waypoint list
+---@field launch_time number Launch time (UTC timestamp)
 
 ---@class SBJ__CONFIG:table
 
@@ -231,23 +231,23 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 ------------------------------------------------------------------------
 ---@class SBJ__Loadout:table
----@field loadoutId number 彈藥配置ID
----@field num number 單位數量
+---@field loadoutId number Ammunition configuration ID
+---@field num number Unit count
 
 ---@class SBJ__EmbarkedUnit:table
----@field side string 陣營名稱
----@field type string 單位類型
----@field name string 單位名稱
----@field dbid number 單位數據庫ID
----@field loadouts SBJ__Loadout[]|nil 單位彈藥配置
+---@field side string Side name
+---@field type string Unit type
+---@field name string Unit name
+---@field dbid number Unit database ID
+---@field loadouts SBJ__Loadout[]|nil Unit ammunition configuration
 
 ---@class SBJ__ShipConfig:table
----@field dbid number 數據庫ID
----@field unitname string 單位名稱
----@field distance number 距離
----@field angle number 角度
----@field embarkedUnits SBJ__EmbarkedUnit[]|nil 搭載單位
----@field loadouts SBJ__Loadout[]|nil 彈藥配置
+---@field dbid number Database ID
+---@field unitname string Unit name
+---@field distance number Distance
+---@field angle number Angle
+---@field embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
+---@field loadouts SBJ__Loadout[]|nil Ammunition configuration
 
 ---@class SBJ__ShipSettings:table
 ---@field distanceBetweenLSTAndLPDArea string
@@ -312,55 +312,55 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 ---Dynamic Fire Support Plan Types
 ---@class SBJ__ReconScheduleEntry
----@field time string 偵察時間 "2027-06-09 14:30:00"
----@field type string 偵察類型 "satellite" | "aircraft"
----@field delay number 延遲觸發時間（秒）
----@field executed boolean 是否已執行
----@field fsemTemplate SBJ__FsemTemplate FSEM模板
+---@field time string Reconnaissance time "2027-06-09 14:30:00"
+---@field type string Reconnaissance type "satellite" | "aircraft"
+---@field delay number Delay trigger time (seconds)
+---@field executed boolean Whether already executed
+---@field fsemTemplate SBJ__FsemTemplate FSEM template
 
 ---@class SBJ__FsemTemplate
----@field name string FSEM名稱
----@field isFirstWave boolean 是否為第一波攻擊
----@field strikeInterval number 打擊間隔時間（秒）
----@field FSTs SBJ__FstTemplate[] FST模板陣列
+---@field name string FSEM name
+---@field isFirstWave boolean Whether it's the first wave attack
+---@field strikeInterval number Strike interval time (seconds)
+---@field FSTs SBJ__FstTemplate[] FST template array
 
 ---@class SBJ__FstTemplate
----@field name string FST名稱
----@field target SBJ__TargetTemplate 目標配置
----@field wpnSystem string 武器系統類型
----@field batteries SBJ__Battery[] 電池/火力單位陣列
+---@field name string FST name
+---@field target SBJ__TargetTemplate Target configuration
+---@field wpnSystem string Weapon system type
+---@field batteries SBJ__Battery[] Battery/fire unit array
 
 ---@class SBJ__TargetTemplate
----@field objs table[]? 目標物件陣列（固定目標使用）
----@field areas string[] 作戰區域
----@field filterNames string[]? 篩選函數名稱（動態目標使用）
----@field contactAge number 聯絡人有效時間（秒）
----@field minTargetCount number 最小目標數量閾值
----@field ammoPerTarget number 每目標彈藥數量
+---@field objs table[]? Target object array (for fixed targets)
+---@field areas string[] Operation areas
+---@field filterNames string[]? Filter function names (for dynamic targets)
+---@field contactAge number Contact valid time (seconds)
+---@field minTargetCount number Minimum target count threshold
+---@field ammoPerTarget number Ammunition count per target
 
 ---@class SBJ__DynamicFSPConfig
----@field enabled boolean 是否啟用動態火力支援計畫
----@field reconSchedule SBJ__ReconScheduleEntry[] 偵察時程表
+---@field enabled boolean Whether to enable dynamic fire support plan
+---@field reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 
 ---@class SBJ__BatteryAssignment
----@field guid string 火力單位GUID
----@field battery table 火力單位資料
+---@field guid string Fire unit GUID
+---@field battery table Fire unit data
 
 ---Dynamic ATO Insertion Types
 ---@class SBJ__ATOTemplate
----@field name string ATO波次名稱
----@field targetType string 目標類型 ("STRIKE", "SEAD", etc.)
----@field isFirstWave boolean 是否為第一波攻擊
----@field strikeInterval number 打擊間隔時間（秒）
----@field packages SBJ__ATOPackage[] ATO套件陣列
+---@field name string ATO wave name
+---@field targetType string Target type ("STRIKE", "SEAD", etc.)
+---@field isFirstWave boolean Whether it's the first wave attack
+---@field strikeInterval number Strike interval time (seconds)
+---@field packages SBJ__ATOPackage[] ATO package array
 
 ---@class SBJ__ATOPackage:SBJ__Task
----@field striker SBJ__MissionEntry? 主攻擊機配置
----@field escort SBJ__MissionEntry? 護航機配置
----@field wildWeasel SBJ__MissionEntry? 野鼬配置
----@field jammer SBJ__MissionEntry? 干擾機配置
----@field tanker SBJ__MissionEntry? 加油機配置
----@field timeToReady number? 準備時間（分鐘）
+---@field striker SBJ__MissionEntry? Main striker configuration
+---@field escort SBJ__MissionEntry? Escort configuration
+---@field wildWeasel SBJ__MissionEntry? Wild Weasel configuration
+---@field jammer SBJ__MissionEntry? Jammer configuration
+---@field tanker SBJ__MissionEntry? Tanker configuration
+---@field timeToReady number? Ready time (minutes)
 
 ---@class SBJ__GPSJammerData:table
 ---@field name string

@@ -75,6 +75,22 @@ saveData.c.commsJamming.jammers = {
 
 -- GPS Jamming
 saveData.c.GPSJamming.isActivated = true
+saveData.c.GPSJamming.jammers = {
+  ['1st Bn, 1st ECM Bde'] = {
+    zoneName = 'JAMMING ZONE/1',
+    name = '1st Bn, 1st ECM Bde',
+    point = { lat = 'N 25.28.17', lon = 'E 119.35.17' },
+    randomRadius = config.c.GPSJamming.randomRadius,
+    radius = config.c.GPSJamming.radius
+  },
+  ['2nd Bn, 1st ECM Bde'] = {
+    zoneName = 'JAMMING ZONE/2',
+    name = '2nd Bn, 1st ECM Bde',
+    point = { lat = 'N 24.43.49', lon = 'E 118.29.41' },
+    randomRadius = config.c.GPSJamming.randomRadius,
+    radius = config.c.GPSJamming.radius
+  },
+}
 -- CONFIG.c.GPSJamming.GPSGuidedWeapons = {
 --     { dbid = 779,  jammingResistance = 33 }, -- ATACMS
 --     { dbid = 452,  jammingResistance = 33 }, -- SLAM-ER

@@ -517,22 +517,8 @@ config.c.commsJamming.randomVariance = {
 }
 
 -- GPS Jamming
-config.c.GPSJamming.jammers = {
-  ['1st Bn, 1st ECM Bde'] = {
-    zoneName = 'JAMMING ZONE/1',
-    name = '1st Bn, 1st ECM Bde',
-    point = { lat = 'N 25.28.17', lon = 'E 119.35.17' },
-    randomRadius = 20,
-    radius = 14
-  },
-  ['2nd Bn, 1st ECM Bde'] = {
-    zoneName = 'JAMMING ZONE/2',
-    name = '2nd Bn, 1st ECM Bde',
-    point = { lat = 'N 24.43.49', lon = 'E 118.29.41' },
-    randomRadius = 20,
-    radius = 14
-  },
-}
+config.c.GPSJamming.randomRadius = 20 -- random radius
+config.c.GPSJamming.radius = 14
 config.c.GPSJamming.GPSGuidedWeapons = {
   { dbid = config.weapon.JDAM,       jammingResistance = 50 },
   { dbid = config.weapon.WAN_CHIEN,  jammingResistance = 50 },
