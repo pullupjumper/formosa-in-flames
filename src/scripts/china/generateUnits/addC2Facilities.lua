@@ -10,11 +10,11 @@ if not saveData then
   return
 end
 
--- 使用新的 unitGenerator API
+-- Use the new unitGenerator API
 UnitGenerator.removeC2Facilities(config)
 UnitGenerator.addC2Facilities(config)
 
--- 使用新的 initC2Facilities 函數
+-- Use the new initC2Facilities function
 UnitGenerator.initC2Facilities(config, saveData)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

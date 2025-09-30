@@ -16,14 +16,14 @@ local ADVANCE_SECONDS = 180
 -- Strike Package Processing Functions (integrated from strikePackageProcessor)
 --------------------------------------------------------------------------------
 
---- 計算開始武器掛載的時間
+--- Calculate the start time for weapon loading
 ---@param packageData SBJ__Package
 ---@return number|nil loadoutStartTime timestamp
 local function calculateLoadoutStartTime(packageData)
   local earliestStartTime = nil
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
 
-  -- 找出所有機群中最早的出擊時間
+  -- Find the earliest start time among all flight groups
   for _, role in ipairs(roles) do
     if packageData[role] and packageData[role].startTime then
       local startTimeTimestamp = Utils.parseDatetimeToTimestamp(packageData[role].startTime)
@@ -37,40 +37,40 @@ local function calculateLoadoutStartTime(packageData)
     return nil
   end
 
-  -- 取得 package 層級的 timeToReady
+  -- Get the package-level timeToReady
   local timeToReady = packageData.timeToReady or (9 * 60)
   local loadoutStartTime = earliestStartTime - timeToReady
 
   return loadoutStartTime
 end
 
---- 檢查是否到達開始武器掛載的時間
+--- Check if it's time to start weapon loading
 ---@param packageData SBJ__Package
 ---@return boolean
 local function isTimeToStartLoadout(packageData)
-  -- 取得 package 層級的 loadoutStatus
+  -- Get the package-level loadoutStatus
   local loadoutStatus = packageData.loadoutStatus
   if not loadoutStatus then
     Logger.error("loadoutStatus not found in package data")
     return false
   end
 
-  -- 計算開始掛載時間
+  -- Calculate loadout start time
   if not loadoutStatus.loadoutStartTime then
     loadoutStatus.loadoutStartTime = calculateLoadoutStartTime(packageData)
   end
 
   if not loadoutStatus.loadoutStartTime then
-    return false -- 無法計算開始時間
+    return false -- Cannot calculate start time
   end
 
-  -- 將時間戳轉回字串格式供 GameUtils.isAfterStartTime() 使用
+  -- Convert timestamp back to string format for GameUtils.isAfterStartTime() use
   ---@type string
   local loadoutStartTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.loadoutStartTime)
   return GameUtils.isAfterStartTime(loadoutStartTimeStr, ADVANCE_SECONDS)
 end
 
---- 為整個 package 的所有機群設定武器掛載
+--- Set weapon loadouts for all flight groups in the package
 ---@param packageData SBJ__Package
 local function initiateLoadoutForPackage(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
@@ -85,26 +85,26 @@ local function initiateLoadoutForPackage(packageData)
       local unitCount = roleData.unitCount
       local targetUnitDBID = roleData.unitDBID
 
-      -- 如果沒有指定 unitDBID，跳過這個角色
+      -- If no unitDBID is specified, skip this role
       if not targetUnitDBID then
         Logger.log("No unitDBID specified for role: " .. role .. ", skipping loadout setup")
         goto continue
       end
 
-      -- 獲取基地
+      -- Get the base
       local base = GameApi.ScenEdit_GetUnit(roleData.baseGUID)
       if base and #base.embarkedUnits['Aircraft'] > 0 then
         local unitsProcessed = 0
 
-        -- 只為匹配 unitDBID 的飛機設定 loadout
+        -- Only set loadout for aircraft matching unitDBID
         for _, unitGUID in ipairs(base.embarkedUnits['Aircraft']) do
           if unitsProcessed >= unitCount then
-            break -- 已處理足夠數量的單位
+            break -- Processed sufficient number of units
           end
 
           local unit = GameApi.ScenEdit_GetUnit(unitGUID)
           if unit then
-            -- 只處理符合指定 unitDBID 的飛機
+            -- Only process aircraft matching the specified unitDBID
             if unit.dbid == targetUnitDBID then
               local result = GameApi.ScenEdit_SetLoadout({
                 unitname = unit.name,
@@ -122,7 +122,7 @@ local function initiateLoadoutForPackage(packageData)
                 Logger.error("Failed to set loadout for " .. unit.name)
               end
             end
-            -- 如果 unit.dbid != targetUnitDBID，則跳過此單位，不做任何動作
+            -- If unit.dbid != targetUnitDBID, skip this unit without any action
           end
         end
 
@@ -131,7 +131,7 @@ local function initiateLoadoutForPackage(packageData)
           role, unitsProcessed, unitCount, targetUnitDBID
         ))
 
-        -- 如果沒有找到足夠的符合型號飛機，記錄警告
+        -- If insufficient aircraft of matching type found, log warning
         if unitsProcessed < unitCount then
           Logger.log(string.format(
             "loging: Only found %d aircraft with DBID %d for %s role, need %d",
@@ -144,7 +144,7 @@ local function initiateLoadoutForPackage(packageData)
     end
   end
 
-  -- 更新狀態 - 使用現有時間函數
+  -- Update status - using existing time function
   local currentTime = GameApi.ScenEdit_CurrentTime()
   local loadoutStatus = packageData.loadoutStatus
   loadoutStatus.isLoadoutInitiated = true
@@ -155,7 +155,7 @@ local function initiateLoadoutForPackage(packageData)
   Logger.log("All loadouts initiated, expected ready at: " .. expectedReadyTimeStr)
 end
 
---- 檢查武器掛載是否完成
+--- Check if weapon loading is complete
 ---@param packageData SBJ__Package
 ---@return boolean
 local function isLoadoutReady(packageData)
@@ -165,24 +165,24 @@ local function isLoadoutReady(packageData)
     return false
   end
 
-  -- 如果 loadout 已準備完成
+  -- If loadout is ready
   if loadoutStatus.isLoadoutInitiated and loadoutStatus.expectedReadyTime then
     ---@type string
     local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
     return GameUtils.isAfterStartTime(expectedReadyTimeStr)
   end
 
-  -- 如果尚未開始 loadout 程序，現在開始
+  -- If loadout process hasn't started yet, start now
   if not loadoutStatus.isLoadoutInitiated then
     initiateLoadoutForPackage(packageData)
-    return false -- 第一次設定，需要等待
+    return false -- First time setup, need to wait
   end
 
-  -- 正在等待中
+  -- Currently waiting
   return false
 end
 
---- 找出最早出擊的機群
+--- Find the earliest departing flight group
 ---@param packageData SBJ__Package
 ---@return table|nil earliestRole
 local function findEarliestRole(packageData)
@@ -276,23 +276,23 @@ end
 ---@param packageData SBJ__Package The pure data table from saveData
 ---@return boolean hasLaunched
 local function processPackage(config, saveData, packageData)
-  -- 1. 檢查是否到達武器掛載開始時間
+  -- 1. Check if weapon loading start time has been reached
   if not isTimeToStartLoadout(packageData) then
-    return false -- 還沒到開始掛載的時間
+    return false -- Not yet time to start loading
   end
 
-  -- 2. 檢查武器掛載是否完成
+  -- 2. Check if weapon loading is complete
   if not isLoadoutReady(packageData) then
-    return false -- 正在掛載武器或等待完成
+    return false -- Currently loading weapons or waiting for completion
   end
 
-  -- 3. 檢查最早機群是否到達出擊時間
+  -- 3. Check if earliest flight group has reached departure time
   local earliestRole = findEarliestRole(packageData)
   if not (earliestRole and GameUtils.isAfterStartTime(earliestRole.startTime, ADVANCE_SECONDS)) then
-    return false -- 最早機群還沒到出擊時間
+    return false -- Earliest flight group hasn't reached departure time yet
   end
 
-  -- 4. 建立所有任務 - 攻擊任務是關鍵
+  -- 4. Create all missions - strike mission is critical
   local roles = { "tanker", "striker", "escort", "wildWeasel", "jammer", }
 
   for _, role in ipairs(roles) do
@@ -301,7 +301,7 @@ local function processPackage(config, saveData, packageData)
 
       if role == 'striker' and not missionCreated then
         Logger.error("Critical failure: Could not create striker mission. Aborting package.")
-        return false -- 如果主要任務建立失敗，中止整個流程
+        return false -- If primary mission creation fails, abort entire process
       end
     end
   end
@@ -347,7 +347,7 @@ local function processPackage(config, saveData, packageData)
     Logger.log("Recon UAV added to queue.")
   end
 
-  -- 5. 尋找目標
+  -- 5. Find targets
   -- local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
   local evaluatedTargetlist = packageData.target.list
   Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
@@ -358,7 +358,7 @@ local function processPackage(config, saveData, packageData)
     return false
   end
 
-  -- 6. 將目標分配給攻擊任務
+  -- 6. Assign targets to strike mission
   local targetsAssigned = GameApi.ScenEdit_AssignUnitAsTarget(
     evaluatedTargetlist,
     packageData.striker.missionParams.name
@@ -370,11 +370,11 @@ local function processPackage(config, saveData, packageData)
 
   Logger.log("Targets assigned to mission " .. packageData.striker.missionParams.name)
 
-  -- 7. 將單位分配給所有任務
+  -- 7. Assign units to all missions
   if assignUnits(packageData) then
     Logger.log(packageData.striker.missionParams.name ..
       " status -> LAUNCHED. All loadouts ready, package has been launched.")
-    return true -- 成功
+    return true -- Success
   else
     Logger.error(packageData.striker.missionParams.name .. " failed to assign striker units.")
     return false

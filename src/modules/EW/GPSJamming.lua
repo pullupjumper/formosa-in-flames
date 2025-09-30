@@ -48,8 +48,9 @@ end
 ---@param zone CMO__Zone
 ---@param sideObj CMO__Side
 ---@param sideName string
+---@param isDeleted? boolean
 ---@return boolean -- Whether the removal was successful
-local function removeEvent(jammerData, zone, sideObj, sideName)
+local function removeEvent(jammerData, zone, sideObj, sideName, isDeleted)
   local myz = sideObj:getstandardzone(zone.guid)
 
   for _, area in ipairs(myz.area) do
@@ -57,7 +58,10 @@ local function removeEvent(jammerData, zone, sideObj, sideName)
   end
 
   GameApi.ScenEdit_RemoveZone('China', -925, { Description = myz.description })
-  GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = jammerData.name })
+
+  if isDeleted then
+    GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = jammerData.name })
+  end
   GameUtils.unitEntersAreaEvent(jammerData.zoneName, {}, {}, '', 'remove', false, false, false)
   Logger.log("[GPS Jamming] Removed GPS jamming zone: " .. jammerData.zoneName)
   return true
@@ -178,7 +182,7 @@ function GPSJamming.removeJammers(saveData, sideName)
   for _, zone in ipairs(sideObj.standardzones) do
     for _, jammerData in pairs(saveData[side].GPSJamming.jammers) do
       if zone.description == jammerData.zoneName then
-        if removeEvent(jammerData, zone, sideObj, sideName) then
+        if removeEvent(jammerData, zone, sideObj, sideName, true) then
           removedCount = removedCount + 1
         end
       end

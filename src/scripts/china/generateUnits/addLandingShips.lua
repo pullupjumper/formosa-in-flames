@@ -2,8 +2,8 @@ local UnitGenerator = require('src.modules.unitGenerator')
 local config = require('src.core.constants')
 local GameApi = require("src.utils.gameApi")
 
--- 移除現有登陸艦
+-- Remove existing landing ships
 UnitGenerator.removeLandingShips(config)
 
--- 添加新的登陸艦
+-- Add new landing ships
 UnitGenerator.addLandingShips(config)

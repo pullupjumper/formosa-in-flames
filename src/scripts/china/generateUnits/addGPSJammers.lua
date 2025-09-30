@@ -1,8 +1,13 @@
-local UnitGenerator = require('src.modules.unitGenerator')
 local config = require('src.core.constants')
+local GPSJamming = require('src.modules.EW.GPSJamming')
 local Logger = require("src.utils.logger")
+local gKH = require('src.core.gKH_State_Standalone')
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-UnitGenerator.removeJammingZones(config)
-UnitGenerator.addGPSJammingZones(config)
+if not saveData then
+  Logger.error("saveData is nil")
+  return
+end
 
-Logger.log("Successfully added GPS jammers")
+GPSJamming.removeJammers(saveData, 'China')
+GPSJamming.addGPSJammers(config, saveData, 'China')

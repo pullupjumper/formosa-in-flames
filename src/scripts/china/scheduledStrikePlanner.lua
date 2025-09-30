@@ -24,22 +24,13 @@ if saveData == nil then
   return
 end
 
--- 動態作戰計畫 - 統一處理偵察排程和各種打擊手段
+-- Dynamic operations plan - unified handling of reconnaissance scheduling and various strike methods
 if saveData.c.dynamicOperations and saveData.c.dynamicOperations.enabled then
-  -- 執行地面火力支援作戰
+  -- Execute ground fire support operations
   DynamicFireSupportPlan.execute(config, saveData, contacts)
-  -- 執行空中作戰任務
+  -- Execute air combat missions
   DynamicATOInsertion.process(config, saveData, contacts)
 end
-
--- 保留舊版本的相容性支援
--- if saveData.c.ground.dynamicFSP and saveData.c.ground.dynamicFSP.enabled then
---   DynamicFireSupportPlan.execute(config, saveData, contacts)
--- end
-
--- if saveData.c.air.dynamicATO and saveData.c.air.dynamicATO.enabled then
---   DynamicATOInsertion.process(config, saveData, contacts)
--- end
 
 if saveData.c.recon.isActivated then
   Recon.handleReconQueue(saveData)

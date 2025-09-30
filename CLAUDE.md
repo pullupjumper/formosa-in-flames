@@ -71,7 +71,67 @@ The project uses a **modular event-driven architecture** centered around `src/co
 - `src/modules/EW/` - Electronic warfare (GPS jamming, SIGINT, comms jamming)  
 - `src/modules/landingOPs/` - Amphibious assault coordination and logistics
 
-**Faction Scripts** (`src/scripts/`): Event handlers organized by faction (china/, taiwan/, us/).
+**Faction Scripts** (`src/scripts/`): Event handlers organized by faction (china/, taiwan/, us/). These scripts are triggered by CMO game events.
+
+### Event System
+
+CMO provides several event types that trigger the scripts in `src/scripts/`:
+
+**Event Types**:
+- **Unit Remains in Area** - Triggers every 5 minutes when units stay within defined areas
+- **Unit Enters Area** - Triggers when units enter defined areas
+- **Unit Destroyed** - Triggers when units are destroyed
+- **Unit Damaged** - Triggers when units take damage
+- **Unit Base Status** - Triggers on base status changes
+- **Regular Time** - Scheduled events that trigger at regular intervals:
+  - 1-minute intervals for high-frequency tasks
+  - 5-minute intervals for periodic operations
+- **Scen Loaded** - Triggers once when scenario initializes
+
+Event handlers in `src/scripts/` are organized by faction and event type, coordinating real-time responses to simulation state changes.
+
+**Unit Destroyed Event Scripts**:
+- `src/scripts/score/taiwaneseAssetIsDestroy.lua` - Score tracking for destroyed Taiwanese assets
+- `src/scripts/score/destroyUnits.lua` - General unit destruction scoring and tracking
+
+**Unit Base Status Event Scripts**:
+- `src/scripts/china/aircraftLanding.lua` - China aircraft landing and base operations
+- `src/scripts/taiwan/aircraftLanding.lua` - Taiwan aircraft landing and base operations
+
+**Unit Damaged Event Scripts**:
+- `src/scripts/runwayIsDamaged.lua` - Runway damage detection and repair scheduling
+
+**Unit Remains in Area Event Scripts** (5-minute intervals):
+- `src/scripts/china/amphibiousOps/launchACV.lua` - Launch Air Cushion Vehicles from landing ships
+- `src/scripts/china/amphibiousOps/offloadVehicles.lua` - Offload vehicles from landing craft
+
+**Unit Enters Area Event Scripts**:
+- `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` - Air landing zone neutralization operations
+- `src/scripts/china/launcher/ammoHoldingArea.lua` - China TEL ammunition holding area management
+- `src/scripts/china/launcher/firingPosition.lua` - China TEL firing position handling
+- `src/scripts/china/launcher/hideArea.lua` - China TEL hide area management
+- `src/scripts/china/launcher/reloadPoint.lua` - China TEL reload point operations
+- `src/scripts/china/recon/H6NLaunchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
+- `src/scripts/china/CSGEnterArea.lua` - China Carrier Strike Group area entry handling
+- `src/scripts/taiwan/launcher/ammoHoldingArea.lua` - Taiwan TEL ammunition holding area management
+- `src/scripts/taiwan/launcher/hideArea.lua` - Taiwan TEL hide area management
+- `src/scripts/taiwan/launcher/reloadPoint.lua` - Taiwan TEL reload point operations
+- `src/scripts/score/successfulLanding.lua` - Score tracking for successful amphibious landings
+
+**1-Minute Regular Time Event Scripts**:
+- `src/scripts/china/EW/commsJamming.lua` - China communications jamming operations
+
+**5-Minute Regular Time Event Scripts**:
+- `src/scripts/china/amphibiousOps/landingCheck.lua` - Monitors amphibious landing progress
+- `src/scripts/china/EW/collectSIGINT.lua` - China SIGINT collection operations
+- `src/scripts/china/scheduledStrikePlanner.lua` - China strike planning coordination
+- `src/scripts/china/launcher/scheduledReloadHideCheck.lua` - China TEL reload/hide status monitoring
+- `src/scripts/taiwan/launcher/scheduledReloadHideCheck.lua` - Taiwan TEL reload/hide status monitoring
+- `src/scripts/us/collectSIGINT.lua` - US SIGINT collection operations
+- `src/scripts/scheduledRunwayRepairment.lua` - Automated runway damage repair scheduling
+
+**Scen Loaded Event**:
+All core systems (`src/core/`), modules (`src/modules/`), and utilities (`src/utils/`) are initialized when the scenario loads. The main entry point `src/core/init.lua` orchestrates the initialization of all game systems, configuration loading, and module setup at scenario start.
 
 ## Critical Development Guidelines
 
