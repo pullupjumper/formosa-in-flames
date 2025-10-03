@@ -534,19 +534,26 @@ config.c.IADS.C2Settings = {
 }
 
 -- Comms Jamming
-config.c.commsJamming.limit = 6
+config.c.commsJamming.limit = 4
 config.c.commsJamming.range = 50
 config.c.commsJamming.initialComms = -20
 config.c.commsJamming.baseJammingPower = -120
 config.c.commsJamming.distanceExponent = 1.04
 config.c.commsJamming.effectivenessFormula = { base = 1.9, range = 1.8 }
+config.c.commsJamming.distanceThresholds = {
+  close = 100,
+  medium = 200,
+  far = 300,
+  distant = 400
+}
 config.c.commsJamming.aewSupport = {
   close = 400,  -- < 100nm
   medium = 350, -- < 200nm
   far = 250,    -- < 300nm
   distant = 150 -- < 400nm
 }
-config.c.commsJamming.recoveryTime = { min = 15, max = 25 }
+-- config.c.commsJamming.recoveryTime = { min = 15, max = 25 }
+config.c.commsJamming.recoveryTime = { min = 5, max = 10 }
 config.c.commsJamming.jammingTime = { min = 5, max = 10 }
 config.c.commsJamming.cooldownTime = { min = -5, max = -1 }
 config.c.commsJamming.randomVariance = {

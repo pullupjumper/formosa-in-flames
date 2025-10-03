@@ -5,6 +5,27 @@ local Utils = require("src.utils.utils")
 local CommsJamming = {}
 
 
+---Get distance-based modifier category
+---@param config SBJ__CONFIG
+---@param distance number Distance in nautical miles
+---@return string|nil category Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
+local function getDistanceCategory(config, distance)
+  local thresholds = config.c.commsJamming.distanceThresholds
+
+  if distance < thresholds.close then
+    return 'close'
+  elseif distance < thresholds.medium then
+    return 'medium'
+  elseif distance < thresholds.far then
+    return 'far'
+  elseif distance < thresholds.distant then
+    return 'distant'
+  end
+
+  return nil
+end
+
+
 ---Calculate communication modifier for affected unit based on jammers and support systems
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
@@ -28,21 +49,12 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 
     if actualAEW and actualAEW.condition == 'Airborne' then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualAEW.guid)
-      if distance < 100 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.close + math.random(
-          config.c.commsJamming.randomVariance.close.min, config.c.commsJamming.randomVariance.close.max
-        )
-      elseif distance < 200 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.medium + math.random(
-          config.c.commsJamming.randomVariance.medium.min, config.c.commsJamming.randomVariance.medium.max
-        )
-      elseif distance < 300 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.far + math.random(
-          config.c.commsJamming.randomVariance.far.min, config.c.commsJamming.randomVariance.far.max
-        )
-      elseif distance < 400 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.distant + math.random(
-          config.c.commsJamming.randomVariance.distant.min, config.c.commsJamming.randomVariance.distant.max
+      local category = getDistanceCategory(config, distance)
+
+      if category then
+        commModifier = commModifier + config.c.commsJamming.aewSupport[category] + math.random(
+          config.c.commsJamming.randomVariance[category].min,
+          config.c.commsJamming.randomVariance[category].max
         )
       end
     end
@@ -53,21 +65,12 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 
     if ROCC then
       local distance = GameApi.Tool_Range(affectedUnitGUID, ROCC.guid)
-      if distance < 100 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.close + math.random(
-          config.c.commsJamming.randomVariance.close.min, config.c.commsJamming.randomVariance.close.max
-        )
-      elseif distance < 200 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.medium + math.random(
-          config.c.commsJamming.randomVariance.medium.min, config.c.commsJamming.randomVariance.medium.max
-        )
-      elseif distance < 300 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.far + math.random(
-          config.c.commsJamming.randomVariance.far.min, config.c.commsJamming.randomVariance.far.max
-        )
-      elseif distance < 400 then
-        commModifier = commModifier + config.c.commsJamming.aewSupport.distant + math.random(
-          config.c.commsJamming.randomVariance.distant.min, config.c.commsJamming.randomVariance.distant.max
+      local category = getDistanceCategory(config, distance)
+
+      if category then
+        commModifier = commModifier + config.c.commsJamming.aewSupport[category] + math.random(
+          config.c.commsJamming.randomVariance[category].min,
+          config.c.commsJamming.randomVariance[category].max
         )
       end
       break
@@ -115,46 +118,92 @@ end
 ---@param jammer CMO__Unit The jamming unit
 ---@param distance number Pre-calculated distance between jammer and unit
 ---@return boolean success Whether jamming was successfully applied
-local function commsJammingWithDistance(config, affectedUnitData, jammer, distance)
-  if jammer and jammer.condition == 'Airborne' and jammer.jammer then
-    if affectedUnitData.isOutOfComms == false then
-      if affectedUnitData.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitData.outofcomms >= 0 then
-        local effectiveness = 1 * math.sqrt(
-          1 - (distance ^ config.c.commsJamming.effectivenessFormula.base /
-            config.c.commsJamming.range ^ config.c.commsJamming.effectivenessFormula.range)
-        )
+local function omnidirectionalJammingWithDistance(config, affectedUnitData, jammer, distance)
+  if affectedUnitData.isOutOfComms == false then
+    if affectedUnitData.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitData.outofcomms >= 0 then
+      local effectiveness = 1 * math.sqrt(
+        1 - (distance ^ config.c.commsJamming.effectivenessFormula.base /
+          config.c.commsJamming.range ^ config.c.commsJamming.effectivenessFormula.range)
+      )
 
-        if effectiveness == effectiveness and effectiveness > (math.random() / 2) then
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = true })
-          affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
-          affectedUnitData.isOutOfComms = true
-          Logger.log(
-            "CommsJamming: Unit " .. affectedUnitData.guid .. " successfully jammed by " ..
-            jammer.guid .. " (distance: " .. math.floor(distance) ..
-            "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
-          )
-          return true
-        else
-          GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
-          affectedUnitData.outofcomms = 0
-          affectedUnitData.isOutOfComms = false
-          Logger.log(
-            "CommsJamming: Unit " .. affectedUnitData.guid .. " jamming attempt failed (distance: " ..
-            math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
-          )
-          return true
-        end
-      elseif affectedUnitData.outofcomms < 0 then
-        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
-        affectedUnitData.isOutOfComms = false
+      if effectiveness == effectiveness and effectiveness > (math.random() / 2) then
+        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = true })
         affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
+        affectedUnitData.isOutOfComms = true
+        Logger.log(
+          "CommsJamming: Unit " .. affectedUnitData.guid .. " successfully jammed by " ..
+          jammer.guid .. " (distance: " .. math.floor(distance) ..
+          "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
+        )
+        return true
       else
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+        affectedUnitData.outofcomms = 0
         affectedUnitData.isOutOfComms = false
-        affectedUnitData.outofcomms = math.random(
-          config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
+        Logger.log(
+          "CommsJamming: Unit " .. affectedUnitData.guid .. " jamming attempt failed (distance: " ..
+          math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
         )
+        return true
       end
+    elseif affectedUnitData.outofcomms < 0 then
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+      affectedUnitData.isOutOfComms = false
+      affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
+    else
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+      affectedUnitData.isOutOfComms = false
+      affectedUnitData.outofcomms = math.random(
+        config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
+      )
+    end
+  end
+
+  return false
+end
+
+---Apply communication jamming effects to a unit with pre-calculated distance
+---@param config SBJ__CONFIG
+---@param affectedUnitData table The unit being jammed
+---@param jammer CMO__Unit The jamming unit
+---@param distance number Pre-calculated distance between jammer and unit
+---@return boolean success Whether jamming was successfully applied
+local function directionalJammingWithDistance(config, affectedUnitData, jammer, distance)
+  if affectedUnitData.isOutOfComms == false then
+    if affectedUnitData.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitData.outofcomms >= 0 then
+      local bearing = GameApi.Tool_Bearing(jammer.guid, affectedUnitData.guid)
+      local heading = jammer.heading
+      local orientation = math.abs(bearing - heading)
+
+      if distance < math.random(75, 100) and orientation < math.random(12, 18) then
+        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = true })
+        affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
+        affectedUnitData.isOutOfComms = true
+        Logger.log(
+          "CommsJamming: Unit " .. affectedUnitData.guid .. " successfully jammed by " ..
+          jammer.guid .. " (distance: " .. math.floor(distance) .. "nm" .. ")"
+        )
+        return true
+      else
+        GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+        affectedUnitData.outofcomms = 0
+        affectedUnitData.isOutOfComms = false
+        Logger.log(
+          "CommsJamming: Unit " .. affectedUnitData.guid .. " jamming attempt failed (distance: " ..
+          math.floor(distance) .. "nm" .. ")"
+        )
+        return true
+      end
+    elseif affectedUnitData.outofcomms < 0 then
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+      affectedUnitData.isOutOfComms = false
+      affectedUnitData.outofcomms = affectedUnitData.outofcomms + 1
+    else
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitData.guid, outofcomms = false })
+      affectedUnitData.isOutOfComms = false
+      affectedUnitData.outofcomms = math.random(
+        config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
+      )
     end
   end
 
@@ -254,10 +303,13 @@ function CommsJamming.handleCommsJamming(config, saveData)
       end
 
       jammerAttempts = jammerAttempts + 1
-      local result = commsJammingWithDistance(config, entry.unit, jammer, entry.distance)
-      if result then
-        count = count + 1
-      end
+      -- local result = commsJammingWithDistance(config, entry.unit, jammer, entry.distance)
+      local result = directionalJammingWithDistance(config, entry.unit, jammer, entry.distance)
+      count = count + 1
+
+      -- if result then
+      --   count = count + 1
+      -- end
     end
 
     totalJammedUnits = totalJammedUnits + count

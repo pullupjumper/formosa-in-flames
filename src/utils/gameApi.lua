@@ -1,8 +1,9 @@
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
-
+---@class GameApi
 local realApi = {}
+---@type GameApi
 local GameApi = {}
 
 ---comment
