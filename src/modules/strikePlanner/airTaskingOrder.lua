@@ -10,7 +10,7 @@ local AssignMission = require("src.modules.assignMission")
 
 local AirTaskingOrder = {}
 
-local ADVANCE_SECONDS = 180
+local ADVANCE_SECONDS = 300
 
 --------------------------------------------------------------------------------
 -- Strike Package Processing Functions (integrated from strikePackageProcessor)
@@ -225,6 +225,9 @@ local function createMission(packageData, role)
       mission['OnDeactivateDelete'] = true
       mission['OnDeactivateRTB'] = true
 
+      -- if role == 'striker' and packageData[role].startTime then
+      --   mission['TakeOffTime'] = packageData[role].startTime
+      -- end
       if packageData[role].startTime then
         mission['TakeOffTime'] = packageData[role].startTime
       end

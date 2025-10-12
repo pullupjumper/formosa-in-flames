@@ -621,7 +621,7 @@ saveData.t.ground.glcm.ammunitionSections = {
     guid = 'IC8B0X-0HN7R5QOIVTHT',
     wpnCurrent = config.t.ground.glcm.wpnDefault,
     wpnDefault = config.t.ground.glcm.wpnDefault,
-    unitCount = 2,
+    unitCount = 3,
     position = config.t.ground.glcm.positions.quanxi,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -632,7 +632,7 @@ saveData.t.ground.glcm.ammunitionSections = {
     guid = 'IC8B0X-0HN7R5QOIVUDC',
     wpnCurrent = config.t.ground.glcm.wpnDefault,
     wpnDefault = config.t.ground.glcm.wpnDefault,
-    unitCount = 2,
+    unitCount = 3,
     position = config.t.ground.glcm.positions.neipu,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -967,26 +967,26 @@ saveData.c.dynamicOperations.reconSchedule = {
       }
     }
   },
-  {
-    -- time = "2027-06-09 04:40:00",
-    time = "2027-06-09 01:00:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {
-      {
-        type = "air",
-        executed = false,
-        template = {
-          name = "AIR INTERCEPT/E",
-          targetType = "STRIKE",
-          isFirstWave = true,
-          strikeInterval = 30 * 60,
-          packages = config.c.packageTemplate.AIR_INTERCEPT_E
-        }
-      }
-    }
-  },
+  -- {
+  --   -- time = "2027-06-09 04:40:00",
+  --   time = "2027-06-09 01:00:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {
+  --     {
+  --       type = "air",
+  --       executed = false,
+  --       template = {
+  --         name = "AIR INTERCEPT/E",
+  --         targetType = "STRIKE",
+  --         isFirstWave = true,
+  --         strikeInterval = 30 * 60,
+  --         packages = config.c.packageTemplate.AIR_INTERCEPT_E
+  --       }
+  --     }
+  --   }
+  -- },
   {
     time = "2027-06-09 05:44:00",
     type = "satellite",

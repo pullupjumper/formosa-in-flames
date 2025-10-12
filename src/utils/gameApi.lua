@@ -260,6 +260,27 @@ function realApi.ScenEdit_GetReferencePoints(opts)
 end
 
 ---comment
+---@param opts CMO__ReferencePointDescriptor
+---@return CMO__ReferencePoint
+function realApi.ScenEdit_GetReferencePoint(opts)
+  local result = ScenEdit_GetReferencePoint(opts)
+
+  if result == nil then
+    error("Failed to get reference point with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---comment
+---@param objectType string
+---@param DBID integer
+---@return table
+function realApi.ScenEdit_QueryDB(objectType, DBID)
+  return ScenEdit_QueryDB(objectType, DBID)
+end
+
+---comment
 ---@param opts CMO__SetUnitDescriptor
 ---@return CMO__Unit|nil
 function realApi.ScenEdit_AddUnit(opts)
@@ -345,7 +366,7 @@ end
 
 ---comment
 ---@param side string
-function GameApi.ScenEdit_GetScore(side)
+function realApi.ScenEdit_GetScore(side)
   return ScenEdit_GetScore(side)
 end
 

@@ -5,24 +5,6 @@ local config = require("src.core.constants")
 local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
--- local function initGPSJammers()
---     for _, value in ipairs(CONFIG.c.GPSJamming.jammers) do
---         local jammer = SE_GetUnit({ guid = value.guid })
---         local eventName = value.eventName
---         local event = ScenEdit_GetEvent(eventName)
-
---         if jammer and event == nil then
---             if jammer.dbid == config.platform.GPS_JAMMER then
---                 local jammingArea = GameUtils.NewArea(
---                     { latitude = jammer.latitude, longitude = jammer.longitude },
---                     { side = 'China', distance = '15', shape = 'circle' }
---                 )
---                 local FilterType = { TargetSide = 'Taiwan', TargetType = 6 }
---                 UnitEntersAreaEvent(eventName, FilterType, jammingArea, 'GPSJamming()', 'add', false, true, true)
---             end
---         end
---     end
--- end
 
 ---Initialize Command and Control systems for Taiwan IADS
 ---@param config SBJ__CONFIG

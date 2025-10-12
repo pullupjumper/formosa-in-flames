@@ -303,8 +303,8 @@ function CommsJamming.handleCommsJamming(config, saveData)
       end
 
       jammerAttempts = jammerAttempts + 1
-      -- local result = commsJammingWithDistance(config, entry.unit, jammer, entry.distance)
-      local result = directionalJammingWithDistance(config, entry.unit, jammer, entry.distance)
+      local result = omnidirectionalJammingWithDistance(config, entry.unit, jammer, entry.distance)
+      -- local result = directionalJammingWithDistance(config, entry.unit, jammer, entry.distance)
       count = count + 1
 
       -- if result then

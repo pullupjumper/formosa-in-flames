@@ -13,7 +13,12 @@ local TIME_CONSTANTS = {
   ESCORT_ADVANCE_TIME = 20 * 60, -- Escort advance 20 minutes
   MISSION_DURATION = 40 * 60,    -- General mission duration 40 minutes
   TANKER_DURATION = 120 * 60,    -- Tanker mission duration 120 minutes
-  TANKER_ADVANCE_TIME = 0 * 60   -- Tanker advance 0 minutes
+  TANKER_ADVANCE_TIME = 0 * 60,  -- Tanker advance 0 minutes
+  ELAPSED_TIME = 30 * 60,
+  MAX_SPEED = 470,
+  MIN_SPEED = 430,
+  MAX_DISTANCE = 450,
+  MAX_FLIGHT_TIME = 60 * 60
 }
 
 -- Local helper functions (private)
@@ -301,18 +306,67 @@ local function processATOTemplateWithValidation(config, saveData, contacts, atoT
   return validPackages
 end
 
+---Calculate advance time for a specific role based on distance to patrol zone
+---@param packageData table Package configuration containing role data and patrol zone
+---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
+---@return number advanceTime Time in seconds for the specific role
+local function calculateRoleAdvanceTime(packageData, role)
+  -- Validate role exists in package
+  if not packageData[role] or not packageData[role].baseGUID then
+    Logger.log("Role " .. role .. " not found in package or missing baseGUID")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  -- Get patrol zone reference point (using escort's patrol zone as reference)
+  local patrolZone = packageData.escort and packageData.escort.missionParams and
+      packageData.escort.missionParams.opts and
+      packageData.escort.missionParams.opts.patrolZone
+
+  if not patrolZone or #patrolZone == 0 then
+    Logger.log("No patrol zone found for advance time calculation")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  local rp = patrolZone[1]
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
+
+  if not point then
+    Logger.log("Reference point not found: " .. tostring(rp))
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  -- Calculate distance from role's base to patrol zone
+  local distance = GameApi.Tool_Range(
+    packageData[role].baseGUID,
+    { latitude = point.latitude, longitude = point.longitude }
+  )
+
+  if not distance or distance <= 0 then
+    Logger.log("Invalid distance calculated for role " .. role)
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  -- Calculate speed based on distance
+  local speed = TIME_CONSTANTS.MAX_SPEED
+  if distance >= TIME_CONSTANTS.MAX_DISTANCE then
+    speed = TIME_CONSTANTS.MIN_SPEED
+  end
+
+  -- Calculate flight time: distance(nm) / speed(knots) * 3600 seconds
+  local flightTime = (distance / speed) * 3600
+
+  Logger.log(string.format(
+    "Calculated %s advance time: %.1f minutes (%.1f nm distance)",
+    role, flightTime / 60, distance
+  ))
+
+  return math.ceil(flightTime)
+end
+
 ---Calculate support advance time based on furthest base distance
 ---@param packageData table Package configuration containing all support roles and targets
 ---@return number advanceTime Time in seconds based on furthest support base
 local function calculateSupportAdvanceTime(packageData)
-  -- Fallback to constant if calculation fails
-  if not packageData or not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
-    Logger.log("Invalid support advance time calculation - missing packageData or targets")
-    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
-  end
-
-  local targetGUIDs = packageData.target.list
-
   -- Collect all support bases
   local supportBases = {}
   if packageData.escort and packageData.escort.baseGUID then
@@ -335,8 +389,15 @@ local function calculateSupportAdvanceTime(packageData)
   local maxDistance = 0
   local furthestBase = nil
 
+  local rp = packageData.escort.missionParams.opts.patrolZone[1]
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
+
   for _, base in ipairs(supportBases) do
-    local distance = GameApi.Tool_Range(base.baseGUID, targetGUIDs[1])
+    -- local distance = GameApi.Tool_Range(base.baseGUID, targetGUIDs[1])
+    local distance = GameApi.Tool_Range(
+      base.baseGUID, { latitude = point.latitude, longitude = point.longitude }
+    )
+
     if distance and distance > maxDistance then
       maxDistance = distance
       furthestBase = base
@@ -349,8 +410,14 @@ local function calculateSupportAdvanceTime(packageData)
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
+  local speed = TIME_CONSTANTS.MAX_SPEED
+
+  if maxDistance >= TIME_CONSTANTS.MAX_DISTANCE then
+    speed = TIME_CONSTANTS.MIN_SPEED
+  end
+
   -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
-  local flightTime = (maxDistance / 480) * 3600
+  local flightTime = (maxDistance / speed) * 3600
 
   Logger.log(string.format(
     "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
@@ -358,6 +425,43 @@ local function calculateSupportAdvanceTime(packageData)
   ))
 
   return math.ceil(flightTime) -- Round up to nearest second
+end
+
+
+---Calculate striker flight time to target
+---@param packageData table Package data containing striker and target info
+---@return number flightTime Flight time in seconds
+local function calculateStrikerFlightTime(packageData)
+  if not packageData.striker or not packageData.striker.baseGUID or
+      not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
+    Logger.log("Invalid striker flight time calculation - using fallback duration")
+    return TIME_CONSTANTS.MISSION_DURATION -- fallback to constant
+  end
+
+  local range = GameApi.ScenEdit_QueryDB('weapon', packageData.striker.weaponDBID).ranges.land.max
+  local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1]) - range
+  -- local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1])
+
+  if not distance or distance <= 0 then
+    Logger.log("Invalid distance calculated for striker flight time - using fallback duration")
+    return TIME_CONSTANTS.MISSION_DURATION -- fallback
+  end
+
+  local speed = TIME_CONSTANTS.MAX_SPEED
+
+  if distance >= TIME_CONSTANTS.MAX_DISTANCE then
+    speed = TIME_CONSTANTS.MIN_SPEED
+  end
+
+  -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
+  local flightTime = (distance / speed) * 3600
+
+  Logger.log(string.format(
+    "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
+    flightTime / 60, distance
+  ))
+
+  return math.ceil(flightTime)
 end
 
 ---Calculate mission timing for a package
@@ -375,18 +479,24 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
       -- Check if there are support roles
       local hasSupportRoles = packageData.escort or packageData.wildWeasel or packageData.jammer
       local advanceTime = 0
+      -- local flightTime = calculateStrikerFlightTime(packageData) * 2 / 3
 
       if hasSupportRoles then
         advanceTime = calculateSupportAdvanceTime(packageData)
       end
 
       ---@type string
-      timing.strikerStart = os.date(
-        "%Y-%m-%d %H:%M:%S",
-        Utils.roundToNearestMinutes(
-          GameApi.ScenEdit_CurrentTime() + (packageData.timeToReady or 5) + advanceTime,
-          5
-        )
+      -- timing.strikerStart = os.date(
+      --   "%Y-%m-%d %H:%M:%S",
+      --   Utils.roundToNearestMinutes(
+      --     GameApi.ScenEdit_CurrentTime() + (packageData.timeToReady or 5) + advanceTime + TIME_CONSTANTS.ELAPSED_TIME -
+      --     flightTime,
+      --     5
+      --   )
+      -- )
+      timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S",
+        GameApi.ScenEdit_CurrentTime() + (packageData.timeToReady or 5) + advanceTime -
+        (advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
       )
     else
       local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
@@ -404,32 +514,6 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   return timing
 end
 
----Calculate striker flight time to target
----@param packageData table Package data containing striker and target info
----@return number flightTime Flight time in seconds
-local function calculateStrikerFlightTime(packageData)
-  if not packageData.striker or not packageData.striker.baseGUID or
-      not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
-    Logger.log("Invalid striker flight time calculation - using fallback duration")
-    return TIME_CONSTANTS.MISSION_DURATION -- fallback to constant
-  end
-
-  local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1])
-  if not distance or distance <= 0 then
-    Logger.log("Invalid distance calculated for striker flight time - using fallback duration")
-    return TIME_CONSTANTS.MISSION_DURATION -- fallback
-  end
-
-  -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
-  local flightTime = (distance / 480) * 3600
-
-  Logger.log(string.format(
-    "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
-    flightTime / 60, distance
-  ))
-
-  return math.ceil(flightTime)
-end
 
 ---Calculate support role timing (escort, wildWeasel, jammer, tanker)
 ---@param role string Role name
@@ -440,37 +524,37 @@ local function calculateRoleTiming(role, packageData)
   local timing = {}
 
   -- Calculate start time based on role
-  local advanceTime
-  -- if role == "tanker" then
-  --   advanceTime = TIME_CONSTANTS.TANKER_ADVANCE_TIME
-  -- else
-  --   -- Calculate dynamic support advance time if targets available
-  --   advanceTime = calculateSupportAdvanceTime(packageData)
-  -- end
-  advanceTime = calculateSupportAdvanceTime(packageData)
+  local advanceTime = calculateRoleAdvanceTime(packageData, role)
+  local maxAdvanceTime = calculateSupportAdvanceTime(packageData)
+
+  -- local advanceTime = calculateSupportAdvanceTime(packageData)
+  -- local flightTime = calculateStrikerFlightTime(packageData) * 2 / 3
+
   ---@type string
   -- timing.startTime = os.date("%Y-%m-%d %H:%M:%S", strikerTimestamp - advanceTime + (packageData.timeToReady or 5))
+  -- timing.startTime = os.date(
+  --   "%Y-%m-%d %H:%M:%S",
+  --   Utils.roundToNearestMinutes(strikerTimestamp - advanceTime - TIME_CONSTANTS.ELAPSED_TIME + flightTime, 5)
+  -- )
   timing.startTime = os.date(
     "%Y-%m-%d %H:%M:%S",
-    Utils.roundToNearestMinutes(strikerTimestamp - advanceTime + (packageData.timeToReady or 5), 5) + 60 * 2
+    strikerTimestamp - advanceTime + 61 + (packageData.timeToReady or 5) +
+    (maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
   )
 
   local startTimestamp = Utils.parseDatetimeToTimestamp(timing.startTime)
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
-  local duration = advanceTime + strikerFlightTime
+  local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
 
   -- if role == 'escort' or role == 'wildWeasel' or role == 'jammer' then
-  --   local onStationTimestemp = startTimestamp + advanceTime + 10 * 60
+  --   -- local onStationTimestemp = startTimestamp + advanceTime + 10 * 60
+  --   local onStationTimestemp = startTimestamp + advanceTime
   --   timing.timeOnStation = os.date("%Y-%m-%d %H:%M:%S", onStationTimestemp)
   -- end
 
-  -- For tanker, still use the original logic
-  -- if role == "tanker" then
-  --   duration = TIME_CONSTANTS.TANKER_DURATION
-  -- end
-
-  timing.endTime = os.date("%Y-%m-%d %H:%M:%S", startTimestamp + duration)
-
+  timing.endTime = os.date("%Y-%m-%d %H:%M:%S",
+    (role == "tanker") and (startTimestamp + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTimestamp + duration
+  )
   return timing
 end
 
@@ -505,9 +589,9 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
 
         packageData[role].endTime = packageData[role].endTime or roleTiming.endTime
 
-        -- if roleTiming.timeOnStation then
-        --   packageData[role].timeOnStation = roleTiming.timeOnStation
-        -- end
+        if roleTiming.timeOnStation then
+          packageData[role].timeOnStation = roleTiming.timeOnStation
+        end
       end
     end
   end
