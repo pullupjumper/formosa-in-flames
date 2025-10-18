@@ -206,7 +206,7 @@ end
 
 ---@param contactGUID string The target contact to attack
 ---@param ammoToAllocate number Total amount of ammunition to allocate for this attack
----@param batteries table<string, SBJ__Battery> Array of batteries to use for attack
+---@param batteries table<string, SBJ__BatteryContext> Array of batteries to use for attack
 ---@param btyIdx number Starting battery index
 ---@param grpIdx number Starting group index
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil

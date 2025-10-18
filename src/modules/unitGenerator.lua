@@ -853,14 +853,53 @@ end
 ---@param config SBJ__CONFIG Configuration object
 ---@param side string Side name
 ---@return boolean Whether successful
-function UnitGenerator.addAircraft(config, side)
-  local key = (side == 'China') and 'c' or 't'
+-- function UnitGenerator.addAircraft(config, side)
+--   local key = (side == 'China') and 'c' or 't'
 
-  for _, info in ipairs(config[key].air.landBased.deployedACs) do
-    local base = GameApi.ScenEdit_GetUnit(info.baseGUID)
+--   for _, info in ipairs(config[key].air.landBased.deployedACs) do
+--     local base = GameApi.ScenEdit_GetUnit(info.baseGUID)
+
+--     if not base then
+--       base = GameApi.ScenEdit_GetUnit(info.name)
+--     end
+
+--     if base and base.embarkedUnits.Aircraft then
+--       for _, embarkedUnit in ipairs(base.embarkedUnits.Aircraft) do
+--         GameApi.ScenEdit_DeleteUnit({ side = embarkedUnit.side, guid = embarkedUnit })
+--       end
+--     end
+
+--     if info.embarkedUnits then
+--       addEmbarkedUnitsAdvanced(info.embarkedUnits, base.guid)
+--     end
+
+--     if info.loadouts then
+--       UnitGenerator.removeMagazinesByBaseGUID(base.guid)
+
+--       for _, loadout in ipairs(info.loadouts) do
+--         GameApi.ScenEdit_FillMagsForLoadout({
+--           unit = info.name,
+--           loadoutid = loadout.loadoutId,
+--           quantity = loadout.num
+--         })
+--       end
+--     end
+--   end
+
+--   Logger.log(string.format("Successfully added aircraft for %s", side))
+--   return true
+-- end
+
+---comment
+---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[]
+---@param sideName string
+---@return boolean
+function UnitGenerator.addAircraft(airbaseDeploymentDescriptors, sideName)
+  for _, data in ipairs(airbaseDeploymentDescriptors) do
+    local base = GameApi.ScenEdit_GetUnit(data.baseGUID)
 
     if not base then
-      base = GameApi.ScenEdit_GetUnit(info.name)
+      base = GameApi.ScenEdit_GetUnit(data.name)
     end
 
     if base and base.embarkedUnits.Aircraft then
@@ -869,16 +908,16 @@ function UnitGenerator.addAircraft(config, side)
       end
     end
 
-    if info.embarkedUnits then
-      addEmbarkedUnitsAdvanced(info.embarkedUnits, base.guid)
+    if data.embarkedUnits then
+      addEmbarkedUnitsAdvanced(data.embarkedUnits, base.guid)
     end
 
-    if info.loadouts then
+    if data.loadouts then
       UnitGenerator.removeMagazinesByBaseGUID(base.guid)
 
-      for _, loadout in ipairs(info.loadouts) do
+      for _, loadout in ipairs(data.loadouts) do
         GameApi.ScenEdit_FillMagsForLoadout({
-          unit = info.name,
+          unit = data.name,
           loadoutid = loadout.loadoutId,
           quantity = loadout.num
         })
@@ -886,7 +925,7 @@ function UnitGenerator.addAircraft(config, side)
     end
   end
 
-  Logger.log(string.format("Successfully added aircraft for %s", side))
+  Logger.log(string.format("Successfully added aircraft for %s", sideName))
   return true
 end
 

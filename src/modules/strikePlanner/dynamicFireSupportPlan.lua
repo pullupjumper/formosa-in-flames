@@ -145,9 +145,9 @@ end
 ---Check if batteries specified in template are available
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
----@param templateBatteries SBJ__Battery[]
+---@param templateBatteries SBJ__BatteryContext[]
 ---@param wpnSystem string
----@return SBJ__Battery[] availableBatteries
+---@return SBJ__BatteryContext[] availableBatteries
 local function checkBatteryAvailability(config, saveData, templateBatteries, wpnSystem)
   local availableBatteries = {}
   local assignedBatteries = collectAssignedBatteries(saveData)
@@ -341,7 +341,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   local groundOperations = DynamicOperationsUtils.filterOperationsByType(
     saveData.c.dynamicOperations.reconSchedule, "ground"
   )
-  
+
   if #groundOperations == 0 then
     return false
   end
@@ -350,7 +350,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   for _, item in ipairs(groundOperations) do
     local reconEntry = item.reconEntry
     local operation = item.operation
-    
+
     local reconTime = Utils.parseDatetimeToTimestamp(reconEntry.time)
     local triggerTime = reconTime + reconEntry.delay
 

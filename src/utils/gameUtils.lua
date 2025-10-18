@@ -263,7 +263,6 @@ end
 ---This function tries to create a unit at a randomized position within a circular area.
 ---If unit creation fails (e.g., due to terrain constraints or API issues), it retries
 ---with different random positions up to the specified maximum attempts.
----@param config SBJ__CONFIG Configuration object (currently unused but reserved for future parameters)
 ---@param name string Unique name for the unit to be created
 ---@param lat number Latitude coordinate of the center point for unit placement
 ---@param lon number Longitude coordinate of the center point for unit placement
@@ -273,7 +272,7 @@ end
 ---@param max_attempts? number Maximum number of placement attempts before giving up (defaults to 50)
 ---@return CMO__Unit|nil unit The created unit object if successful, nil if all attempts failed
 ---@return CMO__Location|nil point The final position where unit was placed, nil if creation failed
-function GameUtils.tryAddUnit(config, name, lat, lon, randomRadius, unitDBID, attempt, max_attempts)
+function GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt, max_attempts)
   attempt = attempt or 1
   max_attempts = max_attempts or 50
 
@@ -291,7 +290,7 @@ function GameUtils.tryAddUnit(config, name, lat, lon, randomRadius, unitDBID, at
   if unit then
     return unit, point
   elseif attempt < max_attempts then
-    return GameUtils.tryAddUnit(config, name, lat, lon, randomRadius, unitDBID, attempt + 1, max_attempts)
+    return GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt + 1, max_attempts)
   else
     print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. name)
     return nil, nil

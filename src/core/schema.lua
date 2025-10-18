@@ -72,20 +72,23 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field AHA SBJ__Position
 ---@field RL SBJ__Position
 
----@class SBJ__Ammunition:table
----@field guid string
----@field wpnCurrent number
----@field wpnDefault number
+--- Ammunition context data structure for tracking ammunition unit status
+---@class SBJ__AmmunitionContext:table
+---@field guid string Ammunition unit GUID
+---@field wpnCurrent number Current available ammunition count
+---@field wpnDefault number Default ammunition count
 
----@class SBJ__AmmunitionSection:SBJ__Ammunition
----@field name string
----@field unitCount number
----@field position SBJ__OPAREAs
----@field reloadStartTime number|nil
----@field state CONFIG.batteryState
----@field ammunition string
+--- Ammunition section context data structure, extends AmmunitionContext with position and resupply management
+---@class SBJ__AmmunitionSectionContext:SBJ__AmmunitionContext
+---@field name string Ammunition section name
+---@field unitCount number Number of resupply vehicles
+---@field position SBJ__OPAREAs Ammunition section position
+---@field reloadStartTime number|nil Reload start timestamp, nil if not reloading
+---@field state CONFIG.batteryState Section state (STATIC/HIDE, etc.)
+---@field ammunition string Associated ammunition unit GUID
 
----@class SBJ__Battery:SBJ__AmmunitionSection
+--- Battery context data structure
+---@class SBJ__BatteryContext:SBJ__AmmunitionSectionContext
 ---@field weaponDBID number -- The weapon DBID to use for the battery
 ---@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
 ---@field ammunitionSection string -- The ammunition section guid to use for the battery
@@ -102,7 +105,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__AttackContacts_Params:table
 ---@field contacts table<integer, string> -- A table of contact GUIDs to attack
 ---@field qty number -- The number of salvos to launch
----@field batteries table<string, SBJ__Battery> -- A table of batteries to use for the attack
+---@field batteries table<string, SBJ__BatteryContext> -- A table of batteries to use for the attack
 ---@field weaponDBID? number -- The weapon DBID to use for the attack, if not specified, the default weapon will be used
 ---@field side? string -- The side to use for the attack, if not specified, the side of the first battery will be used
 
@@ -187,7 +190,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__FireSupportTask:SBJ__Task
 ---@field name string
 ---@field wpnSystem string
----@field batteries SBJ__Battery[]
+---@field batteries SBJ__BatteryContext[]
 ---@field startTime string
 ---@field isFinished boolean
 
@@ -232,12 +235,14 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ------------------------------------------------------------------------
 ---@class SBJ__Loadout:table
 ---@field loadoutId number Ammunition configuration ID
+---@field name string Loadout display name
 ---@field num number Unit count
 
 ---@class SBJ__EmbarkedUnit:table
 ---@field side string Side name
 ---@field type string Unit type
 ---@field name string Unit name
+---@field platformName string Display name of aircraft platform
 ---@field dbid number Unit database ID
 ---@field loadouts SBJ__Loadout[]|nil Unit ammunition configuration
 
@@ -328,7 +333,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field name string FST name
 ---@field target SBJ__TargetTemplate Target configuration
 ---@field wpnSystem string Weapon system type
----@field batteries SBJ__Battery[] Battery/fire unit array
+---@field batteries SBJ__BatteryContext[] Battery/fire unit array
 
 ---@class SBJ__TargetTemplate
 ---@field objs table[]? Target object array (for fixed targets)
@@ -362,9 +367,20 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field tanker SBJ__MissionEntry? Tanker configuration
 ---@field timeToReady number? Ready time (minutes)
 
----@class SBJ__GPSJammerData:table
----@field name string
----@field zoneName string
----@field point CMO__Location
----@field randomRadius number
----@field radius number
+---GPS jammer deployment descriptor
+---Serves as a blueprint for creating jammer units, related events, and jamming zones
+---@class SBJ__GPSJammerDescriptor
+---@field name string Jammer unit identifier
+---@field zoneName string Associated jamming zone name for area creation
+---@field point CMO__Location Deployment coordinates
+---@field randomRadius number Position randomization radius (kilometers)
+---@field radius number GPS jamming effectiveness radius (nautical miles)
+
+---Airbase deployment descriptor
+---Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
+---Used for scenario initialization and deployment planning
+---@class SBJ__AirbaseDeploymentDescriptor:table
+---@field name string Airbase name
+---@field baseGUID string Airbase unit GUID reference
+---@field embarkedUnits SBJ__EmbarkedUnit[] Aircraft units stationed at this base
+---@field loadouts SBJ__Loadout[] Ammunition stockpile in base magazines

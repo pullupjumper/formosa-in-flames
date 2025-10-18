@@ -4,7 +4,9 @@ local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local IADS = require("src.modules.IADS")
+local GPSJamming = require("src.modules.EW.GPSJamming")
 local unit = GameApi.ScenEdit_UnitX()
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
@@ -43,6 +45,8 @@ if unit then
       IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'TAAOC', 'SAM', unit)
     elseif unit.dbid == config.platform.C2 or unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
       IADS.processC2Disruption(saveData, 'Taiwan', unit)
+    elseif unit.dbid == config.platform.GPS_JAMMER then
+      GPSJamming.removeJammingZoneByName(saveData.t.GPSJamming.jammers, 'Taiwan', unit.name)
     end
   end
 

@@ -7,7 +7,7 @@ local Launcher = require("src.modules.launcher")
 local FireSupportPlan = {}
 
 ---@param config SBJ__CONFIG
----@param bettery SBJ__Battery
+---@param bettery SBJ__BatteryContext
 ---@param group CMO__Unit
 ---@return boolean
 local function isBtyReady(config, bettery, group)
@@ -16,7 +16,7 @@ local function isBtyReady(config, bettery, group)
 end
 
 ---@param config SBJ__CONFIG
----@param bettery SBJ__Battery
+---@param bettery SBJ__BatteryContext
 ---@return boolean
 local function isNotBtyAtFiringPosition(config, bettery)
   return bettery.state ~= config.batteryState.STATIC

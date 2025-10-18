@@ -53,7 +53,7 @@ end
 
 ---Command artillery battery to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 local function toRL(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
@@ -66,7 +66,7 @@ end
 
 ---Command artillery battery to move to hide area (HA)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 local function toHA(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
@@ -79,7 +79,7 @@ end
 
 ---Command ammunition section to move to ammunition storage area (AHA)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSection Ammunition section object
+---@param section SBJ__AmmunitionSectionContext Ammunition section object
 ---@param group CMO__Unit Unit group
 local function toAHA(config, section, group)
   section.state = config.batteryState.REPOSITIONING
@@ -91,8 +91,8 @@ local function toAHA(config, section, group)
 end
 
 ---Transfer ammunition from ammunition depot to ammunition section
----@param section SBJ__AmmunitionSection Ammunition section object
----@param ammunition SBJ__Ammunition Ammunition depot object
+---@param section SBJ__AmmunitionSectionContext Ammunition section object
+---@param ammunition SBJ__AmmunitionContext Ammunition depot object
 local function transload(section, ammunition)
   if ammunition.wpnCurrent > 0 and section.wpnCurrent < section.wpnDefault then
     if ammunition.wpnCurrent >= section.wpnDefault then
@@ -109,7 +109,7 @@ end
 
 ---Command ammunition section to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSection Ammunition section object
+---@param section SBJ__AmmunitionSectionContext Ammunition section object
 ---@param group CMO__Unit Unit group
 local function ammoSecToRL(config, section, group)
   section.state = config.batteryState.REPOSITIONING
@@ -125,7 +125,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
 ---@param side string
----@param battery SBJ__Battery
+---@param battery SBJ__BatteryContext
 ---@param group CMO__Unit
 ---@param isAuto boolean
 local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, side, battery, group, isAuto)
@@ -164,7 +164,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
 ---@param side string
----@param battery SBJ__Battery
+---@param battery SBJ__BatteryContext
 ---@param group CMO__Unit
 ---@param isAuto boolean
 local function handleManualBatteryReload(config, saveData, wpnSystem, side, battery, group, isAuto)
@@ -198,7 +198,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
 ---@param side string
----@param section SBJ__AmmunitionSection
+---@param section SBJ__AmmunitionSectionContext
 ---@param group CMO__Unit
 ---@param isAuto boolean
 local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, side, section, group, isAuto)
@@ -236,7 +236,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
 ---@param side string
----@param section SBJ__AmmunitionSection
+---@param section SBJ__AmmunitionSectionContext
 ---@param group CMO__Unit
 ---@param isAuto boolean
 local function handleManualSectionReload(config, saveData, wpnSystem, side, section, group, isAuto)
@@ -312,8 +312,8 @@ end
 -- Public functions
 
 ---Execute reload for artillery battery
----@param battery SBJ__Battery Artillery battery object
----@param ammunitionSection SBJ__AmmunitionSection Ammunition section object
+---@param battery SBJ__BatteryContext Artillery battery object
+---@param ammunitionSection SBJ__AmmunitionSectionContext Ammunition section object
 ---@param weaponDBID number Weapon database ID
 function Launcher.reload(battery, ammunitionSection, weaponDBID)
   local group = GameApi.ScenEdit_GetUnit(battery.guid)
@@ -362,7 +362,7 @@ end
 
 ---Set artillery battery reload start time
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 ---@param isAuto boolean Whether in automatic mode
 function Launcher.setReloadStartTime(config, battery, group, isAuto)
@@ -380,7 +380,7 @@ end
 
 ---Set artillery battery weapon control status to free fire
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 function Launcher.setWCSToFree(config, battery, group)
   battery.state = config.batteryState.STATIC
@@ -396,7 +396,7 @@ end
 
 ---Set artillery battery status to hide
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 function Launcher.setStateToHIDE(config, battery, group)
   battery.state = config.batteryState.HIDE
@@ -449,7 +449,7 @@ end
 
 ---Command artillery battery to move to firing position (FP)
 ---@param config SBJ__CONFIG
----@param battery SBJ__Battery Artillery battery object
+---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
 function Launcher.toFringPosition(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
@@ -470,7 +470,7 @@ end
 ---@param unit CMO__Unit
 ---@param wpnSystem string
 ---@param isAuto boolean
----@return {isMet: boolean, battery: SBJ__Battery|nil}
+---@return {isMet: boolean, battery: SBJ__BatteryContext|nil}
 function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
   local side = unit.side
   local field = (side == 'China') and 'c' or 't'
@@ -518,7 +518,7 @@ end
 ---@param unit CMO__Unit
 ---@param wpnSystem string
 ---@param isAuto boolean
----@return {isMet: boolean, battery: SBJ__AmmunitionSection|nil}
+---@return {isMet: boolean, battery: SBJ__AmmunitionSectionContext|nil}
 function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
   local side = unit.side
   local field = (side == 'China') and 'c' or 't'

@@ -37,6 +37,7 @@ saveData.t.repairRunway = {}
 saveData.t.IADS = {}
 saveData.t.air = {}
 saveData.t.air.landBased = {}
+saveData.t.GPSJamming = {}
 saveData.u = {}
 saveData.u.SIGINT = {}
 saveData.s = {}
@@ -75,6 +76,7 @@ saveData.c.commsJamming.jammers = {
 
 -- GPS Jamming
 saveData.c.GPSJamming.isActivated = true
+---@type table<string, SBJ__GPSJammerDescriptor>
 saveData.c.GPSJamming.jammers = {
   ['1st Bn, 1st ECM Bde'] = {
     zoneName = 'JAMMING ZONE/1',
@@ -91,19 +93,10 @@ saveData.c.GPSJamming.jammers = {
     radius = config.c.GPSJamming.radius
   },
 }
--- CONFIG.c.GPSJamming.GPSGuidedWeapons = {
---     { dbid = 779,  jammingResistance = 33 }, -- ATACMS
---     { dbid = 452,  jammingResistance = 33 }, -- SLAM-ER
---     { dbid = 826,  jammingResistance = 33 }, -- JSOW
---     { dbid = 870,  jammingResistance = 33 }, -- JDAM BLU-109
---     { dbid = 554,  jammingResistance = 33 }, -- JDAM
---     { dbid = 3026, jammingResistance = 66 }, -- WC
---     { dbid = 1717, jammingResistance = 33 }, -- ATACMS M57
--- }
-
 
 -- MLRS
 saveData.c.ground.mlrs.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9ASEFCGDKF'] = {
     guid = 'IC8B0X-0HN9ASEFCGDKF',
@@ -116,6 +109,7 @@ saveData.c.ground.mlrs.ammunitions = {
     wpnDefault = config.c.ground.mlrs.wpnDefault,
   },
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.c.ground.mlrs.ammunitionSections = {
   ['IC8B0X-0HN7R5QOERV4D'] = {
     guid = 'IC8B0X-0HN7R5QOERV4D',
@@ -140,6 +134,7 @@ saveData.c.ground.mlrs.ammunitionSections = {
     ammunition = 'IC8B0X-0HNBRRE2PRT40',
   },
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.c.ground.mlrs.batteries = {
   ['IC8B0X-0HND05GGU36EN'] = {
     name = '1st Bn, 1st Rockets Arty Bde',
@@ -168,6 +163,7 @@ saveData.c.ground.mlrs.batteries = {
 
 -- GLCM
 saveData.c.ground.glcm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.glcm.ammunitions = {
   ['IC8B0X-0HN99I5RL5KR9'] = {
     guid = 'IC8B0X-0HN99I5RL5KR9',
@@ -175,6 +171,7 @@ saveData.c.ground.glcm.ammunitions = {
     wpnDefault = config.c.ground.glcm.wpnDefault,
   },
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.c.ground.glcm.ammunitionSections = {
   ['IC8B0X-0HN7R5QOIVG88'] = {
     guid = 'IC8B0X-0HN7R5QOIVG88',
@@ -190,8 +187,9 @@ saveData.c.ground.glcm.ammunitionSections = {
 }
 
 
+---@type table<string, SBJ__BatteryContext>
 saveData.c.ground.glcm.batteries = {
-  ---@type SBJ__Battery
+  ---@type SBJ__BatteryContext
   ['6Z8LM5-0HMN97ERAUODK'] = {
     guid = '6Z8LM5-0HMN97ERAUODK',
     name = '635th Bde',
@@ -208,6 +206,7 @@ saveData.c.ground.glcm.batteries = {
 
 -- SRBM
 saveData.c.ground.srbm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9ASEFCG848'] = {
     guid = 'IC8B0X-0HN9ASEFCG848',
@@ -240,6 +239,7 @@ saveData.c.ground.srbm.ammunitions = {
     wpnDefault = config.c.ground.srbm.wpnDefault * 2,
   },
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.c.ground.srbm.ammunitionSections = {
   ['IC8B0X-0HN7R5QOIVL7D'] = {
     guid = 'IC8B0X-0HN7R5QOIVL7D',
@@ -308,6 +308,7 @@ saveData.c.ground.srbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9ASEFCGA5A',
   },
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.c.ground.srbm.batteries = {
   ['X58F5H-0HN1G2IFLNKG9'] = {
     guid = 'X58F5H-0HN1G2IFLNKG9',
@@ -379,6 +380,7 @@ saveData.c.ground.srbm.batteries = {
 
 -- MRBM
 saveData.c.ground.mrbm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mrbm.ammunitions = {
   ['IC8B0X-0HNCOR6HG2KK5'] = {
     guid = 'IC8B0X-0HNCOR6HG2KK5',
@@ -386,6 +388,7 @@ saveData.c.ground.mrbm.ammunitions = {
     wpnDefault = config.c.ground.mrbm.wpnDefault * 2,
   },
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.c.ground.mrbm.ammunitionSections = {
   ['IC8B0X-0HNCOR6HG2KF9'] = {
     guid = 'IC8B0X-0HNCOR6HG2KF9',
@@ -399,6 +402,7 @@ saveData.c.ground.mrbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HNCOR6HG2KK5',
   },
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.c.ground.mrbm.batteries = {
   ['IC8B0X-0HNCOR6HG2JE1'] = {
     guid = 'IC8B0X-0HNCOR6HG2JE1',
@@ -528,6 +532,7 @@ saveData.c.repairRunway.runways = {
 
 -- MLRS
 saveData.t.ground.mlrs.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9B47GHVJ7G'] = {
     guid = 'IC8B0X-0HN9B47GHVJ7G',
@@ -535,6 +540,7 @@ saveData.t.ground.mlrs.ammunitions = {
     wpnDefault = config.t.ground.mlrs.wpnDefault,
   }
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.t.ground.mlrs.ammunitionSections = {
   ['IC8B0X-0HN7RT1I581BB'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 21st Arty Command',
@@ -548,6 +554,7 @@ saveData.t.ground.mlrs.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVJ7G',
   }
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.t.ground.mlrs.batteries = {
   ['IC8B0X-0HN7RU9I3KV9T'] = {
     name = 'Rocket Arty Coy, 21st Arty Command',
@@ -565,6 +572,7 @@ saveData.t.ground.mlrs.batteries = {
 
 -- SRBM
 saveData.t.ground.srbm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9B47GHVJG6'] = {
     guid = 'IC8B0X-0HN9B47GHVJG6',
@@ -572,6 +580,7 @@ saveData.t.ground.srbm.ammunitions = {
     wpnDefault = config.t.ground.srbm.wpnDefault,
   }
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.t.ground.srbm.ammunitionSections = {
   ['IC8B0X-0HN7R5QOIVSFS'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
@@ -585,6 +594,7 @@ saveData.t.ground.srbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVJG6',
   }
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.t.ground.srbm.batteries = {
   ['IC8B0X-0HN7SOIUF4D47'] = {
     name = 'Rocket Arty Coy, 58th Arty Command',
@@ -603,6 +613,7 @@ saveData.t.ground.srbm.batteries = {
 
 -- GLCM
 saveData.t.ground.glcm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.glcm.ammunitions = {
   ['IC8B0X-0HN9B47GHVKAG'] = {
     guid = 'IC8B0X-0HN9B47GHVKAG',
@@ -615,6 +626,7 @@ saveData.t.ground.glcm.ammunitions = {
     wpnDefault = config.t.ground.glcm.wpnDefault * 2,
   }
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.t.ground.glcm.ammunitionSections = {
   ['IC8B0X-0HN7R5QOIVTHT'] = {
     name = 'Ammo Sec, 641st Bn, 791st AFAD & Arty Bde',
@@ -639,6 +651,7 @@ saveData.t.ground.glcm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVL3V',
   },
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.t.ground.glcm.batteries = {
   ['X58F5H-0HN1ESDRTUULO'] = {
     guid = 'X58F5H-0HN1ESDRTUULO',
@@ -669,6 +682,7 @@ saveData.t.ground.glcm.batteries = {
 
 -- ASM
 saveData.t.ground.ascm.isActivated = true
+---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.ascm.ammunitions = {
   ['IC8B0X-0HN9B47GHVLV9'] = {
     guid = 'IC8B0X-0HN9B47GHVLV9',
@@ -681,6 +695,7 @@ saveData.t.ground.ascm.ammunitions = {
     wpnDefault = config.t.ground.ascm.wpnDefault * 2,
   },
 }
+---@type table<string, SBJ__AmmunitionSectionContext>
 saveData.t.ground.ascm.ammunitionSections = {
   ['IC8B0X-0HN87KFOFSGUB'] = {
     name = 'Hai Feng Shore-based ASM SUPP Sqn',
@@ -705,6 +720,7 @@ saveData.t.ground.ascm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9JFGVR06D8',
   },
 }
+---@type table<string, SBJ__BatteryContext>
 saveData.t.ground.ascm.batteries = {
   ['IC8B0X-0HN87MOIE9C4U'] = {
     name = '2nd Hai Feng Shore-based ASM MOB Sqn',
@@ -843,6 +859,24 @@ saveData.t.air.landBased.AEW = {
 }
 saveData.t.air.landBased.AC = {
   -- {guid=''}
+}
+
+---@type table<string, SBJ__GPSJammerDescriptor>
+saveData.t.GPSJamming.jammers = {
+  ['Comms & Info Coy, 584th Mech Bde'] = {
+    zoneName = '(Taiwan) Jamming Zone/1',
+    name = 'Comms & Info Coy, 584th Mech Bde',
+    point = { lat = nil, lon = nil },
+    randomRadius = config.t.GPSJamming.randomRadius,
+    radius = config.t.GPSJamming.radius
+  },
+  ['Comms & Info Coy, 269th Mech Bde'] = {
+    zoneName = '(Taiwan) Jamming Zone/2',
+    name = 'Comms & Info Coy, 269th Mech Bde',
+    point = { lat = nil, lon = nil },
+    randomRadius = config.t.GPSJamming.randomRadius,
+    radius = config.t.GPSJamming.radius
+  },
 }
 
 

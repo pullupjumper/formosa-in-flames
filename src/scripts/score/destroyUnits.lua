@@ -5,6 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local unit = GameApi.ScenEdit_UnitX()
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 local IADS = require("src.modules.IADS")
 -- local units = GameApi.VP_GetSide({ side = 'China' }).units
@@ -106,7 +107,7 @@ if unit then
         "You have destroyed a GPS jammer."
       )
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
-      GPSJamming.removeJammingZoneByName(saveData, 'China', unit.name)
+      GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, 'China', unit.name)
     elseif unit.dbid == config.platform.AMMO then
       Launcher.destroyAmmoSecHandler(unit, 'China', 'mlrs', saveData)
       Launcher.destroyAmmoSecHandler(unit, 'China', 'srbm', saveData)
