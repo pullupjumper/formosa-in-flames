@@ -17,11 +17,13 @@ config.c.surface = {}
 config.c.surface.lacm = {}
 config.c.subSurface = {}
 config.c.subSurface.slcm = {}
+---@type SBJ__AmphibOpsConfig
 config.c.PHIBOP = {}
 config.c.recon = {}
 config.c.GPSJamming = {}
 config.c.commsJamming = {}
 config.c.repairRunway = {}
+---@type SBJ__IADSConfig
 config.c.IADS = {}
 config.c.SIGINT = {}
 config.t = {}
@@ -492,6 +494,7 @@ config.c.SIGINT.maxRange = 2.5
 config.c.IADS.ratio = { C2 = 1.5, }
 config.c.IADS.C2FacilityDBIDs = { 319, 318, 115, 113 }
 config.c.IADS.randomRadius = 10
+---@type SBJ__C2Descriptor[]
 config.c.IADS.C2Settings = {
   {
     position = { lat = "N 25.30.37", lon = "E 119.30.54" },
@@ -1421,15 +1424,9 @@ config.c.air.landBased.deployedACs = {
 
 -- Amphibious ops
 config.c.PHIBOP.periodOfTime = 5 * 60
----@class CargoItem:table
----@field type number
----@field num number
----@field dbid number
-
+---@type table<string, SBJ__CargoDescriptor[]>
 config.c.PHIBOP.cargoList = {
-  ---@type table<number, CargoItem>
   type075 = {
-    ---@type CargoItem
     { type = 2, num = 21, dbid = config.platform.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = config.platform.PLZ96 }, -- PLZ-96 12
     { type = 3, num = 3,  dbid = config.platform.PGZ09 }, -- PGZ-09 3
@@ -1437,7 +1434,6 @@ config.c.PHIBOP.cargoList = {
     { type = 3, num = 30, dbid = config.platform.HMMWV }, -- HMMWV 30
     { type = 3, num = 76, dbid = config.platform.MC },    -- MC 76
   },
-  ---@type table<number, CargoItem>
   type071 = {
     { type = 2, num = 5,  dbid = config.platform.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = config.platform.PLZ96 }, -- PLZ-96 12
@@ -1446,29 +1442,24 @@ config.c.PHIBOP.cargoList = {
     { type = 3, num = 2,  dbid = config.platform.SA15 },  -- SA-15 2
     { type = 3, num = 22, dbid = config.platform.MC }     -- MC
   },
-  ---@type table<number, CargoItem>
   type072iii = {
     { type = 2, num = 5, dbid = config.platform.ZBD05 }, -- ZBD-05
     { type = 2, num = 5, dbid = config.platform.ZTD05 }, -- ZTD-05
     { type = 3, num = 6, dbid = config.platform.MC }
   },
-  ---@type table<number, CargoItem>
   type072a = {
     { type = 2, num = 5, dbid = config.platform.ZBD05 }, -- ZBD-05
     { type = 2, num = 5, dbid = config.platform.ZTD05 }, -- ZTD-05
     { type = 3, num = 6, dbid = config.platform.MC }
   },
-  ---@type table<number, CargoItem>
   type073a = {
     { type = 2, num = 3, dbid = config.platform.ZBD05 },
     { type = 2, num = 3, dbid = config.platform.ZTD05 }, -- ZTD-05
   },
-  ---@type table<number, CargoItem>
   ferry = {
     { type = 2, num = 56, dbid = config.platform.ZBD05 }, -- ZBD-05
     { type = 2, num = 56, dbid = config.platform.ZTD05 }, -- ZTD-05
   },
-  ---@type table<number, CargoItem>
   barge = {
     { type = 2, num = 28, dbid = config.platform.ZBD04 },  -- ZBD-04
     { type = 2, num = 28, dbid = config.platform.ZTZ96A }, -- ZTZ-96A
@@ -1480,6 +1471,7 @@ config.c.PHIBOP.cargoList = {
     { type = 2, num = 4,  dbid = config.platform.M977 },   -- M977
   }
 }
+---@type table<string, SBJ__CargoDescriptor[]>
 config.c.PHIBOP.cargoListForTransfer = {
   boat = {
     { type = 2, num = 1, dbid = config.platform.ZBD05 }, -- ZBD-05
@@ -1519,6 +1511,7 @@ config.c.PHIBOP.missionStartime = {
   boat = { 41 * 60, 61 * 60, },
   reconUAV = { 0 }
 }
+---@type SBJ__AmphibiousLayoutConfig
 config.c.PHIBOP.shipSettings = {
   distanceBetweenLSTAndLPDArea = 13,
   horizontalDistance = 0.4,
@@ -1570,6 +1563,7 @@ config.c.PHIBOP.shipSettings = {
   ACVTransitDistance = 5,
   ACVHorizontalDistance = 0.05,
 }
+---@type SBJ__AmphibOpsDescriptor[]
 config.c.PHIBOP.initialLocations = {
   {
     name = 'Taoyuan',
@@ -1726,9 +1720,8 @@ config.c.PHIBOP.initialLocations = {
     airLandingZone = config.c.area.AIRLANDING_TAOYUAN,
     numOfContactsInAirLandingZone = 3
   },
-
 }
----@type SBJ__OperationalZone[]
+---@type SBJ__OperationZoneDescriptor[]
 config.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
@@ -1858,7 +1851,7 @@ config.c.PHIBOP.operationalZones = {
         distance = config.c.PHIBOP.shipSettings.transitDistance
       }
     },
-    ---@type SBJ__ACV
+    ---@type SBJ__ACVConfig
     ACV = {
       bearing = config.c.PHIBOP.shipSettings.heading.west.horizontal,
       distance = config.c.PHIBOP.shipSettings.ACVHorizontalDistance,
@@ -1887,7 +1880,7 @@ config.c.PHIBOP.operationalZones = {
     offloadArea = config.c.area.OFFLOAD_AREA_SISHU,
     boat = {
       dbid = config.platform.TYPE_726A,
-      ---@type SBJ__LandingMission[]
+      ---@type SBJ__LandingMissionDescriptor[]
       missions = {
         {
           name = 'LANDING/SISHU/1/1',
@@ -2173,9 +2166,14 @@ config.c.PHIBOP.transportAircraft = {
     }
   },
 }
+---@type table<string, SBJ__SAGDescriptor>
 config.c.PHIBOP.sag = {
   ['SAG 173'] = {
     groupName = 'SAG 173',
+    unitList = {
+      type054a = { dbid = config.platform.TYPE_054A, },
+      type052d = { dbid = config.platform.TYPE_052D, }
+    },
     from = {
       startingPoint = { lat = 'N 26.54.18', lon = 'E 121.31.38', },
       heading = 225
@@ -2194,6 +2192,10 @@ config.c.PHIBOP.sag = {
   },
   ['SAG 155'] = {
     groupName = 'SAG 155',
+    unitList = {
+      type054a = { dbid = config.platform.TYPE_054A, },
+      type052d = { dbid = config.platform.TYPE_052D, }
+    },
     from = {
       startingPoint = { lat = 'N 26.13.13', lon = 'E 120.59.55', },
       heading = 225
@@ -2212,6 +2214,10 @@ config.c.PHIBOP.sag = {
   },
   ['SAG 167'] = {
     groupName = 'SAG 167',
+    unitList = {
+      type054a = { dbid = config.platform.TYPE_054A, },
+      type052d = { dbid = config.platform.TYPE_052D, }
+    },
     from = {
       startingPoint = { lat = 'N 23.29.19', lon = 'E 118.04.37', },
       heading = config.c.PHIBOP.shipSettings.heading.penghu.vertical,
@@ -2229,6 +2235,10 @@ config.c.PHIBOP.sag = {
   },
   ['SAG 154'] = {
     groupName = 'SAG 154',
+    unitList = {
+      type054a = { dbid = config.platform.TYPE_054A, },
+      type052d = { dbid = config.platform.TYPE_052D, }
+    },
     from = {
       startingPoint = { lat = 'N 22.32.59', lon = 'E 118.04.52', },
       heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
@@ -2246,6 +2256,10 @@ config.c.PHIBOP.sag = {
   },
   ['SAG 175'] = {
     groupName = 'SAG 175',
+    unitList = {
+      type054a = { dbid = config.platform.TYPE_054A, },
+      type052d = { dbid = config.platform.TYPE_052D, }
+    },
     from = {
       startingPoint = { lat = 'N 22.44.28', lon = 'E 118.01.16', },
       heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
@@ -2265,6 +2279,7 @@ config.c.PHIBOP.sag = {
 
 -- Land strike from
 config.c.surface.lacm.weaponDBID = config.weapon.YJ21
+---@type SBJ__CSGDescriptor
 config.c.surface.lacm.csg = {
   groupName = 'CSG',
   unitList = {
@@ -4349,7 +4364,7 @@ config.t.air.landBased.deployedACs = {
     }
   },
 }
-
+---@type table<string, SBJ__SAGDescriptor>
 config.t.surface.sag = {
   ['264th Sqn'] = {
     groupName = '264th Sqn',
@@ -4392,7 +4407,7 @@ config.t.surface.sag = {
     },
   },
 }
-
+---@type SBJ__AirbaseDeploymentDescriptor[]
 config.t.surface.deployedShips = {
   {
     name = 'Port of Keelung',

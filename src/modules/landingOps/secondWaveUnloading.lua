@@ -6,7 +6,7 @@ local GameUtils = require("src.utils.gameUtils")
 local SecondWaveUnloading = {}
 
 ---comment
----@param zone SBJ__OperationalZone
+---@param zone SBJ__OperationZoneDescriptor
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil
 local function createCourseForBarge(zone, unit)
@@ -51,7 +51,7 @@ local function createCourseForBarge(zone, unit)
 end
 
 ---comment
----@param zone SBJ__OperationalZone
+---@param zone SBJ__OperationZoneDescriptor
 ---@param unit CMO__Unit
 ---@param bargeDest CMO__Waypoint[]
 ---@return CMO__Waypoint[]|nil
@@ -118,7 +118,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(config, saveData, units)
   return true
 end
 
----@param params SBJ__OffloadVehicles_Params
+---@param params SBJ__VehicleOffloadParams
 ---@return number|nil
 function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
@@ -196,7 +196,7 @@ end
 ---@param config SBJ__CONFIG
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
----@return SBJ__OperationalZone|nil
+---@return SBJ__OperationZoneDescriptor|nil
 function SecondWaveUnloading.getBargeROROZone(config, barge, roro)
   for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
     local d = GameApi.Tool_Range(roro.guid, barge.guid)

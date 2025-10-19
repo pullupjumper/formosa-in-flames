@@ -11,10 +11,10 @@ if not saveData then
 end
 
 -- Use the new unitGenerator API
-UnitGenerator.removeC2Facilities(config)
-UnitGenerator.addC2Facilities(config)
+UnitGenerator.removeC2Facilities(config, config.c.IADS)
+UnitGenerator.addC2Facilities(config.c.IADS)
 
 -- Use the new initC2Facilities function
-UnitGenerator.initC2Facilities(config, saveData)
+UnitGenerator.initC2Facilities(config, config.c.IADS, saveData)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

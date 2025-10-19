@@ -1,4 +1,4 @@
 local UnitGenerator = require('src.modules.unitGenerator')
 local config = require('src.core.constants')
 
-UnitGenerator.createCSG(config)
+UnitGenerator.createCSG(config.c.surface.lacm.csg)

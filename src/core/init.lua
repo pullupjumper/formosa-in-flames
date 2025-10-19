@@ -410,7 +410,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.IADS.isActivated then
-    UnitGenerator.initC2Facilities(config, saveData)
+    UnitGenerator.initC2Facilities(config, config.c.IADS, saveData)
   end
 
   if saveData.c.commsJamming.isActivated then

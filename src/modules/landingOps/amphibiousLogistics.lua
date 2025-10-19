@@ -7,7 +7,7 @@ local AmphibiousLogistics = {}
 
 ---@param fromUnit CMO__Unit
 ---@param toUnit CMO__Unit
----@param cargoItem CargoItem
+---@param cargoItem SBJ__CargoDescriptor
 function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
   local cargoGuidList = {}
   local count = 0
@@ -37,7 +37,7 @@ function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
 end
 
 ---@param fromUnit CMO__Unit
----@param cargoItem CargoItem
+---@param cargoItem SBJ__CargoDescriptor
 function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
   local cargoGuidList = {}
   local count = 0
@@ -76,7 +76,7 @@ end
 ---@param platformType string
 ---@param platformDBid number
 ---@param loadoutDBID number
----@param cargoItems table<number, CargoItem>
+---@param cargoItems SBJ__CargoDescriptor[]
 function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItems)
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
@@ -126,7 +126,7 @@ end
 
 ---@param config SBJ__CONFIG
 ---@param units CMO__SideUnit
----@return table<string, table>
+---@return { units: CMO__Unit[], isUnitMoving: boolean }
 function AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
   local operationalZones = config.c.PHIBOP.operationalZones
   local unitsInAnchorageArea = {}
@@ -161,7 +161,7 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(config, units)
 end
 
 ---@param platformType string The type of platform to filter (e.g., 'tansportHelicopter', 'boat')
----@param zone SBJ__OperationalZone
+---@param zone SBJ__OperationZoneDescriptor
 ---@param missionName string
 ---@return boolean
 local function handleCargoMission(platformType, zone, missionName)
@@ -213,7 +213,7 @@ function AmphibiousLogistics.createCargoMissions(config)
 end
 
 ---@param config SBJ__CONFIG
----@param unitsInAnchorageArea table<integer, CMO__Unit>
+---@param unitsInAnchorageArea CMO__Unit[]
 ---@return boolean
 function AmphibiousLogistics.transferAndAssign(config, unitsInAnchorageArea)
   local operationalZones = config.c.PHIBOP.operationalZones
@@ -324,7 +324,7 @@ end
 
 ---comment
 ---@param config SBJ__CONFIG
----@param units CMO__SideUnit
+---@param units CMO__SideUnit[]
 ---@return boolean
 function AmphibiousLogistics.retransferCargos(config, units)
   local operationalZones = config.c.PHIBOP.operationalZones

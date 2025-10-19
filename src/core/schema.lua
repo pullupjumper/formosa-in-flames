@@ -34,26 +34,32 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field rename? string @ name to rename the description/name to [only applies for calls to ScenEdit_SetZone]
 ---@field enablers table @Table of enablers for the zone. (undocumented)
 
----@class SBJ__Location_Params:table
----@field initialLocation {latitude:number|string, longitude:number|string}
----@field num number
----@field bearing number
----@field distance number
----@field firstDistance? number
+---Linear placement parameters for positioning multiple units in a line
+---Temporary parameter pack used for unit placement functions
+---@class SBJ__LinearPlacementParams:table
+---@field initialLocation {latitude:number|string, longitude:number|string} Starting position
+---@field num number Number of units to place
+---@field bearing number Direction angle (degrees)
+---@field distance number Distance between units (nautical miles)
+---@field firstDistance? number Special distance for first unit (optional)
 
----@class SBJ__ACVLocation_Params:table
----@field bearing number
----@field distance number
----@field ship CMO__Unit
----@field speed number
----@field destination CMO__TableOfWaypoints
+---ACV deployment parameters for launching air cushion vehicles
+---Temporary parameter pack used for ACV deployment functions
+---@class SBJ__ACVDeploymentParams:table
+---@field bearing number Deployment direction (degrees)
+---@field distance number Deployment distance (nautical miles)
+---@field ship CMO__Unit Parent landing ship
+---@field speed number ACV movement speed (knots)
+---@field destination CMO__TableOfWaypoints ACV destination waypoints
 
----@class SBJ__OffloadVehicles_Params:table
----@field ship CMO__Unit
----@field num number
----@field bearing number
----@field distance number
----@field firstDistance number
+---Vehicle offload parameters for unloading vehicles from landing ships
+---Temporary parameter pack used for vehicle offloading functions
+---@class SBJ__VehicleOffloadParams:table
+---@field ship CMO__Unit Landing ship to offload from
+---@field num number Number of vehicles to offload
+---@field bearing number Offload direction (degrees)
+---@field distance number Distance between vehicles (nautical miles)
+---@field firstDistance number Distance for first vehicle (nautical miles)
 
 ---@class SBJ__AreaMode:table
 ---@field side string
@@ -94,7 +100,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field ammunitionSection string -- The ammunition section guid to use for the battery
 ---@field msg string -- The message to display for the battery
 
----@class SBJ__C2:table
+---@class SBJ__C2Context:table
 ---@field name string
 ---@field msg string
 ---@field guid string
@@ -143,26 +149,72 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 ---@class SBJ__SaveData:table
 
----@class SBJ__ACV:table
----@field bearing number
----@field distance number
----@field speed number
----@field destination CMO__TableOfWaypoints
----@field area string[]
 
----@class SBJ__OperationalZone:table
+---@class SBJ__LandingMissionDescriptor:table
 ---@field name string
----@field baseGUID string
----@field anchorageArea string[]
----@field LSTAnchorageArea string[]
----@field area string[]
----@field offloadArea string[]
----@field boat table
----@field tansportHelicopter table
----@field attackHelicopter table
----@field LSTSettings table
----@field ACV SBJ__ACV
----@field reconUAV table
+---@field loadoutId number
+---@field num number
+---@field startTime number
+
+---Air Cushion Vehicle deployment configuration
+---@class SBJ__ACVConfig:table
+---@field bearing number Deployment direction (degrees)
+---@field distance number Horizontal spacing between ACVs (nautical miles)
+---@field speed number ACV transit speed (knots)
+---@field destination CMO__TableOfWaypoints Destination waypoints
+---@field area string[] Staging area reference points
+
+---Landing craft mission configuration
+---Used for boat-based amphibious landings
+---@class SBJ__BoatMissionConfig:table
+---@field dbid number Landing craft platform database ID
+---@field missions SBJ__LandingMissionDescriptor[] Landing mission descriptors
+---@field zone string[] Landing zone reference points
+---@field settings CMO__Mission Mission behavior settings (Subtype, throttle, active status)
+---@field cargoItemsForTransfer SBJ__CargoForTransfer Cargo manifest by ship type
+
+---Transport helicopter mission configuration
+---Used for air assault operations
+---@class SBJ__TransportHelicopterConfig:table
+---@field dbid number Helicopter platform database ID
+---@field missions SBJ__LandingMissionDescriptor[] Air landing mission descriptors
+---@field zone string[] Landing zone reference points
+---@field settings CMO__Mission Mission behavior settings (Subtype, throttle, altitude, active status)
+---@field cargoItemsForTransfer SBJ__CargoForTransfer Cargo manifest by ship type
+
+---Attack helicopter mission configuration
+---Used for close air support during landings
+---@class SBJ__AttackHelicopterConfig:table
+---@field dbid number Attack helicopter platform database ID
+---@field missions SBJ__LandingMissionDescriptor[] CAS mission descriptors
+
+---Landing Ship Tank movement configuration
+---Defines LST approach to beach
+---@class SBJ__LSTMovementConfig:table
+---@field speed number LST transit speed (knots)
+---@field course {bearing:number, distance:number} Approach course (bearing in degrees, distance in nautical miles)
+
+---Reconnaissance UAV mission configuration
+---Used for ISR support during amphibious operations
+---@class SBJ__ReconUAVConfig:table
+---@field dbid number UAV platform database ID
+---@field missions SBJ__LandingMissionDescriptor[] Reconnaissance mission descriptors
+
+---Operational zone descriptor for amphibious operations
+---Defines complete landing zone configuration including air and surface assets
+---@class SBJ__OperationZoneDescriptor:table
+---@field name string Operational zone name
+---@field baseGUID string Home base GUID for embarked units
+---@field anchorageArea string[] LHD/LPD anchorage area reference points
+---@field LSTAnchorageArea string[] LST anchorage area reference points
+---@field area string[] General operational area reference points
+---@field offloadArea string[] Vehicle offload area reference points
+---@field boat SBJ__BoatMissionConfig Landing craft configuration
+---@field tansportHelicopter SBJ__TransportHelicopterConfig Transport helicopter configuration
+---@field attackHelicopter SBJ__AttackHelicopterConfig Attack helicopter configuration
+---@field LSTSettings SBJ__LSTMovementConfig LST movement configuration
+---@field ACV SBJ__ACVConfig Air cushion vehicle configuration
+---@field reconUAV? SBJ__ReconUAVConfig Reconnaissance UAV configuration (optional)
 
 ---@class SBJ__Target:table
 ---@field list string[]
@@ -211,11 +263,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field contacts CMO__Contact[]
 ---@field shouldTrack? boolean
 
----@class SBJ__LandingMission:table
----@field name string
----@field loadoutId number
----@field num number
----@field startTime string
+
 --------------------------------------------------------------------
 ---@class SBJ__CargoForTransfer:table
 ---@field type075 SBJ__TransferCargoByLoadout[]
@@ -223,14 +271,14 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 ---@class SBJ__TransferCargoByLoadout:table
 ---@field loadoutId number
----@field cargoItems SBJ__CargoList[]
+---@field cargoItems table<number, SBJ__CargoDescriptor[]>
 
----@class SBJ__CargoList:SBJ__CargoItem[]
-
----@class SBJ__CargoItem:table
----@field type number
----@field num number
----@field dbid number
+---Cargo descriptor - defines parameters for creating cargo units on ships
+---Used to specify what type and quantity of cargo to create
+---@class SBJ__CargoDescriptor:table
+---@field type number Cargo type identifier
+---@field num number Quantity of cargo items to create
+---@field dbid number Database ID of the cargo platform
 
 ------------------------------------------------------------------------
 ---@class SBJ__Loadout:table
@@ -246,42 +294,104 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field dbid number Unit database ID
 ---@field loadouts SBJ__Loadout[]|nil Unit ammunition configuration
 
----@class SBJ__ShipConfig:table
----@field dbid number Database ID
----@field unitname string Unit name
----@field distance number Distance
----@field angle number Angle
----@field embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
----@field loadouts SBJ__Loadout[]|nil Ammunition configuration
-
----@class SBJ__ShipSettings:table
----@field distanceBetweenLSTAndLPDArea string
----@field horizontalDistance number
----@field verticalDistance number
----@field transitDistance number
----@field shipSpeed number
----@field heading table
----@field ACVSpeed number
----@field ACVTransitDistance number
----@field ACVHorizontalDistance number
-
----@class SBJ__RandomUnits:table
----@field centerPoint {lat:number, lon:number}
----@field randomRadius number
----@field autodetectable boolean
----@field unitname string
----@field sideName string
----@field unitType string
----@field count number
----@field dbids number[]
-
----@class SBJ__FormationConfig:table
----@field centerPoint {lat:number, lon:number}
+---@class SBJ__From:table
+---@field startingPoint {lat:number, lon:number}
 ---@field heading number
----@field groupName string
----@field sideName string
----@field unitTypes SBJ__ShipConfig[]
 
+---@class SBJ__To:table
+---@field area CMO__Location[]
+
+---@class SBJ__ToStagingArea:SBJ__To
+---@field archorageArea CMO__Location[]
+---@field amphibiousVehicleStagingArea CMO__Location[]
+---@field heading number
+
+---@class SBJ__SAGDescriptor:table
+---@field groupName string Group name
+---@field from SBJ__From
+---@field to SBJ__ToStagingArea
+---@field unitList table<string, SBJ__AirbaseDeploymentDescriptor>
+---@field area string[]
+---@field missionName? string
+
+---@class SBJ__CSGDescriptor:table
+---@field groupName string Group name
+---@field from SBJ__From
+---@field to SBJ__To
+---@field unitList table<string, SBJ__AirbaseDeploymentDescriptor>
+
+---@class SBJ__FormationHeading:table
+---@field horizontal number
+---@field vertical number
+---@field destination CMO__Location[]
+
+---Amphibious operation layout configuration - defines spacing and movement parameters for amphibious assault
+---Used internally for calculating ship positions during landing operations
+---@class SBJ__AmphibiousLayoutConfig:table
+---@field distanceBetweenLSTAndLPDArea string Distance between LST and LPD staging areas
+---@field horizontalDistance number Horizontal spacing between ships in formation
+---@field verticalDistance number Vertical spacing between ships in formation
+---@field transitDistance number Distance for transit phase
+---@field shipSpeed number Ship movement speed
+---@field heading table<string, SBJ__FormationHeading> Formation heading configuration
+---@field ACVSpeed number Air Cushion Vehicle speed
+---@field ACVTransitDistance number ACV transit distance
+---@field ACVHorizontalDistance number ACV horizontal spacing
+
+---Ship type starting point configuration
+---@class SBJ__ShipTypeStartPoint:table
+---@field side string Side name (e.g., 'China', 'Taiwan')
+---@field area string[] Area reference points array
+
+---Ship quantity configuration for amphibious operations
+---@class SBJ__ShipQuantity:table
+---@field type075 number Number of Type 075 amphibious assault ships
+---@field type071 number Number of Type 071 amphibious transport docks
+---@field type076 number Number of Type 076 amphibious assault ships
+---@field type072iii number Number of Type 072III landing ships
+---@field type072a number Number of Type 072A landing ships
+---@field type073a number Number of Type 073A landing craft
+---@field type071InLSTArea? number Number of Type 071 ships in LST area (optional)
+---@field ferry number Number of ferries
+---@field roro number Number of roll-on/roll-off ships
+---@field barge number Number of barges
+
+---Amphibious operation area descriptor
+---@class SBJ__AmphibiousAreaDescriptor:table
+---@field startingPoints table<string, SBJ__ShipTypeStartPoint> Starting points for each ship type
+---@field heading SBJ__FormationHeading Formation heading angle
+---@field num? SBJ__ShipQuantity Ship quantity configuration (optional, only in destination)
+
+---Amphibious operation departure/destination descriptor
+---@class SBJ__AmphibiousLocationDescriptor:table
+---@field areas SBJ__AmphibiousAreaDescriptor[] Array of area descriptors
+---@field stagingArea? string Staging area reference (optional, only in departure)
+---@field num? SBJ__ShipQuantity Ship quantity configuration (optional, only in departure)
+
+---Amphibious operation descriptor
+---Comprehensive configuration for one amphibious landing operation including departure, destination, and air landing zones
+---Used for scenario initialization and deployment planning
+---@class SBJ__AmphibOpsDescriptor:table
+---@field name string Operation name (e.g., 'Taoyuan', 'Sishu', 'Penghu')
+---@field names string[] Unit name array
+---@field from SBJ__AmphibiousLocationDescriptor Departure configuration
+---@field to SBJ__AmphibiousLocationDescriptor Destination configuration
+---@field airLandingZone string Air landing zone reference area
+---@field numOfContactsInAirLandingZone number Number of contacts required in air landing zone
+
+---Amphibious Operations configuration
+---Comprehensive configuration for amphibious assault operations including
+---cargo manifests, ship layouts, operational zones, and mission timing
+---@class SBJ__AmphibOpsConfig:table
+---@field periodOfTime number Check interval in seconds
+---@field cargoList table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
+---@field cargoListForTransfer table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
+---@field missionStartime table<string, number[]> Mission start times by type (seconds)
+---@field shipSettings SBJ__AmphibiousLayoutConfig Ship layout configuration
+---@field initialLocations SBJ__AmphibOpsDescriptor[] Initial deployment descriptors
+---@field operationalZones SBJ__OperationZoneDescriptor[] Operation zone descriptors
+---@field transportAircraft table[] Transport aircraft configuration
+---@field sag table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
 
 ---SIGINT detection configuration
 ---@class SBJ__SIGINTConfig:table
@@ -381,6 +491,22 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---Used for scenario initialization and deployment planning
 ---@class SBJ__AirbaseDeploymentDescriptor:table
 ---@field name string Airbase name
----@field baseGUID string Airbase unit GUID reference
+---@field baseGUID? string Airbase unit GUID reference
+---@field dbid? number  Database ID if the object is a ship
 ---@field embarkedUnits SBJ__EmbarkedUnit[] Aircraft units stationed at this base
 ---@field loadouts SBJ__Loadout[] Ammunition stockpile in base magazines
+
+---C2 node deployment descriptor
+---Defines how to create a single C2 (Command and Control) node
+---@class SBJ__C2Descriptor:table
+---@field position CMO__Location C2 position
+---@field areas string[][] Operation areas
+---@field areaName string Operation area name
+
+---Integrated Air Defense System configuration
+---Defines C2 facility parameters and deployment settings
+---@class SBJ__IADSConfig:table
+---@field ratio {C2:number} C2 facility ratio multiplier
+---@field C2FacilityDBIDs number[] Database IDs for C2 facility types
+---@field randomRadius number Random deployment radius (nautical miles)
+---@field C2Settings SBJ__C2Descriptor[] C2 node deployment descriptors

@@ -3,7 +3,7 @@ local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = {}
 
----@param mission SBJ__LandingMission
+---@param mission SBJ__LandingMissionDescriptor
 ---@return boolean
 local function setMissionStartTime(mission)
   local currentTime = GameApi.ScenEdit_CurrentTime()
@@ -131,7 +131,7 @@ function AmphibiousAssault.countContactsInArea(contacts, area)
   return #filteredContacts
 end
 
----@param params SBJ__ACVLocation_Params
+---@param params SBJ__ACVDeploymentParams
 ---@return number|nil
 function AmphibiousAssault.launchACV(params)
   local ship = params.ship
@@ -223,7 +223,7 @@ end
 ---comment
 ---@param config SBJ__CONFIG
 ---@param ship CMO__Unit
----@return SBJ__OperationalZone|nil
+---@return SBJ__OperationZoneDescriptor|nil
 function AmphibiousAssault.getShipZone(config, ship)
   for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
     if ship:inArea(zone.ACV.area) then

@@ -57,6 +57,7 @@ saveData.c.SIGINT.transmissions = {
 
 -- IADS
 saveData.c.IADS.isActivated = true
+---@type table<string, SBJ__C2Context>
 saveData.c.IADS.C2 = {
   -- ['IC8B0X-0HN84DHD12BBJ'] = {
   --     name = '#A C2/IADS',

@@ -348,7 +348,7 @@ end
 ---@param config SBJ__CONFIG configuration object
 ---@param saveData SBJ__SaveData save data
 ---@param field string side field identifier
----@param unitData SBJ__BatteryContext|SBJ__C2 unit data
+---@param unitData SBJ__BatteryContext|SBJ__C2Context unit data
 ---@param result SBJ__SIGINTResult SIGINT detection result
 ---@param unit CMO__Unit unit object
 local function updateTransmissionData(config, saveData, field, unitData, result, unit)
@@ -395,7 +395,7 @@ end
 ---@param saveData SBJ__SaveData save data
 ---@param field string side field identifier
 ---@param unit CMO__Unit unit object
----@param unitData SBJ__BatteryContext|SBJ__C2 unit data
+---@param unitData SBJ__BatteryContext|SBJ__C2Context unit data
 local function handleUndetected(config, saveData, field, unit, unitData)
   local transmission = saveData[field].SIGINT.transmissions[unitData.guid]
   if not transmission then
@@ -421,7 +421,7 @@ end
 ---@param config SBJ__CONFIG configuration object
 ---@param saveData SBJ__SaveData save data
 ---@param side string side name
----@param units SBJ__BatteryContext[]|SBJ__C2[] unit list (mobile missile launchers)
+---@param units SBJ__BatteryContext[]|SBJ__C2Context[] unit list (mobile missile launchers)
 ---@param isShown boolean whether to show notification
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration
 ---@return table<string, SBJ__SIGINTResult> detection results by unit GUID

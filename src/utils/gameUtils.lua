@@ -24,7 +24,7 @@ function GameUtils.circularRandomPosition(xLatitude, xLongitude, maxRadius)
 end
 
 ---Generate a list of locations based on parameters
----@param params SBJ__Location_Params
+---@param params SBJ__LinearPlacementParams
 ---@return table<integer, CMO__Location>
 function GameUtils.generateLocations(params)
   local numTemp = params.num
