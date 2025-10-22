@@ -478,8 +478,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
 }

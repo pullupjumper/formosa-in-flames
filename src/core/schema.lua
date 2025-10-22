@@ -376,7 +376,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field names string[] Unit name array
 ---@field from SBJ__AmphibiousLocationDescriptor Departure configuration
 ---@field to SBJ__AmphibiousLocationDescriptor Destination configuration
----@field airLandingZone string Air landing zone reference area
+---@field airLandingZone string[] Air landing zone reference area
 ---@field numOfContactsInAirLandingZone number Number of contacts required in air landing zone
 
 ---Amphibious Operations configuration

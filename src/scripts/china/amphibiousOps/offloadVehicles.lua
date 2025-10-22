@@ -44,7 +44,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.isBridgeDestroyed(saveData, 
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
     if roro then
-      local zone = SecondWaveUnloading.getBargeROROZone(config, ship, roro)
+      local zone = SecondWaveUnloading.getBargeROROZone(config.c.PHIBOP, ship, roro)
 
       if zone then
         SecondWaveUnloading.offloadVehicles({

@@ -892,11 +892,11 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors, sideName)
     end
 
     if data.embarkedUnits then
-      addEmbarkedUnitsAdvanced(data.embarkedUnits, base.guid)
+      addEmbarkedUnitsAdvanced(data.embarkedUnits, data.baseGUID)
     end
 
     if data.loadouts then
-      UnitGenerator.removeMagazinesByBaseGUID(base.guid)
+      UnitGenerator.removeMagazinesByBaseGUID(data.baseGUID)
 
       for _, loadout in ipairs(data.loadouts) do
         GameApi.ScenEdit_FillMagsForLoadout({

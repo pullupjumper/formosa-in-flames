@@ -9,7 +9,7 @@ if not ship then
 end
 
 if AmphibiousAssault.isFerryOrLST(config, ship) then
-  local zone = AmphibiousAssault.getShipZone(config, ship)
+  local zone = AmphibiousAssault.getShipZone(config.c.PHIBOP, ship)
 
   if zone then
     local count = AmphibiousAssault.launchACV({

@@ -1,14 +1,15 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
-local config = require("src.core.constants")
 
 local ShipMovement = {}
 
----@param unit CMO__Unit
----@param location CMO__Location
----@param speed number
----@param isTesting boolean
+--- Move a ship to a target location with specified speed
+--- In testing mode, teleports the ship directly to the destination
+---@param unit CMO__Unit The ship unit to move
+---@param location CMO__Location Target destination coordinates
+---@param speed number Ship movement speed in knots
+---@param isTesting boolean If true, teleports ship instantly for testing
 local function moveShip(unit, location, speed, isTesting)
   unit.course = { location }
   unit.manualSpeed = speed
@@ -23,11 +24,13 @@ local function moveShip(unit, location, speed, isTesting)
   end
 end
 
----@param unit CMO__Unit
----@param resultTable table<string, table>
----@param shipType string
----@param shipSettings table<string, number>
----@param isTesting boolean
+--- Handle ship movement for standard amphibious assault ship types
+--- Assigns next available location from pre-calculated positions and increments index
+---@param unit CMO__Unit The ship unit to move
+---@param resultTable table<string, table> Pre-calculated destination locations for all ship types
+---@param shipType string Ship type identifier (type075, type076, type072iii, etc.)
+---@param shipSettings table<string, number> Ship movement configuration
+---@param isTesting boolean If true, enables testing mode with instant teleportation
 local function handleShipType(unit, resultTable, shipType, shipSettings, isTesting)
   local index = resultTable[shipType].locationIndex
   local location = resultTable[shipType].locations[index]
@@ -35,11 +38,13 @@ local function handleShipType(unit, resultTable, shipType, shipSettings, isTesti
   resultTable[shipType].locationIndex = index + 1
 end
 
----@param unit CMO__Unit
----@param resultTable table<string, table>
----@param nameType string
----@param shipSettings table<string, number>
----@param isTesting boolean
+--- Handle ship movement for auxiliary vessels identified by name (ferry, RORO, barge)
+--- Similar to handleShipType but uses ship name instead of DBID for matching
+---@param unit CMO__Unit The ship unit to move
+---@param resultTable table<string, table> Pre-calculated destination locations
+---@param nameType string Ship name type (ferry, RORO, barge)
+---@param shipSettings table<string, number> Ship movement configuration
+---@param isTesting boolean If true, enables testing mode with instant teleportation
 local function handleNameType(unit, resultTable, nameType, shipSettings, isTesting)
   nameType = string.lower(nameType)
   local index = resultTable[nameType].locationIndex
@@ -48,11 +53,14 @@ local function handleNameType(unit, resultTable, nameType, shipSettings, isTesti
   resultTable[nameType].locationIndex = index + 1
 end
 
----@param unit CMO__Unit
----@param resultTable table<string, table>
----@param shipType string
----@param shipSettings table<string, number>
----@param isTesting boolean
+--- Handle Type 071 LPD movement with overflow support to LST area
+--- Type 071 ships can be assigned to either LPD area or LST area based on capacity
+--- When LPD area is full, overflow Type 071s are placed in LST area
+---@param unit CMO__Unit The Type 071 ship to move
+---@param resultTable table<string, table> Pre-calculated destination locations
+---@param shipType string Ship type identifier (always "type071")
+---@param shipSettings table<string, number> Ship movement configuration
+---@param isTesting boolean If true, enables testing mode with instant teleportation
 local function handle071(unit, resultTable, shipType, shipSettings, isTesting)
   local index = resultTable.type071.locationIndex
   local len = #resultTable.type071.locations
@@ -66,10 +74,11 @@ local function handle071(unit, resultTable, shipType, shipSettings, isTesting)
   resultTable.type071.locationIndex = index + 1
 end
 
----@param ship CMO__Unit
----@param lat number|string
----@param lon number|string
----@param bearing number
+--- Set ship position and heading instantly (used in testing mode)
+---@param ship CMO__Unit The ship unit to reposition
+---@param lat number|string Latitude coordinate
+---@param lon number|string Longitude coordinate
+---@param bearing number Ship heading in degrees
 local function setShipPosition(ship, lat, lon, bearing)
   GameApi.ScenEdit_SetUnit({
     guid = ship.guid,
@@ -79,11 +88,12 @@ local function setShipPosition(ship, lat, lon, bearing)
   })
 end
 
----@param latitude number|string
----@param longitude number|string
----@param bearing number
----@param distance number
----@return CMO__Location
+--- Calculate a new position from a starting point given bearing and distance
+---@param latitude number|string Starting latitude
+---@param longitude number|string Starting longitude
+---@param bearing number Direction in degrees (0-360)
+---@param distance number Distance in nautical miles
+---@return CMO__Location New position coordinates
 local function getNextPosition(latitude, longitude, bearing, distance)
   return GameApi.World_GetPointFromBearing({
     LATITUDE = latitude,
@@ -93,9 +103,13 @@ local function getNextPosition(latitude, longitude, bearing, distance)
   })
 end
 
----@param group table<string, table>
----@param isTesting boolean
-local function handleSAG(group, isTesting)
+--- Handle Surface Action Group (SAG) movement to anchorage area
+--- Positions SAG ships in formation: Type 052D destroyers in center, Type 054A frigates at flanks
+--- In testing mode, ships are instantly teleported to their assigned positions
+---@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param group SBJ__SAGDescriptor SAG group descriptor with destination and unit list
+---@param isTesting boolean If true, enables testing mode with instant teleportation
+local function handleSAG(config, group, isTesting)
   local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
   if not unit then
@@ -151,14 +165,18 @@ local function handleSAG(group, isTesting)
   end
 end
 
----comment
----@param saveData SBJ__SaveData
----@param config SBJ__CONFIG
----@param units CMO__SideUnit
----@return boolean
-function ShipMovement.moveToStagingArea(saveData, config, units)
-  local shipSettings = config.c.PHIBOP.shipSettings
-  local initialLocations = config.c.PHIBOP.initialLocations
+--- Move all amphibious assault ships from staging area to designated anchorage positions
+--- Routes different ship types to their pre-calculated positions based on ship class
+--- Handles amphibious assault ships (Type 075/076), landing ships (Type 071/072/073), and auxiliary vessels
+--- Also coordinates Surface Action Group movements for escort duties
+---@param config SBJ__CONFIG Global configuration (used for SAG platform identification)
+---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
+---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@return boolean True if all ship movement orders were successfully issued
+function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units)
+  local shipSettings = amphibOpsConfig.shipSettings
+  local initialLocations = amphibOpsConfig.initialLocations
   local calculations = saveData.c.PHIBOP.calculations
   local isTesting = saveData.c.PHIBOP.isTesting
   local allUnitsMoved = false
@@ -204,19 +222,24 @@ function ShipMovement.moveToStagingArea(saveData, config, units)
     end
   end
 
-  for _, group in pairs(config.c.PHIBOP.sag) do
-    handleSAG(group, isTesting)
+  for _, group in pairs(amphibOpsConfig.sag) do
+    handleSAG(config, group, isTesting)
   end
 
   allUnitsMoved = true
   return allUnitsMoved
 end
 
----comment
----@param saveData SBJ__SaveData
-function ShipMovement.calculateDestination(saveData)
-  local initialLocations = config.c.PHIBOP.initialLocations
-  local shipSettings = config.c.PHIBOP.shipSettings
+--- Pre-calculate all destination positions for amphibious assault ships
+--- Generates a grid of anchorage positions for each ship type in each operational area
+--- Positions are calculated based on reference points with vertical and horizontal spacing
+--- Ship types are arranged in layers: Type 075 (LHD), Type 071 (LPD), Type 076, then LSTs
+--- Results are stored in saveData for later use during actual ship movement
+---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
+---@param saveData SBJ__SaveData Save data where calculated positions will be stored
+function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
+  local initialLocations = amphibOpsConfig.initialLocations
+  local shipSettings = amphibOpsConfig.shipSettings
 
   for _, item in ipairs(initialLocations) do
     for _, area in ipairs(item.to.areas) do
@@ -225,56 +248,48 @@ function ShipMovement.calculateDestination(saveData)
       local firstRp076 = GameApi.World_GetPointFromBearing({
         latitude = firstRp071.latitude,
         longitude = firstRp071.longitude,
-        -- initialLocation = firstRp071,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRpBarge = GameApi.World_GetPointFromBearing({
         latitude = firstRp075.latitude,
         longitude = firstRp075.longitude,
-        -- initialLocation = firstRp075,
         bearing = area.heading.vertical,
         distance = shipSettings.distanceBetweenLSTAndLPDArea
       })
       local firstRpRORO = GameApi.World_GetPointFromBearing({
         latitude = firstRpBarge.latitude,
         longitude = firstRpBarge.longitude,
-        -- initialLocation = firstRpBarge,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRp072a = GameApi.World_GetPointFromBearing({
         latitude = firstRpRORO.latitude,
         longitude = firstRpRORO.longitude,
-        -- initialLocation = firstRpRORO,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRp072iii = GameApi.World_GetPointFromBearing({
         latitude = firstRp072a.latitude,
         longitude = firstRp072a.longitude,
-        -- initialLocation = firstRp072a,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRpFerry = GameApi.World_GetPointFromBearing({
         latitude = firstRp072iii.latitude,
         longitude = firstRp072iii.longitude,
-        -- initialLocation = firstRp072iii,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRp071InLSTArea = GameApi.World_GetPointFromBearing({
         latitude = firstRpFerry.latitude,
         longitude = firstRpFerry.longitude,
-        -- initialLocation = firstRpFerry,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })
       local firstRp073a = GameApi.World_GetPointFromBearing({
         latitude = firstRp071InLSTArea.latitude,
         longitude = firstRp071InLSTArea.longitude,
-        -- initialLocation = firstRp071InLSTArea,
         bearing = area.heading.vertical,
         distance = shipSettings.verticalDistance
       })

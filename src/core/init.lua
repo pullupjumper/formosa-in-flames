@@ -400,7 +400,7 @@ end
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
-  ShipMovement.calculateDestination(saveData)
+  ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
   initAC(config, saveData)
   initTargetlist(saveData)
   initRunways(saveData)

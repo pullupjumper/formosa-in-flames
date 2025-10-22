@@ -22,13 +22,14 @@ if not currentTime then
   return
 end
 
-local side = GameApi.VP_GetSide({ side = 'China' })
+-- local side = GameApi.VP_GetSide({ side = 'China' })
 
-if not side then
-  return
-end
+-- if not side then
+--   return
+-- end
 
--- local units = side.units
+---@type CMO__SideUnit[]
+local filteredShips = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
 
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -40,7 +41,7 @@ end
 
 
 if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.PHIBOP.startTime) then
-  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(saveData, config, side:unitsBy(config.unitType.SHIP))
+  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(config, config.c.PHIBOP, saveData, filteredShips)
 
   if hasIssuedShipMovementOrder then
     saveData.c.PHIBOP.isWaitingForShipArrival = true
@@ -49,12 +50,12 @@ if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveDat
 end
 
 if saveData.c.PHIBOP.isWaitingForShipArrival then
-  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, side:unitsBy(config.unitType.SHIP))
+  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, config.c.PHIBOP, filteredShips)
   local hasArrived = Utils.getCount(result.units) > 15 and not result.isUnitMoving
 
   if hasArrived then
-    local creatingCompleted = AmphibiousLogistics.createCargoMissions(config)
-    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config, result.units)
+    local creatingCompleted = AmphibiousLogistics.createCargoMissions(config.c.PHIBOP)
+    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config, config.c.PHIBOP, result.units)
     local hasAssignedAndTransfered = creatingCompleted and transferingCompleted
 
     if hasAssignedAndTransfered then
@@ -101,10 +102,8 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
   local shouldLaunchAmphibiousAssault = isContactCountLessThan or isTimeExceeded
 
   if shouldLaunchAmphibiousAssault then
-    local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
-    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(
-      config, side:unitsBy(config.unitType.SHIP)
-    )
+    local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config.c.PHIBOP, saveData)
+    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config, config.c.PHIBOP, filteredShips)
     local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
 
     if hasLaunchedAmphibiousAssault then
@@ -121,7 +120,7 @@ if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
 
   if hasEstablishedBeachheads then
     local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(
-      config, saveData, side:unitsBy(config.unitType.SHIP)
+      config, config.c.PHIBOP, saveData, filteredShips
     )
 
     if hasStartedSecondWaveUnloading then
@@ -135,7 +134,7 @@ if saveData.c.PHIBOP.airlandingMissionStartTime ~= nil then
   local isTimeExceeded = elapsedTime >= (3600 * 2)
 
   if isTimeExceeded then
-    local hasTransfered = AmphibiousLogistics.retransferCargos(config, side:unitsBy(config.unitType.SHIP))
+    local hasTransfered = AmphibiousLogistics.retransferCargos(config, config.c.PHIBOP, filteredShips)
 
     if hasTransfered then
       saveData.c.PHIBOP.airlandingMissionStartTime = currentTime

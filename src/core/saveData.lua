@@ -442,11 +442,11 @@ saveData.c.recon.queue = {
 }
 
 -- Fire support plan
-saveData.c.ground.isActivated = true
+saveData.c.ground.isActivated = false
 saveData.c.ground.FSP = {}
 
 -- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
-saveData.c.air.isActivated = true
+saveData.c.air.isActivated = false
 saveData.c.air.ATO = {}
 
 
