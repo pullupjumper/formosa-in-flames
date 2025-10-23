@@ -18,7 +18,7 @@ end
 ---@param config SBJ__CONFIG
 ---@param bettery SBJ__BatteryContext
 ---@return boolean
-local function isNotBtyAtFiringPosition(config, bettery)
+local function isNotBtyAtFiringPoint(config, bettery)
   return bettery.state ~= config.batteryState.STATIC
 end
 
@@ -38,10 +38,10 @@ local function shouldDeployToFiringPosition(config, saveData, FST)
       local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
 
       if isBtyReady(config, bettery, actualBty) then
-        Launcher.toFringPosition(config, bettery, actualBty)
+        Launcher.toFiringPoint(config, bettery, actualBty)
       end
 
-      if isNotBtyAtFiringPosition(config, bettery) then
+      if isNotBtyAtFiringPoint(config, bettery) then
         allBatteriesInPosition = false
       end
     end

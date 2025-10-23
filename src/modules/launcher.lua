@@ -7,12 +7,14 @@ local Launcher = {}
 
 ---Find the area where the unit is located
 ---@param unit CMO__Unit Unit object
----@param positions SBJ__Position[] Position information table
+---@param OPAREAs table<string, SBJ__OPAREA> Position information table
 ---@return string[]|nil Area name or nil
-local function findUnitArea(unit, positions)
-  for _, p in pairs(positions) do
-    if unit:inArea(p.RL.area) then
-      return p.RL.area
+local function findUnitArea(unit, OPAREAs)
+  for _, OPAREA in pairs(OPAREAs) do
+    for _, pos in ipairs(OPAREA.RL) do
+      if unit:inArea(pos.area) then
+        return pos.area
+      end
     end
   end
 
@@ -57,10 +59,11 @@ end
 ---@param group CMO__Unit Unit group
 local function toRL(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
+  local posIdx = math.random(Utils.getCount(battery.OPAREA.RL))
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, battery.position.RL.course, false, 2)
+    setUnitProperties(unit, 'Flank', 30, battery.OPAREA.RL[posIdx].course, false, 2)
   end
 end
 
@@ -71,9 +74,14 @@ end
 local function toHA(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
 
-  for _, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, battery.position.HA.course, false, 2)
+  -- Check if HA exists (some OPAREAs may not have HA)
+  if battery.OPAREA.HA and Utils.getCount(battery.OPAREA.HA) > 0 then
+    local posIdx = math.random(Utils.getCount(battery.OPAREA.HA))
+
+    for _, guid in ipairs(group.group.unitlist) do
+      local unit = GameApi.ScenEdit_GetUnit(guid)
+      setUnitProperties(unit, 'Flank', 30, battery.OPAREA.HA[posIdx].course, false, 2)
+    end
   end
 end
 
@@ -83,10 +91,11 @@ end
 ---@param group CMO__Unit Unit group
 local function toAHA(config, section, group)
   section.state = config.batteryState.REPOSITIONING
+  local posIdx = math.random(Utils.getCount(section.OPAREA.AHA))
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, section.position.AHA.course, false)
+    setUnitProperties(unit, 'Flank', 30, section.OPAREA.AHA[posIdx].course, false)
   end
 end
 
@@ -113,10 +122,13 @@ end
 ---@param group CMO__Unit Unit group
 local function ammoSecToRL(config, section, group)
   section.state = config.batteryState.REPOSITIONING
+  local posIdx = math.random(Utils.getCount(section.OPAREA.RL))
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, section.position.RL.course[#section.position.RL.course], false)
+    setUnitProperties(
+      unit, 'Flank', 30, section.OPAREA.RL[posIdx].course[#section.OPAREA.RL[posIdx].course], false
+    )
   end
 end
 
@@ -207,7 +219,16 @@ local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, 
   local systemConfig = config[field]['ground'][wpnSystem]
 
   if section.state == config.batteryState.STATIC then
-    if section.wpnCurrent == 0 and group:inArea(section.position.RL.area) then
+    -- Check if unit is in any RL area
+    local isInRLArea = false
+    for _, pos in ipairs(section.OPAREA.RL) do
+      if group:inArea(pos.area) then
+        isInRLArea = true
+        break
+      end
+    end
+
+    if section.wpnCurrent == 0 and isInRLArea then
       toAHA(config, section, group)
     end
   end
@@ -447,19 +468,19 @@ function Launcher.isLowAmmo(group, percentage, weaponDBID)
   return currentPercentage <= percentage
 end
 
----Command artillery battery to move to firing position (FP)
+---Command artillery battery to move to firing point (FP)
 ---@param config SBJ__CONFIG
 ---@param battery SBJ__BatteryContext Artillery battery object
 ---@param group CMO__Unit Unit group
-function Launcher.toFringPosition(config, battery, group)
+function Launcher.toFiringPoint(config, battery, group)
   battery.state = config.batteryState.REPOSITIONING
-  local courseIdx = math.random(Utils.getCount(battery.position.FP))
+  local courseIdx = math.random(Utils.getCount(battery.OPAREA.FP))
 
   for _, guid in ipairs(group.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit then
-      setUnitProperties(unit, 'Flank', 30, battery.position.FP[courseIdx].course, false)
+      setUnitProperties(unit, 'Flank', 30, battery.OPAREA.FP[courseIdx].course, false)
     end
   end
 end
@@ -484,7 +505,8 @@ function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
   end
 
   local system = saveData[field]['ground'][wpnSystem]
-  local positions = config[field]['ground'][wpnSystem].positions
+  ---@type table<string, SBJ__OPAREA>
+  local OPAREAs = config[field]['ground'][wpnSystem].OPAREAs
 
   for _, battery in pairs(system[batteryField]) do
     local isStateValid = true
@@ -496,7 +518,7 @@ function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
     end
 
     if battery.guid == group.guid and isStateValid then
-      local area = findUnitArea(unit, positions)
+      local area = findUnitArea(unit, OPAREAs)
       if not area then return { isMet = false, battery = nil } end
 
       for _, section in pairs(system[ammunitionField]) do
@@ -526,7 +548,8 @@ function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
   local group = GameApi.ScenEdit_GetUnit(unit.group.guid)
   if not group then return { isMet = false, battery = nil } end
   local system = saveData[field]['ground'][wpnSystem]
-  local positions = config[field]['ground'][wpnSystem].positions
+  ---@type table<string, SBJ__OPAREA>
+  local OPAREAs = config[field]['ground'][wpnSystem].OPAREAs
 
   for _, section in pairs(system.ammunitionSections) do
     local isStateValid = true
@@ -540,11 +563,14 @@ function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
     if section.guid == group.guid and isStateValid then
       local ammo = GameApi.ScenEdit_GetUnit(section.ammunition)
 
-      for _, p in pairs(positions) do
-        local isInSameArea = unit:inArea(p.AHA.area) and (ammo and ammo:inArea(p.AHA.area))
+      for _, OPAREA in pairs(OPAREAs) do
+        -- Check all AHA areas in the array
+        for _, pos in ipairs(OPAREA.AHA) do
+          local isInSameArea = unit:inArea(pos.area) and (ammo and ammo:inArea(pos.area))
 
-        if isInSameArea then
-          return { isMet = true, battery = section }
+          if isInSameArea then
+            return { isMet = true, battery = section }
+          end
         end
       end
     end

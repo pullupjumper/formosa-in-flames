@@ -72,11 +72,11 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field course CMO__TableOfWaypoints @Waypoints to area
 ---@field area string[]  EX:{"rp-100","rp-101","rp-102","rp-103","rp-104"}
 
----@class SBJ__OPAREAs:table
----@field FP SBJ__Position
----@field HA? SBJ__Position
----@field AHA SBJ__Position
----@field RL SBJ__Position
+---@class SBJ__OPAREA:table
+---@field FP SBJ__Position[]
+---@field HA? SBJ__Position[]
+---@field AHA SBJ__Position[]
+---@field RL SBJ__Position[]
 
 --- Ammunition context data structure for tracking ammunition unit status
 ---@class SBJ__AmmunitionContext:table
@@ -88,9 +88,9 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__AmmunitionSectionContext:SBJ__AmmunitionContext
 ---@field name string Ammunition section name
 ---@field unitCount number Number of resupply vehicles
----@field position SBJ__OPAREAs Ammunition section position
+---@field OPAREA SBJ__OPAREA Ammunition section position
 ---@field reloadStartTime number|nil Reload start timestamp, nil if not reloading
----@field state CONFIG.batteryState Section state (STATIC/HIDE, etc.)
+---@field state batteryState Section state (STATIC/HIDE, etc.)
 ---@field ammunition string Associated ammunition unit GUID
 
 --- Battery context data structure

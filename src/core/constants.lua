@@ -467,8 +467,8 @@ config.fixedFacilityCategory = {
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5
 config.readytime = 5 * 60
----@enum CONFIG.batteryState
 --- Battery states for the ground units
+---@enum batteryState
 config.batteryState = {
   STATIC = 0,
   REPOSITIONING = 1,
@@ -478,8 +478,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
 }
@@ -582,21 +582,22 @@ config.c.GPSJamming.GPSGuidedWeapons = {
 -- MLRS
 config.c.ground.mlrs.wpnDefault = 192
 config.c.ground.mlrs.ammoThreshold = 50
-config.c.ground.mlrs.positions = {
+---@type table<string, SBJ__OPAREA>
+config.c.ground.mlrs.OPAREAs = {
   pingtan = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 25.30.13', lon = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_PINGTAN
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 25.30.02', lon = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_PINGTAN
-    },
+    } },
     FP = {
       {
         course = {
@@ -613,42 +614,40 @@ config.c.ground.mlrs.positions = {
         area = config.c.area.FIRE_POINT_PINGTAN_2
       },
     },
-    AHA = {
+    AHA = { {
       course = {
         { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_PINGTAN
-    },
+    } },
   },
   chinchew = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_CHINCHEW
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_CHINCHEW
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_CHINCHEW_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_CHINCHEW_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
-    },
+    } },
   },
 }
 config.c.ground.mlrs.contactAge = 30 * 60
@@ -657,36 +656,35 @@ config.c.ground.mlrs.reloadTime = 30 * 60
 -- GLCM
 config.c.ground.glcm.wpnDefault = 48
 config.c.ground.glcm.ammoThreshold = 50
-config.c.ground.glcm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.c.ground.glcm.OPAREAs = {
   brigade635 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_CHINCHEW
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_CHINCHEW
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_CHINCHEW_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_CHINCHEW_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
-    },
+    } },
   },
 }
 config.c.ground.glcm.contactAge = 30 * 60
@@ -695,186 +693,175 @@ config.c.ground.glcm.reloadTime = 45 * 60
 -- SRBM
 config.c.ground.srbm.wpnDefault = 36
 config.c.ground.srbm.ammoThreshold = 35
-config.c.ground.srbm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.c.ground.srbm.OPAREAs = {
   brigade615 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.16.56', lon = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE615
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 24.17.06', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE615
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE615_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE615_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.17.05', lon = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE615
-    },
+    } },
   },
   brigade614 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 26.03.40', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE614
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 26.03.48', lon = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE614
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE614_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE614_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 26.03.47', lon = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE614
-    },
+    } },
   },
   brigade636 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 24.45.25', lon = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE636
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 24.45.33', lon = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE636
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE636_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE636_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.45.34', lon = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE636
-    },
+    } },
   },
   brigade616 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 25.54.31', lon = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE616
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 25.54.40', lon = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE616
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE616_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE616_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 25.54.38', lon = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE616
-    },
+    } },
   },
   brigade613 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 28.27.25', lon = 'E 117.51.51', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 28.27.26', lon = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 28.27.03', lon = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE613
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 28.27.12', lon = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE613
-    },
-    FP = {
-      {
-        course = {
-          { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE613_1
+    } },
+    FP = { {
+      course = {
+        { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE613_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 28.27.12', lon = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE613
-    },
+    } },
   },
   brigade617 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 29.09.32', lon = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 29.08.57', lon = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE617
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 29.09.01', lon = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE617
-    },
-    FP = {
-      {
-        course = {
-          { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE617_1
+    } },
+    FP = { {
+      course = {
+        { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE617_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 29.09.03', lon = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE617
-    },
+    } },
   },
 }
 config.c.ground.srbm.contactAge = 30 * 60
@@ -883,37 +870,36 @@ config.c.ground.srbm.reloadTime = 5 * 60
 -- MRBM
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 35
-config.c.ground.mrbm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.c.ground.mrbm.OPAREAs = {
   brigade624 = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
         { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE624
-    },
-    HA = {
+    } },
+    HA = { {
       course = {
         { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE624
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_BRIGADE624_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.c.area.FIRE_POINT_BRIGADE624_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE624
-    },
+    } },
   },
 }
 config.c.ground.mrbm.contactAge = 15 * 60
@@ -3844,30 +3830,29 @@ config.t.GPSJamming.GPSGuidedWeapons = {
 -- MLRS
 config.t.ground.mlrs.wpnDefault = 144
 config.t.ground.mlrs.ammoThreshold = 25
-config.t.ground.mlrs.positions = {
+---@type table<string, SBJ__OPAREA>
+config.t.ground.mlrs.OPAREAs = {
   pingzhen = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_PINGZHEN
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-          { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-        },
-        area = config.t.area.FIRE_POINT_PINGZHEN_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    },
+    } },
   },
 }
 config.t.ground.mlrs.reloadTime = 30 * 60
@@ -3876,54 +3861,51 @@ config.t.ground.mlrs.reloadTime = 30 * 60
 -- SRBM
 config.t.ground.srbm.wpnDefault = 27
 config.t.ground.srbm.ammoThreshold = 25
-config.t.ground.srbm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.t.ground.srbm.OPAREAs = {
   pingzhen = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_PINGZHEN
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-          { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-        },
-        area = config.t.area.FIRE_POINT_PINGZHEN_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    },
+    } },
   },
   dadu = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_DADU
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-          { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
-        },
-        area = config.t.area.FIRE_POINT_DADU_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.t.area.FIRE_POINT_DADU_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_DADU
-    },
+    } },
   },
 }
 config.t.ground.srbm.reloadTime = 10 * 60
@@ -3932,36 +3914,35 @@ config.t.ground.srbm.reloadTime = 10 * 60
 -- GLCM
 config.t.ground.glcm.wpnDefault = 48
 config.t.ground.glcm.ammoThreshold = 25
-config.t.ground.glcm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.t.ground.glcm.OPAREAs = {
   quanxi = {
-    RL = {
+    RL = { {
       course = {},
       area = config.t.area.RELOAD_POINT_QUANXI
-    },
-    FP = {
-      {
-        course = {},
-        area = config.t.area.FIRE_POINT_PINGZHEN_1
-      },
-    },
-    AHA = {
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
       course = {},
       area = config.t.area.AMMO_HOLDING_AREA_QUANXI
-    },
+    } },
   },
   neipu = {
-    RL = {
+    RL = { {
+      course = {},
       area = config.t.area.RELOAD_POINT_NEIPU
-    },
-    FP = {
-      {
-        area = config.t.area.FIRE_POINT_NEIPU_1
-      },
-    },
-    AHA = {
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_NEIPU_1
+    }, },
+    AHA = { {
       course = {},
       area = config.t.area.AMMO_HOLDING_AREA_NEIPU
-    },
+    } },
   }
 }
 config.t.ground.glcm.reloadTime = 45 * 60
@@ -3970,96 +3951,93 @@ config.t.ground.glcm.reloadTime = 45 * 60
 -- ASCM
 config.t.ground.ascm.wpnDefault = 16
 config.t.ground.ascm.ammoThreshold = 25
-config.t.ground.ascm.positions = {
+---@type table<string, SBJ__OPAREA>
+config.t.ground.ascm.OPAREAs = {
   pingzhen = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_PINGZHEN
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-          { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-        },
-        area = config.t.area.FIRE_POINT_PINGZHEN_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    },
+    } },
   },
   dadu = {
-    RL = {
+    RL = { {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
         { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_DADU
-    },
-    FP = {
-      {
-        course = {
-          { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-          { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
-        },
-        area = config.t.area.FIRE_POINT_DADU_1
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
-    },
-    AHA = {
+      area = config.t.area.FIRE_POINT_DADU_1
+    }, },
+    AHA = { {
       course = {
         { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_DADU
-    },
+    } },
   },
   neipu = {
-    RL = {
+    RL = { {
+      course = {},
       area = config.t.area.RELOAD_POINT_NEIPU
-    },
-    FP = {
-      {
-        area = config.t.area.FIRE_POINT_NEIPU_1
-      },
-    },
-    AHA = {
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_NEIPU_1
+    }, },
+    AHA = { {
       course = {},
       area = config.t.area.AMMO_HOLDING_AREA_NEIPU
-    },
+    } },
   },
   luzhu = {
-    RL = {
+    RL = { {
+      course = {},
       area = config.t.area.RELOAD_POINT_LUZHU
-    },
-    FP = {
-      {
-        area = config.t.area.FIRE_POINT_LUZHU_1
-      },
-    },
-    AHA = {
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_LUZHU_1
+    }, },
+    AHA = { {
       course = {},
       area = config.t.area.AMMO_HOLDING_AREA_LUZHU
-    },
+    } },
   },
   dong = {
-    RL = {
+    RL = { {
+      course = {},
       area = config.t.area.RELOAD_POINT_DONG
-    },
-    FP = {
-      {
-        area = config.t.area.FIRE_POINT_DONG_1
-      },
-    },
-    AHA = {
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_DONG_1
+    }, },
+    AHA = { {
       course = {},
       area = config.t.area.AMMO_HOLDING_AREA_DONG
-    },
+    } },
   },
 }
 config.t.ground.ascm.reloadTime = 45 * 60
