@@ -17,7 +17,7 @@ end
 
 
 if saveData.t.ground.mlrs.isActivated then
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, unit, 'mlrs', false)
+  local result = Launcher.isMetWithAmmoTrucks(config, saveData.t.ground.mlrs, unit, false)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, false)
@@ -25,7 +25,7 @@ if saveData.t.ground.mlrs.isActivated then
 end
 
 if saveData.t.ground.glcm.isActivated then
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, unit, 'glcm', false)
+  local result = Launcher.isMetWithAmmoTrucks(config, saveData.t.ground.glcm, unit, false)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, false)
@@ -33,7 +33,7 @@ if saveData.t.ground.glcm.isActivated then
 end
 
 if saveData.t.ground.srbm.isActivated then
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, unit, 'srbm', false)
+  local result = Launcher.isMetWithAmmoTrucks(config, saveData.t.ground.srbm, unit, false)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, false)
@@ -41,7 +41,7 @@ if saveData.t.ground.srbm.isActivated then
 end
 
 if saveData.t.ground.ascm.isActivated then
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, unit, 'ascm', false)
+  local result = Launcher.isMetWithAmmoTrucks(config, saveData.t.ground.ascm, unit, false)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, false)

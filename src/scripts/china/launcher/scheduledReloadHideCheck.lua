@@ -10,19 +10,19 @@ if saveData == nil then
 end
 
 if saveData.c.ground.mlrs.isActivated then
-  Launcher.checkBatteryState(config, saveData, 'mlrs', 'China', true)
+  Launcher.checkBatteryState(config, saveData.c.ground.mlrs, true)
 end
 
 if saveData.c.ground.srbm.isActivated then
-  Launcher.checkBatteryState(config, saveData, 'srbm', 'China', true)
+  Launcher.checkBatteryState(config, saveData.c.ground.srbm, true)
 end
 
 if saveData.c.ground.glcm.isActivated then
-  Launcher.checkBatteryState(config, saveData, 'glcm', 'China', true)
+  Launcher.checkBatteryState(config, saveData.c.ground.glcm, true)
 end
 
 if saveData.c.ground.mrbm.isActivated then
-  Launcher.checkBatteryState(config, saveData, 'mrbm', 'China', true)
+  Launcher.checkBatteryState(config, saveData.c.ground.mrbm, true)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

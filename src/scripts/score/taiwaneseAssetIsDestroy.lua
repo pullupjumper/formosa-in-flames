@@ -25,14 +25,14 @@ if unit then
         "Underground shelter has been destoryed"
       )
     elseif unit.dbid == config.platform.AMMO_TRUCK then
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.mlrs)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.srbm)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.glcm)
       Logger.log("An ammunition section has been destoryed.")
     elseif unit.dbid == config.platform.AMMO then
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'mlrs', saveData)
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'srbm', saveData)
-      Launcher.destroyAmmoSecHandler(unit, 'Taiwan', 'glcm', saveData)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.mlrs)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.srbm)
+      Launcher.destroyAmmoSecHandler(unit, saveData.t.ground.glcm)
       Logger.log("An ammunition has been destoryed.")
     elseif unit.dbid == config.platform.FPS117 or
         unit.dbid == config.platform.TPS43F or

@@ -46,19 +46,19 @@ end
 
 ---Check if battery reload conditions are met
 ---@param batteryCtx SBJ__BatteryContext Artillery battery object
----@param systemConfig table System configuration
+---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param metResult {isMet: boolean} Result of ammo truck meeting check
 ---@param battery CMO__Unit Unit group
 ---@param weaponDBID number Weapon database ID
 ---@return boolean Whether reload conditions are met
-local function isReadyToReloadBattery(batteryCtx, systemConfig, metResult, battery, weaponDBID)
+local function isReadyToReloadBattery(batteryCtx, wsContext, metResult, battery, weaponDBID)
   if batteryCtx.reloadStartTime == nil then
     return false
   end
 
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - batteryCtx.reloadStartTime
 
-  return elapsedTime >= systemConfig.reloadTime and
+  return elapsedTime >= wsContext.reloadTime and
       metResult.isMet and
       Launcher.isLowAmmo(battery, batteryCtx.ammoThreshold, weaponDBID)
 end
@@ -66,19 +66,19 @@ end
 
 ---Check if ammunition section reload conditions are met
 ---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section object
----@param systemConfig table System configuration
+---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param metResult {isMet: boolean} Result of ammo depot meeting check
 ---@return boolean Whether reload conditions are met
-local function isReadyToReloadSection(sectionCtx, systemConfig, metResult)
+local function isReadyToReloadSection(sectionCtx, wsContext, metResult)
   if sectionCtx.reloadStartTime == nil then
     return false
   end
 
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - sectionCtx.reloadStartTime
 
-  return elapsedTime >= systemConfig.reloadTime
-      and sectionCtx.wpnCurrent == 0
-      and metResult.isMet
+  return elapsedTime >= wsContext.reloadTime and
+      sectionCtx.wpnCurrent == 0 and
+      metResult.isMet
 end
 
 
@@ -223,17 +223,11 @@ end
 
 ---Handle automatic artillery battery repositioning logic
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param batteryCtx SBJ__BatteryContext
 ---@param battery CMO__Unit
 ---@param isAuto boolean
-local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  local systemConfig = config[sideKey]['ground'][wpnSystem]
-
+local function handleAutomaticBatteryRepositioning(config, wsContext, batteryCtx, battery, isAuto)
   if batteryCtx.state == config.batteryState.STATIC then
     if Launcher.isLowAmmo(battery, batteryCtx.ammoThreshold, batteryCtx.weaponDBID) then
       moveToReloadPoint(config, batteryCtx, battery)
@@ -242,14 +236,14 @@ local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, 
 
   if batteryCtx.state == config.batteryState.RELOAD then
     if batteryCtx.reloadStartTime == nil then
-      batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() - systemConfig.reloadTime
+      batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() - wsContext.reloadTime
     end
 
-    local result = Launcher.isMetWithAmmoTrucks(config, saveData, battery, wpnSystem, isAuto)
-    local isReadyToReload = isReadyToReloadBattery(batteryCtx, systemConfig, result, battery, batteryCtx.weaponDBID)
+    local result = Launcher.isMetWithAmmoTrucks(config, wsContext, battery, isAuto)
+    local isReadyToReload = isReadyToReloadBattery(batteryCtx, wsContext, result, battery, batteryCtx.weaponDBID)
 
     if isReadyToReload then
-      Launcher.reload(batteryCtx, system.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
+      Launcher.reload(batteryCtx, wsContext.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
       moveToHideArea(config, batteryCtx, battery)
     end
   end
@@ -257,28 +251,22 @@ end
 
 ---Handle manual artillery battery reload logic
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param batteryCtx SBJ__BatteryContext
 ---@param battery CMO__Unit
 ---@param isAuto boolean
-local function handleManualBatteryReload(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  local systemConfig = config[sideKey]['ground'][wpnSystem]
-
+local function handleManualBatteryReload(config, wsContext, batteryCtx, battery, isAuto)
   if batteryCtx.reloadStartTime == nil then
     -- In manual mode, set a far future time to prevent automatic completion
     batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
-        systemConfig.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
+        wsContext.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, battery, wpnSystem, isAuto)
-  local isReadyToReload = isReadyToReloadBattery(batteryCtx, systemConfig, result, battery, batteryCtx.weaponDBID)
+  local result = Launcher.isMetWithAmmoTrucks(config, wsContext, battery, isAuto)
+  local isReadyToReload = isReadyToReloadBattery(batteryCtx, wsContext, result, battery, batteryCtx.weaponDBID)
 
   if isReadyToReload then
-    Launcher.reload(batteryCtx, system.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
+    Launcher.reload(batteryCtx, wsContext.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
 
     if config.isDevMode then
       GameApi.ScenEdit_MsgBox('Missile reload is finished/' .. batteryCtx.name, 1)
@@ -288,17 +276,11 @@ end
 
 ---Handle automatic ammunition section repositioning logic
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param sectionCtx SBJ__AmmunitionSectionContext
 ---@param section CMO__Unit
 ---@param isAuto boolean
-local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  local systemConfig = config[sideKey]['ground'][wpnSystem]
-
+local function handleAutomaticSectionRepositioning(config, wsContext, sectionCtx, section, isAuto)
   if sectionCtx.state == config.batteryState.STATIC then
     -- Check if unit is in any RL area
     local isInRLArea = false
@@ -315,11 +297,11 @@ local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, 
   end
 
   if sectionCtx.state == config.batteryState.RELOAD then
-    local result = Launcher.isMetWithAmmo(config, saveData, section, wpnSystem, isAuto)
-    local isReadyToReload = isReadyToReloadSection(sectionCtx, systemConfig, result)
+    local result = Launcher.isMetWithAmmo(config, wsContext, section, isAuto)
+    local isReadyToReload = isReadyToReloadSection(sectionCtx, wsContext, result)
 
     if isReadyToReload then
-      transferAmmunition(sectionCtx, system.ammunitions[sectionCtx.ammunition])
+      transferAmmunition(sectionCtx, wsContext.ammunitions[sectionCtx.ammunition])
       moveAmmoSectionToReloadPoint(config, sectionCtx, section)
 
       if config.isDevMode then
@@ -331,28 +313,22 @@ end
 
 ---Handle manual ammunition section reload logic
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param sectionCtx SBJ__AmmunitionSectionContext
 ---@param section CMO__Unit
 ---@param isAuto boolean
-local function handleManualSectionReload(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  local systemConfig = config[sideKey]['ground'][wpnSystem]
-
+local function handleManualSectionReload(config, wsContext, sectionCtx, section, isAuto)
   if sectionCtx.reloadStartTime == nil then
     -- In manual mode, set a far future time to prevent automatic completion
     sectionCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
-        systemConfig.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
+        wsContext.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local result = Launcher.isMetWithAmmo(config, saveData, section, wpnSystem, isAuto)
-  local isReadyToReload = isReadyToReloadSection(sectionCtx, systemConfig, result)
+  local result = Launcher.isMetWithAmmo(config, wsContext, section, isAuto)
+  local isReadyToReload = isReadyToReloadSection(sectionCtx, wsContext, result)
 
   if isReadyToReload then
-    transferAmmunition(sectionCtx, system.ammunitions[sectionCtx.ammunition])
+    transferAmmunition(sectionCtx, wsContext.ammunitions[sectionCtx.ammunition])
 
     if config.isDevMode then
       GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. sectionCtx.name, 1)
@@ -362,22 +338,17 @@ end
 
 ---Handle status and actions of all ammunition sections
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param isAuto boolean
-local function processAmmunitionSections(config, saveData, wpnSystem, sideName, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-
-  for _, sectionCtx in pairs(saveData[sideKey]['ground'][wpnSystem].ammunitionSections) do
+local function processAmmunitionSections(config, wsContext, isAuto)
+  for _, sectionCtx in pairs(wsContext.ammunitionSections) do
     local section = GameApi.ScenEdit_GetUnit(sectionCtx.guid)
 
     if section then
       if isAuto then
-        handleAutomaticSectionRepositioning(config, saveData, wpnSystem, sideName, sectionCtx, section,
-          isAuto)
+        handleAutomaticSectionRepositioning(config, wsContext, sectionCtx, section, isAuto)
       else
-        handleManualSectionReload(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
+        handleManualSectionReload(config, wsContext, sectionCtx, section, isAuto)
       end
     end
   end
@@ -385,21 +356,17 @@ end
 
 ---Handle status and actions of all artillery batteries
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param isAuto boolean
-local function processBatteries(config, saveData, wpnSystem, sideName, isAuto)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-
-  for _, batteryCtx in pairs(saveData[sideKey]['ground'][wpnSystem].batteries) do
+local function processBatteries(config, wsContext, isAuto)
+  for _, batteryCtx in pairs(wsContext.batteries) do
     local battery = GameApi.ScenEdit_GetUnit(batteryCtx.guid)
 
     if battery then
       if isAuto then
-        handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
+        handleAutomaticBatteryRepositioning(config, wsContext, batteryCtx, battery, isAuto)
       else
-        handleManualBatteryReload(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
+        handleManualBatteryReload(config, wsContext, batteryCtx, battery, isAuto)
       end
     end
   end
@@ -611,30 +578,23 @@ end
 
 ---Check if artillery battery has met with ammunition trucks
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
+---@param wsContext SBJ__WeaponSystemContext
 ---@param unit CMO__Unit
----@param wpnSystem string
 ---@param isAuto boolean
 ---@return {isMet: boolean, battery: SBJ__BatteryContext|nil}
-function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
-  local side = unit.side
-  local sideKey = (side == 'China') and 'c' or 't'
+function Launcher.isMetWithAmmoTrucks(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, battery = nil } end
   local battery = GameApi.ScenEdit_GetUnit(unit.group.guid)
   if not battery then return { isMet = false, battery = nil } end
 
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  ---@type table<string, SBJ__OPAREA>
-  local OPAREAs = config[sideKey]['ground'][wpnSystem].OPAREAs
-
   -- Determine unit type by checking which collection contains this GUID
-  local isAmmunitionSection = system.ammunitionSections[battery.guid] ~= nil
+  local isAmmunitionSection = wsContext.ammunitionSections[battery.guid] ~= nil
 
   if isAmmunitionSection then
     -- Case: Ammunition section looking for batteries
-    for _, sectionCtx in pairs(system.ammunitionSections) do
+    for _, sectionCtx in pairs(wsContext.ammunitionSections) do
       local isMet, ctx = checkMeetingInArea(
-        sectionCtx, battery.guid, system.batteries, unit, OPAREAs, config, isAuto
+        sectionCtx, battery.guid, wsContext.batteries, unit, wsContext.OPAREAs, config, isAuto
       )
       if isMet then
         return { isMet = true, battery = ctx }
@@ -642,9 +602,9 @@ function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
     end
   else
     -- Case: Battery looking for ammunition sections
-    for _, batteryCtx in pairs(system.batteries) do
+    for _, batteryCtx in pairs(wsContext.batteries) do
       local isMet, ctx = checkMeetingInArea(
-        batteryCtx, battery.guid, system.ammunitionSections, unit, OPAREAs, config, isAuto
+        batteryCtx, battery.guid, wsContext.ammunitionSections, unit, wsContext.OPAREAs, config, isAuto
       )
       if isMet then
         return { isMet = true, battery = ctx }
@@ -657,22 +617,16 @@ end
 
 ---Check if ammunition section has met with ammunition depot
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
+---@param wsContext SBJ__WeaponSystemContext
 ---@param unit CMO__Unit
----@param wpnSystem string
 ---@param isAuto boolean
 ---@return {isMet: boolean, battery: SBJ__AmmunitionSectionContext|nil}
-function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
-  local side = unit.side
-  local sideKey = (side == 'China') and 'c' or 't'
+function Launcher.isMetWithAmmo(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, battery = nil } end
   local section = GameApi.ScenEdit_GetUnit(unit.group.guid)
   if not section then return { isMet = false, battery = nil } end
-  local system = saveData[sideKey]['ground'][wpnSystem]
-  ---@type table<string, SBJ__OPAREA>
-  local OPAREAs = config[sideKey]['ground'][wpnSystem].OPAREAs
 
-  for _, sectionCtx in pairs(system.ammunitionSections) do
+  for _, sectionCtx in pairs(wsContext.ammunitionSections) do
     local isStateValid = true
 
     if isAuto then
@@ -684,7 +638,7 @@ function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
     if sectionCtx.guid == section.guid and isStateValid then
       local ammo = GameApi.ScenEdit_GetUnit(sectionCtx.ammunition)
 
-      for _, OPAREA in pairs(OPAREAs) do
+      for _, OPAREA in pairs(wsContext.OPAREAs) do
         -- Check all AHA areas in the array
         for _, pos in ipairs(OPAREA.AHA) do
           local isInSameArea = unit:inArea(pos.area) and (ammo and ammo:inArea(pos.area))
@@ -702,38 +656,31 @@ end
 
 ---Check status of all artillery batteries and ammunition sections, and trigger corresponding actions
 ---@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param wpnSystem string
----@param sideName string
+---@param wsContext SBJ__WeaponSystemContext
 ---@param isAuto boolean
-function Launcher.checkBatteryState(config, saveData, wpnSystem, sideName, isAuto)
-  processBatteries(config, saveData, wpnSystem, sideName, isAuto)
-  processAmmunitionSections(config, saveData, wpnSystem, sideName, isAuto)
+function Launcher.checkBatteryState(config, wsContext, isAuto)
+  processBatteries(config, wsContext, isAuto)
+  processAmmunitionSections(config, wsContext, isAuto)
 end
 
 ---Handle logic when ammunition section unit is destroyed
 ---@param unit CMO__Unit Destroyed unit
----@param sideName string Side
----@param wpnSystem string Platform type
----@param saveData SBJ__SaveData
-function Launcher.destroyAmmoSecHandler(unit, sideName, wpnSystem, saveData)
-  local sideKey = (sideName == 'China') and 'c' or 't'
-  local system = saveData[sideKey].ground[wpnSystem]
-
+---@param wsContext SBJ__WeaponSystemContext
+function Launcher.destroyAmmoSecHandler(unit, wsContext)
   -- Determine unit type by checking if it has a group (type-safe approach)
   -- Ammunition depots are single units (no group), ammunition sections are groups
   local isAmmunitionDepot = (unit.group == nil)
 
   if isAmmunitionDepot then
     -- Handle ammunition depot destruction
-    local ammoCtx = system.ammunitions[unit.guid]
+    local ammoCtx = wsContext.ammunitions[unit.guid]
 
     if ammoCtx and ammoCtx.wpnCurrent > 0 then
       ammoCtx.wpnCurrent = 0
     end
   else
     -- Handle ammunition section unit destruction (part of a group)
-    local ammoSecCtx = system.ammunitionSections[unit.group.guid]
+    local ammoSecCtx = wsContext.ammunitionSections[unit.group.guid]
 
     if ammoSecCtx and ammoSecCtx.wpnCurrent > 0 then
       -- Reduce ammunition proportionally when one unit in the section is destroyed

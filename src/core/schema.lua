@@ -102,6 +102,8 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 ---@class SBJ__WeaponSystemContext:table
 ---@field isActivated boolean -- Whether the weapon system is active
+---@field reloadTime number -- Reload time for all batteries/sections in this system (seconds)
+---@field OPAREAs table<string, SBJ__OPAREA> -- Operational areas for this weapon system
 ---@field batteries table<string, SBJ__BatteryContext> -- A table of batteries to use for the attack
 ---@field ammunitionSections table<string, SBJ__AmmunitionSectionContext> -- A table of ammunition sections to use for the attack
 ---@field ammunitions table<string, SBJ__AmmunitionContext> -- A table of ammunition units to use for the attack

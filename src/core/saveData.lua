@@ -106,6 +106,8 @@ saveData.c.GPSJamming.jammers = {
 
 -- MLRS
 saveData.c.ground.mlrs.isActivated = true
+saveData.c.ground.mlrs.reloadTime = config.c.ground.mlrs.reloadTime
+saveData.c.ground.mlrs.OPAREAs = config.c.ground.mlrs.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9ASEFCGDKF'] = {
@@ -155,7 +157,7 @@ saveData.c.ground.mlrs.batteries = {
     OPAREA = config.c.ground.mlrs.OPAREAs.pingtan,
     weaponDBID = config.weapon.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOERV4D'
+    ammunitionSection = 'IC8B0X-0HN7R5QOERV4D',
   },
   ['IC8B0X-0HNBRRE2PRQAL'] = {
     name = '6th Bn, 73rd Arty Bde',
@@ -166,13 +168,15 @@ saveData.c.ground.mlrs.batteries = {
     OPAREA = config.c.ground.mlrs.OPAREAs.chinchew,
     weaponDBID = config.weapon.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9'
+    ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9',
   },
 }
 
 
 -- GLCM
 saveData.c.ground.glcm.isActivated = true
+saveData.c.ground.glcm.reloadTime = config.c.ground.glcm.reloadTime
+saveData.c.ground.glcm.OPAREAs = config.c.ground.glcm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.glcm.ammunitions = {
   ['IC8B0X-0HN99I5RL5KR9'] = {
@@ -207,13 +211,15 @@ saveData.c.ground.glcm.batteries = {
     OPAREA = config.c.ground.glcm.OPAREAs.brigade635,
     weaponDBID = config.weapon.CJ10,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVG88'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVG88',
   },
 }
 
 
 -- SRBM
 saveData.c.ground.srbm.isActivated = true
+saveData.c.ground.srbm.reloadTime = config.c.ground.srbm.reloadTime
+saveData.c.ground.srbm.OPAREAs = config.c.ground.srbm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9ASEFCG848'] = {
@@ -327,7 +333,7 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade615,
     weaponDBID = config.weapon.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D',
   },
   ['X58F5H-0HN1LQGRV8HNQ'] = {
     guid = 'X58F5H-0HN1LQGRV8HNQ',
@@ -338,7 +344,7 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade614,
     weaponDBID = config.weapon.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG',
   },
   ['IC8B0X-0HN822OHANPB3'] = {
     guid = 'IC8B0X-0HN822OHANPB3',
@@ -349,7 +355,7 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade636,
     weaponDBID = config.weapon.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1',
   },
   ['X58F5H-0HN1G2IFLF6QE'] = {
     guid = 'X58F5H-0HN1G2IFLF6QE',
@@ -360,7 +366,7 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade616,
     weaponDBID = config.weapon.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN',
   },
   ['X58F5H-0HN1G2DEBC7O8'] = {
     guid = 'X58F5H-0HN1G2DEBC7O8',
@@ -371,7 +377,7 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade613,
     weaponDBID = config.weapon.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC',
   },
   ['IC8B0X-0HN822OHANRHI'] = {
     guid = 'IC8B0X-0HN822OHANRHI',
@@ -382,12 +388,14 @@ saveData.c.ground.srbm.batteries = {
     OPAREA = config.c.ground.srbm.OPAREAs.brigade617,
     weaponDBID = config.weapon.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P',
   },
 }
 
 -- MRBM
 saveData.c.ground.mrbm.isActivated = true
+saveData.c.ground.mrbm.reloadTime = config.c.ground.mrbm.reloadTime
+saveData.c.ground.mrbm.OPAREAs = config.c.ground.mrbm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mrbm.ammunitions = {
   ['IC8B0X-0HNCOR6HG2KK5'] = {
@@ -421,7 +429,7 @@ saveData.c.ground.mrbm.batteries = {
     OPAREA = config.c.ground.mrbm.OPAREAs.brigade624,
     weaponDBID = config.weapon.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HNCOR6HG2KF9'
+    ammunitionSection = 'IC8B0X-0HNCOR6HG2KF9',
   },
 }
 
@@ -540,6 +548,8 @@ saveData.c.repairRunway.runways = {
 
 -- MLRS
 saveData.t.ground.mlrs.isActivated = true
+saveData.t.ground.mlrs.reloadTime = config.t.ground.mlrs.reloadTime
+saveData.t.ground.mlrs.OPAREAs = config.t.ground.mlrs.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9B47GHVJ7G'] = {
@@ -573,13 +583,15 @@ saveData.t.ground.mlrs.batteries = {
     OPAREA = config.t.ground.mlrs.OPAREAs.pingzhen,
     weaponDBID = config.weapon.MK45_AMLRS,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7RT1I581BB'
+    ammunitionSection = 'IC8B0X-0HN7RT1I581BB',
   },
 }
 
 
 -- SRBM
 saveData.t.ground.srbm.isActivated = true
+saveData.t.ground.srbm.reloadTime = config.t.ground.srbm.reloadTime
+saveData.t.ground.srbm.OPAREAs = config.t.ground.srbm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9B47GHVJG6'] = {
@@ -613,7 +625,7 @@ saveData.t.ground.srbm.batteries = {
     OPAREA = config.t.ground.srbm.OPAREAs.dadu,
     weaponDBID = config.weapon.ATACMS,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS',
   },
 }
 
@@ -621,6 +633,8 @@ saveData.t.ground.srbm.batteries = {
 
 -- GLCM
 saveData.t.ground.glcm.isActivated = true
+saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
+saveData.t.ground.glcm.OPAREAs = config.t.ground.glcm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.glcm.ammunitions = {
   ['IC8B0X-0HN9B47GHVKAG'] = {
@@ -670,7 +684,7 @@ saveData.t.ground.glcm.batteries = {
     OPAREA = config.t.ground.glcm.OPAREAs.quanxi,
     weaponDBID = config.weapon.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT',
   },
   ['X58F5H-0HN1ESDRTLGU7'] = {
     guid = 'X58F5H-0HN1ESDRTLGU7',
@@ -681,7 +695,7 @@ saveData.t.ground.glcm.batteries = {
     OPAREA = config.t.ground.glcm.OPAREAs.neipu,
     weaponDBID = config.weapon.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC'
+    ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC',
   }
 }
 
@@ -690,6 +704,8 @@ saveData.t.ground.glcm.batteries = {
 
 -- ASM
 saveData.t.ground.ascm.isActivated = true
+saveData.t.ground.ascm.reloadTime = config.t.ground.ascm.reloadTime
+saveData.t.ground.ascm.OPAREAs = config.t.ground.ascm.OPAREAs
 ---@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.ascm.ammunitions = {
   ['IC8B0X-0HN9B47GHVLV9'] = {
@@ -739,7 +755,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
+    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
   },
   ['X58F5H-0HMVEU1FUVOLC'] = {
     name = '4th Hai Feng Shore-based ASM MOB Sqn',
@@ -750,7 +766,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
+    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
   },
   ['X58F5H-0HMVEU1FUVO8I'] = {
     name = '1st Hai Feng Shore-based ASM MOB Sqn',
@@ -761,7 +777,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.dong,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
+    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5',
   },
   ['X58F5H-0HMVEU1FUVO6J'] = {
     name = '3rd Hai Feng Shore-based ASM MOB Sqn',
@@ -772,7 +788,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.dong,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5'
+    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5',
   },
   ['IC8B0X-0HN8CEO4EUE8B'] = {
     name = '5th Hai Feng Shore-based ASM MOB Sqn',
@@ -783,7 +799,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB'
+    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
   },
 }
 saveData.t.ground.ascm.test = {

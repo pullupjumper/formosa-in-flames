@@ -18,7 +18,7 @@ end
 
 
 if saveData.c.ground.glcm.isActivated then
-  local result = Launcher.isMetWithAmmo(config, saveData, unit, 'glcm', true)
+  local result = Launcher.isMetWithAmmo(config, saveData.c.ground.glcm, unit, true)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, true)
@@ -27,7 +27,7 @@ end
 
 
 if saveData.c.ground.mlrs.isActivated then
-  local result = Launcher.isMetWithAmmo(config, saveData, unit, 'mlrs', true)
+  local result = Launcher.isMetWithAmmo(config, saveData.c.ground.mlrs, unit, true)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, true)
@@ -36,7 +36,7 @@ end
 
 
 if saveData.c.ground.srbm.isActivated then
-  local result = Launcher.isMetWithAmmo(config, saveData, unit, 'srbm', true)
+  local result = Launcher.isMetWithAmmo(config, saveData.c.ground.srbm, unit, true)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, true)
@@ -45,7 +45,7 @@ end
 
 
 if saveData.c.ground.mrbm.isActivated then
-  local result = Launcher.isMetWithAmmo(config, saveData, unit, 'mrbm', true)
+  local result = Launcher.isMetWithAmmo(config, saveData.c.ground.mrbm, unit, true)
 
   if result.isMet then
     Launcher.setReloadStartTime(config, result.battery, unit, true)

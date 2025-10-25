@@ -9,8 +9,8 @@ if saveData == nil then
   return
 end
 
-Launcher.checkBatteryState(config, saveData, 'mlrs', 'Taiwan', false)
-Launcher.checkBatteryState(config, saveData, 'srbm', 'Taiwan', false)
-Launcher.checkBatteryState(config, saveData, 'glcm', 'Taiwan', false)
-Launcher.checkBatteryState(config, saveData, 'ascm', 'Taiwan', false)
+Launcher.checkBatteryState(config, saveData.t.ground.mlrs, false)
+Launcher.checkBatteryState(config, saveData.t.ground.srbm, false)
+Launcher.checkBatteryState(config, saveData.t.ground.glcm, false)
+Launcher.checkBatteryState(config, saveData.t.ground.ascm, false)
 gKH.State.SaveTableToKey(saveData, "SaveData")
