@@ -12,6 +12,10 @@ if saveData == nil then
   return
 end
 
+if not unit then
+  return
+end
+
 
 if saveData.c.ground.glcm.isActivated then
   local result = Launcher.isMetWithAmmo(config, saveData, unit, 'glcm', true)

@@ -10,10 +10,15 @@ saveData.c.air.shipBased = {}
 saveData.c.air.dynamicATO = {}
 saveData.c.dynamicOperations = {}
 saveData.c.ground = {}
+---@type SBJ__WeaponSystemContext
 saveData.c.ground.mlrs = {}
+---@type SBJ__WeaponSystemContext
 saveData.c.ground.srbm = {}
+---@type SBJ__WeaponSystemContext
 saveData.c.ground.mrbm = {}
+---@type SBJ__WeaponSystemContext
 saveData.c.ground.glcm = {}
+---@type SBJ__WeaponSystemContext
 saveData.c.ground.ascm = {}
 saveData.c.ground.dynamicFSP = {}
 saveData.c.surface = {}
@@ -29,9 +34,13 @@ saveData.c.IADS = {}
 saveData.c.SIGINT = {}
 saveData.t = {}
 saveData.t.ground = {}
+---@type SBJ__WeaponSystemContext
 saveData.t.ground.mlrs = {}
+---@type SBJ__WeaponSystemContext
 saveData.t.ground.glcm = {}
+---@type SBJ__WeaponSystemContext
 saveData.t.ground.srbm = {}
+---@type SBJ__WeaponSystemContext
 saveData.t.ground.ascm = {}
 saveData.t.repairRunway = {}
 saveData.t.IADS = {}
@@ -186,8 +195,6 @@ saveData.c.ground.glcm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN99I5RL5KR9',
   },
 }
-
-
 ---@type table<string, SBJ__BatteryContext>
 saveData.c.ground.glcm.batteries = {
   ---@type SBJ__BatteryContext

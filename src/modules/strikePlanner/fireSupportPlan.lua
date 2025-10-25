@@ -38,7 +38,7 @@ local function shouldDeployToFiringPosition(config, saveData, FST)
       local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
 
       if isBtyReady(config, bettery, actualBty) then
-        Launcher.toFiringPoint(config, bettery, actualBty)
+        Launcher.moveToFiringPoint(config, bettery, actualBty)
       end
 
       if isNotBtyAtFiringPoint(config, bettery) then

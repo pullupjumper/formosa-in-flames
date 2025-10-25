@@ -1,7 +1,29 @@
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
 
 local Launcher = {}
+
+
+---@class SBJ__SetUnitPropertiesParams
+---@field unit CMO__Unit Unit object (required)
+---@field throttle string? Throttle setting (default: 'Stop')
+---@field speed number? Speed (default: 0)
+---@field course CMO__TableOfWaypoints? Waypoints (optional)
+---@field holdPosition boolean? Whether to hold position (default: true)
+---@field wcs number? Weapon control status: 1=Free, 2=Hold (optional)
+---@field formation table? Formation settings (optional)
+
+-- Module constants
+local CONSTANTS = {
+  REPOSITION_SPEED = 30,                -- Speed (km/h) when moving between positions
+  MANUAL_RELOAD_DELAY_MULTIPLIER = 100, -- Time multiplier for manual reload mode
+  -- Weapon Control Status
+  WCS = {
+    FREE = 1, -- Free fire
+    HOLD = 2, -- Hold fire
+  }
+}
 
 -- Private functions
 
@@ -22,151 +44,213 @@ local function findUnitArea(unit, OPAREAs)
 end
 
 
+---Check if battery reload conditions are met
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param systemConfig table System configuration
+---@param metResult {isMet: boolean} Result of ammo truck meeting check
+---@param battery CMO__Unit Unit group
+---@param weaponDBID number Weapon database ID
+---@return boolean Whether reload conditions are met
+local function isReadyToReloadBattery(batteryCtx, systemConfig, metResult, battery, weaponDBID)
+  if batteryCtx.reloadStartTime == nil then
+    return false
+  end
+
+  local elapsedTime = GameApi.ScenEdit_CurrentTime() - batteryCtx.reloadStartTime
+
+  return elapsedTime >= systemConfig.reloadTime and
+      metResult.isMet and
+      Launcher.isLowAmmo(battery, batteryCtx.ammoThreshold, weaponDBID)
+end
+
+
+---Check if ammunition section reload conditions are met
+---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section object
+---@param systemConfig table System configuration
+---@param metResult {isMet: boolean} Result of ammo depot meeting check
+---@return boolean Whether reload conditions are met
+local function isReadyToReloadSection(sectionCtx, systemConfig, metResult)
+  if sectionCtx.reloadStartTime == nil then
+    return false
+  end
+
+  local elapsedTime = GameApi.ScenEdit_CurrentTime() - sectionCtx.reloadStartTime
+
+  return elapsedTime >= systemConfig.reloadTime
+      and sectionCtx.wpnCurrent == 0
+      and metResult.isMet
+end
+
+
 -- Private helper functions
----Set unit movement and weapon control status
----@param unit CMO__Unit Unit object
----@param throttle string Throttle setting (e.g. 'Flank', 'Stop')
----@param speed number Speed
----@param course CMO__TableOfWaypoints|nil Waypoints
----@param holdPosition boolean Whether to hold position
----@param wcs number|nil Weapon control status (1: Free, 2: Hold)
----@param formation table|nil Formation settings
-local function setUnitProperties(unit, throttle, speed, course, holdPosition, wcs, formation)
+
+---Set unit movement and weapon control status using table parameters
+---@param params SBJ__SetUnitPropertiesParams
+local function setUnitProperties(params)
+  local unit = params.unit
   if not unit then return end
 
   local unitSetParams = {
     guid = unit.guid,
-    manualthrottle = throttle,
-    manualSpeed = speed,
-    holdposition = holdPosition
+    manualthrottle = params.throttle or 'Stop',
+    manualSpeed = params.speed or 0,
+    holdposition = params.holdPosition ~= nil and params.holdPosition or true
   }
-  if course then unitSetParams.course = course end
+
+  if params.course then
+    unitSetParams.course = params.course
+  end
+
   GameApi.ScenEdit_SetUnit(unitSetParams)
 
-  if wcs then
-    GameApi.ScenEdit_SetDoctrine({ side = unit.side, guid = unit.guid }, { weapon_control_status_land = wcs })
+  if params.wcs then
+    GameApi.ScenEdit_SetDoctrine(
+      { side = unit.side, guid = unit.guid },
+      { weapon_control_status_land = params.wcs }
+    )
   end
 
-  if formation then
-    unit.formation = formation
+  if params.formation then
+    unit.formation = params.formation
   end
+end
+
+
+---Generic function to move units to specified positions
+---@param unitName string Unit name (for error messages)
+---@param battery CMO__Unit Unit group
+---@param positions table Position array
+---@param positionType string Position type ('RL'/'HA'/'AHA'/'FP', for error messages)
+---@param wcs number? Weapon control status (optional)
+---@param useLastCourse boolean? Whether to use the last waypoint in course (default: false)
+---@return boolean Success status
+local function moveUnitToPosition(unitName, battery, positions, positionType, wcs, useLastCourse)
+  local posCount = Utils.getCount(positions)
+  if posCount == 0 then
+    Logger.error(string.format("launcher: No %s positions available for %s", positionType, unitName))
+    return false
+  end
+
+  local posIdx = math.random(posCount)
+  local position = positions[posIdx]
+
+  if not position or not position.course then
+    Logger.error(string.format("launcher: Invalid %s position data at index %d for %s",
+      positionType, posIdx, unitName))
+    return false
+  end
+
+  -- Use last waypoint if requested and course is an array
+  local course = position.course
+  if useLastCourse and type(course) == 'table' and #course > 0 then
+    course = course[#course]
+  end
+
+  for _, guid in ipairs(battery.group.unitlist) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+    setUnitProperties({
+      unit = unit,
+      throttle = 'Flank',
+      speed = CONSTANTS.REPOSITION_SPEED,
+      course = course,
+      holdPosition = false,
+      wcs = wcs
+    })
+  end
+
+  return true
 end
 
 
 ---Command artillery battery to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
-local function toRL(config, battery, group)
-  battery.state = config.batteryState.REPOSITIONING
-  local posIdx = math.random(Utils.getCount(battery.OPAREA.RL))
-
-  for _, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, battery.OPAREA.RL[posIdx].course, false, 2)
-  end
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
+local function moveToReloadPoint(config, batteryCtx, battery)
+  batteryCtx.state = config.batteryState.REPOSITIONING
+  moveUnitToPosition(batteryCtx.name, battery, batteryCtx.OPAREA.RL, 'RL', CONSTANTS.WCS.HOLD)
 end
 
 ---Command artillery battery to move to hide area (HA)
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
-local function toHA(config, battery, group)
-  battery.state = config.batteryState.REPOSITIONING
-
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
+local function moveToHideArea(config, batteryCtx, battery)
   -- Check if HA exists (some OPAREAs may not have HA)
-  if battery.OPAREA.HA and Utils.getCount(battery.OPAREA.HA) > 0 then
-    local posIdx = math.random(Utils.getCount(battery.OPAREA.HA))
-
-    for _, guid in ipairs(group.group.unitlist) do
-      local unit = GameApi.ScenEdit_GetUnit(guid)
-      setUnitProperties(unit, 'Flank', 30, battery.OPAREA.HA[posIdx].course, false, 2)
-    end
+  if not batteryCtx.OPAREA.HA then
+    Logger.log("launcher: No HA defined for battery " .. batteryCtx.name .. ", skipping hide movement")
+    return
   end
+
+  batteryCtx.state = config.batteryState.REPOSITIONING
+  moveUnitToPosition(batteryCtx.name, battery, batteryCtx.OPAREA.HA, 'HA', CONSTANTS.WCS.HOLD)
 end
 
 ---Command ammunition section to move to ammunition storage area (AHA)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSectionContext Ammunition section object
----@param group CMO__Unit Unit group
-local function toAHA(config, section, group)
-  section.state = config.batteryState.REPOSITIONING
-  local posIdx = math.random(Utils.getCount(section.OPAREA.AHA))
-
-  for _, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(unit, 'Flank', 30, section.OPAREA.AHA[posIdx].course, false)
-  end
+---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section object
+---@param section CMO__Unit Unit group
+local function moveToAmmoHoldingArea(config, sectionCtx, section)
+  sectionCtx.state = config.batteryState.REPOSITIONING
+  moveUnitToPosition(sectionCtx.name, section, sectionCtx.OPAREA.AHA, 'AHA')
 end
 
 ---Transfer ammunition from ammunition depot to ammunition section
----@param section SBJ__AmmunitionSectionContext Ammunition section object
----@param ammunition SBJ__AmmunitionContext Ammunition depot object
-local function transload(section, ammunition)
-  if ammunition.wpnCurrent > 0 and section.wpnCurrent < section.wpnDefault then
-    if ammunition.wpnCurrent >= section.wpnDefault then
-      section.wpnCurrent = section.wpnCurrent + section.wpnDefault
-      ammunition.wpnCurrent = ammunition.wpnCurrent - section.wpnDefault
+---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section object
+---@param ammunitionCtx SBJ__AmmunitionContext Ammunition depot object
+local function transferAmmunition(sectionCtx, ammunitionCtx)
+  if ammunitionCtx.wpnCurrent > 0 and sectionCtx.wpnCurrent < sectionCtx.wpnDefault then
+    if ammunitionCtx.wpnCurrent >= sectionCtx.wpnDefault then
+      sectionCtx.wpnCurrent = sectionCtx.wpnCurrent + sectionCtx.wpnDefault
+      ammunitionCtx.wpnCurrent = ammunitionCtx.wpnCurrent - sectionCtx.wpnDefault
     else
-      section.wpnCurrent = section.wpnCurrent + ammunition.wpnCurrent
-      ammunition.wpnCurrent = 0
+      sectionCtx.wpnCurrent = sectionCtx.wpnCurrent + ammunitionCtx.wpnCurrent
+      ammunitionCtx.wpnCurrent = 0
     end
   end
 
-  section.reloadStartTime = nil
+  sectionCtx.reloadStartTime = nil
 end
 
 ---Command ammunition section to move to reload point (RL)
 ---@param config SBJ__CONFIG
----@param section SBJ__AmmunitionSectionContext Ammunition section object
----@param group CMO__Unit Unit group
-local function ammoSecToRL(config, section, group)
-  section.state = config.batteryState.REPOSITIONING
-  local posIdx = math.random(Utils.getCount(section.OPAREA.RL))
-
-  for _, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties(
-      unit, 'Flank', 30, section.OPAREA.RL[posIdx].course[#section.OPAREA.RL[posIdx].course], false
-    )
-  end
+---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section object
+---@param section CMO__Unit Unit group
+local function moveAmmoSectionToReloadPoint(config, sectionCtx, section)
+  sectionCtx.state = config.batteryState.REPOSITIONING
+  moveUnitToPosition(sectionCtx.name, section, sectionCtx.OPAREA.RL, 'RL', nil, true)
 end
 
 ---Handle automatic artillery battery repositioning logic
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
----@param battery SBJ__BatteryContext
----@param group CMO__Unit
+---@param sideName string
+---@param batteryCtx SBJ__BatteryContext
+---@param battery CMO__Unit
 ---@param isAuto boolean
-local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, side, battery, group, isAuto)
-  local field = (side == 'China') and 'c' or 't'
-  local system = saveData[field]['ground'][wpnSystem]
-  local systemConfig = config[field]['ground'][wpnSystem]
+local function handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
+  local system = saveData[sideKey]['ground'][wpnSystem]
+  local systemConfig = config[sideKey]['ground'][wpnSystem]
 
-  if battery.state == config.batteryState.STATIC then
-    if Launcher.isLowAmmo(group, battery.ammoThreshold, battery.weaponDBID) then
-      toRL(config, battery, group)
+  if batteryCtx.state == config.batteryState.STATIC then
+    if Launcher.isLowAmmo(battery, batteryCtx.ammoThreshold, batteryCtx.weaponDBID) then
+      moveToReloadPoint(config, batteryCtx, battery)
     end
   end
 
-  if battery.state == config.batteryState.RELOAD then
-    if battery.reloadStartTime == nil then
-      battery.reloadStartTime = GameApi.ScenEdit_CurrentTime() - systemConfig.reloadTime
+  if batteryCtx.state == config.batteryState.RELOAD then
+    if batteryCtx.reloadStartTime == nil then
+      batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() - systemConfig.reloadTime
     end
 
-    local elapsedTime = GameApi.ScenEdit_CurrentTime() - battery.reloadStartTime
-    local result = Launcher.isMetWithAmmoTrucks(config, saveData, group, wpnSystem, isAuto)
-    local isMoreThanReloadTime = (
-      battery.reloadStartTime ~= nil and
-      elapsedTime >= systemConfig.reloadTime and
-      result.isMet and
-      Launcher.isLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
+    local result = Launcher.isMetWithAmmoTrucks(config, saveData, battery, wpnSystem, isAuto)
+    local isReadyToReload = isReadyToReloadBattery(batteryCtx, systemConfig, result, battery, batteryCtx.weaponDBID)
 
-    if isMoreThanReloadTime then
-      Launcher.reload(battery, system.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
-      toHA(config, battery, group)
+    if isReadyToReload then
+      Launcher.reload(batteryCtx, system.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
+      moveToHideArea(config, batteryCtx, battery)
     end
   end
 end
@@ -175,32 +259,29 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
----@param battery SBJ__BatteryContext
----@param group CMO__Unit
+---@param sideName string
+---@param batteryCtx SBJ__BatteryContext
+---@param battery CMO__Unit
 ---@param isAuto boolean
-local function handleManualBatteryReload(config, saveData, wpnSystem, side, battery, group, isAuto)
-  local field = (side == 'China') and 'c' or 't'
-  local system = saveData[field]['ground'][wpnSystem]
-  local systemConfig = config[field]['ground'][wpnSystem]
+local function handleManualBatteryReload(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
+  local system = saveData[sideKey]['ground'][wpnSystem]
+  local systemConfig = config[sideKey]['ground'][wpnSystem]
 
-  if battery.reloadStartTime == nil then
-    battery.reloadStartTime = GameApi.ScenEdit_CurrentTime() + systemConfig.reloadTime * 100
+  if batteryCtx.reloadStartTime == nil then
+    -- In manual mode, set a far future time to prevent automatic completion
+    batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
+        systemConfig.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local elapsedTime = GameApi.ScenEdit_CurrentTime() - battery.reloadStartTime
-  local result = Launcher.isMetWithAmmoTrucks(config, saveData, group, wpnSystem, isAuto)
-  local isMoreThanReloadTime = (
-    battery.reloadStartTime ~= nil and
-    elapsedTime >= systemConfig.reloadTime and
-    result.isMet and
-    Launcher.isLowAmmo(group, battery.ammoThreshold, battery.weaponDBID))
+  local result = Launcher.isMetWithAmmoTrucks(config, saveData, battery, wpnSystem, isAuto)
+  local isReadyToReload = isReadyToReloadBattery(batteryCtx, systemConfig, result, battery, batteryCtx.weaponDBID)
 
-  if isMoreThanReloadTime then
-    Launcher.reload(battery, system.ammunitionSections[battery.ammunitionSection], battery.weaponDBID)
+  if isReadyToReload then
+    Launcher.reload(batteryCtx, system.ammunitionSections[batteryCtx.ammunitionSection], batteryCtx.weaponDBID)
 
     if config.isDevMode then
-      GameApi.ScenEdit_MsgBox('Missile reload is finished/' .. battery.name, 1)
+      GameApi.ScenEdit_MsgBox('Missile reload is finished/' .. batteryCtx.name, 1)
     end
   end
 end
@@ -209,44 +290,40 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
----@param section SBJ__AmmunitionSectionContext
----@param group CMO__Unit
+---@param sideName string
+---@param sectionCtx SBJ__AmmunitionSectionContext
+---@param section CMO__Unit
 ---@param isAuto boolean
-local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, side, section, group, isAuto)
-  local field = (side == 'China') and 'c' or 't'
-  local system = saveData[field]['ground'][wpnSystem]
-  local systemConfig = config[field]['ground'][wpnSystem]
+local function handleAutomaticSectionRepositioning(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
+  local system = saveData[sideKey]['ground'][wpnSystem]
+  local systemConfig = config[sideKey]['ground'][wpnSystem]
 
-  if section.state == config.batteryState.STATIC then
+  if sectionCtx.state == config.batteryState.STATIC then
     -- Check if unit is in any RL area
     local isInRLArea = false
-    for _, pos in ipairs(section.OPAREA.RL) do
-      if group:inArea(pos.area) then
+    for _, pos in ipairs(sectionCtx.OPAREA.RL) do
+      if section:inArea(pos.area) then
         isInRLArea = true
         break
       end
     end
 
-    if section.wpnCurrent == 0 and isInRLArea then
-      toAHA(config, section, group)
+    if sectionCtx.wpnCurrent == 0 and isInRLArea then
+      moveToAmmoHoldingArea(config, sectionCtx, section)
     end
   end
 
-  if section.state == config.batteryState.RELOAD then
-    local elapsedTime = GameApi.ScenEdit_CurrentTime() - section.reloadStartTime
-    local result = Launcher.isMetWithAmmo(config, saveData, group, wpnSystem, isAuto)
-    local isMoreThanReloadTime = (
-      section.reloadStartTime ~= nil and
-      elapsedTime >= systemConfig.reloadTime and
-      section.wpnCurrent == 0 and result.isMet)
+  if sectionCtx.state == config.batteryState.RELOAD then
+    local result = Launcher.isMetWithAmmo(config, saveData, section, wpnSystem, isAuto)
+    local isReadyToReload = isReadyToReloadSection(sectionCtx, systemConfig, result)
 
-    if isMoreThanReloadTime then
-      transload(section, system.ammunitions[section.ammunition])
-      ammoSecToRL(config, section, group)
+    if isReadyToReload then
+      transferAmmunition(sectionCtx, system.ammunitions[sectionCtx.ammunition])
+      moveAmmoSectionToReloadPoint(config, sectionCtx, section)
 
       if config.isDevMode then
-        GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
+        GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. sectionCtx.name, 1)
       end
     end
   end
@@ -256,31 +333,29 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
----@param section SBJ__AmmunitionSectionContext
----@param group CMO__Unit
+---@param sideName string
+---@param sectionCtx SBJ__AmmunitionSectionContext
+---@param section CMO__Unit
 ---@param isAuto boolean
-local function handleManualSectionReload(config, saveData, wpnSystem, side, section, group, isAuto)
-  local field = (side == 'China') and 'c' or 't'
-  local system = saveData[field]['ground'][wpnSystem]
-  local systemConfig = config[field]['ground'][wpnSystem]
+local function handleManualSectionReload(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
+  local system = saveData[sideKey]['ground'][wpnSystem]
+  local systemConfig = config[sideKey]['ground'][wpnSystem]
 
-  if section.reloadStartTime == nil then
-    section.reloadStartTime = GameApi.ScenEdit_CurrentTime() + systemConfig.reloadTime * 100
+  if sectionCtx.reloadStartTime == nil then
+    -- In manual mode, set a far future time to prevent automatic completion
+    sectionCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
+        systemConfig.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local elapsedTime = GameApi.ScenEdit_CurrentTime() - section.reloadStartTime
-  local result = Launcher.isMetWithAmmo(config, saveData, group, wpnSystem, isAuto)
-  local isMoreThanReloadTime = (
-    section.reloadStartTime ~= nil and
-    elapsedTime >= systemConfig.reloadTime and
-    section.wpnCurrent == 0 and result.isMet)
+  local result = Launcher.isMetWithAmmo(config, saveData, section, wpnSystem, isAuto)
+  local isReadyToReload = isReadyToReloadSection(sectionCtx, systemConfig, result)
 
-  if isMoreThanReloadTime then
-    transload(section, system.ammunitions[section.ammunition])
+  if isReadyToReload then
+    transferAmmunition(sectionCtx, system.ammunitions[sectionCtx.ammunition])
 
     if config.isDevMode then
-      GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. section.name, 1)
+      GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. sectionCtx.name, 1)
     end
   end
 end
@@ -289,20 +364,20 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
+---@param sideName string
 ---@param isAuto boolean
-local function processAmmunitionSections(config, saveData, wpnSystem, side, isAuto)
-  local field = (side == 'China') and 'c' or 't'
+local function processAmmunitionSections(config, saveData, wpnSystem, sideName, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
 
-  for _, section in pairs(saveData[field]['ground'][wpnSystem].ammunitionSections) do
-    local group = GameApi.ScenEdit_GetUnit(section.guid)
+  for _, sectionCtx in pairs(saveData[sideKey]['ground'][wpnSystem].ammunitionSections) do
+    local section = GameApi.ScenEdit_GetUnit(sectionCtx.guid)
 
-    if group then
+    if section then
       if isAuto then
-        handleAutomaticSectionRepositioning(config, saveData, wpnSystem, side, section, group,
+        handleAutomaticSectionRepositioning(config, saveData, wpnSystem, sideName, sectionCtx, section,
           isAuto)
       else
-        handleManualSectionReload(config, saveData, wpnSystem, side, section, group, isAuto)
+        handleManualSectionReload(config, saveData, wpnSystem, sideName, sectionCtx, section, isAuto)
       end
     end
   end
@@ -312,19 +387,19 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
+---@param sideName string
 ---@param isAuto boolean
-local function processBatteries(config, saveData, wpnSystem, side, isAuto)
-  local field = (side == 'China') and 'c' or 't'
+local function processBatteries(config, saveData, wpnSystem, sideName, isAuto)
+  local sideKey = (sideName == 'China') and 'c' or 't'
 
-  for _, battery in pairs(saveData[field]['ground'][wpnSystem].batteries) do
-    local group = GameApi.ScenEdit_GetUnit(battery.guid)
+  for _, batteryCtx in pairs(saveData[sideKey]['ground'][wpnSystem].batteries) do
+    local battery = GameApi.ScenEdit_GetUnit(batteryCtx.guid)
 
-    if group then
+    if battery then
       if isAuto then
-        handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, side, battery, group, isAuto)
+        handleAutomaticBatteryRepositioning(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
       else
-        handleManualBatteryReload(config, saveData, wpnSystem, side, battery, group, isAuto)
+        handleManualBatteryReload(config, saveData, wpnSystem, sideName, batteryCtx, battery, isAuto)
       end
     end
   end
@@ -332,158 +407,207 @@ end
 
 -- Public functions
 
----Execute reload for artillery battery
----@param battery SBJ__BatteryContext Artillery battery object
----@param ammunitionSection SBJ__AmmunitionSectionContext Ammunition section object
+---Calculate ammunition statistics for a unit
+---@param unit CMO__Unit|nil Unit object
 ---@param weaponDBID number Weapon database ID
-function Launcher.reload(battery, ammunitionSection, weaponDBID)
-  local group = GameApi.ScenEdit_GetUnit(battery.guid)
-  if not group then return end
+---@return number currentAmmo Current ammunition count
+---@return number maxAmmo Maximum ammunition capacity
+local function calculateAmmoStats(unit, weaponDBID)
+  local totalCurrent = 0
+  local totalMax = 0
 
-  for index, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
+  if not unit or not unit.mounts then
+    return totalCurrent, totalMax
+  end
 
-    if unit and unit.mounts then
-      for _, mount in ipairs(unit.mounts) do
-        local totalWpnCurrentNum = 0
-        local totalWpnDefaultNum = 0
-
-        for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-          if wpn['wpn_dbid'] == weaponDBID then
-            totalWpnCurrentNum = totalWpnCurrentNum + wpn['wpn_current']
-            totalWpnDefaultNum = totalWpnDefaultNum + wpn['wpn_maxcap']
-          end
-        end
-
-        local requiredNum = totalWpnDefaultNum - totalWpnCurrentNum
-
-        if ammunitionSection.wpnCurrent >= requiredNum then
-          GameApi.ScenEdit_AddReloadsToUnit({
-            guid = unit.guid,
-            wpn_dbid = weaponDBID,
-            number = requiredNum
-          })
-
-          ammunitionSection.wpnCurrent = ammunitionSection.wpnCurrent - requiredNum
-        elseif ammunitionSection.wpnCurrent > 0 and ammunitionSection.wpnCurrent < requiredNum then
-          GameApi.ScenEdit_AddReloadsToUnit({
-            guid = unit.guid,
-            wpn_dbid = weaponDBID,
-            number = ammunitionSection.wpnCurrent
-          })
-
-          ammunitionSection.wpnCurrent = 0
-        end
+  for _, mount in ipairs(unit.mounts) do
+    for _, wpn in ipairs(mount.mount_weapons) do
+      if wpn.wpn_dbid == weaponDBID then
+        totalCurrent = totalCurrent + wpn.wpn_current
+        totalMax = totalMax + wpn.wpn_maxcap
       end
     end
   end
 
-  battery.reloadStartTime = nil
+  return totalCurrent, totalMax
+end
+
+
+---Reload ammunition for a single unit
+---@param unit CMO__Unit|nil Unit object
+---@param weaponDBID number Weapon database ID
+---@param sectionCtx SBJ__AmmunitionSectionContext Ammunition section context
+---@return number Total ammunition consumed
+local function reloadUnit(unit, weaponDBID, sectionCtx)
+  if not unit then
+    return 0
+  end
+
+  local currentAmmo, maxAmmo = calculateAmmoStats(unit, weaponDBID)
+  local required = maxAmmo - currentAmmo
+
+  if required > 0 and sectionCtx.wpnCurrent > 0 then
+    local ammoToLoad = math.min(required, sectionCtx.wpnCurrent)
+
+    GameApi.ScenEdit_AddReloadsToUnit({
+      guid = unit.guid,
+      wpn_dbid = weaponDBID,
+      number = ammoToLoad
+    })
+
+    sectionCtx.wpnCurrent = sectionCtx.wpnCurrent - ammoToLoad
+    return ammoToLoad
+  end
+
+  return 0
+end
+
+
+---Execute reload for artillery battery
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param ammunitionSectionCtx SBJ__AmmunitionSectionContext Ammunition section object
+---@param weaponDBID number Weapon database ID
+function Launcher.reload(batteryCtx, ammunitionSectionCtx, weaponDBID)
+  local battery = GameApi.ScenEdit_GetUnit(batteryCtx.guid)
+  if not battery then return end
+
+  for _, guid in ipairs(battery.group.unitlist) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+    reloadUnit(unit, weaponDBID, ammunitionSectionCtx)
+  end
+
+  batteryCtx.reloadStartTime = nil
 end
 
 ---Set artillery battery reload start time
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
 ---@param isAuto boolean Whether in automatic mode
-function Launcher.setReloadStartTime(config, battery, group, isAuto)
-  battery.state = config.batteryState.RELOAD
-  battery.reloadStartTime = GameApi.ScenEdit_CurrentTime()
+function Launcher.setReloadStartTime(config, batteryCtx, battery, isAuto)
+  batteryCtx.state = config.batteryState.RELOAD
+  batteryCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
 
-  for _, guid in ipairs(group.group.unitlist) do
+  for _, guid in ipairs(battery.group.unitlist) do
     local u = GameApi.ScenEdit_GetUnit(guid)
 
     if u and isAuto then
-      setUnitProperties(u, 'Stop', 0, nil, true, nil, { spacing = 0, transpose = true })
+      setUnitProperties({
+        unit = u,
+        holdPosition = true,
+        formation = { spacing = 0, transpose = true }
+      })
     end
   end
 end
 
 ---Set artillery battery weapon control status to free fire
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
-function Launcher.setWCSToFree(config, battery, group)
-  battery.state = config.batteryState.STATIC
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
+function Launcher.setWCSToFree(config, batteryCtx, battery)
+  batteryCtx.state = config.batteryState.STATIC
 
-  for _, guid in ipairs(group.group.unitlist) do
+  for _, guid in ipairs(battery.group.unitlist) do
     local u = GameApi.ScenEdit_GetUnit(guid)
 
     if u then
-      setUnitProperties(u, 'Stop', 0, nil, true, 1, { spacing = 0, transpose = true })
+      setUnitProperties({
+        unit = u,
+        holdPosition = true,
+        wcs = CONSTANTS.WCS.FREE, -- Free fire
+        formation = { spacing = 0, transpose = true }
+      })
     end
   end
 end
 
 ---Set artillery battery status to hide
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
-function Launcher.setStateToHIDE(config, battery, group)
-  battery.state = config.batteryState.HIDE
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
+function Launcher.setStateToHIDE(config, batteryCtx, battery)
+  batteryCtx.state = config.batteryState.HIDE
 
-  for _, guid in ipairs(group.group.unitlist) do
+  for _, guid in ipairs(battery.group.unitlist) do
     local u = GameApi.ScenEdit_GetUnit(guid)
 
     if u then
-      setUnitProperties(u, 'Stop', 0, nil, true, 2, { spacing = 0, transpose = true })
+      setUnitProperties({
+        unit = u,
+        holdPosition = true,
+        wcs = CONSTANTS.WCS.HOLD, -- Hold fire while hiding
+        formation = { spacing = 0, transpose = true }
+      })
     end
   end
 end
 
 ---Check if unit/group ammunition is below specified percentage
----@param group CMO__Unit Unit or group object
+---@param battery CMO__Unit Unit or group object
 ---@param percentage number Percentage threshold
 ---@param weaponDBID number Weapon database ID
 ---@return boolean Whether it is low ammunition
-function Launcher.isLowAmmo(group, percentage, weaponDBID)
-  local totalWpnCurrentNum = 0
-  local totalWpnDefaultNum = 0
+function Launcher.isLowAmmo(battery, percentage, weaponDBID)
+  local totalCurrent = 0
+  local totalMax = 0
 
-  local function processUnit(unit)
-    if not unit then return end
-
-    for _, mount in ipairs(unit.mounts) do
-      for _, weapon in ipairs(mount.mount_weapons) do
-        if weapon.wpn_dbid == weaponDBID then
-          totalWpnCurrentNum = totalWpnCurrentNum + weapon.wpn_current
-          totalWpnDefaultNum = totalWpnDefaultNum + weapon.wpn_maxcap
-        end
-      end
-    end
+  -- Process single unit or all units in group
+  local units = battery.group and battery.group.unitlist or { battery.guid }
+  for _, guid in ipairs(units) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+    local currentAmmo, maxAmmo = calculateAmmoStats(unit, weaponDBID)
+    totalCurrent = totalCurrent + currentAmmo
+    totalMax = totalMax + maxAmmo
   end
 
-  if group.group == nil then
-    local unit = GameApi.ScenEdit_GetUnit(group.guid)
-    processUnit(unit)
-  else
-    for _, guid in ipairs(group.group.unitlist) do
-      local unit = GameApi.ScenEdit_GetUnit(guid)
-      processUnit(unit)
-    end
-  end
-
-  if totalWpnDefaultNum == 0 then return false end
-  local currentPercentage = (totalWpnCurrentNum / totalWpnDefaultNum) * 100
-  return currentPercentage <= percentage
+  if totalMax == 0 then return false end
+  return (totalCurrent / totalMax * 100) <= percentage
 end
 
 ---Command artillery battery to move to firing point (FP)
 ---@param config SBJ__CONFIG
----@param battery SBJ__BatteryContext Artillery battery object
----@param group CMO__Unit Unit group
-function Launcher.toFiringPoint(config, battery, group)
-  battery.state = config.batteryState.REPOSITIONING
-  local courseIdx = math.random(Utils.getCount(battery.OPAREA.FP))
+---@param batteryCtx SBJ__BatteryContext Artillery battery object
+---@param battery CMO__Unit Unit group
+function Launcher.moveToFiringPoint(config, batteryCtx, battery)
+  batteryCtx.state = config.batteryState.REPOSITIONING
+  moveUnitToPosition(batteryCtx.name, battery, batteryCtx.OPAREA.FP, 'FP')
+end
 
-  for _, guid in ipairs(group.group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
+---Check if two types of units have met in the same area
+---@param targetCtx SBJ__BatteryContext|SBJ__AmmunitionSectionContext Target unit context (battery or section)
+---@param targetGuid string Target unit GUID to match
+---@param counterpartList SBJ__BatteryContext[]|SBJ__AmmunitionSectionContext[] List of counterpart units to check
+---@param unit CMO__Unit Original unit for area checking
+---@param OPAREAs table<string, SBJ__OPAREA> OPAREA configuration
+---@param config SBJ__CONFIG Configuration
+---@param isAuto boolean Whether in automatic mode
+---@return boolean isMet Whether units have met
+---@return table|nil context The matched context if met
+local function checkMeetingInArea(targetCtx, targetGuid, counterpartList, unit, OPAREAs, config, isAuto)
+  local isStateValid = true
 
-    if unit then
-      setUnitProperties(unit, 'Flank', 30, battery.OPAREA.FP[courseIdx].course, false)
+  if isAuto then
+    local repoState = config.batteryState.REPOSITIONING
+    local reloadState = config.batteryState.RELOAD
+    isStateValid = (targetCtx.state == repoState or targetCtx.state == reloadState)
+  end
+
+  if targetCtx.guid == targetGuid and isStateValid then
+    local area = findUnitArea(unit, OPAREAs)
+    if not area then return false, nil end
+
+    for _, counterpartCtx in pairs(counterpartList) do
+      local counterpart = GameApi.ScenEdit_GetUnit(counterpartCtx.guid)
+      if counterpart and counterpart:inArea(area) then
+        return true, targetCtx
+      end
     end
   end
+
+  return false, nil
 end
+
 
 ---Check if artillery battery has met with ammunition trucks
 ---@param config SBJ__CONFIG
@@ -494,39 +618,36 @@ end
 ---@return {isMet: boolean, battery: SBJ__BatteryContext|nil}
 function Launcher.isMetWithAmmoTrucks(config, saveData, unit, wpnSystem, isAuto)
   local side = unit.side
-  local field = (side == 'China') and 'c' or 't'
+  local sideKey = (side == 'China') and 'c' or 't'
   if not unit.group then return { isMet = false, battery = nil } end
-  local group = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  if not group then return { isMet = false, battery = nil } end
-  local batteryField, ammunitionField = 'batteries', 'ammunitionSections'
+  local battery = GameApi.ScenEdit_GetUnit(unit.group.guid)
+  if not battery then return { isMet = false, battery = nil } end
 
-  if string.find(group.name, 'Ammo') or string.find(group.name, 'SUPP') then
-    batteryField, ammunitionField = 'ammunitionSections', 'batteries'
-  end
-
-  local system = saveData[field]['ground'][wpnSystem]
+  local system = saveData[sideKey]['ground'][wpnSystem]
   ---@type table<string, SBJ__OPAREA>
-  local OPAREAs = config[field]['ground'][wpnSystem].OPAREAs
+  local OPAREAs = config[sideKey]['ground'][wpnSystem].OPAREAs
 
-  for _, battery in pairs(system[batteryField]) do
-    local isStateValid = true
+  -- Determine unit type by checking which collection contains this GUID
+  local isAmmunitionSection = system.ammunitionSections[battery.guid] ~= nil
 
-    if isAuto then
-      local repoState = config.batteryState.REPOSITIONING
-      local reloadState = config.batteryState.RELOAD
-      isStateValid = (battery.state == repoState or battery.state == reloadState)
+  if isAmmunitionSection then
+    -- Case: Ammunition section looking for batteries
+    for _, sectionCtx in pairs(system.ammunitionSections) do
+      local isMet, ctx = checkMeetingInArea(
+        sectionCtx, battery.guid, system.batteries, unit, OPAREAs, config, isAuto
+      )
+      if isMet then
+        return { isMet = true, battery = ctx }
+      end
     end
-
-    if battery.guid == group.guid and isStateValid then
-      local area = findUnitArea(unit, OPAREAs)
-      if not area then return { isMet = false, battery = nil } end
-
-      for _, section in pairs(system[ammunitionField]) do
-        local ammoSec = GameApi.ScenEdit_GetUnit(section.guid)
-
-        if ammoSec and ammoSec:inArea(area) then
-          return { isMet = true, battery = battery }
-        end
+  else
+    -- Case: Battery looking for ammunition sections
+    for _, batteryCtx in pairs(system.batteries) do
+      local isMet, ctx = checkMeetingInArea(
+        batteryCtx, battery.guid, system.ammunitionSections, unit, OPAREAs, config, isAuto
+      )
+      if isMet then
+        return { isMet = true, battery = ctx }
       end
     end
   end
@@ -543,25 +664,25 @@ end
 ---@return {isMet: boolean, battery: SBJ__AmmunitionSectionContext|nil}
 function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
   local side = unit.side
-  local field = (side == 'China') and 'c' or 't'
+  local sideKey = (side == 'China') and 'c' or 't'
   if not unit.group then return { isMet = false, battery = nil } end
-  local group = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  if not group then return { isMet = false, battery = nil } end
-  local system = saveData[field]['ground'][wpnSystem]
+  local section = GameApi.ScenEdit_GetUnit(unit.group.guid)
+  if not section then return { isMet = false, battery = nil } end
+  local system = saveData[sideKey]['ground'][wpnSystem]
   ---@type table<string, SBJ__OPAREA>
-  local OPAREAs = config[field]['ground'][wpnSystem].OPAREAs
+  local OPAREAs = config[sideKey]['ground'][wpnSystem].OPAREAs
 
-  for _, section in pairs(system.ammunitionSections) do
+  for _, sectionCtx in pairs(system.ammunitionSections) do
     local isStateValid = true
 
     if isAuto then
       local repoState = config.batteryState.REPOSITIONING
       local reloadState = config.batteryState.RELOAD
-      isStateValid = (section.state == repoState or section.state == reloadState)
+      isStateValid = (sectionCtx.state == repoState or sectionCtx.state == reloadState)
     end
 
-    if section.guid == group.guid and isStateValid then
-      local ammo = GameApi.ScenEdit_GetUnit(section.ammunition)
+    if sectionCtx.guid == section.guid and isStateValid then
+      local ammo = GameApi.ScenEdit_GetUnit(sectionCtx.ammunition)
 
       for _, OPAREA in pairs(OPAREAs) do
         -- Check all AHA areas in the array
@@ -569,7 +690,7 @@ function Launcher.isMetWithAmmo(config, saveData, unit, wpnSystem, isAuto)
           local isInSameArea = unit:inArea(pos.area) and (ammo and ammo:inArea(pos.area))
 
           if isInSameArea then
-            return { isMet = true, battery = section }
+            return { isMet = true, battery = sectionCtx }
           end
         end
       end
@@ -583,37 +704,45 @@ end
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
 ---@param wpnSystem string
----@param side string
+---@param sideName string
 ---@param isAuto boolean
-function Launcher.checkBatteryState(config, saveData, wpnSystem, side, isAuto)
-  processBatteries(config, saveData, wpnSystem, side, isAuto)
-  processAmmunitionSections(config, saveData, wpnSystem, side, isAuto)
+function Launcher.checkBatteryState(config, saveData, wpnSystem, sideName, isAuto)
+  processBatteries(config, saveData, wpnSystem, sideName, isAuto)
+  processAmmunitionSections(config, saveData, wpnSystem, sideName, isAuto)
 end
 
 ---Handle logic when ammunition section unit is destroyed
 ---@param unit CMO__Unit Destroyed unit
----@param side string Side
+---@param sideName string Side
 ---@param wpnSystem string Platform type
 ---@param saveData SBJ__SaveData
-function Launcher.destroyAmmoSecHandler(unit, side, wpnSystem, saveData)
-  local field = (side == 'China') and 'c' or 't'
-  local isAmmo = false
-  if unit.group == nil then isAmmo = true end
+function Launcher.destroyAmmoSecHandler(unit, sideName, wpnSystem, saveData)
+  local sideKey = (sideName == 'China') and 'c' or 't'
+  local system = saveData[sideKey].ground[wpnSystem]
 
-  if isAmmo then
-    local ammo = saveData[field].ground[wpnSystem].ammunitions[unit.guid]
+  -- Determine unit type by checking if it has a group (type-safe approach)
+  -- Ammunition depots are single units (no group), ammunition sections are groups
+  local isAmmunitionDepot = (unit.group == nil)
 
-    if ammo and ammo.wpnCurrent > 0 then
-      ammo.wpnCurrent = 0
+  if isAmmunitionDepot then
+    -- Handle ammunition depot destruction
+    local ammoCtx = system.ammunitions[unit.guid]
+
+    if ammoCtx and ammoCtx.wpnCurrent > 0 then
+      ammoCtx.wpnCurrent = 0
     end
   else
-    local ammoSec = saveData[field].ground[wpnSystem].ammunitionSections[unit.group.guid]
+    -- Handle ammunition section unit destruction (part of a group)
+    local ammoSecCtx = system.ammunitionSections[unit.group.guid]
 
-    if ammoSec and ammoSec.wpnCurrent > 0 then
-      if (ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount) < 0 then
-        ammoSec.wpnCurrent = 0
+    if ammoSecCtx and ammoSecCtx.wpnCurrent > 0 then
+      -- Reduce ammunition proportionally when one unit in the section is destroyed
+      local ammoPerUnit = ammoSecCtx.wpnDefault / ammoSecCtx.unitCount
+
+      if (ammoSecCtx.wpnCurrent - ammoPerUnit) < 0 then
+        ammoSecCtx.wpnCurrent = 0
       else
-        ammoSec.wpnCurrent = ammoSec.wpnCurrent - ammoSec.wpnDefault / ammoSec.unitCount
+        ammoSecCtx.wpnCurrent = ammoSecCtx.wpnCurrent - ammoPerUnit
       end
     end
   end

@@ -100,6 +100,12 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field ammunitionSection string -- The ammunition section guid to use for the battery
 ---@field msg string -- The message to display for the battery
 
+---@class SBJ__WeaponSystemContext:table
+---@field isActivated boolean -- Whether the weapon system is active
+---@field batteries table<string, SBJ__BatteryContext> -- A table of batteries to use for the attack
+---@field ammunitionSections table<string, SBJ__AmmunitionSectionContext> -- A table of ammunition sections to use for the attack
+---@field ammunitions table<string, SBJ__AmmunitionContext> -- A table of ammunition units to use for the attack
+
 ---@class SBJ__C2Context:table
 ---@field name string
 ---@field msg string

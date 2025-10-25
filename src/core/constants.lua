@@ -2446,7 +2446,6 @@ config.c.subSurface.slcm.submarines = {
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
 }
-
 config.c.subSurface.slcm.targetlist = {
   '6Z8LM5-0HMIJ7B89BCF3',
   '6Z8LM5-0HMIJ7B89BCF4',

@@ -11,6 +11,10 @@ if saveData == nil then
   return
 end
 
+if not unit then
+  return
+end
+
 
 if saveData.t.ground.mlrs.isActivated then
   local result = Launcher.isMetWithAmmoTrucks(config, saveData, unit, 'mlrs', false)
