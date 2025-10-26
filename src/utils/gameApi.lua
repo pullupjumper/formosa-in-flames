@@ -579,6 +579,18 @@ function realApi.ScenEdit_SetLoadout(opts)
   return ScenEdit_SetLoadout(opts)
 end
 
+---comment
+---@return CMO__Event
+function realApi.ScenEdit_EventX()
+  local result = ScenEdit_EventX()
+
+  if not result then
+    error("Failed to get event")
+  end
+
+  return result
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

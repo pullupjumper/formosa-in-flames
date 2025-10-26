@@ -11,10 +11,10 @@ if saveData == nil then
 end
 
 if saveData.u.SIGINT.isActivated then
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.srbm.batteries, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.glcm.batteries, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.mlrs.batteries, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.ascm.batteries, true)
+  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.srbm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.glcm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.mlrs.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.ascm.firingUnits, true)
   SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.IADS.ROCC, true)
   SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.IADS.TAAOC, true)
 end

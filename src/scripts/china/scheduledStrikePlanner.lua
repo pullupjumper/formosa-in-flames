@@ -49,7 +49,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c
   AttackManager.attackContacts({
     contacts = config.c.surface.lacm.targetlist,
     qty = 5,
-    batteries = ships,
+    firingUnits = ships,
     weaponDBID = config.c.surface.lacm.weaponDBID
   })
   saveData.c.surface.lacm.isActivated = false
@@ -72,7 +72,7 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveDat
   AttackManager.attackContacts({
     contacts = config.c.subSurface.slcm.targetlist,
     qty = 8,
-    batteries = config.c.subSurface.slcm.submarines,
+    firingUnits = config.c.subSurface.slcm.submarines,
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   })
 

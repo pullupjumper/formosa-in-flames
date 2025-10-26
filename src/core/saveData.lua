@@ -121,8 +121,8 @@ saveData.c.ground.mlrs.ammunitions = {
     wpnDefault = config.c.ground.mlrs.wpnDefault,
   },
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.c.ground.mlrs.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.c.ground.mlrs.resupplyUnits = {
   ['IC8B0X-0HN7R5QOERV4D'] = {
     guid = 'IC8B0X-0HN7R5QOERV4D',
     name = 'Ammo Sec, 1st Bn, 1st Rockets Arty Bde',
@@ -146,8 +146,8 @@ saveData.c.ground.mlrs.ammunitionSections = {
     ammunition = 'IC8B0X-0HNBRRE2PRT40',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.c.ground.mlrs.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.c.ground.mlrs.firingUnits = {
   ['IC8B0X-0HND05GGU36EN'] = {
     name = '1st Bn, 1st Rockets Arty Bde',
     msg = 'Radio source, Bty',
@@ -157,7 +157,7 @@ saveData.c.ground.mlrs.batteries = {
     OPAREA = config.c.ground.mlrs.OPAREAs.pingtan,
     weaponDBID = config.weapon.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOERV4D',
+    resupplyUnit = 'IC8B0X-0HN7R5QOERV4D',
   },
   ['IC8B0X-0HNBRRE2PRQAL'] = {
     name = '6th Bn, 73rd Arty Bde',
@@ -168,7 +168,7 @@ saveData.c.ground.mlrs.batteries = {
     OPAREA = config.c.ground.mlrs.OPAREAs.chinchew,
     weaponDBID = config.weapon.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HNBRRE2PRRG9',
+    resupplyUnit = 'IC8B0X-0HNBRRE2PRRG9',
   },
 }
 
@@ -185,8 +185,8 @@ saveData.c.ground.glcm.ammunitions = {
     wpnDefault = config.c.ground.glcm.wpnDefault,
   },
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.c.ground.glcm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.c.ground.glcm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVG88'] = {
     guid = 'IC8B0X-0HN7R5QOIVG88',
     name = 'Ammo Sec, 635th Bde, PLARF',
@@ -199,19 +199,19 @@ saveData.c.ground.glcm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN99I5RL5KR9',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.c.ground.glcm.batteries = {
-  ---@type SBJ__BatteryContext
+---@type table<string, SBJ__FiringUnitContext>
+saveData.c.ground.glcm.firingUnits = {
+  ---@type SBJ__FiringUnitContext
   ['6Z8LM5-0HMN97ERAUODK'] = {
     guid = '6Z8LM5-0HMN97ERAUODK',
-    name = '635th Bde',
+    name = '635th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.glcm.OPAREAs.brigade635,
     weaponDBID = config.weapon.CJ10,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVG88',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVG88',
   },
 }
 
@@ -253,8 +253,8 @@ saveData.c.ground.srbm.ammunitions = {
     wpnDefault = config.c.ground.srbm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.c.ground.srbm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.c.ground.srbm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVL7D'] = {
     guid = 'IC8B0X-0HN7R5QOIVL7D',
     name = 'Ammo Sec, 615th Bde, PLARF',
@@ -322,73 +322,73 @@ saveData.c.ground.srbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9ASEFCGA5A',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.c.ground.srbm.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.c.ground.srbm.firingUnits = {
   ['X58F5H-0HN1G2IFLNKG9'] = {
     guid = 'X58F5H-0HN1G2IFLNKG9',
-    name = '615th Bde',
+    name = '615th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade615,
     weaponDBID = config.weapon.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVL7D',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVL7D',
   },
   ['X58F5H-0HN1LQGRV8HNQ'] = {
     guid = 'X58F5H-0HN1LQGRV8HNQ',
-    name = '614th Bde',
+    name = '614th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade614,
     weaponDBID = config.weapon.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVLSG',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVLSG',
   },
   ['IC8B0X-0HN822OHANPB3'] = {
     guid = 'IC8B0X-0HN822OHANPB3',
-    name = '636th Bde',
+    name = '636th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade636,
     weaponDBID = config.weapon.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVMO1',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVMO1',
   },
   ['X58F5H-0HN1G2IFLF6QE'] = {
     guid = 'X58F5H-0HN1G2IFLF6QE',
-    name = '616th Bde',
+    name = '616th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade616,
     weaponDBID = config.weapon.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVOSN',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVOSN',
   },
   ['X58F5H-0HN1G2DEBC7O8'] = {
     guid = 'X58F5H-0HN1G2DEBC7O8',
-    name = '613rd Bde',
+    name = '613rd Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade613,
     weaponDBID = config.weapon.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVPNC',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVPNC',
   },
   ['IC8B0X-0HN822OHANRHI'] = {
     guid = 'IC8B0X-0HN822OHANRHI',
-    name = '617th Bde',
+    name = '617th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.srbm.OPAREAs.brigade617,
     weaponDBID = config.weapon.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVQ6P',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVQ6P',
   },
 }
 
@@ -404,8 +404,8 @@ saveData.c.ground.mrbm.ammunitions = {
     wpnDefault = config.c.ground.mrbm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.c.ground.mrbm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.c.ground.mrbm.resupplyUnits = {
   ['IC8B0X-0HNCOR6HG2KF9'] = {
     guid = 'IC8B0X-0HNCOR6HG2KF9',
     name = 'Ammo Sec, 624th Bde, PLARF',
@@ -418,18 +418,18 @@ saveData.c.ground.mrbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HNCOR6HG2KK5',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.c.ground.mrbm.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.c.ground.mrbm.firingUnits = {
   ['IC8B0X-0HNCOR6HG2JE1'] = {
     guid = 'IC8B0X-0HNCOR6HG2JE1',
-    name = '624th Bde',
+    name = '624th Bde, PLARF',
     msg = 'Radio source, Bty',
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     OPAREA = config.c.ground.mrbm.OPAREAs.brigade624,
     weaponDBID = config.weapon.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HNCOR6HG2KF9',
+    resupplyUnit = 'IC8B0X-0HNCOR6HG2KF9',
   },
 }
 
@@ -558,8 +558,8 @@ saveData.t.ground.mlrs.ammunitions = {
     wpnDefault = config.t.ground.mlrs.wpnDefault,
   }
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.t.ground.mlrs.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.t.ground.mlrs.resupplyUnits = {
   ['IC8B0X-0HN7RT1I581BB'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 21st Arty Command',
     guid = 'IC8B0X-0HN7RT1I581BB',
@@ -572,8 +572,8 @@ saveData.t.ground.mlrs.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVJ7G',
   }
 }
----@type table<string, SBJ__BatteryContext>
-saveData.t.ground.mlrs.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.t.ground.mlrs.firingUnits = {
   ['IC8B0X-0HN7RU9I3KV9T'] = {
     name = 'Rocket Arty Coy, 21st Arty Command',
     msg = 'Radio source, Bty',
@@ -583,7 +583,7 @@ saveData.t.ground.mlrs.batteries = {
     OPAREA = config.t.ground.mlrs.OPAREAs.pingzhen,
     weaponDBID = config.weapon.MK45_AMLRS,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7RT1I581BB',
+    resupplyUnit = 'IC8B0X-0HN7RT1I581BB',
   },
 }
 
@@ -600,8 +600,8 @@ saveData.t.ground.srbm.ammunitions = {
     wpnDefault = config.t.ground.srbm.wpnDefault,
   }
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.t.ground.srbm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.t.ground.srbm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVSFS'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
     guid = 'IC8B0X-0HN7R5QOIVSFS',
@@ -614,8 +614,8 @@ saveData.t.ground.srbm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVJG6',
   }
 }
----@type table<string, SBJ__BatteryContext>
-saveData.t.ground.srbm.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.t.ground.srbm.firingUnits = {
   ['IC8B0X-0HN7SOIUF4D47'] = {
     name = 'Rocket Arty Coy, 58th Arty Command',
     msg = 'Radio source, Bty',
@@ -625,7 +625,7 @@ saveData.t.ground.srbm.batteries = {
     OPAREA = config.t.ground.srbm.OPAREAs.dadu,
     weaponDBID = config.weapon.ATACMS,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVSFS',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVSFS',
   },
 }
 
@@ -648,8 +648,8 @@ saveData.t.ground.glcm.ammunitions = {
     wpnDefault = config.t.ground.glcm.wpnDefault * 2,
   }
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.t.ground.glcm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.t.ground.glcm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVTHT'] = {
     name = 'Ammo Sec, 641st Bn, 791st AFAD & Arty Bde',
     guid = 'IC8B0X-0HN7R5QOIVTHT',
@@ -673,8 +673,8 @@ saveData.t.ground.glcm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9B47GHVL3V',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.t.ground.glcm.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.t.ground.glcm.firingUnits = {
   ['X58F5H-0HN1ESDRTUULO'] = {
     guid = 'X58F5H-0HN1ESDRTUULO',
     name = '641st Bn, 791st AFAD & Arty Bde',
@@ -684,7 +684,7 @@ saveData.t.ground.glcm.batteries = {
     OPAREA = config.t.ground.glcm.OPAREAs.quanxi,
     weaponDBID = config.weapon.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVTHT',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVTHT',
   },
   ['X58F5H-0HN1ESDRTLGU7'] = {
     guid = 'X58F5H-0HN1ESDRTLGU7',
@@ -695,7 +695,7 @@ saveData.t.ground.glcm.batteries = {
     OPAREA = config.t.ground.glcm.OPAREAs.neipu,
     weaponDBID = config.weapon.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN7R5QOIVUDC',
+    resupplyUnit = 'IC8B0X-0HN7R5QOIVUDC',
   }
 }
 
@@ -719,8 +719,8 @@ saveData.t.ground.ascm.ammunitions = {
     wpnDefault = config.t.ground.ascm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__AmmunitionSectionContext>
-saveData.t.ground.ascm.ammunitionSections = {
+---@type table<string, SBJ__ResupplyUnitContext>
+saveData.t.ground.ascm.resupplyUnits = {
   ['IC8B0X-0HN87KFOFSGUB'] = {
     name = 'Hai Feng Shore-based ASM SUPP Sqn',
     guid = 'IC8B0X-0HN87KFOFSGUB',
@@ -744,8 +744,8 @@ saveData.t.ground.ascm.ammunitionSections = {
     ammunition = 'IC8B0X-0HN9JFGVR06D8',
   },
 }
----@type table<string, SBJ__BatteryContext>
-saveData.t.ground.ascm.batteries = {
+---@type table<string, SBJ__FiringUnitContext>
+saveData.t.ground.ascm.firingUnits = {
   ['IC8B0X-0HN87MOIE9C4U'] = {
     name = '2nd Hai Feng Shore-based ASM MOB Sqn',
     msg = 'Radio source, Bty',
@@ -755,7 +755,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
+    resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
   ['X58F5H-0HMVEU1FUVOLC'] = {
     name = '4th Hai Feng Shore-based ASM MOB Sqn',
@@ -766,7 +766,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
+    resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
   ['X58F5H-0HMVEU1FUVO8I'] = {
     name = '1st Hai Feng Shore-based ASM MOB Sqn',
@@ -777,7 +777,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.dong,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5',
+    resupplyUnit = 'IC8B0X-0HN9JFGVR07U5',
   },
   ['X58F5H-0HMVEU1FUVO6J'] = {
     name = '3rd Hai Feng Shore-based ASM MOB Sqn',
@@ -788,7 +788,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.dong,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN9JFGVR07U5',
+    resupplyUnit = 'IC8B0X-0HN9JFGVR07U5',
   },
   ['IC8B0X-0HN8CEO4EUE8B'] = {
     name = '5th Hai Feng Shore-based ASM MOB Sqn',
@@ -799,7 +799,7 @@ saveData.t.ground.ascm.batteries = {
     OPAREA = config.t.ground.ascm.OPAREAs.luzhu,
     weaponDBID = config.weapon.HF2,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
-    ammunitionSection = 'IC8B0X-0HN87KFOFSGUB',
+    resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
 }
 saveData.t.ground.ascm.test = {

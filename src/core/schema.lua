@@ -78,35 +78,36 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field AHA SBJ__Position[]
 ---@field RL SBJ__Position[]
 
---- Ammunition context data structure for tracking ammunition unit status
+--- Ammunition context data structure for tracking ammunition unit status and counts
 ---@class SBJ__AmmunitionContext:table
 ---@field guid string Ammunition unit GUID
 ---@field wpnCurrent number Current available ammunition count
----@field wpnDefault number Default ammunition count
+---@field wpnDefault number Default/maximum ammunition count
 
---- Ammunition section context data structure, extends AmmunitionContext with position and resupply management
----@class SBJ__AmmunitionSectionContext:SBJ__AmmunitionContext
----@field name string Ammunition section name
----@field unitCount number Number of resupply vehicles
----@field OPAREA SBJ__OPAREA Ammunition section position
----@field reloadStartTime number|nil Reload start timestamp, nil if not reloading
----@field state batteryState Section state (STATIC/HIDE, etc.)
----@field ammunition string Associated ammunition unit GUID
+--- Resupply unit context data structure, extends AmmunitionContext with operational area and resupply management
+---@class SBJ__ResupplyUnitContext:SBJ__AmmunitionContext
+---@field name string Resupply unit name
+---@field unitCount number Number of resupply vehicles in this unit
+---@field OPAREA SBJ__OPAREA Operational area definition for this resupply unit
+---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
+---@field state batteryState Current unit state (STATIC/HIDE, etc.)
+---@field ammunition string Associated ammunition unit GUID for this resupply unit
 
---- Battery context data structure
----@class SBJ__BatteryContext:SBJ__AmmunitionSectionContext
----@field weaponDBID number -- The weapon DBID to use for the battery
----@field ammoThreshold number -- The ammo threshold for the battery, if not specified, the default value will be used
----@field ammunitionSection string -- The ammunition section guid to use for the battery
----@field msg string -- The message to display for the battery
+--- Firing unit context data structure, extends ResupplyUnitContext with weapon system configuration
+---@class SBJ__FiringUnitContext:SBJ__ResupplyUnitContext
+---@field weaponDBID number The weapon database ID to use for the firing unit
+---@field ammoThreshold number The ammunition threshold for the firing unit, if not specified, the default value will be used
+---@field resupplyUnit string The resupply unit GUID associated with this firing unit
+---@field msg string The status message to display for the firing unit
 
+--- Weapon system context data structure, consolidates all components of a complete weapon system
 ---@class SBJ__WeaponSystemContext:table
----@field isActivated boolean -- Whether the weapon system is active
----@field reloadTime number -- Reload time for all batteries/sections in this system (seconds)
----@field OPAREAs table<string, SBJ__OPAREA> -- Operational areas for this weapon system
----@field batteries table<string, SBJ__BatteryContext> -- A table of batteries to use for the attack
----@field ammunitionSections table<string, SBJ__AmmunitionSectionContext> -- A table of ammunition sections to use for the attack
----@field ammunitions table<string, SBJ__AmmunitionContext> -- A table of ammunition units to use for the attack
+---@field isActivated boolean Whether the weapon system is currently active
+---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
+---@field OPAREAs table<string, SBJ__OPAREA> Operational areas indexed by area name for this weapon system
+---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
+---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
+---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
 
 ---@class SBJ__C2Context:table
 ---@field name string
@@ -119,9 +120,9 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__AttackContacts_Params:table
 ---@field contacts table<integer, string> -- A table of contact GUIDs to attack
 ---@field qty number -- The number of salvos to launch
----@field batteries table<string, SBJ__BatteryContext> -- A table of batteries to use for the attack
+---@field firingUnits table<string, SBJ__FiringUnitContext> -- A table of firing units to use for the attack
 ---@field weaponDBID? number -- The weapon DBID to use for the attack, if not specified, the default weapon will be used
----@field side? string -- The side to use for the attack, if not specified, the side of the first battery will be used
+---@field side? string -- The side to use for the attack, if not specified, the side of the first firing unit will be used
 
 ---@class SBJ__MissionEntry:table
 ---@field baseGUID string -- The GUID of the base to use for the mission
@@ -250,7 +251,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__FireSupportTask:SBJ__Task
 ---@field name string
 ---@field wpnSystem string
----@field batteries SBJ__BatteryContext[]
+---@field firingUnits SBJ__FiringUnitContext[]
 ---@field startTime string
 ---@field isFinished boolean
 
@@ -260,7 +261,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field isFirstWave boolean
 ---@field strikeInterval number
 ---@field reconUAVs table
----@field allBatteriesInPosition boolean
+---@field allFiringUnitsInPosition boolean
 ---@field isFinished boolean
 ---@field FSTs SBJ__FireSupportTask[]
 
@@ -451,7 +452,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field name string FST name
 ---@field target SBJ__TargetTemplate Target configuration
 ---@field wpnSystem string Weapon system type
----@field batteries SBJ__BatteryContext[] Battery/fire unit array
+---@field firingUnits SBJ__FiringUnitContext[] Firing unit array
 
 ---@class SBJ__TargetTemplate
 ---@field objs table[]? Target object array (for fixed targets)

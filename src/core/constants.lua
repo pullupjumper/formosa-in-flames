@@ -2463,7 +2463,7 @@ config.c.FSEMTemplate = {
     {
       name = 'RADAR',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ', weaponDBID = config.weapon.DF11A },
         { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8', weaponDBID = config.weapon.DF15B }
       },
@@ -2482,7 +2482,7 @@ config.c.FSEMTemplate = {
     {
       name = 'RUNWAY',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3', weaponDBID = config.weapon.DF16A },
         { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI', weaponDBID = config.weapon.DF16A }
       },
@@ -2509,7 +2509,7 @@ config.c.FSEMTemplate = {
     {
       name = 'PORT',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9', weaponDBID = config.weapon.DF11A }
       },
       target = {
@@ -2531,7 +2531,7 @@ config.c.FSEMTemplate = {
     {
       name = 'SHELTER',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE', weaponDBID = config.weapon.DF15C }
       },
       target = {
@@ -2554,7 +2554,7 @@ config.c.FSEMTemplate = {
     {
       name = 'RADAR',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ', weaponDBID = config.weapon.DF11A },
         { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8', weaponDBID = config.weapon.DF15B }
       },
@@ -2573,7 +2573,7 @@ config.c.FSEMTemplate = {
     {
       name = 'RUNWAY',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3', weaponDBID = config.weapon.DF16A },
         { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI', weaponDBID = config.weapon.DF16A }
       },
@@ -2605,7 +2605,7 @@ config.c.FSEMTemplate = {
     {
       name = 'PORT',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9', weaponDBID = config.weapon.DF11A }
       },
       target = {
@@ -2629,7 +2629,7 @@ config.c.FSEMTemplate = {
     {
       name = 'SHELTER',
       wpnSystem = 'SRBM',
-      batteries = {
+      firingUnits = {
         { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE', weaponDBID = config.weapon.DF15C }
       },
       target = {
@@ -2656,7 +2656,7 @@ config.c.FSEMTemplate = {
     {
       name = "ANTISHIP",
       wpnSystem = "MRBM",
-      batteries = {
+      firingUnits = {
         { name = '624th Bde', guid = 'IC8B0X-0HNCOR6HG2JE1', weaponDBID = config.weapon.DF21D }
       },
       target = {
@@ -2674,7 +2674,7 @@ config.c.FSEMTemplate = {
     {
       name = 'PINGTAN',
       wpnSystem = 'MLRS',
-      batteries = {
+      firingUnits = {
         { name = '1st Bn, 1st Rockets Arty Bde', guid = 'IC8B0X-0HND05GGU36EN', weaponDBID = config.weapon.FD280 }
       },
       target = {
@@ -2690,7 +2690,7 @@ config.c.FSEMTemplate = {
     {
       name = 'CHINCHEW',
       wpnSystem = 'MLRS',
-      batteries = {
+      firingUnits = {
         { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HNBRRE2PRQAL', weaponDBID = config.weapon.FD280 }
       },
       target = {
@@ -2708,7 +2708,7 @@ config.c.FSEMTemplate = {
     {
       name = 'HELIPAD',
       wpnSystem = 'GLCM',
-      batteries = {
+      firingUnits = {
         { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK', weaponDBID = config.weapon.CJ10 }
       },
       target = {

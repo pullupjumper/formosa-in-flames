@@ -94,8 +94,8 @@ local function collectAssignedBatteries(saveData)
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     if not FSEM.isFinished and FSEM.isActivated and FSEM.FSTs then
       for _, FST in ipairs(FSEM.FSTs) do
-        if not FST.isFinished and FST.batteries then
-          for _, battery in ipairs(FST.batteries) do
+        if not FST.isFinished and FST.firingUnits then
+          for _, battery in ipairs(FST.firingUnits) do
             local batteryGuid = type(battery) == "table" and battery.guid or battery
             assignedBatteries[batteryGuid] = true
           end
@@ -124,8 +124,8 @@ local function validateBatteryStatus(config, saveData, batteryGuid, wpnSystem)
   -- Get battery data from weapon system
   local weaponSystemLower = string.lower(wpnSystem)
   local batteryData = saveData.c.ground[weaponSystemLower] and
-      saveData.c.ground[weaponSystemLower].batteries and
-      saveData.c.ground[weaponSystemLower].batteries[batteryGuid]
+      saveData.c.ground[weaponSystemLower].firingUnits and
+      saveData.c.ground[weaponSystemLower].firingUnits[batteryGuid]
 
   if not batteryData then
     return false, "Cannot find battery data: " .. batteryGuid
@@ -142,12 +142,12 @@ local function validateBatteryStatus(config, saveData, batteryGuid, wpnSystem)
   return true, nil
 end
 
----Check if batteries specified in template are available
+---Check if firing units specified in template are available
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
----@param templateBatteries SBJ__BatteryContext[]
+---@param templateBatteries SBJ__FiringUnitContext[]
 ---@param wpnSystem string
----@return SBJ__BatteryContext[] availableBatteries
+---@return SBJ__FiringUnitContext[] availableBatteries
 local function checkBatteryAvailability(config, saveData, templateBatteries, wpnSystem)
   local availableBatteries = {}
   local assignedBatteries = collectAssignedBatteries(saveData)
@@ -175,7 +175,7 @@ local function checkBatteryAvailability(config, saveData, templateBatteries, wpn
     end
   end
 
-  Logger.log("Check completed, available batteries: " .. #availableBatteries .. "/" .. #templateBatteries)
+  Logger.log("Check completed, available firing units: " .. #availableBatteries .. "/" .. #templateBatteries)
   return availableBatteries
 end
 
@@ -217,7 +217,7 @@ local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedT
     isActivated = true,
     isFinished = false,
     isFirstWave = fsemTemplate.isFirstWave,
-    allBatteriesInPosition = false,
+    allFiringUnitsInPosition = false,
     FSTs = {}
   }
 
@@ -230,16 +230,16 @@ local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedT
     if targets and #targets >= fstTemplate.target.minTargetCount then
       fstIndex = fstIndex + 1
 
-      -- Check if batteries specified in template are available
-      local availableBatteries = checkBatteryAvailability(
-        config, saveData, fstTemplate.batteries, fstTemplate.wpnSystem
+      -- Check if firing units specified in template are available
+      local availableFiringUnits = checkBatteryAvailability(
+        config, saveData, fstTemplate.firingUnits, fstTemplate.wpnSystem
       )
 
-      if availableBatteries and #availableBatteries > 0 then
+      if availableFiringUnits and #availableFiringUnits > 0 then
         local fst = {
           name = fstTemplate.name,
           wpnSystem = fstTemplate.wpnSystem,
-          batteries = availableBatteries,
+          firingUnits = availableFiringUnits,
           startTime = os.date("!%Y-%m-%d %H:%M:%S", fsemStartTime + (fstIndex * fsemTemplate.strikeInterval)),
           isFinished = false,
           target = {
@@ -255,7 +255,7 @@ local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedT
 
         table.insert(newFSEM.FSTs, fst)
         Logger.log("Created FST: " .. fstTemplate.name .. ", target count: " ..
-          #targets .. ", fire unit count: " .. #availableBatteries)
+          #targets .. ", fire unit count: " .. #availableFiringUnits)
       else
         Logger.error("Specified fire units for FST " .. fstTemplate.name .. " are unavailable or already assigned")
       end

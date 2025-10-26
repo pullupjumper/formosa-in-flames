@@ -2,6 +2,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local Logger = require("src.utils.logger")
 local Launcher = require('src.modules.launcher')
 local config = require("src.core.constants")
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
@@ -9,8 +10,12 @@ if saveData == nil then
   return
 end
 
-Launcher.checkBatteryState(config, saveData.t.ground.mlrs, false)
-Launcher.checkBatteryState(config, saveData.t.ground.srbm, false)
-Launcher.checkBatteryState(config, saveData.t.ground.glcm, false)
-Launcher.checkBatteryState(config, saveData.t.ground.ascm, false)
+local wpnSystems = { 'srbm', 'mrbm', 'mlrs', 'glcm', 'ascm' }
+
+for _, wpnSystem in ipairs(wpnSystems) do
+  if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
+    Launcher.checkBatteryState(config, saveData.t.ground[wpnSystem], false)
+  end
+end
+
 gKH.State.SaveTableToKey(saveData, "SaveData")

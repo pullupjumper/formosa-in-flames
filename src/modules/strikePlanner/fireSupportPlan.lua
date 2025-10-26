@@ -7,7 +7,7 @@ local Launcher = require("src.modules.launcher")
 local FireSupportPlan = {}
 
 ---@param config SBJ__CONFIG
----@param bettery SBJ__BatteryContext
+---@param bettery SBJ__FiringUnitContext
 ---@param group CMO__Unit
 ---@return boolean
 local function isBtyReady(config, bettery, group)
@@ -16,7 +16,7 @@ local function isBtyReady(config, bettery, group)
 end
 
 ---@param config SBJ__CONFIG
----@param bettery SBJ__BatteryContext
+---@param bettery SBJ__FiringUnitContext
 ---@return boolean
 local function isNotBtyAtFiringPoint(config, bettery)
   return bettery.state ~= config.batteryState.STATIC
@@ -27,27 +27,27 @@ end
 ---@param FST SBJ__FireSupportTask
 ---@return boolean
 local function shouldDeployToFiringPosition(config, saveData, FST)
-  local allBatteriesInPosition = true
+  local allFiringUnitsInPosition = true
 
-  for _, bty in ipairs(FST.batteries) do
+  for _, bty in ipairs(FST.firingUnits) do
     local actualBty = GameApi.ScenEdit_GetUnit(bty.guid)
 
     if not actualBty then
-      allBatteriesInPosition = false
+      allFiringUnitsInPosition = false
     else
-      local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].batteries[bty.guid]
+      local bettery = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[bty.guid]
 
       if isBtyReady(config, bettery, actualBty) then
         Launcher.moveToFiringPoint(config, bettery, actualBty)
       end
 
       if isNotBtyAtFiringPoint(config, bettery) then
-        allBatteriesInPosition = false
+        allFiringUnitsInPosition = false
       end
     end
   end
 
-  return allBatteriesInPosition
+  return allFiringUnitsInPosition
 end
 
 ---comment
@@ -88,7 +88,7 @@ local function executeFireSupportTasks(FSEM)
       local result = AttackManager.attackContacts({
         contacts = FST.target.list,
         qty = FST.target.ammoPerTarget,
-        batteries = FST.batteries,
+        firingUnits = FST.firingUnits,
       })
 
       if result > 0 then
@@ -103,23 +103,23 @@ end
 ---@param saveData SBJ__SaveData
 function FireSupportPlan.strike(config, saveData)
   for _, FSEM in pairs(saveData.c.ground.FSP) do
-    local allBatteriesInPosition = true
+    local allFiringUnitsInPosition = true
 
     if not FSEM.isFinished and FSEM.isActivated then
       for _, FST in ipairs(FSEM.FSTs) do
         local isInFiringPosition = processFST(FST, config, saveData)
 
         if not isInFiringPosition then
-          allBatteriesInPosition = false
+          allFiringUnitsInPosition = false
         end
       end
     end
 
-    FSEM.allBatteriesInPosition = allBatteriesInPosition
+    FSEM.allFiringUnitsInPosition = allFiringUnitsInPosition
   end
 
   for _, FSEM in pairs(saveData.c.ground.FSP) do
-    if not FSEM.isFinished and FSEM.isActivated and FSEM.allBatteriesInPosition then
+    if not FSEM.isFinished and FSEM.isActivated and FSEM.allFiringUnitsInPosition then
       executeFireSupportTasks(FSEM)
     end
 

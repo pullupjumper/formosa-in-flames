@@ -109,18 +109,18 @@ if unit then
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
       GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, 'China', unit.name)
     elseif unit.dbid == config.platform.AMMO then
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.mlrs)
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.srbm)
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.glcm)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAmmo),
         "You have destroyed a ammo revetment."
       )
     elseif unit.dbid == config.platform.AMMO_TRUCK then
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.mlrs)
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.srbm)
-      Launcher.destroyAmmoSecHandler(unit, saveData.c.ground.glcm)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
+      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAmmoTruck),

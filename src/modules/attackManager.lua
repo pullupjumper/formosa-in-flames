@@ -206,13 +206,13 @@ end
 
 ---@param contactGUID string The target contact to attack
 ---@param ammoToAllocate number Total amount of ammunition to allocate for this attack
----@param batteries table<string, SBJ__BatteryContext> Array of batteries to use for attack
----@param btyIdx number Starting battery index
+---@param firingUnits table<string, SBJ__FiringUnitContext> Array of firing units to use for attack
+---@param btyIdx number Starting firing unit index
 ---@param grpIdx number Starting group index
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
 ---@param side string The side to use for the attack, default is 'China'
 ---@return table Results including next indices and number of weapons launched
-function AttackManager.attackContact(contactGUID, ammoToAllocate, batteries, btyIdx, grpIdx, weaponDBID, side)
+function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
   local totalAmmoAllocated = 0
   local attemptCount = 0
@@ -227,19 +227,19 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, batteries, bty
     btyIdx = btyIdx or 1
     grpIdx = grpIdx or 1
 
-    -- Process each battery until we've allocated enough ammo or tried all batteries
-    while btyIdx <= #batteries and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
-      local actualUnit = GameApi.ScenEdit_GetUnit(batteries[btyIdx].guid)
-      local wpnDBID = weaponDBID or batteries[btyIdx].weaponDBID
+    -- Process each firing unit until we've allocated enough ammo or tried all firing units
+    while btyIdx <= #firingUnits and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
+      local actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[btyIdx].guid)
+      local wpnDBID = weaponDBID or firingUnits[btyIdx].weaponDBID
 
       if not actualUnit then
-        actualUnit = GameApi.ScenEdit_GetUnit(batteries[btyIdx].name, side)
+        actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[btyIdx].name, side)
         if not actualUnit then break end
       end
 
       -- Handle differently based on whether it's a group or individual unit
       if actualUnit.group then
-        -- Track if we need to advance to next battery
+        -- Track if we need to advance to next firing unit
         local advanceBattery, ammoAllocated = processUnitGroup(
           actualUnit, contact, ammoToAllocate, totalAmmoAllocated, wpnDBID, grpIdx
         )
@@ -255,8 +255,8 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, batteries, bty
           grpIdx = grpIdx + 1
         end
 
-        -- Wrap around to first battery if needed
-        if btyIdx > #batteries then btyIdx = 1 end
+        -- Wrap around to first firing unit if needed
+        if btyIdx > #firingUnits then btyIdx = 1 end
 
         -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
@@ -268,9 +268,9 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, batteries, bty
         totalAmmoAllocated = totalAmmoAllocated + unitResult.ammoAllocated
         attemptCount = attemptCount + 1
 
-        -- Move to next battery
+        -- Move to next firing unit
         btyIdx = btyIdx + 1
-        if btyIdx > #batteries then btyIdx = 1 end
+        if btyIdx > #firingUnits then btyIdx = 1 end
 
         -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
@@ -290,7 +290,7 @@ function AttackManager.attackContacts(opts)
   local totalLaunchedNum = 0
   local contacts = opts.contacts or {}
   local qty = opts.qty or 1
-  local batteries = opts.batteries
+  local firingUnits = opts.firingUnits
   local weaponDBID = opts.weaponDBID
   local side = opts.side or 'China'
 
@@ -298,7 +298,7 @@ function AttackManager.attackContacts(opts)
     result = AttackManager.attackContact(
       contact,
       qty,
-      batteries,
+      firingUnits,
       result.btyIdx,
       result.grpIdx,
       weaponDBID,

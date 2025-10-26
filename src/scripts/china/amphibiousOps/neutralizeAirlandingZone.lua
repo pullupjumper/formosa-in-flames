@@ -28,7 +28,7 @@ if ship and ship.group and ship.dbid == config.platform.TYPE_052D then
     AttackManager.attackContacts({
       contacts = filteredContacts,
       qty = 440 // Utils.getCount(filteredContacts),
-      batteries = { ship },
+      firingUnits = { ship },
       weaponDBID = 2691,
     })
   end

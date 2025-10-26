@@ -304,24 +304,24 @@ local function createBatteryDataString(config, saveData, side, ...)
   local rows = {}
 
   for index, wpnSystem in pairs(wpnSystems) do
-    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].ammunitionSections then
-      for k, value in pairs(saveData[key].ground[wpnSystem].ammunitionSections) do
+    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].resupplyUnits then
+      for k, value in pairs(saveData[key].ground[wpnSystem].resupplyUnits) do
         rows[k] = {}
       end
     end
   end
 
   for index, wpnSystem in pairs(wpnSystems) do
-    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].batteries then
-      for _, bty in pairs(saveData[key].ground[wpnSystem].batteries) do
+    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].firingUnits then
+      for _, bty in pairs(saveData[key].ground[wpnSystem].firingUnits) do
         local name = bty.name
         local status = ''
-        local missilesInAmmoVehicles = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
+        local missilesInAmmoVehicles = saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit]
             .wpnCurrent
-        local ammoSec = saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection]
+        local ammoSec = saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit]
         local reloadTime = config[key].ground[wpnSystem].reloadTime / 60
         local missilesInAHA = saveData[key].ground[wpnSystem].ammunitions
-            [saveData[key].ground[wpnSystem].ammunitionSections[bty.ammunitionSection].ammunition].wpnCurrent
+            [saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit].ammunition].wpnCurrent
         local batteryReloadTime = nil
         local ammoSectionReloadTime = nil
 
@@ -364,7 +364,7 @@ local function createBatteryDataString(config, saveData, side, ...)
         end
 
         if side == 'China' then
-          table.insert(rows[bty.ammunitionSection], {
+          table.insert(rows[bty.resupplyUnit], {
             name = name,
             type = wpnSystem,
             status = status,
@@ -375,7 +375,7 @@ local function createBatteryDataString(config, saveData, side, ...)
             defaultReloadTime = reloadTime
           })
         else
-          table.insert(rows[bty.ammunitionSection], {
+          table.insert(rows[bty.resupplyUnit], {
             name = name,
             type = wpnSystem,
             status = status,

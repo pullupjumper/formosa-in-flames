@@ -2,7 +2,7 @@
 local SIGINT = require('src.modules.EW.sigint')
 local config = require('src.core.constants')
 local Logger = require("src.utils.logger")
-
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
@@ -11,9 +11,9 @@ if saveData == nil then
 end
 
 if saveData.u.SIGINT.isActivated then
-  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.mlrs.batteries, true)
-  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.srbm.batteries, true)
-  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.glcm.batteries, true)
+  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.mlrs.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.srbm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.ground.glcm.firingUnits, true)
   SIGINT.handleSIGINT(config, saveData, 'US', saveData.c.IADS.C2, true)
 end
 
