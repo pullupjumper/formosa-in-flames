@@ -3,20 +3,19 @@ local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading'
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
-
+local ship = GameApi.ScenEdit_UnitX()
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-  Logger.log("saveData is nil")
+  Logger.error("saveData is nil")
   return
 end
-
-local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
+  Logger.error("ship is nil")
   return
 end
-
 
 if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, ship) then
   ship.course = nil

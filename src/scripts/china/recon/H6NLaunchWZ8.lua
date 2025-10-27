@@ -3,15 +3,14 @@ local Recon = require('src.modules.strikePlanner.recon')
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.constants")
-
 local unit = GameApi.ScenEdit_UnitX()
-
-if not unit then
-  return
-end
-
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
+if not unit then
+  Logger.error("unit is nil")
+  return
+end
 
 if saveData == nil then
   Logger.error("saveData is nil")
@@ -22,14 +21,7 @@ if unit then
   for _, q in ipairs(saveData.c.recon.queue) do
     if q.unitGUID == unit.guid then
       local course = nil
-
-      -- if q.isTracking then
-      --   course = config.c.recon.courses.WZ8[2]
-      -- else
-      --   course = config.c.recon.courses.WZ8[1]
-      -- end
       course = config.c.recon.courses.WZ8[1]
-
       local wz8 = Recon.launchWZ8(unit, course)
 
       if wz8 then

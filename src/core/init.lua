@@ -168,21 +168,6 @@ local function initSIGINT(config, saveData)
   end
 end
 
----Setup reconnaissance queue from air tasking orders
----@param saveData SBJ__SaveData
-local function setupReconQueue(saveData)
-  for _, wave in pairs(saveData.c.air.ATO) do
-    for _, package in ipairs(wave.packages) do
-      if package.reconUAV then
-        table.insert(saveData.c.recon.queue, package.reconUAV)
-      end
-    end
-    -- if item.reconUAVs then
-    --   Utils.InsertList(saveData.c.recon.queue, item.reconUAVs)
-    -- end
-  end
-end
-
 ---Initialize target list by scanning contacts and categorizing them
 ---@param saveData SBJ__SaveData
 local function initTargetlist(saveData)
@@ -419,10 +404,6 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
 
   if saveData.u.SIGINT.isActivated then
     initSIGINT(config, saveData)
-  end
-
-  if saveData.c.recon.isActivated then
-    setupReconQueue(saveData)
   end
 
   if config.isDevMode then

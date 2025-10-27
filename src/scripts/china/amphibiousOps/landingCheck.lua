@@ -9,36 +9,27 @@ local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics'
 local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 local UnitStatusUI = require("src.modules.unitStatusUI")
-
 local contacts = GameApi.ScenEdit_GetContacts('China')
-
-if not contacts then
-  return
-end
-
 local currentTime = GameApi.ScenEdit_CurrentTime()
-
-if not currentTime then
-  return
-end
-
--- local side = GameApi.VP_GetSide({ side = 'China' })
-
--- if not side then
---   return
--- end
-
 ---@type CMO__SideUnit[]
 local filteredShips = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
-
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
+
+if not contacts then
+  Logger.error("contacts is nil")
+  return
+end
+
+if not currentTime then
+  Logger.error("currentTime is nil")
+  return
+end
 
 if saveData == nil then
   Logger.error("saveData is nil")
   return
 end
-
 
 if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.PHIBOP.startTime) then
   local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(config, config.c.PHIBOP, saveData, filteredShips)
@@ -62,7 +53,6 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
       saveData.c.PHIBOP.isWaitingForShipArrival = false
       saveData.c.PHIBOP.isWaitingForAmphibiousAssault = true
       saveData.c.PHIBOP.amphibiousAssaultStartTime = currentTime
-      -- saveData.c.air.ATO['CAS/N/1'].isActivated = true
       local time = os.date("%Y-%m-%d %H:%M:%S", currentTime)
       table.insert(saveData.c.dynamicOperations.reconSchedule, {
         time = time,

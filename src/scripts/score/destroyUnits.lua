@@ -4,13 +4,13 @@ local config = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local GPSJamming = require("src.modules.EW.GPSJamming")
+local IADS = require("src.modules.IADS")
 local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
-local IADS = require("src.modules.IADS")
--- local units = GameApi.VP_GetSide({ side = 'China' }).units
-local side = GameApi.VP_GetSide({ side = 'China' })
-
+---@type CMO__SideUnit[]
+local filteredUnits = GameApi.VP_GetSide({ side = 'China' })
+    :unitsBy(config.unitType.FACILITY, tostring(config.fixedFacilityCategory.MOBILE_VEHICLE))
 
 if saveData == nil then
   Logger.error('saveData is nil')
@@ -133,14 +133,14 @@ if unit then
       IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'SAM', unit)
       IADS.activateNearestRadar(
         config,
-        side:unitsBy(config.unitType.FACILITY, config.fixedFacilityCategory.MOBILE_VEHICLE),
+        filteredUnits,
         unit
       )
     elseif unit.dbid == config.platform.JY26 or unit.dbid == config.platform.YLC8B then
       IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'radar', unit)
       IADS.activateNearestRadar(
         config,
-        side:unitsBy(config.unitType.FACILITY, config.fixedFacilityCategory.MOBILE_VEHICLE),
+        filteredUnits,
         unit
       )
     else

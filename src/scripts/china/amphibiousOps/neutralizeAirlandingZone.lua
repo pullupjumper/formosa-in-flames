@@ -2,14 +2,12 @@ local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.constants")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
-
+local ship = GameApi.ScenEdit_UnitX()
 local contacts = GameApi.ScenEdit_GetContacts('China')
 
 if not contacts then
   return
 end
-
-local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
   return

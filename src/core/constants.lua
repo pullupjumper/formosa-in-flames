@@ -913,21 +913,6 @@ config.c.recon.bases = {
 config.c.recon.contactAge = 15 * 60
 config.c.recon.courses = {
   WZ8 = {
-    -- {
-    --   { lat = 'N 25.53.18', lon = 'E 121.32.54', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 24.58.25', lon = 'E 121.41.17', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 24.38.39', lon = 'E 121.41.42', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 24.05.04', lon = 'E 121.22.33', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 22.52.27', lon = 'E 121.06.41', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 22.31.53', lon = 'E 120.29.25', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 23.21.08', lon = 'E 120.19.55', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 24.16.15', lon = 'E 120.29.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 25.09.57', lon = 'E 121.08.54', desiredAltitude = 30480, desiredSpeed = 3300 },
-    -- },
-    -- {
-    --   { lat = 'N 25.08.36', lon = 'E 122.40.26', desiredAltitude = 30480, desiredSpeed = 3300 },
-    --   { lat = 'N 21.21.28', lon = 'E 121.20.36', desiredAltitude = 30480, desiredSpeed = 3300 },
-    -- },
     {
       { lat = 'N 24.59.45', lon = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
       { lat = 'N 24.01.38', lon = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
@@ -2391,7 +2376,6 @@ config.c.subSurface.slcm.submarines = {
     name = "407",
     guid = '',
     course = {
-      -- { lat = 'N 25.07.11', lon = 'E 122.12.20', },
       { lat = 'N 25.07.57', lon = 'E 122.46.06', presetDepth = 3 },
       { lat = 'N 24.33.33', lon = 'E 122.05.57', presetDepth = 3 },
       { lat = 'N 24.30.54', lon = 'E 122.48.02', presetDepth = 3 },
@@ -2406,7 +2390,6 @@ config.c.subSurface.slcm.submarines = {
     name = "408",
     guid = '',
     course = {
-      -- { lat = 'N 24.32.29', lon = 'E 122.47.27', },
       { lat = 'N 25.11.06', lon = 'E 122.42.15', presetDepth = 3 },
       { lat = 'N 24.33.33', lon = 'E 122.08.38', presetDepth = 3 },
       { lat = 'N 25.09.37', lon = 'E 122.06.45', presetDepth = 3 },

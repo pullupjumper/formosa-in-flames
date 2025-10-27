@@ -9,15 +9,14 @@ local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
 local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
-
-
+---@type SBJ__SaveData
+local saveData = gKH.State.LoadTableFromKey("SaveData")
 local contacts = GameApi.ScenEdit_GetContacts('China')
 
 if not contacts then
+  Logger.error("contacts is nil")
   return
 end
-
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
   Logger.error("saveData is nil")

@@ -1,7 +1,6 @@
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.constants")
-
 local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
