@@ -534,7 +534,19 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field dbids number[] Array of database IDs to randomly select from
 
 ---@class SBJ__IADSContext:table
----@field C2? table<string, SBJ__C2Context> C2 node deployment descriptors
----@field ROCC? table<string, SBJ__C2Context> ROCC deployment descriptors
----@field TAAOC? table<string, SBJ__C2Context> TAAOC deployment descriptors
+---@field C2? table<string, SBJ__C2Context> C2 node context data structure
+---@field ROCC? table<string, SBJ__C2Context> ROCC context data structure
+---@field TAAOC? table<string, SBJ__C2Context> TAAOC context data structure
 ---@field isActivated boolean Whether IADS is activated
+
+---@class SBJ__AircraftContext:table
+---@field guid string Aircraft unit GUID
+---@field OODA table Aircraft OODA data
+---@field commsLevel number Aircraft comms level
+---@field commsBase number Aircraft comms base
+---@field commsThreshold number Aircraft comms threshold
+---@field outofcomms number Aircraft out of comms threshold
+
+---@class SBJ__LandBasedPlatformContext:table
+---@field AC table<string, SBJ__AircraftContext> Aircraft context data structure
+---@field AEW table<string, SBJ__AircraftContext> AEW aircraft context data structure

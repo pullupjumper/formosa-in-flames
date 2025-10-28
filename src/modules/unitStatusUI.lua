@@ -3085,7 +3085,8 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
         -- Apply aircraft and loadout configurations
         if abDeploymentDescriptors then
-          UnitGenerator.addAircraft(abDeploymentDescriptors, sideName)
+          UnitGenerator.addAircraft(abDeploymentDescriptors)
+          UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
         end
       end
     end

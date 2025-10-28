@@ -656,11 +656,10 @@ function UnitGenerator.addSubmarines(config, side)
   return true
 end
 
----comment
----@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[]
----@param sideName string
----@return boolean
-function UnitGenerator.addAircraft(airbaseDeploymentDescriptors, sideName)
+---Add aircraft to airbases with specified loadouts and embarked units
+---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configuration list
+---@return boolean Whether aircraft addition was successful
+function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
   for _, data in ipairs(airbaseDeploymentDescriptors) do
     local base = GameApi.ScenEdit_GetUnit(data.baseGUID)
 
@@ -691,7 +690,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors, sideName)
     end
   end
 
-  Logger.log(string.format("Successfully added aircraft for %s", sideName))
+  Logger.log(string.format("Successfully added aircraft"))
   return true
 end
 
@@ -791,6 +790,51 @@ function UnitGenerator.removeLandingShips(config)
   end
 
   Logger.log(string.format("Removed %d landing ships", removedCount))
+  return true
+end
+
+---Initialize aircraft units for Taiwan air operations
+---@param config SBJ__CONFIG Configuration object containing platform and unit type definitions
+---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
+---@return boolean Whether initialization was successful
+function UnitGenerator.initAircraftContexts(config, context)
+  local filteredUnits = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
+
+  if not filteredUnits then
+    Logger.log("No Taiwan aircraft units found for initialization")
+    return true  -- Not an error condition, just no units to initialize
+  end
+
+  local aewCount = 0
+  local acCount = 0
+
+  for _, u in ipairs(filteredUnits) do
+    local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
+
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E2K then
+      context.AEW[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
+      aewCount = aewCount + 1
+    elseif actualUnit and actualUnit.type == 'Aircraft' then
+      context.AC[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
+      acCount = acCount + 1
+    end
+  end
+
+  Logger.log(string.format("Initialized aircraft contexts: %d AEW, %d AC", aewCount, acCount))
   return true
 end
 

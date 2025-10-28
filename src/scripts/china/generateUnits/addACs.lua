@@ -1,4 +1,4 @@
 local UnitGenerator = require('src.modules.unitGenerator')
 local config = require('src.core.constants')
 
-UnitGenerator.addAircraft(config.c.air.landBased.deployedACs, 'China')
+UnitGenerator.addAircraft(config.c.air.landBased.deployedACs)

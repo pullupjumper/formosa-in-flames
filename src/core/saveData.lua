@@ -47,6 +47,7 @@ saveData.t.repairRunway = {}
 ---@type SBJ__IADSContext
 saveData.t.IADS = {}
 saveData.t.air = {}
+---@type SBJ__LandBasedPlatformContext
 saveData.t.air.landBased = {}
 saveData.t.GPSJamming = {}
 saveData.u = {}
@@ -882,12 +883,10 @@ saveData.t.IADS.TAAOC = {
 
 
 -- Aircraft
-saveData.t.air.landBased.AEW = {
-  -- {guid=''}
-}
-saveData.t.air.landBased.AC = {
-  -- {guid=''}
-}
+---@type table<string, SBJ__LandBasedPlatformContext>
+saveData.t.air.landBased.AEW = {}
+---@type table<string, SBJ__LandBasedPlatformContext>
+saveData.t.air.landBased.AC = {}
 
 ---@type table<string, SBJ__GPSJammerDescriptor>
 saveData.t.GPSJamming.jammers = {

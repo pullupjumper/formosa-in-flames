@@ -32,37 +32,6 @@ local function initCommsJammers(config, saveData, side)
   end
 end
 
----Initialize aircraft units for Taiwan air operations
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
-local function initAC(config, saveData)
-  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
-
-  for _, unit in ipairs(units) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
-
-    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E2K then
-      saveData.t.air.landBased.AEW[actualUnit.guid] = {
-        guid = actualUnit.guid,
-        OODA = actualUnit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
-      }
-    elseif actualUnit and actualUnit.type == 'Aircraft' then
-      saveData.t.air.landBased.AC[actualUnit.guid] = {
-        guid = actualUnit.guid,
-        OODA = actualUnit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
-      }
-    end
-  end
-end
-
 ---Initialize SIGINT (Signals Intelligence) units for US and China
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
@@ -319,7 +288,7 @@ local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
   ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
-  initAC(config, saveData)
+  UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
   initTargetlist(saveData)
   initRunways(saveData)
 
