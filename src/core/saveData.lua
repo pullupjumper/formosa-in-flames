@@ -83,9 +83,8 @@ saveData.c.IADS.C2 = {
 
 -- Comms jamming
 saveData.c.commsJamming.isActivated = true
-saveData.c.commsJamming.jammers = {
-  -- { guid = '' },
-}
+---@type table<string, SBJ__AircraftContext>
+saveData.c.commsJamming.jammers = {}
 
 -- GPS Jamming
 saveData.c.GPSJamming.isActivated = true

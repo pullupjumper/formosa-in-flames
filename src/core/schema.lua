@@ -15,6 +15,11 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@return table<number, any> @ Returns all the flights on the mission. Currently only returns the first flight, will be fixed in a upcoming release.
 function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
+---@class CMO__OODA:table
+---@field evasion number @The evasion of the unit
+---@field targeting number @The targeting of the unit
+---@field detection number @The detection of the unit
+
 ---@class CMO__FlightPlanOptions:table
 ---@field DATEONTARGET string @ The mission time on target day, YYYY/MM/DD
 ---@field TIMEONTARGET string @ The mission time on target, HH:MM:SS
@@ -114,8 +119,8 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field msg string
 ---@field guid string
 ---@field areas table<number, string[]>
----@field SAM table
----@field radar? table
+---@field SAM table<string, SBJ__RadarContext>
+---@field radar? table<string, SBJ__RadarContext>
 
 ---@class SBJ__AttackContacts_Params:table
 ---@field contacts table<integer, string> -- A table of contact GUIDs to attack
@@ -550,3 +555,11 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@class SBJ__LandBasedPlatformContext:table
 ---@field AC table<string, SBJ__AircraftContext> Aircraft context data structure
 ---@field AEW table<string, SBJ__AircraftContext> AEW aircraft context data structure
+
+---@class SBJ__RadarContext:table
+---@field name string Radar unit name
+---@field guid string Radar unit GUID
+---@field OODA CMO__OODA Radar OODA data
+---@field currOODA CMO__OODA Current OODA
+---@field isOutOfComms boolean Whether the radar is out of comms
+---@field outofcomms number Radar out of comms threshold

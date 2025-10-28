@@ -6,31 +6,7 @@ local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
 local IADS = require("src.modules.IADS")
-
----Initialize communications jammers for the specified side
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param side string The side name (e.g., 'China')
-local function initCommsJammers(config, saveData, side)
-  local units = GameApi.VP_GetSide({ side = side }):unitsBy(config.unitType.AIRCRAFT)
-
-  for _, unit in ipairs(units) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
-
-    if actualUnit and (actualUnit.dbid == config.platform.Y9 or
-          actualUnit.dbid == config.platform.J15D or
-          actualUnit.dbid == config.platform.J16D) then
-      saveData.c.commsJamming.jammers[actualUnit.guid] = {
-        guid = actualUnit.guid,
-        OODA = actualUnit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
-      }
-    end
-  end
-end
+local CommsJamming = require("src.modules.EW.commsJamming")
 
 ---Initialize SIGINT (Signals Intelligence) units for US and China
 ---@param config SBJ__CONFIG
@@ -301,7 +277,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.commsJamming.isActivated then
-    initCommsJammers(config, saveData, 'China')
+    CommsJamming.initCommsJammersContext(config, saveData, 'China')
   end
 
   if saveData.u.SIGINT.isActivated then
