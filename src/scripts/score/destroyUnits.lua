@@ -10,7 +10,7 @@ local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 ---@type CMO__SideUnit[]
 local filteredUnits = GameApi.VP_GetSide({ side = 'China' })
-    :unitsBy(config.unitType.FACILITY, tostring(config.fixedFacilityCategory.MOBILE_VEHICLE))
+    :unitsBy(config.unitType.FACILITY, config.fixedFacilityCategory.MOBILE_VEHICLE)
 
 if saveData == nil then
   Logger.error('saveData is nil')
@@ -130,14 +130,14 @@ if unit then
         unit.dbid == config.platform.S300 or
         unit.dbid == config.platform.S400 or
         unit.dbid == config.platform.HQ12 then
-      IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, 'SAM', unit)
       IADS.activateNearestRadar(
         config,
         filteredUnits,
         unit
       )
     elseif unit.dbid == config.platform.JY26 or unit.dbid == config.platform.YLC8B then
-      IADS.removeDestroyedUnitDataFromIADS(saveData, 'China', 'C2', 'radar', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, 'radar', unit)
       IADS.activateNearestRadar(
         config,
         filteredUnits,
@@ -152,7 +152,7 @@ if unit then
             "Destruction of civilian facilities"
           )
         elseif unit.dbid == DBID and saveData.c.IADS.C2[unit.guid] then
-          IADS.processC2Disruption(saveData, 'China', unit)
+          IADS.processC2Disruption(saveData.c.IADS, unit)
         end
       end
     end

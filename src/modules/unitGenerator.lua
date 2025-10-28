@@ -30,17 +30,6 @@ local UnitGenerator = {}
 ---@field sideName string Side name (e.g., 'China', 'Taiwan')
 ---@field unitTypes UnitGenerator_ShipFormationSpec[] Array of ship configurations to create
 
-
----@class UnitGenerator__RandomUnitsDescriptor:table
----@field centerPoint {lat:number, lon:number}
----@field randomRadius number
----@field autodetectable boolean
----@field unitname string
----@field sideName string
----@field unitType string
----@field count number
----@field dbids number[]
-
 ---@alias UnitGenerator_UnitType
 ---| '"type075"'
 ---| '"type071"'
@@ -67,11 +56,6 @@ local FORMATION = {
     MEDIUM = 4.5,
     FAR = 20
   }
-}
-
-local UNIT_CREATION = {
-  MAX_ATTEMPTS = 50,
-  RANDOM_TEXT_LENGTH = 2
 }
 
 -- ============================================================================
@@ -106,28 +90,6 @@ local function cleanupExistingGroup(groupName, sideName)
   end
   return true
 end
-
----Attempt to create a single unit (with retry mechanism)
----@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
----@param maxAttempts number|nil Maximum number of attempts
----@return CMO__Unit|nil Created unit
-local function tryCreateUnit(unitDescriptor, maxAttempts)
-  maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
-
-  for attempt = 1, maxAttempts do
-    local unit = GameApi.ScenEdit_AddUnit(unitDescriptor)
-    if unit then
-      return unit
-    end
-
-    if attempt == maxAttempts then
-      Logger.error(string.format("Failed to create unit after %d attempts", maxAttempts))
-    end
-  end
-
-  return nil
-end
-
 
 -- ============================================================================
 -- Unit management functions - Handle unit creation and embarking
@@ -447,42 +409,6 @@ local function getCSGShipConfiguration(csgDescriptor)
   }
 end
 
----Create units at random positions
----@param descriptor UnitGenerator__RandomUnitsDescriptor Configuration parameters
----@return CMO__Unit|CMO__Unit[] Created units
-local function createRandomUnits(descriptor)
-  local units = {}
-
-  for i = 1, descriptor.count do
-    local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
-    local point = GameUtils.circularRandomPosition(
-      descriptor.centerPoint.lat,
-      descriptor.centerPoint.lon,
-      descriptor.randomRadius
-    )
-
-    local unitDescriptor = {
-      type = descriptor.unitType,
-      dbid = dbid,
-      side = descriptor.sideName,
-      Lat = point.latitude,
-      Lon = point.longitude,
-      autodetectable = descriptor.autodetectable,
-      unitname = descriptor.unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH),
-    }
-
-    local unit = tryCreateUnit(unitDescriptor)
-    if unit then
-      table.insert(units, unit)
-      if descriptor.count == 1 then
-        return unit
-      end
-    end
-  end
-
-  return units
-end
-
 ---Create formation ships
 ---@param formationConfig UnitGenerator_FormationConfig Formation configuration
 ---@return boolean Whether successful
@@ -517,7 +443,7 @@ local function createShipFormation(formationConfig)
       unitname = shipConfig.unitname,
     }
 
-    local unit = tryCreateUnit(unitDescriptor)
+    local unit = GameUtils.tryCreateUnit(unitDescriptor)
     if unit then
       table.insert(createdUnits, unit)
 
@@ -550,61 +476,6 @@ end
 -- ============================================================================
 -- Main functionality functions - Refactored version
 -- ============================================================================
-
----Remove C2 facilities
----@param config SBJ__CONFIG Configuration object
----@param IADSConfig SBJ__IADSConfig
----@return boolean Whether successful
-function UnitGenerator.removeC2Facilities(config, IADSConfig)
-  local units = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
-  local removedCount = 0
-
-  if not units then
-    return false
-  end
-
-  for _, u in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(u.guid)
-    if unit then
-      for _, DBID in ipairs(IADSConfig.C2FacilityDBIDs) do
-        if unit.dbid == DBID then
-          GameApi.ScenEdit_DeleteUnit({ side = 'China', guid = unit.guid })
-          removedCount = removedCount + 1
-          break
-        end
-      end
-    end
-  end
-
-  Logger.log(string.format("Removed %d C2 facilities", removedCount))
-  return true
-end
-
----Add C2 facilities
----@param IADSConfig SBJ__IADSConfig Configuration object
----@return boolean Whether successful
-function UnitGenerator.addC2Facilities(IADSConfig)
-  for _, setting in ipairs(IADSConfig.C2Settings) do
-    local units = createRandomUnits({
-      centerPoint = setting.position,
-      dbids = IADSConfig.C2FacilityDBIDs,
-      count = 3,
-      randomRadius = IADSConfig.randomRadius,
-      sideName = 'China',
-      unitType = 'Facility',
-      unitname = "Suspected C2 Facility#",
-      autodetectable = true
-    })
-
-    if not units or (type(units) == "table" and #units == 0) then
-      Logger.error("Failed to create C2 facilities")
-      return false
-    end
-  end
-
-  Logger.log("Successfully added C2 facilities")
-  return true
-end
 
 ---Create SAG formations
 ---@param sagDescriptors table<string, SBJ__SAGDescriptor> Configuration object
@@ -746,7 +617,7 @@ function UnitGenerator.addSubmarines(config, side)
       GameApi.ScenEdit_DeleteUnit({ side = side, guid = actualUnit.guid })
     end
 
-    local addedUnit = createRandomUnits({
+    local addedUnit = GameUtils.createRandomUnits({
       centerPoint = unit.from.startingPoint,
       dbids = { config.platform.TYPE_093B },
       count = 1,
@@ -782,94 +653,6 @@ function UnitGenerator.addSubmarines(config, side)
   end
 
   Logger.log(string.format("Successfully added submarines for %s", side))
-  return true
-end
-
----Initialize C2 facilities
----@param config SBJ__CONFIG Configuration object
----@param IADSConfig SBJ__IADSConfig
----@param saveData SBJ__SaveData Save data
----@return boolean Whether successful
-function UnitGenerator.initC2Facilities(config, IADSConfig, saveData)
-  local units = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
-  saveData.c.IADS.C2 = {}
-
-  if not units then
-    return false
-  end
-
-  for _, setting in ipairs(IADSConfig.C2Settings) do
-    local facilities = {}
-
-    for _, u in ipairs(units) do
-      local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
-      if actualUnit then
-        for _, area in ipairs(setting.areas) do
-          for _, DBID in ipairs(IADSConfig.C2FacilityDBIDs) do
-            if actualUnit.dbid == DBID and actualUnit:inArea(area) then
-              table.insert(facilities, actualUnit)
-              break
-            end
-          end
-        end
-      end
-    end
-
-    if #facilities > 0 then
-      local randomIdx = math.random(#facilities)
-      saveData.c.IADS.C2[facilities[randomIdx].guid] = {
-        name = facilities[randomIdx].name .. '/' .. setting.areaName,
-        msg = 'Radio source, ' .. facilities[randomIdx].name,
-        guid = facilities[randomIdx].guid,
-        areas = setting.areas,
-        SAM = {},
-        radar = {}
-      }
-    end
-  end
-
-  -- Initialize SAM and radar systems
-  for _, unit in ipairs(units) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
-
-    for c2Guid, item in pairs(saveData.c.IADS.C2) do
-      for _, area in ipairs(item.areas) do
-        if actualUnit and actualUnit:inArea(area) then
-          -- SAM systems
-          if (actualUnit.dbid == config.platform.HQ22 or
-                actualUnit.dbid == config.platform.S300 or
-                actualUnit.dbid == config.platform.S400 or
-                actualUnit.dbid == config.platform.HQ12) and
-              not string.find(actualUnit.name, 'DECOY') then
-            saveData.c.IADS.C2[c2Guid].SAM[actualUnit.guid] = {
-              name = actualUnit.name,
-              guid = actualUnit.guid,
-              OODA = actualUnit.OODA,
-              currOODA = actualUnit.OODA,
-              isOutOfComms = false,
-              outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
-            }
-          end
-
-          -- Radar systems
-          if actualUnit.dbid == config.platform.JY26 or actualUnit.dbid == config.platform.YLC8B then
-            saveData.c.IADS.C2[c2Guid].radar[actualUnit.guid] = {
-              name = actualUnit.name,
-              guid = actualUnit.guid,
-              OODA = actualUnit.OODA,
-              currOODA = actualUnit.OODA,
-              isOutOfComms = false,
-              outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
-            }
-          end
-        end
-      end
-    end
-  end
-
-  Logger.log("Successfully initialized C2 facilities")
   return true
 end
 

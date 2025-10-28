@@ -1,8 +1,8 @@
-local UnitGenerator = require('src.modules.unitGenerator')
 local config = require('src.core.constants')
 local Logger = require("src.utils.logger")
 local gKH = require('src.core.gKH_State_Standalone')
-
+local IADS = require("src.modules.IADS")
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if not saveData then
@@ -10,11 +10,8 @@ if not saveData then
   return
 end
 
--- Use the new unitGenerator API
-UnitGenerator.removeC2Facilities(config, config.c.IADS)
-UnitGenerator.addC2Facilities(config.c.IADS)
-
--- Use the new initC2Facilities function
-UnitGenerator.initC2Facilities(config, config.c.IADS, saveData)
+IADS.removeC2Facilities(config, config.c.IADS)
+IADS.addC2Facilities(config.c.IADS)
+IADS.initC2FacilitiesContext(config, config.c.IADS, saveData.c.IADS)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

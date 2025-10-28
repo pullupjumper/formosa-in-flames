@@ -519,3 +519,22 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field C2FacilityDBIDs number[] Database IDs for C2 facility types
 ---@field randomRadius number Random deployment radius (nautical miles)
 ---@field C2Settings SBJ__C2Descriptor[] C2 node deployment descriptors
+
+
+
+---Random units descriptor - Configuration for creating multiple units at random positions
+---@class SBJ__RandomUnitsDescriptor:table
+---@field centerPoint {lat:number, lon:number} Center point for random positioning
+---@field randomRadius number Maximum radius from center point (nautical miles)
+---@field autodetectable boolean Whether units are automatically detectable
+---@field unitname string Base name for created units (random suffix will be added)
+---@field sideName string Side name (e.g., 'China', 'Taiwan', 'US')
+---@field unitType string Unit type (e.g., 'Facility', 'Ship', 'Submarine', 'Aircraft')
+---@field count number Number of units to create
+---@field dbids number[] Array of database IDs to randomly select from
+
+---@class SBJ__IADSContext:table
+---@field C2? table<string, SBJ__C2Context> C2 node deployment descriptors
+---@field ROCC? table<string, SBJ__C2Context> ROCC deployment descriptors
+---@field TAAOC? table<string, SBJ__C2Context> TAAOC deployment descriptors
+---@field isActivated boolean Whether IADS is activated

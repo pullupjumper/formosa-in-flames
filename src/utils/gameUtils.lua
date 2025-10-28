@@ -3,6 +3,15 @@ local Utils = require("src.utils.utils")
 
 local GameUtils = {}
 
+-- ============================================================================
+-- Constants definition
+-- ============================================================================
+
+local UNIT_CREATION = {
+  MAX_ATTEMPTS = 50,
+  RANDOM_TEXT_LENGTH = 2
+}
+
 ---@param xLatitude number
 ---@param xLongitude number
 ---@param maxRadius number
@@ -295,6 +304,63 @@ function GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt, m
     print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. name)
     return nil, nil
   end
+end
+
+---Attempt to create a single unit (with retry mechanism)
+---@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
+---@param maxAttempts number|nil Maximum number of attempts
+---@return CMO__Unit|nil Created unit
+function GameUtils.tryCreateUnit(unitDescriptor, maxAttempts)
+  maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
+
+  for attempt = 1, maxAttempts do
+    local unit = GameApi.ScenEdit_AddUnit(unitDescriptor)
+    if unit then
+      return unit
+    end
+
+    if attempt == maxAttempts then
+      print(string.format("Failed to create unit after %d attempts", maxAttempts))
+    end
+  end
+
+  return nil
+end
+
+---Create units at random positions
+---@param descriptor SBJ__RandomUnitsDescriptor Configuration parameters
+---@return CMO__Unit|CMO__Unit[] Created units
+function GameUtils.createRandomUnits(descriptor)
+  local units = {}
+
+  for i = 1, descriptor.count do
+    local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
+    local point = GameUtils.circularRandomPosition(
+      descriptor.centerPoint.lat,
+      descriptor.centerPoint.lon,
+      descriptor.randomRadius
+    )
+
+    local unitDescriptor = {
+      type = descriptor.unitType,
+      dbid = dbid,
+      side = descriptor.sideName,
+      Lat = point.latitude,
+      Lon = point.longitude,
+      autodetectable = descriptor.autodetectable,
+      unitname = descriptor.unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH),
+    }
+
+    local unit = GameUtils.tryCreateUnit(unitDescriptor)
+    if unit then
+      table.insert(units, unit)
+      if descriptor.count == 1 then
+        return unit
+      end
+    end
+  end
+
+  return units
 end
 
 return GameUtils

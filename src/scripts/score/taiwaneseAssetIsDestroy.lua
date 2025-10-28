@@ -38,13 +38,13 @@ if unit then
         unit.dbid == config.platform.TPS43F or
         unit.dbid == config.platform.HR3000 or
         unit.dbid == config.platform.GE592 then
-      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'ROCC', 'radar', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, 'radar', unit)
     elseif unit.dbid == config.platform.CUSTOMED_TK3 or unit.dbid == config.platform.PAC3 then
-      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'ROCC', 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, 'SAM', unit)
     elseif unit.dbid == config.platform.TC2 or unit.dbid == config.platform.SKY_GUARD then
-      IADS.removeDestroyedUnitDataFromIADS(saveData, 'Taiwan', 'TAAOC', 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.TAAOC, 'SAM', unit)
     elseif unit.dbid == config.platform.C2 or unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
-      IADS.processC2Disruption(saveData, 'Taiwan', unit)
+      IADS.processC2Disruption(saveData.t.IADS, unit)
     elseif unit.dbid == config.platform.GPS_JAMMER then
       GPSJamming.removeJammingZoneByName(saveData.t.GPSJamming.jammers, 'Taiwan', unit.name)
     end

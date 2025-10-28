@@ -30,6 +30,7 @@ saveData.c.recon = {}
 saveData.c.GPSJamming = {}
 saveData.c.commsJamming = {}
 saveData.c.repairRunway = {}
+---@type SBJ__IADSContext
 saveData.c.IADS = {}
 saveData.c.SIGINT = {}
 saveData.t = {}
@@ -43,6 +44,7 @@ saveData.t.ground.srbm = {}
 ---@type SBJ__WeaponSystemContext
 saveData.t.ground.ascm = {}
 saveData.t.repairRunway = {}
+---@type SBJ__IADSContext
 saveData.t.IADS = {}
 saveData.t.air = {}
 saveData.t.air.landBased = {}
@@ -819,6 +821,7 @@ saveData.t.repairRunway.runways = {
 
 -- IADS
 saveData.t.IADS.isActivated = true
+---@type table<string, SBJ__C2Context>
 saveData.t.IADS.ROCC = {
   ['IC8B0X-0HNC3OB4KJKIF'] = {
     name = 'ROCC/North',
@@ -845,6 +848,7 @@ saveData.t.IADS.ROCC = {
     radar = {}
   },
 }
+---@type table<string, SBJ__C2Context>
 saveData.t.IADS.TAAOC = {
   ['IC8B0X-0HN41D1QKTVU7'] = {
     name = 'TAAOC/3rd OPAREA',

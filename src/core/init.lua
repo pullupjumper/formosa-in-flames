@@ -5,74 +5,7 @@ local config = require("src.core.constants")
 local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
-
----Initialize Command and Control systems for Taiwan IADS
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
-local function initC2(config, saveData)
-  local units = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(config.unitType.FACILITY)
-
-  for _, unit in ipairs(units) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
-
-    for _, item in pairs(saveData.t.IADS.ROCC) do
-      for _, area in ipairs(item.areas) do
-        if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.CUSTOMED_TK3 or actualUnit.dbid == config.platform.PAC3 then
-            local data = {
-              name = actualUnit.name,
-              guid = actualUnit.guid,
-              OODA = actualUnit.OODA,
-              currOODA = actualUnit.OODA,
-              isOutOfComms = false,
-              outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
-            }
-
-            saveData.t.IADS.ROCC[item.guid].SAM[actualUnit.guid] = data
-          end
-
-          if actualUnit.dbid == config.platform.FPS117
-              or actualUnit.dbid == config.platform.TPS43F
-              or actualUnit.dbid == config.platform.HR3000
-              or actualUnit.dbid == config.platform.GE592 then
-            local data = {
-              name = actualUnit.name,
-              guid = actualUnit.guid,
-              OODA = actualUnit.OODA,
-              currOODA = actualUnit.OODA,
-              isOutOfComms = false,
-              outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
-            }
-
-            saveData.t.IADS.ROCC[item.guid].radar[actualUnit.guid] = data
-          end
-        end
-      end
-    end
-
-    for _, item in pairs(saveData.t.IADS.TAAOC) do
-      for _, area in ipairs(item.areas) do
-        if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.TC2 or actualUnit.dbid == config.platform.SKY_GUARD then
-            local data = {
-              name = actualUnit.name,
-              guid = actualUnit.guid,
-              OODA = actualUnit.OODA,
-              currOODA = actualUnit.OODA,
-              isOutOfComms = false,
-              outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
-            }
-
-            saveData.t.IADS.TAAOC[item.guid].SAM[actualUnit.guid] = data
-          end
-        end
-      end
-    end
-  end
-end
+local IADS = require("src.modules.IADS")
 
 ---Initialize communications jammers for the specified side
 ---@param config SBJ__CONFIG
@@ -381,7 +314,7 @@ end
 if config.isSaved then
   gKH.State.SaveTableToKey(saveData, "SaveData")
 end
-
+---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
@@ -391,11 +324,11 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initRunways(saveData)
 
   if saveData.t.IADS.isActivated then
-    initC2(config, saveData)
+    IADS.initC2Contexts(config, saveData.t.IADS)
   end
 
   if saveData.c.IADS.isActivated then
-    UnitGenerator.initC2Facilities(config, config.c.IADS, saveData)
+    IADS.initC2FacilitiesContext(config, config.c.IADS, saveData.c.IADS)
   end
 
   if saveData.c.commsJamming.isActivated then
