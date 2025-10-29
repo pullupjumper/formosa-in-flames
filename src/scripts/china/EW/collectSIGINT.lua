@@ -11,12 +11,12 @@ if saveData == nil then
 end
 
 if saveData.u.SIGINT.isActivated then
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.srbm.firingUnits, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.glcm.firingUnits, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.mlrs.firingUnits, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.ground.ascm.firingUnits, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.IADS.ROCC, true)
-  SIGINT.handleSIGINT(config, saveData, 'China', saveData.t.IADS.TAAOC, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.ground.srbm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.ground.glcm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.ground.mlrs.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.ground.ascm.firingUnits, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.IADS.ROCC, true)
+  SIGINT.handleSIGINT(config, saveData.c.SIGINT, 'China', saveData.t.IADS.TAAOC, true)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

@@ -32,6 +32,7 @@ saveData.c.commsJamming = {}
 saveData.c.repairRunway = {}
 ---@type SBJ__IADSContext
 saveData.c.IADS = {}
+---@type SBJ__SIGINTContext
 saveData.c.SIGINT = {}
 saveData.t = {}
 saveData.t.ground = {}
@@ -51,35 +52,23 @@ saveData.t.air = {}
 saveData.t.air.landBased = {}
 saveData.t.GPSJamming = {}
 saveData.u = {}
+---@type SBJ__SIGINTContext
 saveData.u.SIGINT = {}
 saveData.s = {}
 
 -- SIGINT
 saveData.c.SIGINT.isActivated = true
+saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
+---@type table<string, SBJ__AircraftContext>
 saveData.c.SIGINT.RA = {}
-saveData.c.SIGINT.transmissions = {
-  -- [''] = {
-  --     name = '',
-  --     latitude = 0,
-  --     longitude = 0,
-  --     contacts = { { guid = '' } }
-  -- },
-}
+---@type table<string, SBJ__RadioTransmissionContext>
+saveData.c.SIGINT.transmissions = {}
 
 
 -- IADS
 saveData.c.IADS.isActivated = true
 ---@type table<string, SBJ__C2Context>
-saveData.c.IADS.C2 = {
-  -- ['IC8B0X-0HN84DHD12BBJ'] = {
-  --     name = '#A C2/IADS',
-  --     msg = 'Radio source, C2/IADS',
-  --     guid = 'IC8B0X-0HN84DHD12BBJ',
-  --     area = { 'RP-85130', 'RP-85131', 'RP-85132', 'RP-85133', },
-  --     radar = {},
-  --     SAM = {},
-  -- },
-}
+saveData.c.IADS.C2 = {}
 
 -- Comms jamming
 saveData.c.commsJamming.isActivated = true
@@ -908,15 +897,11 @@ saveData.t.GPSJamming.jammers = {
 
 -- SIGINT
 saveData.u.SIGINT.isActivated = true
+saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
+---@type table<string, SBJ__AircraftContext>
 saveData.u.SIGINT.RA = {}
-saveData.u.SIGINT.transmissions = {
-  -- [''] = {
-  --     name = '',
-  --     latitude = 0,
-  --     longitude = 0,
-  --     contacts = { { guid = '' } }
-  -- },
-}
+---@type table<string, SBJ__RadioTransmissionContext>
+saveData.u.SIGINT.transmissions = {}
 
 -- Dynamic Operations (unified reconnaissance schedule)
 saveData.c.dynamicOperations.enabled = true

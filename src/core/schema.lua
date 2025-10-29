@@ -424,6 +424,29 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field detectorId string|nil ID of detecting unit
 ---@field timestamp number detection timestamp
 
+---@class SBJ__SIGINTContext:table
+---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts
+---@field RA table<string, SBJ__AircraftContext> Recon aircraft context data structure
+---@field isActivated boolean Whether SIGINT is activated
+---@field maxCount number Maximum detection level
+
+---Radio transmission context data structure
+---Tracks and manages detected radio transmission sources with contextual information
+---@class SBJ__RadioTransmissionContext:table
+---@field name string Unit name of the transmission source
+---@field guid string Unit GUID of the transmission source
+---@field msg string Message content
+---@field type string Type of the transmission source
+---@field latitude number Latitude of the transmission source
+---@field longitude number Longitude of the transmission source
+---@field contacts table Contact list associated with this transmission
+---@field currentDetectionLevel number Current detection level (increases on detection, decreases when undetected, determines autodetectable threshold)
+---@field autodetectable boolean Whether the transmission can be automatically detected
+---@field firstDetected number Timestamp of first detection
+---@field lastDetected number Timestamp of last detection
+---@field detectionCount number Number of times this transmission has been detected
+---@field confidence number Confidence level/reliability of the detection
+
 ---Enhanced SIGINT display data configuration
 ---@class SBJ__SIGINTDisplayData:table
 ---@field R number|nil red value (default: 255)

@@ -40,15 +40,16 @@ local SIGINT_CONSTANTS = {
 -- ============================================================================
 
 local sideConfigCache = {}
-local detectionHistory = {}
 
 -- ============================================================================
 -- Utility Functions
 -- ============================================================================
 
----Get cached side configuration
----@param side string side name
----@return SBJ__SideConfig side configuration
+---Get or create cached side configuration
+---Returns side configuration with field identifier and enemy side mapping
+---Uses cache to avoid repeated creation of same configuration objects
+---@param side string side name ('China', 'US', or other)
+---@return SBJ__SideConfig side configuration with field, enemySide, and displayName
 local function getCachedSideConfig(side)
   if not sideConfigCache[side] then
     if side == 'China' then
@@ -99,10 +100,11 @@ function SIGINT.calculateDetectionProbability(distance, config)
   end
 end
 
----Calculate signal deviation distance
----@param baseDistance number base distance for calculation
----@param config SBJ__SIGINTConfig|nil detection configuration
----@return number deviation distance
+---Calculate signal deviation distance for SIGINT detection position randomization
+---Uses complex formula to simulate signal triangulation error based on distance
+---@param baseDistance number base distance between detector and target (nautical miles)
+---@param config SBJ__SIGINTConfig|nil detection configuration (optional overrides)
+---@return number deviation distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
   local constants = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
   local randomFactor = (config and config.randomFactor) or constants.RANDOM_FACTOR
@@ -142,11 +144,12 @@ function SIGINT.isPointInPolygon(point, polygon)
   return (crossings % 2 == 1)
 end
 
----Enhanced area checking
----@param side string side name
+---Check if point is within defined area using reference points
+---Converts reference point names to polygon coordinates and performs point-in-polygon test
+---@param side string side name (used to retrieve reference points)
 ---@param point CMO__Location|nil point to check
----@param area string[] reference point names array defining the area
----@return boolean whether point is in the area
+---@param area string[] array of reference point names defining the polygon boundary
+---@return boolean true if point is inside the area, false otherwise
 local function isInArea(side, point, area)
   if not point or not area then
     return false
@@ -176,11 +179,11 @@ end
 ---Check if unit is emitting signal with enhanced logic
 ---@param config SBJ__CONFIG configuration object
 ---@param unit CMO__Unit unit object
----@param unitData SBJ__FiringUnitContext unit data (only Battery units are processed for movement)
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context unit data (Battery units check movement, C2 units always emit)
 ---@param enemySide string enemy side name
 ---@return boolean whether unit is emitting signal
 ---@return string reason reason for emission status
-local function isUnitEmitting(config, unit, unitData, enemySide)
+local function isUnitEmitting(config, unit, unitCtx, enemySide)
   -- Check for specific platform types that always emit
   if unit.dbid == config.platform.C2 then
     return true, "Platform type 46 (always emitting)"
@@ -209,12 +212,12 @@ local function isUnitEmitting(config, unit, unitData, enemySide)
   end
 
   -- Check if leaving restricted launch area (only for Battery units)
-  if not unitData.OPAREA.RL[1].area or #unitData.OPAREA.RL[1].area == 0 then
+  if not unitCtx.OPAREA.RL[1].area or #unitCtx.OPAREA.RL[1].area == 0 then
     return false, "No RL area defined"
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitData.OPAREA.RL.area)
+  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.OPAREA.RL.area) and unit.speed > 0
 
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
@@ -223,25 +226,23 @@ end
 -- Detection Core Functions
 -- ============================================================================
 
----Enhanced SIGINT detection
----@param saveData SBJ__SaveData save data
----@param side string side name
----@param enemy_unit string|CMO__Unit enemy unit GUID or unit object
----@param notification string notification message
----@param isEmitting boolean whether emitting signal
----@param isShown boolean whether to show notification
----@param data SBJ__SIGINTDisplayData|nil display data configuration
----@param config SBJ__SIGINTConfig|nil detection configuration
----@return SBJ__SIGINTResult -- detection result
-local function getSIGINT(saveData, side, enemy_unit, notification, isEmitting, isShown, data, config)
-  local sideConfig = getCachedSideConfig(side)
-  local key = sideConfig.field
-
+---Perform SIGINT detection attempt for enemy unit
+---Checks all airborne reconnaissance aircraft in SIGINT context for detection probability
+---Returns randomized position if detected, zero position if not detected
+---@param sigintContext SBJ__SIGINTContext SIGINT context containing reconnaissance aircraft
+---@param enemyUnit string|CMO__Unit enemy unit GUID or unit object to detect
+---@param notification string notification message to display on map if detected
+---@param isEmitting boolean whether target unit is currently emitting signals
+---@param isShown boolean whether to show visual notification on map
+---@param data SBJ__SIGINTDisplayData|nil display configuration (colors, lifetime, font size)
+---@param config SBJ__SIGINTConfig|nil detection configuration (optional overrides for thresholds)
+---@return SBJ__SIGINTResult detection result with position, confidence, and metadata
+local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
   -- Get enemy unit
-  local enemyUnit
-  if type(enemy_unit) == "string" then
-    enemyUnit = GameApi.ScenEdit_GetUnit(enemy_unit)
-    if not enemyUnit then
+  local enemy
+  if type(enemyUnit) == "string" then
+    enemy = GameApi.ScenEdit_GetUnit(enemyUnit)
+    if not enemy then
       return {
         longitude = 0,
         latitude = 0,
@@ -251,7 +252,7 @@ local function getSIGINT(saveData, side, enemy_unit, notification, isEmitting, i
       }
     end
   else
-    enemyUnit = enemy_unit
+    enemy = enemyUnit
   end
 
   -- Setup display configuration
@@ -266,20 +267,20 @@ local function getSIGINT(saveData, side, enemy_unit, notification, isEmitting, i
   }
 
   -- Detection logic
-  for elint_guid, value in pairs(saveData[key].SIGINT.RA) do
-    local elint_u = GameApi.ScenEdit_GetUnit(elint_guid)
-    if not elint_u or elint_u.condition ~= 'Airborne' then
+  for _, ctx in pairs(sigintContext.RA) do
+    local actualReconAC = GameApi.ScenEdit_GetUnit(ctx.guid)
+    if not actualReconAC or actualReconAC.condition ~= 'Airborne' then
       goto continue
     end
 
-    local distance = GameApi.Tool_Range(enemyUnit.guid, elint_guid)
+    local distance = GameApi.Tool_Range(enemy.guid, ctx.guid)
     local detectionProbability = SIGINT.calculateDetectionProbability(distance, config)
 
     if math.random() < detectionProbability and isEmitting then
       local deviation = calculateSignalDeviation(distance, config)
       local pos = GameApi.World_GetPointFromBearing({
-        latitude = enemyUnit.latitude,
-        longitude = enemyUnit.longitude,
+        latitude = enemy.latitude,
+        longitude = enemy.longitude,
         distance = deviation,
         bearing = math.random(0, 359)
       })
@@ -309,7 +310,7 @@ local function getSIGINT(saveData, side, enemy_unit, notification, isEmitting, i
         latitude = pos.latitude,
         isDetected = true,
         confidence = detectionProbability,
-        detectorId = elint_guid,
+        detectorId = ctx.guid,
         timestamp = GameApi.ScenEdit_CurrentTime()
       }
     end
@@ -330,48 +331,48 @@ end
 -- State Management Functions
 -- ============================================================================
 
----Update unit autodetectable state
----@param unit CMO__Unit unit object
----@param guid string unit GUID
----@param isAutodetectable boolean whether autodetectable
-local function updateAutodetectableState(unit, guid, isAutodetectable)
+---Update unit autodetectable state for SIGINT targets
+---If unit is in a group, updates all group members; otherwise updates individual unit
+---@param unit CMO__Unit unit object to update (can be group leader or individual unit)
+---@param isAutodetectable boolean target autodetectable state (true = can be auto-detected by enemy)
+local function updateAutodetectableState(unit, isAutodetectable)
   if unit.group then
     for _, v in ipairs(unit.group.unitlist) do
       GameApi.ScenEdit_SetUnit({ guid = v, autodetectable = isAutodetectable })
     end
   else
-    GameApi.ScenEdit_SetUnit({ guid = guid, autodetectable = isAutodetectable })
+    GameApi.ScenEdit_SetUnit({ guid = unit.guid, autodetectable = isAutodetectable })
   end
 end
 
----Enhanced transmission data update
----@param config SBJ__CONFIG configuration object
----@param saveData SBJ__SaveData save data
----@param field string side field identifier
----@param unitData SBJ__FiringUnitContext|SBJ__C2Context unit data
----@param result SBJ__SIGINTResult SIGINT detection result
----@param unit CMO__Unit unit object
-local function updateTransmissionData(config, saveData, field, unitData, result, unit)
-  local transmission = saveData[field].SIGINT.transmissions[unitData.guid]
+---Update or create transmission record after successful SIGINT detection
+---Creates new transmission record if first detection, otherwise updates existing record
+---Increments currentDetectionLevel and checks autodetectable threshold
+---@param sigintContext SBJ__SIGINTContext SIGINT context to update transmission records
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context unit context data with metadata
+---@param result SBJ__SIGINTResult detection result with position and confidence
+---@param unit CMO__Unit actual unit object for autodetectable state updates
+local function updateTransmissionData(sigintContext, unitCtx, result, unit)
+  local transmission = sigintContext.transmissions[unitCtx.guid]
 
   if not transmission then
-    local unitType = (string.find(unitData.name, 'ROCC') or string.find(unitData.name, 'TAAOC')) and 'C2' or 'mobile'
+    local unitType = (string.find(unitCtx.name, 'ROCC') or string.find(unitCtx.name, 'TAAOC')) and 'C2' or 'mobile'
     transmission = {
-      name = unitData.name,
-      guid = unitData.guid,
-      msg = unitData.msg,
+      name = unitCtx.name,
+      guid = unitCtx.guid,
+      msg = unitCtx.msg,
       type = unitType,
       latitude = result.latitude,
       longitude = result.longitude,
       contacts = {},
-      temp = 0,
+      currentDetectionLevel = 0,
       autodetectable = false,
       firstDetected = result.timestamp,
       lastDetected = result.timestamp,
       detectionCount = 0,
       confidence = result.confidence
     }
-    saveData[field].SIGINT.transmissions[unitData.guid] = transmission
+    sigintContext.transmissions[unitCtx.guid] = transmission
   end
 
   -- Update transmission data
@@ -380,36 +381,43 @@ local function updateTransmissionData(config, saveData, field, unitData, result,
   transmission.lastDetected = result.timestamp
   transmission.detectionCount = transmission.detectionCount + 1
   transmission.confidence = math.max(transmission.confidence, result.confidence)
-  transmission.temp = transmission.temp + 1
+  transmission.currentDetectionLevel = transmission.currentDetectionLevel + 1
+
+  if transmission.autodetectable then
+    updateAutodetectableState(unit, false)
+    transmission.autodetectable = false
+    Logger.log("updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to false")
+  end
 
   -- Check if should become autodetectable
-  local maxCount = config[field].SIGINT.maxCount
-  if transmission.temp > maxCount and not transmission.autodetectable then
-    updateAutodetectableState(unit, unitData.guid, true)
+  local maxCount = sigintContext.maxCount
+  if transmission.currentDetectionLevel > maxCount and not transmission.autodetectable then
+    updateAutodetectableState(unit, true)
     transmission.autodetectable = true
+    Logger.log("updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to true")
   end
 end
 
----Enhanced undetected case handling
----@param config SBJ__CONFIG configuration object
----@param saveData SBJ__SaveData save data
----@param field string side field identifier
----@param unit CMO__Unit unit object
----@param unitData SBJ__FiringUnitContext|SBJ__C2Context unit data
-local function handleUndetected(config, saveData, field, unit, unitData)
-  local transmission = saveData[field].SIGINT.transmissions[unitData.guid]
+---Handle undetected case for SIGINT target
+---Decrements currentDetectionLevel when unit is not detected, simulating signal fade
+---Resets autodetectable state to false if currently autodetectable
+---@param sigintContext SBJ__SIGINTContext SIGINT context containing transmission records
+---@param unit CMO__Unit unit object that was not detected this cycle
+local function handleUndetected(sigintContext, unit)
+  local transmission = sigintContext.transmissions[unit.guid]
   if not transmission then
     return
   end
 
-  local maxCount = config[field].SIGINT.maxCount
-  if transmission.temp > maxCount - 1 then
-    transmission.temp = transmission.temp - 1
+  local maxCount = sigintContext.maxCount
+  if transmission.currentDetectionLevel > maxCount - 1 then
+    transmission.currentDetectionLevel = transmission.currentDetectionLevel - 1
   end
 
   if transmission.autodetectable then
-    updateAutodetectableState(unit, unitData.guid, false)
+    updateAutodetectableState(unit, false)
     transmission.autodetectable = false
+    Logger.log("handleUndetected: Updated autodetectable state for unit " .. unit.name .. " to false")
   end
 end
 
@@ -419,22 +427,22 @@ end
 
 ---Enhanced SIGINT detection handler
 ---@param config SBJ__CONFIG configuration object
----@param saveData SBJ__SaveData save data
----@param side string side name
----@param units SBJ__FiringUnitContext[]|SBJ__C2Context[] unit list (mobile missile launchers)
----@param isShown boolean whether to show notification
----@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration
+---@param sigintContext SBJ__SIGINTContext SIGINT context
+---@param sideName string side name (used to determine enemy side for area checks)
+---@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> unit contexts to monitor (firing units and C2 nodes)
+---@param isShown boolean whether to show detection notifications on map
+---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
 ---@return table<string, SBJ__SIGINTResult> detection results by unit GUID
-function SIGINT.handleSIGINT(config, saveData, side, units, isShown, sigintConfig)
-  local sideConfig = getCachedSideConfig(side)
-  local field, enemySide = sideConfig.field, sideConfig.enemySide
+function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
+  local sideConfig = getCachedSideConfig(sideName)
+  local enemySide = sideConfig.enemySide
   local results = {}
   local processedCount = 0
   local detectedCount = 0
 
-  for _, unitData in pairs(units) do
+  for _, unitCtx in pairs(unitContexts) do
     -- Get actual unit
-    local actualUnit = GameApi.ScenEdit_GetUnit(unitData.guid)
+    local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.guid)
     if not actualUnit then
       goto continue
     end
@@ -447,74 +455,65 @@ function SIGINT.handleSIGINT(config, saveData, side, units, isShown, sigintConfi
     processedCount = processedCount + 1
 
     -- Check if unit is emitting
-    local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitData, enemySide)
+    local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
 
     -- Perform SIGINT detection
-    local result = getSIGINT(saveData, side, unitData.guid, unitData.msg,
-      isEmitting, isShown, nil, sigintConfig)
-    results[unitData.guid] = result
+    local result = getSIGINT(sigintContext, unitCtx.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
+    results[unitCtx.guid] = result
 
     -- Update transmission data based on result
     if result.isDetected then
       detectedCount = detectedCount + 1
-      updateTransmissionData(config, saveData, field, unitData, result, actualUnit)
+      updateTransmissionData(sigintContext, unitCtx, result, actualUnit)
     else
-      handleUndetected(config, saveData, field, actualUnit, unitData)
+      handleUndetected(sigintContext, actualUnit)
     end
 
     ::continue::
   end
 
   Logger.log(string.format("SIGINT processing: %d/%d units processed, %d detections",
-    processedCount, Utils.getCount(units), detectedCount))
+    processedCount, Utils.getCount(unitContexts), detectedCount))
 
   return results
 end
 
----Clear detection cache
-function SIGINT.clearCache()
-  sideConfigCache = {}
-  detectionHistory = {}
-end
+---Initialize reconnaissance aircraft contexts for SIGINT operations
+---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
+---@param config SBJ__CONFIG configuration object containing platform DBIDs
+---@param SIGINTContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
+---@param sideName string side name to scan for reconnaissance aircraft
+---@return number count number of reconnaissance aircraft initialized
+function SIGINT.initReconAircraftContexts(config, SIGINTContext, sideName)
+  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(config.unitType.AIRCRAFT)
 
----Get detection statistics
----@param saveData SBJ__SaveData save data
----@param side string side name
----@return table statistics detection statistics
-function SIGINT.getDetectionStatistics(saveData, side)
-  local sideConfig = getCachedSideConfig(side)
-  local transmissions = saveData[sideConfig.field].SIGINT.transmissions
+  if not filteredUnits then
+    Logger.warn(string.format("No aircraft units found for side '%s'", sideName))
+    return 0
+  end
 
-  local stats = {
-    totalTransmissions = 0,
-    autodetectableUnits = 0,
-    averageDetections = 0,
-    mostDetectedUnit = nil,
-    maxDetections = 0
-  }
+  local initializedCount = 0
+  for _, u in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-  local totalDetections = 0
-
-  for guid, transmission in pairs(transmissions) do
-    stats.totalTransmissions = stats.totalTransmissions + 1
-    totalDetections = totalDetections + (transmission.detectionCount or transmission.temp or 0)
-
-    if transmission.autodetectable then
-      stats.autodetectableUnits = stats.autodetectableUnits + 1
-    end
-
-    local detectionCount = transmission.detectionCount or transmission.temp or 0
-    if detectionCount > stats.maxDetections then
-      stats.maxDetections = detectionCount
-      stats.mostDetectedUnit = transmission.name
+    if unit and unit.type == 'Aircraft' and
+        (unit.dbid == config.platform.RC135V or unit.dbid == config.platform.Y9DZ) then
+      SIGINTContext.RA[unit.guid] = {
+        guid = unit.guid,
+        OODA = unit.OODA,
+        commsLevel = 40,
+        commsBase = 40,
+        commsThreshold = 30,
+        outofcomms = 0,
+      }
+      initializedCount = initializedCount + 1
     end
   end
 
-  if stats.totalTransmissions > 0 then
-    stats.averageDetections = totalDetections / stats.totalTransmissions
-  end
+  Logger.log(string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations",
+    initializedCount, sideName))
 
-  return stats
+  return initializedCount
 end
 
 return SIGINT

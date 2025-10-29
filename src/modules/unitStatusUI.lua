@@ -909,7 +909,7 @@ local function getHTMLTemplate()
                   <th>Last Detected</th>
                   <th class="text-right">Detection Count</th>
                   <th class="text-right">Confidence</th>
-                  <th class="text-right">Temp</th>
+                  <th class="text-right">Current Detection Level</th>
                 </tr>
               </thead>
               <tbody id="signal-tbody">
@@ -1186,8 +1186,8 @@ local function getHTMLTemplate()
           <td>${signal.firstDetected || 'N/A'}</td>
           <td>${signal.lastDetected || 'N/A'}</td>
           <td class="text-right">${signal.detectionCount || 0}</td>
-          <td class="text-right">${signal.confidence || 0}%%</td>
-          <td class="text-right">${signal.temp || 0}</td>
+          <td class="text-right">${signal.confidence * 100 || 0}%%</td>
+          <td class="text-right">${signal.currentDetectionLevel || 0}</td>
         `;
 
         tbody.appendChild(row);

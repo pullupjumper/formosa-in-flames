@@ -7,44 +7,45 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
 local IADS = require("src.modules.IADS")
 local CommsJamming = require("src.modules.EW.commsJamming")
+local SIGINT = require("src.modules.EW.sigint")
 
 ---Initialize SIGINT (Signals Intelligence) units for US and China
 ---@param config SBJ__CONFIG
 ---@param saveData SBJ__SaveData
-local function initSIGINT(config, saveData)
-  local units = GameApi.VP_GetSide({ side = 'US' }):unitsBy(config.unitType.AIRCRAFT)
-  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
+-- local function initSIGINT(config, saveData)
+--   local units = GameApi.VP_GetSide({ side = 'US' }):unitsBy(config.unitType.AIRCRAFT)
+--   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
 
-  for _, value in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(value.guid)
+--   for _, value in ipairs(units) do
+--     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC135V then
-      saveData.u.SIGINT.RA[unit.guid] = {
-        guid = unit.guid,
-        OODA = unit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
-      }
-    end
-  end
+--     if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC135V then
+--       saveData.u.SIGINT.RA[unit.guid] = {
+--         guid = unit.guid,
+--         OODA = unit.OODA,
+--         commsLevel = 40,
+--         commsBase = 40,
+--         commsThreshold = 30,
+--         outofcomms = 0,
+--       }
+--     end
+--   end
 
-  for _, value in ipairs(unitsFromChina) do
-    local unit = GameApi.ScenEdit_GetUnit(value.guid)
+--   for _, value in ipairs(unitsFromChina) do
+--     local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-    if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y9DZ then
-      saveData.c.SIGINT.RA[unit.guid] = {
-        guid = unit.guid,
-        OODA = unit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
-      }
-    end
-  end
-end
+--     if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y9DZ then
+--       saveData.c.SIGINT.RA[unit.guid] = {
+--         guid = unit.guid,
+--         OODA = unit.OODA,
+--         commsLevel = 40,
+--         commsBase = 40,
+--         commsThreshold = 30,
+--         outofcomms = 0,
+--       }
+--     end
+--   end
+-- end
 
 ---Initialize target list by scanning contacts and categorizing them
 ---@param saveData SBJ__SaveData
@@ -281,7 +282,8 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.u.SIGINT.isActivated then
-    initSIGINT(config, saveData)
+    SIGINT.initReconAircraftContexts(config, saveData.u.SIGINT, 'US')
+    SIGINT.initReconAircraftContexts(config, saveData.c.SIGINT, 'China')
   end
 
   if config.isDevMode then
