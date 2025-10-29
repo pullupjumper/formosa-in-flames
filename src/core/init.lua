@@ -9,44 +9,6 @@ local IADS = require("src.modules.IADS")
 local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
 
----Initialize SIGINT (Signals Intelligence) units for US and China
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
--- local function initSIGINT(config, saveData)
---   local units = GameApi.VP_GetSide({ side = 'US' }):unitsBy(config.unitType.AIRCRAFT)
---   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
-
---   for _, value in ipairs(units) do
---     local unit = GameApi.ScenEdit_GetUnit(value.guid)
-
---     if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.RC135V then
---       saveData.u.SIGINT.RA[unit.guid] = {
---         guid = unit.guid,
---         OODA = unit.OODA,
---         commsLevel = 40,
---         commsBase = 40,
---         commsThreshold = 30,
---         outofcomms = 0,
---       }
---     end
---   end
-
---   for _, value in ipairs(unitsFromChina) do
---     local unit = GameApi.ScenEdit_GetUnit(value.guid)
-
---     if unit and unit.type == 'Aircraft' and unit.dbid == config.platform.Y9DZ then
---       saveData.c.SIGINT.RA[unit.guid] = {
---         guid = unit.guid,
---         OODA = unit.OODA,
---         commsLevel = 40,
---         commsBase = 40,
---         commsThreshold = 30,
---         outofcomms = 0,
---       }
---     end
---   end
--- end
-
 ---Initialize target list by scanning contacts and categorizing them
 ---@param saveData SBJ__SaveData
 local function initTargetlist(saveData)
@@ -245,13 +207,13 @@ local function initRunways(saveData)
   for _, v in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(v.guid)
 
-    if unit and (unit.dbid == 55
-          or unit.dbid == 43
-          or unit.dbid == 757
-          or unit.dbid == 1422
-          or unit.dbid == 1424
-          or unit.dbid == 1423
-          or unit.dbid == 1421) then
+    if unit and (unit.dbid == 55 or
+          unit.dbid == 43 or
+          unit.dbid == 757 or
+          unit.dbid == 1422 or
+          unit.dbid == 1424 or
+          unit.dbid == 1423 or
+          unit.dbid == 1421) then
       table.insert(saveData.c.repairRunway.runways, { guid = unit.guid, startTime = nil })
     end
   end

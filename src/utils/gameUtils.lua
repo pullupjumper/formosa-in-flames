@@ -7,10 +7,50 @@ local GameUtils = {}
 -- Constants definition
 -- ============================================================================
 
+local sideConfigCache = {}
+
 local UNIT_CREATION = {
   MAX_ATTEMPTS = 50,
   RANDOM_TEXT_LENGTH = 2
 }
+
+-- ============================================================================
+-- Side Configuration Functions
+-- ============================================================================
+
+---Get or create cached side configuration
+---Returns side configuration with field identifier and enemy side mapping
+---Uses cache to avoid repeated creation of same configuration objects
+---@param sideName string side name ('China', 'US', or other)
+---@return SBJ__SideConfig side configuration with field, enemySide, and displayName
+function GameUtils.getCachedSideConfig(sideName)
+  if not sideConfigCache[sideName] then
+    if sideName == 'China' then
+      sideConfigCache[sideName] = {
+        field = 'c',
+        enemySide = 'Taiwan',
+        displayName = 'China'
+      }
+    elseif sideName == 'US' then
+      sideConfigCache[sideName] = {
+        field = 'u',
+        enemySide = 'China',
+        displayName = 'United States'
+      }
+    else
+      sideConfigCache[sideName] = {
+        field = 't',
+        enemySide = 'China',
+        displayName = sideName
+      }
+    end
+  end
+  return sideConfigCache[sideName]
+end
+
+-- ============================================================================
+-- Positioning Functions
+-- ============================================================================
 
 ---@param xLatitude number
 ---@param xLongitude number

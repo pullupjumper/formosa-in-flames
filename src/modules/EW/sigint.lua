@@ -1,4 +1,5 @@
 ﻿local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
@@ -33,47 +34,6 @@ local SIGINT_CONSTANTS = {
   MIN_POLYGON_POINTS = 3,
   DETECTION_SKIP_PROBABILITY = 0.3
 }
-
-
--- ============================================================================
--- Cache and State Management
--- ============================================================================
-
-local sideConfigCache = {}
-
--- ============================================================================
--- Utility Functions
--- ============================================================================
-
----Get or create cached side configuration
----Returns side configuration with field identifier and enemy side mapping
----Uses cache to avoid repeated creation of same configuration objects
----@param side string side name ('China', 'US', or other)
----@return SBJ__SideConfig side configuration with field, enemySide, and displayName
-local function getCachedSideConfig(side)
-  if not sideConfigCache[side] then
-    if side == 'China' then
-      sideConfigCache[side] = {
-        field = 'c',
-        enemySide = 'Taiwan',
-        displayName = 'China'
-      }
-    elseif side == 'US' then
-      sideConfigCache[side] = {
-        field = 'u',
-        enemySide = 'China',
-        displayName = 'United States'
-      }
-    else
-      sideConfigCache[side] = {
-        field = 'u',
-        enemySide = 'China',
-        displayName = side
-      }
-    end
-  end
-  return sideConfigCache[side]
-end
 
 -- ============================================================================
 -- Detection Algorithm Functions
@@ -434,7 +394,7 @@ end
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
 ---@return table<string, SBJ__SIGINTResult> detection results by unit GUID
 function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
-  local sideConfig = getCachedSideConfig(sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
   local results = {}
   local processedCount = 0

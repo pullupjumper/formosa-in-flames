@@ -1,11 +1,11 @@
 local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local gKH = require('src.core.gKH_State_Standalone')
 
----@class UnitStatusUI
 ---Unit status user interface module
 ---Provides HTML table display functionality for various military unit statuses
 ---This module creates interactive web-based dashboards for monitoring:
@@ -290,16 +290,13 @@ end
 ---Handles different weapon system types (SRBM, MLRS, GLCM, ASCM, MRBM)
 ---@param config SBJ__CONFIG Configuration table
 ---@param saveData SBJ__SaveData Saved game data
----@param side string Side name ('China' or 'Taiwan')
+---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string Weapon system type list
 ---@return string JSON formatted artillery battery status data
-local function createBatteryDataString(config, saveData, side, ...)
-  local key = 't'
+local function createBatteryDataString(config, saveData, sideName, ...)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local key = sideConfig.field
   local wpnSystems = { ... }
-
-  if side == 'China' then
-    key = 'c'
-  end
 
   local rows = {}
 
@@ -363,7 +360,7 @@ local function createBatteryDataString(config, saveData, side, ...)
           ammoSectionReloadTime = 0
         end
 
-        if side == 'China' then
+        if sideName == 'China' then
           table.insert(rows[bty.resupplyUnit], {
             name = name,
             type = wpnSystem,
@@ -397,14 +394,11 @@ end
 ---Extracts weapon information from base magazines
 ---Processes deployed aircraft configurations and loadouts
 ---@param config SBJ__CONFIG Configuration table
----@param side string Side name ('China' or 'Taiwan')
+---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string JSON formatted ammunition inventory data
-local function createMagazineDataString(config, side)
-  local key = 't'
-
-  if side == 'China' then
-    key = 'c'
-  end
+local function createMagazineDataString(config, sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local key = sideConfig.field
 
   local rows = {}
 
@@ -435,15 +429,12 @@ end
 ---Includes SAM and radar unit status, OODA loops, and communication status
 ---Handles different C2 node types (C2, ROCC, TAAOC)
 ---@param saveData SBJ__SaveData Saved game data
----@param side string Side name ('China' or 'Taiwan')
+---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string System type list
 ---@return string JSON formatted C2 status data
-local function createC2NodeDataString(saveData, side, ...)
-  local key = 't'
-
-  if side == 'China' then
-    key = 'c'
-  end
+local function createC2NodeDataString(saveData, sideName, ...)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local key = sideConfig.field
 
   local rows = {}
   local types = { ... }
@@ -499,14 +490,11 @@ end
 ---Processes signal intelligence data with timestamp formatting
 ---Converts detected transmission information to display format
 ---@param saveData SBJ__SaveData Saved game data
----@param side string Side name ('China' or 'Taiwan')
+---@param sideName string Side name ('China' or 'US')
 ---@return string JSON formatted signal data
-local function createSignalDataString(saveData, side)
-  local key = 'u'
-
-  if side == 'China' then
-    key = 'c'
-  end
+local function createSignalDataString(saveData, sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local key = sideConfig.field
 
   local rows = {}
   for _, data in pairs(saveData[key].SIGINT.transmissions) do
@@ -2939,7 +2927,8 @@ end
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string JSON formatted GPS jamming unit data
 local function createGPSJammingDataString(saveData, sideName)
-  local side = sideName == 'China' and 'c' or 't'
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local side = sideConfig.field
 
   local rows = {}
   for _, data in pairs(saveData[side].GPSJamming.jammers) do
@@ -2958,7 +2947,8 @@ end
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string JSON formatted deployed aircraft data with coordinates
 local function createDeployedAircraftDataString(config, sideName)
-  local side = sideName == 'China' and 'c' or 't'
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local side = sideConfig.field
   local rows = {}
 
   for _, data in pairs(config[side].air.landBased.deployedACs) do
@@ -2986,8 +2976,8 @@ end
 --- - Base weapon inventory
 --- - Landing unit counts (China only)
 ---@param config SBJ__CONFIG Configuration table
----@param side string Side name ('China' or 'Taiwan')
-function UnitStatusUI.createUI(config, side)
+---@param sideName string Side name ('China' or 'Taiwan')
+function UnitStatusUI.createUI(config, sideName)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
   if saveData == nil then
@@ -2995,11 +2985,11 @@ function UnitStatusUI.createUI(config, side)
     return
   end
 
-  if side == 'China' then
-    local signalDataString = createSignalDataString(saveData, side)
-    local batteryDataString = createBatteryDataString(config, saveData, side, 'srbm', 'mlrs', 'glcm', 'ascm', 'mrbm')
-    local magazineDataString = createMagazineDataString(config, side)
-    local c2NodeDataString = createC2NodeDataString(saveData, side, 'C2')
+  if sideName == 'China' then
+    local signalDataString = createSignalDataString(saveData, sideName)
+    local batteryDataString = createBatteryDataString(config, saveData, sideName, 'srbm', 'mlrs', 'glcm', 'ascm', 'mrbm')
+    local magazineDataString = createMagazineDataString(config, sideName)
+    local c2NodeDataString = createC2NodeDataString(saveData, sideName, 'C2')
     local landingUnitsString = UnitStatusUI.countUnitsInEachArea(config)
     landingUnitsString = gKH.json.stringify(landingUnitsString)
 
@@ -3015,10 +3005,10 @@ function UnitStatusUI.createUI(config, side)
     )
     local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
   else
-    local signalDataString = createSignalDataString(saveData, side)
-    local batteryDataString = createBatteryDataString(config, saveData, side, 'srbm', 'mlrs', 'glcm', 'ascm')
-    local magazineDataString = createMagazineDataString(config, side)
-    local c2NodeDataString = createC2NodeDataString(saveData, side, 'ROCC', 'TAAOC')
+    local signalDataString = createSignalDataString(saveData, 'US')
+    local batteryDataString = createBatteryDataString(config, saveData, sideName, 'srbm', 'mlrs', 'glcm', 'ascm')
+    local magazineDataString = createMagazineDataString(config, sideName)
+    local c2NodeDataString = createC2NodeDataString(saveData, sideName, 'ROCC', 'TAAOC')
 
     local HTMLTemplate = getHTMLTemplate()
     local msg = string.format(
@@ -3095,5 +3085,4 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   gKH.State.SaveTableToKey(saveData, "SaveData")
 end
 
----@return UnitStatusUI
 return UnitStatusUI
