@@ -372,6 +372,8 @@ end
 ---@return CMO__Unit|CMO__Unit[] Created units
 function GameUtils.createRandomUnits(descriptor)
   local units = {}
+  -- Default to true if not specified (backward compatible)
+  local useRandomSuffix = (descriptor.useRandomSuffix ~= false)
 
   for i = 1, descriptor.count do
     local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
@@ -381,6 +383,12 @@ function GameUtils.createRandomUnits(descriptor)
       descriptor.randomRadius
     )
 
+    -- Generate unit name with optional random suffix
+    local unitname = descriptor.unitname
+    if useRandomSuffix then
+      unitname = unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH)
+    end
+
     local unitDescriptor = {
       type = descriptor.unitType,
       dbid = dbid,
@@ -388,7 +396,7 @@ function GameUtils.createRandomUnits(descriptor)
       Lat = point.latitude,
       Lon = point.longitude,
       autodetectable = descriptor.autodetectable,
-      unitname = descriptor.unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH),
+      unitname = unitname,
     }
 
     local unit = GameUtils.tryCreateUnit(unitDescriptor)

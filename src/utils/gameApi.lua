@@ -8,16 +8,23 @@ local GameApi = {}
 
 ---comment
 ---@param guid string -- The GUID of the unit
+---@param sideName? string -- Optional side name to narrow down the search
 ---@return CMO__Unit|nil -- Returns the unit object associated with the given GUID or side
-function realApi.ScenEdit_GetUnit(guid)
-  local result = ScenEdit_GetUnit({ guid = guid })
+function realApi.ScenEdit_GetUnit(guid, sideName)
+  local result
 
-  if result == nil then
-    result = ScenEdit_GetUnit({ unitname = guid })
+  if sideName then
+    result = ScenEdit_GetUnit({ unitname = guid, side = sideName })
+  else
+    result = ScenEdit_GetUnit({ guid = guid })
   end
 
   if result == nil then
-    error("Unit not found with guid: " .. tostring(guid))
+    local errorMsg = "Unit not found with guid: " .. tostring(guid)
+    if sideName then
+      errorMsg = errorMsg .. ", side: " .. tostring(sideName)
+    end
+    error(errorMsg)
   end
 
   return result

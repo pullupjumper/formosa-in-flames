@@ -18,14 +18,14 @@ if saveData == nil then
 end
 
 if unit then
-  for _, q in ipairs(saveData.c.recon.queue) do
-    if q.unitGUID == unit.guid then
+  for _, entry in ipairs(saveData.c.recon.queue) do
+    if entry.unitGUID == unit.guid then
       local course = nil
       course = config.c.recon.courses.WZ8[1]
-      local wz8 = Recon.launchWZ8(unit, course)
+      local wz8 = Recon.launchWZ8(config, unit, course)
 
       if wz8 then
-        q.unitGUID = wz8.guid
+        entry.unitGUID = wz8.guid
       end
     end
   end

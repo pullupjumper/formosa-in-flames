@@ -1,10 +1,9 @@
 local Logger = require("src.utils.logger")
 
----@class DynamicOperationsUtils
 local DynamicOperationsUtils = {}
 
 ---Check if all operations in a reconnaissance entry are completed
----@param reconEntry table Reconnaissance schedule entry with operations array
+---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry with operations array
 ---@return boolean completed Whether all operations are completed
 function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
   if not reconEntry.operations then
@@ -37,9 +36,9 @@ function DynamicOperationsUtils.updateReconScheduleStatus(saveData)
 end
 
 ---Filter operations by type from reconnaissance schedule
----@param reconSchedule table[] Array of reconnaissance schedule entries
+---@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
 ---@param operationType string Operation type to filter ("air" or "ground")
----@return table[] filteredOperations Array of matching operations with their parent entries
+---@return table<number, {reconEntry: SBJ__ReconScheduleEntry, operation: SBJ__Operation}> filteredOperations Array of matching operations with their parent entries
 function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationType)
   local filteredOperations = {}
 
@@ -60,8 +59,8 @@ function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationT
 end
 
 ---Mark operation as executed and update parent reconnaissance entry status
----@param reconEntry table Parent reconnaissance entry
----@param operation table Operation that was executed
+---@param reconEntry SBJ__ReconScheduleEntry Parent reconnaissance entry
+---@param operation SBJ__Operation Operation that was executed
 ---@param success boolean Whether the operation was successful
 function DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, success)
   operation.executed = true

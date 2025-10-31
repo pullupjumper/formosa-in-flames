@@ -625,7 +625,8 @@ function UnitGenerator.addSubmarines(config, side)
       sideName = side,
       unitType = 'Submarine',
       unitname = unit.name,
-      autodetectable = false
+      autodetectable = false,
+      useRandomSuffix = false
     })
 
     if addedUnit then
@@ -802,7 +803,7 @@ function UnitGenerator.initAircraftContexts(config, context)
 
   if not filteredUnits then
     Logger.log("No Taiwan aircraft units found for initialization")
-    return true  -- Not an error condition, just no units to initialize
+    return true -- Not an error condition, just no units to initialize
   end
 
   local aewCount = 0

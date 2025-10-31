@@ -481,7 +481,8 @@ config.c.triggers = {
   amphibiousOps = { startTime = '2027-06-09 02:40:00' },
   -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
-  launchSLCM = { startTime = '2027-06-09 06:30:00' },
+  -- launchSLCM = { startTime = '2027-06-09 06:30:00' },
+  launchSLCM = { startTime = '2027-06-09 01:00:00' },
 }
 
 
@@ -929,6 +930,7 @@ config.c.recon.courses = {
     { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
   }
 }
+---@type table<string, SBJ__ReconUAVTemplate>
 config.c.recon.template = {
   BZK005_RECON_1 = {
     baseGUID = config.base.LONGTIAN_AAB,
@@ -2440,8 +2442,8 @@ config.c.subSurface.slcm.randomRadius = 20
 -- Runway repairment
 config.c.repairRunway.percentagePerHour = 3
 
-
-config.c.FSEMTemplate = {
+---@type table<string, SBJ__FSTTemplate[]>
+config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
       name = 'RADAR',
@@ -2712,7 +2714,7 @@ config.c.FSEMTemplate = {
     },
   },
 }
-
+---@type table<string, SBJ__PackageTemplate[]>
 config.c.packageTemplate = {
   STRIKE_AB_W_1 = {
     {

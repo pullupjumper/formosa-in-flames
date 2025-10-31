@@ -175,25 +175,22 @@ end
 ---Initialize runway repair targets for both Taiwan and China
 ---@param saveData SBJ__SaveData
 local function initRunways(saveData)
-  local targetlist = TargetingProcess.selectTargetsByQueryParams({
-    targetlist = saveData.c.targetlist,
-    queryParams = {
-      { baseName = 'Hualien AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Taitung/Jhihhang AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Ching Chuang Kang AB',          subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Chiayi AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Tainan AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Pingtung South AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Pingtung North AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Magong AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Hsinchu AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Jiashan AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Guiren AAB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Longtan AAB',                   subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Gangshan AB',                   subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Taipei Songshan Airport',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-      { baseName = 'Taoyuan International Airport', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-    },
+  local targetlist = TargetingProcess.filterTargetsByTypeAndBase(saveData.c.targetlist, {
+    { baseName = 'Hualien AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Taitung/Jhihhang AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Ching Chuang Kang AB',          subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Chiayi AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Tainan AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Pingtung South AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Pingtung North AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Magong AB',                     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Hsinchu AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Jiashan AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Guiren AAB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Longtan AAB',                   subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Gangshan AB',                   subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Taipei Songshan Airport',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+    { baseName = 'Taoyuan International Airport', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
   })
   for _, guid in ipairs(targetlist) do
     local contact = GameApi.ScenEdit_GetContact('China', guid)

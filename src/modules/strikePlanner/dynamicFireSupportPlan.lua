@@ -5,34 +5,34 @@ local Logger = require("src.utils.logger")
 local Launcher = require("src.modules.launcher")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
----@class DynamicFireSupportPlan
 local DynamicFireSupportPlan = {}
 
 -- Local helper functions (private)
 
 ---Process individual FST template, perform target filtering and BDA assessment
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param contacts CMO__Contact[]
----@param fstTemplate SBJ__FstTemplate
----@param isFirstWave boolean
----@return CMO__Contact[] strikeTargets
-local function processFST(config, saveData, contacts, fstTemplate, isFirstWave)
+--- Routes to dynamic or fixed target processing, applies filters and damage assessment
+---@param config SBJ__CONFIG Global configuration table
+---@param saveData SBJ__SaveData Persistent save data containing target list
+---@param contacts CMO__Contact[] Available sensor contacts from the game
+---@param FSTTemplate SBJ__FSTTemplate Fire Support Task template with target criteria
+---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
+---@return CMO__Contact[] # Array of strike targets that passed filtering and assessment
+local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
   -- Choose different assessment methods based on target type
   local strikeTargets = {}
 
-  if fstTemplate.target.filterNames then
+  if FSTTemplate.target.filterNames then
     -- For targets requiring dynamic filtering (e.g., radar, air defense systems), use passed contacts
-    Logger.log("Using dynamic target filtering, filters: " .. table.concat(fstTemplate.target.filterNames, ", "))
-    local shouldTrack = fstTemplate.target.filterNames[1] == "findNavalTargets" or
-        fstTemplate.target.filterNames[1] == "findRadioDirection"
+    Logger.log("Using dynamic target filtering, filters: " .. table.concat(FSTTemplate.target.filterNames, ", "))
+    local shouldTrack = FSTTemplate.target.filterNames[1] == "findNavalTargets" or
+        FSTTemplate.target.filterNames[1] == "findRadioDirection"
 
     local filterOpts = {
       contacts = contacts,
       task = {
         target = {
-          areas = fstTemplate.target.areas,
-          contactAge = fstTemplate.target.contactAge
+          areas = FSTTemplate.target.areas,
+          contactAge = FSTTemplate.target.contactAge
         }
       },
       config = config,
@@ -41,7 +41,7 @@ local function processFST(config, saveData, contacts, fstTemplate, isFirstWave)
     }
 
     -- Call corresponding function in TargetingProcess
-    for _, filterName in ipairs(fstTemplate.target.filterNames) do
+    for _, filterName in ipairs(FSTTemplate.target.filterNames) do
       local targetingFunction = TargetingProcess[filterName]
 
       if targetingFunction then
@@ -62,18 +62,18 @@ local function processFST(config, saveData, contacts, fstTemplate, isFirstWave)
     -- First filter targets that meet criteria
     local filteredTargets = {}
 
-    if fstTemplate.target.objs then
-      filteredTargets = TargetingProcess.selectTargetsByQueryParams({
-        targetlist = saveData.c.targetlist,
-        queryParams = fstTemplate.target.objs
-      })
+    if FSTTemplate.target.objs then
+      filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
+        saveData.c.targetlist,
+        FSTTemplate.target.objs
+      )
     end
 
     if filteredTargets and #filteredTargets > 0 then
       Logger.log("Filtered " .. #filteredTargets .. " candidate targets")
 
       -- Perform BDA assessment
-      local task = { target = { list = filteredTargets, contactAge = fstTemplate.target.contactAge } }
+      local task = { target = { list = filteredTargets, contactAge = FSTTemplate.target.contactAge } }
       strikeTargets = TargetingProcess.assessTargetsDamage(task, isFirstWave)
     end
   end
@@ -82,107 +82,111 @@ local function processFST(config, saveData, contacts, fstTemplate, isFirstWave)
 end
 
 ---Collect all currently assigned battery GUIDs from active FSEMs
----@param saveData SBJ__SaveData
----@return table<string, boolean> assignedBatteries Map of battery GUID to assignment status
-local function collectAssignedBatteries(saveData)
-  local assignedBatteries = {}
+--- Scans all active FSEMs to identify batteries already assigned to prevent double allocation
+---@param saveData SBJ__SaveData Persistent save data containing FSP (Fire Support Plan) information
+---@return table<string, boolean> # Map of battery GUID to true (assigned status)
+local function collectAssignedFiringUnits(saveData)
+  local assignedFiringUnits = {}
 
   if not saveData.c.ground.FSP then
-    return assignedBatteries
+    return assignedFiringUnits
   end
 
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     if not FSEM.isFinished and FSEM.isActivated and FSEM.FSTs then
       for _, FST in ipairs(FSEM.FSTs) do
         if not FST.isFinished and FST.firingUnits then
-          for _, battery in ipairs(FST.firingUnits) do
-            local batteryGuid = type(battery) == "table" and battery.guid or battery
-            assignedBatteries[batteryGuid] = true
+          for _, firingUnit in ipairs(FST.firingUnits) do
+            local firingUnitGUID = type(firingUnit) == "table" and firingUnit.guid or firingUnit
+            assignedFiringUnits[firingUnitGUID] = true
           end
         end
       end
     end
   end
 
-  return assignedBatteries
+  return assignedFiringUnits
 end
 
----Validate individual battery status and readiness
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param batteryGuid string
----@param wpnSystem string
----@return boolean isValid Whether battery is ready for use
----@return string|nil reason Reason if battery is not valid
-local function validateBatteryStatus(config, saveData, batteryGuid, wpnSystem)
+---Validate individual firing unit status and readiness
+--- Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
+---@param config SBJ__CONFIG Global configuration table with firing unit state definitions
+---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
+---@param firingUnitGUID string The GUID of the battery/firing unit to validate
+---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") used to locate battery data
+---@return boolean # true if firing unit is ready for use (exists, in HIDE state, has ammo)
+---@return string|nil # Error reason if firing unit is not valid, nil on success
+local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
   -- Check if unit exists in game
-  local actualUnit = GameApi.ScenEdit_GetUnit(batteryGuid)
+  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitGUID)
   if not actualUnit then
-    return false, "Cannot find actual unit: " .. batteryGuid
+    return false, "Cannot find actual unit: " .. firingUnitGUID
   end
 
   -- Get battery data from weapon system
   local weaponSystemLower = string.lower(wpnSystem)
-  local batteryData = saveData.c.ground[weaponSystemLower] and
+  local firingUnitCtx = saveData.c.ground[weaponSystemLower] and
       saveData.c.ground[weaponSystemLower].firingUnits and
-      saveData.c.ground[weaponSystemLower].firingUnits[batteryGuid]
+      saveData.c.ground[weaponSystemLower].firingUnits[firingUnitGUID]
 
-  if not batteryData then
-    return false, "Cannot find battery data: " .. batteryGuid
+  if not firingUnitCtx then
+    return false, "Cannot find battery data: " .. firingUnitGUID
   end
 
   -- Check operational status
-  local isInGoodState = batteryData.state == config.batteryState.HIDE
-  local hasAmmo = not Launcher.isLowAmmo(actualUnit, batteryData.ammoThreshold, batteryData.weaponDBID)
+  local isInGoodState = firingUnitCtx.state == config.batteryState.HIDE
+  local hasAmmo = not Launcher.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 
   if not isInGoodState or not hasAmmo then
-    return false, "Battery in poor condition or low ammunition"
+    return false, "Firing Unit in poor condition or low ammunition"
   end
 
   return true, nil
 end
 
 ---Check if firing units specified in template are available
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param templateBatteries SBJ__FiringUnitContext[]
----@param wpnSystem string
----@return SBJ__FiringUnitContext[] availableBatteries
-local function checkBatteryAvailability(config, saveData, templateBatteries, wpnSystem)
-  local availableBatteries = {}
-  local assignedBatteries = collectAssignedBatteries(saveData)
+--- Filters battery list to only include unassigned batteries with valid status and ammunition
+---@param config SBJ__CONFIG Global configuration table with battery state definitions
+---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
+---@param firingUnitCtxs SBJ__FiringUnitContext[] Array of battery contexts from FST template
+---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") for validation
+---@return SBJ__FiringUnitContext[] # Array of available batteries ready for assignment
+local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpnSystem)
+  local availableFiringUnitCtxs = {}
+  local assignedFiringUnitCtxs = collectAssignedFiringUnits(saveData)
 
   -- Check each specified battery in template
-  for _, templateBattery in ipairs(templateBatteries) do
-    local batteryGuid = templateBattery.guid
+  for _, firingUnitCtx in ipairs(firingUnitCtxs) do
+    local firingUnitGUID = firingUnitCtx.guid
 
     -- Check if already assigned to another FST
-    if assignedBatteries[batteryGuid] then
-      Logger.log("Battery " .. templateBattery.name .. " already assigned to other FST")
+    if assignedFiringUnitCtxs[firingUnitGUID] then
+      Logger.log(firingUnitCtx.name .. " already assigned to other FST")
     else
       -- Validate battery status and readiness
-      local isValid, reason = validateBatteryStatus(config, saveData, batteryGuid, wpnSystem)
+      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
 
       if isValid then
-        table.insert(availableBatteries, templateBattery)
+        table.insert(availableFiringUnitCtxs, firingUnitCtx)
       else
         if reason:find("Cannot find") then
           Logger.error(reason)
         else
-          Logger.log("Battery " .. templateBattery.name .. " - " .. reason)
+          Logger.log("Battery " .. firingUnitCtx.name .. " - " .. reason)
         end
       end
     end
   end
 
-  Logger.log("Check completed, available firing units: " .. #availableBatteries .. "/" .. #templateBatteries)
-  return availableBatteries
+  Logger.log("Check completed, available firing units: " .. #availableFiringUnitCtxs .. "/" .. #firingUnitCtxs)
+  return availableFiringUnitCtxs
 end
 
 ---Insert new FSEM into existing FSP sequence
----@param saveData SBJ__SaveData
----@param newFSEM SBJ__FireSupportExecutionMatrix
----@return boolean success
+--- Adds FSEM to the Fire Support Plan and registers it as a generated operation
+---@param saveData SBJ__SaveData Persistent save data with FSP structure
+---@param newFSEM SBJ__FireSupportExecutionMatrix Complete FSEM with FSTs ready for execution
+---@return boolean # true if FSEM was successfully inserted and registered
 local function insertFSEM(saveData, newFSEM)
   -- Add new FSEM to the end of FSP sequence
   saveData.c.ground.FSP[newFSEM.name] = newFSEM
@@ -195,69 +199,72 @@ local function insertFSEM(saveData, newFSEM)
 end
 
 ---Create actual FSEM from template and evaluation results
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param fsemTemplate SBJ__FsemTemplate
----@param evaluatedTargets table<string, CMO__Contact[]>
----@param reconType string Reconnaissance type from the recon entry
----@return boolean success
-local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedTargets, reconType)
+--- Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
+---@param config SBJ__CONFIG Global configuration table
+---@param saveData SBJ__SaveData Persistent save data for FSP insertion
+---@param FSEMTemplate SBJ__FSEMTemplate Template defining FSEM structure and FST configurations
+---@param evaluatedTargets table<string, CMO__Contact[]> Map of FST name to evaluated target arrays
+---@param reconType string Reconnaissance type identifier used for FSEM naming
+---@return boolean # true if FSEM was successfully created and inserted, false if no valid FSTs
+local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedTargets, reconType)
   -- Calculate FSEM execution time
   local currentTime = GameApi.ScenEdit_CurrentTime()
-  local fsemStartTime = currentTime
+  local FSEMStartTime = currentTime
 
   -- Generate unique FSEM name based on template name
-  local fsemName = DynamicOperationsUtils.generateUniqueGroundOperationName(
-    fsemTemplate.name:match("([^/]+)") or fsemTemplate.name, reconType, saveData
+  local FSEMName = DynamicOperationsUtils.generateUniqueGroundOperationName(
+    FSEMTemplate.name:match("([^/]+)") or FSEMTemplate.name, reconType, saveData
   )
 
   -- Create new FSEM structure
+  ---@type SBJ__FireSupportExecutionMatrix
   local newFSEM = {
-    name = fsemName,
+    name = FSEMName,
     isActivated = true,
     isFinished = false,
-    isFirstWave = fsemTemplate.isFirstWave,
+    isFirstWave = FSEMTemplate.isFirstWave,
     allFiringUnitsInPosition = false,
     FSTs = {}
   }
 
-  local fstIndex = 0
+  local FSTIndex = 0
 
   -- Create actual FST for each valid target FST
-  for _, fstTemplate in ipairs(fsemTemplate.FSTs) do
-    local targets = evaluatedTargets[fstTemplate.name]
+  for _, FSTTemplate in ipairs(FSEMTemplate.FSTs) do
+    local targets = evaluatedTargets[FSTTemplate.name]
 
-    if targets and #targets >= fstTemplate.target.minTargetCount then
-      fstIndex = fstIndex + 1
+    if targets and #targets >= FSTTemplate.target.minTargetCount then
+      FSTIndex = FSTIndex + 1
 
       -- Check if firing units specified in template are available
-      local availableFiringUnits = checkBatteryAvailability(
-        config, saveData, fstTemplate.firingUnits, fstTemplate.wpnSystem
+      local availableFiringUnits = checkFiringUnitAvailability(
+        config, saveData, FSTTemplate.firingUnits, FSTTemplate.wpnSystem
       )
 
       if availableFiringUnits and #availableFiringUnits > 0 then
-        local fst = {
-          name = fstTemplate.name,
-          wpnSystem = fstTemplate.wpnSystem,
+        ---@type SBJ__FireSupportTask
+        local FST = {
+          name = FSTTemplate.name,
+          wpnSystem = FSTTemplate.wpnSystem,
           firingUnits = availableFiringUnits,
-          startTime = os.date("!%Y-%m-%d %H:%M:%S", fsemStartTime + (fstIndex * fsemTemplate.strikeInterval)),
+          startTime = os.date("!%Y-%m-%d %H:%M:%S", FSEMStartTime + (FSTIndex * FSEMTemplate.strikeInterval)),
           isFinished = false,
           target = {
             list = targets,
-            objs = fstTemplate.target.objs or {},
-            areas = fstTemplate.target.areas or {},
-            filterNames = fstTemplate.target.filterNames,
-            contactAge = fstTemplate.target.contactAge,
-            minTargetCount = fstTemplate.target.minTargetCount,
-            ammoPerTarget = fstTemplate.target.ammoPerTarget
+            objs = FSTTemplate.target.objs or {},
+            areas = FSTTemplate.target.areas or {},
+            filterNames = FSTTemplate.target.filterNames,
+            contactAge = FSTTemplate.target.contactAge,
+            minTargetCount = FSTTemplate.target.minTargetCount,
+            ammoPerTarget = FSTTemplate.target.ammoPerTarget
           }
         }
 
-        table.insert(newFSEM.FSTs, fst)
-        Logger.log("Created FST: " .. fstTemplate.name .. ", target count: " ..
+        table.insert(newFSEM.FSTs, FST)
+        Logger.log("Created FST: " .. FSTTemplate.name .. ", target count: " ..
           #targets .. ", fire unit count: " .. #availableFiringUnits)
       else
-        Logger.error("Specified fire units for FST " .. fstTemplate.name .. " are unavailable or already assigned")
+        Logger.error("Specified fire units for FST " .. FSTTemplate.name .. " are unavailable or already assigned")
       end
     end
   end
@@ -272,12 +279,13 @@ local function createFSEMFromTemplate(config, saveData, fsemTemplate, evaluatedT
 end
 
 ---Process reconnaissance schedule entry, get FSEM template and execute evaluation
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param contacts CMO__Contact[]
----@param reconEntry SBJ__ReconScheduleEntry
----@param operation table Ground operation from reconEntry
----@return boolean success
+--- Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
+---@param config SBJ__CONFIG Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts from the game
+---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry triggering this operation
+---@param operation SBJ__Operation Ground operation containing FSEM template
+---@return boolean # true if FSEM was successfully created from reconnaissance results
 local function processReconSchedule(config, saveData, contacts, reconEntry, operation)
   if not operation.template or not operation.template.FSTs then
     Logger.error("Ground operation missing FSEM template")
@@ -292,23 +300,24 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
   local hasValidTargets = false
 
   -- Process FST templates one by one
-  for _, fstTemplate in ipairs(copyFSTs) do
-    local fstTargets = processFST(config, saveData, contacts, fstTemplate, operation.template.isFirstWave)
+  for _, FSTTemplate in ipairs(copyFSTs) do
+    local FSTTargets = processFST(config, saveData, contacts, FSTTemplate, operation.template.isFirstWave)
 
-    if fstTargets and #fstTargets >= fstTemplate.target.minTargetCount then
-      evaluatedTargets[fstTemplate.name] = fstTargets
+    if FSTTargets and #FSTTargets >= FSTTemplate.target.minTargetCount then
+      evaluatedTargets[FSTTemplate.name] = FSTTargets
       hasValidTargets = true
-      Logger.log("FST " .. fstTemplate.name .. " found " .. #fstTargets .. " targets")
+      Logger.log("FST " .. FSTTemplate.name .. " found " .. #FSTTargets .. " targets")
     else
-      Logger.log("FST " .. fstTemplate.name .. " insufficient targets (required: " ..
-        fstTemplate.target.minTargetCount .. ", found: " ..
-        (fstTargets and #fstTargets or 0) .. ")")
+      Logger.log("FST " .. FSTTemplate.name .. " insufficient targets (required: " ..
+        FSTTemplate.target.minTargetCount .. ", found: " ..
+        (FSTTargets and #FSTTargets or 0) .. ")")
     end
   end
 
   -- If valid targets exist, create and insert FSEM
   if hasValidTargets then
     -- Create a copy of fsemTemplate with the copied FSTs
+    ---@type SBJ__FSEMTemplate
     local modifiedTemplate = Utils.deepCopy(operation.template)
     modifiedTemplate.FSTs = copyFSTs
 
@@ -324,10 +333,11 @@ end
 -- Public functions (exported)
 
 ---Main execution function, process reconnaissance schedule and dynamically create FSEM
----@param config SBJ__CONFIG Configuration parameters
----@param saveData SBJ__SaveData Game state data
----@param contacts CMO__Contact[] Contact data passed from event script
----@return boolean success Whether execution was successful
+--- Entry point for dynamic Fire Support Plan system, validates configuration and processes ground operations
+---@param config SBJ__CONFIG Global configuration with battery and weapon system parameters
+---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
+---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
+---@return boolean # true if any ground operation was processed and executed, false if disabled or none ready
 function DynamicFireSupportPlan.execute(config, saveData, contacts)
   -- Check if dynamic operations feature is enabled
   if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.enabled then

@@ -6,7 +6,7 @@ local AttackManager = {}
 ---Get weapon information for a unit
 ---@param unit CMO__Unit The unit to check
 ---@param weaponDBID number|nil Specific weapon DBID to look for
----@return table Weapon information
+---@return {weaponDBID: number, mountDBID: number, availableWeapons: number, maxWeapons: number, assignedWeapons: number} Weapon information
 local function getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0
   local maxWeaponCapacity = 0
