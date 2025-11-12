@@ -32,7 +32,7 @@ if saveData.c.dynamicOperations and saveData.c.dynamicOperations.enabled then
 end
 
 if saveData.c.recon.isActivated then
-  Recon.handleReconQueue(config, saveData.c.recon)
+  Recon.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule, saveData.c.surface.lacm)
 end
 
 if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then

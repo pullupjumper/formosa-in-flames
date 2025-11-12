@@ -230,6 +230,8 @@ config.base = {
 }
 
 config.platform = {
+  TB001 = 7062,
+  WZ7 = 7371,
   J16D = 4632,
   TYPE_726A = 2149,
   Z18 = 3708,
@@ -346,6 +348,8 @@ config.sensor = {
 }
 
 config.loadout = {
+  TB001_RECON = 33455,
+  WZ7_RECON = 25184,
   KA52_ATTACK = 30568,
   Z10_ATTACK = 31490,
   Z18_TRANSPORT_1 = 18367,
@@ -481,8 +485,8 @@ config.c.triggers = {
   amphibiousOps = { startTime = '2027-06-09 02:40:00' },
   -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
-  -- launchSLCM = { startTime = '2027-06-09 06:30:00' },
-  launchSLCM = { startTime = '2027-06-09 01:00:00' },
+  launchSLCM = { startTime = '2027-06-09 06:30:00' },
+  -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
 }
 
 
@@ -907,27 +911,41 @@ config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
 
 -- Recon
-config.c.recon.bases = {
-  H6N = { guid = config.base.LIUAN_AB },
-  BZK005 = { guid = config.base.LONGTIAN_AAB }
-}
-config.c.recon.contactAge = 15 * 60
 config.c.recon.courses = {
   WZ8 = {
-    {
-      { lat = 'N 24.59.45', lon = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.01.38', lon = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 21.55.32', lon = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 22.41.05', lon = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 22.57.13', lon = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 23.28.13', lon = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 24.15.54', lon = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
-      { lat = 'N 25.14.02', lon = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
-    }
+    { lat = 'N 24.59.45', lon = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 24.01.38', lon = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 21.55.32', lon = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 22.41.05', lon = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 22.57.13', lon = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 23.28.13', lon = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 24.15.54', lon = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { lat = 'N 25.14.02', lon = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
   },
   H6N = {
-    { lat = 'N 29.47.52', lon = 'E 119.19.47', desiredAltitude = 13716, desiredSpeed = 450 },
-    { lat = 'N 25.57.34', lon = 'E 121.32.45', desiredAltitude = 13716, desiredSpeed = 550 },
+    { lat = '31.4291627579406', lon = '116.708479118499', desiredAltitude = 13716, desiredSpeed = 450 },
+    { lat = 'N 29.47.52',       lon = 'E 119.19.47',      desiredAltitude = 13716, desiredSpeed = 450 },
+    { lat = 'N 25.57.34',       lon = 'E 121.32.45',      desiredAltitude = 13716, desiredSpeed = 550 },
+  },
+  BZK005_1 = {
+    { lon = 119.651011005704, lat = 25.6118001826929, desiredSpeed = 115 },
+    { lon = 121.238926932242, lat = 25.459719525138,  desiredSpeed = 115 },
+    { lon = 120.926681879442, lat = 25.2124494777565, desiredSpeed = 115 },
+    { lon = 120.929674562224, lat = 24.991467160603,  desiredSpeed = 115 },
+    { lon = 120.479387627427, lat = 24.2630653534717, desiredSpeed = 115 },
+  },
+  BZK005_2 = {
+    { lon = 118.031467210727, lat = 23.9011198341539, desiredSpeed = 115 },
+    { lon = 120.074966412556, lat = 23.5745839530736, desiredSpeed = 115 },
+    { lon = 119.894517624583, lat = 23.1838444302557, desiredSpeed = 115 },
+    { lon = 119.884596562779, lat = 22.8618144043299, desiredSpeed = 115 },
+    { lon = 120.200631279976, lat = 22.571862857163,  desiredSpeed = 115 },
+    { lon = 120.536274602033, lat = 22.1911994531482, desiredSpeed = 115 },
+  },
+  GJ11 = {
+    { lon = 120.954426817633, lat = 25.4296233744497, desiredSpeed = 600 },
+    { lon = 121.087994141654, lat = 25.0506579616447, desiredSpeed = 600 },
+    { lon = 121.249386737925, lat = 25.1186720471747, desiredSpeed = 600 },
   }
 }
 ---@type table<string, SBJ__ReconUAVTemplate>
@@ -936,57 +954,68 @@ config.c.recon.template = {
     baseGUID = config.base.LONGTIAN_AAB,
     unitDBID = config.platform.BZK005,
     unitGUID = nil,
-    missionName = 'RECON/1',
-    course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
+    course = config.c.recon.courses.BZK005_1,
     unitCount = 1,
-    -- takeoffTime = '2027-06-09 01:00:00',
+    speed = 115,
     takeoffTime = nil,
-    -- missionStartTime = '2027-06-09 01:30:00',
-    missionStartTime = nil,
+    endTime = nil,
+    isTracking = false
   },
   BZK005_RECON_2 = {
     baseGUID = config.base.SHANTOU_WAISHA_AB,
     unitDBID = config.platform.BZK005,
     unitGUID = nil,
-    missionName = 'RECON/2',
-    course = { { lat = 'N 25.27.28', lon = 'E 120.46.09' } },
+    course = config.c.recon.courses.BZK005_2,
     unitCount = 1,
-    -- takeoffTime = '2027-06-09 01:00:00',
+    speed = 115,
     takeoffTime = nil,
-    -- missionStartTime = '2027-06-09 01:30:00',
-    missionStartTime = nil,
+    endTime = nil,
+    isTracking = false
   },
-  -- WZ8_RECON_EAST_WATER = {
-  --   baseGUID = config.base.LIUAN_AB,
-  --   unitDBID = config.platform.H6N,
-  --   unitGUID = nil,
-  --   missionName = nil,
-  --   course = config.c.recon.courses.H6N,
-  --   unitCount = 1,
-  --   -- takeoffTime = '2027-06-09 01:20:00',
-  --   -- takeoffTime = '2027-06-09 01:00:00',
-  --   missionStartTime = nil,
-  --   -- hasLaunched = false,
-  --   isTracking = true
-  -- },
   WZ8_RECON_ISLAND = {
     baseGUID = config.base.LIUAN_AB,
     unitDBID = config.platform.H6N,
     unitGUID = nil,
-    missionName = nil,
     course = config.c.recon.courses.H6N,
     unitCount = 1,
-    -- takeoffTime = '2027-06-09 01:20:00',
-    -- takeoffTime = '2027-06-09 01:00:00',
-    missionStartTime = nil,
-    -- hasLaunched = false,
+    speed = 450,
+    takeoffTime = nil,
+    endTime = nil,
     isTracking = true
   },
-}
-config.c.recon.flightTime = {
-  BZK005_RECON_1 = 60 * 60,
-  BZK005_RECON_2 = 120 * 60,
-  H6N_RECON = 65 * 60,
+  WZ7_RECON_1 = {
+    baseGUID = config.base.LONGTIAN_AAB,
+    unitDBID = config.platform.WZ7,
+    unitGUID = nil,
+    course = config.c.recon.courses.BZK005_1,
+    unitCount = 1,
+    speed = 450,
+    takeoffTime = nil,
+    endTime = nil,
+    isTracking = false
+  },
+  TB001_RECON_1 = {
+    baseGUID = config.base.LONGTIAN_AAB,
+    unitDBID = config.platform.TB001,
+    unitGUID = nil,
+    course = config.c.recon.courses.BZK005_1,
+    unitCount = 1,
+    speed = 135,
+    takeoffTime = nil,
+    endTime = nil,
+    isTracking = false
+  },
+  GJ11_RECON = {
+    baseGUID = 'Type 076',
+    unitDBID = config.platform.GJ11,
+    unitGUID = nil,
+    course = config.c.recon.courses.GJ11,
+    unitCount = 1,
+    speed = 600,
+    takeoffTime = nil,
+    endTime = nil,
+    isTracking = false
+  }
 }
 
 -- Aircraft deployment
@@ -1054,11 +1083,11 @@ config.c.air.landBased.deployedACs = {
       {
         side = 'China',
         type = 'Air',
-        dbid = config.platform.Y9,
-        platformName = 'Y-9',
-        name = '60th Air Reg',
+        dbid = config.platform.J16D,
+        platformName = 'J-16D',
+        name = '40th Air Bde',
         loadouts = {
-          { name = 'Electronic Warfare', loadoutId = config.loadout.Y9_EW, num = 3 },
+          { name = 'Electronic Warfare', loadoutId = config.loadout.J16D_OECM, num = 4 },
         }
       },
       {
@@ -1083,7 +1112,8 @@ config.c.air.landBased.deployedACs = {
       },
     },
     loadouts = {
-      { name = 'KAB-1500 Strike', loadoutId = config.loadout.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
+      { name = 'KAB-1500 Strike',    loadoutId = config.loadout.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
+      { name = 'Electronic Warfare', loadoutId = config.loadout.J16D_OECM,    num = 4 },
     }
   },
   {
@@ -2373,8 +2403,9 @@ config.c.surface.lacm.targetlist = {
 
 -- SLCM
 config.c.subSurface.slcm.weaponDBID = config.weapon.CJ10_SLCM
+---@type table<string, SBJ__SubmarineDescriptor>
 config.c.subSurface.slcm.submarines = {
-  {
+  ['407'] = {
     name = "407",
     guid = '',
     course = {
@@ -2388,7 +2419,7 @@ config.c.subSurface.slcm.submarines = {
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  {
+  ['408'] = {
     name = "408",
     guid = '',
     course = {
@@ -2402,7 +2433,7 @@ config.c.subSurface.slcm.submarines = {
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  {
+  ['409'] = {
     name = "409",
     guid = '',
     course = {
@@ -2416,7 +2447,7 @@ config.c.subSurface.slcm.submarines = {
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  {
+  ['410'] = {
     name = "410",
     guid = '',
     course = {
@@ -2726,7 +2757,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J16_AKD88,
         -- startTime = '2027-06-09 01:25:00',
-        missionParams = { name = 'STRIKE/AB/W/1', type = 'strike', opts = { type = 'land' } },
+        missionParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = {
@@ -2737,7 +2768,7 @@ config.c.packageTemplate = {
         loadoutID = config.loadout.J20_PL15,
         -- startTime = '2027-06-09 01:05:00',
         missionParams = {
-          name = 'SWEEP/AB/W/1',
+          name = 'SWEEP/AB/S/1',
           type = 'patrol',
           opts = {
             type = 'aaw',
@@ -2759,7 +2790,7 @@ config.c.packageTemplate = {
         loadoutID = config.loadout.SU30_YJ91,
         -- startTime = '2027-06-09 01:05:00',
         missionParams = {
-          name = 'SEAD/AB/W/1',
+          name = 'SEAD/AB/S/1',
           type = 'patrol',
           opts = {
             type = 'sead',
@@ -2775,13 +2806,13 @@ config.c.packageTemplate = {
       },
       jammer = {
         baseGUID = config.base.ZHANGPU_AAB,
-        unitDBID = config.platform.Y9,
+        unitDBID = config.platform.J16D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil, -- Electronic warfare aircraft
         -- startTime = '2027-06-09 01:05:00', -- Escort launch time
         missionParams = {
-          name = 'JAMMING/AB/W/1',
+          name = 'JAMMING/AB/S/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_SOUTH_PATROL }
         },
@@ -2857,7 +2888,7 @@ config.c.packageTemplate = {
       },
       jammer = {
         baseGUID = config.base.ZHANGPU_AAB,
-        unitDBID = config.platform.Y9,
+        unitDBID = config.platform.J16D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
@@ -2938,7 +2969,7 @@ config.c.packageTemplate = {
       },
       jammer = {
         baseGUID = config.base.ZHANGPU_AAB,
-        unitDBID = config.platform.Y9,
+        unitDBID = config.platform.J16D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
@@ -3080,7 +3111,7 @@ config.c.packageTemplate = {
       },
       jammer = {
         baseGUID = config.base.ZHANGPU_AAB,
-        unitDBID = config.platform.Y9,
+        unitDBID = config.platform.J16D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
@@ -3560,7 +3591,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J15_LS6_500,
         -- startTime = '2027-06-09 07:00:00',
-        missionParams = { name = 'STRIKE/AB/JHI', type = 'strike', opts = { type = 'land' } },
+        missionParams = { name = 'STRIKE/AB/JHI/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3571,7 +3602,7 @@ config.c.packageTemplate = {
       --   unitCount = 8,
       --   loadoutID = config.loadout.J15_YJ91,
       --   missionParams = {
-      --     name = 'SWEAP/AB/JHI',
+      --     name = 'SWEAP/AB/JHI/1',
       --     type = 'patrol',
       --     opts = {
       --       type = 'aaw',
@@ -3592,7 +3623,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J15_YJ91,
         missionParams = {
-          name = 'SEAD/AB/JHI',
+          name = 'SEAD/AB/JHI/1',
           type = 'patrol',
           opts = {
             type = 'sead',
@@ -3613,7 +3644,7 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = config.loadout.J15D_EW,
         missionParams = {
-          name = 'JAMMING/AB/JHI',
+          name = 'JAMMING/AB/JHI/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_JHI_PATROL }
         },
@@ -3648,7 +3679,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J15_LS6_500,
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/E', type = 'strike', opts = { type = 'land' } },
+        missionParams = { name = 'STRIKE/AB/JIA/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3659,7 +3690,7 @@ config.c.packageTemplate = {
       --   unitCount = 8,
       --   loadoutID = config.loadout.J20_PL15,
       --   missionParams = {
-      --     name = 'SWEAP/AB/E',
+      --     name = 'SWEAP/AB/JIA/1',
       --     type = 'patrol',
       --     opts = {
       --       type = 'aaw',
@@ -3680,7 +3711,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J15_YJ91,
         missionParams = {
-          name = 'SEAD/AB/E',
+          name = 'SEAD/AB/JIA/1',
           type = 'patrol',
           opts = {
             type = 'sead',
@@ -3701,7 +3732,7 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = config.loadout.J15D_EW,
         missionParams = {
-          name = 'JAMMING/AB/E',
+          name = 'JAMMING/AB/JIA/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_JIASHAN_PATROL }
         },

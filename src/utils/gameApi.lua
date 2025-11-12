@@ -336,7 +336,7 @@ function realApi.ScenEdit_SetEMCON(objType, name, emcon)
 end
 
 ---comment
----@param AUNameOrIDOrTable string
+---@param AUNameOrIDOrTable string|string[]
 ---@param MissionNameOrIDOrTable string
 ---@return string[]
 function realApi.ScenEdit_AssignUnitAsTarget(AUNameOrIDOrTable, MissionNameOrIDOrTable)

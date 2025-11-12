@@ -83,10 +83,10 @@ end
 --- Validates distance to radio source and transmission strength
 ---@param config SBJ__CONFIG Global configuration with SIGINT range and count thresholds
 ---@param distance number Distance in nautical miles to radio source
----@param transmission table Transmission data with temp (count) and other properties
+---@param transmission SBJ__RadioTransmissionContext  Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
-  return distance <= config.c.SIGINT.maxRange and transmission.temp > config.c.SIGINT.maxCount
+  return distance <= config.c.SIGINT.maxRange and transmission.currentDetectionLevel > config.c.SIGINT.maxCount
 end
 
 ---Find mobile ground targets (vehicles) within specified areas
@@ -135,7 +135,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.trackTarget(config, saveData.c.recon, filteredUnits, config.platform.BZK005, contact)
+            isTracking = Recon.trackTarget(saveData.c.recon, filteredUnits, config.platform.BZK005, contact)
           end
         end
       end
@@ -190,7 +190,7 @@ function TargetingProcess.findNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.trackTarget(config, saveData.c.recon, filteredUnits, config.platform.WZ8, contact)
+          hasTracked = Recon.trackTarget(saveData.c.recon, filteredUnits, config.platform.WZ8, contact)
           Logger.log("hasTracked: " .. tostring(hasTracked))
         end
       end

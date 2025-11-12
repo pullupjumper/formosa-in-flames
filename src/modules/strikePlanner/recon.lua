@@ -1,6 +1,8 @@
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
-local AssignMission = require("src.modules.assignMission")
+local Utils = require("src.utils.utils")
+local Logger = require("src.utils.logger")
+local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
 local Recon = {}
 
@@ -89,160 +91,368 @@ function Recon.launchWZ8(config, h6n, course)
   return wz8
 end
 
----Check if reconnaissance should takeoff before strike mission starts
----@param entry SBJ__ReconQueueEntry Reconnaissance queue entry to check
----@return boolean True if should takeoff before strike, false otherwise
-local function shouldTakeoffBeforeStrike(entry)
-  return (not entry.hasLaunched) and entry.takeoffTime ~= nil and entry.missionStartTime ~= nil
+---Handle reconnaissance launch phase
+---@param entry SBJ__ReconQueueEntry Queue entry to process
+---@return boolean launched Whether unit was successfully launched
+local function handleReconLaunch(entry)
+  if entry.hasLaunched or not GameUtils.isAfterStartTime(entry.takeoffTime) then
+    return false
+  end
+
+  local units = Recon.launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, 'Aircraft')
+
+  if units and #units > 0 then
+    entry.unitGUID = units[1]
+    entry.hasLaunched = true
+    Logger.log(string.format("Launched recon unit %s from base %s", units[1], entry.baseGUID))
+    return true
+  else
+    Logger.log(string.format("Failed to launch recon unit from base %s", entry.baseGUID))
+    return false
+  end
 end
 
----Check if reconnaissance should takeoff after strike mission starts
----@param entry SBJ__ReconQueueEntry Reconnaissance queue entry to check
----@return boolean True if should takeoff after strike, false otherwise
-local function shouldTakeoffAfterStrike(entry)
-  return (not entry.hasLaunched) and entry.missionStartTime ~= nil
+---Handle reconnaissance tracking mode - continuously update course to track moving target
+---@param entry SBJ__ReconQueueEntry Queue entry
+---@param actualUnit CMO__Unit The reconnaissance unit
+---@return boolean success Whether tracking was successfully updated
+local function handleReconTracking(entry, actualUnit)
+  -- Check if tracking target is assigned
+  if not entry.trackingTargetGUID then
+    Logger.log(string.format("No tracking assignment found for unit: %s", actualUnit.guid))
+    return false
+  end
+
+  -- Validate entry has speed configured
+  if not entry.speed then
+    Logger.log(string.format("No speed configured for unit: %s", actualUnit.guid))
+    return false
+  end
+
+  local target = GameApi.ScenEdit_GetContact('China', entry.trackingTargetGUID)
+
+  if not target then
+    Logger.log(string.format("Tracking target lost: %s", entry.trackingTargetGUID))
+    return false
+  end
+
+  -- Update course to target position (continuous tracking for missile guidance)
+  actualUnit.course = { {
+    latitude = target.latitude,
+    longitude = target.longitude,
+    desiredSpeed = entry.speed,
+    presetThrottle = 'Military'
+  } }
+
+  return true
 end
 
----Check if the reconnaissance queue entry is for H-6N bomber
----@param config SBJ__CONFIG Configuration data for platform DBIDs
----@param entry SBJ__ReconQueueEntry Reconnaissance queue entry to check
----@return boolean True if unit is H-6N and hasn't launched, false otherwise
-local function isH6N(config, entry)
-  return not entry.hasLaunched and entry.unitDBID == config.platform.H6N
+---Handle reconnaissance return to base
+---@param actualUnit CMO__Unit The reconnaissance unit
+local function handleReconRTB(actualUnit)
+  actualUnit:RTB(true)
+  Logger.log(string.format("Unit %s returning to base", actualUnit.name))
 end
 
----Check if reconnaissance unit should enter target area
----@param entry SBJ__ReconQueueEntry Reconnaissance queue entry to check
----@return boolean True if should enter target area, false otherwise
-local function shouldEnterTargetArea(entry)
-  return entry.hasLaunched and not entry.isFinished and entry.takeoffTime ~= nil and entry.missionStartTime ~= nil
+---Get platform-specific special operations based on successful reconnaissance
+---Different UAV platforms trigger different specialized operations:
+--- BZK-005: C2 command and control strike operations
+--- WZ-8 (launched from H-6N): Anti-ship strike and airbase strike operations
+---@param config SBJ__CONFIG Configuration data
+---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
+---@param LACMContext SBJ__LACMContext LACM context data
+---@return SBJ__Operation[] specialOperations Array of special operations to add
+local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+  local operations = {}
+
+  -- Each entry has only one unitDBID, check which platform it is
+  if entry.unitDBID == config.platform.BZK005 then
+    -- BZK-005 reconnaissance: Schedule C2 (Command & Control) strike operations
+    if not DynamicOperationsUtils.hasOperation(reconSchedule, "C2/1", "ground") then
+      table.insert(operations, {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "C2/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSTTemplate.STRIKE_C2
+        }
+      })
+    end
+  elseif entry.unitDBID == config.platform.H6N then
+    -- WZ-8 reconnaissance (launched from H-6N): Schedule anti-ship strike operations
+    if not DynamicOperationsUtils.hasOperation(reconSchedule, "ANTISHIP/1", "ground") then
+      table.insert(operations, {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "ANTISHIP/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSTTemplate.ANTISHIP
+        }
+      })
+    end
+
+    -- If LACM operations activated: Schedule airbase strike operations
+    if LACMContext.isActivated and not DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/E/1", "air") then
+      table.insert(operations, {
+        type = "air",
+        executed = false,
+        template = {
+          name = "STRIKE/AB/E/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          packages = config.c.packageTemplate.STRIKE_AB_E_1
+        }
+      })
+    end
+  end
+
+  return operations
 end
 
----Check if reconnaissance unit should return to base
----@param entry SBJ__ReconQueueEntry Reconnaissance queue entry to check
----@return boolean True if should RTB, false otherwise
-local function shouldRTB(entry)
-  return entry.hasLaunched and not entry.isFinished
+---Schedule dynamic reconnaissance operations for next wave
+---
+---This function is ONLY called when reconnaissance mission completes successfully
+---(UAV reached endTime with complete intelligence data)
+---
+---Generates next wave operations based on:
+---1. Last executed operations in current schedule
+---2. Next scheduled reconnaissance time
+---3. Platform-specific special operations (BZK-005: C2 strike, WZ-8: Anti-ship strike)
+---
+---@param config SBJ__CONFIG Configuration data
+---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
+---@param LACMContext SBJ__LACMContext LACM context data
+local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+  local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
+
+  -- Check if there are operations to schedule and next recon time exists
+  if not result.nextReconTime or (#result.air == 0 and #result.ground == 0) then
+    return
+  end
+
+  local nextReconTime = Utils.parseDatetimeToTimestamp(result.nextReconTime)
+  local endTime = Utils.parseDatetimeToTimestamp(entry.endTime)
+
+  -- Only schedule if current recon completed before next scheduled recon
+  -- This ensures next wave operations are inserted in the correct time slot
+  if endTime >= nextReconTime then
+    return
+  end
+
+  -- Generate next wave operations
+  local operations = {}
+
+  for _, operation in ipairs(result.air) do
+    local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+    table.insert(operations, newOperation)
+  end
+
+  for _, operation in ipairs(result.ground) do
+    local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+    table.insert(operations, newOperation)
+  end
+
+  -- Add platform-specific operations
+  local specialOps = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+  for _, op in ipairs(specialOps) do
+    table.insert(operations, op)
+  end
+
+  -- Add to reconnaissance schedule if there are operations
+  if #operations > 0 then
+    table.insert(reconSchedule, {
+      time = entry.endTime,
+      type = "UAV",
+      delay = 0,
+      executed = false,
+      operations = operations
+    })
+
+    Logger.log(string.format("Scheduled %d dynamic operations for recon at %s", #operations, entry.endTime))
+  end
+end
+
+---Finish reconnaissance mission and conditionally schedule next operations
+---Only schedules next wave operations if mission completed successfully (reached endTime with valid intelligence)
+---@param config SBJ__CONFIG Configuration data
+---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param entry SBJ__ReconQueueEntry Queue entry
+---@param LACMContext SBJ__LACMContext LACM context data
+---@param success boolean Mission success status:
+---  - true: UAV completed full reconnaissance duration (reached endTime), schedule next operations
+---  - false: Mission failed (UAV destroyed before endTime), skip scheduling due to incomplete intelligence
+local function finishReconMission(config, reconSchedule, entry, LACMContext, success)
+  -- Prevent double execution
+  if entry.isFinished then
+    return
+  end
+
+  entry.isFinished = true
+
+  if success then
+    -- Mission successful: UAV survived until endTime and completed reconnaissance duration
+    -- Intelligence data is complete and reliable, safe to schedule next wave operations
+    scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+    Logger.log(string.format("Recon mission completed successfully, scheduling next operations"))
+  else
+    -- Mission failed: UAV destroyed or lost before completing reconnaissance duration
+    -- Intelligence data is incomplete, do not schedule operations based on insufficient data
+    Logger.log(string.format("Recon mission failed, skipping next wave scheduling"))
+  end
 end
 
 ---Process reconnaissance queue and manage reconnaissance mission lifecycle
----Handles takeoff timing, mission assignment, and RTB for all queued reconnaissance missions
+---Handles launch timing, in-flight management, endTime verification, and mission completion
+---
+---Mission Success Criteria:
+---1. UAV must complete assigned reconnaissance course (#actualUnit.course == 0)
+---2. Current game time must reach or pass entry.endTime (ensures full reconnaissance duration)
+---3. UAV must remain operational (not destroyed) throughout the mission
+---
+---Mission Failure:
+---- UAV destroyed before endTime: Intelligence incomplete, next operations not scheduled
+---
+---Mission Completion Flow:
+---1. Launch phase: Deploy UAV at scheduled takeoffTime
+---2. Flight phase: Monitor course completion and UAV status
+---3. Loitering phase: If course complete but endTime not reached, UAV stays airborne
+---4. Completion phase: When endTime reached, finish mission and schedule next operations
 ---@param config SBJ__CONFIG Configuration data for platform DBIDs
 ---@param reconContext SBJ__ReconContext Reconnaissance context containing queue and temp tracking data
-function Recon.handleReconQueue(config, reconContext)
+---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule containing assigned missions
+---@param LACMContext SBJ__LACMContext LACM context data
+function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
+  -- Input validation
+  if not reconContext or not reconContext.queue then
+    return
+  end
+
   for _, entry in ipairs(reconContext.queue) do
-    if shouldTakeoffBeforeStrike(entry) and GameUtils.isAfterStartTime(entry.takeoffTime) then
-      local units = Recon.launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, 'Aircraft')
+    -- Phase 1: Launch reconnaissance units when time comes
+    if not entry.hasLaunched then
+      handleReconLaunch(entry)
+      goto continue
+    end
 
-      if units and #units > 0 then
-        entry.unitGUID = units[1]
-        entry.hasLaunched = true
+    -- Phase 2: In-flight management (monitor UAV status, verify endTime, handle mission completion)
+    if entry.hasLaunched and not entry.isFinished then
+      local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
+
+      -- Check if unit still exists (may be destroyed in combat)
+      if not actualUnit then
+        Logger.log(string.format("Recon unit not found (destroyed or missing): %s", tostring(entry.unitGUID)))
+        finishReconMission(config, reconSchedule, entry, LACMContext, false) -- Mission failed: Intelligence incomplete
+        goto continue
       end
-    elseif shouldTakeoffAfterStrike(entry) and GameUtils.isAfterStartTime(entry.missionStartTime) then
-      local units = AssignMission.assignEmbarkedUnitToStrikeMission(
-        entry.baseGUID, entry.unitCount, 0, entry.unitDBID, entry.missionName, false
-      )
 
-      if units and #units > 0 then
-        entry.unitGUID = units[1]
-        entry.hasLaunched = true
-        entry.isFinished = true
+      -- Only process if unit has completed its current course
+      if #actualUnit.course > 0 then
+        goto continue
       end
-    elseif isH6N(config, entry) and GameUtils.isAfterStartTime(entry.takeoffTime) then
-      local units = Recon.launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, 'Aircraft')
 
-      if units and #units > 0 then
-        entry.unitGUID = units[1]
-        entry.hasLaunched = true
+      -- Check if endTime has been reached (UAV must complete full reconnaissance duration)
+      if not GameUtils.isAfterStartTime(entry.endTime) then
+        -- Course complete but endTime not reached: UAV stays airborne (loitering) to ensure full intelligence collection
+        Logger.log(string.format("UAV %s completed course but waiting for endTime: %s",
+          actualUnit.name, entry.endTime))
+        goto continue
+      end
+
+      -- Both conditions met (course complete AND endTime reached): Process mission completion
+      -- Handle based on mode: tracking or normal reconnaissance
+      if entry.isTracking and entry.trackingTargetGUID then
+        -- Tracking mode: has assigned target to track for missile guidance
+        local success = handleReconTracking(entry, actualUnit)
+
+        if not success then
+          -- Target lost or tracking failed - but recon mission already completed (past endTime)
+          -- Finish mission successfully since reconnaissance duration was completed with valid intelligence
+          Logger.log(string.format("Tracking failed for unit %s, but recon completed, returning to base", actualUnit
+          .name))
+          finishReconMission(config, reconSchedule, entry, LACMContext, true) -- Mission succeeded: Intelligence complete
+        end
+        -- If tracking succeeds, do nothing - wait for next cycle to continue tracking
+      else
+        -- Normal reconnaissance mode: Finish mission successfully
+        -- This includes: isTracking=false OR (isTracking=true but no trackingTargetGUID assigned)
+        finishReconMission(config, reconSchedule, entry, LACMContext, true) -- Mission succeeded: Intelligence complete
       end
     end
 
-    if shouldEnterTargetArea(entry) and GameUtils.isAfterStartTime(entry.missionStartTime) then
-      local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
-
-      if actualUnit then
-        local result = GameApi.ScenEdit_AssignUnitToMission(actualUnit.guid, entry.missionName)
-
-        if result then
-          entry.isFinished = true
-        end
-      end
-    elseif shouldRTB(entry) then
-      local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
-
-      if actualUnit and #actualUnit.course == 0 and actualUnit.dbid == config.platform.WZ8 and not entry.isTracking then
-        actualUnit:RTB(true)
-        entry.isFinished = true
-      end
-
-      if actualUnit and #actualUnit.course == 0 and actualUnit.dbid == config.platform.WZ8 and entry.isTracking then
-        local targetGUID = reconContext.temp['WZ8'][actualUnit.guid].targetGUID
-        local target = GameApi.ScenEdit_GetContact('China', targetGUID)
-
-        if target then
-          actualUnit.course = { {
-            latitude = target.latitude,
-            longitude = target.longitude,
-            desiredSpeed = 3300,
-            presetThrottle = 'Military'
-          } }
-        end
-      end
-    end
+    ::continue::
   end
 end
 
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to continuously track the target
----@param config SBJ__CONFIG Configuration data for platform DBIDs
 ---@param reconContext SBJ__ReconContext Reconnaissance context for tracking UAV assignments
 ---@param units CMO__SideUnit Side units collection to search for available UAVs
 ---@param UAVDBID number UAV platform database ID to filter by
 ---@param target CMO__Contact Target contact to track
 ---@return boolean True if UAV was assigned to track target, false otherwise
-function Recon.trackTarget(config, reconContext, units, UAVDBID, target)
+function Recon.trackTarget(reconContext, units, UAVDBID, target)
   local UAV = nil
-  local speed = 115
-  local type = 'BZK005'
 
-  if UAVDBID == config.platform.WZ8 then
-    speed = 3300
-    type = 'WZ8'
-  end
-
-  for guid, entry in pairs(reconContext.temp[type]) do
-    if entry.targetGUID == target.guid then
-      local unit = GameApi.ScenEdit_GetUnit(guid)
-      if unit then return true end
-    end
-  end
-
-  if UAV == nil then
-    local d = 1000
-
-    for _, u in ipairs(units) do
-      local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
-
-      if actualUnit and actualUnit.dbid == UAVDBID and actualUnit.condition == 'Airborne' then
-        local distance = GameApi.Tool_Range(
-          { latitude = actualUnit.latitude, longitude = actualUnit.longitude }, target.guid
-        )
-
-        if distance and distance < d then
-          d = distance
-          UAV = actualUnit
-        end
+  -- Check if any UAV in queue is already tracking this target
+  for _, entry in ipairs(reconContext.queue) do
+    if entry.trackingTargetGUID == target.guid and entry.unitGUID then
+      local unit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
+      if unit then
+        return true
       end
     end
   end
 
-  if UAV then
-    if UAV.mission then UAV.mission = '' end
-    reconContext.temp[type][UAV.guid] = { guid = UAV.guid, targetGUID = target.guid }
-    return true
+  -- Find closest available UAV
+  local minDistance = 1000
+  for _, u in ipairs(units) do
+    local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
+
+    if actualUnit and actualUnit.dbid == UAVDBID and actualUnit.condition == 'Airborne' then
+      local distance = GameApi.Tool_Range(
+        { latitude = actualUnit.latitude, longitude = actualUnit.longitude }, target.guid
+      )
+
+      if distance and distance < minDistance then
+        minDistance = distance
+        UAV = actualUnit
+      end
+    end
   end
 
-  return false
+  if not UAV then
+    return false
+  end
+
+  -- Find queue entry for this UAV
+  local queueEntry = nil
+  for _, entry in ipairs(reconContext.queue) do
+    if entry.unitGUID == UAV.guid then
+      queueEntry = entry
+      break
+    end
+  end
+
+  -- If not in queue, this UAV is not managed by reconnaissance system
+  if not queueEntry then
+    Logger.log(string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
+      UAV.name, UAV.guid))
+    return false
+  end
+
+  -- Update existing entry and reactivate it for tracking mission
+  queueEntry.isTracking = true
+  queueEntry.trackingTargetGUID = target.guid
+  queueEntry.isFinished = false -- Reactivate entry for tracking mission
+
+  Logger.log(string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
+  return true
 end
 
 return Recon

@@ -21,7 +21,7 @@ if unit then
   for _, entry in ipairs(saveData.c.recon.queue) do
     if entry.unitGUID == unit.guid then
       local course = nil
-      course = config.c.recon.courses.WZ8[1]
+      course = config.c.recon.courses.WZ8
       local wz8 = Recon.launchWZ8(config, unit, course)
 
       if wz8 then

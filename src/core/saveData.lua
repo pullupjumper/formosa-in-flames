@@ -22,6 +22,7 @@ saveData.c.ground.glcm = {}
 saveData.c.ground.ascm = {}
 saveData.c.ground.dynamicFSP = {}
 saveData.c.surface = {}
+---@type SBJ__LACMContext
 saveData.c.surface.lacm = {}
 saveData.c.subSurface = {}
 saveData.c.subSurface.slcm = {}
@@ -427,26 +428,22 @@ saveData.c.ground.mrbm.firingUnits = {
 
 -- Recon
 saveData.c.recon.isActivated = true
----@type table<string, table<string, SBJ__ReconTempEntry>>
-saveData.c.recon.temp = {
-  H6N = {},
-  WZ8 = {},
-  BZK005 = {}
-}
 ---@type SBJ__ReconQueueEntry[]
 saveData.c.recon.queue = {
   {
     baseGUID = config.base.LIUAN_AB,
     unitDBID = config.platform.H6N,
     unitGUID = nil,
-    missionName = nil,
     course = config.c.recon.courses.H6N,
     unitCount = 1,
     -- takeoffTime = '2027-06-09 01:20:00',
     takeoffTime = '2027-06-09 01:00:00',
-    missionStartTime = nil,
+    endTime = '2027-06-09 02:00:00',
     hasLaunched = false,
-    isTracking = true
+    isTracking = true,
+    isFinished = false,
+    trackingTargetGUID = nil,
+    speed = 450
   },
 }
 
@@ -456,7 +453,7 @@ saveData.c.ground.isActivated = true
 saveData.c.ground.FSP = {}
 
 -- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
-saveData.c.air.isActivated = false
+saveData.c.air.isActivated = true
 ---@type SBJ__Wave[]
 saveData.c.air.ATO = {}
 
@@ -527,7 +524,7 @@ saveData.c.PHIBOP.barges = {
 }
 
 -- Land strike from DDG
-saveData.c.surface.lacm.isActivated = true
+saveData.c.surface.lacm.isActivated = false
 saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 
@@ -929,7 +926,6 @@ saveData.c.dynamicOperations.reconSchedule = {
         executed = false,
         template = {
           name = "STRIKE/AB/W/1",
-          targetType = "STRIKE",
           isFirstWave = true,
           strikeInterval = 30 * 60,
           packages = config.c.packageTemplate.STRIKE_AB_W_1
@@ -939,8 +935,7 @@ saveData.c.dynamicOperations.reconSchedule = {
       --   type = "air",
       --   executed = false,
       --   template = {
-      --     name = "STRIKE/AB/W/1",
-      --     targetType = "STRIKE",
+      --     name = "STRIKE/AB/W/AAR/1",
       --     isFirstWave = true,
       --     strikeInterval = 30 * 60,
       --     packages = config.c.packageTemplate.STRIKE_AB_W_AAR_1
@@ -968,56 +963,55 @@ saveData.c.dynamicOperations.reconSchedule = {
       }
     }
   },
-  {
-    -- time = "2027-06-09 03:00:00",
-    time = "2027-06-09 02:14:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {
-      {
-        type = "air",
-        executed = false,
-        template = {
-          name = "STRIKE/AB/W/2",
-          targetType = "STRIKE",
-          isFirstWave = false,
-          strikeInterval = 30 * 60,
-          packages = config.c.packageTemplate.STRIKE_AB_W_2
-        }
-      },
-      {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "INFRASTRUCTURE/2",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_2
-        }
-      },
-      {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "ANTISHIP/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.ANTISHIP
-        }
-      },
-      {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "C2/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.STRIKE_C2
-        }
-      }
-    }
-  },
+  -- {
+  --   -- time = "2027-06-09 03:00:00",
+  --   time = "2027-06-09 02:14:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {
+  --     {
+  --       type = "air",
+  --       executed = false,
+  --       template = {
+  --         name = "STRIKE/AB/W/2",
+  --         isFirstWave = false,
+  --         strikeInterval = 30 * 60,
+  --         packages = config.c.packageTemplate.STRIKE_AB_W_2
+  --       }
+  --     },
+  --     {
+  --       type = "ground",
+  --       executed = false,
+  --       template = {
+  --         name = "INFRASTRUCTURE/2",
+  --         strikeInterval = 0,
+  --         isFirstWave = false,
+  --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_2
+  --       }
+  --     },
+  --     {
+  --       type = "ground",
+  --       executed = false,
+  --       template = {
+  --         name = "ANTISHIP/1",
+  --         strikeInterval = 0,
+  --         isFirstWave = false,
+  --         FSTs = config.c.FSTTemplate.ANTISHIP
+  --       }
+  --     },
+  --     {
+  --       type = "ground",
+  --       executed = false,
+  --       template = {
+  --         name = "C2/1",
+  --         strikeInterval = 0,
+  --         isFirstWave = false,
+  --         FSTs = config.c.FSTTemplate.STRIKE_C2
+  --       }
+  --     }
+  --   }
+  -- },
   -- {
   --   -- time = "2027-06-09 04:40:00",
   --   time = "2027-06-09 01:00:00",
@@ -1030,7 +1024,6 @@ saveData.c.dynamicOperations.reconSchedule = {
   --       executed = false,
   --       template = {
   --         name = "AIR INTERCEPT/E",
-  --         targetType = "STRIKE",
   --         isFirstWave = true,
   --         strikeInterval = 30 * 60,
   --         packages = config.c.packageTemplate.AIR_INTERCEPT_E

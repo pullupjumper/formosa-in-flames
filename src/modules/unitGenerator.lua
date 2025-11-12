@@ -603,18 +603,18 @@ end
 
 ---Add submarines
 ---@param config SBJ__CONFIG Configuration object
----@param side string Side name
+---@param sideName string Side name
 ---@return boolean Whether successful
-function UnitGenerator.addSubmarines(config, side)
-  if side ~= 'China' then
+function UnitGenerator.addSubmarines(config, sideName)
+  if sideName ~= 'China' then
     return true -- Currently only supports Chinese submarines
   end
 
   for _, unit in pairs(config.c.subSurface.slcm.submarines) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
+    local actualUnit = GameApi.ScenEdit_GetUnit(unit.name, sideName)
 
     if actualUnit then
-      GameApi.ScenEdit_DeleteUnit({ side = side, guid = actualUnit.guid })
+      GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = actualUnit.guid })
     end
 
     local addedUnit = GameUtils.createRandomUnits({
@@ -622,7 +622,7 @@ function UnitGenerator.addSubmarines(config, side)
       dbids = { config.platform.TYPE_093B },
       count = 1,
       randomRadius = config.c.subSurface.slcm.randomRadius,
-      sideName = side,
+      sideName = sideName,
       unitType = 'Submarine',
       unitname = unit.name,
       autodetectable = false,
@@ -634,7 +634,7 @@ function UnitGenerator.addSubmarines(config, side)
 
       -- Remove default weapons and add specified weapons
       GameApi.ScenEdit_AddReloadsToUnit({
-        side = side,
+        side = sideName,
         guid = addedUnit.guid,
         wpn_dbid = 2868,
         number = 24,
@@ -642,7 +642,7 @@ function UnitGenerator.addSubmarines(config, side)
       })
 
       GameApi.ScenEdit_AddReloadsToUnit({
-        side = side,
+        side = sideName,
         guid = addedUnit.guid,
         wpn_dbid = config.c.subSurface.slcm.weaponDBID,
         number = 8,
@@ -653,7 +653,7 @@ function UnitGenerator.addSubmarines(config, side)
     end
   end
 
-  Logger.log(string.format("Successfully added submarines for %s", side))
+  Logger.log(string.format("Successfully added submarines for %s", sideName))
   return true
 end
 

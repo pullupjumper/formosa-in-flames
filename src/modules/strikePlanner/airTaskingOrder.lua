@@ -310,45 +310,33 @@ local function processPackage(config, saveData, packageData)
 
   if packageData.reconUAV then
     if not packageData.reconUAV.takeoffTime then
-      local takeoffTime = 0
-      local missionStartTime = 0
+      -- Calculate flight time using speed and course from template
+      local distance, flightTime = GameUtils.calculatePathDistanceAndTime(
+        packageData.reconUAV.course,
+        packageData.reconUAV.speed
+      )
 
-      if packageData.reconUAV.unitDBID == config.platform.BZK005 then
-        if packageData.reconUAV.missionName == 'RECON/1' then
-          takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
-              config.c.ground.srbm.reloadTime - config.c.recon.flightTime.BZK005_RECON_1
-          missionStartTime = takeoffTime + config.c.recon.flightTime.BZK005_RECON_1
-        elseif packageData.reconUAV.missionName == 'RECON/2' then
-          takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
-              config.c.ground.srbm.reloadTime - config.c.recon.flightTime.BZK005_RECON_2
-          missionStartTime = takeoffTime + config.c.recon.flightTime.BZK005_RECON_2
-        end
-        -- takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm
-        --     .reloadTime - 10 * 60
-        -- local missionStartTime = takeoffTime + 30 * 60
-        packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
-        packageData.reconUAV.missionStartTime = os.date("!%Y-%m-%d %H:%M:%S", missionStartTime)
-        Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
-        Logger.log("Recon UAV mission start time set to: " .. packageData.reconUAV.missionStartTime)
-      end
+      -- Calculate takeoff and end times
+      local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
+          config.c.ground.srbm.reloadTime - flightTime
+      local endTime = takeoffTime + flightTime
 
-      if packageData.reconUAV.unitDBID == config.platform.H6N then
-        -- local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) - 30 * 60
-        takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
-            config.c.ground.srbm.reloadTime - config.c.recon.flightTime.H6N_RECON
-        packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
-        Logger.log("Recon UAV takeoff time set to: " .. packageData.reconUAV.takeoffTime)
-      end
+      packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
+      packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime)
+
+      Logger.log(string.format("Recon UAV takeoff time set to: %s",
+        packageData.reconUAV.takeoffTime))
     end
 
     local copyReconUAV = Utils.deepCopy(packageData.reconUAV)
     copyReconUAV.hasLaunched = false
+    copyReconUAV.isFinished = false
+    copyReconUAV.trackingTargetGUID = nil
     table.insert(saveData.c.recon.queue, copyReconUAV)
     Logger.log("Recon UAV added to queue.")
   end
 
   -- 5. Find targets
-  -- local evaluatedTargetlist = findTargets(packageData, config, saveData, contacts, isFirstWave)
   local evaluatedTargetlist = packageData.target.list
   Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 

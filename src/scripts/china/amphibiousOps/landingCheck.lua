@@ -65,7 +65,6 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
             executed = false,
             template = {
               name = "CAS/N/1",
-              targetType = "infantry",
               isFirstWave = true,
               strikeInterval = 0 * 60,
               packages = config.c.packageTemplate.CAS_N_1

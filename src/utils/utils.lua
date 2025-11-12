@@ -225,4 +225,40 @@ function Utils.formatDateTime(datetimeStr)
   }
 end
 
+--- Parse mission name string to extract code, number, and AAR (air-to-air refueling) flag
+---@param missionName string Mission name string (e.g., "STRIKE/AB/W/1" or "STRIKE/AB/W/AAR/1")
+---@return string|nil code Code extracted from mission name (e.g., "W")
+---@return number|nil number Number extracted from mission name
+---@return boolean hasAAR Whether the mission has air-to-air refueling support
+function Utils.parseMissionName(missionName)
+  if not missionName or type(missionName) ~= "string" then
+    return nil, nil, false
+  end
+
+  -- Split string by "/"
+  local parts = {}
+  for part in string.gmatch(missionName, "[^/]+") do
+    table.insert(parts, part)
+  end
+
+  -- Check basic format: STRIKE/AB/...
+  if #parts < 4 or parts[1] ~= "STRIKE" or parts[2] ~= "AB" then
+    return nil, nil, false
+  end
+
+  local code = parts[3]  -- Extract code (e.g., "W")
+  local hasAAR = false
+  local number = nil
+
+  -- Check if AAR is present
+  if parts[4] == "AAR" then
+    hasAAR = true
+    number = tonumber(parts[5])
+  else
+    number = tonumber(parts[4])
+  end
+
+  return code, number, hasAAR
+end
+
 return Utils

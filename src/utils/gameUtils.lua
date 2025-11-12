@@ -52,6 +52,70 @@ end
 -- Positioning Functions
 -- ============================================================================
 
+---Calculate the great circle distance between two points using Haversine formula
+---@param lat1 number First point latitude (degrees)
+---@param lon1 number First point longitude (degrees)
+---@param lat2 number Second point latitude (degrees)
+---@param lon2 number Second point longitude (degrees)
+---@return number distance Distance in nautical miles
+function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
+  -- Earth radius in nautical miles
+  local R = 3440.065
+
+  -- Convert degrees to radians
+  local lat1Rad = math.rad(lat1)
+  local lat2Rad = math.rad(lat2)
+  local deltaLatRad = math.rad(lat2 - lat1)
+  local deltaLonRad = math.rad(lon2 - lon1)
+
+  -- Haversine formula
+  local a = math.sin(deltaLatRad / 2) * math.sin(deltaLatRad / 2) +
+            math.cos(lat1Rad) * math.cos(lat2Rad) *
+            math.sin(deltaLonRad / 2) * math.sin(deltaLonRad / 2)
+
+  local c = 2 * Utils.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+  return R * c
+end
+
+---Calculate total path distance and transit time for a route
+---@param waypoints table<integer, {lat: number, lon: number}> Array of waypoints defining the route
+---@param speedKnots number Transit speed in knots
+---@return number totalDistance Total path distance in nautical miles
+---@return number totalTime Total transit time in seconds
+function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
+  if not waypoints or #waypoints < 2 then
+    return 0, 0
+  end
+
+  if not speedKnots or speedKnots <= 0 then
+    error("Speed must be a positive number")
+  end
+
+  local totalDistance = 0
+
+  -- Calculate distance between consecutive waypoints
+  for i = 1, #waypoints - 1 do
+    local point1 = waypoints[i]
+    local point2 = waypoints[i + 1]
+
+    local distance = GameUtils.calculateDistance(
+      point1.lat,
+      point1.lon,
+      point2.lat,
+      point2.lon
+    )
+
+    totalDistance = totalDistance + distance
+  end
+
+  -- Calculate time in seconds
+  -- Time = Distance / Speed (in hours), then convert to seconds
+  local totalTime = (totalDistance / speedKnots) * 3600
+
+  return totalDistance, totalTime
+end
+
 ---@param xLatitude number
 ---@param xLongitude number
 ---@param maxRadius number

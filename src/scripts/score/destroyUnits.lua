@@ -47,20 +47,10 @@ if unit then
         (score + config.s.uav),
         "Destroyed a recon UAV."
       )
-      local type = 'BZK005'
 
-      if unit.dbid == config.platform.WZ8 then
-        type = 'WZ8'
-      end
-
-      for _, value in pairs(saveData.c.recon.temp[type]) do
-        if value.guid == unit.guid then
-          saveData.c.recon.temp[type][value.guid] = nil
-        end
-      end
-
-      for index, q in ipairs(saveData.c.recon.queue) do
-        if q.unitGUID == unit.guid then
+      -- Remove from reconnaissance queue
+      for index, entry in ipairs(saveData.c.recon.queue) do
+        if entry.unitGUID == unit.guid then
           saveData.c.recon.queue[index] = nil
         end
       end
