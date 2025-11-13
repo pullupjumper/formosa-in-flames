@@ -343,45 +343,40 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
     -- Phase 2: In-flight management (monitor UAV status, verify endTime, handle mission completion)
     if entry.hasLaunched and not entry.isFinished then
       local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
+      local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
 
-      -- Check if unit still exists (may be destroyed in combat)
+      -- Check if UAV was destroyed
       if not actualUnit then
-        Logger.log(string.format("Recon unit not found (destroyed or missing): %s", tostring(entry.unitGUID)))
-        finishReconMission(config, reconSchedule, entry, LACMContext, false) -- Mission failed: Intelligence incomplete
+        Logger.log(string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
+        -- Mission success depends on whether endTime was reached (intelligence collection completed)
+        finishReconMission(config, reconSchedule, entry, LACMContext, isEndTimeReached)
         goto continue
       end
 
-      -- Only process if unit has completed its current course
+      -- UAV exists: check if still flying course
       if #actualUnit.course > 0 then
         goto continue
       end
 
-      -- Check if endTime has been reached (UAV must complete full reconnaissance duration)
-      if not GameUtils.isAfterStartTime(entry.endTime) then
-        -- Course complete but endTime not reached: UAV stays airborne (loitering) to ensure full intelligence collection
+      -- Course completed: check if endTime reached
+      if not isEndTimeReached then
+        -- Course complete but endTime not reached: loiter and wait for full reconnaissance duration
         Logger.log(string.format("UAV %s completed course but waiting for endTime: %s",
           actualUnit.name, entry.endTime))
         goto continue
       end
 
-      -- Both conditions met (course complete AND endTime reached): Process mission completion
-      -- Handle based on mode: tracking or normal reconnaissance
+      -- Both course and endTime completed: process mission completion
       if entry.isTracking and entry.trackingTargetGUID then
-        -- Tracking mode: has assigned target to track for missile guidance
+        -- Tracking mode: continue tracking target
         local success = handleReconTracking(entry, actualUnit)
-
         if not success then
-          -- Target lost or tracking failed - but recon mission already completed (past endTime)
-          -- Finish mission successfully since reconnaissance duration was completed with valid intelligence
-          Logger.log(string.format("Tracking failed for unit %s, but recon completed, returning to base", actualUnit
-          .name))
-          finishReconMission(config, reconSchedule, entry, LACMContext, true) -- Mission succeeded: Intelligence complete
+          Logger.log(string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
+          finishReconMission(config, reconSchedule, entry, LACMContext, true)
         end
-        -- If tracking succeeds, do nothing - wait for next cycle to continue tracking
       else
-        -- Normal reconnaissance mode: Finish mission successfully
-        -- This includes: isTracking=false OR (isTracking=true but no trackingTargetGUID assigned)
-        finishReconMission(config, reconSchedule, entry, LACMContext, true) -- Mission succeeded: Intelligence complete
+        -- Normal reconnaissance: mission complete
+        finishReconMission(config, reconSchedule, entry, LACMContext, true)
       end
     end
 
