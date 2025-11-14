@@ -84,7 +84,7 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   end
 
   if not baseUnit.embarkedUnits or not baseUnit.embarkedUnits.Aircraft then
-    Logger.log("Air base " .. baseUnit.name .. " has no embarked aircraft")
+    Logger.log("dynamicOperations", "Air base " .. baseUnit.name .. " has no embarked aircraft")
     return 0
   end
 
@@ -102,10 +102,10 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
     end
   end
 
-  Logger.log(
-    "Base " .. baseUnit.name .. " has " .. availableCount ..
-    " available aircraft of type DBID " .. tostring(requiredUnitDBID)
-  )
+  Logger.log("dynamicOperations",
+      "Base " .. baseUnit.name .. " has " .. availableCount ..
+      " available aircraft of type DBID " .. tostring(requiredUnitDBID)
+    )
 
   return availableCount
 end
@@ -189,10 +189,10 @@ end
 local function processDynamicTargets(packageData, contacts, config, saveData, packageIndex)
   local strikeTargets = {}
 
-  Logger.log(
-    "Package " .. packageIndex .. " using dynamic target filtering, filters: " ..
-    table.concat(packageData.target.filterNames, ", ")
-  )
+  Logger.log("dynamicOperations",
+      "Package " .. packageIndex .. " using dynamic target filtering, filters: " ..
+      table.concat(packageData.target.filterNames, ", ")
+    )
 
   local shouldTrack = packageData.target.filterNames[1] == "findNavalTargets" or
       packageData.target.filterNames[1] == "findRadioDirection"
@@ -212,7 +212,7 @@ local function processDynamicTargets(packageData, contacts, config, saveData, pa
       local targets = targetingFunction(filterOpts)
       if targets and #targets > 0 then
         Utils.insertList(strikeTargets, targets)
-        Logger.log("Package " .. packageIndex .. " filter " .. filterName .. " found " .. #targets .. " targets")
+        Logger.log("dynamicOperations", "Package " .. packageIndex .. " filter " .. filterName .. " found " .. #targets .. " targets")
       end
     else
       Logger.error("Unknown target filtering function: " .. filterName)
@@ -232,7 +232,7 @@ end
 local function processFixedTargets(packageData, saveData, isFirstWave, packageIndex)
   local strikeTargets = {}
 
-  Logger.log("Package " .. packageIndex .. " using fixed target list for BDA assessment")
+  Logger.log("dynamicOperations", "Package " .. packageIndex .. " using fixed target list for BDA assessment")
 
   if not packageData.target.objs then
     return strikeTargets
@@ -244,7 +244,7 @@ local function processFixedTargets(packageData, saveData, isFirstWave, packageIn
   )
 
   if filteredTargets and #filteredTargets > 0 then
-    Logger.log("Package " .. packageIndex .. " filtered " .. #filteredTargets .. " candidate targets")
+    Logger.log("dynamicOperations", "Package " .. packageIndex .. " filtered " .. #filteredTargets .. " candidate targets")
     local task = { target = { list = filteredTargets, contactAge = packageData.target.contactAge } }
     strikeTargets = TargetingProcess.assessTargetsDamage(task, isFirstWave)
   end
@@ -307,9 +307,9 @@ local function processATOTemplateWithValidation(config, saveData, contacts, wave
         packageData.target.list = strikeTargets
       end
       table.insert(validPackages, packageData)
-      Logger.log("Package " .. packageIndex .. " validated: " .. #strikeTargets .. " targets, " .. reason)
+      Logger.log("dynamicOperations", "Package " .. packageIndex .. " validated: " .. #strikeTargets .. " targets, " .. reason)
     else
-      Logger.log("Package " .. packageIndex .. " skipped: " .. reason)
+      Logger.log("dynamicOperations", "Package " .. packageIndex .. " skipped: " .. reason)
     end
   end
 
@@ -324,7 +324,7 @@ end
 local function calculateRoleAdvanceTime(packageData, role)
   -- Validate role exists in package
   if not packageData[role] or not packageData[role].baseGUID then
-    Logger.log("Role " .. role .. " not found in package or missing baseGUID")
+    Logger.log("dynamicOperations", "Role " .. role .. " not found in package or missing baseGUID")
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -334,7 +334,7 @@ local function calculateRoleAdvanceTime(packageData, role)
       packageData.escort.missionParams.opts.patrolZone
 
   if not patrolZone or #patrolZone == 0 then
-    Logger.log("No patrol zone found for advance time calculation")
+    Logger.log("dynamicOperations", "No patrol zone found for advance time calculation")
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -342,7 +342,7 @@ local function calculateRoleAdvanceTime(packageData, role)
   local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
 
   if not point then
-    Logger.log("Reference point not found: " .. tostring(rp))
+      Logger.log("dynamicOperations", "Reference point not found: " .. tostring(rp))
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -353,7 +353,7 @@ local function calculateRoleAdvanceTime(packageData, role)
   )
 
   if not distance or distance <= 0 then
-    Logger.log("Invalid distance calculated for role " .. role)
+    Logger.log("dynamicOperations", "Invalid distance calculated for role " .. role)
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -366,10 +366,10 @@ local function calculateRoleAdvanceTime(packageData, role)
   -- Calculate flight time: distance(nm) / speed(knots) * 3600 seconds
   local flightTime = (distance / speed) * 3600
 
-  Logger.log(string.format(
-    "Calculated %s advance time: %.1f minutes (%.1f nm distance)",
-    role, flightTime / 60, distance
-  ))
+    Logger.log("dynamicOperations", string.format(
+      "Calculated %s advance time: %.1f minutes (%.1f nm distance)",
+      role, flightTime / 60, distance
+    ))
 
   return math.ceil(flightTime)
 end
@@ -393,7 +393,7 @@ local function calculateSupportAdvanceTime(packageData)
 
   -- If no support bases found, return default
   if #supportBases == 0 then
-    Logger.log("No support bases found for advance time calculation")
+    Logger.log("dynamicOperations", "No support bases found for advance time calculation")
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -418,7 +418,7 @@ local function calculateSupportAdvanceTime(packageData)
 
   -- Validate distance calculation
   if not furthestBase or maxDistance <= 0 then
-    Logger.log("Invalid distance calculated between support bases and target")
+    Logger.log("dynamicOperations", "Invalid distance calculated between support bases and target")
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -431,10 +431,10 @@ local function calculateSupportAdvanceTime(packageData)
   -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
   local flightTime = (maxDistance / speed) * 3600
 
-  Logger.log(string.format(
-    "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
-    flightTime / 60, maxDistance, furthestBase.role
-  ))
+    Logger.log("dynamicOperations", string.format(
+      "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
+      flightTime / 60, maxDistance, furthestBase.role
+    ))
 
   return math.ceil(flightTime) -- Round up to nearest second
 end
@@ -447,7 +447,7 @@ end
 local function calculateStrikerFlightTime(packageData)
   if not packageData.striker or not packageData.striker.baseGUID or
       not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
-    Logger.log("Invalid striker flight time calculation - using fallback duration")
+    Logger.log("dynamicOperations", "Invalid striker flight time calculation - using fallback duration")
     return TIME_CONSTANTS.MISSION_DURATION -- fallback to constant
   end
 
@@ -456,7 +456,7 @@ local function calculateStrikerFlightTime(packageData)
   -- local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1])
 
   if not distance or distance <= 0 then
-    Logger.log("Invalid distance calculated for striker flight time - using fallback duration")
+    Logger.log("dynamicOperations", "Invalid distance calculated for striker flight time - using fallback duration")
     return TIME_CONSTANTS.MISSION_DURATION -- fallback
   end
 
@@ -469,10 +469,10 @@ local function calculateStrikerFlightTime(packageData)
   -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
   local flightTime = (distance / speed) * 3600
 
-  Logger.log(string.format(
-    "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
-    flightTime / 60, distance
-  ))
+    Logger.log("dynamicOperations", string.format(
+      "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
+      flightTime / 60, distance
+    ))
 
   return math.ceil(flightTime)
 end
@@ -671,8 +671,7 @@ local function insertATOWave(saveData, packageTemplate, reconType)
       packageData,
       packageIndex,
       previousPackage,
-      packageTemplate.strikeInterval or 0
-    )
+      packageTemplate.strikeInterval or 0)
 
     table.insert(newWave.packages, newPackage)
     previousPackage = packageData
@@ -692,8 +691,9 @@ end
 ---@return boolean # true if any recon event was triggered and processed, false if none ready or failed
 local function processReconSchedule(config, saveData, contacts)
   local reconSchedule = saveData.c.dynamicOperations.reconSchedule
+
   if not reconSchedule or #reconSchedule == 0 then
-    Logger.log("No reconnaissance schedule found")
+    Logger.log("dynamicOperations", "No reconnaissance schedule found")
     return false
   end
 
@@ -701,7 +701,7 @@ local function processReconSchedule(config, saveData, contacts)
   local airOperations = DynamicOperationsUtils.filterOperationsByType(reconSchedule, "air")
 
   if #airOperations == 0 then
-    Logger.log("No air operations pending")
+    Logger.log("dynamicOperations", "No air operations pending")
     return false
   end
 
@@ -720,11 +720,11 @@ local function processReconSchedule(config, saveData, contacts)
 
     if GameUtils.isAfterStartTime(scheduledTimestamp) then
       anyTriggered = true
-      Logger.log(
-        "Air reconnaissance trigger activated: " ..
-        reconEntry.type .. " at timestamp " ..
-        tostring(scheduledTimestamp)
-      )
+      Logger.log("dynamicOperations",
+          "Air reconnaissance trigger activated: " ..
+          reconEntry.type .. " at timestamp " ..
+          tostring(scheduledTimestamp)
+        )
 
       if operation.template then
         local validPackages = processATOTemplateWithValidation(
@@ -746,26 +746,26 @@ local function processReconSchedule(config, saveData, contacts)
             table.insert(modifiedTemplate.packages, validPackage)
           end
 
-          Logger.log(
-            "Found " .. #validPackages .. " valid packages out of " ..
-            #operation.template.packages .. " total packages (" ..
-            totalValidTargets .. " targets)"
-          )
+          Logger.log("dynamicOperations",
+              "Found " .. #validPackages .. " valid packages out of " ..
+              #operation.template.packages .. " total packages (" ..
+              totalValidTargets .. " targets)"
+            )
 
           local success = insertATOWave(saveData, modifiedTemplate, reconEntry.type)
 
           if success then
             DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
             anyProcessed = true
-            Logger.log(
-              "Dynamic ATO wave successfully inserted: " .. operation.template.name ..
-              " with " .. #validPackages .. " packages"
-            )
+            Logger.log("dynamicOperations", 
+                "Dynamic ATO wave successfully inserted: " .. operation.template.name ..
+                " with " .. #validPackages .. " packages"
+              )
           else
             Logger.error("Failed to insert dynamic ATO wave: " .. operation.template.name)
           end
         else
-          Logger.log("No valid packages found, ATO generation skipped")
+          Logger.log("dynamicOperations", "No valid packages found, ATO generation skipped")
         end
       end
     end
@@ -798,7 +798,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
   end
 
   if not saveData.c.dynamicOperations.enabled then
-    Logger.log("Dynamic Operations not enabled, skipping")
+    Logger.log("dynamicOperations", "Dynamic Operations not enabled, skipping")
     return false
   end
 

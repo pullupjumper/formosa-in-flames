@@ -64,7 +64,7 @@ local function removeEvent(descriptor, zone, sideObj, sideName, isDeleted)
     GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = descriptor.name })
   end
   GameUtils.unitEntersAreaEvent(descriptor.zoneName, {}, {}, '', 'remove', false, false, false)
-  Logger.log("[GPS Jamming] Removed GPS jamming zone: " .. descriptor.zoneName)
+  Logger.log("GPSJamming", "[GPS Jamming] Removed GPS jamming zone: " .. descriptor.zoneName)
   return true
 end
 
@@ -97,7 +97,7 @@ function GPSJamming.jamming(config, sideName)
       local jamChance = math.random(100)
 
       if jamChance > wpn.jammingResistance then
-        Logger.log("[GPS Jamming] GPS jamming successful on " .. weaponU.name)
+        Logger.log("GPSJamming", "[GPS Jamming] GPS jamming successful on " .. weaponU.name)
 
         if weaponU.course then
           local count = Utils.getCount(weaponU.course)
@@ -137,7 +137,7 @@ function GPSJamming.jamming(config, sideName)
         end
         return true
       else
-        Logger.log("[GPS Jamming] Weapon " .. weaponU.name .. " resisted jamming")
+        Logger.log("GPSJamming", "[GPS Jamming] Weapon " .. weaponU.name .. " resisted jamming")
         return false
       end
     end
@@ -282,7 +282,7 @@ function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
 
   --       GameApi.ScenEdit_RemoveZone(sideName, -925, { Description = myz.description })
   --       GameUtils.unitEntersAreaEvent(jammerData.zoneName, {}, {}, '', 'remove', false, false, false)
-  --       Logger.log("[GPS Jamming] Removed GPS jamming zone: " .. jammerData.zoneName)
+  --       Logger.log("GPSJamming", "[GPS Jamming] Removed GPS jamming zone: " .. jammerData.zoneName)
   --     end
   --   end
 

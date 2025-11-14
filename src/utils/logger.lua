@@ -1,8 +1,9 @@
+local config = require("src.core.constants")
+
 local Logger = {}
 
 -- Toggle whether in game (set by you in main)
 Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
-
 
 
 ---@param side string @The side the message is visible to (sidename may also be used in place of side)
@@ -40,24 +41,39 @@ local function printBox(side, ...)
   ScenEdit_SpecialMessage(side, boxString)
 end
 
--- Actual output function (automatic detection)
----comment
----@param message string
-function Logger.log(message)
-  if Logger.inGame then
-    printBox('playerside', "[LOG] " .. message)
-  else
-    print("[LOG] " .. message) -- For development stage
+-- Log with module name and verbose check
+---@param moduleName string Module name to check verbose setting
+---@param message string Log message
+function Logger.log(moduleName, message)
+  local moduleConfig = config.logging and config.logging.modules and config.logging.modules[moduleName]
+
+  if moduleConfig and moduleConfig.verbose then
+    local formattedMessage = string.format("[%s] %s", moduleName, message)
+    if Logger.inGame then
+      printBox('playerside', "[LOG] " .. formattedMessage)
+    else
+      print("[LOG] " .. formattedMessage)
+    end
   end
 end
 
----comment
----@param message string
+-- Error logging (always output, no verbose check)
+---@param message string Error message
 function Logger.error(message)
   if Logger.inGame then
     printBox('playerside', "[ERROR] " .. message)
   else
     print("[ERROR] " .. message)
+  end
+end
+
+-- Warning logging (similar to error, always output)
+---@param message string Warning message
+function Logger.warn(message)
+  if Logger.inGame then
+    printBox('playerside', "[WARN] " .. message)
+  else
+    print("[WARN] " .. message)
   end
 end
 

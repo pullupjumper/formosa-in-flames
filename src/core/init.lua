@@ -247,9 +247,9 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
 
   if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
-    Logger.log('Init data and save.')
+    Logger.log("init", 'Init data and save.')
   else
-    Logger.log('Does not init data.')
+    Logger.log("init", 'Does not init data.')
   end
 end
 

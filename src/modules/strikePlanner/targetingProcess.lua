@@ -191,7 +191,7 @@ function TargetingProcess.findNavalTargets(opts)
 
         if not hasTracked then
           hasTracked = Recon.trackTarget(saveData.c.recon, filteredUnits, config.platform.WZ8, contact)
-          Logger.log("hasTracked: " .. tostring(hasTracked))
+          Logger.log("recon", "hasTracked: " .. tostring(hasTracked))
         end
       end
     end

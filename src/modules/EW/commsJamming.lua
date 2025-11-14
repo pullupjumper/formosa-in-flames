@@ -79,10 +79,10 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 
   -- Log significant communication level changes (debugging aid)
   if commModifier < -200 then
-    Logger.log("CommsJamming: Severe comm degradation detected for " ..
+    Logger.log("commsJamming", "CommsJamming: Severe comm degradation detected for " ..
       affectedUnitGUID .. " (level: " .. commModifier .. ")")
   elseif commModifier > 300 then
-    Logger.log("CommsJamming: Strong comm enhancement detected for " ..
+    Logger.log("commsJamming", "CommsJamming: Strong comm enhancement detected for " ..
       affectedUnitGUID .. " (level: " .. commModifier .. ")")
   end
 
@@ -131,8 +131,8 @@ local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jamme
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
         affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
         affectedUnitCtx.isOutOfComms = true
-        Logger.log(
-          "CommsJamming: Unit " .. affectedUnitCtx.guid .. " successfully jammed by " ..
+        Logger.log("commsJamming",
+          "Unit " .. affectedUnitCtx.guid .. " successfully jammed by " ..
           jammer.guid .. " (distance: " .. math.floor(distance) ..
           "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
         )
@@ -141,8 +141,8 @@ local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jamme
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
         affectedUnitCtx.outofcomms = 0
         affectedUnitCtx.isOutOfComms = false
-        Logger.log(
-          "CommsJamming: Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
+        Logger.log("commsJamming",
+          "Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
           math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
         )
         return true
@@ -180,8 +180,8 @@ local function directionalJammingWithDistance(config, affectedUnitCtx, jammer, d
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
         affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
         affectedUnitCtx.isOutOfComms = true
-        Logger.log(
-          "CommsJamming: Unit " .. affectedUnitCtx.guid .. " successfully jammed by " ..
+        Logger.log("commsJamming",
+          "Unit " .. affectedUnitCtx.guid .. " successfully jammed by " ..
           jammer.guid .. " (distance: " .. math.floor(distance) .. "nm" .. ")"
         )
         return true
@@ -189,8 +189,8 @@ local function directionalJammingWithDistance(config, affectedUnitCtx, jammer, d
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
         affectedUnitCtx.outofcomms = 0
         affectedUnitCtx.isOutOfComms = false
-        Logger.log(
-          "CommsJamming: Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
+        Logger.log("commsJamming",
+          "Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
           math.floor(distance) .. "nm" .. ")"
         )
         return true
@@ -225,7 +225,7 @@ local function findJammers(jammers)
     end
   end
 
-  Logger.log("CommsJamming: Found " .. #airborneJammers .. " active communication jammers")
+  Logger.log("commsJamming", "CommsJamming: Found " .. #airborneJammers .. " active communication jammers")
   return airborneJammers
 end
 
@@ -254,7 +254,7 @@ local function findSAMAndRadar(IADSContext)
     end
   end
 
-  Logger.log("CommsJamming: Found " .. unitCount .. " potential SAM/Radar targets")
+  Logger.log("commsJamming", "CommsJamming: Found " .. unitCount .. " potential SAM/Radar targets")
   return unitTemp
 end
 
@@ -275,10 +275,10 @@ function CommsJamming.handleCommsJamming(config, saveData)
   local totalJammedUnits = 0
   local totalAttempts = 0
 
-  Logger.log(
-    "CommsJamming: Processing " .. #jammers .. " jammers against " ..
-    Utils.getCount(unitCtxs) .. " potential targets"
-  )
+  Logger.log("commsJamming",
+      "CommsJamming: Processing " .. #jammers .. " jammers against " ..
+      Utils.getCount(unitCtxs) .. " potential targets"
+    )
 
   -- Apply jamming effects with distance caching
   for _, jammer in ipairs(jammers) do
@@ -317,8 +317,8 @@ function CommsJamming.handleCommsJamming(config, saveData)
 
     totalJammedUnits = totalJammedUnits + count
     totalAttempts = totalAttempts + jammerAttempts
-    Logger.log("CommsJamming: Jammer " ..
-      jammer.guid .. " processed " .. jammerAttempts .. " attempts, affected " .. count .. " units")
+    Logger.log("commsJamming", "CommsJamming: Jammer " ..
+        jammer.guid .. " processed " .. jammerAttempts .. " attempts, affected " .. count .. " units")
   end
 
   -- Handle aircraft communication quality
@@ -336,20 +336,20 @@ function CommsJamming.handleCommsJamming(config, saveData)
       if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
         GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
         aircraftRTB = aircraftRTB + 1
-        Logger.log("CommsJamming: Aircraft " .. aircraftCtx.guid ..
+        Logger.log("commsJamming", "Aircraft " .. aircraftCtx.guid ..
           " ordered RTB due to comm degradation (level: " ..
           aircraftCtx.commsLevel .. " < threshold: " .. aircraftCtx.commsThreshold .. ")")
       elseif math.abs(aircraftCtx.commsLevel - oldCommLevel) > 50 then
-        Logger.log("CommsJamming: Aircraft " ..
+        Logger.log("commsJamming", "Aircraft " ..
           aircraftCtx.guid .. " comm level changed: " .. oldCommLevel .. " -> " .. aircraftCtx.commsLevel)
       end
     end
   end
 
-  Logger.log(
-    "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
-    " jamming attempts successful, " .. aircraftRTB .. "/" .. aircraftProcessed .. " aircraft ordered RTB"
-  )
+  Logger.log("commsJamming", 
+      "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
+      " jamming attempts successful, " .. aircraftRTB .. "/" .. aircraftProcessed .. " aircraft ordered RTB"
+    )
 end
 
 ---Initialize communications jammer contexts for the specified side

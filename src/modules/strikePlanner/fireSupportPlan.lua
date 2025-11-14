@@ -69,7 +69,7 @@ local function processFST(FST, config, saveData)
   end
 
   if not shouldDeployToFiringPoint(config, saveData, FST) then
-    Logger.log("Batteries not at firing position for " .. FST.name)
+    Logger.log("ground", "Batteries not at firing position for " .. FST.name)
     return false
   end
 
@@ -105,7 +105,7 @@ local function executeFireSupportTasks(FSEM)
 
       if result > 0 then
         FST.isFinished = true
-        Logger.log('Fired ' .. result .. ' missiles for ' .. FST.name)
+        Logger.log("ground", 'Fired ' .. result .. ' missiles for ' .. FST.name)
       end
     end
   end

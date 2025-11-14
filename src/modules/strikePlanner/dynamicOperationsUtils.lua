@@ -19,7 +19,7 @@ function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
   end
 
   reconEntry.executed = true
-  Logger.log("Reconnaissance entry at " .. reconEntry.time .. " fully completed")
+  Logger.log("dynamicOperations", "Reconnaissance entry at " .. reconEntry.time .. " fully completed")
   return true
 end
 
@@ -29,6 +29,7 @@ function DynamicOperationsUtils.updateReconScheduleStatus(saveData)
   if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconSchedule then
     return
   end
+
 
   for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconSchedule) do
     if not reconEntry.executed then
@@ -68,8 +69,8 @@ function DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, suc
   operation.executed = true
   operation.executionResult = success
 
-  Logger.log("Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") ..
-    " for reconnaissance at " .. reconEntry.time)
+    Logger.log("dynamicOperations", "Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") ..
+      " for reconnaissance at " .. reconEntry.time)
 
   -- Check if all operations in this reconnaissance entry are now completed
   DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
@@ -133,7 +134,7 @@ function DynamicOperationsUtils.registerGeneratedOperation(operationType, operat
   end
 
   saveData.c.dynamicOperations.generatedOperations[operationType][operationName] = true
-  Logger.log("Registered generated " .. operationType .. " operation: " .. operationName)
+  Logger.log("dynamicOperations", "Registered generated " .. operationType .. " operation: " .. operationName)
 end
 
 ---Get operations from most recent reconnaissance entry (based on current game time) classified by type and next reconnaissance time
@@ -210,15 +211,15 @@ function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedu
   -- Format current timestamp for logging
   local currentTimeStr = os.date("%Y-%m-%d %H:%M:%S", currentTimestamp)
 
-  if mostRecentEntry then
-    Logger.log("Retrieved " .. #result.air .. " air operations and " .. #result.ground ..
-      " ground operations from most recent recon at " .. mostRecentEntry.time ..
-      " (current time: " .. currentTimeStr .. ")" ..
-      (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no more scheduled recon"))
-  else
-    Logger.log("No reconnaissance entries found before current time: " .. currentTimeStr ..
-      (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no scheduled recon"))
-  end
+    if mostRecentEntry then
+      Logger.log("dynamicOperations", "Retrieved " .. #result.air .. " air operations and " .. #result.ground ..
+        " ground operations from most recent recon at " .. mostRecentEntry.time ..
+        " (current time: " .. currentTimeStr .. ")" ..
+        (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no more scheduled recon"))
+    else
+      Logger.log("dynamicOperations", "No reconnaissance entries found before current time: " .. currentTimeStr ..
+        (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no scheduled recon"))
+    end
 
   return result
 end
@@ -295,7 +296,7 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
   -- If new template not found, reuse current template
   local finalName = nextName
   if not newTemplate then
-    Logger.log("Template not found: " .. configKey .. ", reusing current template: " .. templateName)
+    Logger.log("dynamicOperations", "Template not found: " .. configKey .. ", reusing current template: " .. templateName)
     -- Reuse current template but keep original name
     if operation.type == "air" then
       newTemplate = operation.template.packages
@@ -304,7 +305,7 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
     end
     finalName = templateName -- Keep original name when reusing
   else
-    Logger.log("Found next template: " .. configKey)
+    Logger.log("dynamicOperations", "Found next template: " .. configKey)
   end
 
   -- Create new operation object

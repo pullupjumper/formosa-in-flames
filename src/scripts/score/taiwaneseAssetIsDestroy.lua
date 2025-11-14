@@ -28,12 +28,12 @@ if unit then
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.mlrs)
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.srbm)
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.glcm)
-      Logger.log("A resupply unit has been destoryed.")
+      Logger.log("score", "A resupply unit has been destoryed.")
     elseif unit.dbid == config.platform.AMMO then
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.mlrs)
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.srbm)
       Launcher.handleSupplyAssetDestruction(unit, saveData.t.ground.glcm)
-      Logger.log("An ammunition has been destoryed.")
+      Logger.log("score", "An ammunition has been destoryed.")
     elseif unit.dbid == config.platform.FPS117 or
         unit.dbid == config.platform.TPS43F or
         unit.dbid == config.platform.HR3000 or

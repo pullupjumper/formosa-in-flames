@@ -346,7 +346,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   if transmission.autodetectable then
     updateAutodetectableState(unit, false)
     transmission.autodetectable = false
-    Logger.log("updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to false")
+    Logger.log("SIGINT", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to false")
   end
 
   -- Check if should become autodetectable
@@ -354,7 +354,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   if transmission.currentDetectionLevel > maxCount and not transmission.autodetectable then
     updateAutodetectableState(unit, true)
     transmission.autodetectable = true
-    Logger.log("updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to true")
+    Logger.log("SIGINT", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to true")
   end
 end
 
@@ -377,7 +377,7 @@ local function handleUndetected(sigintContext, unit)
   if transmission.autodetectable then
     updateAutodetectableState(unit, false)
     transmission.autodetectable = false
-    Logger.log("handleUndetected: Updated autodetectable state for unit " .. unit.name .. " to false")
+    Logger.log("SIGINT", "handleUndetected: Updated autodetectable state for unit " .. unit.name .. " to false")
   end
 end
 
@@ -432,7 +432,7 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
     ::continue::
   end
 
-  Logger.log(string.format("SIGINT processing: %d/%d units processed, %d detections",
+  Logger.log("SIGINT", string.format("SIGINT processing: %d/%d units processed, %d detections",
     processedCount, Utils.getCount(unitContexts), detectedCount))
 
   return results
@@ -470,7 +470,7 @@ function SIGINT.initReconAircraftContexts(config, SIGINTContext, sideName)
     end
   end
 
-  Logger.log(string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations",
+  Logger.log("SIGINT", string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations",
     initializedCount, sideName))
 
   return initializedCount

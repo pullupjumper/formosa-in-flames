@@ -468,7 +468,7 @@ local function createShipFormation(formationConfig)
     end
   end
 
-  Logger.log(string.format("Successfully created formation %s with %d ships",
+  Logger.log("unitGenerator", string.format("Successfully created formation %s with %d ships",
     formationConfig.groupName, #createdUnits))
   return true
 end
@@ -529,7 +529,7 @@ function UnitGenerator.createSAGs(sagDescriptors, sideName)
     end
   end
 
-  Logger.log(string.format("Successfully created SAGs for %s", sideName))
+  Logger.log("unitGenerator", string.format("Successfully created SAGs for %s", sideName))
   return true
 end
 
@@ -572,7 +572,7 @@ function UnitGenerator.createCSG(csgDescriptor)
     csg.course = csgDescriptor.to.area
   end
 
-  Logger.log("Successfully created CSG")
+  Logger.log("unitGenerator", "Successfully created CSG")
   return true
 end
 
@@ -597,7 +597,7 @@ function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
     end
   end
 
-  Logger.log(string.format("Successfully added deployed ships for %s", sideName))
+  Logger.log("unitGenerator", string.format("Successfully added deployed ships for %s", sideName))
   return true
 end
 
@@ -653,7 +653,7 @@ function UnitGenerator.addSubmarines(config, sideName)
     end
   end
 
-  Logger.log(string.format("Successfully added submarines for %s", sideName))
+  Logger.log("unitGenerator", string.format("Successfully added submarines for %s", sideName))
   return true
 end
 
@@ -691,7 +691,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
     end
   end
 
-  Logger.log(string.format("Successfully added aircraft"))
+  Logger.log("unitGenerator", string.format("Successfully added aircraft"))
   return true
 end
 
@@ -749,7 +749,7 @@ function UnitGenerator.addLandingShips(config, amphibOpsConfig)
     end
   end
 
-  Logger.log("Successfully added landing ships")
+  Logger.log("unitGenerator", "Successfully added landing ships")
   return true
 end
 
@@ -790,7 +790,7 @@ function UnitGenerator.removeLandingShips(config)
     end
   end
 
-  Logger.log(string.format("Removed %d landing ships", removedCount))
+  Logger.log("unitGenerator", string.format("Removed %d landing ships", removedCount))
   return true
 end
 
@@ -802,7 +802,7 @@ function UnitGenerator.initAircraftContexts(config, context)
   local filteredUnits = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
 
   if not filteredUnits then
-    Logger.log("No Taiwan aircraft units found for initialization")
+    Logger.log("unitGenerator", "No Taiwan aircraft units found for initialization")
     return true -- Not an error condition, just no units to initialize
   end
 
@@ -835,7 +835,7 @@ function UnitGenerator.initAircraftContexts(config, context)
     end
   end
 
-  Logger.log(string.format("Initialized aircraft contexts: %d AEW, %d AC", aewCount, acCount))
+  Logger.log("unitGenerator", string.format("Initialized aircraft contexts: %d AEW, %d AC", aewCount, acCount))
   return true
 end
 

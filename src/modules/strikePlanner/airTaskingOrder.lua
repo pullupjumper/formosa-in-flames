@@ -72,7 +72,7 @@ local function initiateLoadoutForPackage(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
   local timeToReady = packageData.timeToReady or (9 * 60)
 
-  Logger.log("Starting loadout for package: " .. packageData.striker.missionParams.name)
+  Logger.log("air", "Starting loadout for package: " .. packageData.striker.missionParams.name)
 
   for _, role in ipairs(roles) do
     if packageData[role] and packageData[role].loadoutID then
@@ -83,7 +83,7 @@ local function initiateLoadoutForPackage(packageData)
 
       -- If no unitDBID is specified, skip this role
       if not targetUnitDBID then
-        Logger.log("No unitDBID specified for role: " .. role .. ", skipping loadout setup")
+        Logger.log("air", "No unitDBID specified for role: " .. role .. ", skipping loadout setup")
         goto continue
       end
 
@@ -110,7 +110,7 @@ local function initiateLoadoutForPackage(packageData)
 
               if result then
                 unitsProcessed = unitsProcessed + 1
-                Logger.log(string.format(
+                Logger.log("air", string.format(
                   "Setting loadout for %s (DBID:%d, %s %d/%d) with ID %d, ready in %d seconds",
                   unit.name, unit.dbid, role, unitsProcessed, unitCount, loadoutID, timeToReady
                 ))
@@ -122,14 +122,14 @@ local function initiateLoadoutForPackage(packageData)
           end
         end
 
-        Logger.log(string.format(
+        Logger.log("air", string.format(
           "Completed loadout setup for %s: %d/%d units processed (target DBID: %d)",
           role, unitsProcessed, unitCount, targetUnitDBID
         ))
 
         -- If insufficient aircraft of matching type found, log warning
         if unitsProcessed < unitCount then
-          Logger.log(string.format(
+          Logger.log("air", string.format(
             "loging: Only found %d aircraft with DBID %d for %s role, need %d",
             unitsProcessed, targetUnitDBID, role, unitCount
           ))
@@ -148,7 +148,7 @@ local function initiateLoadoutForPackage(packageData)
   loadoutStatus.expectedReadyTime = currentTime + timeToReady
 
   local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
-  Logger.log("All loadouts initiated, expected ready at: " .. expectedReadyTimeStr)
+  Logger.log("air", "All loadouts initiated, expected ready at: " .. expectedReadyTimeStr)
 end
 
 --- Check if weapon loading is complete
@@ -207,7 +207,7 @@ local function createMission(packageData, role)
   local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionParams.name)
 
   if not mission then
-    Logger.log("Mission not found, creating: " .. packageData[role].missionParams.name)
+    Logger.log("air", "Mission not found, creating: " .. packageData[role].missionParams.name)
 
     mission = GameUtils.createMission(
       "China",
@@ -306,7 +306,7 @@ local function processPackage(config, saveData, packageData)
     end
   end
 
-  Logger.log("All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
+  Logger.log("air", "All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
 
   if packageData.reconUAV then
     if not packageData.reconUAV.takeoffTime then
@@ -324,7 +324,7 @@ local function processPackage(config, saveData, packageData)
       packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
       packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime)
 
-      Logger.log(string.format("Recon UAV takeoff time set to: %s",
+      Logger.log("air", string.format("Recon UAV takeoff time set to: %s",
         packageData.reconUAV.takeoffTime))
     end
 
@@ -333,15 +333,15 @@ local function processPackage(config, saveData, packageData)
     copyReconUAV.isFinished = false
     copyReconUAV.trackingTargetGUID = nil
     table.insert(saveData.c.recon.queue, copyReconUAV)
-    Logger.log("Recon UAV added to queue.")
+    Logger.log("air", "Recon UAV added to queue.")
   end
 
   -- 5. Find targets
   local evaluatedTargetlist = packageData.target.list
-  Logger.log(packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
+  Logger.log("air", packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < packageData.target.minTargetCount then
-    Logger.log("Not enough targets found for " ..
+    Logger.log("air", "Not enough targets found for " ..
       packageData.striker.missionParams.name .. ". Need " .. packageData.target.minTargetCount)
     return false
   end
@@ -356,11 +356,11 @@ local function processPackage(config, saveData, packageData)
     return false
   end
 
-  Logger.log("Targets assigned to mission " .. packageData.striker.missionParams.name)
+  Logger.log("air", "Targets assigned to mission " .. packageData.striker.missionParams.name)
 
   -- 7. Assign units to all missions
   if assignUnits(packageData) then
-    Logger.log(packageData.striker.missionParams.name ..
+    Logger.log("air", packageData.striker.missionParams.name ..
       " status -> LAUNCHED. All loadouts ready, package has been launched.")
     return true -- Success
   else

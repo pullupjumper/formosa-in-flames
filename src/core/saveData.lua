@@ -4,32 +4,30 @@ local config = require('src.core.constants')
 local saveData = {}
 saveData.c = {}
 saveData.c.targetlist = {}
+---@type SBJ__AirOperationsContext
 saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
-saveData.c.air.dynamicATO = {}
+---@type SBJ__DynamicOperationsContext
 saveData.c.dynamicOperations = {}
+---@type SBJ__GroundForceContext
 saveData.c.ground = {}
----@type SBJ__WeaponSystemContext
 saveData.c.ground.mlrs = {}
----@type SBJ__WeaponSystemContext
 saveData.c.ground.srbm = {}
----@type SBJ__WeaponSystemContext
 saveData.c.ground.mrbm = {}
----@type SBJ__WeaponSystemContext
 saveData.c.ground.glcm = {}
----@type SBJ__WeaponSystemContext
 saveData.c.ground.ascm = {}
-saveData.c.ground.dynamicFSP = {}
 saveData.c.surface = {}
 ---@type SBJ__LACMContext
 saveData.c.surface.lacm = {}
 saveData.c.subSurface = {}
 saveData.c.subSurface.slcm = {}
+---@type SBJ__PHIBOPContext
 saveData.c.PHIBOP = {}
 ---@type SBJ__ReconContext
 saveData.c.recon = {}
 saveData.c.GPSJamming = {}
+---@type SBJ__CommsJammingContext
 saveData.c.commsJamming = {}
 saveData.c.repairRunway = {}
 ---@type SBJ__IADSContext
@@ -37,14 +35,11 @@ saveData.c.IADS = {}
 ---@type SBJ__SIGINTContext
 saveData.c.SIGINT = {}
 saveData.t = {}
+---@type SBJ__GroundForceContext
 saveData.t.ground = {}
----@type SBJ__WeaponSystemContext
 saveData.t.ground.mlrs = {}
----@type SBJ__WeaponSystemContext
 saveData.t.ground.glcm = {}
----@type SBJ__WeaponSystemContext
 saveData.t.ground.srbm = {}
----@type SBJ__WeaponSystemContext
 saveData.t.ground.ascm = {}
 saveData.t.repairRunway = {}
 ---@type SBJ__IADSContext
@@ -61,20 +56,16 @@ saveData.s = {}
 -- SIGINT
 saveData.c.SIGINT.isActivated = true
 saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
----@type table<string, SBJ__AircraftContext>
 saveData.c.SIGINT.RA = {}
----@type table<string, SBJ__RadioTransmissionContext>
 saveData.c.SIGINT.transmissions = {}
 
 
 -- IADS
 saveData.c.IADS.isActivated = true
----@type table<string, SBJ__C2Context>
 saveData.c.IADS.C2 = {}
 
 -- Comms jamming
 saveData.c.commsJamming.isActivated = true
----@type table<string, SBJ__AircraftContext>
 saveData.c.commsJamming.jammers = {}
 
 -- GPS Jamming
@@ -101,7 +92,6 @@ saveData.c.GPSJamming.jammers = {
 saveData.c.ground.mlrs.isActivated = true
 saveData.c.ground.mlrs.reloadTime = config.c.ground.mlrs.reloadTime
 saveData.c.ground.mlrs.OPAREAs = config.c.ground.mlrs.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9ASEFCGDKF'] = {
     guid = 'IC8B0X-0HN9ASEFCGDKF',
@@ -114,7 +104,6 @@ saveData.c.ground.mlrs.ammunitions = {
     wpnDefault = config.c.ground.mlrs.wpnDefault,
   },
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.c.ground.mlrs.resupplyUnits = {
   ['IC8B0X-0HN7R5QOERV4D'] = {
     guid = 'IC8B0X-0HN7R5QOERV4D',
@@ -139,7 +128,6 @@ saveData.c.ground.mlrs.resupplyUnits = {
     ammunition = 'IC8B0X-0HNBRRE2PRT40',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.c.ground.mlrs.firingUnits = {
   ['IC8B0X-0HND05GGU36EN'] = {
     name = '1st Bn, 1st Rockets Arty Bde',
@@ -170,7 +158,6 @@ saveData.c.ground.mlrs.firingUnits = {
 saveData.c.ground.glcm.isActivated = true
 saveData.c.ground.glcm.reloadTime = config.c.ground.glcm.reloadTime
 saveData.c.ground.glcm.OPAREAs = config.c.ground.glcm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.glcm.ammunitions = {
   ['IC8B0X-0HN99I5RL5KR9'] = {
     guid = 'IC8B0X-0HN99I5RL5KR9',
@@ -178,7 +165,6 @@ saveData.c.ground.glcm.ammunitions = {
     wpnDefault = config.c.ground.glcm.wpnDefault,
   },
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.c.ground.glcm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVG88'] = {
     guid = 'IC8B0X-0HN7R5QOIVG88',
@@ -192,9 +178,7 @@ saveData.c.ground.glcm.resupplyUnits = {
     ammunition = 'IC8B0X-0HN99I5RL5KR9',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.c.ground.glcm.firingUnits = {
-  ---@type SBJ__FiringUnitContext
   ['6Z8LM5-0HMN97ERAUODK'] = {
     guid = '6Z8LM5-0HMN97ERAUODK',
     name = '635th Bde, PLARF',
@@ -213,7 +197,6 @@ saveData.c.ground.glcm.firingUnits = {
 saveData.c.ground.srbm.isActivated = true
 saveData.c.ground.srbm.reloadTime = config.c.ground.srbm.reloadTime
 saveData.c.ground.srbm.OPAREAs = config.c.ground.srbm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9ASEFCG848'] = {
     guid = 'IC8B0X-0HN9ASEFCG848',
@@ -246,7 +229,6 @@ saveData.c.ground.srbm.ammunitions = {
     wpnDefault = config.c.ground.srbm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.c.ground.srbm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVL7D'] = {
     guid = 'IC8B0X-0HN7R5QOIVL7D',
@@ -315,7 +297,6 @@ saveData.c.ground.srbm.resupplyUnits = {
     ammunition = 'IC8B0X-0HN9ASEFCGA5A',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.c.ground.srbm.firingUnits = {
   ['X58F5H-0HN1G2IFLNKG9'] = {
     guid = 'X58F5H-0HN1G2IFLNKG9',
@@ -389,7 +370,6 @@ saveData.c.ground.srbm.firingUnits = {
 saveData.c.ground.mrbm.isActivated = true
 saveData.c.ground.mrbm.reloadTime = config.c.ground.mrbm.reloadTime
 saveData.c.ground.mrbm.OPAREAs = config.c.ground.mrbm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.c.ground.mrbm.ammunitions = {
   ['IC8B0X-0HNCOR6HG2KK5'] = {
     guid = 'IC8B0X-0HNCOR6HG2KK5',
@@ -397,7 +377,6 @@ saveData.c.ground.mrbm.ammunitions = {
     wpnDefault = config.c.ground.mrbm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.c.ground.mrbm.resupplyUnits = {
   ['IC8B0X-0HNCOR6HG2KF9'] = {
     guid = 'IC8B0X-0HNCOR6HG2KF9',
@@ -411,7 +390,6 @@ saveData.c.ground.mrbm.resupplyUnits = {
     ammunition = 'IC8B0X-0HNCOR6HG2KK5',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.c.ground.mrbm.firingUnits = {
   ['IC8B0X-0HNCOR6HG2JE1'] = {
     guid = 'IC8B0X-0HNCOR6HG2JE1',
@@ -428,7 +406,6 @@ saveData.c.ground.mrbm.firingUnits = {
 
 -- Recon
 saveData.c.recon.isActivated = true
----@type SBJ__ReconQueueEntry[]
 saveData.c.recon.queue = {
   {
     baseGUID = config.base.LIUAN_AB,
@@ -449,12 +426,10 @@ saveData.c.recon.queue = {
 
 -- Fire support plan
 saveData.c.ground.isActivated = true
----@type SBJ__FireSupportExecutionMatrix[]
 saveData.c.ground.FSP = {}
 
 -- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
 saveData.c.air.isActivated = true
----@type SBJ__Wave[]
 saveData.c.air.ATO = {}
 
 
@@ -515,13 +490,7 @@ saveData.c.PHIBOP.calculations = {
     }
   },
 }
-saveData.c.PHIBOP.barges = {
-  -- [''] = {
-  --     guid = '',
-  --     bridgeGUID = '',
-  --     roros = {},
-  -- },
-}
+saveData.c.PHIBOP.barges = {}
 
 -- Land strike from DDG
 saveData.c.surface.lacm.isActivated = false
@@ -539,11 +508,13 @@ saveData.c.repairRunway.runways = {
   -- { guid = '', startTime = nil }
 }
 
+-- Ground force
+saveData.t.ground.isActivated = true
+
 -- MLRS
 saveData.t.ground.mlrs.isActivated = true
 saveData.t.ground.mlrs.reloadTime = config.t.ground.mlrs.reloadTime
 saveData.t.ground.mlrs.OPAREAs = config.t.ground.mlrs.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.mlrs.ammunitions = {
   ['IC8B0X-0HN9B47GHVJ7G'] = {
     guid = 'IC8B0X-0HN9B47GHVJ7G',
@@ -551,7 +522,6 @@ saveData.t.ground.mlrs.ammunitions = {
     wpnDefault = config.t.ground.mlrs.wpnDefault,
   }
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.t.ground.mlrs.resupplyUnits = {
   ['IC8B0X-0HN7RT1I581BB'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 21st Arty Command',
@@ -565,7 +535,6 @@ saveData.t.ground.mlrs.resupplyUnits = {
     ammunition = 'IC8B0X-0HN9B47GHVJ7G',
   }
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.t.ground.mlrs.firingUnits = {
   ['IC8B0X-0HN7RU9I3KV9T'] = {
     name = 'Rocket Arty Coy, 21st Arty Command',
@@ -585,7 +554,6 @@ saveData.t.ground.mlrs.firingUnits = {
 saveData.t.ground.srbm.isActivated = true
 saveData.t.ground.srbm.reloadTime = config.t.ground.srbm.reloadTime
 saveData.t.ground.srbm.OPAREAs = config.t.ground.srbm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.srbm.ammunitions = {
   ['IC8B0X-0HN9B47GHVJG6'] = {
     guid = 'IC8B0X-0HN9B47GHVJG6',
@@ -593,7 +561,6 @@ saveData.t.ground.srbm.ammunitions = {
     wpnDefault = config.t.ground.srbm.wpnDefault,
   }
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.t.ground.srbm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVSFS'] = {
     name = 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
@@ -607,7 +574,6 @@ saveData.t.ground.srbm.resupplyUnits = {
     ammunition = 'IC8B0X-0HN9B47GHVJG6',
   }
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.t.ground.srbm.firingUnits = {
   ['IC8B0X-0HN7SOIUF4D47'] = {
     name = 'Rocket Arty Coy, 58th Arty Command',
@@ -628,7 +594,6 @@ saveData.t.ground.srbm.firingUnits = {
 saveData.t.ground.glcm.isActivated = true
 saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.OPAREAs = config.t.ground.glcm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.glcm.ammunitions = {
   ['IC8B0X-0HN9B47GHVKAG'] = {
     guid = 'IC8B0X-0HN9B47GHVKAG',
@@ -641,7 +606,6 @@ saveData.t.ground.glcm.ammunitions = {
     wpnDefault = config.t.ground.glcm.wpnDefault * 2,
   }
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.t.ground.glcm.resupplyUnits = {
   ['IC8B0X-0HN7R5QOIVTHT'] = {
     name = 'Ammo Sec, 641st Bn, 791st AFAD & Arty Bde',
@@ -666,7 +630,6 @@ saveData.t.ground.glcm.resupplyUnits = {
     ammunition = 'IC8B0X-0HN9B47GHVL3V',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.t.ground.glcm.firingUnits = {
   ['X58F5H-0HN1ESDRTUULO'] = {
     guid = 'X58F5H-0HN1ESDRTUULO',
@@ -699,7 +662,6 @@ saveData.t.ground.glcm.firingUnits = {
 saveData.t.ground.ascm.isActivated = true
 saveData.t.ground.ascm.reloadTime = config.t.ground.ascm.reloadTime
 saveData.t.ground.ascm.OPAREAs = config.t.ground.ascm.OPAREAs
----@type table<string, SBJ__AmmunitionContext>
 saveData.t.ground.ascm.ammunitions = {
   ['IC8B0X-0HN9B47GHVLV9'] = {
     guid = 'IC8B0X-0HN9B47GHVLV9',
@@ -712,7 +674,6 @@ saveData.t.ground.ascm.ammunitions = {
     wpnDefault = config.t.ground.ascm.wpnDefault * 2,
   },
 }
----@type table<string, SBJ__ResupplyUnitContext>
 saveData.t.ground.ascm.resupplyUnits = {
   ['IC8B0X-0HN87KFOFSGUB'] = {
     name = 'Hai Feng Shore-based ASM SUPP Sqn',
@@ -737,7 +698,6 @@ saveData.t.ground.ascm.resupplyUnits = {
     ammunition = 'IC8B0X-0HN9JFGVR06D8',
   },
 }
----@type table<string, SBJ__FiringUnitContext>
 saveData.t.ground.ascm.firingUnits = {
   ['IC8B0X-0HN87MOIE9C4U'] = {
     name = '2nd Hai Feng Shore-based ASM MOB Sqn',
@@ -812,7 +772,6 @@ saveData.t.repairRunway.runways = {
 
 -- IADS
 saveData.t.IADS.isActivated = true
----@type table<string, SBJ__C2Context>
 saveData.t.IADS.ROCC = {
   ['IC8B0X-0HNC3OB4KJKIF'] = {
     name = 'ROCC/North',
@@ -839,7 +798,6 @@ saveData.t.IADS.ROCC = {
     radar = {}
   },
 }
----@type table<string, SBJ__C2Context>
 saveData.t.IADS.TAAOC = {
   ['IC8B0X-0HN41D1QKTVU7'] = {
     name = 'TAAOC/3rd OPAREA',
@@ -900,9 +858,7 @@ saveData.t.GPSJamming.jammers = {
 -- SIGINT
 saveData.u.SIGINT.isActivated = true
 saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
----@type table<string, SBJ__AircraftContext>
 saveData.u.SIGINT.RA = {}
----@type table<string, SBJ__RadioTransmissionContext>
 saveData.u.SIGINT.transmissions = {}
 
 -- Dynamic Operations (unified reconnaissance schedule)
@@ -912,7 +868,6 @@ saveData.c.dynamicOperations.generatedOperations = {
   air = {},   -- Track generated air operations
   ground = {} -- Track generated ground operations
 }
----@type SBJ__ReconScheduleEntry[]
 saveData.c.dynamicOperations.reconSchedule = {
   {
     -- time = "2027-06-09 02:14:00",

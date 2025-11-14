@@ -32,7 +32,7 @@ function IADS.processC2Disruption(IADSContext, C2)
     disableUnitsUnderC2Node(IADSContext.C2[C2.guid], 'radar')
     disableUnitsUnderC2Node(IADSContext.C2[C2.guid], 'SAM')
     IADSContext.C2[C2.guid] = nil
-    Logger.log(C2.name .. '\'s C2 is destroyed')
+    Logger.log("IADS", C2.name .. '\'s C2 is destroyed')
   end
 
   -- Check Taiwan ROCC nodes
@@ -40,14 +40,14 @@ function IADS.processC2Disruption(IADSContext, C2)
     disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], 'radar')
     disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], 'SAM')
     IADSContext.ROCC[C2.guid] = nil
-    Logger.log(C2.name .. '\'s ROCC is destroyed')
+    Logger.log("IADS", C2.name .. '\'s ROCC is destroyed')
   end
 
   -- Check Taiwan TAAOC nodes
   if IADSContext.TAAOC and IADSContext.TAAOC[C2.guid] then
     disableUnitsUnderC2Node(IADSContext.TAAOC[C2.guid], 'SAM')
     IADSContext.TAAOC[C2.guid] = nil
-    Logger.log(C2.name .. '\'s TAAOC is destroyed')
+    Logger.log("IADS", C2.name .. '\'s TAAOC is destroyed')
   end
 end
 
@@ -64,7 +64,7 @@ function IADS.removeDestroyedUnitContextFromIADS(C2TypeContext, type, destroyedU
     for _, area in pairs(ctx.areas) do
       if destroyedUnit:inArea(area) and C2TypeContext[ctx.guid] then
         C2TypeContext[ctx.guid][type][destroyedUnit.guid] = nil
-        Logger.log(destroyedUnit.name .. '\'s ' .. type .. ' is destroyed')
+        Logger.log("IADS", destroyedUnit.name .. '\'s ' .. type .. ' is destroyed')
       end
     end
   end
@@ -123,7 +123,7 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
   -- Activate the nearest radar found
   if temp.unit ~= nil then
     GameApi.ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    Logger.log(tostring(temp.unit.name) .. '\'s radar is activated.')
+    Logger.log("IADS", tostring(temp.unit.name) .. '\'s radar is activated.')
   end
 end
 
@@ -151,7 +151,7 @@ function IADS.addC2Facilities(IADSConfig)
     end
   end
 
-  Logger.log("Successfully added C2 facilities")
+  Logger.log("IADS", "Successfully added C2 facilities")
   return true
 end
 
@@ -244,7 +244,7 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
     end
   end
 
-  Logger.log("Successfully initialized C2 facilities")
+  Logger.log("IADS", "Successfully initialized C2 facilities")
   return true
 end
 
@@ -345,7 +345,7 @@ function IADS.removeC2Facilities(config, IADSConfig)
     end
   end
 
-  Logger.log(string.format("Removed %d C2 facilities", removedCount))
+  Logger.log("IADS", string.format("Removed %d C2 facilities", removedCount))
   return true
 end
 

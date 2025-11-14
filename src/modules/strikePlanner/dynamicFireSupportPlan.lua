@@ -23,7 +23,8 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
 
   if FSTTemplate.target.filterNames then
     -- For targets requiring dynamic filtering (e.g., radar, air defense systems), use passed contacts
-    Logger.log("Using dynamic target filtering, filters: " .. table.concat(FSTTemplate.target.filterNames, ", "))
+    Logger.log("dynamicOperations",
+      "Using dynamic target filtering, filters: " .. table.concat(FSTTemplate.target.filterNames, ", "))
     local shouldTrack = FSTTemplate.target.filterNames[1] == "findNavalTargets" or
         FSTTemplate.target.filterNames[1] == "findRadioDirection"
 
@@ -49,7 +50,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
 
         if targets and #targets > 0 then
           Utils.insertList(strikeTargets, targets)
-          Logger.log("Filter " .. filterName .. " found " .. #targets .. " targets")
+          Logger.log("dynamicOperations", "Filter " .. filterName .. " found " .. #targets .. " targets")
         end
       else
         Logger.error("Unknown target filtering function: " .. filterName)
@@ -57,7 +58,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
     end
   else
     -- For fixed target lists (e.g., airport facilities), use assessTargetsDamage
-    Logger.log("Using fixed target list for BDA assessment")
+    Logger.log("dynamicOperations", "Using fixed target list for BDA assessment")
 
     -- First filter targets that meet criteria
     local filteredTargets = {}
@@ -70,7 +71,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
     end
 
     if filteredTargets and #filteredTargets > 0 then
-      Logger.log("Filtered " .. #filteredTargets .. " candidate targets")
+      Logger.log("dynamicOperations", "Filtered " .. #filteredTargets .. " candidate targets")
 
       -- Perform BDA assessment
       local task = { target = { list = filteredTargets, contactAge = FSTTemplate.target.contactAge } }
@@ -161,7 +162,7 @@ local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpn
 
     -- Check if already assigned to another FST
     if assignedFiringUnitCtxs[firingUnitGUID] then
-      Logger.log(firingUnitCtx.name .. " already assigned to other FST")
+      Logger.log("dynamicOperations", firingUnitCtx.name .. " already assigned to other FST")
     else
       -- Validate battery status and readiness
       local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
@@ -172,13 +173,14 @@ local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpn
         if reason:find("Cannot find") then
           Logger.error(reason)
         else
-          Logger.log("Battery " .. firingUnitCtx.name .. " - " .. reason)
+          Logger.log("dynamicOperations", "Battery " .. firingUnitCtx.name .. " - " .. reason)
         end
       end
     end
   end
 
-  Logger.log("Check completed, available firing units: " .. #availableFiringUnitCtxs .. "/" .. #firingUnitCtxs)
+  Logger.log("dynamicOperations",
+    "Check completed, available firing units: " .. #availableFiringUnitCtxs .. "/" .. #firingUnitCtxs)
   return availableFiringUnitCtxs
 end
 
@@ -194,7 +196,8 @@ local function insertFSEM(saveData, newFSEM)
   -- Register the generated operation name
   DynamicOperationsUtils.registerGeneratedOperation("ground", newFSEM.name, saveData)
 
-  Logger.log("Successfully inserted dynamic FSEM: " .. newFSEM.name .. ", FST count: " .. #newFSEM.FSTs)
+  Logger.log("dynamicOperations",
+    "Successfully inserted dynamic FSEM: " .. newFSEM.name .. ", FST count: " .. #newFSEM.FSTs)
   return true
 end
 
@@ -261,7 +264,7 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
         }
 
         table.insert(newFSEM.FSTs, FST)
-        Logger.log("Created FST: " .. FSTTemplate.name .. ", target count: " ..
+        Logger.log("dynamicOperations", "Created FST: " .. FSTTemplate.name .. ", target count: " ..
           #targets .. ", fire unit count: " .. #availableFiringUnits)
       else
         Logger.error("Specified fire units for FST " .. FSTTemplate.name .. " are unavailable or already assigned")
@@ -292,6 +295,7 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
     return false
   end
 
+
   -- Create deep copy to avoid modifying original template
   local copyFSTs = Utils.deepCopy(operation.template.FSTs)
 
@@ -306,9 +310,9 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
     if FSTTargets and #FSTTargets >= FSTTemplate.target.minTargetCount then
       evaluatedTargets[FSTTemplate.name] = FSTTargets
       hasValidTargets = true
-      Logger.log("FST " .. FSTTemplate.name .. " found " .. #FSTTargets .. " targets")
+      Logger.log("dynamicOperations", "FST " .. FSTTemplate.name .. " found " .. #FSTTargets .. " targets")
     else
-      Logger.log("FST " .. FSTTemplate.name .. " insufficient targets (required: " ..
+      Logger.log("dynamicOperations", "FST " .. FSTTemplate.name .. " insufficient targets (required: " ..
         FSTTemplate.target.minTargetCount .. ", found: " ..
         (FSTTargets and #FSTTargets or 0) .. ")")
     end
@@ -325,7 +329,7 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
       config, saveData, modifiedTemplate, evaluatedTargets, reconEntry.type
     )
   else
-    Logger.log("Insufficient targets for follow-up strikes, skipping FSEM creation")
+    Logger.log("dynamicOperations", "Insufficient targets for follow-up strikes, skipping FSEM creation")
     return false
   end
 end
@@ -366,7 +370,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
 
     -- Check if trigger time is reached (reconnaissance completed + delay)
     if currentTime >= triggerTime then
-      Logger.log("Starting ground reconnaissance schedule processing: " ..
+      Logger.log("dynamicOperations", "Starting ground reconnaissance schedule processing: " ..
         reconEntry.time .. " (type: " .. reconEntry.type .. ")")
 
       -- Process this reconnaissance schedule entry
@@ -377,7 +381,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
       if success then
         DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
         hasExecutedAny = true
-        Logger.log("Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time)
+        Logger.log("dynamicOperations", "Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time)
       else
         Logger.error("Failed to execute dynamic FSP, reconnaissance time: " .. reconEntry.time)
       end

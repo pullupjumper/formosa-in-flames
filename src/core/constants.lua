@@ -3,6 +3,26 @@ local config = {}
 config.isDevMode = true
 config.isSaved = true
 config.difficulty = 'normal'
+
+-- Logging configuration
+config.logging = {
+  modules = {
+    ground = { verbose = true },
+    air = { verbose = true },
+    PHIBOP = { verbose = false },
+    recon = { verbose = true },
+    dynamicOperations = { verbose = true },
+    SIGINT = { verbose = false },
+    commsJamming = { verbose = false },
+    GPSJamming = { verbose = false },
+    IADS = { verbose = false },
+    attackManager = { verbose = false },
+    unitGenerator = { verbose = false },
+    launcher = { verbose = false },
+    score = { verbose = true },
+    init = { verbose = true },
+  }
+}
 config.c = {}
 config.c.air = {}
 config.c.air.landBased = {}

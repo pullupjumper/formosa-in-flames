@@ -214,6 +214,36 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 -- ============================================================================
 -- Amphibious operations types for amphibiousAssault and landingOps modules
 
+--- Barge context for tracking barge operations and associated units
+---@class SBJ__BargeContext:table
+---@field guid string Barge unit GUID
+---@field bridgeGUID? string Bridge unit GUID for barge connection (optional)
+---@field roros string[] Array of RORO ship GUIDs transported by this barge
+
+--- Ship position calculation result for amphibious operation planning
+---@class SBJ__ShipCalculationResult:table
+---@field locations CMO__Location[] Calculated positions for ship formation
+---@field locationIndex number Current position index in the locations array
+---@field dbid number Platform database ID for this ship type
+
+--- Operation zone calculation result containing all ship type positions
+---@class SBJ__OperationZoneCalculation:table
+---@field name string Operation zone name (e.g., 'Taoyuan', 'Penghu', 'Sishu')
+---@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
+
+--- Amphibious operations context managing all amphibious operation state
+---@class SBJ__PHIBOPContext:table
+---@field startTime string Operation start time
+---@field isTesting boolean Whether in testing mode
+---@field isShipsStartedMoving boolean Whether ships have started moving
+---@field isWaitingForShipArrival boolean Whether waiting for ship arrival
+---@field amphibiousAssaultStartTime? number Amphibious assault start timestamp (optional)
+---@field isWaitingForAmphibiousAssault boolean Whether waiting for amphibious assault
+---@field isWaitingForSecondWaveUnloading boolean Whether waiting for second wave unloading
+---@field airlandingMissionStartTime? number Air landing mission start timestamp (optional)
+---@field calculations table<string, SBJ__OperationZoneCalculation> Operation zone calculations indexed by zone name
+---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
+
 ---ACV deployment parameters for launching air cushion vehicles
 ---Temporary parameter pack used for ACV deployment functions
 ---@class SBJ__ACVDeploymentParams:table
@@ -394,6 +424,13 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field startTime string The start time of the mission
 ---@field endTime? string The end time of the mission (optional)
 
+--- Air operations context managing air tasking orders and aircraft status
+---@class SBJ__AirOperationsContext:table
+---@field landBased table Land-based aircraft context (reserved for future use)
+---@field shipBased table Ship-based aircraft context (reserved for future use)
+---@field isActivated boolean Whether air operations system is activated
+---@field ATO table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
+
 
 -- ============================================================================
 -- Launcher & TEL Systems
@@ -450,6 +487,16 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
+
+--- Ground force context data structure, manages all ground-based weapon systems and fire support operations
+---@class SBJ__GroundForceContext:table
+---@field isActivated boolean Whether ground force systems are activated
+---@field mlrs SBJ__WeaponSystemContext Multiple Launch Rocket System
+---@field srbm SBJ__WeaponSystemContext Short-Range Ballistic Missile system
+---@field mrbm SBJ__WeaponSystemContext Medium-Range Ballistic Missile system
+---@field glcm SBJ__WeaponSystemContext Ground-Launched Cruise Missile system
+---@field ascm SBJ__WeaponSystemContext Anti-Ship Cruise Missile system
+---@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
 
 
 -- ============================================================================
@@ -577,6 +624,18 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 -- ============================================================================
 -- Dynamic operations types for dynamicATOInsertion and dynamicFireSupportPlan modules
 
+--- Generated operations tracker for dynamic operations
+---@class SBJ__GeneratedOperationsTracker:table
+---@field air table<string, boolean> Generated air operation names indexed by operation name
+---@field ground table<string, boolean> Generated ground operation names indexed by operation name
+
+--- Dynamic operations context managing intelligence-driven adaptive strike planning
+---@class SBJ__DynamicOperationsContext:table
+---@field enabled boolean Whether dynamic operations system is enabled
+---@field lastEvaluationTime? number Last evaluation timestamp (Unix time)
+---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
+---@field reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance-driven operation schedule
+
 --- Reconnaissance schedule entry for intelligence gathering operations
 ---@class SBJ__ReconScheduleEntry
 ---@field time string Reconnaissance time in format "2027-06-09 14:30:00"
@@ -590,6 +649,7 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field type string Template type
 ---@field executed boolean Whether operation has been executed
 ---@field template SBJ__FSEMTemplate|SBJ__WaveTemplate Operation template (FSEM or Wave)
+---@field executionResult? boolean Operation execution result (true for success, false for failure)
 
 --- Wave template for Dynamic ATO Insertion
 ---@class SBJ__WaveTemplate:table
@@ -690,6 +750,11 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 ---@field RA table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
 ---@field isActivated boolean Whether SIGINT is activated
 ---@field maxCount number Maximum detection level
+
+--- Communications jamming context managing electronic warfare jamming operations
+---@class SBJ__CommsJammingContext:table
+---@field isActivated boolean Whether communications jamming system is activated
+---@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
 
 
 -- ============================================================================

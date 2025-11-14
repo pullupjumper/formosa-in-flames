@@ -169,7 +169,7 @@ end
 local function moveToHideArea(config, firingUnitCtx, firingUnit)
   -- Check if HA exists (some OPAREAs may not have HA)
   if not firingUnitCtx.OPAREA.HA then
-    Logger.log("launcher: No HA defined for firing unit " .. firingUnitCtx.name .. ", skipping hide movement")
+    Logger.log("launcher", "launcher: No HA defined for firing unit " .. firingUnitCtx.name .. ", skipping hide movement")
     return
   end
 

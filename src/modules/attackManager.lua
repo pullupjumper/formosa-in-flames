@@ -97,13 +97,13 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
-    Logger.log('func/AttackContact/No weapons available, no need to fire more')
+    Logger.log("attackManager", 'No weapons available, no need to fire more')
     return false
   end
 
   -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
-    Logger.log('func/AttackContact/Maximum weapon allocation reached, no need to fire more')
+    Logger.log("attackManager", 'Maximum weapon allocation reached, no need to fire more')
     return false
   end
 
@@ -111,7 +111,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
-    Logger.log('func/AttackContact/Target already has sufficient weapons allocated, no need to fire more')
+    Logger.log("attackManager", 'Target already has sufficient weapons allocated, no need to fire more')
     return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 

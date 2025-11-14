@@ -104,10 +104,10 @@ local function handleReconLaunch(entry)
   if units and #units > 0 then
     entry.unitGUID = units[1]
     entry.hasLaunched = true
-    Logger.log(string.format("Launched recon unit %s from base %s", units[1], entry.baseGUID))
+    Logger.log("recon", string.format("Launched recon unit %s from base %s", units[1], entry.baseGUID))
     return true
   else
-    Logger.log(string.format("Failed to launch recon unit from base %s", entry.baseGUID))
+    Logger.log("recon", string.format("Failed to launch recon unit from base %s", entry.baseGUID))
     return false
   end
 end
@@ -119,20 +119,20 @@ end
 local function handleReconTracking(entry, actualUnit)
   -- Check if tracking target is assigned
   if not entry.trackingTargetGUID then
-    Logger.log(string.format("No tracking assignment found for unit: %s", actualUnit.guid))
+    Logger.log("recon", string.format("No tracking assignment found for unit: %s", actualUnit.guid))
     return false
   end
 
   -- Validate entry has speed configured
   if not entry.speed then
-    Logger.log(string.format("No speed configured for unit: %s", actualUnit.guid))
+    Logger.log("recon", string.format("No speed configured for unit: %s", actualUnit.guid))
     return false
   end
 
   local target = GameApi.ScenEdit_GetContact('China', entry.trackingTargetGUID)
 
   if not target then
-    Logger.log(string.format("Tracking target lost: %s", entry.trackingTargetGUID))
+    Logger.log("recon", string.format("Tracking target lost: %s", entry.trackingTargetGUID))
     return false
   end
 
@@ -151,7 +151,7 @@ end
 ---@param actualUnit CMO__Unit The reconnaissance unit
 local function handleReconRTB(actualUnit)
   actualUnit:RTB(true)
-  Logger.log(string.format("Unit %s returning to base", actualUnit.name))
+  Logger.log("recon", string.format("Unit %s returning to base", actualUnit.name))
 end
 
 ---Get platform-specific special operations based on successful reconnaissance
@@ -274,7 +274,7 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
       operations = operations
     })
 
-    Logger.log(string.format("Scheduled %d dynamic operations for recon at %s", #operations, entry.endTime))
+    Logger.log("recon", string.format("Scheduled %d dynamic operations for recon at %s", #operations, entry.endTime))
   end
 end
 
@@ -299,11 +299,11 @@ local function finishReconMission(config, reconSchedule, entry, LACMContext, suc
     -- Mission successful: UAV survived until endTime and completed reconnaissance duration
     -- Intelligence data is complete and reliable, safe to schedule next wave operations
     scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
-    Logger.log(string.format("Recon mission completed successfully, scheduling next operations"))
+    Logger.log("recon", string.format("Recon mission completed successfully, scheduling next operations"))
   else
     -- Mission failed: UAV destroyed or lost before completing reconnaissance duration
     -- Intelligence data is incomplete, do not schedule operations based on insufficient data
-    Logger.log(string.format("Recon mission failed, skipping next wave scheduling"))
+    Logger.log("recon", string.format("Recon mission failed, skipping next wave scheduling"))
   end
 end
 
@@ -347,7 +347,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
 
       -- Check if UAV was destroyed
       if not actualUnit then
-        Logger.log(string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
+        Logger.log("recon", string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
         -- Mission success depends on whether endTime was reached (intelligence collection completed)
         finishReconMission(config, reconSchedule, entry, LACMContext, isEndTimeReached)
         goto continue
@@ -361,7 +361,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
       -- Course completed: check if endTime reached
       if not isEndTimeReached then
         -- Course complete but endTime not reached: loiter and wait for full reconnaissance duration
-        Logger.log(string.format("UAV %s completed course but waiting for endTime: %s",
+        Logger.log("recon", string.format("UAV %s completed course but waiting for endTime: %s",
           actualUnit.name, entry.endTime))
         goto continue
       end
@@ -371,7 +371,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
         -- Tracking mode: continue tracking target
         local success = handleReconTracking(entry, actualUnit)
         if not success then
-          Logger.log(string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
+          Logger.log("recon", string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
           finishReconMission(config, reconSchedule, entry, LACMContext, true)
         end
       else
@@ -436,7 +436,7 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   -- If not in queue, this UAV is not managed by reconnaissance system
   if not queueEntry then
-    Logger.log(string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
+    Logger.log("recon", string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
       UAV.name, UAV.guid))
     return false
   end
@@ -446,7 +446,7 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
   queueEntry.trackingTargetGUID = target.guid
   queueEntry.isFinished = false -- Reactivate entry for tracking mission
 
-  Logger.log(string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
+  Logger.log("recon", string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
   return true
 end
 

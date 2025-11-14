@@ -194,7 +194,7 @@ function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
     local bridge = GameApi.ScenEdit_GetUnit(saveData.c.PHIBOP.barges[ship.guid].bridgeGUID)
 
     if not bridge then
-      Logger.log('Bridge is destroyed')
+      Logger.log("PHIBOP", 'Bridge is destroyed')
       return true
     end
 
