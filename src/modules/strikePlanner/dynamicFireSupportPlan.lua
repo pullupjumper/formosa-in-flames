@@ -170,7 +170,7 @@ local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpn
       if isValid then
         table.insert(availableFiringUnitCtxs, firingUnitCtx)
       else
-        if reason:find("Cannot find") then
+        if reason and reason:find("Cannot find") then
           Logger.error(reason)
         else
           Logger.log("dynamicOperations", "Battery " .. firingUnitCtx.name .. " - " .. reason)
@@ -321,7 +321,6 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
   -- If valid targets exist, create and insert FSEM
   if hasValidTargets then
     -- Create a copy of fsemTemplate with the copied FSTs
-    ---@type SBJ__FSEMTemplate
     local modifiedTemplate = Utils.deepCopy(operation.template)
     modifiedTemplate.FSTs = copyFSTs
 

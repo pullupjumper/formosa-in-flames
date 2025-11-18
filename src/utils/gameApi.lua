@@ -455,8 +455,8 @@ function realApi.ScenEdit_SetUnitDamage(opts)
 end
 
 ---comment
----@param longitude number
----@param latitude number
+---@param longitude number|string
+---@param latitude number|string
 ---@param notification string
 ---@param R number
 ---@param G number
@@ -465,10 +465,12 @@ end
 ---@param persistent boolean
 ---@param lifeTime number
 ---@param fontSize number
-function realApi.ScenEdit_CreateBarkNotification_Geo(longitude, latitude, notification, R, G, B, showToAll, persistent,
-                                                     lifeTime, fontSize)
-  return ScenEdit_CreateBarkNotification_Geo(longitude, latitude, notification, R, G, B, showToAll, persistent, lifeTime,
-    fontSize)
+function realApi.ScenEdit_CreateBarkNotification_Geo(
+    longitude, latitude, notification, R, G, B, showToAll, persistent, lifeTime, fontSize
+)
+  return ScenEdit_CreateBarkNotification_Geo(
+    longitude, latitude, notification, R, G, B, showToAll, persistent, lifeTime, fontSize
+  )
 end
 
 ---comment
@@ -480,7 +482,7 @@ end
 
 ---comment
 ---@param side string
----@param zoneType string
+---@param zoneType string|integer
 ---@param opts table
 ---@return CMO__Zone
 function realApi.ScenEdit_RemoveZone(side, zoneType, opts)

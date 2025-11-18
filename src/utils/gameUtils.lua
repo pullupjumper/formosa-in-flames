@@ -70,8 +70,8 @@ function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
 
   -- Haversine formula
   local a = math.sin(deltaLatRad / 2) * math.sin(deltaLatRad / 2) +
-            math.cos(lat1Rad) * math.cos(lat2Rad) *
-            math.sin(deltaLonRad / 2) * math.sin(deltaLonRad / 2)
+      math.cos(lat1Rad) * math.cos(lat2Rad) *
+      math.sin(deltaLonRad / 2) * math.sin(deltaLonRad / 2)
 
   local c = 2 * Utils.atan2(math.sqrt(a), math.sqrt(1 - a))
 
@@ -267,7 +267,7 @@ end
 ---@param side string
 ---@param name string
 ---@param type string
----@param opts? CMO__Mission
+---@param opts CMO__Mission
 ---@param emcon? string
 ---@return CMO__Mission|nil
 function GameUtils.createMission(side, name, type, opts, emcon)
@@ -390,15 +390,19 @@ function GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt, m
   max_attempts = max_attempts or 50
 
   local point = GameUtils.circularRandomPosition(lat, lon, randomRadius)
-  local unit = GameApi.ScenEdit_AddUnit({
-    type = 'Facility',
-    unitname = name,
-    dbid = unitDBID,
-    side = 'China',
-    Lat = point.latitude,
-    Lon = point.longitude,
-    autodetectable = false
-  })
+  local unit
+
+  if point then
+    unit = GameApi.ScenEdit_AddUnit({
+      type = 'Facility',
+      unitname = name,
+      dbid = unitDBID,
+      side = 'China',
+      latitude = point.latitude,
+      longitude = point.longitude,
+      autodetectable = false
+    })
+  end
 
   if unit then
     return unit, point
@@ -446,6 +450,7 @@ function GameUtils.createRandomUnits(descriptor)
       descriptor.centerPoint.lon,
       descriptor.randomRadius
     )
+    local unitDescriptor
 
     -- Generate unit name with optional random suffix
     local unitname = descriptor.unitname
@@ -453,15 +458,17 @@ function GameUtils.createRandomUnits(descriptor)
       unitname = unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH)
     end
 
-    local unitDescriptor = {
-      type = descriptor.unitType,
-      dbid = dbid,
-      side = descriptor.sideName,
-      Lat = point.latitude,
-      Lon = point.longitude,
-      autodetectable = descriptor.autodetectable,
-      unitname = unitname,
-    }
+    if point then
+      unitDescriptor = {
+        type = descriptor.unitType,
+        dbid = dbid,
+        side = descriptor.sideName,
+        latitude = point.latitude,
+        longitude = point.longitude,
+        autodetectable = descriptor.autodetectable,
+        unitname = unitname,
+      }
+    end
 
     local unit = GameUtils.tryCreateUnit(unitDescriptor)
     if unit then

@@ -184,8 +184,9 @@ function Utils.calculateSphericalCenter(coords)
 end
 
 --- Deep copy a table recursively
----@param original table The table to deep copy
----@return table -- A deep copy of the original table
+---@generic T
+---@param original T The table to deep copy
+---@return T -- A deep copy of the original table
 function Utils.deepCopy(original)
   if type(original) ~= 'table' then
     return original
@@ -246,7 +247,7 @@ function Utils.parseMissionName(missionName)
     return nil, nil, false
   end
 
-  local code = parts[3]  -- Extract code (e.g., "W")
+  local code = parts[3] -- Extract code (e.g., "W")
   local hasAAR = false
   local number = nil
 

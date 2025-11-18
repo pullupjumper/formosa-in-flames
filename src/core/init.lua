@@ -201,6 +201,10 @@ local function initRunways(saveData)
 
   local units = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.FACILITY)
 
+  if not units then
+    return
+  end
+
   for _, v in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(v.guid)
 

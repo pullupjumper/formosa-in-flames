@@ -99,6 +99,10 @@ end
 function UnitStatusUI.wcsSettingTable(config)
   local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
 
+  if not units then
+    return
+  end
+
   local HTMLTemplate = [[
     <!DOCTYPE html>
 <html lang="zh-TW">
@@ -2990,8 +2994,8 @@ function UnitStatusUI.createUI(config, sideName)
     local batteryDataString = createBatteryDataString(config, saveData, sideName, 'srbm', 'mlrs', 'glcm', 'ascm', 'mrbm')
     local magazineDataString = createMagazineDataString(config, sideName)
     local c2NodeDataString = createC2NodeDataString(saveData, sideName, 'C2')
-    local landingUnitsString = UnitStatusUI.countUnitsInEachArea(config)
-    landingUnitsString = gKH.json.stringify(landingUnitsString)
+    local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
+    local landingUnitsString = gKH.json.stringify(landingUnitsData)
 
 
     local HTMLTemplate = getHTMLTemplate()

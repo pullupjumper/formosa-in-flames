@@ -575,19 +575,19 @@ function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 --- Parameters for generating missile flight paths
 ---@class SBJ__GenerateMissilePaths_Params
----@field target_lat number Target latitude
----@field target_lon number Target longitude
----@field launcher_lat number Launcher latitude
----@field launcher_lon number Launcher longitude
----@field radar_range number Radar range (nautical miles)
----@field missile_count? number Number of missiles (default is 5)
----@field missile_speed_kts? number Missile speed in knots (default is 600)
----@field missile_range_nm? number Maximum missile range in nautical miles (default is 100)
+---@field targetLat number Target latitude
+---@field targetLon number Target longitude
+---@field launcherLat number Launcher latitude
+---@field launcherLon number Launcher longitude
+---@field radarRange number Radar range (nautical miles)
+---@field missileCount? number Number of missiles (default is 5)
+---@field missileSpeedKts? number Missile speed in knots (default is 600)
+---@field missileRangeNm? number Maximum missile range in nautical miles (default is 100)
 
 --- Missile path definition with waypoints and timing
 ---@class SBJ__MissilePath
 ---@field waypoints table<integer, CMO__Location> Missile waypoint list
----@field launch_time number Launch time (UTC timestamp)
+---@field launchTime number Launch time (UTC timestamp)
 
 
 -- ============================================================================

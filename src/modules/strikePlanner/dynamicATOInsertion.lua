@@ -103,9 +103,9 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   end
 
   Logger.log("dynamicOperations",
-      "Base " .. baseUnit.name .. " has " .. availableCount ..
-      " available aircraft of type DBID " .. tostring(requiredUnitDBID)
-    )
+    "Base " .. baseUnit.name .. " has " .. availableCount ..
+    " available aircraft of type DBID " .. tostring(requiredUnitDBID)
+  )
 
   return availableCount
 end
@@ -145,7 +145,7 @@ end
 ---@param packageIndex number Index of the package for logging
 ---@param assignedAircraft table<string, number> Map of base GUID to currently assigned aircraft count
 ---@return boolean # true if package is valid and can be executed
----@return string # Reason string (error message on failure, success message on pass)
+---@return string|nil # Reason string (error message on failure, success message on pass)
 local function validateIndividualPackage(packageData, packageTargets, packageIndex, assignedAircraft)
   -- Check target sufficiency
   local targetCount = #packageTargets
@@ -190,9 +190,9 @@ local function processDynamicTargets(packageData, contacts, config, saveData, pa
   local strikeTargets = {}
 
   Logger.log("dynamicOperations",
-      "Package " .. packageIndex .. " using dynamic target filtering, filters: " ..
-      table.concat(packageData.target.filterNames, ", ")
-    )
+    "Package " .. packageIndex .. " using dynamic target filtering, filters: " ..
+    table.concat(packageData.target.filterNames, ", ")
+  )
 
   local shouldTrack = packageData.target.filterNames[1] == "findNavalTargets" or
       packageData.target.filterNames[1] == "findRadioDirection"
@@ -212,7 +212,8 @@ local function processDynamicTargets(packageData, contacts, config, saveData, pa
       local targets = targetingFunction(filterOpts)
       if targets and #targets > 0 then
         Utils.insertList(strikeTargets, targets)
-        Logger.log("dynamicOperations", "Package " .. packageIndex .. " filter " .. filterName .. " found " .. #targets .. " targets")
+        Logger.log("dynamicOperations",
+          "Package " .. packageIndex .. " filter " .. filterName .. " found " .. #targets .. " targets")
       end
     else
       Logger.error("Unknown target filtering function: " .. filterName)
@@ -244,7 +245,8 @@ local function processFixedTargets(packageData, saveData, isFirstWave, packageIn
   )
 
   if filteredTargets and #filteredTargets > 0 then
-    Logger.log("dynamicOperations", "Package " .. packageIndex .. " filtered " .. #filteredTargets .. " candidate targets")
+    Logger.log("dynamicOperations",
+      "Package " .. packageIndex .. " filtered " .. #filteredTargets .. " candidate targets")
     local task = { target = { list = filteredTargets, contactAge = packageData.target.contactAge } }
     strikeTargets = TargetingProcess.assessTargetsDamage(task, isFirstWave)
   end
@@ -289,7 +291,6 @@ end
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
 ---@return SBJ__PackageTemplate[] # Array of validated packages with assigned targets
 local function processATOTemplateWithValidation(config, saveData, contacts, waveTemplate, isFirstWave)
-  ---@type SBJ__PackageTemplate[]
   local copyPackages = Utils.deepCopy(waveTemplate.packages)
   local validPackages = {}
   local assignedAircraft = collectAssignedAircraft(saveData)
@@ -307,7 +308,8 @@ local function processATOTemplateWithValidation(config, saveData, contacts, wave
         packageData.target.list = strikeTargets
       end
       table.insert(validPackages, packageData)
-      Logger.log("dynamicOperations", "Package " .. packageIndex .. " validated: " .. #strikeTargets .. " targets, " .. reason)
+      Logger.log("dynamicOperations",
+        "Package " .. packageIndex .. " validated: " .. #strikeTargets .. " targets, " .. reason)
     else
       Logger.log("dynamicOperations", "Package " .. packageIndex .. " skipped: " .. reason)
     end
@@ -342,7 +344,7 @@ local function calculateRoleAdvanceTime(packageData, role)
   local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
 
   if not point then
-      Logger.log("dynamicOperations", "Reference point not found: " .. tostring(rp))
+    Logger.log("dynamicOperations", "Reference point not found: " .. tostring(rp))
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
@@ -366,10 +368,10 @@ local function calculateRoleAdvanceTime(packageData, role)
   -- Calculate flight time: distance(nm) / speed(knots) * 3600 seconds
   local flightTime = (distance / speed) * 3600
 
-    Logger.log("dynamicOperations", string.format(
-      "Calculated %s advance time: %.1f minutes (%.1f nm distance)",
-      role, flightTime / 60, distance
-    ))
+  Logger.log("dynamicOperations", string.format(
+    "Calculated %s advance time: %.1f minutes (%.1f nm distance)",
+    role, flightTime / 60, distance
+  ))
 
   return math.ceil(flightTime)
 end
@@ -431,10 +433,10 @@ local function calculateSupportAdvanceTime(packageData)
   -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
   local flightTime = (maxDistance / speed) * 3600
 
-    Logger.log("dynamicOperations", string.format(
-      "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
-      flightTime / 60, maxDistance, furthestBase.role
-    ))
+  Logger.log("dynamicOperations", string.format(
+    "Calculated support advance time: %.1f minutes (%.1f nm distance from %s base)",
+    flightTime / 60, maxDistance, furthestBase.role
+  ))
 
   return math.ceil(flightTime) -- Round up to nearest second
 end
@@ -469,10 +471,10 @@ local function calculateStrikerFlightTime(packageData)
   -- Calculate flight time: distance(nm) / speed(480 knots) * 3600 seconds
   local flightTime = (distance / speed) * 3600
 
-    Logger.log("dynamicOperations", string.format(
-      "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
-      flightTime / 60, distance
-    ))
+  Logger.log("dynamicOperations", string.format(
+    "Calculated striker flight time: %.1f minutes (%.1f nm distance)",
+    flightTime / 60, distance
+  ))
 
   return math.ceil(flightTime)
 end
@@ -513,8 +515,10 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
         (advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
       )
     else
-      local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
-      timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval)
+      if previousPackage and previousPackage.striker.startTime then
+        local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
+        timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval)
+      end
     end
   else
     -- Use existing startTime
@@ -671,7 +675,8 @@ local function insertATOWave(saveData, packageTemplate, reconType)
       packageData,
       packageIndex,
       previousPackage,
-      packageTemplate.strikeInterval or 0)
+      packageTemplate.strikeInterval or 0
+    )
 
     table.insert(newWave.packages, newPackage)
     previousPackage = packageData
@@ -721,10 +726,10 @@ local function processReconSchedule(config, saveData, contacts)
     if GameUtils.isAfterStartTime(scheduledTimestamp) then
       anyTriggered = true
       Logger.log("dynamicOperations",
-          "Air reconnaissance trigger activated: " ..
-          reconEntry.type .. " at timestamp " ..
-          tostring(scheduledTimestamp)
-        )
+        "Air reconnaissance trigger activated: " ..
+        reconEntry.type .. " at timestamp " ..
+        tostring(scheduledTimestamp)
+      )
 
       if operation.template then
         local validPackages = processATOTemplateWithValidation(
@@ -737,7 +742,6 @@ local function processReconSchedule(config, saveData, contacts)
 
         if #validPackages > 0 then
           local totalValidTargets = 0
-          ---@type SBJ__WaveTemplate
           local modifiedTemplate = Utils.deepCopy(operation.template)
           modifiedTemplate.packages = {}
 
@@ -747,20 +751,20 @@ local function processReconSchedule(config, saveData, contacts)
           end
 
           Logger.log("dynamicOperations",
-              "Found " .. #validPackages .. " valid packages out of " ..
-              #operation.template.packages .. " total packages (" ..
-              totalValidTargets .. " targets)"
-            )
+            "Found " .. #validPackages .. " valid packages out of " ..
+            #operation.template.packages .. " total packages (" ..
+            totalValidTargets .. " targets)"
+          )
 
           local success = insertATOWave(saveData, modifiedTemplate, reconEntry.type)
 
           if success then
             DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
             anyProcessed = true
-            Logger.log("dynamicOperations", 
-                "Dynamic ATO wave successfully inserted: " .. operation.template.name ..
-                " with " .. #validPackages .. " packages"
-              )
+            Logger.log("dynamicOperations",
+              "Dynamic ATO wave successfully inserted: " .. operation.template.name ..
+              " with " .. #validPackages .. " packages"
+            )
           else
             Logger.error("Failed to insert dynamic ATO wave: " .. operation.template.name)
           end

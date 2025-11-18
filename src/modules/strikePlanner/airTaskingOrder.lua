@@ -328,6 +328,7 @@ local function processPackage(config, saveData, packageData)
         packageData.reconUAV.takeoffTime))
     end
 
+    ---@type SBJ__ReconQueueEntry
     local copyReconUAV = Utils.deepCopy(packageData.reconUAV)
     copyReconUAV.hasLaunched = false
     copyReconUAV.isFinished = false

@@ -1874,7 +1874,6 @@ config.c.PHIBOP.operationalZones = {
         distance = config.c.PHIBOP.shipSettings.transitDistance
       }
     },
-    ---@type SBJ__ACVConfig
     ACV = {
       bearing = config.c.PHIBOP.shipSettings.heading.west.horizontal,
       distance = config.c.PHIBOP.shipSettings.ACVHorizontalDistance,
@@ -1903,7 +1902,6 @@ config.c.PHIBOP.operationalZones = {
     offloadArea = config.c.area.OFFLOAD_AREA_SISHU,
     boat = {
       dbid = config.platform.TYPE_726A,
-      ---@type SBJ__LandingMissionDescriptor[]
       missions = {
         {
           name = 'LANDING/SISHU/1/1',
