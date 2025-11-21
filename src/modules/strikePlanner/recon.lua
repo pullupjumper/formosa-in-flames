@@ -17,6 +17,10 @@ function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
+    base = GameApi.ScenEdit_GetUnit(baseGUID, 'China')
+  end
+
+  if not base then
     return
   end
 
@@ -30,6 +34,7 @@ function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
     local actualUnit = GameApi.ScenEdit_GetUnit(guid)
 
     if actualUnit and actualUnit.dbid == unitDBID and actualUnit.readytime_v == 0 and count < unitCount then
+      GameApi.ScenEdit_SetDoctrine({ guid = actualUnit.guid, }, { automatic_evasion = false })
       actualUnit:Launch(true)
       actualUnit.course = course
       count = count + 1
@@ -177,9 +182,39 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
           name = "C2/1",
           strikeInterval = 0,
           isFirstWave = false,
-          FSTs = config.c.FSTTemplate.STRIKE_C2
+          FSTs = config.c.FSTTemplate.STRIKE_C2_1
         }
       })
+
+      return operations
+    end
+
+    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "C2/", "ground")
+    if existing and operation then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+      table.insert(operations, nextOperation)
+    end
+  elseif entry.unitDBID == config.platform.GJ11 then
+    -- GJ-11 reconnaissance: Schedule CAS operations
+    if not DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/1", "air") then
+      table.insert(operations, {
+        type = "air",
+        executed = false,
+        template = {
+          name = "CAS/N/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          packages = config.c.packageTemplate.CAS_N_1
+        }
+      })
+
+      return operations
+    end
+
+    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/", "air")
+    if existing and operation then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+      table.insert(operations, nextOperation)
     end
   elseif entry.unitDBID == config.platform.H6N then
     -- WZ-8 reconnaissance (launched from H-6N): Schedule anti-ship strike operations
@@ -191,9 +226,26 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
           name = "ANTISHIP/1",
           strikeInterval = 0,
           isFirstWave = false,
-          FSTs = config.c.FSTTemplate.ANTISHIP
+          FSTs = config.c.FSTTemplate.ANTISHIP_1
         }
       })
+
+      return operations
+    end
+
+    if not DynamicOperationsUtils.hasOperation(reconSchedule, "ASUW/N/1 ", "air") then
+      table.insert(operations, {
+        type = "air",
+        executed = false,
+        template = {
+          name = "ASUW/N/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          packages = config.c.packageTemplate.ASUW_N_1
+        }
+      })
+
+      return operations
     end
 
     -- If LACM operations activated: Schedule airbase strike operations
@@ -208,6 +260,48 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
           packages = config.c.packageTemplate.STRIKE_AB_E_1
         }
       })
+
+      return operations
+    end
+
+    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/W/", "air")
+    if existing and operation then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+      table.insert(operations, nextOperation)
+    end
+
+    local strikeInfrastructureOpExisting, strikeInfrastructureOp = DynamicOperationsUtils.hasOperation(
+      reconSchedule, "STRIKE/INFRASTRUCTURE/", "ground"
+    )
+    if strikeInfrastructureOpExisting and strikeInfrastructureOp then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeInfrastructureOp, config)
+      table.insert(operations, nextOperation)
+    end
+
+    local strikeHelipadOpExisting, strikeHelipadOp = DynamicOperationsUtils.hasOperation(
+      reconSchedule, "STRIKE/HELIPAD/", "ground"
+    )
+    if strikeHelipadOpExisting and strikeHelipadOp then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeHelipadOp, config)
+      table.insert(operations, nextOperation)
+    end
+
+    local asuWOpExisting, asuWOp = DynamicOperationsUtils.hasOperation(reconSchedule, "ASUW/N/", "air")
+    if asuWOpExisting and asuWOp then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(asuWOp, config)
+      table.insert(operations, nextOperation)
+    end
+
+    local antiShipOpExisting, antiShipOp = DynamicOperationsUtils.hasOperation(reconSchedule, "ANTISHIP/", "ground")
+    if antiShipOpExisting and antiShipOp then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(antiShipOp, config)
+      table.insert(operations, nextOperation)
+    end
+
+    local strikeEastExisting, strikeEastOp = DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/E/", "air")
+    if LACMContext.isActivated and strikeEastExisting and strikeEastOp then
+      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeEastOp, config)
+      table.insert(operations, nextOperation)
     end
   end
 
@@ -248,15 +342,15 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
   -- Generate next wave operations
   local operations = {}
 
-  for _, operation in ipairs(result.air) do
-    local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-    table.insert(operations, newOperation)
-  end
+  -- for _, operation in ipairs(result.air) do
+  --   local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+  --   table.insert(operations, newOperation)
+  -- end
 
-  for _, operation in ipairs(result.ground) do
-    local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-    table.insert(operations, newOperation)
-  end
+  -- for _, operation in ipairs(result.ground) do
+  --   local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+  --   table.insert(operations, newOperation)
+  -- end
 
   -- Add platform-specific operations
   local specialOps = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
@@ -436,8 +530,9 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   -- If not in queue, this UAV is not managed by reconnaissance system
   if not queueEntry then
-    Logger.log("recon", string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
-      UAV.name, UAV.guid))
+    Logger.log("recon",
+      string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
+        UAV.name, UAV.guid))
     return false
   end
 

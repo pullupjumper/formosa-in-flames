@@ -69,8 +69,9 @@ function DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, suc
   operation.executed = true
   operation.executionResult = success
 
-    Logger.log("dynamicOperations", "Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") ..
-      " for reconnaissance at " .. reconEntry.time)
+  Logger.log("dynamicOperations",
+    "Operation " .. operation.type .. " executed " .. (success and "successfully" or "with failure") ..
+    " for reconnaissance at " .. reconEntry.time)
 
   -- Check if all operations in this reconnaissance entry are now completed
   DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
@@ -211,15 +212,15 @@ function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedu
   -- Format current timestamp for logging
   local currentTimeStr = os.date("%Y-%m-%d %H:%M:%S", currentTimestamp)
 
-    if mostRecentEntry then
-      Logger.log("dynamicOperations", "Retrieved " .. #result.air .. " air operations and " .. #result.ground ..
-        " ground operations from most recent recon at " .. mostRecentEntry.time ..
-        " (current time: " .. currentTimeStr .. ")" ..
-        (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no more scheduled recon"))
-    else
-      Logger.log("dynamicOperations", "No reconnaissance entries found before current time: " .. currentTimeStr ..
-        (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no scheduled recon"))
-    end
+  if mostRecentEntry then
+    Logger.log("dynamicOperations", "Retrieved " .. #result.air .. " air operations and " .. #result.ground ..
+      " ground operations from most recent recon at " .. mostRecentEntry.time ..
+      " (current time: " .. currentTimeStr .. ")" ..
+      (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no more scheduled recon"))
+  else
+    Logger.log("dynamicOperations", "No reconnaissance entries found before current time: " .. currentTimeStr ..
+      (result.nextReconTime and (", next recon at " .. result.nextReconTime) or ", no scheduled recon"))
+  end
 
   return result
 end
@@ -237,23 +238,73 @@ function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operat
     return false, nil, nil
   end
 
-  -- Search through all reconnaissance schedule entries
-  for _, reconEntry in ipairs(reconSchedule) do
-    if reconEntry.operations then
-      for _, operation in ipairs(reconEntry.operations) do
-        -- Match both template name and operation type
-        if operation.type == operationType
-            and operation.template
-            and operation.template.name == templateName then
-          -- Operation found
-          return true, operation, reconEntry
+  -- Check if this is a prefix search (ends with /)
+  -- User requested: "STRIKE/AB/W/" should find "STRIKE/AB/W/3" (max number, latest time)
+  local isPrefixSearch = templateName:sub(-1) == "/"
+
+  if isPrefixSearch then
+    local bestOp = nil
+    local bestEntry = nil
+    local maxNumber = -1
+    local maxTime = -1
+
+    for _, reconEntry in ipairs(reconSchedule) do
+      if reconEntry.operations then
+        for _, operation in ipairs(reconEntry.operations) do
+          if operation.type == operationType and operation.template and operation.template.name then
+            local name = operation.template.name
+            -- Check if name starts with the prefix
+            if name:sub(1, #templateName) == templateName then
+              -- Extract the number part
+              local numberPart = name:sub(#templateName + 1)
+              local number = tonumber(numberPart)
+
+              if number then
+                local entryTime = Utils.parseDatetimeToTimestamp(reconEntry.time)
+
+                -- Update if we found a higher number, or same number with later time
+                if number > maxNumber then
+                  maxNumber = number
+                  maxTime = entryTime
+                  bestOp = operation
+                  bestEntry = reconEntry
+                elseif number == maxNumber then
+                  if entryTime > maxTime then
+                    maxTime = entryTime
+                    bestOp = operation
+                    bestEntry = reconEntry
+                  end
+                end
+              end
+            end
+          end
         end
       end
     end
-  end
 
-  -- Operation not found in schedule
-  return false, nil, nil
+    if bestOp then
+      return true, bestOp, bestEntry
+    else
+      return false, nil, nil
+    end
+  else
+    -- Original exact match logic
+    for _, reconEntry in ipairs(reconSchedule) do
+      if reconEntry.operations then
+        for _, operation in ipairs(reconEntry.operations) do
+          -- Match both template name and operation type
+          if operation.type == operationType
+              and operation.template
+              and operation.template.name == templateName then
+            -- Operation found
+            return true, operation, reconEntry
+          end
+        end
+      end
+    end
+
+    return false, nil, nil
+  end
 end
 
 ---Generate next operation based on given operation by incrementing template number

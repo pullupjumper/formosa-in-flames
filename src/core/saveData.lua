@@ -913,7 +913,7 @@ saveData.c.dynamicOperations.reconSchedule = {
           name = "HELIPAD/1",
           strikeInterval = 0,
           isFirstWave = true,
-          FSTs = config.c.FSTTemplate.STRIKE_HELIPAD
+          FSTs = config.c.FSTTemplate.STRIKE_HELIPAD_1
         }
       }
     }

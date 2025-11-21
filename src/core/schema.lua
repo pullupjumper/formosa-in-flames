@@ -17,7 +17,7 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@param side string The mission side
 ---@param missionName string The mission name or GUID
 ---@param opts CMO__FlightPlanOptions The options for the flight plan
----@return table<number, any> Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
+---@return table<number, any>|nil Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
 function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
 
 --- Unit OODA (Observe, Orient, Decide, Act) loop characteristics

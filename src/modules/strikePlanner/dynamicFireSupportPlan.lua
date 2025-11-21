@@ -373,12 +373,10 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
         reconEntry.time .. " (type: " .. reconEntry.type .. ")")
 
       -- Process this reconnaissance schedule entry
-      local success = processReconSchedule(
-        config, saveData, contacts, reconEntry, operation
-      )
+      local success = processReconSchedule(config, saveData, contacts, reconEntry, operation)
+      DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
 
       if success then
-        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
         hasExecutedAny = true
         Logger.log("dynamicOperations", "Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time)
       else

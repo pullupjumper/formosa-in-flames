@@ -53,25 +53,19 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
       saveData.c.PHIBOP.isWaitingForShipArrival = false
       saveData.c.PHIBOP.isWaitingForAmphibiousAssault = true
       saveData.c.PHIBOP.amphibiousAssaultStartTime = currentTime
-      local time = os.date("%Y-%m-%d %H:%M:%S", currentTime)
-      table.insert(saveData.c.dynamicOperations.reconSchedule, {
-        time = time,
-        type = "reconUAV",
-        delay = 0,
-        executed = false,
-        operations = {
-          {
-            type = "air",
-            executed = false,
-            template = {
-              name = "CAS/N/1",
-              isFirstWave = true,
-              strikeInterval = 0 * 60,
-              packages = config.c.packageTemplate.CAS_N_1
-            }
-          }
-        }
-      })
+      ---@type SBJ__ReconQueueEntry
+      local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
+      local distance, flightTime = GameUtils.calculatePathDistanceAndTime(
+        entry.course,
+        entry.speed
+      )
+      local endTime = currentTime + flightTime
+      entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime)
+      entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime)
+      entry.hasLaunched = false
+      entry.isFinished = false
+      entry.trackingTargetGUID = nil
+      table.insert(saveData.c.recon.queue, entry)
     end
   end
 end

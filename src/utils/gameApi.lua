@@ -13,18 +13,17 @@ local GameApi = {}
 function realApi.ScenEdit_GetUnit(guid, sideName)
   local result
 
-  if sideName then
-    result = ScenEdit_GetUnit({ unitname = guid, side = sideName })
-  else
+  if not sideName then
     result = ScenEdit_GetUnit({ guid = guid })
   end
 
   if result == nil then
-    local errorMsg = "Unit not found with guid: " .. tostring(guid)
-    if sideName then
-      errorMsg = errorMsg .. ", side: " .. tostring(sideName)
-    end
-    error(errorMsg)
+    sideName = sideName or "China"
+    result = ScenEdit_GetUnit({ unitname = guid, side = sideName })
+  end
+
+  if result == nil then
+    error("Unit not found with guid/name: " .. tostring(guid))
   end
 
   return result
@@ -575,8 +574,8 @@ end
 ---comment
 ---@param side string
 ---@param missionName string
----@param opts table
----@return table
+---@param opts CMO__FlightPlanOptions
+---@return table<number, any>|nil
 function realApi.ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
   return ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
 end

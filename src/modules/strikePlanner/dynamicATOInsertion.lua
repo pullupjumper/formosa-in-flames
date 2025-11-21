@@ -757,9 +757,9 @@ local function processReconSchedule(config, saveData, contacts)
           )
 
           local success = insertATOWave(saveData, modifiedTemplate, reconEntry.type)
+          DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
 
           if success then
-            DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
             anyProcessed = true
             Logger.log("dynamicOperations",
               "Dynamic ATO wave successfully inserted: " .. operation.template.name ..

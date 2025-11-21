@@ -165,7 +165,7 @@ local function isLoadoutReady(packageData)
   if loadoutStatus.isLoadoutInitiated and loadoutStatus.expectedReadyTime then
     ---@type string
     local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
-    return GameUtils.isAfterStartTime(expectedReadyTimeStr)
+    return GameUtils.isAfterStartTime(expectedReadyTimeStr, 5)
   end
 
   -- If loadout process hasn't started yet, start now

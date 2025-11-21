@@ -17,6 +17,7 @@ from collections import defaultdict, deque
 # CLEANING FUNCTIONS (from clean_lua_scripts.py)
 # =============================================================================
 
+
 def process_lua_content(content):
     """
     Process Lua content:
@@ -104,7 +105,7 @@ def process_lua_content(content):
         match = re.search(r'local\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*\{', line)
         if match:
             local_tables.append(match.group(1))
-    
+
     # Count function definitions for each table to identify the main module table
     table_function_counts = {}
     for table_name in local_tables:
@@ -114,7 +115,7 @@ def process_lua_content(content):
             if pattern.match(line.strip()):
                 count += 1
         table_function_counts[table_name] = count
-    
+
     # Find the table with the most functions (likely the main module table)
     main_module_table = None
     max_functions = 0
@@ -122,18 +123,20 @@ def process_lua_content(content):
         if count > max_functions and count > 0:  # Must have at least 1 function
             max_functions = count
             main_module_table = table_name
-    
+
     # If we found a main module table and there are multiple tables, remove 'local' from main table
     if main_module_table and len(local_tables) > 1:
         try:
-            pattern = re.compile(r"^(\s*)local(\s+" + re.escape(main_module_table) + r"\s*.*)$")
+            pattern = re.compile(r"^(\s*)local(\s+" +
+                                 re.escape(main_module_table) + r"\s*.*)$")
             for j, line in enumerate(lines):
                 match_local_decl = pattern.match(line)
                 if match_local_decl:
                     # Further check if the line contains '={}' to ensure it's table initialization
                     if re.search(r"=\s*\{", line):
                         # If match successful and is table initialization, remove 'local'
-                        new_line = match_local_decl.group(1) + match_local_decl.group(2)
+                        new_line = match_local_decl.group(
+                            1) + match_local_decl.group(2)
                         lines[j] = new_line
                         break
         except re.error as e:
@@ -169,6 +172,7 @@ def process_lua_content(content):
 
     return content
 
+
 def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
     """
     Clean Lua files from src directory to slim directory.
@@ -176,12 +180,12 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
     """
     if not os.path.exists(slim_dir):
         os.makedirs(slim_dir)
-    
+
     processed_count = 0
     error_count = 0
 
     print(f"🧹 Cleaning Lua files from '{src_dir}' to '{slim_dir}'...")
-    
+
     for root, _, files in os.walk(src_dir):
         for file_name in files:
             if file_name.endswith(".lua"):
@@ -215,7 +219,9 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
                         f.write(processed_content)
 
                     if require_count_before > 0:
-                        print(f"  ✓ {relative_path} (removed {require_count_before - require_count_after}/{require_count_before} require statements)")
+                        print(
+                            f"  ✓ {relative_path} (removed {require_count_before - require_count_after}/{require_count_before} require statements)"
+                        )
                     else:
                         print(f"  ✓ {relative_path}")
                     processed_count += 1
@@ -226,14 +232,17 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
 
     return processed_count, error_count
 
+
 # =============================================================================
 # MERGING FUNCTIONS (from merge_lua_scripts.py)
 # =============================================================================
+
 
 def get_file_section_comment(file_path: str, base_dir: str) -> str:
     """Generate a section comment for the file."""
     relative_path = os.path.relpath(file_path, base_dir)
     return f"-- ===== {relative_path} ===== --"
+
 
 def read_file_content(file_path: str) -> str:
     """Read and return file content with error handling."""
@@ -245,30 +254,33 @@ def read_file_content(file_path: str) -> str:
         print(f"Error reading file {file_path}: {e}")
         return ""
 
-def analyze_file_dependencies(file_path: str, slim_dir: str, src_dir: str = "src") -> Set[str]:
+
+def analyze_file_dependencies(file_path: str,
+                              slim_dir: str,
+                              src_dir: str = "src") -> Set[str]:
     """
     Analyze a single file's require() statements and return normalized dependency paths.
     Since slim files have requires removed, we check the corresponding src file.
     """
     dependencies = set()
-    
+
     # Convert slim path to src path
     rel_path = os.path.relpath(file_path, slim_dir)
     src_file_path = os.path.join(src_dir, rel_path)
-    
+
     if not os.path.exists(src_file_path):
         return dependencies
-    
+
     try:
         with open(src_file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Find all require statements
         require_patterns = [
             r'require\s*\(\s*["\']([^"\']+)["\']\s*\)',
             r'require\s*\(["\']([^"\']+)["\']\)',
         ]
-        
+
         for pattern in require_patterns:
             matches = re.findall(pattern, content)
             for match in matches:
@@ -277,11 +289,14 @@ def analyze_file_dependencies(file_path: str, slim_dir: str, src_dir: str = "src
                 normalized_path = normalize_require_path(match, slim_dir)
                 if normalized_path:
                     dependencies.add(normalized_path)
-    
+
     except Exception as e:
-        print(f"Warning: Could not analyze dependencies for {src_file_path}: {e}")
-    
+        print(
+            f"Warning: Could not analyze dependencies for {src_file_path}: {e}"
+        )
+
     return dependencies
+
 
 def normalize_require_path(require_path: str, slim_dir: str) -> str:
     """
@@ -291,27 +306,29 @@ def normalize_require_path(require_path: str, slim_dir: str) -> str:
     # Remove "src." prefix if present
     if require_path.startswith("src."):
         require_path = require_path[4:]
-    
+
     # Convert dots to path separators
     file_path = require_path.replace(".", "/") + ".lua"
-    
+
     # Check if the file exists in slim directory
     full_path = os.path.join(slim_dir, file_path)
     if os.path.exists(full_path):
         return file_path
-    
+
     return None
 
-def collect_all_lua_files(slim_dir: str, skip_schema: bool = True) -> Dict[str, str]:
+
+def collect_all_lua_files(slim_dir: str,
+                          skip_schema: bool = True) -> Dict[str, str]:
     """
     Collect all Lua files from slim directory (excluding scripts and optionally schema).
     Returns dict of {relative_path: full_path}
     """
     files = {}
-    
+
     # Define directories to include
     include_dirs = ["core", "utils", "modules"]
-    
+
     for dir_name in include_dirs:
         dir_path = os.path.join(slim_dir, dir_name)
         if os.path.exists(dir_path):
@@ -321,34 +338,41 @@ def collect_all_lua_files(slim_dir: str, skip_schema: bool = True) -> Dict[str, 
                         # Skip schema.lua if requested
                         if skip_schema and filename == 'schema.lua':
                             continue
-                        
+
                         full_path = os.path.join(root, filename)
                         rel_path = os.path.relpath(full_path, slim_dir)
-                        rel_path = rel_path.replace('\\', '/')  # Normalize separators
+                        rel_path = rel_path.replace(
+                            '\\', '/')  # Normalize separators
                         files[rel_path] = full_path
-    
+
     return files
 
-def build_dependency_graph(files: Dict[str, str], slim_dir: str, src_dir: str = "src") -> Dict[str, Set[str]]:
+
+def build_dependency_graph(files: Dict[str, str],
+                           slim_dir: str,
+                           src_dir: str = "src") -> Dict[str, Set[str]]:
     """
     Build dependency graph by analyzing require statements in src files.
     Returns dict of {file_path: set_of_dependencies}
     """
     dependency_graph = {}
-    
+
     print("📊 Analyzing file dependencies...")
     for rel_path, full_path in files.items():
         dependencies = analyze_file_dependencies(full_path, slim_dir, src_dir)
         # Only keep dependencies that exist in our file list
         valid_dependencies = {dep for dep in dependencies if dep in files}
         dependency_graph[rel_path] = valid_dependencies
-        
+
         if valid_dependencies:
-            print(f"  {rel_path} depends on: {', '.join(sorted(valid_dependencies))}")
+            print(
+                f"  {rel_path} depends on: {', '.join(sorted(valid_dependencies))}"
+            )
         else:
             print(f"  {rel_path} has no dependencies")
-    
+
     return dependency_graph
+
 
 def topological_sort(dependency_graph: Dict[str, Set[str]]) -> List[str]:
     """
@@ -358,43 +382,44 @@ def topological_sort(dependency_graph: Dict[str, Set[str]]) -> List[str]:
     # Calculate in-degrees
     in_degree = defaultdict(int)
     all_files = set(dependency_graph.keys())
-    
+
     # Add all files that are dependencies but might not be in the main list
     for deps in dependency_graph.values():
         all_files.update(deps)
-    
+
     # Initialize in-degrees
     for file in all_files:
         in_degree[file] = 0
-    
+
     # Calculate actual in-degrees
     for file, deps in dependency_graph.items():
         for dep in deps:
             in_degree[file] += 1
-    
+
     # Start with files that have no dependencies
     queue = deque([file for file in all_files if in_degree[file] == 0])
     result = []
-    
+
     while queue:
         current = queue.popleft()
         result.append(current)
-        
+
         # Reduce in-degree for files that depend on current file
         for file, deps in dependency_graph.items():
             if current in deps:
                 in_degree[file] -= 1
                 if in_degree[file] == 0:
                     queue.append(file)
-    
+
     # Check for circular dependencies
     if len(result) != len(all_files):
         remaining = all_files - set(result)
         print(f"⚠️ Warning: Circular dependencies detected in: {remaining}")
         # Add remaining files in arbitrary order
         result.extend(remaining)
-    
+
     return result
+
 
 def get_file_priority(file_path: str) -> Tuple[int, str]:
     """
@@ -404,18 +429,17 @@ def get_file_priority(file_path: str) -> Tuple[int, str]:
     # Define fixed priority files
     priority_files = {
         "core/gKH_State_Standalone.lua": 0,
-        "core/gKH_ContactNotes_standalone.lua": 1,
-        "core/constants.lua": 2,
-        "core/saveData.lua": 3,
+        "core/constants.lua": 1,
+        "core/saveData.lua": 2,
     }
-    
+
     if file_path in priority_files:
         return (priority_files[file_path], file_path)
-    
+
     # init.lua should be last
     if file_path == "core/init.lua":
         return (9999, file_path)
-    
+
     # Default priority based on directory
     if file_path.startswith("utils/"):
         return (100, file_path)
@@ -424,81 +448,91 @@ def get_file_priority(file_path: str) -> Tuple[int, str]:
     else:
         return (500, file_path)
 
-def sort_files_with_dependencies(files: Dict[str, str], slim_dir: str, src_dir: str = "src") -> List[str]:
+
+def sort_files_with_dependencies(files: Dict[str, str],
+                                 slim_dir: str,
+                                 src_dir: str = "src") -> List[str]:
     """
     Sort files considering both fixed priorities and dynamic dependencies.
     """
     # Build dependency graph
     dependency_graph = build_dependency_graph(files, slim_dir, src_dir)
-    
+
     # Get topological order
     topo_order = topological_sort(dependency_graph)
-    
+
     # Group files by priority, maintaining topological order within groups
     priority_groups = defaultdict(list)
-    
+
     for file_path in topo_order:
         if file_path in files:  # Only include files that actually exist
             priority, _ = get_file_priority(file_path)
             priority_groups[priority].append(file_path)
-    
+
     # Combine groups in priority order
     result = []
     for priority in sorted(priority_groups.keys()):
         result.extend(priority_groups[priority])
-    
+
     return result
 
-def merge_lua_files(slim_dir: str, output_file: str, src_dir: str = "src", skip_schema: bool = True) -> Tuple[bool, int]:
+
+def merge_lua_files(slim_dir: str,
+                    output_file: str,
+                    src_dir: str = "src",
+                    skip_schema: bool = True) -> Tuple[bool, int]:
     """
     Merge all Lua files from slim directory in dependency order.
     Uses dynamic dependency analysis from src directory to determine optimal ordering.
     Returns (success, file_count)
     """
-    
+
     if not os.path.exists(slim_dir):
         print(f"❌ Error: Slim directory '{slim_dir}' does not exist")
         return False, 0
-    
+
     if not os.path.exists(src_dir):
-        print(f"⚠️ Warning: Source directory '{src_dir}' does not exist - dependency analysis may be limited")
-    
+        print(
+            f"⚠️ Warning: Source directory '{src_dir}' does not exist - dependency analysis may be limited"
+        )
+
     # Collect all Lua files
     print("📁 Collecting Lua files...")
     files = collect_all_lua_files(slim_dir, skip_schema)
     print(f"Found {len(files)} Lua files")
-    
+
     if not files:
         print("❌ No Lua files found to merge")
         return False, 0
-    
+
     # Sort files with dependency analysis
     print("\n🔀 Sorting files by dependencies...")
     sorted_files = sort_files_with_dependencies(files, slim_dir, src_dir)
-    
+
     # Merge files
     merged_content = []
     processed_files = []
-    
+
     print(f"\n🔨 Merging {len(sorted_files)} files...")
     for file_rel_path in sorted_files:
         if file_rel_path in files:
             file_path = files[file_rel_path]
             content = read_file_content(file_path)
             if content:
-                merged_content.append(get_file_section_comment(file_path, slim_dir))
+                merged_content.append(
+                    get_file_section_comment(file_path, slim_dir))
                 merged_content.append(content)
                 merged_content.append("")  # Add blank line
                 processed_files.append(file_rel_path)
                 print(f"  ✓ {file_rel_path}")
             else:
                 print(f"  ✗ {file_rel_path} (empty or unreadable)")
-    
+
     # Write merged content to output file
     if merged_content:
         try:
             final_content = "\n".join(merged_content)
-            
+
             # Add header comment
             header = f"""-- ================================================================
 -- Formosa in Flames - Merged Scenario Script
@@ -508,15 +542,17 @@ def merge_lua_files(slim_dir: str, output_file: str, src_dir: str = "src", skip_
 
 """
             final_content = header + final_content
-            
+
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(final_content)
-            
-            print(f"\n✅ Successfully merged {len(processed_files)} files into '{output_file}'")
+
+            print(
+                f"\n✅ Successfully merged {len(processed_files)} files into '{output_file}'"
+            )
             print(f"📄 Output file size: {len(final_content):,} characters")
-            
+
             return True, len(processed_files)
-            
+
         except Exception as e:
             print(f"❌ Error writing output file: {e}")
             return False, 0
@@ -524,9 +560,11 @@ def merge_lua_files(slim_dir: str, output_file: str, src_dir: str = "src", skip_
         print("❌ No content to merge")
         return False, 0
 
+
 # =============================================================================
 # MAIN BUILD FUNCTIONS
 # =============================================================================
+
 
 def build_scenario(args) -> bool:
     """
@@ -535,55 +573,57 @@ def build_scenario(args) -> bool:
     src_dir = args.src_dir
     slim_dir = args.slim_dir
     output_file = args.output
-    
+
     print("🚀 Starting Lua scenario build process...")
     print(f"📂 Source directory: {src_dir}")
     print(f"📂 Slim directory: {slim_dir}")
     print(f"📄 Output file: {output_file}")
-    print("="*70)
-    
+    print("=" * 70)
+
     total_success = True
-    
+
     # Step 1: Clean (if requested)
     if args.clean or args.build:
         if not os.path.exists(src_dir):
             print(f"❌ Error: Source directory '{src_dir}' does not exist")
             return False
-        
+
         # Remove existing slim directory if doing full build
         if args.build and os.path.exists(slim_dir):
             print(f"🗑️ Removing existing slim directory: {slim_dir}")
             shutil.rmtree(slim_dir)
-        
+
         processed_count, error_count = clean_lua_files(src_dir, slim_dir)
-        
+
         print(f"\n📊 Cleaning Results:")
         print(f"  ✅ Successfully processed: {processed_count} files")
         print(f"  ❌ Errors: {error_count} files")
-        
+
         if error_count > 0:
             print("⚠️ Some files had errors during cleaning")
             total_success = False
-    
+
     # Step 2: Merge (if requested)
     if args.merge or args.build:
         if not os.path.exists(slim_dir):
-            print(f"❌ Error: Slim directory '{slim_dir}' does not exist. Run with --clean first.")
+            print(
+                f"❌ Error: Slim directory '{slim_dir}' does not exist. Run with --clean first."
+            )
             return False
-        
-        print("\n" + "="*70)
-        merge_success, merged_count = merge_lua_files(
-            slim_dir, output_file, src_dir, not args.include_schema
-        )
-        
+
+        print("\n" + "=" * 70)
+        merge_success, merged_count = merge_lua_files(slim_dir, output_file,
+                                                      src_dir,
+                                                      not args.include_schema)
+
         print(f"\n📊 Merging Results:")
         print(f"  ✅ Files merged: {merged_count}")
         print(f"  📄 Output: {output_file}")
-        
+
         if not merge_success:
             total_success = False
-    
-    print("\n" + "="*70)
+
+    print("\n" + "=" * 70)
     if total_success:
         print("🎉 Build completed successfully!")
         if args.build:
@@ -594,13 +634,15 @@ def build_scenario(args) -> bool:
             print("🔨 Merging process completed")
     else:
         print("💥 Build completed with errors!")
-    
+
     return total_success
+
 
 def main():
     """Main execution function with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Build Lua Scenario - Clean and merge Lua files with dependency analysis",
+        description=
+        "Build Lua Scenario - Clean and merge Lua files with dependency analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -608,45 +650,43 @@ Examples:
   python build_lua_scenario.py --clean-only       # Only clean files
   python build_lua_scenario.py --merge-only       # Only merge files
   python build_lua_scenario.py --output custom.lua # Custom output filename
-        """
-    )
-    
+        """)
+
     # Mode selection (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--clean-only",
+                            dest="clean",
+                            action="store_true",
+                            help="Only perform cleaning step (src -> slim)")
     mode_group.add_argument(
-        "--clean-only", dest="clean", action="store_true",
-        help="Only perform cleaning step (src -> slim)"
-    )
-    mode_group.add_argument(
-        "--merge-only", dest="merge", action="store_true", 
-        help="Only perform merging step (slim -> merged file)"
-    )
-    
+        "--merge-only",
+        dest="merge",
+        action="store_true",
+        help="Only perform merging step (slim -> merged file)")
+
     # Default is full build
     parser.set_defaults(build=True)
-    
+
     # Directory options
-    parser.add_argument(
-        "--src-dir", default="src",
-        help="Source directory (default: src)"
-    )
-    parser.add_argument(
-        "--slim-dir", default="slim", 
-        help="Slim directory (default: slim)"
-    )
-    
+    parser.add_argument("--src-dir",
+                        default="src",
+                        help="Source directory (default: src)")
+    parser.add_argument("--slim-dir",
+                        default="slim",
+                        help="Slim directory (default: slim)")
+
     # Output options
     parser.add_argument(
-        "--output", default=None,
-        help="Output filename (default: slim/merged_scenario.lua)"
-    )
+        "--output",
+        default=None,
+        help="Output filename (default: slim/merged_scenario.lua)")
     parser.add_argument(
-        "--include-schema", action="store_true",
-        help="Include schema.lua in merge (default: skip schema)"
-    )
-    
+        "--include-schema",
+        action="store_true",
+        help="Include schema.lua in merge (default: skip schema)")
+
     args = parser.parse_args()
-    
+
     # Handle mode logic
     if args.clean:
         args.build = False
@@ -659,15 +699,16 @@ Examples:
         args.build = True
         args.clean = True
         args.merge = True
-    
+
     # Set default output path
     if args.output is None:
         args.output = os.path.join(args.slim_dir, "merged_scenario.lua")
-    
+
     # Run build process
     success = build_scenario(args)
-    
+
     return 0 if success else 1
+
 
 if __name__ == "__main__":
     exit(main())

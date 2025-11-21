@@ -34,7 +34,7 @@ if unit then
         "Destroyed a recon aircraft."
       )
       saveData.c.SIGINT.RA[unit.guid] = nil
-    elseif unit.dbid == config.platform.Y9 or unit.dbid == config.platform.J15D then
+    elseif unit.dbid == config.platform.Y9 or unit.dbid == config.platform.J16D or unit.dbid == config.platform.J15D then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAircraftOnTheGround),

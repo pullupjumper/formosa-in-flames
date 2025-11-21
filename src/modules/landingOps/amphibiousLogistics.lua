@@ -288,14 +288,14 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
           zone.attackHelicopter.missions
         )
 
-        if zone.reconUAV then
-          AssignMission.assignEmbarkedUnitsToMissions(
-            u.guid,
-            'Aircraft',
-            zone.reconUAV.dbid,
-            zone.reconUAV.missions
-          )
-        end
+        -- if zone.reconUAV then
+        --   AssignMission.assignEmbarkedUnitsToMissions(
+        --     u.guid,
+        --     'Aircraft',
+        --     zone.reconUAV.dbid,
+        --     zone.reconUAV.missions
+        --   )
+        -- end
       end
 
       if u.dbid == config.platform.TYPE_071 and u:inArea(zone.anchorageArea) then

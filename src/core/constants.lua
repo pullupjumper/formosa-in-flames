@@ -391,6 +391,7 @@ config.loadout = {
   KJ500_AEW = 18300,
   HY6U_AAR = 8811,
   J10C_LS_6_500 = 25595,
+  J10C_CS_BBC_5 = 34241,
   H6N_TRANSPORT = 8792,
   S70C_ASW = 845,
   J15_YJ91 = 9677,
@@ -433,6 +434,7 @@ config.weapon = {
   YJ63 = 2107,        -- YJ-63 Air-Launched Cruise Missile
   KAB1500 = 3077,     -- KAB-1500 Laser-Guided Bomb
   LS_6_500 = 3226,    -- LS-6-500 Glide Bomb
+  CS_BBC_5 = 4541,    -- CS-BBC-5 Glide Bomb (Submunitions)
   YJ91_ASM = 276,     -- YJ-91 Anti-Ship Missile
   YJ83 = 2137,        -- YJ-83 Anti-Ship Missile
   MK45_AMLRS = 2948,  -- MK45 AMLRS Multiple Launch Rocket System
@@ -502,8 +504,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
   -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
@@ -963,9 +965,9 @@ config.c.recon.courses = {
     { lon = 120.536274602033, lat = 22.1911994531482, desiredSpeed = 115 },
   },
   GJ11 = {
-    { lon = 120.954426817633, lat = 25.4296233744497, desiredSpeed = 600 },
-    { lon = 121.087994141654, lat = 25.0506579616447, desiredSpeed = 600 },
-    { lon = 121.249386737925, lat = 25.1186720471747, desiredSpeed = 600 },
+    { lon = 120.954426817633, lat = 25.4296233744497, desiredSpeed = 450, desiredAltitude = 100 },
+    { lon = 121.087994141654, lat = 25.0506579616447, desiredSpeed = 450, desiredAltitude = 100 },
+    { lon = 121.249386737925, lat = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
   }
 }
 ---@type table<string, SBJ__ReconUAVTemplate>
@@ -1284,14 +1286,14 @@ config.c.air.landBased.deployedACs = {
         platformName = 'J-10C',
         name = '25th Air Bde',
         loadouts = {
-          { name = 'LS-6-500 Strike', loadoutId = config.loadout.J10C_LS_6_500, num = 8 },
+          { name = 'CS-BBC-5 Strike', loadoutId = config.loadout.J10C_CS_BBC_5, num = 8 },
         }
       },
     },
     loadouts = {
       { name = 'YJ-91 ARM',       loadoutId = config.loadout.SU30_YJ91,     num = 8 }, --YJ-91 X 2
       { name = 'YJ-83 Anti-Ship', loadoutId = config.loadout.J16_YJ83,      num = 8 }, --YJ-83 X 2
-      { name = 'LS-6-500 Strike', loadoutId = config.loadout.J10C_LS_6_500, num = 8 }, --LS-6-500 X 2
+      { name = 'CS-BBC-5 Strike', loadoutId = config.loadout.J10C_CS_BBC_5, num = 8 }, --CS-BBC-5 X 2
     }
   },
   {
@@ -2686,7 +2688,7 @@ config.c.FSTTemplate = {
       },
     },
   },
-  ANTISHIP = {
+  ANTISHIP_1 = {
     {
       name = "ANTISHIP",
       wpnSystem = "MRBM",
@@ -2704,7 +2706,7 @@ config.c.FSTTemplate = {
       },
     }
   },
-  STRIKE_C2 = {
+  STRIKE_C2_1 = {
     {
       name = 'PINGTAN',
       wpnSystem = 'MLRS',
@@ -2738,7 +2740,7 @@ config.c.FSTTemplate = {
       },
     },
   },
-  STRIKE_HELIPAD = {
+  STRIKE_HELIPAD_1 = {
     {
       name = 'HELIPAD',
       wpnSystem = 'GLCM',
@@ -3824,10 +3826,10 @@ config.c.packageTemplate = {
       timeToReady = config.readytime,
       striker = {
         baseGUID = config.base.SHUIMEN_AAB,
-        weaponDBID = config.weapon.LS_6_500,
+        weaponDBID = config.weapon.CS_BBC_5,
         unitDBID = config.platform.J10C,
         unitCount = 8,
-        loadoutID = config.loadout.J10C_LS_6_500,
+        loadoutID = config.loadout.J10C_CS_BBC_5,
         -- startTime = '2027-06-09 01:30:00',
         missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
@@ -3858,6 +3860,7 @@ config.t.GPSJamming.GPSGuidedWeapons = {
   { dbid = config.weapon.CJ10,     jammingResistance = 50 },
   { dbid = config.weapon.AKD88,    jammingResistance = 50 },
   { dbid = config.weapon.LS_6_500, jammingResistance = 50 },
+  { dbid = config.weapon.CS_BBC_5, jammingResistance = 50 },
 }
 
 -- MLRS

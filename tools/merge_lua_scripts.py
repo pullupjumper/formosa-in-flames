@@ -185,9 +185,8 @@ def get_file_priority(file_path: str) -> Tuple[int, str]:
     # Define fixed priority files
     priority_files = {
         "core/gKH_State_Standalone.lua": 0,
-        "core/gKH_ContactNotes_standalone.lua": 1,
-        "core/constants.lua": 2,
-        "core/saveData.lua": 3,
+        "core/constants.lua": 1,
+        "core/saveData.lua": 2,
     }
     
     if file_path in priority_files:
