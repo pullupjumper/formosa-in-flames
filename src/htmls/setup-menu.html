@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Taiwan Deployment Planning Tool</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg-dark: #10161A;
+      --bg-panel: #202B33;
+      --bg-hover: #293742;
+      --border-color: #30404D;
+      --text-primary: #E1E8ED;
+      --text-secondary: #A7B6C2;
+      --accent-blue: #137CBD;
+      --accent-blue-hover: #2B95D6;
+      --success: #0F9960;
+      --danger: #DB3737;
+      --warning: #D9822B;
+      --font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Popup Styles */
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-color);
+    }
+
+    .leaflet-popup-content {
+      margin: 10px;
+    }
+
+    /* Loadout Controls */
+    .loadout-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .loadout-info {
+      flex: 1;
+    }
+
+    .loadout-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .loadout-cost {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .loadout-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .loadout-btn {
+      background: var(--bg-hover);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 24px;
+      height: 24px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      padding: 0;
+    }
+
+    .loadout-btn:hover {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    .loadout-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loadout-quantity {
+      min-width: 20px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      height: 50px;
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      justify-content: space-between;
+    }
+
+    .breadcrumb {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .breadcrumb span {
+      color: var(--text-primary);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .content-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Tabs */
+    .tab-container {
+      display: flex;
+      background-color: var(--bg-dark);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 20px;
+    }
+
+    .tab-button {
+      background-color: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      transition: 0.3s;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-button.active {
+      color: var(--accent-blue);
+      border-bottom: 3px solid var(--accent-blue);
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Map */
+    .map-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+    }
+
+    /* Leaflet Dark Mode Overrides */
+    .leaflet-container {
+      background: #10161A !important;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      background-color: var(--bg-panel);
+      padding: 15px;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(16, 22, 26, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      max-height: calc(100% - 40px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      color: var(--text-primary);
+    }
+
+    .panel-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Form Elements */
+    select,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      background-color: #182026;
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      color: var(--text-primary);
+      font-size: 12px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    select:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 1px var(--accent-blue);
+    }
+
+    .ew-unit-btn {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      margin-bottom: 8px;
+      background-color: #293742;
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      color: var(--text-primary);
+      cursor: pointer;
+      text-align: left;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .ew-unit-btn:hover {
+      background-color: #30404D;
+    }
+
+    .ew-unit-btn.selected {
+      background-color: rgba(19, 124, 189, 0.2);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .export-btn {
+      width: 100%;
+      padding: 10px;
+      background-color: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+      transition: background-color 0.2s;
+    }
+
+    .export-btn:hover {
+      background-color: var(--accent-blue-hover);
+    }
+
+    /* Summary View */
+    .summary-container {
+      padding: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    .summary-section {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .summary-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .base-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .base-card {
+      background-color: #182026;
+      border: 1px solid var(--border-color);
+      padding: 15px;
+      border-radius: 2px;
+    }
+
+    .base-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 10px;
+    }
+
+    .base-card-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .base-card-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+
+    .summary-label {
+      color: var(--text-secondary);
+    }
+
+    .summary-value {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #182026;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #394B59;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5C7080;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <div class="main-content">
+      <div class="top-bar">
+        <div class="breadcrumb"><span>TAIWAN</span> / DEPLOYMENT PLANNING</div>
+        <div class="top-actions"></div>
+      </div>
+
+      <div class="tab-container">
+        <button class="tab-button active" data-tab="aircraft">Aircraft & Loadouts</button>
+        <button class="tab-button" data-tab="jammers">GPS Jammers</button>
+        <button class="tab-button" data-tab="summary">Summary</button>
+      </div>
+
+      <div class="content-wrapper">
+        <!-- Aircraft Page -->
+        <div id="aircraftPage" class="tab-content active">
+          <div id="aircraftMap" class="map-container"></div>
+          <div class="controls-panel">
+            <div class="panel-header">Loadout Budget</div>
+            <div class="control-group">
+              <div class="control-label">Remaining Budget</div>
+              <div id="budgetValue"
+                style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 4px;">1000</div>
+              <div id="budgetDetails" style="font-size: 11px; color: var(--text-secondary);">Used: 0 / Total: 1000</div>
+              <div style="width: 100%; height: 4px; background: #30404D; margin-top: 8px; border-radius: 2px;">
+                <div id="budgetProgressBar"
+                  style="width: 0%; height: 100%; background: #0F9960; border-radius: 2px; transition: width 0.3s;">
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-header" style="margin-top: 20px;">Base Editor</div>
+            <div id="baseEditor" class="empty"
+              style="font-size: 12px; color: var(--text-secondary); font-style: italic;">
+              Select an airbase on the map to edit loadouts
+            </div>
+            <div id="aircraftCoordinates"
+              style="margin-top: 20px; font-size: 11px; color: var(--text-secondary); font-family: monospace;"></div>
+          </div>
+        </div>
+
+        <!-- Jammers Page -->
+        <div id="jammersPage" class="tab-content">
+          <div id="jammersMap" class="map-container"></div>
+          <div class="controls-panel">
+            <div class="panel-header">EW Deployment</div>
+            <div class="control-group">
+              <div class="control-label">Available Units</div>
+              <div id="ewUnitsList">
+                <!-- Generated by JS -->
+              </div>
+            </div>
+            <div id="deploymentStatus"
+              style="margin-top: 10px; padding: 10px; background: rgba(16, 22, 26, 0.3); border: 1px solid var(--border-color); border-radius: 2px; font-size: 12px;">
+              Select an EW unit then click on the map to deploy
+            </div>
+            <div id="jammersCoordinates"
+              style="margin-top: 20px; font-size: 11px; color: var(--text-secondary); font-family: monospace;"></div>
+          </div>
+        </div>
+
+        <!-- Summary Page -->
+        <div id="summaryPage" class="tab-content">
+          <div class="summary-container" id="summaryContent">
+            <!-- Generated by JS -->
+          </div>
+          <input type="hidden" id="summaryData" name="summaryData" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Data
+    const ewUnitString = `[
+      {
+        "zoneName": "JAMMING ZONE/1",
+        "name": "Comm and Info Coy, 584th Mech Bde",
+        "point": { "lat": 24.906367, "lon": 121.284363 },
+        "randomRadius": 20,
+        "radius": 11
+      },
+      {
+        "zoneName": "JAMMING ZONE/2",
+        "name": "Comm and Info Coy, 269th Mech Bde",
+        "point": { "lat": 24.492148, "lon": 120.955020 },
+        "randomRadius": 20,
+        "radius": 11
+      }
+    ]`;
+    const ewUnitsData = JSON.parse(ewUnitString);
+
+    const baseString = `[{"name":"Ching Chuang Kang AB", "longitude":120.61987074635, "latitude":24.266687043134, "baseGUID":"6Z8LM5-0HMIHS2L949R0", "embarkedUnits":[{"dbid":3795, "platformName":"IDF", "type":"Air", "side":"Taiwan", "loadouts":[{"num":8, "loadoutId":19104, "name":"Wan Chien"}], "name":"3rd Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":19104, "name":"Wan Chien"}]}, {"name":"Chiayi AB", "longitude":120.39031110523, "latitude":23.463954680839, "baseGUID":"6Z8LM5-0HMIJ3QGCHSUB", "embarkedUnits":[{"dbid":3962, "platformName":"F-16V Block 20", "type":"Air", "side":"Taiwan", "loadouts":[{"num":8, "loadoutId":22785, "name":"AMRAAM"}], "name":"4th Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":22785, "name":"AMRAAM"}, {"num":8, "loadoutId":22789, "name":"Harpoon"}, {"num":8, "loadoutId":22790, "name":"GBU"}]}, {"name":"Tainan AB", "longitude":120.20421803987, "latitude":22.950204912894, "baseGUID":"6Z8LM5-0HMIJ3QGCHVVS", "embarkedUnits":[{"dbid":3795, "platformName":"IDF", "type":"Air", "side":"Taiwan", "loadouts":[{"num":4, "loadoutId":19104, "name":"Wan Chien"}], "name":"1st Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":19104, "name":"Wan Chien"}]}, {"name":"Magong AB", "longitude":119.62810201945, "latitude":23.569032242702, "baseGUID":"6Z8LM5-0HMISSTNL3T8K", "embarkedUnits":[{"dbid":3795, "platformName":"IDF", "type":"Air", "side":"Taiwan", "loadouts":[{"num":4, "loadoutId":19104, "name":"Wan Chien"}], "name":"1st Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":19104, "name":"Wan Chien"}]}, {"name":"Guiren AAB", "longitude":120.28448603465, "latitude":22.981265758066, "baseGUID":"IC8B0X-0HN37BVOG0T9O", "embarkedUnits":[{"dbid":2126, "platformName":"AH-1W", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":7347, "num":8, "missionName":"ASUW/ACV/PENGHU", "name":"Hellfire"}], "name":"603rd Air Cavalry Bde"}], "loadouts":[{"num":8, "loadoutId":7347, "name":"Hellfire"}]}, {"name":"Pingtung North AB", "longitude":120.48108029825, "latitude":22.700322757856, "baseGUID":"IC8B0X-0HNCTPETEF6GG", "embarkedUnits":[{"dbid":2095, "platformName":"E-2K", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":14639, "num":3, "missionName":"FERRY/2", "name":"AEW"}], "name":"6th Mixed Wing"}]}, {"name":"Pingtung South AB", "longitude":120.46165747758, "latitude":22.673094464097, "baseGUID":"IC8B0X-0HNCTPETEF6F9", "embarkedUnits":[{"dbid":2825, "platformName":"P-3C", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":13537, "num":3, "missionName":"ASW/E", "name":"ASW Patrol"}], "name":"6th Mixed Wing"}, {"dbid":4755, "platformName":"C-130HE", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":25876, "num":1, "missionName":"FERRY/2", "name":"Electronic Warfare"}], "name":"6th Mixed Wing"}]}, {"name":"Taitung/Jhihhang AB", "longitude":121.18112220849, "latitude":22.792770581932, "baseGUID":"6Z8LM5-0HMIJ3QGCI3V3", "embarkedUnits":[{"dbid":6889, "platformName":"F-16V Block 70", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":33012, "num":8, "missionName":"FERRY/3", "name":"SLAM-ER"}], "name":"7th Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":33012, "name":"SLAM-ER"}, {"num":8, "loadoutId":9479, "name":"JDAM"}, {"num":8, "loadoutId":9326, "name":"HARM"}, {"num":8, "loadoutId":9481, "name":"JSOW"}]}, {"name":"Jiashan AB", "longitude":121.59074054977, "latitude":24.02678653108, "baseGUID":"IC8B0X-0HNCTPETEF5C1", "embarkedUnits":[{"dbid":6039, "platformName":"MQ-9B", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":32059, "num":3, "missionName":"AEW/S", "name":"Reconnaissance"}], "name":"5th Tactical Mixed Wing"}, {"dbid":3962, "platformName":"F-16V Block 20", "type":"Air", "side":"Taiwan", "loadouts":[{"num":8, "loadoutId":22789, "name":"Harpoon"}], "name":"5th Tactical Mixed Wing"}], "loadouts":[{"num":8, "loadoutId":22785, "name":"AMRAAM"}, {"num":8, "loadoutId":22789, "name":"Harpoon"}, {"num":8, "loadoutId":22790, "name":"GBU"}]}, {"name":"Hsinchu AB", "longitude":120.94001989278, "latitude":24.818223765531, "baseGUID":"6Z8LM5-0HMIK08HEK556", "embarkedUnits":[{"dbid":175, "platformName":"Mirage 2000", "type":"Air", "side":"Taiwan", "loadouts":[{"num":8, "loadoutId":5732, "name":"MICA AAM"}], "name":"2nd Tactical Fighter Wing"}], "loadouts":[{"num":8, "loadoutId":5732, "name":"MICA AAM"}]}, {"name":"Longtan AAB", "longitude":121.23728163269, "latitude":24.854988201865, "baseGUID":"IC8B0X-0HN3ADVRF2U7P", "embarkedUnits":[{"dbid":2419, "platformName":"AH-64E", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":15213, "num":8, "missionName":"ASUW/ACV/W", "name":"Hellfire"}], "name":"601st Air Cavalry Bde"}], "loadouts":[{"num":8, "loadoutId":15213, "name":"Hellfire"}]}, {"name":"Taoyuan International Airport", "longitude":121.23018110638, "latitude":25.084411507528, "baseGUID":"6Z8LM5-0HMJ1GE4HSIU5", "embarkedUnits":[{"dbid":5035, "platformName":"Chung Shyang II", "type":"Air", "side":"Taiwan", "loadouts":[{"loadoutId":28116, "num":3, "missionName":"RECON/3", "name":"Reconnaissance"}], "name":"1st Maritime Tactical Recon Sqn"}]}, {"name":"Rende Emergency Highway Strip", "longitude":120.24984614501, "latitude":22.951039712644, "baseGUID":"X58F5H-0HMU28MM77N82", "loadouts":[{"num":8, "loadoutId":19104, "name":"Wan Chien"}]}, {"name":"Madou Emergency Highway Strip", "longitude":120.23609817812, "latitude":23.181856645595, "baseGUID":"X58F5H-0HMU28MM7836P", "loadouts":[{"num":8, "loadoutId":22785, "name":"AMRAAM"}, {"num":8, "loadoutId":22789, "name":"Harpoon"}, {"num":8, "loadoutId":22790, "name":"GBU"}]}, {"name":"Minxiong Emergency Highway Strip", "longitude":120.41153010785, "latitude":23.543783221176, "baseGUID":"X58F5H-0HMU28MM78J9P", "loadouts":[{"num":8, "loadoutId":22785, "name":"AMRAAM"}, {"num":8, "loadoutId":22789, "name":"Harpoon"}, {"num":8, "loadoutId":22790, "name":"GBU"}]}, {"name":"Tainan Field Airdrome", "longitude":120.21113094617, "latitude":23.203959723785, "baseGUID":"IC8B0X-0HN81FNLB6M8Q", "loadouts":[{"num":8, "loadoutId":7347, "name":"Hellfire"}]}, {"name":"Hsinchu Field Airdrome ", "longitude":121.04044915856, "latitude":24.812525208369, "baseGUID":"IC8B0X-0HN81FNLB2OPJ", "loadouts":[{"num":8, "loadoutId":15213, "name":"Hellfire"}]}]`;
+
+    const basesData = JSON.parse(baseString);
+
+    // State
+    const LOADOUT_COST = 100;
+    const INITIAL_SCORE = 1000;
+    let currentScore = INITIAL_SCORE;
+    let usedScore = 0;
+    let selectedEWUnit = null;
+    let deployedUnits = new Map();
+    let ewMarkers = [];
+    let baseMarkers = [];
+    let aircraftMap, jammersMap;
+    let currentEditingBase = null;
+
+    const taiwanBoundary = [
+      [25.295, 121.565], [25.085, 121.566], [24.967, 121.187], [24.814, 120.967],
+      [24.574, 120.815], [24.147, 120.674], [23.957, 120.434], [23.695, 120.451],
+      [23.479, 120.449], [23.308, 120.311], [22.627, 120.301], [22.336, 120.548],
+      [22.789, 121.154], [23.121, 121.364], [23.326, 121.365], [23.583, 121.513],
+      [23.993, 121.601], [24.178, 121.602], [24.265, 121.735], [24.756, 121.758],
+      [25.295, 121.565]
+    ];
+
+    // Tab Management
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        switchTab(targetTab);
+      });
+    });
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tabName) {
+          btn.classList.add('active');
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(page => {
+        page.classList.remove('active');
+      });
+
+      if (tabName === 'aircraft') {
+        document.getElementById('aircraftPage').classList.add('active');
+        setTimeout(() => {
+          if (aircraftMap) aircraftMap.invalidateSize();
+        }, 100);
+      } else if (tabName === 'jammers') {
+        document.getElementById('jammersPage').classList.add('active');
+        setTimeout(() => {
+          if (jammersMap) jammersMap.invalidateSize();
+        }, 100);
+      } else if (tabName === 'summary') {
+        document.getElementById('summaryPage').classList.add('active');
+        updateSummary();
+      }
+    }
+
+    // Taiwan boundary check
+    function isPointInTaiwan(lat, lng) {
+      let inside = false;
+      const x = lng, y = lat;
+      for (let i = 0, j = taiwanBoundary.length - 1; i < taiwanBoundary.length; j = i++) {
+        const xi = taiwanBoundary[i][1], yi = taiwanBoundary[i][0];
+        const xj = taiwanBoundary[j][1], yj = taiwanBoundary[j][0];
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    // Initialize maps
+    function initAircraftMap() {
+      aircraftMap = L.map('aircraftMap').setView([23.8, 121.0], 8);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors, © CartoDB',
+        maxZoom: 18
+      }).addTo(aircraftMap);
+
+      aircraftMap.on('click', function (e) {
+        document.getElementById('aircraftCoordinates').innerHTML =
+          `Latitude: ${e.latlng.lat.toFixed(6)}°, Longitude: ${e.latlng.lng.toFixed(6)}°`;
+      });
+
+      generateAirbaseMarkers();
+    }
+
+    function initJammersMap() {
+      jammersMap = L.map('jammersMap').setView([23.8, 121.0], 8);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors, © CartoDB',
+        maxZoom: 18
+      }).addTo(jammersMap);
+
+      jammersMap.on('click', function (e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        if (selectedEWUnit !== null) {
+          deployEWUnit(lat, lng);
+        } else {
+          document.getElementById('jammersCoordinates').innerHTML =
+            `Latitude: ${lat.toFixed(6)}°, Longitude: ${lng.toFixed(6)}°`;
+        }
+      });
+
+      generateJammersAirbaseMarkers();
+    }
+
+    // Icons
+    const abIcon = L.icon({
+      iconUrl: 'https://i.meee.com.tw/5afNBSQ.png',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10]
+    });
+
+    const fallbackABIcon = L.divIcon({
+      className: 'ab-marker',
+      html: '<div style="background-color: #ff6b6b; width: 20px; height: 20px; border-radius: 3px; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 9px;">AB</div>',
+      iconSize: [25, 15],
+      iconAnchor: [12, 12]
+    });
+
+    const ewIcon = L.icon({
+      iconUrl: 'https://i.meee.com.tw/XENYCji.png',
+      iconSize: [40, 30],
+      iconAnchor: [20, 15],
+      popupAnchor: [0, -15]
+    });
+
+    const fallbackEWIcon = L.divIcon({
+      className: 'ew-marker',
+      html: '<div style="background-color: #00b894; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 9px;">CIC</div>',
+      iconSize: [25, 15],
+      iconAnchor: [12, 12]
+    });
+
+    // Budget management
+    function updateBudgetDisplay() {
+      const budgetValueEl = document.getElementById('budgetValue');
+      const budgetDetailsEl = document.getElementById('budgetDetails');
+      const budgetProgressBar = document.getElementById('budgetProgressBar');
+
+      budgetValueEl.textContent = currentScore;
+      budgetDetailsEl.textContent = `Used: ${usedScore} / Total: ${INITIAL_SCORE}`;
+
+      const percentage = (currentScore / INITIAL_SCORE) * 100;
+      budgetProgressBar.style.width = `${percentage}%`;
+
+      budgetValueEl.classList.remove('warning', 'danger');
+      budgetProgressBar.classList.remove('warning', 'danger');
+
+      if (currentScore < 200) {
+        budgetValueEl.classList.add('danger');
+        budgetProgressBar.classList.add('danger');
+      } else if (currentScore < 400) {
+        budgetValueEl.classList.add('warning');
+        budgetProgressBar.classList.add('warning');
+      }
+    }
+
+    function canAffordLoadout() {
+      return currentScore >= LOADOUT_COST;
+    }
+
+    function addLoadout(baseIndex, loadoutIndex) {
+      if (!canAffordLoadout()) {
+        alert('Insufficient budget! Cannot add more loadouts.');
+        return false;
+      }
+      basesData[baseIndex].loadouts[loadoutIndex].num += 1;
+      currentScore -= LOADOUT_COST;
+      usedScore += LOADOUT_COST;
+      updateBudgetDisplay();
+      return true;
+    }
+
+    function removeLoadout(baseIndex, loadoutIndex) {
+      if (basesData[baseIndex].loadouts[loadoutIndex].num <= 0) return false;
+      basesData[baseIndex].loadouts[loadoutIndex].num -= 1;
+      currentScore += LOADOUT_COST;
+      usedScore -= LOADOUT_COST;
+      updateBudgetDisplay();
+      return true;
+    }
+
+    // Base Editor
+    window.showBaseEditor = function (baseIndex) {
+      currentEditingBase = baseIndex;
+      const base = basesData[baseIndex];
+      const editor = document.getElementById('baseEditor');
+      editor.classList.remove('empty');
+
+      let editorHTML = `<div class="base-editor-header">${base.name}</div>`;
+
+      if (base.embarkedUnits && base.embarkedUnits.length > 0) {
+        editorHTML += `<div class="base-editor-section"><div class="section-title">Deployed Aircraft</div>`;
+        base.embarkedUnits.forEach((unit, unitIndex) => {
+          const totalAircraft = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+          editorHTML += `
+            <div class="loadout-controls">
+              <div class="loadout-info">
+                <div class="loadout-name">${unit.platformName}</div>
+                <div class="loadout-cost">${unit.name}</div>
+              </div>
+              <div class="loadout-actions">
+                <button class="loadout-btn" id="aircraft-${baseIndex}-${unitIndex}-dec" onclick="handleAircraftDecrease(${baseIndex}, ${unitIndex})">−</button>
+                <div class="loadout-quantity" id="aircraft-${baseIndex}-${unitIndex}-qty">${totalAircraft}</div>
+                <button class="loadout-btn" id="aircraft-${baseIndex}-${unitIndex}-inc" onclick="handleAircraftIncrease(${baseIndex}, ${unitIndex})">+</button>
+              </div>
+            </div>`;
+        });
+        editorHTML += `</div>`;
+      }
+
+      if (base.loadouts && base.loadouts.length > 0) {
+        editorHTML += `<div class="base-editor-section"><div class="section-title">Base Ammunition Storage</div>`;
+        base.loadouts.forEach((loadout, loadoutIndex) => {
+          const loadoutName = loadout.name || `Loadout ${loadout.loadoutId}`;
+          editorHTML += `
+            <div class="loadout-controls">
+              <div class="loadout-info">
+                <div class="loadout-name">${loadoutName}</div>
+                <div class="loadout-cost">Cost: ${LOADOUT_COST}</div>
+              </div>
+              <div class="loadout-actions">
+                <button class="loadout-btn" id="loadout-${baseIndex}-${loadoutIndex}-dec" onclick="handleLoadoutDecrease(${baseIndex}, ${loadoutIndex})">−</button>
+                <div class="loadout-quantity" id="loadout-${baseIndex}-${loadoutIndex}-qty">${loadout.num}</div>
+                <button class="loadout-btn" id="loadout-${baseIndex}-${loadoutIndex}-inc" onclick="handleLoadoutIncrease(${baseIndex}, ${loadoutIndex})">+</button>
+              </div>
+            </div>`;
+        });
+        editorHTML += `</div>`;
+      }
+
+      editor.innerHTML = editorHTML;
+
+      if (base.embarkedUnits) {
+        base.embarkedUnits.forEach((unit, unitIndex) => updateAircraftButtons(baseIndex, unitIndex));
+      }
+      updateLoadoutButtons(baseIndex);
+    }
+
+    function getPopupContent(base) {
+      let popupContent = `
+        <div class="base-popup" style="color: #e0e0e0;">
+          <strong style="font-size: 14px; color: #00b894;">${base.name}</strong><br><br>
+          <strong style="color: #ffffff;">Coordinates:</strong><br>
+          <span style="color: #00b894;">Lat: ${base.latitude.toFixed(6)}°</span><br>
+          <span style="color: #00b894;">Lng: ${base.longitude.toFixed(6)}°</span><br>`;
+
+      if (base.embarkedUnits && base.embarkedUnits.length > 0) {
+        popupContent += `<div class="popup-section" style="margin-top: 12px;">
+          <div class="popup-section-title">Deployed Aircraft</div>`;
+        base.embarkedUnits.forEach((unit) => {
+          const totalAircraft = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+          popupContent += `
+            <div class="popup-item">
+              <span class="popup-item-name">${unit.platformName} x ${totalAircraft}</span>
+            </div>`;
+        });
+        popupContent += `</div>`;
+      }
+
+      if (base.loadouts && base.loadouts.length > 0) {
+        popupContent += `<div class="popup-section" style="margin-top: 12px;">
+          <div class="popup-section-title">Ammunition Storage</div>`;
+        base.loadouts.forEach((loadout) => {
+          const loadoutName = loadout.name || `Loadout ${loadout.loadoutId}`;
+          popupContent += `
+            <div class="popup-item">
+              <span class="popup-item-name">${loadoutName} x ${loadout.num}</span>
+            </div>`;
+        });
+        popupContent += `</div>`;
+      }
+
+      popupContent += `</div>`;
+      return popupContent;
+    }
+
+    function updateBasePopup(baseIndex) {
+      if (baseMarkers[baseIndex]) {
+        baseMarkers[baseIndex].setPopupContent(getPopupContent(basesData[baseIndex]));
+      }
+    }
+
+    function generateAirbaseMarkers() {
+      baseMarkers = [];
+      basesData.forEach((base, baseIndex) => {
+        const baseMarker = L.marker([base.latitude, base.longitude], {
+          icon: abIcon
+        }).addTo(aircraftMap);
+
+        baseMarkers.push(baseMarker);
+
+        // 點擊 marker 直接開啟編輯器
+        baseMarker.on('click', function () {
+          showBaseEditor(baseIndex);
+        });
+
+        baseMarker.bindPopup(getPopupContent(base), {
+          maxWidth: 320,
+          className: 'custom-popup'
+        });
+      });
+    }
+
+    // Generate read-only airbase markers for GPS Jammers map
+    function generateJammersAirbaseMarkers() {
+      basesData.forEach((base) => {
+        const baseMarker = L.marker([base.latitude, base.longitude], {
+          icon: abIcon
+        }).addTo(jammersMap);
+
+        let popupContent = `
+          <div class="base-popup" style="color: #e0e0e0;">
+            <strong style="font-size: 14px; color: #00b894;">${base.name}</strong><br><br>
+            <strong style="color: #ffffff;">Coordinates:</strong><br>
+            <span style="color: #00b894;">Lat: ${base.latitude.toFixed(6)}°</span><br>
+            <span style="color: #00b894;">Lng: ${base.longitude.toFixed(6)}°</span><br>`;
+
+        if (base.embarkedUnits && base.embarkedUnits.length > 0) {
+          popupContent += `<div class="popup-section" style="margin-top: 12px;">
+            <div class="popup-section-title">Deployed Aircraft</div>`;
+          base.embarkedUnits.forEach((unit) => {
+            const totalAircraft = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+            popupContent += `
+              <div class="popup-item">
+                <span class="popup-item-name">${unit.platformName} x ${totalAircraft}</span>
+              </div>`;
+          });
+          popupContent += `</div>`;
+        }
+
+        if (base.loadouts && base.loadouts.length > 0) {
+          popupContent += `<div class="popup-section" style="margin-top: 12px;">
+            <div class="popup-section-title">Ammunition Storage</div>`;
+          base.loadouts.forEach((loadout) => {
+            const loadoutName = loadout.name || `Loadout ${loadout.loadoutId}`;
+            popupContent += `
+              <div class="popup-item">
+                <span class="popup-item-name">${loadoutName} x ${loadout.num}</span>
+              </div>`;
+          });
+          popupContent += `</div>`;
+        }
+
+        popupContent += `</div>`;
+
+        baseMarker.bindPopup(popupContent, {
+          maxWidth: 320,
+          className: 'custom-popup'
+        });
+      });
+    }
+
+    // Loadout handlers
+    window.handleAircraftIncrease = function (baseIndex, unitIndex) {
+      if (!canAffordLoadout()) {
+        alert('Insufficient budget! Cannot add more aircraft.');
+        return;
+      }
+      const unit = basesData[baseIndex].embarkedUnits[unitIndex];
+      if (unit.loadouts && unit.loadouts.length > 0) {
+        unit.loadouts[0].num += 1;
+      }
+      currentScore -= LOADOUT_COST;
+      usedScore += LOADOUT_COST;
+      updateBudgetDisplay();
+
+      const qtyElement = document.getElementById(`aircraft-${baseIndex}-${unitIndex}-qty`);
+      if (qtyElement) {
+        qtyElement.textContent = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+      }
+      updateAircraftButtons(baseIndex, unitIndex);
+      updateBasePopup(baseIndex);
+    }
+
+    window.handleAircraftDecrease = function (baseIndex, unitIndex) {
+      const unit = basesData[baseIndex].embarkedUnits[unitIndex];
+      if (!unit.loadouts || unit.loadouts.length === 0 || unit.loadouts[0].num <= 0) return;
+
+      unit.loadouts[0].num -= 1;
+      currentScore += LOADOUT_COST;
+      usedScore -= LOADOUT_COST;
+      updateBudgetDisplay();
+
+      const qtyElement = document.getElementById(`aircraft-${baseIndex}-${unitIndex}-qty`);
+      if (qtyElement) {
+        qtyElement.textContent = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+      }
+      updateAircraftButtons(baseIndex, unitIndex);
+      updateBasePopup(baseIndex);
+    }
+
+    function updateAircraftButtons(baseIndex, unitIndex) {
+      const unit = basesData[baseIndex].embarkedUnits[unitIndex];
+      const incButton = document.getElementById(`aircraft-${baseIndex}-${unitIndex}-inc`);
+      const decButton = document.getElementById(`aircraft-${baseIndex}-${unitIndex}-dec`);
+
+      if (incButton) incButton.disabled = !canAffordLoadout();
+      if (decButton) {
+        const totalAircraft = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+        decButton.disabled = totalAircraft <= 0;
+      }
+    }
+
+    window.handleLoadoutIncrease = function (baseIndex, loadoutIndex) {
+      if (addLoadout(baseIndex, loadoutIndex)) {
+        const qtyElement = document.getElementById(`loadout-${baseIndex}-${loadoutIndex}-qty`);
+        if (qtyElement) {
+          qtyElement.textContent = basesData[baseIndex].loadouts[loadoutIndex].num;
+        }
+        updateLoadoutButtons(baseIndex);
+        updateBasePopup(baseIndex);
+      }
+    }
+
+    window.handleLoadoutDecrease = function (baseIndex, loadoutIndex) {
+      if (removeLoadout(baseIndex, loadoutIndex)) {
+        const qtyElement = document.getElementById(`loadout-${baseIndex}-${loadoutIndex}-qty`);
+        if (qtyElement) {
+          qtyElement.textContent = basesData[baseIndex].loadouts[loadoutIndex].num;
+        }
+        updateLoadoutButtons(baseIndex);
+        updateBasePopup(baseIndex);
+      }
+    }
+
+    function updateLoadoutButtons(baseIndex) {
+      const base = basesData[baseIndex];
+      if (!base.loadouts) return;
+
+      base.loadouts.forEach((loadout, loadoutIndex) => {
+        const incButton = document.getElementById(`loadout-${baseIndex}-${loadoutIndex}-inc`);
+        const decButton = document.getElementById(`loadout-${baseIndex}-${loadoutIndex}-dec`);
+        if (incButton) incButton.disabled = !canAffordLoadout();
+        if (decButton) decButton.disabled = loadout.num <= 0;
+      });
+    }
+
+    // EW Units
+    function generateEWUnitButtons() {
+      const unitsList = document.getElementById('ewUnitsList');
+      ewUnitsData.forEach((unit, index) => {
+        const button = document.createElement('div');
+        button.className = 'ew-unit-btn';
+        button.dataset.unitIndex = index;
+        button.innerHTML = `
+          <div class="unit-name">${unit.name}</div>
+          <div class="unit-zone">${unit.zoneName}</div>`;
+        button.addEventListener('click', () => selectEWUnit(index));
+        unitsList.appendChild(button);
+      });
+    }
+
+    function selectEWUnit(index) {
+      if (deployedUnits.has(index)) {
+        undeployEWUnit(index);
+        return;
+      }
+      document.querySelectorAll('.ew-unit-btn').forEach(btn => btn.classList.remove('selected'));
+      selectedEWUnit = index;
+      document.querySelector(`[data-unit-index="${index}"]`).classList.add('selected');
+      updateDeploymentStatus(`Selected: ${ewUnitsData[index].name}<br>Click map to deploy`);
+    }
+
+    function undeployEWUnit(index) {
+      if (!deployedUnits.has(index)) return;
+
+      const unit = ewUnitsData[index];
+      const deployment = deployedUnits.get(index);
+
+      jammersMap.removeLayer(deployment.marker);
+      jammersMap.removeLayer(deployment.circle);
+      deployedUnits.delete(index);
+
+      const markerIndex = ewMarkers.indexOf(deployment.marker);
+      if (markerIndex > -1) ewMarkers.splice(markerIndex, 1);
+
+      if (index === 0) {
+        unit.point.lat = 24.906367;
+        unit.point.lon = 121.284363;
+      } else if (index === 1) {
+        unit.point.lat = 24.492148;
+        unit.point.lon = 120.955020;
+      }
+
+      document.querySelector(`[data-unit-index="${index}"]`).classList.remove('deployed');
+      updateDeploymentStatus(`${unit.name} deployment cancelled`);
+    }
+
+    function updateDeploymentStatus(message) {
+      document.getElementById('deploymentStatus').innerHTML = message;
+    }
+
+    function deployEWUnit(lat, lng) {
+      if (selectedEWUnit === null) {
+        updateDeploymentStatus('Please select an EW unit first');
+        return;
+      }
+
+      if (!isPointInTaiwan(lat, lng)) {
+        updateDeploymentStatus('⚠️ EW units can only be deployed on Taiwan mainland');
+        return;
+      }
+
+      const unit = ewUnitsData[selectedEWUnit];
+      unit.point.lat = parseFloat(lat.toFixed(6));
+      unit.point.lon = parseFloat(lng.toFixed(6));
+
+      const ewMarker = L.marker([lat, lng], { icon: ewIcon }).addTo(jammersMap);
+
+      const radiusInMeters = unit.radius * 1852;
+      const jammingCircle = L.circle([lat, lng], {
+        radius: radiusInMeters,
+        color: '#ff6b6b',
+        fillColor: '#ff6b6b',
+        fillOpacity: 0.1,
+        weight: 2,
+        opacity: 0.7
+      }).addTo(jammersMap);
+
+      ewMarker.bindPopup(`
+        <div style="color: #e0e0e0;">
+          <strong style="color: #00b894;">${unit.name}</strong><br>
+          <em style="color: #a0a0a0;">${unit.zoneName}</em><br><br>
+          <span style="color: #00b894;">Lat: ${lat.toFixed(6)}°</span><br>
+          <span style="color: #00b894;">Lng: ${lng.toFixed(6)}°</span><br><br>
+          <strong style="color: #ff6b6b;">Jamming Radius: ${unit.radius} NM</strong><br>
+          <span style="color: #a0a0a0;">Random Radius: ${unit.randomRadius}km</span>
+        </div>
+      `).openPopup();
+
+      deployedUnits.set(selectedEWUnit, { marker: ewMarker, circle: jammingCircle });
+      ewMarkers.push(ewMarker);
+
+      const button = document.querySelector(`[data-unit-index="${selectedEWUnit}"]`);
+      button.classList.remove('selected');
+      button.classList.add('deployed');
+
+      updateDeploymentStatus(`${unit.name} deployed at<br>Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°<br><span style="color: #ff6b6b;">Jamming Range: ${unit.radius} NM</span>`);
+      selectedEWUnit = null;
+    }
+
+    // Summary
+    function updateSummary() {
+      const summaryContent = document.getElementById('summaryContent');
+
+      let totalAircraft = 0;
+      let totalLoadouts = 0;
+      const baseStats = [];
+
+      basesData.forEach(base => {
+        let baseAircraft = 0;
+        let baseLoadouts = 0;
+        const aircraftDetails = [];
+        const loadoutDetails = [];
+
+        if (base.embarkedUnits) {
+          base.embarkedUnits.forEach(unit => {
+            if (unit.loadouts) {
+              const aircraftCount = unit.loadouts.reduce((sum, lo) => sum + lo.num, 0);
+              if (aircraftCount > 0) {
+                aircraftDetails.push({ name: unit.platformName, count: aircraftCount });
+                baseAircraft += aircraftCount;
+                totalAircraft += aircraftCount;
+              }
+            }
+          });
+        }
+
+        if (base.loadouts) {
+          base.loadouts.forEach(loadout => {
+            if (loadout.num > 0) {
+              loadoutDetails.push({ name: loadout.name || `Loadout ${loadout.loadoutId}`, count: loadout.num });
+              baseLoadouts += loadout.num;
+              totalLoadouts += loadout.num;
+            }
+          });
+        }
+
+        if (baseAircraft > 0 || baseLoadouts > 0) {
+          baseStats.push({
+            name: base.name,
+            aircraft: baseAircraft,
+            loadouts: baseLoadouts,
+            aircraftDetails: aircraftDetails,
+            loadoutDetails: loadoutDetails
+          });
+        }
+      });
+
+      let summaryHTML = `
+        <div class="summary-section">
+          <div class="summary-title">Budget Overview</div>
+          <div class="summary-item">
+            <span class="summary-label">Total Budget</span>
+            <span class="summary-value">${INITIAL_SCORE}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Used Budget</span>
+            <span class="summary-value">${usedScore}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Remaining Budget</span>
+            <span class="summary-value">${currentScore}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Usage Percentage</span>
+            <span class="summary-value">${((usedScore / INITIAL_SCORE) * 100).toFixed(1)}%</span>
+          </div>
+        </div>
+
+        <div class="summary-section">
+          <div class="summary-title">Aircraft & Loadouts Summary</div>
+          <div class="summary-item">
+            <span class="summary-label">Total Aircraft Deployed</span>
+            <span class="summary-value">${totalAircraft}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Ammunition Stored</span>
+            <span class="summary-value">${totalLoadouts}</span>
+          </div>
+        </div>`;
+
+      if (baseStats.length > 0) {
+        summaryHTML += `
+          <div class="summary-section">
+            <div class="summary-title">Base Breakdown</div>
+            <div class="base-breakdown">`;
+        baseStats.forEach(stat => {
+          summaryHTML += `
+            <div class="base-card">
+              <div class="base-card-title">${stat.name}</div>`;
+
+          if (stat.aircraftDetails.length > 0) {
+            summaryHTML += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #3d3d3d;">
+              <div style="font-size: 11px; color: #a0a0a0; text-transform: uppercase; margin-bottom: 6px;">Aircraft</div>`;
+            stat.aircraftDetails.forEach(detail => {
+              summaryHTML += `
+              <div class="base-card-item">
+                <span class="summary-label">${detail.name} x ${detail.count}</span>
+              </div>`;
+            });
+            summaryHTML += `</div>`;
+          }
+
+          if (stat.loadoutDetails.length > 0) {
+            summaryHTML += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #3d3d3d;">
+              <div style="font-size: 11px; color: #a0a0a0; text-transform: uppercase; margin-bottom: 6px;">Ammunition</div>`;
+            stat.loadoutDetails.forEach(detail => {
+              summaryHTML += `
+              <div class="base-card-item">
+                <span class="summary-label">${detail.name} x ${detail.count}</span>
+              </div>`;
+            });
+            summaryHTML += `</div>`;
+          }
+
+          summaryHTML += `</div>`;
+        });
+        summaryHTML += `</div></div>`;
+      }
+
+      const deployedJammers = Array.from(deployedUnits.keys());
+      summaryHTML += `
+        <div class="summary-section">
+          <div class="summary-title">GPS Jammers</div>
+          <div class="summary-item">
+            <span class="summary-label">Deployed Units</span>
+            <span class="summary-value">${deployedJammers.length} / ${ewUnitsData.length}</span>
+          </div>`;
+
+      if (deployedJammers.length > 0) {
+        deployedJammers.forEach(index => {
+          const unit = ewUnitsData[index];
+          summaryHTML += `
+            <div style="margin-top: 12px; padding: 12px; background-color: rgba(0,0,0,0.3); border-radius: 4px; border: 1px solid #3d3d3d;">
+              <div style="color: #ffffff; font-weight: 600; margin-bottom: 6px; font-size: 13px;">${unit.name}</div>
+              <div style="color: #a0a0a0; font-size: 12px;">Location: ${unit.point.lat}, ${unit.point.lon}</div>
+              <div style="color: #ff6b6b; font-size: 12px;">Range: ${unit.radius} NM</div>
+            </div>`;
+        });
+      }
+      summaryHTML += `</div>`;
+
+      summaryHTML += `<button class="export-btn" onclick="exportConfiguration()">Submit</button>`;
+      summaryContent.innerHTML = summaryHTML;
+    }
+
+    function exportConfiguration() {
+      const config = {
+        budget: { initial: INITIAL_SCORE, used: usedScore, remaining: currentScore },
+        bases: basesData,
+        ewUnits: ewUnitsData,
+        deployedJammers: Array.from(deployedUnits.keys())
+      };
+
+      const jsonString = JSON.stringify(config, null, 2);
+      const input = document.getElementById('summaryData')
+      input.value = jsonString
+      console.log(jsonString)
+
+      // navigator.clipboard.writeText(jsonString).then(() => {
+      //   alert('Configuration copied to clipboard!');
+      // }).catch(err => {
+      //   const blob = new Blob([jsonString], { type: 'application/json' });
+      //   const url = URL.createObjectURL(blob);
+      //   const a = document.createElement('a');
+      //   a.href = url;
+      //   a.download = 'taiwan-deployment-config.json';
+      //   a.click();
+      //   URL.revokeObjectURL(url);
+      // });
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      initAircraftMap();
+      initJammersMap();
+      generateEWUnitButtons();
+      updateDeploymentStatus('Select an EW unit then click on the map to deploy');
+    });
+  </script>
+</body>
+
+</html>

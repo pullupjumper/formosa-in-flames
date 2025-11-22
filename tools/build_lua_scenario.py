@@ -209,6 +209,11 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
 
                     processed_content = process_lua_content(content)
 
+                    # Special handling for unitStatusUI.lua to inject HTML templates
+                    if file_name == "unitStatusUI.lua":
+                        processed_content = inject_html_templates(
+                            processed_content, src_dir)
+
                     # Count require statements after processing
                     require_count_after = len([
                         line for line in processed_content.splitlines() if
@@ -231,6 +236,129 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
                     error_count += 1
 
     return processed_count, error_count
+
+
+def inject_html_templates(content: str, src_dir: str) -> str:
+    """
+    Inject HTML templates into unitStatusUI.lua
+    """
+    # Assuming references/html is parallel to src directory
+    # src_dir is likely "src"
+    # We need to go up one level and then to references/html
+    # But src_dir might be absolute or relative.
+    # If src_dir is "src", os.path.dirname("src") is "".
+
+    # Let's try to find the project root based on src_dir
+    if os.path.isabs(src_dir):
+        project_root = os.path.dirname(src_dir)
+    else:
+        # If src_dir is relative, e.g. "src", we assume we are running from project root
+        project_root = "."
+
+    html_dir = os.path.join(project_root, "src", "htmls")
+
+    # Helper to process and inject
+    def process_and_inject(html_filename: str, function_name: str,
+                           lua_content: str):
+        html_path = os.path.join(html_dir, html_filename)
+        if os.path.exists(html_path):
+            try:
+                with open(html_path, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+
+                # Escape % to %% but keep %s as %s
+                # 1. Replace all % with %%
+                html_content = html_content.replace('%', '%%')
+                # 2. Replace %%s back to %s (restore placeholders)
+                html_content = html_content.replace('%%s', '%s')
+
+                # Replace data assignments with placeholders
+                # 1. units object -> unitsString
+                html_content = re.sub(
+                    r'const\s+units\s*=\s*\{.*?\};',
+                    'const unitsString = `%s`;\n    const units = JSON.parse(unitsString);',
+                    html_content,
+                    flags=re.DOTALL)
+
+                # 2. signals array -> signalsString
+                html_content = re.sub(
+                    r'const\s+signals\s*=\s*\[.*?\];',
+                    'const signalsString = `%s`;\n    const signals = JSON.parse(signalsString);',
+                    html_content,
+                    flags=re.DOTALL)
+
+                # 3. dataString (C2 nodes) - use greedy matching to handle multi-line JSON
+                html_content = re.sub(r'const\s+dataString\s*=\s*`[^`]*`;',
+                                      'const dataString = `%s`;',
+                                      html_content,
+                                      flags=re.DOTALL)
+
+                # 4. baseWeaponsString - use greedy matching to handle multi-line JSON
+                html_content = re.sub(
+                    r'const\s+baseWeaponsString\s*=\s*`[^`]*`;',
+                    'const baseWeaponsString = `%s`;',
+                    html_content,
+                    flags=re.DOTALL)
+
+                # 5. landingUnitsString - use greedy matching to handle multi-line JSON
+                html_content = re.sub(
+                    r'const\s+landingUnitsString\s*=\s*`[^`]*`;',
+                    'const landingUnitsString = `%s`;',
+                    html_content,
+                    flags=re.DOTALL)
+
+                # 6. ewUnitString
+                html_content = re.sub(r'const\s+ewUnitString\s*=\s*`.*?`;',
+                                      'const ewUnitString = `%s`;',
+                                      html_content,
+                                      flags=re.DOTALL)
+
+                # 7. baseString
+                html_content = re.sub(r'const\s+baseString\s*=\s*`.*?`;',
+                                      'const baseString = `%s`;',
+                                      html_content,
+                                      flags=re.DOTALL)
+
+                # Regex to replace content inside [[ ... ]]
+                # We use a lambda to safely insert the content
+                pattern = r'(local function ' + re.escape(
+                    function_name) + r'\(\)\s*return \[\[).*?(\]\])'
+
+                new_content = re.sub(pattern,
+                                     lambda m: m.group(1) + '\n' + html_content
+                                     + '\n' + m.group(2),
+                                     lua_content,
+                                     flags=re.DOTALL)
+
+                if new_content != lua_content:
+                    print(
+                        f"    ✓ Injected {html_filename} into {function_name}")
+                    return new_content
+                else:
+                    print(
+                        f"    ⚠️ Could not find function {function_name} to inject {html_filename}"
+                    )
+                    return lua_content
+
+            except Exception as e:
+                print(f"    ✗ Error injecting {html_filename}: {e}")
+                return lua_content
+        else:
+            print(f"    ⚠️ HTML file not found: {html_path}")
+            return lua_content
+
+    # 1. Inject unit-status-table.html into getHTMLTemplate
+    content = process_and_inject("unit-status-table.html", "getHTMLTemplate",
+                                 content)
+
+    # 2. Inject setup-menu.html into getSetupMenuTemplate
+    content = process_and_inject("setup-menu.html", "getSetupMenuTemplate",
+                                 content)
+
+    content = process_and_inject("EMCON-setting-menu.html",
+                                 "getWCSSettingTemplate", content)
+
+    return content
 
 
 # =============================================================================

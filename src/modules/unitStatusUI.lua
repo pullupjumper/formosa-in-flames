@@ -91,19 +91,12 @@ function UnitStatusUI.countUnitsInEachArea(config)
   return result
 end
 
----Display HTML dialog for weapon control status settings table, allows EMCON status configuration
----Creates an interactive checkbox interface for configuring EMCON settings
----Supports Pac-2/3, Sky Bow-3, and TC-2 weapon systems
----Updates weapon control status and emission settings based on user selection
----@param config SBJ__CONFIG Configuration table
-function UnitStatusUI.wcsSettingTable(config)
-  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
-
-  if not units then
-    return
-  end
-
-  local HTMLTemplate = [[
+---Generates the HTML template for the WCS (Weapon Control System) settings UI
+---This template provides a web-based interface for configuring WCS settings,
+---specifically for setting units to 'hold' status.
+---@return string Returns an HTML string representing the WCS settings page
+local function getWCSSettingTemplate()
+  return [[
     <!DOCTYPE html>
 <html lang="zh-TW">
 
@@ -197,7 +190,21 @@ function UnitStatusUI.wcsSettingTable(config)
 
 </html>
     ]]
+end
 
+---Display HTML dialog for weapon control status settings table, allows EMCON status configuration
+---Creates an interactive checkbox interface for configuring EMCON settings
+---Supports Pac-2/3, Sky Bow-3, and TC-2 weapon systems
+---Updates weapon control status and emission settings based on user selection
+---@param config SBJ__CONFIG Configuration table
+function UnitStatusUI.wcsSettingTable(config)
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
+
+  if not units then
+    return
+  end
+
+  local HTMLTemplate = getWCSSettingTemplate()
   local msg = string.format(HTMLTemplate)
   local form = GameApi.UI_CallAdvancedHTMLDialog('Title', msg, { 'Done' })
 
