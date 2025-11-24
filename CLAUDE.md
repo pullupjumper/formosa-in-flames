@@ -42,8 +42,11 @@ The project uses a **modular event-driven architecture** centered around `src/co
 
 **Annotation Standards**:
 
-*Module Header* (required):
+*Module Header* (required, placed after require statements):
 ```lua
+local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
+
 --- Module Name
 ---
 --- Brief description and key features

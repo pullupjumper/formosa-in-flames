@@ -6,22 +6,14 @@ local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local gKH = require('src.core.gKH_State_Standalone')
 
----Unit status user interface module
----Provides HTML table display functionality for various military unit statuses
----This module creates interactive web-based dashboards for monitoring:
---- - Landing unit counts by operational zone
---- - Command and control system status (IADS)
---- - Artillery battery status and reload times
---- - Base ammunition inventory
---- - EMCON settings configuration
---- - Comprehensive multi-tab status display
+--- Unit Status UI
+---
+--- HTML-based dashboard for monitoring unit status, IADS, artillery batteries, and inventory
 local UnitStatusUI = {}
 
----Count units of different types in each area
----Iterates through operational zones and counts specific military unit types
----Supports: ZBD-05, ZTD-05, PLL-05, PLZ-96, PGZ-09, PGZ-95, SA-15, AirborneCorps, HMMWV, ZBD-03
+---Count military units by type within operational zones
 ---@param config SBJ__CONFIG Configuration table
----@return table<string, table<string, number>> # Returns table with area names as keys and unit type counts as values
+---@return table<string, table<string, number>> # Table with area names as keys and unit type counts as values
 function UnitStatusUI.countUnitsInEachArea(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local result = {}
@@ -91,10 +83,8 @@ function UnitStatusUI.countUnitsInEachArea(config)
   return result
 end
 
----Generates the HTML template for the WCS (Weapon Control System) settings UI
----This template provides a web-based interface for configuring WCS settings,
----specifically for setting units to 'hold' status.
----@return string # Returns an HTML string representing the WCS settings page
+---Generate HTML template for WCS settings UI
+---@return string # HTML string representing the WCS settings page
 local function getWCSSettingTemplate()
   return [[
     <!DOCTYPE html>
@@ -192,10 +182,7 @@ local function getWCSSettingTemplate()
     ]]
 end
 
----Display HTML dialog for weapon control status settings table, allows EMCON status configuration
----Creates an interactive checkbox interface for configuring EMCON settings
----Supports Pac-2/3, Sky Bow-3, and TC-2 weapon systems
----Updates weapon control status and emission settings based on user selection
+---Display HTML dialog for EMCON settings configuration
 ---@param config SBJ__CONFIG Configuration table
 function UnitStatusUI.wcsSettingTable(config)
   local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
@@ -296,9 +283,6 @@ function UnitStatusUI.wcsSettingTable(config)
 end
 
 ---Create JSON string for artillery battery status data
----Processes battery and ammunition section information for display
----Calculates reload times and remaining ammunition counts
----Handles different weapon system types (SRBM, MLRS, GLCM, ASCM, MRBM)
 ---@param config SBJ__CONFIG Configuration table
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -402,8 +386,6 @@ local function createBatteryDataString(config, saveData, sideName, ...)
 end
 
 ---Create JSON string for base ammunition inventory data
----Extracts weapon information from base magazines
----Processes deployed aircraft configurations and loadouts
 ---@param config SBJ__CONFIG Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted ammunition inventory data
@@ -436,9 +418,6 @@ local function createMagazineDataString(config, sideName)
 end
 
 ---Create JSON string for C2 system status data
----Processes IADS (Integrated Air Defense System) node information
----Includes SAM and radar unit status, OODA loops, and communication status
----Handles different C2 node types (C2, ROCC, TAAOC)
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string System type list
@@ -498,8 +477,6 @@ local function createC2NodeDataString(saveData, sideName, ...)
 end
 
 ---Create JSON string for SIGINT transmission data
----Processes signal intelligence data with timestamp formatting
----Converts detected transmission information to display format
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'US')
 ---@return string # JSON formatted signal data
@@ -518,15 +495,7 @@ local function createSignalDataString(saveData, sideName)
   return gKH.json.stringify(rows)
 end
 
----Get HTML template for comprehensive status dashboard
----Returns a complete HTML document with CSS styling and JavaScript functionality
----Features:
---- - Dark theme with military green color scheme
---- - Tabbed interface for different data types
---- - Dynamic table population with JavaScript
---- - Progress bars for reload status
---- - Responsive design with custom scrollbars
---- - Support for signal data, mobile launchers, C2 nodes, base weapons, landing units
+---Get HTML template for comprehensive status dashboard with tabbed interface
 ---@return string # Complete HTML template with placeholders for data injection
 local function getHTMLTemplate()
   return [[
@@ -1375,7 +1344,7 @@ local function getHTMLTemplate()
     ]]
 end
 
----Get HTML template for setup menu
+---Get HTML template for interactive deployment setup menu
 ---@return string # Setup menu template
 local function getSetupMenuTemplate()
   return [[
@@ -2932,8 +2901,6 @@ local function getSetupMenuTemplate()
 end
 
 ---Create JSON string for GPS jamming unit data
----Extracts GPS jamming unit information from saved game state
----Processes jammer configurations including position and operational parameters
 ---@param saveData SBJ__SaveData Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted GPS jamming unit data
@@ -2950,10 +2917,7 @@ local function createGPSJammingDataString(saveData, sideName)
   return gKH.json.stringify(rows)
 end
 
----Create JSON string for deployed aircraft data
----Extracts deployed aircraft information from configuration
----Enriches aircraft data with base geographical coordinates
----Filters out aircraft from bases that no longer exist
+---Create JSON string for deployed aircraft data with base coordinates
 ---@param config SBJ__CONFIG Configuration table containing aircraft deployment data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted deployed aircraft data with coordinates
@@ -2976,16 +2940,7 @@ local function createDeployedAircraftDataString(config, sideName)
   return gKH.json.stringify(rows)
 end
 
----Create comprehensive status UI with tabbed interface
----Main entry point for displaying multi-tab military status dashboard
----Aggregates data from multiple sources and creates unified HTML interface
----Supports both China and Taiwan/US sides with appropriate data filtering
----Features:
---- - Signal intelligence data (SIGINT transmissions)
---- - Mobile missile launcher status with reload progress
---- - Command and control node status (IADS)
---- - Base weapon inventory
---- - Landing unit counts (China only)
+---Create comprehensive status UI with multi-tab military dashboard
 ---@param config SBJ__CONFIG Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
@@ -3034,14 +2989,7 @@ function UnitStatusUI.createUI(config, sideName)
   end
 end
 
----Create interactive setup menu for scenario initialization
----Displays comprehensive web-based planning interface for Taiwan deployment
----Features:
---- - Aircraft & Loadouts tab: Configure air force deployment and ammunition storage
---- - GPS Jammers tab: Position electronic warfare units with interactive map
---- - Summary tab: Review and submit complete deployment configuration
----Processes user input and applies changes to game state and unit deployment
----Currently only available for Taiwan side
+---Create interactive setup menu for Taiwan deployment planning
 ---@param config SBJ__CONFIG Configuration table
 ---@param sideName string Side name (currently only 'Taiwan' is supported)
 function UnitStatusUI.createSetupMenu(config, sideName)

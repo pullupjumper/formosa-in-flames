@@ -1,7 +1,11 @@
 local GameApi = require("src.utils.gameApi")
 
+--- Assign Mission
+---
+--- Handles assignment of embarked units to missions with filtering and validation
 local AssignMission = {}
 
+---Filter embarked platforms by type and database ID
 ---@param baseUnit CMO__Unit The base unit with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')
 ---@param platformDBID number The database ID of the platform to filter
@@ -23,6 +27,7 @@ local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   return filteredPlatforms
 end
 
+---Check if a unit can be assigned to a mission
 ---@param unit CMO__Unit The unit to check
 ---@param mission SBJ__MissionEntry The mission settings
 ---@return boolean # True if the unit can be assigned to the mission, false otherwise
@@ -30,6 +35,7 @@ local function canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
 end
 
+---Process mission assignments for filtered platforms
 ---@param filteredPlatforms table<integer, CMO__Unit> A list of filtered embarked units
 ---@param mission SBJ__MissionEntry The mission to assign units to
 local function processMissionAssignments(filteredPlatforms, mission)
@@ -47,6 +53,7 @@ local function processMissionAssignments(filteredPlatforms, mission)
   end
 end
 
+---Assign embarked units to missions
 ---@param fromUnit string The unit guid with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Ship')
 ---@param platformDBID number The database ID of the platform to filter
@@ -65,6 +72,7 @@ function AssignMission.assignEmbarkedUnitsToMissions(fromUnit, platformType, pla
   end
 end
 
+---Get weapon count for a specific weapon type on a unit
 ---@param unitGuid string The GUID of the unit
 ---@param weaponDBID number The database ID of the weapon to filter by
 ---@return number # The count of the specified weapon on the unit's loadout
@@ -87,6 +95,7 @@ local function getWeaponCount(unitGuid, weaponDBID)
   return weaponNum
 end
 
+---Check if unit is eligible for strike mission
 ---@param unit CMO__Unit The unit to check
 ---@param weaponNum number The number of specified weapons on the unit
 ---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
@@ -95,13 +104,14 @@ local function isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID)
   return unit.readytime_v == 0 and unit.mission == nil and (weaponNum > 0 or unit.dbid == unitDBID)
 end
 
----@param fromUnit string -- The unit guid with embarked units
----@param num number -- The number of units to assign to the mission
----@param weaponDBID number|0 -- The database ID of the weapon to filter by, or 0 for any weapon
----@param unitDBID number|nil -- The database ID of the unit to filter by, or nil for any unit
----@param missionName string -- The name of the mission to assign units to
----@param isEscort boolean -- Whether the mission is an escort mission
----@return table<integer, string>|nil # -- A list of assigned units
+---Assign embarked units to strike mission
+---@param fromUnit string The unit guid with embarked units
+---@param num number The number of units to assign to the mission
+---@param weaponDBID number|0 The database ID of the weapon to filter by, or 0 for any weapon
+---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
+---@param missionName string The name of the mission to assign units to
+---@param isEscort boolean Whether the mission is an escort mission
+---@return table<integer, string>|nil # A list of assigned units
 function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   ---@type CMO__Unit
   local airbase = GameApi.ScenEdit_GetUnit(fromUnit)

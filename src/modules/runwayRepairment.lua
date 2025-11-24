@@ -1,5 +1,8 @@
 local GameApi = require("src.utils.gameApi")
 
+--- Runway Repairment
+---
+--- Runway damage assessment and automated repair scheduling system
 local RunwayRepairment = {}
 
 ---Handle runway damage events and record repair start time
@@ -20,8 +23,7 @@ function RunwayRepairment.whenRunwayIsDamaged(saveData, side, unit)
   end
 end
 
----Execute scheduled runway repair operations (called every 5 minutes)
----Reduces damage by (startDP * percentagePerHour / 12 / 100) per interval
+---Execute scheduled runway repair operations reducing damage incrementally
 ---@param config SBJ__CONFIG Configuration containing repair rate settings
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param side string Faction name ("China" or other faction)

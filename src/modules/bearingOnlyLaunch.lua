@@ -1,21 +1,25 @@
 local math = require("math")
 local Utils = require("src.utils.utils")
 
+--- Bearing Only Launch
+---
+--- Generates missile paths that avoid radar detection using waypoint routing
 local BearingOnlyLaunch = {}
 
 -- Earth radius (nautical miles)
 EARTH_RADIUS_NM = 3440.065
 
--- Angle and radian conversion
+---Convert degrees to radians
 ---@param d number Degrees
 ---@return number # Radians
 local function deg2rad(d) return d * math.pi / 180 end
 
+---Convert radians to degrees
 ---@param r number Radians
 ---@return number # Degrees
 local function rad2deg(r) return r * 180 / math.pi end
 
--- Calculate destination based on starting point, bearing, and distance
+---Calculate destination point based on starting point, bearing, and distance
 ---@param lat number Starting latitude
 ---@param lon number Starting longitude
 ---@param bearingDeg number Bearing in degrees
@@ -36,7 +40,7 @@ local function destinationPoint(lat, lon, bearingDeg, distanceNm)
   return rad2deg(lat2), rad2deg(lon2)
 end
 
--- Calculate distance between two points (nautical miles)
+---Calculate distance between two points using Haversine formula
 ---@param lat1 number First point latitude
 ---@param lon1 number First point longitude
 ---@param lat2 number Second point latitude
@@ -51,7 +55,7 @@ local function haversineNM(lat1, lon1, lat2, lon2)
   return EARTH_RADIUS_NM * c
 end
 
--- Check if path crosses radar circular area (approximated using midpoint)
+---Check if path crosses radar circular area using midpoint approximation
 ---@param lat1 number Path start latitude
 ---@param lon1 number Path start longitude
 ---@param lat2 number Path end latitude
@@ -68,41 +72,9 @@ local function intersectsRadarCircle(lat1, lon1, lat2, lon2, radarLat, radarLon,
 end
 
 
--- Main function
+---Generate missile paths that avoid radar detection zones
 ---@param params SBJ__GenerateMissilePaths_Params Parameters for generating missile paths
----@return table<integer, SBJ__MissilePath> # Returns missile path list
----Example:
--- local paths = Generate_missile_paths({
---   target_lat = 34.0,
---   target_lon = -118.0,
---   launcher_lat = 33.0,
---   launcher_lon = -117.0,
---   radar_range = 50,
---   missile_count = 5,
---   missile_speed_kts = 600,
---   missile_range_nm = 100
--- })
--- local u=ScenEdit_GetUnit({name='SSM Plt (Hsiung Feng III)', guid='IC8B0X-0HND5HOHSH38N'})
--- local c=ScenEdit_GetContact({side='Taiwan', guid='IC8B0X-0HND5HOHSLL5K'})
--- local missiles = generate_missile_paths({
---     target_lat = c.latitude,
---     target_lon = c.longitude,
---     launcher_lat = u.latitude,
---     launcher_lon = u.longitude,
---     radar_range = 7,
---     radar_dir = 0,         -- Enemy radar direction (e.g. facing southwest, towards us)
---     radar_fov = 120,
---     missile_count = 8,
---     missile_speed_kts = 1600,
---     missile_range_nm = 100
--- })
--- print(u.mounts[1])
--- for k,v in ipairs(missiles)do
--- print(v.launchTime)
--- print( os.date("%m/%d/%Y %I:%M:%S %p", (v.launchTime)))
--- local r=ScenEdit_AttackContact(u.guid, c.guid, { mode=1, mount=3613, weapon=1133, qty=1, course=v.waypoints})
--- print(r)
--- end
+---@return table<integer, SBJ__MissilePath> # Missile path list with waypoints and launch times
 function BearingOnlyLaunch.generateMissilePaths(params)
   local result = {}
   local now = os.time()

@@ -1,6 +1,9 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 
+--- Attack Manager
+---
+--- Coordinates weapon allocation and attack execution against contacts with multi-unit support
 local AttackManager = {}
 
 ---Get weapon information for a unit
@@ -204,6 +207,7 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   return { ammoAllocated = 0 }
 end
 
+---Attack a single contact with weapon allocation from firing units
 ---@param contactGUID string The target contact to attack
 ---@param ammoToAllocate number Total amount of ammunition to allocate for this attack
 ---@param firingUnits table<string, SBJ__FiringUnitContext> Array of firing units to use for attack
@@ -283,7 +287,8 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
   return { btyIdx = btyIdx, grpIdx = grpIdx, ammoAllocated = totalAmmoAllocated }
 end
 
----@param opts SBJ__AttackContacts_Params
+---Attack multiple contacts with weapon allocation from firing units
+---@param opts SBJ__AttackContacts_Params Attack parameters
 ---@return number # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(opts)
   local result = { btyIdx = 1, grpIdx = 1, launchedNum = 0 }

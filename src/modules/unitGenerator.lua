@@ -3,7 +3,9 @@ local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 
----@class UnitGenerator
+--- Unit Generator
+---
+--- Unit creation with formation logic and cleanup for ships, aircraft, and amphibious forces
 local UnitGenerator = {}
 
 -- ============================================================================

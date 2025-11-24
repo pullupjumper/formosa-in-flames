@@ -2,13 +2,14 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 
+--- IADS
+---
+--- Integrated Air Defense System coordination and command and control management
 local IADS = {}
 
---- Sets units of specified type to out-of-communications state
---- When a C2 node is destroyed, this function disables all radars or SAMs under its control
---- by setting their communication status to offline
---- @param C2Context SBJ__C2Context The C2 context containing the units to disable
---- @param type string Unit type to disable ('radar' or 'SAM')
+---Disable units under C2 node by setting them out of communications
+---@param C2Context SBJ__C2Context The C2 context containing the units to disable
+---@param type string Unit type to disable ('radar' or 'SAM')
 local function disableUnitsUnderC2Node(C2Context, type)
   for _, data in pairs(C2Context[type]) do
     local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
@@ -21,11 +22,9 @@ local function disableUnitsUnderC2Node(C2Context, type)
   end
 end
 
---- Disrupts command and control communications
---- When a C2 node is destroyed, this function automatically checks all C2 types
---- (C2, ROCC, TAAOC) and disables associated radars and SAMs
---- @param IADSContext SBJ__IADSContext IADS context containing C2 nodes
---- @param C2 CMO__Unit The destroyed command and control node unit
+---Process command and control disruption when C2 node is destroyed
+---@param IADSContext SBJ__IADSContext IADS context containing C2 nodes
+---@param C2 CMO__Unit The destroyed command and control node unit
 function IADS.processC2Disruption(IADSContext, C2)
   -- Check China C2 nodes
   if IADSContext.C2 and IADSContext.C2[C2.guid] then
@@ -51,13 +50,10 @@ function IADS.processC2Disruption(IADSContext, C2)
   end
 end
 
---- Clears data for destroyed units
---- Removes destroyed radars or SAMs from air defense system data structure
---- Iterates through all C2 nodes to find which one was managing the destroyed unit
---- and removes it from that C2 node's inventory
---- @param C2TypeContext table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.C2, IADSContext.ROCC, or IADSContext.TAAOC)
---- @param type string Unit type ('radar' or 'SAM')
---- @param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
+---Remove destroyed unit from IADS tracking by clearing its data from C2 context
+---@param C2TypeContext table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.C2, IADSContext.ROCC, or IADSContext.TAAOC)
+---@param type string Unit type ('radar' or 'SAM')
+---@param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
 function IADS.removeDestroyedUnitContextFromIADS(C2TypeContext, type, destroyedUnit)
   -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
   for _, ctx in pairs(C2TypeContext) do
@@ -70,12 +66,10 @@ function IADS.removeDestroyedUnitContextFromIADS(C2TypeContext, type, destroyedU
   end
 end
 
---- Activates backup radar
---- When a radar is destroyed, automatically activates the nearest backup radar to maintain air defense coverage
---- Search priority: 1) Dedicated radars (JY-26, YLC-8B), 2) SAM system radars (HQ-22, S-300, S-400, HQ-12)
---- @param config SBJ__CONFIG Configuration parameters containing platform DBIDs and radar distance threshold
---- @param sideUnits CMO__SideUnit[] Array of available radar units to search through for potential backups
---- @param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
+---Activate nearest backup radar when a radar is destroyed to maintain coverage
+---@param config SBJ__CONFIG Configuration parameters containing platform DBIDs and radar distance threshold
+---@param sideUnits CMO__SideUnit[] Array of available radar units to search through for potential backups
+---@param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
 function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
   local temp = { unit = nil, distance = config.radarDistance }
 
@@ -127,11 +121,9 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
   end
 end
 
---- Add C2 facilities to the scenario
---- Creates multiple C2 facility units at random positions within configured areas
---- These facilities serve as suspected command and control nodes for the Chinese forces
---- @param IADSConfig SBJ__IADSConfig IADS configuration containing C2 settings, facility DBIDs, and deployment parameters
----@return boolean # Returns true if all C2 facilities were successfully created, false if any creation failed
+---Add C2 facility units at random positions within configured areas
+---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 settings, facility DBIDs, and deployment parameters
+---@return boolean # True if all C2 facilities were successfully created, false if any creation failed
 function IADS.addC2Facilities(IADSConfig)
   for _, setting in ipairs(IADSConfig.C2Settings) do
     local units = GameUtils.createRandomUnits({
@@ -155,16 +147,11 @@ function IADS.addC2Facilities(IADSConfig)
   return true
 end
 
---- Initialize C2 facilities for China's IADS
---- This function:
---- 1. Identifies all facility units on China's side
---- 2. Randomly selects one facility per configured area to act as the active C2 node
---- 3. Associates all radars (JY-26, YLC-8B) and SAMs (HQ-22, S-300, S-400, HQ-12) in each area with their C2 node
---- 4. Initializes tracking data for each unit including OODA loop timing and EMCON settings
---- @param config SBJ__CONFIG Global configuration containing platform DBIDs and unit types
---- @param IADSConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
---- @param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
----@return boolean # Returns true if initialization succeeded, false if no units found
+---Initialize C2 facilities context for China's IADS with radar and SAM associations
+---@param config SBJ__CONFIG Global configuration containing platform DBIDs and unit types
+---@param IADSConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
+---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
+---@return boolean # True if initialization succeeded, false if no units found
 function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   IADSContext.C2 = {}
@@ -248,13 +235,9 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
   return true
 end
 
---- Initialize Command and Control systems for Taiwan's IADS
---- This function associates Taiwan's air defense units with their respective C2 nodes:
---- 1. ROCC (Regional Operations Control Center) manages strategic SAMs (TK-3, PAC-3) and long-range radars (FPS-117, TPS-43F, HR-3000, GE-592)
---- 2. TAAOC (Tactical Air Operations Center) manages tactical SAMs (TC-2, Sky Guard)
---- All units are initialized with passive EMCON settings for emission control
---- @param config SBJ__CONFIG Global configuration containing platform DBIDs for Taiwan's air defense systems
---- @param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
+---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
+---@param config SBJ__CONFIG Global configuration containing platform DBIDs for Taiwan's air defense systems
+---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 function IADS.initC2Contexts(config, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(config.unitType.FACILITY)
 
@@ -318,12 +301,10 @@ function IADS.initC2Contexts(config, IADSContext)
   end
 end
 
---- Remove C2 facilities from the scenario
---- Deletes all C2 facility units that match the configured DBIDs from China's side
---- Used for cleaning up existing C2 facilities before redeployment or scenario reset
---- @param config SBJ__CONFIG Global configuration containing unit type definitions
---- @param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
----@return boolean # Returns true if removal operation completed (even if 0 units removed), false if unit query failed
+---Remove C2 facility units from scenario by deleting units matching configured DBIDs
+---@param config SBJ__CONFIG Global configuration containing unit type definitions
+---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
+---@return boolean # True if removal operation completed, false if unit query failed
 function IADS.removeC2Facilities(config, IADSConfig)
   local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   local removedCount = 0
