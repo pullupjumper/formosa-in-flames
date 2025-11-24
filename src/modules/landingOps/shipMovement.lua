@@ -110,7 +110,7 @@ end
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers in center, Type 054A frigates at flanks
 ---In testing mode, ships are instantly teleported to their assigned positions
----@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param group SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 local function handleSAG(config, group, isTesting)
@@ -173,7 +173,7 @@ end
 ---Routes different ship types to their pre-calculated positions based on ship class
 ---Handles amphibious assault ships (Type 075/076), landing ships (Type 071/072/073), and auxiliary vessels
 ---Also coordinates Surface Action Group movements for escort duties
----@param config SBJ__CONFIG Global configuration (used for SAG platform identification)
+---@param config SBJ__Config Global configuration (used for SAG platform identification)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)

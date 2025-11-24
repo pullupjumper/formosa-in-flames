@@ -86,7 +86,7 @@ end
 
 ---Check if target is within range of a radio transmission source
 ---Validates distance to radio source and transmission strength
----@param config SBJ__CONFIG Global configuration with SIGINT range and count thresholds
+---@param config SBJ__Config Global configuration with SIGINT range and count thresholds
 ---@param distance number Distance in nautical miles to radio source
 ---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
@@ -116,7 +116,7 @@ end
 
 ---Filter targets that are within range of SIGINT-detected radio sources
 ---Cross-references contacts with SIGINT transmissions, triggers reconnaissance for mobile sources
----@param config SBJ__CONFIG Global configuration with SIGINT parameters and platform definitions
+---@param config SBJ__Config Global configuration with SIGINT parameters and platform definitions
 ---@param saveData SBJ__SaveData Persistent save data containing SIGINT transmission records
 ---@param contacts string[] Array of contact GUIDs to evaluate
 ---@return string[]|nil # Array of contact GUIDs near radio sources, or nil if no aircraft available

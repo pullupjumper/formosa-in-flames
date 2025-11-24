@@ -12,7 +12,7 @@ local gKH = require('src.core.gKH_State_Standalone')
 local UnitStatusUI = {}
 
 ---Count military units by type within operational zones
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 ---@return table<string, table<string, number>> # Table with area names as keys and unit type counts as values
 function UnitStatusUI.countUnitsInEachArea(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
@@ -183,7 +183,7 @@ local function getWCSSettingTemplate()
 end
 
 ---Display HTML dialog for EMCON settings configuration
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 function UnitStatusUI.wcsSettingTable(config)
   local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
 
@@ -283,7 +283,7 @@ function UnitStatusUI.wcsSettingTable(config)
 end
 
 ---Create JSON string for artillery battery status data
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string Weapon system type list
@@ -386,7 +386,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
 end
 
 ---Create JSON string for base ammunition inventory data
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted ammunition inventory data
 local function createMagazineDataString(config, sideName)
@@ -2918,7 +2918,7 @@ local function createGPSJammingDataString(saveData, sideName)
 end
 
 ---Create JSON string for deployed aircraft data with base coordinates
----@param config SBJ__CONFIG Configuration table containing aircraft deployment data
+---@param config SBJ__Config Configuration table containing aircraft deployment data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted deployed aircraft data with coordinates
 local function createDeployedAircraftDataString(config, sideName)
@@ -2941,7 +2941,7 @@ local function createDeployedAircraftDataString(config, sideName)
 end
 
 ---Create comprehensive status UI with multi-tab military dashboard
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
   local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -2990,7 +2990,7 @@ function UnitStatusUI.createUI(config, sideName)
 end
 
 ---Create interactive setup menu for Taiwan deployment planning
----@param config SBJ__CONFIG Configuration table
+---@param config SBJ__Config Configuration table
 ---@param sideName string Side name (currently only 'Taiwan' is supported)
 function UnitStatusUI.createSetupMenu(config, sideName)
   ---@type SBJ__SaveData

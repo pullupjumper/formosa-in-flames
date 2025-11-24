@@ -141,7 +141,7 @@ end
 ---Get units in anchorage area and check their movement status
 ---Filters amphibious ships (LHD, LPD, LST) and checks if any are still moving
 ---Used to determine when all ships have arrived and are ready for cargo operations
----@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit Unit list from the side (filtered for ships)
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
@@ -240,7 +240,7 @@ end
 ---Handles Type 075/076 LHDs (boats + transport/attack helicopters + recon UAVs)
 ---Handles Type 071 LPDs (boats + transport helicopters)
 ---Also processes transport aircraft from other bases
----@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
 ---@return boolean # True if all transfers and assignments completed successfully
@@ -354,7 +354,7 @@ end
 ---Re-transfer cargo to embarked units for second wave operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
 ---Used when returning units need fresh cargo for subsequent landing waves
----@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all cargo was successfully re-transferred

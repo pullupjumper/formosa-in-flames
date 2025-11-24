@@ -2,11 +2,15 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
+--- Communications Jamming
+---
+--- Communications jamming coordination for electronic warfare operations,
+--- including omnidirectional and directional jamming, SAM/radar disruption, and aircraft communication monitoring
 local CommsJamming = {}
 
 
 ---Get distance-based modifier category
----@param config SBJ__CONFIG Configuration containing communication jamming parameters
+---@param config SBJ__Config Configuration containing communication jamming parameters
 ---@param distance number Distance in nautical miles
 ---@return string|nil # Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
 local function getDistanceCategory(config, distance)
@@ -27,7 +31,7 @@ end
 
 
 ---Calculate communication modifier for affected unit based on jammers and support systems
----@param config SBJ__CONFIG Configuration containing communication jamming parameters
+---@param config SBJ__Config Configuration containing communication jamming parameters
 ---@param saveData SBJ__SaveData Save data containing jammer, AEW, and C2 unit contexts
 ---@param affectedUnitGUID string GUID of the unit whose communication level is being calculated
 ---@return integer # The calculated communication modifier
@@ -90,7 +94,7 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 end
 
 ---Recover communications for a jammed unit based on recovery time configuration
----@param config SBJ__CONFIG Configuration containing recovery time parameters
+---@param config SBJ__Config Configuration containing recovery time parameters
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context to recover communications for
 local function recoverComms(config, affectedUnitCtx)
   if affectedUnitCtx.isOutOfComms then
@@ -114,7 +118,7 @@ end
 
 
 ---Apply communication jamming effects to a unit with pre-calculated distance
----@param config SBJ__CONFIG Configuration containing jamming parameters (range, effectiveness, timing)
+---@param config SBJ__Config Configuration containing jamming parameters (range, effectiveness, timing)
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
@@ -164,7 +168,7 @@ local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jamme
 end
 
 ---Apply directional communication jamming effects to a unit with pre-calculated distance
----@param config SBJ__CONFIG Configuration containing jamming parameters (range, effectiveness, timing)
+---@param config SBJ__Config Configuration containing jamming parameters (range, effectiveness, timing)
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
@@ -262,7 +266,7 @@ end
 ---Handle communication jamming operations for all active jammers and affected units
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
 ---Updates unit communication states and triggers RTB for aircraft with degraded communications
----@param config SBJ__CONFIG Configuration containing jamming parameters, thresholds, and effectiveness formulas
+---@param config SBJ__Config Configuration containing jamming parameters, thresholds, and effectiveness formulas
 ---@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
 function CommsJamming.handleCommsJamming(config, saveData)
   local jammers = findJammers(saveData.c.commsJamming.jammers)
@@ -355,7 +359,7 @@ end
 ---Initialize communications jammer contexts for the specified side
 ---Scans all aircraft on the side and creates contexts for Y-9, J-15D, and J-16D electronic warfare aircraft
 ---Contexts include OODA, communication levels, thresholds, and jamming state tracking
----@param config SBJ__CONFIG Configuration containing platform DBIDs for jammer identification (Y9, J15D, J16D)
+---@param config SBJ__Config Configuration containing platform DBIDs for jammer identification (Y9, J15D, J16D)
 ---@param saveData SBJ__SaveData Save data where jammer contexts will be stored in c.commsJamming.jammers
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
 function CommsJamming.initCommsJammersContext(config, saveData, sideName)

@@ -4,6 +4,10 @@ local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local AssignMission = require("src.modules.assignMission")
 
+--- Air Tasking Order
+---
+--- ATO execution and coordination including strike package processing,
+--- loadout management, mission assignment, and flight group orchestration
 local AirTaskingOrder = {}
 
 local ADVANCE_SECONDS = 300
@@ -275,7 +279,7 @@ end
 
 ---Processes a single strike package through its complete lifecycle
 ---Handles weapon loading, mission creation, target assignment, and unit launch
----@param config SBJ__CONFIG The global configuration table
+---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO state
 ---@param packageData SBJ__Package The strike package data to process
 ---@return boolean # true if package was successfully launched, false if still in preparation
@@ -392,7 +396,7 @@ end
 
 ---The main entry point for air strikes.
 ---Iterates through ATO waves and packages, processing each strike package sequentially
----@param config SBJ__CONFIG The global configuration table
+---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
 function AirTaskingOrder.airStrike(config, saveData)
   if not saveData or not saveData.c or not saveData.c.air or not saveData.c.air.ATO then

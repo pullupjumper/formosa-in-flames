@@ -82,7 +82,7 @@ end
 ---Directs barges to offload areas and RORO ships to follow barges
 ---Creates logistics chain: RORO -> Barge -> Beach for vehicle delivery
 ---Tracks barge-RORO relationships in saveData for bridge creation
----@param config SBJ__CONFIG Global configuration (unused but kept for consistency)
+---@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to track barge-RORO relationships
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)

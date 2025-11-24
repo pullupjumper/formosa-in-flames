@@ -5,6 +5,10 @@ local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
+--- Dynamic ATO Insertion
+---
+--- Dynamic Air Tasking Order insertion based on real-time intelligence,
+--- including strike package generation, timing calculations, and aircraft allocation
 local DynamicATOInsertion = {}
 
 -- Time constants
@@ -182,7 +186,7 @@ end
 ---Applies configured targeting filters (e.g., naval, radar) to find valid strike targets
 ---@param packageData SBJ__PackageTemplate Package configuration with target filter definitions
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for tracking
 ---@param packageIndex number Package index for logging
 ---@return string[] # Array of target GUIDs matching the filter criteria
@@ -258,7 +262,7 @@ end
 ---Routes to dynamic or fixed target processing based on package configuration
 ---@param packageData SBJ__PackageTemplate Package configuration with target definitions
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param isFirstWave boolean Whether this is the first wave
 ---@param packageIndex number Package index for logging
@@ -284,7 +288,7 @@ end
 
 ---Process ATO template with integrated validation - single pass through packages
 ---Processes all packages in wave template, finding targets and validating resources in one pass
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
@@ -690,7 +694,7 @@ end
 
 ---Process reconnaissance schedule and generate ATO waves for air operations
 ---Checks recon schedule for triggered events and generates corresponding ATO waves
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing recon schedule
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # true if any recon event was triggered and processed, false if none ready or failed
@@ -786,7 +790,7 @@ end
 
 ---Main processing function for Dynamic ATO Insertion
 ---Entry point for dynamic ATO system, validates configuration and processes recon schedule
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # true if processing completed successfully, false if disabled or failed

@@ -1,4 +1,4 @@
----@class SBJ__CONFIG
+---@class SBJ__Config
 local config = {}
 config.isDevMode = true
 config.isSaved = true

@@ -5,6 +5,10 @@ local Logger = require("src.utils.logger")
 local Launcher = require("src.modules.launcher")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
+--- Dynamic Fire Support Plan
+---
+--- Dynamic Fire Support Planning with BDA-based automated FSEM creation,
+--- including target assessment, firing unit coordination, and strike scheduling
 local DynamicFireSupportPlan = {}
 
 -- Local helper functions (private)

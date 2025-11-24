@@ -3,6 +3,10 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 
+--- GPS Jamming
+---
+--- GPS denial operations management including jamming zone creation,
+--- weapon course deviation simulation, and jammer deployment coordination
 local GPSJamming = {}
 
 ---Add jamming zone for a GPS jammer unit

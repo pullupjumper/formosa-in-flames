@@ -67,7 +67,7 @@ function IADS.removeDestroyedUnitContextFromIADS(C2TypeContext, type, destroyedU
 end
 
 ---Activate nearest backup radar when a radar is destroyed to maintain coverage
----@param config SBJ__CONFIG Configuration parameters containing platform DBIDs and radar distance threshold
+---@param config SBJ__Config Configuration parameters containing platform DBIDs and radar distance threshold
 ---@param sideUnits CMO__SideUnit[] Array of available radar units to search through for potential backups
 ---@param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
 function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
@@ -148,7 +148,7 @@ function IADS.addC2Facilities(IADSConfig)
 end
 
 ---Initialize C2 facilities context for China's IADS with radar and SAM associations
----@param config SBJ__CONFIG Global configuration containing platform DBIDs and unit types
+---@param config SBJ__Config Global configuration containing platform DBIDs and unit types
 ---@param IADSConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
 ---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
@@ -236,7 +236,7 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
 end
 
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
----@param config SBJ__CONFIG Global configuration containing platform DBIDs for Taiwan's air defense systems
+---@param config SBJ__Config Global configuration containing platform DBIDs for Taiwan's air defense systems
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 function IADS.initC2Contexts(config, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(config.unitType.FACILITY)
@@ -302,7 +302,7 @@ function IADS.initC2Contexts(config, IADSContext)
 end
 
 ---Remove C2 facility units from scenario by deleting units matching configured DBIDs
----@param config SBJ__CONFIG Global configuration containing unit type definitions
+---@param config SBJ__Config Global configuration containing unit type definitions
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
 function IADS.removeC2Facilities(config, IADSConfig)

@@ -4,6 +4,10 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
+--- Reconnaissance
+---
+--- Reconnaissance mission scheduling and management including UAV launches,
+--- WZ-8 drone operations, target tracking, and dynamic operations coordination
 local Recon = {}
 
 ---Launch units from a base with specified parameters

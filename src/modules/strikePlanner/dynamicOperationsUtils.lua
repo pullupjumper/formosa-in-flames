@@ -2,6 +2,10 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 
+--- Dynamic Operations Utilities
+---
+--- Utilities for dynamic operations coordination including reconnaissance
+--- schedule management, operation filtering, and next wave generation
 local DynamicOperationsUtils = {}
 
 ---Check if all operations in a reconnaissance entry are completed
@@ -307,7 +311,7 @@ function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operat
   end
 end
 
----Generate next operation based on given operation by incrementing template number
+---Generate next SBJ__Configased on given operation by incrementing template number
 ---Parses template name, increments number, finds next template in config
 ---If next template not found, reuses current template
 ---@param operation SBJ__Operation Original operation object

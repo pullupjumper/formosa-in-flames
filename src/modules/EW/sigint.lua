@@ -3,6 +3,10 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
+--- SIGINT (Signals Intelligence)
+---
+--- Signals intelligence collection and processing including detection probability
+--- calculations, transmission tracking, and reconnaissance aircraft coordination
 local SIGINT = {}
 
 -- ============================================================================

@@ -4,6 +4,10 @@ local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 
+--- Fire Support Plan
+---
+--- Fire Support Execution Matrix (FSEM) management for coordinating ground-based
+--- missile strikes, firing unit deployment, and fire support task execution
 local FireSupportPlan = {}
 
 ---Check if firing unit is ready to move to firing point

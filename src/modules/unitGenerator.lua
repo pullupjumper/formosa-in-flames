@@ -222,7 +222,7 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
 end
 
 ---Create ships by type
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param position CMO__Location Position
 ---@param areaDescriptor SBJ__AmphibiousAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibOpsDescriptor Item configuration
@@ -604,7 +604,7 @@ function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
 end
 
 ---Add submarines
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param sideName string Side name
 ---@return boolean # Whether successful
 function UnitGenerator.addSubmarines(config, sideName)
@@ -722,7 +722,7 @@ end
 -- addEmbarkedUnitsAdvanced already defined above
 
 ---Add landing ships
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration containing ship settings and cargo
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(config, amphibOpsConfig)
@@ -756,7 +756,7 @@ function UnitGenerator.addLandingShips(config, amphibOpsConfig)
 end
 
 ---Remove landing ships
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
@@ -797,7 +797,7 @@ function UnitGenerator.removeLandingShips(config)
 end
 
 ---Initialize aircraft units for Taiwan air operations
----@param config SBJ__CONFIG Configuration object containing platform and unit type definitions
+---@param config SBJ__Config Configuration object containing platform and unit type definitions
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
 ---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(config, context)

@@ -157,7 +157,7 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
 end
 
 ---Command firing unit to move to reload point (RL)
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
@@ -166,7 +166,7 @@ local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
 end
 
 ---Command firing unit to move to hide area (HA)
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToHideArea(config, firingUnitCtx, firingUnit)
@@ -181,7 +181,7 @@ local function moveToHideArea(config, firingUnitCtx, firingUnit)
 end
 
 ---Command resupply unit to move to ammunition holding area (AHA)
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveToAmmoHoldingArea(config, resupplyUnitCtx, resupplyUnit)
@@ -207,7 +207,7 @@ local function transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
 end
 
 ---Command resupply unit to move to reload point (RL)
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUnit)
@@ -216,7 +216,7 @@ local function moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUn
 end
 
 ---Handle automatic firing unit repositioning logic
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
@@ -245,7 +245,7 @@ local function handleAutomaticFiringUnitRepositioning(config, wsContext, firingU
 end
 
 ---Handle manual firing unit reload logic
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
@@ -271,7 +271,7 @@ local function handleManualFiringUnitReload(config, wsContext, firingUnitCtx, fi
 end
 
 ---Handle automatic resupply unit repositioning logic
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
@@ -308,7 +308,7 @@ local function handleAutomaticResupplyUnitRepositioning(config, wsContext, resup
 end
 
 ---Handle manual resupply unit reload logic
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
@@ -333,7 +333,7 @@ local function handleManualResupplyUnitReload(config, wsContext, resupplyUnitCtx
 end
 
 ---Handle status and actions of all resupply units
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 local function processResupplyUnits(config, wsContext, isAuto)
@@ -351,7 +351,7 @@ local function processResupplyUnits(config, wsContext, isAuto)
 end
 
 ---Handle status and actions of all firing units
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 local function processFiringUnits(config, wsContext, isAuto)
@@ -441,7 +441,7 @@ function Launcher.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID)
 end
 
 ---Set firing unit reload start time
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
@@ -463,7 +463,7 @@ function Launcher.setReloadStartTime(config, firingUnitCtx, firingUnit, isAuto)
 end
 
 ---Set firing unit weapon control status to free fire
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function Launcher.setWCSToFree(config, firingUnitCtx, firingUnit)
@@ -484,7 +484,7 @@ function Launcher.setWCSToFree(config, firingUnitCtx, firingUnit)
 end
 
 ---Set firing unit status to hide
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function Launcher.setStateToHIDE(config, firingUnitCtx, firingUnit)
@@ -527,7 +527,7 @@ function Launcher.isLowAmmo(firingUnit, percentage, weaponDBID)
 end
 
 ---Command firing unit to move to firing point (FP)
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function Launcher.moveToFiringPoint(config, firingUnitCtx, firingUnit)
@@ -541,7 +541,7 @@ end
 ---@param counterpartList SBJ__FiringUnitContext[]|SBJ__ResupplyUnitContext[] List of counterpart units to check
 ---@param unit CMO__Unit Original unit for area checking
 ---@param OPAREAs table<string, SBJ__OPAREA> OPAREA configuration
----@param config SBJ__CONFIG Configuration
+---@param config SBJ__Config Configuration
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean isMet Whether units have met
 ---@return table|nil context The matched context if met
@@ -570,11 +570,11 @@ local function checkMeetingInArea(targetCtx, targetGuid, counterpartList, unit, 
 end
 
 ---Check if firing unit has met with resupply units
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
----@return {isMet: boolean, firingUnit: SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil} # Meeting status with resupply unit context 
+---@return {isMet: boolean, firingUnit: SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil} # Meeting status with resupply unit context
 function Launcher.isMetWithResupplyUnits(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, firingUnit = nil } end
   local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
@@ -609,11 +609,11 @@ function Launcher.isMetWithResupplyUnits(config, wsContext, unit, isAuto)
 end
 
 ---Check if resupply unit has met with ammunition depot
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
----@return {isMet: boolean, resupplyUnit: SBJ__ResupplyUnitContext|nil} # Meeting status with ammo depot context 
+---@return {isMet: boolean, resupplyUnit: SBJ__ResupplyUnitContext|nil} # Meeting status with ammo depot context
 function Launcher.isMetWithAmmoDepot(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, resupplyUnit = nil } end
   local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)
@@ -648,7 +648,7 @@ function Launcher.isMetWithAmmoDepot(config, wsContext, unit, isAuto)
 end
 
 ---Check status of all firing units and resupply units, and trigger corresponding actions
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 function Launcher.checkBatteryState(config, wsContext, isAuto)

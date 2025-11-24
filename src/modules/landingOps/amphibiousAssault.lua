@@ -83,7 +83,7 @@ end
 ---LSTs in anchorage areas are directed toward their landing zones
 ---Surface Action Groups are moved to amphibious vehicle staging areas for support
 ---RORO ships and barges remain in anchorage and do not beach
----@param config SBJ__CONFIG Global configuration (unused but kept for consistency)
+---@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all LST courses were successfully set
@@ -231,7 +231,7 @@ end
 ---Check if a ship is a ferry or Landing Ship Tank (LST)
 ---Used to identify ships capable of launching ACVs or beaching operations
 ---Includes Type 071 (LPD), Type 072 (LST variants), Type 073A (LSM), and ferries
----@param config SBJ__CONFIG Global configuration for platform DBIDs
+---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param ship CMO__Unit Ship unit to check
 ---@return boolean # True if ship is a ferry or LST
 function AmphibiousAssault.isFerryOrLST(config, ship)
