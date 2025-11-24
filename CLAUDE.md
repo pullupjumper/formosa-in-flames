@@ -60,6 +60,8 @@ local ModuleName = {}
 ```
 
 *Key Rules*:
+- **Function descriptions**: Use `---Description` (no space after `---`), start with uppercase letter
+- **Module header**: Use `--- Module Name` (with space after `---`) for module headers only
 - **Single return**: Use `#` separator → `---@return type # Description`
 - **Multiple returns**: Include variable names → `---@return type varName Description`
 - **Parameters**: No `--` separator, direct description after type
