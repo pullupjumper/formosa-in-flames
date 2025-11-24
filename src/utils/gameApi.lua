@@ -1,15 +1,20 @@
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
+--- Game API Wrapper Module
+---
+--- Wraps all CMO ScenEdit_* and related API calls with centralized error handling.
+--- All functions are automatically wrapped via metatable to provide safe execution through Utils.safeCall().
+--- Never call ScenEdit_* functions directly - always use GameApi.* equivalents.
 ---@class GameApi
 local realApi = {}
 ---@type GameApi
 local GameApi = {}
 
----comment
----@param guid string -- The GUID of the unit
----@param sideName? string -- Optional side name to narrow down the search
----@return CMO__Unit|nil -- Returns the unit object associated with the given GUID or side
+---Get unit by GUID or name
+---@param guid string The GUID or name of the unit
+---@param sideName? string Optional side name to narrow down the search
+---@return CMO__Unit|nil # Returns the unit object, or nil if not found
 function realApi.ScenEdit_GetUnit(guid, sideName)
   local result
 
@@ -29,11 +34,11 @@ function realApi.ScenEdit_GetUnit(guid, sideName)
   return result
 end
 
----comment
----@param attackerID string -- The GUID of the attacker unit
----@param contactId string -- The contact ID of the target contact
----@param opts CMO__AttackOptions -- Options for the attack, such as weapon selection, salvo size, etc.
----@return boolean -- Returns true if the attack was successfully initiated, false otherwise
+---Attack a contact with specified options
+---@param attackerID string The GUID of the attacker unit
+---@param contactId string The contact ID of the target
+---@param opts CMO__AttackOptions Attack options (weapon selection, salvo size, etc.)
+---@return boolean # True if attack was successfully initiated
 function realApi.ScenEdit_AttackContact(attackerID, contactId, opts)
   local result = ScenEdit_AttackContact(attackerID, contactId, opts)
   if not result then
@@ -42,18 +47,18 @@ function realApi.ScenEdit_AttackContact(attackerID, contactId, opts)
   return result
 end
 
----comment
----@param guid string -- The GUID of the doctrine
----@return CMO__Doctrine -- Returns the doctrine object associated with the given GUID
+---Get doctrine settings for a unit or side
+---@param guid string The GUID of the unit or side
+---@return CMO__Doctrine # Doctrine settings object
 function realApi.ScenEdit_GetDoctrine(guid)
   return ScenEdit_GetDoctrine({ guid = guid })
 end
 
----comment
----@param attackerGUID string -- The GUID of the attacker unit
----@param contactGUID string -- The GUID of the target contact
----@param attackingSideGUID string -- The GUID of the attacking side
----@return table<integer, { weapon:number, qtyFired:number, shooter:string, target:string, qtyAssigned:number, weaponName:string }>|nil -- Returns an weapon allocation table
+---Get weapon allocation information
+---@param attackerGUID string The GUID of the attacker unit (empty string for all)
+---@param contactGUID string The GUID of the target contact (empty string for all)
+---@param attackingSideGUID string The GUID or name of the attacking side (empty string for all)
+---@return table<integer, { weapon:number, qtyFired:number, shooter:string, target:string, qtyAssigned:number, weaponName:string }>|nil # Weapon allocation table
 function realApi.ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
   local result = ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 
@@ -65,10 +70,10 @@ function realApi.ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingS
   return result
 end
 
----comment
----@param side string -- The side of the contact
----@param contactId string -- The GUID of the contact
----@return CMO__Contact|nil -- Returns the contact object associated with the given side and contact ID
+---Get contact information by side and contact ID
+---@param side string The side that detects the contact
+---@param contactId string The GUID of the contact
+---@return CMO__Contact|nil # Contact object
 function realApi.ScenEdit_GetContact(side, contactId)
   local result = ScenEdit_GetContact({ side = side, guid = contactId })
 
@@ -79,9 +84,9 @@ function realApi.ScenEdit_GetContact(side, contactId)
   return result
 end
 
----comment
----@param guid string -- The GUID of the loadout
----@return CMO__Loadout|nil -- Returns the loadout object associated with the given GUID
+---Get loadout information for a unit
+---@param guid string The GUID of the unit
+---@return CMO__Loadout|nil # Loadout object with weapon details
 function realApi.ScenEdit_GetLoadout(guid)
   local result = ScenEdit_GetLoadout({ Unitname = guid })
 
@@ -92,11 +97,11 @@ function realApi.ScenEdit_GetLoadout(guid)
   return result
 end
 
----comment
----@param guid string -- The GUID of the unit to assign to the mission
----@param missionName string -- The name of the mission to assign the unit to
----@param isEscort? boolean -- Whether the mission is an escort mission
----@return boolean -- Returns true if the unit was successfully assigned to the mission, false otherwise
+---Assign unit to a mission
+---@param guid string The GUID of the unit to assign
+---@param missionName string The name of the mission
+---@param isEscort? boolean Whether this is an escort assignment (default: false)
+---@return boolean # True if successfully assigned
 function realApi.ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
   isEscort = isEscort or false
   local result = ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
@@ -108,40 +113,40 @@ function realApi.ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
   return result
 end
 
----comment
----@param params CMO__GetPointFromBearing_Params -- Params for getting a point from bearing
----@return CMO__Location -- Returns a location object with latitude and longitude based on the provided options
+---Calculate a point from bearing and distance
+---@param params CMO__GetPointFromBearing_Params Parameters for bearing calculation
+---@return CMO__Location # Location with latitude and longitude
 function realApi.World_GetPointFromBearing(params)
   return World_GetPointFromBearing(params)
 end
 
----comment
----@param opts CMO__ReferencePointDescriptor -- Options for getting a point from bearing
----@return CMO__ReferencePoint -- Returns a reference point object with latitude and longitude based on the provided options
+---Add a reference point to the scenario
+---@param opts CMO__ReferencePointDescriptor Reference point configuration
+---@return CMO__ReferencePoint # Created reference point object
 function realApi.ScenEdit_AddReferencePoint(opts)
   return ScenEdit_AddReferencePoint(opts)
 end
 
----comment
----@param side string -- The side to which the special message is sent
----@param message string -- The message to be sent
----@param locationPoint? CMO__Location -- The location point where the message is sent
----@return number -- 1 if successful, raises an error if unsuccessful.
+---Send a special message to a side
+---@param side string The side to receive the message
+---@param message string The message text
+---@param locationPoint? CMO__Location Optional location where message appears
+---@return number # 1 if successful
 function realApi.ScenEdit_SpecialMessage(side, message, locationPoint)
   return ScenEdit_SpecialMessage(side, message, locationPoint)
 end
 
----comment
----@param params CMO__GetCircleOfPoints_Params -- Params for getting a circle from point
----@return CMO__TableOfLocations -- Returns a table of locations representing a circle around a point
+---Generate a circle of points around a location
+---@param params CMO__GetCircleOfPoints_Params Circle generation parameters
+---@return CMO__TableOfLocations # Table of location points forming a circle
 function realApi.World_GetCircleFromPoint(params)
   return World_GetCircleFromPoint(params)
 end
 
----Gets a Mission wrapper for the specfied mission name or guid.
----@param SideNameOrGuid string @ The name of the side or its guid.
----@param missionNameOrGuid string @ the name or guid of the mission.
----@return CMO__Mission|nil @ The associated mission wrapper or nil on failure.
+---Get mission by side and mission name or GUID
+---@param SideNameOrGuid string The name of the side or its GUID
+---@param missionNameOrGuid string The name or GUID of the mission
+---@return CMO__Mission|nil # Mission object
 function realApi.ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
   local result = ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
 
@@ -153,21 +158,24 @@ function realApi.ScenEdit_GetMission(SideNameOrGuid, missionNameOrGuid)
   return result
 end
 
----@return integer
+---Get current scenario time
+---@return integer # Current time as Unix timestamp
 function realApi.ScenEdit_CurrentTime()
   return ScenEdit_CurrentTime()
 end
 
----@param opts CMO__UnitUpdate
----@return CMO__Unit
+---Update unit properties
+---@param opts CMO__UnitUpdate Unit update parameters
+---@return CMO__Unit # Updated unit object
 function realApi.ScenEdit_SetUnit(opts)
   return ScenEdit_SetUnit(opts)
 end
 
----@param side string
----@param missionName string
----@param settings CMO__Mission
----@return CMO__Mission|nil
+---Update mission settings
+---@param side string Side name
+---@param missionName string Mission name
+---@param settings CMO__Mission Mission settings to update
+---@return CMO__Mission|nil # Updated mission object
 function realApi.ScenEdit_SetMission(side, missionName, settings)
   local result = ScenEdit_SetMission(side, missionName, settings)
 
@@ -178,9 +186,10 @@ function realApi.ScenEdit_SetMission(side, missionName, settings)
   return result
 end
 
----@param selector CMO__DoctrineSelector
----@param doctrine CMO__Doctrine
----@return CMO__Doctrine|nil
+---Set doctrine for a unit or side
+---@param selector CMO__DoctrineSelector Doctrine selector (unit GUID or side name)
+---@param doctrine CMO__Doctrine Doctrine settings to apply
+---@return CMO__Doctrine|nil # Updated doctrine object
 function realApi.ScenEdit_SetDoctrine(selector, doctrine)
   local result = ScenEdit_SetDoctrine(selector, doctrine)
 
@@ -191,11 +200,12 @@ function realApi.ScenEdit_SetDoctrine(selector, doctrine)
   return result
 end
 
----@param side string
----@param missionName string
----@param missionType string
----@param opts CMO__Mission
----@return CMO__Mission|nil
+---Add a new mission to a side
+---@param side string Side name
+---@param missionName string Mission name
+---@param missionType string Mission type (e.g., 'patrol', 'strike')
+---@param opts CMO__Mission Mission configuration options
+---@return CMO__Mission|nil # Created mission object
 function realApi.ScenEdit_AddMission(side, missionName, missionType, opts)
   local result = ScenEdit_AddMission(side, missionName, missionType, opts)
 
@@ -206,8 +216,9 @@ function realApi.ScenEdit_AddMission(side, missionName, missionType, opts)
   return result
 end
 
----@param side string
----@return CMO__TableOfContacts|nil
+---Get all contacts for a side
+---@param side string Side name
+---@return CMO__TableOfContacts|nil # Table of all detected contacts
 function realApi.ScenEdit_GetContacts(side)
   local result = ScenEdit_GetContacts(side)
 
@@ -218,14 +229,16 @@ function realApi.ScenEdit_GetContacts(side)
   return result
 end
 
----@param text string
----@param code? integer
+---Display a message box
+---@param text string Message text to display
+---@param code? integer Optional message box type code
 function realApi.ScenEdit_MsgBox(text, code)
   return ScenEdit_MsgBox(text, code)
 end
 
----@param opts CMO__SideSelector
----@return CMO__Side
+---Get side information
+---@param opts CMO__SideSelector Side selector parameters
+---@return CMO__Side # Side object with units and other data
 function realApi.VP_GetSide(opts)
   local result = VP_GetSide(opts)
 
@@ -236,25 +249,25 @@ function realApi.VP_GetSide(opts)
   return result
 end
 
----comment
----@param startLocation string|CMO__Location
----@param endLocation string|CMO__Location
----@return number
+---Calculate range between two locations
+---@param startLocation string|CMO__Location Starting location (GUID or coordinates)
+---@param endLocation string|CMO__Location Ending location (GUID or coordinates)
+---@return number # Range in nautical miles
 function realApi.Tool_Range(startLocation, endLocation)
   return Tool_Range(startLocation, endLocation)
 end
 
----comment
----@param startLocation string|CMO__Location
----@param endLocation string|CMO__Location
----@return number
+---Calculate bearing between two locations
+---@param startLocation string|CMO__Location Starting location (GUID or coordinates)
+---@param endLocation string|CMO__Location Ending location (GUID or coordinates)
+---@return number # Bearing in degrees
 function realApi.Tool_Bearing(startLocation, endLocation)
   return Tool_Bearing(startLocation, endLocation)
 end
 
----comment
----@param opts CMO__ReferencePointDescriptor
----@return CMO__TableOfReferencePoints|nil
+---Get multiple reference points by filter
+---@param opts CMO__ReferencePointDescriptor Reference point filter criteria
+---@return CMO__TableOfReferencePoints|nil # Table of matching reference points
 function realApi.ScenEdit_GetReferencePoints(opts)
   local result = ScenEdit_GetReferencePoints(opts)
 
@@ -265,9 +278,9 @@ function realApi.ScenEdit_GetReferencePoints(opts)
   return result
 end
 
----comment
----@param opts CMO__ReferencePointDescriptor
----@return CMO__ReferencePoint
+---Get a single reference point
+---@param opts CMO__ReferencePointDescriptor Reference point selector
+---@return CMO__ReferencePoint # Reference point object
 function realApi.ScenEdit_GetReferencePoint(opts)
   local result = ScenEdit_GetReferencePoint(opts)
 
@@ -278,17 +291,17 @@ function realApi.ScenEdit_GetReferencePoint(opts)
   return result
 end
 
----comment
----@param objectType string
----@param DBID integer
----@return table
+---Query the game database
+---@param objectType string Object type ('Unit', 'Weapon', 'Sensor', etc.)
+---@param DBID integer Database ID to query
+---@return table # Database entry information
 function realApi.ScenEdit_QueryDB(objectType, DBID)
   return ScenEdit_QueryDB(objectType, DBID)
 end
 
----comment
----@param opts CMO__SetUnitDescriptor
----@return CMO__Unit|nil
+---Add a new unit to the scenario
+---@param opts CMO__SetUnitDescriptor Unit creation parameters
+---@return CMO__Unit|nil # Created unit object
 function realApi.ScenEdit_AddUnit(opts)
   local result = ScenEdit_AddUnit(opts)
 
@@ -299,8 +312,8 @@ function realApi.ScenEdit_AddUnit(opts)
   return result
 end
 
----comment
----@return CMO__Unit|nil
+---Get the current context unit (UnitX)
+---@return CMO__Unit|nil # The current unit being processed
 function realApi.ScenEdit_UnitX()
   local result = ScenEdit_UnitX()
 
@@ -311,92 +324,92 @@ function realApi.ScenEdit_UnitX()
   return result
 end
 
----comment
----@param param CMO__HostUnit
----@return boolean
+---Host a unit to its parent (embark)
+---@param param CMO__HostUnit Host unit parameters
+---@return boolean # True if successfully hosted
 function realApi.ScenEdit_HostUnitToParent(param)
   return ScenEdit_HostUnitToParent(param)
 end
 
----comment
----@param params CMO__UpdateUnit
----@return CMO__Unit
+---Update unit properties (alternative to SetUnit)
+---@param params CMO__UpdateUnit Update parameters
+---@return CMO__Unit # Updated unit object
 function realApi.ScenEdit_UpdateUnit(params)
   return ScenEdit_UpdateUnit(params)
 end
 
----comment
----@param objType string
----@param name string
----@param emcon string
----@return boolean
+---Set EMCON (Emission Control) settings
+---@param objType string Object type ('Unit', 'Side', 'Mission')
+---@param name string Object name or GUID
+---@param emcon string EMCON setting string
+---@return boolean # True if successfully set
 function realApi.ScenEdit_SetEMCON(objType, name, emcon)
   return ScenEdit_SetEMCON(objType, name, emcon)
 end
 
----comment
----@param AUNameOrIDOrTable string|string[]
----@param MissionNameOrIDOrTable string
----@return string[]
+---Assign units as targets for a mission
+---@param AUNameOrIDOrTable string|string[] Unit name(s) or GUID(s) to assign as targets
+---@param MissionNameOrIDOrTable string Mission name or GUID
+---@return string[] # Array of assigned unit GUIDs
 function realApi.ScenEdit_AssignUnitAsTarget(AUNameOrIDOrTable, MissionNameOrIDOrTable)
   return ScenEdit_AssignUnitAsTarget(AUNameOrIDOrTable, MissionNameOrIDOrTable)
 end
 
----comment
----@param CMO__DoctrineWRASelector CMO__DoctrineWRASelector
----@param CMO__WRA CMO__WRA
-function realApi.ScenEdit_SetDoctrineWRA(CMO__DoctrineWRASelector, CMO__WRA)
-  local result = ScenEdit_SetDoctrineWRA(CMO__DoctrineWRASelector, CMO__WRA)
+---Set Weapon Release Authority (WRA) settings
+---@param selector CMO__DoctrineWRASelector WRA selector parameters
+---@param wra CMO__WRA WRA settings to apply
+function realApi.ScenEdit_SetDoctrineWRA(selector, wra)
+  local result = ScenEdit_SetDoctrineWRA(selector, wra)
 
   if result == nil then
-    error("Failed to set doctrine with selector: " .. tostring(CMO__DoctrineWRASelector))
+    error("Failed to set doctrine with selector: " .. tostring(selector))
   end
 
   return result
 end
 
----comment
----@param CMO__Weapon2MountDescriptor CMO__Weapon2MountDescriptor
----@return number
-function realApi.ScenEdit_AddReloadsToUnit(CMO__Weapon2MountDescriptor)
-  return ScenEdit_AddReloadsToUnit(CMO__Weapon2MountDescriptor)
+---Add reloads to a unit
+---@param descriptor CMO__Weapon2MountDescriptor Weapon mount descriptor
+---@return number # Number of reloads added
+function realApi.ScenEdit_AddReloadsToUnit(descriptor)
+  return ScenEdit_AddReloadsToUnit(descriptor)
 end
 
----comment
----@param SideOrGuid string
----@param newScore number
----@param reason? string
+---Set score for a side
+---@param SideOrGuid string Side name or GUID
+---@param newScore number New score value
+---@param reason? string Optional reason for score change
 function realApi.ScenEdit_SetScore(SideOrGuid, newScore, reason)
   return ScenEdit_SetScore(SideOrGuid, newScore, reason)
 end
 
----comment
----@param side string
+---Get current score for a side
+---@param side string Side name
 function realApi.ScenEdit_GetScore(side)
   return ScenEdit_GetScore(side)
 end
 
----comment
----@param title string
----@param htmlContent string
----@param buttons table
----@return table
+---Display advanced HTML dialog
+---@param title string Dialog title
+---@param htmlContent string HTML content to display
+---@param buttons table Button configuration table
+---@return table # Dialog result
 function realApi.UI_CallAdvancedHTMLDialog(title, htmlContent, buttons)
   return UI_CallAdvancedHTMLDialog(title, htmlContent, buttons)
 end
 
----comment
----@param unitGuid string
----@param emconState string
----@param settings CMO__ConfigTable
----@return boolean
+---Configure intermittent emission settings for a unit
+---@param unitGuid string Unit GUID
+---@param emconState string EMCON state
+---@param settings CMO__ConfigTable Configuration table
+---@return boolean # True if successfully configured
 function realApi.ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState, settings)
   return ScenEdit_SetUnitIntermittentEmissionConfig(unitGuid, emconState, settings)
 end
 
----comment
----@param opts CMO__UnitSelector
----@return boolean
+---Delete a unit from the scenario
+---@param opts CMO__UnitSelector Unit selector parameters
+---@return boolean # True if successfully deleted
 function realApi.ScenEdit_DeleteUnit(opts)
   local result = ScenEdit_DeleteUnit(opts)
 
@@ -407,9 +420,9 @@ function realApi.ScenEdit_DeleteUnit(opts)
   return result
 end
 
----comment
----@param opts CMO__Weapon2MountDescriptor
----@return number
+---Add weapon to unit magazine
+---@param opts CMO__Weapon2MountDescriptor Weapon mount descriptor
+---@return number # Number of weapons added
 function realApi.ScenEdit_AddWeaponToUnitMagazine(opts)
   local result = ScenEdit_AddWeaponToUnitMagazine(opts)
 
@@ -420,16 +433,16 @@ function realApi.ScenEdit_AddWeaponToUnitMagazine(opts)
   return result
 end
 
----comment
----@param opts CMO__FillMagClass
----@return table
+---Fill magazines for loadout
+---@param opts CMO__FillMagClass Magazine fill options
+---@return table # Fill result information
 function realApi.ScenEdit_FillMagsForLoadout(opts)
   return ScenEdit_FillMagsForLoadout(opts)
 end
 
----comment
----@param opts CMO__ReferencePointDescriptor
----@return CMO__ReferencePoint|nil
+---Update reference point properties
+---@param opts CMO__ReferencePointDescriptor Reference point update parameters
+---@return CMO__ReferencePoint|nil # Updated reference point
 function realApi.ScenEdit_SetReferencePoint(opts)
   local result = ScenEdit_SetReferencePoint(opts)
 
@@ -440,9 +453,9 @@ function realApi.ScenEdit_SetReferencePoint(opts)
   return result
 end
 
----comment
----@param opts CMO__DamageOptions
----@return table<integer, CMO__UnitComponent_Return>|nil
+---Set unit damage
+---@param opts CMO__DamageOptions Damage parameters
+---@return table<integer, CMO__UnitComponent_Return>|nil # Damage result components
 function realApi.ScenEdit_SetUnitDamage(opts)
   local result = ScenEdit_SetUnitDamage(opts)
 
@@ -453,17 +466,17 @@ function realApi.ScenEdit_SetUnitDamage(opts)
   return result
 end
 
----comment
----@param longitude number|string
----@param latitude number|string
----@param notification string
----@param R number
----@param G number
----@param B number
----@param showToAll boolean
----@param persistent boolean
----@param lifeTime number
----@param fontSize number
+---Create bark notification at geographic location
+---@param longitude number|string Longitude coordinate
+---@param latitude number|string Latitude coordinate
+---@param notification string Notification text
+---@param R number Red color component (0-255)
+---@param G number Green color component (0-255)
+---@param B number Blue color component (0-255)
+---@param showToAll boolean Whether to show to all sides
+---@param persistent boolean Whether notification persists
+---@param lifeTime number Duration in seconds
+---@param fontSize number Font size
 function realApi.ScenEdit_CreateBarkNotification_Geo(
     longitude, latitude, notification, R, G, B, showToAll, persistent, lifeTime, fontSize
 )
@@ -472,27 +485,27 @@ function realApi.ScenEdit_CreateBarkNotification_Geo(
   )
 end
 
----comment
----@param opts CMO__ReferencePointDescriptor
----@return boolean
+---Delete a reference point
+---@param opts CMO__ReferencePointDescriptor Reference point selector
+---@return boolean # True if successfully deleted
 function realApi.ScenEdit_DeleteReferencePoint(opts)
   return ScenEdit_DeleteReferencePoint(opts)
 end
 
----comment
----@param side string
----@param zoneType string|integer
----@param opts table
----@return CMO__Zone
+---Remove a zone
+---@param side string Side name
+---@param zoneType string|integer Zone type code
+---@param opts table Zone selector options
+---@return CMO__Zone # Removed zone information
 function realApi.ScenEdit_RemoveZone(side, zoneType, opts)
   return ScenEdit_RemoveZone(side, zoneType, opts)
 end
 
----comment
----@param side string
----@param zoneType number
----@param opts CMO__Zone
----@return CMO__Zone|nil
+---Add a zone to a side
+---@param side string Side name
+---@param zoneType number Zone type code
+---@param opts CMO__Zone Zone configuration
+---@return CMO__Zone|nil # Created zone object
 function realApi.ScenEdit_AddZone(side, zoneType, opts)
   local result = ScenEdit_AddZone(side, zoneType, opts)
 
@@ -503,15 +516,15 @@ function realApi.ScenEdit_AddZone(side, zoneType, opts)
   return result
 end
 
----comment
----@return string
+---Get player's current side
+---@return string # Player side name
 function realApi.ScenEdit_PlayerSide()
   return ScenEdit_PlayerSide()
 end
 
----comment
----@param eventName string
----@return CMO__Event|nil
+---Get event by name
+---@param eventName string Event name
+---@return CMO__Event|nil # Event object
 function realApi.ScenEdit_GetEvent(eventName)
   local result = ScenEdit_GetEvent(eventName)
 
@@ -522,10 +535,10 @@ function realApi.ScenEdit_GetEvent(eventName)
   return result
 end
 
----comment
----@param eventName string
----@param opts CMO__EventUpdate
----@return string|CMO__Event|nil
+---Update event settings
+---@param eventName string Event name
+---@param opts CMO__EventUpdate Event update parameters
+---@return string|CMO__Event|nil # Updated event object
 function realApi.ScenEdit_SetEvent(eventName, opts)
   local result = ScenEdit_SetEvent(eventName, opts)
 
@@ -535,16 +548,16 @@ function realApi.ScenEdit_SetEvent(eventName, opts)
   return result
 end
 
----comment
----@param opts CMO__TriggerUpdate
----@return table
+---Update trigger settings
+---@param opts CMO__TriggerUpdate Trigger update parameters
+---@return table # Updated trigger information
 function realApi.ScenEdit_SetTrigger(opts)
   return ScenEdit_SetTrigger(opts)
 end
 
----comment
----@param opts table
----@return CMO__TCA_ReturnTable|nil
+---Update action settings
+---@param opts table Action update parameters
+---@return CMO__TCA_ReturnTable|nil # Updated action information
 function realApi.ScenEdit_SetAction(opts)
   local result = ScenEdit_SetAction(opts)
 
@@ -555,40 +568,40 @@ function realApi.ScenEdit_SetAction(opts)
   return result
 end
 
----comment
----@param eventName string
----@param opts CMO__EventTCAUpdate
----@return CMO__TCA_ReturnTable
+---Set event trigger
+---@param eventName string Event name
+---@param opts CMO__EventTCAUpdate Trigger configuration
+---@return CMO__TCA_ReturnTable # Trigger result
 function realApi.ScenEdit_SetEventTrigger(eventName, opts)
   return ScenEdit_SetEventTrigger(eventName, opts)
 end
 
----comment
----@param eventName string
----@param opts CMO__EventTCAUpdate
----@return CMO__TCA_ReturnTable
+---Set event action
+---@param eventName string Event name
+---@param opts CMO__EventTCAUpdate Action configuration
+---@return CMO__TCA_ReturnTable # Action result
 function realApi.ScenEdit_SetEventAction(eventName, opts)
   return ScenEdit_SetEventAction(eventName, opts)
 end
 
----comment
----@param side string
----@param missionName string
----@param opts CMO__FlightPlanOptions
----@return table<number, any>|nil
+---Create mission flight plan
+---@param side string Side name
+---@param missionName string Mission name
+---@param opts CMO__FlightPlanOptions Flight plan options
+---@return table<number, any>|nil # Flight plan waypoints
 function realApi.ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
   return ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
 end
 
----comment
----@param opts CMO__LoadoutInfo
----@return boolean
+---Set loadout for a unit
+---@param opts CMO__LoadoutInfo Loadout configuration
+---@return boolean # True if successfully set
 function realApi.ScenEdit_SetLoadout(opts)
   return ScenEdit_SetLoadout(opts)
 end
 
----comment
----@return CMO__Event
+---Get the current context event (EventX)
+---@return CMO__Event # The current event being processed
 function realApi.ScenEdit_EventX()
   local result = ScenEdit_EventX()
 

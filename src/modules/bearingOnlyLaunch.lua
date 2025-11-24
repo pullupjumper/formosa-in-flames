@@ -7,10 +7,21 @@ local BearingOnlyLaunch = {}
 EARTH_RADIUS_NM = 3440.065
 
 -- Angle and radian conversion
+---@param d number Degrees
+---@return number # Radians
 local function deg2rad(d) return d * math.pi / 180 end
+
+---@param r number Radians
+---@return number # Degrees
 local function rad2deg(r) return r * 180 / math.pi end
 
 -- Calculate destination based on starting point, bearing, and distance
+---@param lat number Starting latitude
+---@param lon number Starting longitude
+---@param bearingDeg number Bearing in degrees
+---@param distanceNm number Distance in nautical miles
+---@return number lat2 Destination latitude
+---@return number lon2 Destination longitude
 local function destinationPoint(lat, lon, bearingDeg, distanceNm)
   local bearing = deg2rad(bearingDeg)
   local lat1 = deg2rad(lat)
@@ -26,6 +37,11 @@ local function destinationPoint(lat, lon, bearingDeg, distanceNm)
 end
 
 -- Calculate distance between two points (nautical miles)
+---@param lat1 number First point latitude
+---@param lon1 number First point longitude
+---@param lat2 number Second point latitude
+---@param lon2 number Second point longitude
+---@return number # Distance in nautical miles
 local function haversineNM(lat1, lon1, lat2, lon2)
   local dLat = deg2rad(lat2 - lat1)
   local dLon = deg2rad(lon2 - lon1)
@@ -36,6 +52,14 @@ local function haversineNM(lat1, lon1, lat2, lon2)
 end
 
 -- Check if path crosses radar circular area (approximated using midpoint)
+---@param lat1 number Path start latitude
+---@param lon1 number Path start longitude
+---@param lat2 number Path end latitude
+---@param lon2 number Path end longitude
+---@param radarLat number Radar latitude
+---@param radarLon number Radar longitude
+---@param radarRangeNm number Radar range in nautical miles
+---@return boolean # True if path intersects radar circle
 local function intersectsRadarCircle(lat1, lon1, lat2, lon2, radarLat, radarLon, radarRangeNm)
   local midLat = (lat1 + lat2) / 2
   local midLon = (lon1 + lon2) / 2
@@ -46,7 +70,7 @@ end
 
 -- Main function
 ---@param params SBJ__GenerateMissilePaths_Params Parameters for generating missile paths
----@return table<integer, SBJ__MissilePath> Returns missile path list
+---@return table<integer, SBJ__MissilePath> # Returns missile path list
 ---Example:
 -- local paths = Generate_missile_paths({
 --   target_lat = 34.0,

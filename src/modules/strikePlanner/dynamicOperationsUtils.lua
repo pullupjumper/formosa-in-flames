@@ -6,7 +6,7 @@ local DynamicOperationsUtils = {}
 
 ---Check if all operations in a reconnaissance entry are completed
 ---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry with operations array
----@return boolean completed Whether all operations are completed
+---@return boolean # Whether all operations are completed
 function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
   if not reconEntry.operations then
     return true
@@ -41,7 +41,7 @@ end
 ---Filter operations by type from reconnaissance schedule
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
 ---@param operationType string Operation type to filter ("air" or "ground")
----@return table<number, {reconEntry: SBJ__ReconScheduleEntry, operation: SBJ__Operation}> filteredOperations Array of matching operations with their parent entries
+---@return table<number, {reconEntry: SBJ__ReconScheduleEntry, operation: SBJ__Operation}> # Array of matching operations with their parent entries
 function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationType)
   local filteredOperations = {}
 
@@ -81,7 +81,7 @@ end
 ---@param operationType string Type of the operation (e.g., "air", "ground")
 ---@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
 ---@param saveData SBJ__SaveData Game save data
----@return string uniqueName Generated unique operation name
+---@return string # Generated unique operation name
 function DynamicOperationsUtils.generateUniqueAirOperationName(operationType, reconType, saveData)
   local sequence = 1
   local baseName = "DYNAMIC/" .. string.upper(reconType) .. "/" .. operationType
@@ -105,7 +105,7 @@ end
 ---@param operationType string Type of the operation (e.g., "INFRASTRUCTURE", "ANTISHIP")
 ---@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
 ---@param saveData SBJ__SaveData Game save data
----@return string uniqueName Generated unique operation name
+---@return string # Generated unique operation name
 function DynamicOperationsUtils.generateUniqueGroundOperationName(operationType, reconType, saveData)
   local sequence = 1
   local baseName = "DYNAMIC/" .. string.upper(reconType) .. "/" .. operationType
@@ -141,7 +141,7 @@ end
 ---Get operations from most recent reconnaissance entry (based on current game time) classified by type and next reconnaissance time
 ---Uses current game time to find the most recent recon entry whose time has passed, regardless of executed status
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries (may not be in time order)
----@return {air: SBJ__Operation[], ground: SBJ__Operation[], nextReconTime: string|nil} result Operations classified by type and next recon time
+---@return {air: SBJ__Operation[], ground: SBJ__Operation[], nextReconTime: string|nil} # Operations classified by type and next recon time
 function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
   local result = {
     air = {},
@@ -308,11 +308,11 @@ function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operat
 end
 
 ---Generate next operation based on given operation by incrementing template number
---- Parses template name, increments number, finds next template in config
---- If next template not found, reuses current template
+---Parses template name, increments number, finds next template in config
+---If next template not found, reuses current template
 ---@param operation SBJ__Operation Original operation object
 ---@param config SBJ__CONFIG Configuration data
----@return SBJ__Operation newOperation New operation object (reuses current template if next not found)
+---@return SBJ__Operation # New operation object (reuses current template if next not found)
 function DynamicOperationsUtils.generateNextOperation(operation, config)
   -- Extract base name and number from template.name
   -- Example: "STRIKE/AB/W/1" -> "STRIKE/AB/W/" + 1

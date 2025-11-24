@@ -21,7 +21,7 @@ local UnitStatusUI = {}
 ---Iterates through operational zones and counts specific military unit types
 ---Supports: ZBD-05, ZTD-05, PLL-05, PLZ-96, PGZ-09, PGZ-95, SA-15, AirborneCorps, HMMWV, ZBD-03
 ---@param config SBJ__CONFIG Configuration table
----@return table<string, table<string, number>> Returns table with area names as keys and unit type counts as values
+---@return table<string, table<string, number>> # Returns table with area names as keys and unit type counts as values
 function UnitStatusUI.countUnitsInEachArea(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }).units
   local result = {}
@@ -94,7 +94,7 @@ end
 ---Generates the HTML template for the WCS (Weapon Control System) settings UI
 ---This template provides a web-based interface for configuring WCS settings,
 ---specifically for setting units to 'hold' status.
----@return string Returns an HTML string representing the WCS settings page
+---@return string # Returns an HTML string representing the WCS settings page
 local function getWCSSettingTemplate()
   return [[
     <!DOCTYPE html>
@@ -303,7 +303,7 @@ end
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string Weapon system type list
----@return string JSON formatted artillery battery status data
+---@return string # JSON formatted artillery battery status data
 local function createBatteryDataString(config, saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local key = sideConfig.field
@@ -406,7 +406,7 @@ end
 ---Processes deployed aircraft configurations and loadouts
 ---@param config SBJ__CONFIG Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
----@return string JSON formatted ammunition inventory data
+---@return string # JSON formatted ammunition inventory data
 local function createMagazineDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local key = sideConfig.field
@@ -442,7 +442,7 @@ end
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@param ... string System type list
----@return string JSON formatted C2 status data
+---@return string # JSON formatted C2 status data
 local function createC2NodeDataString(saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local key = sideConfig.field
@@ -502,7 +502,7 @@ end
 ---Converts detected transmission information to display format
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'US')
----@return string JSON formatted signal data
+---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local key = sideConfig.field
@@ -527,7 +527,7 @@ end
 --- - Progress bars for reload status
 --- - Responsive design with custom scrollbars
 --- - Support for signal data, mobile launchers, C2 nodes, base weapons, landing units
----@return string Complete HTML template with placeholders for data injection
+---@return string # Complete HTML template with placeholders for data injection
 local function getHTMLTemplate()
   return [[
     <!DOCTYPE html>
@@ -1376,7 +1376,7 @@ local function getHTMLTemplate()
 end
 
 ---Get HTML template for setup menu
----@return string Setup menu template
+---@return string # Setup menu template
 local function getSetupMenuTemplate()
   return [[
     <!DOCTYPE html>
@@ -2936,7 +2936,7 @@ end
 ---Processes jammer configurations including position and operational parameters
 ---@param saveData SBJ__SaveData Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
----@return string JSON formatted GPS jamming unit data
+---@return string # JSON formatted GPS jamming unit data
 local function createGPSJammingDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local side = sideConfig.field
@@ -2956,7 +2956,7 @@ end
 ---Filters out aircraft from bases that no longer exist
 ---@param config SBJ__CONFIG Configuration table containing aircraft deployment data
 ---@param sideName string Side name ('China' or 'Taiwan')
----@return string JSON formatted deployed aircraft data with coordinates
+---@return string # JSON formatted deployed aircraft data with coordinates
 local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local side = sideConfig.field

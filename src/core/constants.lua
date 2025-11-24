@@ -440,7 +440,7 @@ config.weapon = {
   MK45_AMLRS = 2948,  -- MK45 AMLRS Multiple Launch Rocket System
   ATACMS = 1717,      -- ATACMS Tactical Missile System
   HF2E = 3228,        -- HF-2E Anti-Ship Cruise Missile
-  HF2 = 1133,         -- HF-2 Anti-Ship Missile
+  HF3 = 1133,         -- HF-2 Anti-Ship Missile
   MK48_TORPEDO = 905, -- MK-48 Torpedo
   HARPOON_II = 816,   -- Harpoon II
   JSOW = 826,         -- JSOW
@@ -504,8 +504,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
   -- launchSLCM = { startTime = '2027-06-09 01:00:00' },

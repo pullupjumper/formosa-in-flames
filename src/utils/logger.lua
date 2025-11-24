@@ -1,13 +1,25 @@
 local config = require("src.core.constants")
 
+--- Logging Module
+---
+--- Bilingual logging system that automatically detects game/dev environment.
+--- Provides different log levels:
+--- - log(): Module-specific logging with verbose control
+--- - error(): Always-on error logging
+--- - warn(): Always-on warning logging
+---
+--- Environment detection:
+--- - In-game: Uses ScenEdit_SpecialMessage with formatted box display
+--- - Development: Uses standard print() output
 local Logger = {}
 
 -- Toggle whether in game (set by you in main)
 Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 
 
----@param side string @The side the message is visible to (sidename may also be used in place of side)
----@param ... string @Variable number of string arguments to be printed inside the box
+---Print formatted box message to player
+---@param side string The side the message is visible to (sidename may also be used)
+---@param ... string Variable number of string arguments to be printed inside the box
 local function printBox(side, ...)
   -- Collect all string parameters into array
   local strings = { ... }
@@ -41,7 +53,7 @@ local function printBox(side, ...)
   ScenEdit_SpecialMessage(side, boxString)
 end
 
--- Log with module name and verbose check
+---Log with module name and verbose check
 ---@param moduleName string Module name to check verbose setting
 ---@param message string Log message
 function Logger.log(moduleName, message)
@@ -57,7 +69,7 @@ function Logger.log(moduleName, message)
   end
 end
 
--- Error logging (always output, no verbose check)
+---Error logging (always output, no verbose check)
 ---@param message string Error message
 function Logger.error(message)
   if Logger.inGame then
@@ -67,7 +79,7 @@ function Logger.error(message)
   end
 end
 
--- Warning logging (similar to error, always output)
+---Warning logging (similar to error, always output)
 ---@param message string Warning message
 function Logger.warn(message)
   if Logger.inGame then

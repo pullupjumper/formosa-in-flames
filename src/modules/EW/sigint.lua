@@ -41,9 +41,9 @@ local SIGINT_CONSTANTS = {
 
 ---Calculate SIGINT detection probability based on distance
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
----@param distance number distance in nautical miles
----@param config SBJ__SIGINTConfig|nil detection configuration
----@return number probability value between 0 and 1
+---@param distance number Distance in nautical miles
+---@param config SBJ__SIGINTConfig|nil Detection configuration
+---@return number # Value between 0 and 1
 function SIGINT.calculateDetectionProbability(distance, config)
   config = config or {}
   local threshold = config.detectionThreshold or SIGINT_CONSTANTS.DETECTION_THRESHOLD
@@ -62,9 +62,9 @@ end
 
 ---Calculate signal deviation distance for SIGINT detection position randomization
 ---Uses complex formula to simulate signal triangulation error based on distance
----@param baseDistance number base distance between detector and target (nautical miles)
----@param config SBJ__SIGINTConfig|nil detection configuration (optional overrides)
----@return number deviation distance from actual position (nautical miles)
+---@param baseDistance number Base distance between detector and target (nautical miles)
+---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides)
+---@return number # Distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
   local constants = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
   local randomFactor = (config and config.randomFactor) or constants.RANDOM_FACTOR
@@ -77,9 +77,9 @@ local function calculateSignalDeviation(baseDistance, config)
 end
 
 ---Check if point is within polygon using ray casting algorithm
----@param point CMO__Location point to check
----@param polygon CMO__Location[] polygon vertices
----@return boolean whether point is inside polygon
+---@param point CMO__Location Point to check
+---@param polygon CMO__Location[] Polygon vertices
+---@return boolean # Whether point is inside polygon
 function SIGINT.isPointInPolygon(point, polygon)
   if not point or not polygon or #polygon < SIGINT_CONSTANTS.MIN_POLYGON_POINTS then
     return false
@@ -106,10 +106,10 @@ end
 
 ---Check if point is within defined area using reference points
 ---Converts reference point names to polygon coordinates and performs point-in-polygon test
----@param side string side name (used to retrieve reference points)
----@param point CMO__Location|nil point to check
----@param area string[] array of reference point names defining the polygon boundary
----@return boolean true if point is inside the area, false otherwise
+---@param side string Side name (used to retrieve reference points)
+---@param point CMO__Location|nil Point to check
+---@param area string[] Array of reference point names defining the polygon boundary
+---@return boolean # True if point is inside the area, false otherwise
 local function isInArea(side, point, area)
   if not point or not area then
     return false
@@ -137,12 +137,12 @@ end
 -- ============================================================================
 
 ---Check if unit is emitting signal with enhanced logic
----@param config SBJ__CONFIG configuration object
----@param unit CMO__Unit unit object
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context unit data (Battery units check movement, C2 units always emit)
----@param enemySide string enemy side name
----@return boolean whether unit is emitting signal
----@return string reason reason for emission status
+---@param config SBJ__CONFIG Configuration object
+---@param unit CMO__Unit Unit object
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit data (Battery units check movement, C2 units always emit)
+---@param enemySide string Enemy side name
+---@return boolean isEmitting Whether unit is emitting signal
+---@return string reason Reason for emission status
 local function isUnitEmitting(config, unit, unitCtx, enemySide)
   -- Check for specific platform types that always emit
   if unit.dbid == config.platform.C2 then
@@ -190,13 +190,13 @@ end
 ---Checks all airborne reconnaissance aircraft in SIGINT context for detection probability
 ---Returns randomized position if detected, zero position if not detected
 ---@param sigintContext SBJ__SIGINTContext SIGINT context containing reconnaissance aircraft
----@param enemyUnit string|CMO__Unit enemy unit GUID or unit object to detect
----@param notification string notification message to display on map if detected
----@param isEmitting boolean whether target unit is currently emitting signals
----@param isShown boolean whether to show visual notification on map
----@param data SBJ__SIGINTDisplayData|nil display configuration (colors, lifetime, font size)
----@param config SBJ__SIGINTConfig|nil detection configuration (optional overrides for thresholds)
----@return SBJ__SIGINTResult detection result with position, confidence, and metadata
+---@param enemyUnit string|CMO__Unit Enemy unit GUID or unit object to detect
+---@param notification string Notification message to display on map if detected
+---@param isEmitting boolean Whether target unit is currently emitting signals
+---@param isShown boolean Whether to show visual notification on map
+---@param data SBJ__SIGINTDisplayData|nil Display configuration (colors, lifetime, font size)
+---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
+---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
 local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
   -- Get enemy unit
   local enemy
@@ -293,8 +293,8 @@ end
 
 ---Update unit autodetectable state for SIGINT targets
 ---If unit is in a group, updates all group members; otherwise updates individual unit
----@param unit CMO__Unit unit object to update (can be group leader or individual unit)
----@param isAutodetectable boolean target autodetectable state (true = can be auto-detected by enemy)
+---@param unit CMO__Unit Unit object to update (can be group leader or individual unit)
+---@param isAutodetectable boolean Target autodetectable state (true = can be auto-detected by enemy)
 local function updateAutodetectableState(unit, isAutodetectable)
   if unit.group then
     for _, v in ipairs(unit.group.unitlist) do
@@ -309,9 +309,9 @@ end
 ---Creates new transmission record if first detection, otherwise updates existing record
 ---Increments currentDetectionLevel and checks autodetectable threshold
 ---@param sigintContext SBJ__SIGINTContext SIGINT context to update transmission records
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context unit context data with metadata
----@param result SBJ__SIGINTResult detection result with position and confidence
----@param unit CMO__Unit actual unit object for autodetectable state updates
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context data with metadata
+---@param result SBJ__SIGINTResult Detection result with position and confidence
+---@param unit CMO__Unit Actual unit object for autodetectable state updates
 local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   local transmission = sigintContext.transmissions[unitCtx.guid]
 
@@ -362,7 +362,7 @@ end
 ---Decrements currentDetectionLevel when unit is not detected, simulating signal fade
 ---Resets autodetectable state to false if currently autodetectable
 ---@param sigintContext SBJ__SIGINTContext SIGINT context containing transmission records
----@param unit CMO__Unit unit object that was not detected this cycle
+---@param unit CMO__Unit Unit object that was not detected this cycle
 local function handleUndetected(sigintContext, unit)
   local transmission = sigintContext.transmissions[unit.guid]
   if not transmission then
@@ -386,13 +386,13 @@ end
 -- ============================================================================
 
 ---Enhanced SIGINT detection handler
----@param config SBJ__CONFIG configuration object
+---@param config SBJ__CONFIG Configuration object
 ---@param sigintContext SBJ__SIGINTContext SIGINT context
----@param sideName string side name (used to determine enemy side for area checks)
----@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> unit contexts to monitor (firing units and C2 nodes)
----@param isShown boolean whether to show detection notifications on map
+---@param sideName string Side name (used to determine enemy side for area checks)
+---@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit contexts to monitor (firing units and C2 nodes)
+---@param isShown boolean Whether to show detection notifications on map
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
----@return table<string, SBJ__SIGINTResult> detection results by unit GUID
+---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
@@ -440,10 +440,10 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param config SBJ__CONFIG configuration object containing platform DBIDs
+---@param config SBJ__CONFIG Configuration object containing platform DBIDs
 ---@param SIGINTContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
----@param sideName string side name to scan for reconnaissance aircraft
----@return number count number of reconnaissance aircraft initialized
+---@param sideName string Side name to scan for reconnaissance aircraft
+---@return number # Number of reconnaissance aircraft initialized
 function SIGINT.initReconAircraftContexts(config, SIGINTContext, sideName)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(config.unitType.AIRCRAFT)
 

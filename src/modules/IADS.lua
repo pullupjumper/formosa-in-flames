@@ -131,7 +131,7 @@ end
 --- Creates multiple C2 facility units at random positions within configured areas
 --- These facilities serve as suspected command and control nodes for the Chinese forces
 --- @param IADSConfig SBJ__IADSConfig IADS configuration containing C2 settings, facility DBIDs, and deployment parameters
---- @return boolean Returns true if all C2 facilities were successfully created, false if any creation failed
+---@return boolean # Returns true if all C2 facilities were successfully created, false if any creation failed
 function IADS.addC2Facilities(IADSConfig)
   for _, setting in ipairs(IADSConfig.C2Settings) do
     local units = GameUtils.createRandomUnits({
@@ -164,7 +164,7 @@ end
 --- @param config SBJ__CONFIG Global configuration containing platform DBIDs and unit types
 --- @param IADSConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
 --- @param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
---- @return boolean Returns true if initialization succeeded, false if no units found
+---@return boolean # Returns true if initialization succeeded, false if no units found
 function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   IADSContext.C2 = {}
@@ -323,7 +323,7 @@ end
 --- Used for cleaning up existing C2 facilities before redeployment or scenario reset
 --- @param config SBJ__CONFIG Global configuration containing unit type definitions
 --- @param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
---- @return boolean Returns true if removal operation completed (even if 0 units removed), false if unit query failed
+---@return boolean # Returns true if removal operation completed (even if 0 units removed), false if unit query failed
 function IADS.removeC2Facilities(config, IADSConfig)
   local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
   local removedCount = 0

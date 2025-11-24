@@ -1,17 +1,18 @@
--- ---@param d number
--- ---@return {detection: number, targeting: number, evasion: number}
--- function GetOODA(d)
---   return {
---     detection = math.random(10 * d, 30 * d),
---     targeting = math.random(20 * d, 20 * d),
---     evasion = math.random(90 * d, 120 * d)
---   }
--- end
+--- Utilities Module
+---
+--- Foundation utility functions for common operations.
+--- Provides:
+--- - String manipulation (random text generation)
+--- - Table operations (counting, inserting, deep copying)
+--- - Date/time parsing and formatting
+--- - Mathematical utilities (atan2, spherical center calculation)
+--- - Safe function execution with error handling
+--- - Mission name parsing
 local Utils = {}
 
---- Generate a random string of uppercase letters
----@param numLetters number -- The number of letters to generate
----@return string -- A string containing random uppercase letters
+---Generate a random string of uppercase letters
+---@param numLetters number The number of letters to generate
+---@return string # A string containing random uppercase letters
 function Utils.randomTxt(numLetters)
   local totTxt = ""
   for i = 1, numLetters do
@@ -20,9 +21,9 @@ function Utils.randomTxt(numLetters)
   return totTxt
 end
 
---- Get the count of items in a list
----@param list table -- The list to count items in
----@return number -- The number of items in the list
+---Get the count of items in a list
+---@param list table The list to count items in
+---@return number # The number of items in the list
 function Utils.getCount(list)
   if list == nil then return 0 end
   local count = 0
@@ -34,10 +35,10 @@ function Utils.getCount(list)
   return count
 end
 
---- Insert a list of items into another list
----@param list table -- The list to insert into
----@param insertedList table -- The list of items to insert
----@return table -- The updated list with items inserted
+---Insert a list of items into another list
+---@param list table The list to insert into
+---@param insertedList table The list of items to insert
+---@return table # The updated list with items inserted
 function Utils.insertList(list, insertedList)
   local count = Utils.getCount(insertedList)
 
@@ -49,8 +50,8 @@ function Utils.insertList(list, insertedList)
 end
 
 ---Parse a datetime string in the format "YYYY-MM-DD HH:MM:SS" to a UTC timestamp
----@param datetimeStr string -- The datetime string in the format "YYYY-MM-DD HH:MM:SS"
----@return number -- The UTC timestamp corresponding to the datetime string
+---@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
+---@return number # The UTC timestamp corresponding to the datetime string
 function Utils.parseDatetimeToTimestamp(datetimeStr)
   local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
@@ -78,12 +79,12 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
 end
 
 ---Safely call a function with error handling
+---Example usage: local result, err = Utils.safeCall("MyFunction", MyFunction, arg1, arg2)
 ---@param funcName string The name of the function being called
 ---@param func function The function to call
 ---@param ... any The arguments to pass to the function
----@return any|nil --The result of the function call, or nil if an error occurred
----@return string|nil --An error message if an error occurred, or nil if the call was successful
----Example usage: local result, err = Utils.SafeCall("MyFunction", MyFunction, arg1, arg2)
+---@return any|nil result The result of the function call, or nil if an error occurred
+---@return string|nil err An error message if an error occurred, or nil if the call was successful
 function Utils.safeCall(funcName, func, ...)
   local args = { ... }
 
@@ -106,10 +107,11 @@ function Utils.safeCall(funcName, func, ...)
   return result
 end
 
----comment
----@param y number
----@param x number
----@return number
+---Calculate arctangent of y/x with proper quadrant handling
+---Implements atan2 function for Lua (handles all quadrants correctly)
+---@param y number Y coordinate
+---@param x number X coordinate
+---@return number # Angle in radians (-π to π)
 function Utils.atan2(y, x)
   if x > 0 then
     return math.atan(y / x)
@@ -132,9 +134,10 @@ function Utils.atan2(y, x)
   return 0
 end
 
----comment
----@param coords table<number,{latitude: number, longitude: number}>
----@return {latitude: number, longitude: number}|nil
+---Calculate the spherical center point from a set of latitude/longitude coordinates
+---Uses Cartesian coordinate transformation to find the geometric center on a sphere
+---@param coords table<number, {latitude: number, longitude: number}> Array of coordinate points (minimum 4 points required)
+---@return {latitude: number, longitude: number}|nil # Center point coordinates, or nil if input is invalid
 function Utils.calculateSphericalCenter(coords)
   -- Check if input is valid
   if not coords or #coords < 4 then
@@ -183,10 +186,10 @@ function Utils.calculateSphericalCenter(coords)
   }
 end
 
---- Deep copy a table recursively
+---Deep copy a table recursively
 ---@generic T
 ---@param original T The table to deep copy
----@return T -- A deep copy of the original table
+---@return T # A deep copy of the original table
 function Utils.deepCopy(original)
   if type(original) ~= 'table' then
     return original
@@ -200,18 +203,18 @@ function Utils.deepCopy(original)
   return copy
 end
 
---- Round timestamp to nearest minutes interval
+---Round timestamp to nearest minutes interval
 ---@param timestamp number The timestamp to round
 ---@param minutes number The minute interval to round to (e.g., 5 for 5-minute intervals)
----@return number -- The rounded timestamp
+---@return number # The rounded timestamp
 function Utils.roundToNearestMinutes(timestamp, minutes)
   local secondsInInterval = minutes * 60
   return math.ceil(timestamp / secondsInInterval) * secondsInInterval
 end
 
---- Format datetime string to separated date and time components
+---Format datetime string to separated date and time components
 ---@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
----@return {date: string, time: string} -- Object with date in "YYYY/MM/DD" format and time in "HH:MM:SS" format
+---@return {date: string, time: string} # Object with date in "YYYY/MM/DD" format and time in "HH:MM:SS" format
 function Utils.formatDateTime(datetimeStr)
   local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
@@ -226,10 +229,10 @@ function Utils.formatDateTime(datetimeStr)
   }
 end
 
---- Parse mission name string to extract code, number, and AAR (air-to-air refueling) flag
+---Parse mission name string to extract code, number, and AAR (air-to-air refueling) flag
 ---@param missionName string Mission name string (e.g., "STRIKE/AB/W/1" or "STRIKE/AB/W/AAR/1")
 ---@return string|nil code Code extracted from mission name (e.g., "W")
----@return number|nil number Number extracted from mission name
+---@return number|nil num Number extracted from mission name
 ---@return boolean hasAAR Whether the mission has air-to-air refueling support
 function Utils.parseMissionName(missionName)
   if not missionName or type(missionName) ~= "string" then

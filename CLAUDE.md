@@ -40,6 +40,48 @@ The project uses a **modular event-driven architecture** centered around `src/co
 - `CMO__*` for game API types
 - All public functions must have `---@param` and `---@return` annotations
 
+**Annotation Standards**:
+
+*Module Header* (required):
+```lua
+--- Module Name
+---
+--- Brief description and key features
+local ModuleName = {}
+```
+
+*Function Annotations*:
+```lua
+---Function description
+---@param name type Description
+---@param optional? type Optional parameter description
+---@return type # Description (single return)
+---@return type varName Description (multiple returns)
+```
+
+*Key Rules*:
+- **Single return**: Use `#` separator → `---@return type # Description`
+- **Multiple returns**: Include variable names → `---@return type varName Description`
+- **Parameters**: No `--` separator, direct description after type
+- **Variable names**: Use semantic names (`success`, `count`, `error`) not generic (`result1`, `result2`)
+- **Reserved words**: Avoid Lua keywords as variable names (use `num` not `number`)
+
+Examples:
+```lua
+---Get unit by GUID or name
+---@param guid string The GUID or name of the unit
+---@param sideName? string Optional side name
+---@return CMO__Unit|nil # Unit object or nil if not found
+function GameApi.ScenEdit_GetUnit(guid, sideName)
+
+---Safely call a function with error handling
+---@param funcName string Function name for error context
+---@param func function The function to call
+---@return any|nil result Function result or nil on error
+---@return string|nil error Error message or nil on success
+function Utils.safeCall(funcName, func, ...)
+```
+
 **Error Handling Strategy**: All CMO API calls through `GameAPI` are automatically wrapped with error handling via `setmetatable`. The metatable's `__index` method intercepts all API calls and wraps them in `Utils.safeCall()`, providing centralized error handling with automatic logging through the bilingual `Logger` module. Errors are logged with context and functions return `nil` on failure. Never call raw `ScenEdit_*` functions directly - always use the `GameAPI.*` wrappers.
 
 **Configuration Management**:

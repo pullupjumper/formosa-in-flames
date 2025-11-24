@@ -1,6 +1,15 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 
+--- Game Utilities Module
+---
+--- Higher-level game operations built on top of GameAPI.
+--- Provides utilities for:
+--- - Side configuration management
+--- - Positioning and distance calculations
+--- - Mission and event creation
+--- - Unit generation and placement
+--- - Formation management
 local GameUtils = {}
 
 -- ============================================================================
@@ -21,8 +30,8 @@ local UNIT_CREATION = {
 ---Get or create cached side configuration
 ---Returns side configuration with field identifier and enemy side mapping
 ---Uses cache to avoid repeated creation of same configuration objects
----@param sideName string side name ('China', 'US', or other)
----@return SBJ__SideConfig side configuration with field, enemySide, and displayName
+---@param sideName string Side name ('China', 'US', or other)
+---@return SBJ__SideConfig # Side configuration with field, enemySide, and displayName
 function GameUtils.getCachedSideConfig(sideName)
   if not sideConfigCache[sideName] then
     if sideName == 'China' then
@@ -57,7 +66,7 @@ end
 ---@param lon1 number First point longitude (degrees)
 ---@param lat2 number Second point latitude (degrees)
 ---@param lon2 number Second point longitude (degrees)
----@return number distance Distance in nautical miles
+---@return number # Distance in nautical miles
 function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
   -- Earth radius in nautical miles
   local R = 3440.065
@@ -116,10 +125,11 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
   return totalDistance, totalTime
 end
 
----@param xLatitude number
----@param xLongitude number
----@param maxRadius number
----@return CMO__Location|nil
+---Generate a random position within a circular area around a center point
+---@param xLatitude number Center point latitude
+---@param xLongitude number Center point longitude
+---@param maxRadius number Maximum radius for random positioning (nautical miles)
+---@return CMO__Location|nil # Random position within the circle, or nil if generation fails
 function GameUtils.circularRandomPosition(xLatitude, xLongitude, maxRadius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
     latitude = xLatitude,
@@ -138,7 +148,7 @@ end
 
 ---Generate a list of locations based on parameters
 ---@param params SBJ__LinearPlacementParams
----@return table<integer, CMO__Location>
+---@return table<integer, CMO__Location> # Array of generated locations along the specified bearing
 function GameUtils.generateLocations(params)
   local numTemp = params.num
   local bearingTemp = params.bearing
@@ -177,9 +187,10 @@ function GameUtils.generateLocations(params)
   return locations
 end
 
----@param position CMO__Location
----@param mode SBJ__AreaMode
----@return table<integer, CMO__ReferencePoint>|boolean
+---Create a reference point area in the specified shape (circle or square)
+---@param position CMO__Location Center position for the area
+---@param mode SBJ__AreaMode Area configuration (shape, side, distance, etc.)
+---@return table<integer, CMO__ReferencePoint>|boolean # Array of reference point names forming the area, or false if creation fails
 function GameUtils.newArea(position, mode)
   local side = mode.side
   local shape = mode.shape
@@ -236,9 +247,10 @@ function GameUtils.newArea(position, mode)
   return (rpTable)
 end
 
----@param time string|number @A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
----@param advanceSeconds? number @Optional seconds to advance the check time (makes condition trigger earlier)
----@return boolean
+---Check if current scenario time has reached or passed the specified start time
+---@param time string|number A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
+---@param advanceSeconds? number Optional seconds to advance the check time (makes condition trigger earlier)
+---@return boolean # True if current time >= start time (adjusted by advanceSeconds if provided)
 function GameUtils.isAfterStartTime(time, advanceSeconds)
   local result = GameApi.ScenEdit_CurrentTime()
 
@@ -263,13 +275,14 @@ function GameUtils.isAfterStartTime(time, advanceSeconds)
   return result >= targetTimestamp
 end
 
----comment
----@param side string
----@param name string
----@param type string
----@param opts CMO__Mission
----@param emcon? string
----@return CMO__Mission|nil
+---Create a new mission with specified parameters and optional EMCON settings
+---Combines mission creation, configuration, and EMCON setup in a single operation
+---@param side string Side name that owns the mission
+---@param name string Mission name (must be unique)
+---@param type string Mission type (e.g., "Strike", "Patrol", "Ferry")
+---@param opts CMO__Mission Mission configuration options
+---@param emcon? string Optional EMCON settings string
+---@return CMO__Mission|nil # Created mission object, or nil if any step fails
 function GameUtils.createMission(side, name, type, opts, emcon)
   local mission = GameApi.ScenEdit_AddMission(side, name, type, opts)
 
@@ -307,7 +320,7 @@ end
 ---@param exit boolean If true, triggers when units EXIT the area; if false, triggers on ENTER
 ---@param isRepeatable boolean If true, event can trigger multiple times; if false, triggers only once
 ---@param isActive boolean If true, event is immediately active; if false, event is dormant
----@return boolean True if operation succeeded, false if any API call failed
+---@return boolean # True if operation succeeded, false if any API call failed
 function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
   -- Set default parameter values
   if isRepeatable == nil then isRepeatable = false end
@@ -417,7 +430,7 @@ end
 ---Attempt to create a single unit (with retry mechanism)
 ---@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
 ---@param maxAttempts number|nil Maximum number of attempts
----@return CMO__Unit|nil Created unit
+---@return CMO__Unit|nil # Created unit if successful, nil if all attempts failed
 function GameUtils.tryCreateUnit(unitDescriptor, maxAttempts)
   maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
 
@@ -437,7 +450,7 @@ end
 
 ---Create units at random positions
 ---@param descriptor SBJ__RandomUnitsDescriptor Configuration parameters
----@return CMO__Unit|CMO__Unit[] Created units
+---@return CMO__Unit|CMO__Unit[] # Created units (single unit if count=1, array otherwise)
 function GameUtils.createRandomUnits(descriptor)
   local units = {}
   -- Default to true if not specified (backward compatible)

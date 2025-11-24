@@ -3,11 +3,16 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local Recon = require("src.modules.strikePlanner.recon")
 
+--- TargetingProcess
+---
+--- Target selection and filtering for strike planning operations.
+--- Provides functions for identifying infantry, naval, C2, and SAM targets
+--- based on SIGINT, emissions analysis, and BDA evaluation.
 local TargetingProcess = {}
 
 
 ---Find infantry units within specified areas
---- Filters contacts to identify ground infantry units (typed == 8) in target areas
+---Filters contacts to identify ground infantry units (typed == 8) in target areas
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of infantry unit GUIDs found in target areas
 function TargetingProcess.findInfantry(opts)
@@ -27,7 +32,7 @@ function TargetingProcess.findInfantry(opts)
 end
 
 ---Find airborne early warning aircraft (P-3C, E-2K) within specified areas
---- Identifies aircraft contacts with specific radar emissions (SEAVUE or APS-145)
+---Identifies aircraft contacts with specific radar emissions (SEAVUE or APS-145)
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, and config
 ---@return string[] # Array of airborne early warning aircraft GUIDs
 function TargetingProcess.findAirborne(opts)
@@ -53,7 +58,7 @@ function TargetingProcess.findAirborne(opts)
 end
 
 ---Analyze radar emissions to identify SAM systems
---- Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
+---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, and sensor configuration
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
 function TargetingProcess.analyzeEmissions(opts)
@@ -80,17 +85,17 @@ function TargetingProcess.analyzeEmissions(opts)
 end
 
 ---Check if target is within range of a radio transmission source
---- Validates distance to radio source and transmission strength
+---Validates distance to radio source and transmission strength
 ---@param config SBJ__CONFIG Global configuration with SIGINT range and count thresholds
 ---@param distance number Distance in nautical miles to radio source
----@param transmission SBJ__RadioTransmissionContext  Transmission data with current detection level (count) and other properties
+---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
   return distance <= config.c.SIGINT.maxRange and transmission.currentDetectionLevel > config.c.SIGINT.maxCount
 end
 
 ---Find mobile ground targets (vehicles) within specified areas
---- Identifies ground mobile units (typed == 8) in target areas
+---Identifies ground mobile units (typed == 8) in target areas
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of mobile ground unit GUIDs
 function TargetingProcess.findMobileTargets(opts)
@@ -110,7 +115,7 @@ function TargetingProcess.findMobileTargets(opts)
 end
 
 ---Filter targets that are within range of SIGINT-detected radio sources
---- Cross-references contacts with SIGINT transmissions, triggers reconnaissance for mobile sources
+---Cross-references contacts with SIGINT transmissions, triggers reconnaissance for mobile sources
 ---@param config SBJ__CONFIG Global configuration with SIGINT parameters and platform definitions
 ---@param saveData SBJ__SaveData Persistent save data containing SIGINT transmission records
 ---@param contacts string[] Array of contact GUIDs to evaluate
@@ -146,7 +151,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
 end
 
 ---Find targets by radio direction (SIGINT-based targeting)
---- Combines mobile targets and C2 units, filters by proximity to radio transmissions
+---Combines mobile targets and C2 units, filters by proximity to radio transmissions
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, config, and saveData
 ---@return string[]|nil # Array of target GUIDs near radio sources, or nil if unavailable
 function TargetingProcess.findRadioDirection(opts)
@@ -164,7 +169,7 @@ function TargetingProcess.findRadioDirection(opts)
 end
 
 ---Find naval targets (ships) within specified areas
---- Identifies naval contacts within contact age limit, triggers WZ-8 reconnaissance tracking
+---Identifies naval contacts within contact age limit, triggers WZ-8 reconnaissance tracking
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, config, saveData, and optional shouldTrack flag
 ---@return string[]|nil # Array of naval target GUIDs, or nil if no reconnaissance aircraft available
 function TargetingProcess.findNavalTargets(opts)
@@ -201,7 +206,7 @@ function TargetingProcess.findNavalTargets(opts)
 end
 
 ---Find Command and Control (C2) facilities
---- Identifies ROCC and TAAOC command centers within target areas
+---Identifies ROCC and TAAOC command centers within target areas
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
 function TargetingProcess.findC2(opts)
@@ -223,7 +228,7 @@ function TargetingProcess.findC2(opts)
 end
 
 ---Evaluate if a target is valid for strike based on damage and detection status
---- Checks BDA (Battle Damage Assessment), contact age, and special helipad conditions
+---Checks BDA (Battle Damage Assessment), contact age, and special helipad conditions
 ---@param target CMO__Contact Contact object to evaluate
 ---@param contactAge number Maximum acceptable contact age in seconds
 ---@param isFirstWave boolean If true, accepts all targets; if false, applies BDA filtering
@@ -246,7 +251,7 @@ function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
 end
 
 ---Assess target damage status (Battle Damage Assessment)
---- Filters target list based on BDA, excluding heavily damaged targets (unless first wave)
+---Filters target list based on BDA, excluding heavily damaged targets (unless first wave)
 ---@param task SBJ__Task Task containing target list and contact age parameters
 ---@param isFirstWave boolean If true, includes all targets; if false, filters by damage status
 ---@return string[] # Array of target GUIDs that passed BDA evaluation
@@ -269,7 +274,7 @@ function TargetingProcess.assessTargetsDamage(task, isFirstWave)
 end
 
 ---Filter targets by type and base name
---- Filters target list based on base name pattern and facility sub-types
+---Filters target list based on base name pattern and facility sub-types
 ---@param targetlist string[] Array of target objects with name, subType, and guid properties
 ---@param queryParams SBJ__TargetQueryParam[] Array of query parameters with baseName (optional) and subTypes (array)
 ---@return string[] # Array of target GUIDs matching query criteria

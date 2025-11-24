@@ -24,7 +24,7 @@ local TIME_CONSTANTS = {
 
 
 ---Collect all currently assigned aircraft from active ATO waves
---- Counts aircraft already assigned to missions across all active ATO waves to prevent over-allocation
+---Counts aircraft already assigned to missions across all active ATO waves to prevent over-allocation
 ---@param saveData SBJ__SaveData The persistent save data containing ATO wave information
 ---@return table<string, number> # Map of base GUID to assigned aircraft count
 local function collectAssignedAircraft(saveData)
@@ -70,7 +70,7 @@ local function collectAssignedAircraft(saveData)
 end
 
 ---Get available aircraft count at a specific base for a specific unit type
---- Counts embarked aircraft matching the required DBID that are not assigned to missions
+---Counts embarked aircraft matching the required DBID that are not assigned to missions
 ---@param baseGUID string The GUID of the air base to check
 ---@param requiredUnitDBID number The required aircraft unit database ID (DBID) to filter by
 ---@return number # Number of available unassigned aircraft of the specified type
@@ -111,13 +111,13 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
 end
 
 ---Validate aircraft availability for a specific role
---- Checks if base has sufficient aircraft after accounting for existing assignments
+---Checks if base has sufficient aircraft after accounting for existing assignments
 ---@param roleData table Role configuration containing baseGUID, unitCount, and unitDBID
 ---@param roleName string Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex number Package index for error messages
 ---@param assignedAircraft table<string, number> Map of base GUID to currently assigned aircraft count
----@return boolean # true if sufficient aircraft available
----@return string|nil # Error message if validation fails, nil on success
+---@return boolean success true if sufficient aircraft available
+---@return string|nil errorMessage Error message if validation fails, nil on success
 local function validateAircraftRole(roleData, roleName, packageIndex, assignedAircraft)
   if not roleData then
     return true, nil
@@ -139,13 +139,13 @@ local function validateAircraftRole(roleData, roleName, packageIndex, assignedAi
 end
 
 ---Check if individual package has sufficient targets and resources
---- Validates both target count meets minimum requirements and all roles have available aircraft
+---Validates both target count meets minimum requirements and all roles have available aircraft
 ---@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
 ---@param packageTargets string[] Array of target GUIDs found for this package
 ---@param packageIndex number Index of the package for logging
 ---@param assignedAircraft table<string, number> Map of base GUID to currently assigned aircraft count
----@return boolean # true if package is valid and can be executed
----@return string|nil # Reason string (error message on failure, success message on pass)
+---@return boolean success true if package is valid and can be executed
+---@return string|nil reason Reason string (error message on failure, success message on pass)
 local function validateIndividualPackage(packageData, packageTargets, packageIndex, assignedAircraft)
   -- Check target sufficiency
   local targetCount = #packageTargets
@@ -179,7 +179,7 @@ end
 
 
 ---Process dynamic targets using filter functions
---- Applies configured targeting filters (e.g., naval, radar) to find valid strike targets
+---Applies configured targeting filters (e.g., naval, radar) to find valid strike targets
 ---@param packageData SBJ__PackageTemplate Package configuration with target filter definitions
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param config SBJ__CONFIG Global configuration table
@@ -224,7 +224,7 @@ local function processDynamicTargets(packageData, contacts, config, saveData, pa
 end
 
 ---Process fixed targets using BDA assessment
---- Filters pre-defined target lists and assesses their damage status
+---Filters pre-defined target lists and assesses their damage status
 ---@param packageData SBJ__PackageTemplate Package configuration with fixed target definitions
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
@@ -255,7 +255,7 @@ local function processFixedTargets(packageData, saveData, isFirstWave, packageIn
 end
 
 ---Process targets for a single package
---- Routes to dynamic or fixed target processing based on package configuration
+---Routes to dynamic or fixed target processing based on package configuration
 ---@param packageData SBJ__PackageTemplate Package configuration with target definitions
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param config SBJ__CONFIG Global configuration table
@@ -283,7 +283,7 @@ local function processPackageTargets(packageData, contacts, config, saveData, is
 end
 
 ---Process ATO template with integrated validation - single pass through packages
---- Processes all packages in wave template, finding targets and validating resources in one pass
+---Processes all packages in wave template, finding targets and validating resources in one pass
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -319,7 +319,7 @@ local function processATOTemplateWithValidation(config, saveData, contacts, wave
 end
 
 ---Calculate advance time for a specific role based on distance to patrol zone
---- Computes flight time from role's base to patrol zone using distance-based speed calculation
+---Computes flight time from role's base to patrol zone using distance-based speed calculation
 ---@param packageData SBJ__PackageTemplate Package configuration containing role data and patrol zone
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
 ---@return number # Flight time in seconds for the role to reach patrol zone
@@ -377,7 +377,7 @@ local function calculateRoleAdvanceTime(packageData, role)
 end
 
 ---Calculate support advance time based on furthest base distance
---- Finds the furthest support base from patrol zone and calculates required advance time
+---Finds the furthest support base from patrol zone and calculates required advance time
 ---@param packageData SBJ__PackageTemplate Package configuration containing all support roles (escort, wildWeasel, jammer)
 ---@return number # Flight time in seconds for furthest support base to reach patrol zone
 local function calculateSupportAdvanceTime(packageData)
@@ -443,7 +443,7 @@ end
 
 
 ---Calculate striker flight time to target
---- Computes flight time from striker base to target accounting for weapon range
+---Computes flight time from striker base to target accounting for weapon range
 ---@param packageData table Package data containing striker baseGUID, weaponDBID, and target list
 ---@return number # Flight time in seconds from base to weapon release point
 local function calculateStrikerFlightTime(packageData)
@@ -480,7 +480,7 @@ local function calculateStrikerFlightTime(packageData)
 end
 
 ---Calculate mission timing for a package
---- Determines striker start and end times based on support advance time and strike intervals
+---Determines striker start and end times based on support advance time and strike intervals
 ---@param packageData SBJ__PackageTemplate Package configuration with role and timing information
 ---@param packageIndex number Index of the package (1-based)
 ---@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
@@ -534,7 +534,7 @@ end
 
 
 ---Calculate support role timing (escort, wildWeasel, jammer, tanker)
---- Computes when support aircraft should launch to arrive before striker
+---Computes when support aircraft should launch to arrive before striker
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
 ---@param packageData SBJ__PackageTemplate Package data containing striker timing and role configurations
 ---@return {startTime: string, endTime: string} # Table with start/end times in "YYYY-MM-DD HH:MM:SS" format
@@ -578,7 +578,7 @@ local function calculateRoleTiming(role, packageData)
 end
 
 ---Create a single package with proper timing
---- Converts package template to executable package with calculated timings for all roles
+---Converts package template to executable package with calculated timings for all roles
 ---@param packageData SBJ__PackageTemplate Package template configuration
 ---@param packageIndex number Index of the package (1-based)
 ---@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
@@ -639,7 +639,7 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
 end
 
 ---Insert ATO wave into saveData maintaining data structure integrity
---- Creates new wave structure with all packages and registers it in the ATO system
+---Creates new wave structure with all packages and registers it in the ATO system
 ---@param saveData SBJ__SaveData Persistent save data to insert wave into
 ---@param packageTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param reconType string Reconnaissance type identifier used for wave naming
@@ -689,7 +689,7 @@ local function insertATOWave(saveData, packageTemplate, reconType)
 end
 
 ---Process reconnaissance schedule and generate ATO waves for air operations
---- Checks recon schedule for triggered events and generates corresponding ATO waves
+---Checks recon schedule for triggered events and generates corresponding ATO waves
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing recon schedule
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -785,7 +785,7 @@ end
 
 
 ---Main processing function for Dynamic ATO Insertion
---- Entry point for dynamic ATO system, validates configuration and processes recon schedule
+---Entry point for dynamic ATO system, validates configuration and processes recon schedule
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game

@@ -44,7 +44,7 @@ end
 --- Returns the actual number of items deleted (may be less than requested)
 ---@param fromUnit CMO__Unit Unit to remove cargo from
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
----@return number Number of cargo items actually deleted
+---@return number # Number of cargo items actually deleted
 function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
   local cargoGuidList = {}
   local count = 0
@@ -141,7 +141,7 @@ end
 ---@param config SBJ__CONFIG Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit Unit list from the side (filtered for ships)
----@return { units: CMO__Unit[], isUnitMoving: boolean } Units in anchorage and movement status
+---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
 function AmphibiousLogistics.getUnitsInAnchorageArea(config, amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
   local unitsInAnchorageArea = {}
@@ -181,7 +181,7 @@ end
 ---@param platformType string The type of platform to filter (e.g., 'tansportHelicopter', 'boat')
 ---@param zone SBJ__OperationZoneDescriptor Operation zone descriptor with mission settings
 ---@param missionName string Name for the cargo mission
----@return boolean True if mission was successfully created and configured
+---@return boolean # True if mission was successfully created and configured
 local function handleCargoMission(platformType, zone, missionName)
   local m = GameApi.ScenEdit_AddMission("China", missionName, "Cargo", { zone = zone[platformType].zone })
 
@@ -208,7 +208,7 @@ end
 --- Sets up ferry missions for landing craft and transport helicopters
 --- Configures mission zones, settings, and doctrine (no automatic evasion)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@return boolean True if all cargo missions were successfully created
+---@return boolean # True if all cargo missions were successfully created
 function AmphibiousLogistics.createCargoMissions(amphibOpsConfig)
   local operationalZones = amphibOpsConfig.operationalZones
 
@@ -240,7 +240,7 @@ end
 ---@param config SBJ__CONFIG Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
----@return boolean True if all transfers and assignments completed successfully
+---@return boolean # True if all transfers and assignments completed successfully
 function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInAnchorageArea)
   local operationalZones = amphibOpsConfig.operationalZones
 
@@ -354,7 +354,7 @@ end
 ---@param config SBJ__CONFIG Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
----@return boolean True if all cargo was successfully re-transferred
+---@return boolean # True if all cargo was successfully re-transferred
 function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 

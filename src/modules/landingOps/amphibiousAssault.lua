@@ -6,7 +6,7 @@ local AmphibiousAssault = {}
 --- Set start time for a single landing mission
 --- Calculates start time relative to current time and updates the mission
 ---@param mission SBJ__LandingMissionDescriptor Mission descriptor with delay offset
----@return boolean True if mission start time was successfully set
+---@return boolean # True if mission start time was successfully set
 local function setMissionStartTime(mission)
   local currentTime = GameApi.ScenEdit_CurrentTime()
   if not currentTime then
@@ -29,7 +29,7 @@ end
 --- Records the mission start timestamp in saveData for phase tracking
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to record mission start time
----@return boolean True if all mission start times were successfully set
+---@return boolean # True if all mission start times were successfully set
 function AmphibiousAssault.setLandingMissionStartTime(amphibOpsConfig, saveData)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
@@ -66,7 +66,7 @@ end
 --- Check if unit is a Landing Ship Tank (excludes auxiliary vessels)
 --- Used to filter out RORO ships and barges from LST-specific operations
 ---@param unit CMO__Unit Ship unit to check
----@return boolean True if unit is an LST (not RORO or Barge)
+---@return boolean # True if unit is an LST (not RORO or Barge)
 local function isLST(unit)
   if unit.name ~= 'RORO' and unit.name ~= 'Barge' then
     return true
@@ -81,7 +81,7 @@ end
 ---@param config SBJ__CONFIG Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
----@return boolean True if all LST courses were successfully set
+---@return boolean # True if all LST courses were successfully set
 function AmphibiousAssault.setCoursesForLSTs(config, amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 
@@ -129,7 +129,7 @@ end
 --- Only counts contacts of type 8 (ground units)
 ---@param contacts CMO__Contact Contact list from the side
 ---@param area CMO__ReferencePoint[] Reference points defining the air landing zone
----@return integer Number of enemy ground units in the area
+---@return integer # Number of enemy ground units in the area
 function AmphibiousAssault.countContactsInArea(contacts, area)
   local filteredContacts = {}
 
@@ -147,7 +147,7 @@ end
 --- Vehicles are positioned in formation and directed toward the landing zone
 --- Prioritizes ZBD-05 (IFV) over ZTD-05 (light tank) when cargo is available
 ---@param params SBJ__ACVDeploymentParams Deployment configuration (ship, bearing, distance, destination)
----@return number|nil Number of ACVs successfully launched, or nil on failure
+---@return number|nil # Number of ACVs successfully launched, or nil on failure
 function AmphibiousAssault.launchACV(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
@@ -228,7 +228,7 @@ end
 --- Includes Type 071 (LPD), Type 072 (LST variants), Type 073A (LSM), and ferries
 ---@param config SBJ__CONFIG Global configuration for platform DBIDs
 ---@param ship CMO__Unit Ship unit to check
----@return boolean True if ship is a ferry or LST
+---@return boolean # True if ship is a ferry or LST
 function AmphibiousAssault.isFerryOrLST(config, ship)
   return (ship.dbid == config.platform.TYPE_071
     or ship.dbid == config.platform.TYPE_072III
@@ -242,7 +242,7 @@ end
 --- Used to retrieve zone-specific configuration for ACV launches
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param ship CMO__Unit Ship unit to locate
----@return SBJ__OperationZoneDescriptor|nil Operation zone descriptor, or nil if ship not in any zone
+---@return SBJ__OperationZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
 function AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     if ship:inArea(zone.ACV.area) then

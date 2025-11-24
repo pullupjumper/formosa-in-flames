@@ -10,7 +10,7 @@ local DynamicFireSupportPlan = {}
 -- Local helper functions (private)
 
 ---Process individual FST template, perform target filtering and BDA assessment
---- Routes to dynamic or fixed target processing, applies filters and damage assessment
+---Routes to dynamic or fixed target processing, applies filters and damage assessment
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -83,7 +83,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
 end
 
 ---Collect all currently assigned battery GUIDs from active FSEMs
---- Scans all active FSEMs to identify batteries already assigned to prevent double allocation
+---Scans all active FSEMs to identify batteries already assigned to prevent double allocation
 ---@param saveData SBJ__SaveData Persistent save data containing FSP (Fire Support Plan) information
 ---@return table<string, boolean> # Map of battery GUID to true (assigned status)
 local function collectAssignedFiringUnits(saveData)
@@ -110,13 +110,13 @@ local function collectAssignedFiringUnits(saveData)
 end
 
 ---Validate individual firing unit status and readiness
---- Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
+---Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
 ---@param config SBJ__CONFIG Global configuration table with firing unit state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param firingUnitGUID string The GUID of the battery/firing unit to validate
 ---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") used to locate battery data
----@return boolean # true if firing unit is ready for use (exists, in HIDE state, has ammo)
----@return string|nil # Error reason if firing unit is not valid, nil on success
+---@return boolean success true if firing unit is ready for use (exists, in HIDE state, has ammo)
+---@return string|nil errorReason Error reason if firing unit is not valid, nil on success
 local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
   -- Check if unit exists in game
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitGUID)
@@ -146,7 +146,7 @@ local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSys
 end
 
 ---Check if firing units specified in template are available
---- Filters battery list to only include unassigned batteries with valid status and ammunition
+---Filters battery list to only include unassigned batteries with valid status and ammunition
 ---@param config SBJ__CONFIG Global configuration table with battery state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
 ---@param firingUnitCtxs SBJ__FiringUnitContext[] Array of battery contexts from FST template
@@ -185,7 +185,7 @@ local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpn
 end
 
 ---Insert new FSEM into existing FSP sequence
---- Adds FSEM to the Fire Support Plan and registers it as a generated operation
+---Adds FSEM to the Fire Support Plan and registers it as a generated operation
 ---@param saveData SBJ__SaveData Persistent save data with FSP structure
 ---@param newFSEM SBJ__FireSupportExecutionMatrix Complete FSEM with FSTs ready for execution
 ---@return boolean # true if FSEM was successfully inserted and registered
@@ -202,7 +202,7 @@ local function insertFSEM(saveData, newFSEM)
 end
 
 ---Create actual FSEM from template and evaluation results
---- Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
+---Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
 ---@param FSEMTemplate SBJ__FSEMTemplate Template defining FSEM structure and FST configurations
@@ -282,7 +282,7 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
 end
 
 ---Process reconnaissance schedule entry, get FSEM template and execute evaluation
---- Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
+---Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
 ---@param config SBJ__CONFIG Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -336,7 +336,7 @@ end
 -- Public functions (exported)
 
 ---Main execution function, process reconnaissance schedule and dynamically create FSEM
---- Entry point for dynamic Fire Support Plan system, validates configuration and processes ground operations
+---Entry point for dynamic Fire Support Plan system, validates configuration and processes ground operations
 ---@param config SBJ__CONFIG Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering

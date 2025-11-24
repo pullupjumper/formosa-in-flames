@@ -28,7 +28,7 @@ local CONSTANTS = {
 ---Find the area where the unit is located
 ---@param unit CMO__Unit Unit object
 ---@param OPAREAs table<string, SBJ__OPAREA> Position information table
----@return string[]|nil Area name or nil
+---@return string[]|nil # Area name or nil
 local function findUnitArea(unit, OPAREAs)
   for _, OPAREA in pairs(OPAREAs) do
     for _, pos in ipairs(OPAREA.RL) do
@@ -47,7 +47,7 @@ end
 ---@param metResult {isMet: boolean} Result of resupply unit meeting check
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param weaponDBID number Weapon database ID
----@return boolean Whether reload conditions are met
+---@return boolean # Whether reload conditions are met
 local function isReadyToReloadFiringUnit(firingUnitCtx, wsContext, metResult, firingUnit, weaponDBID)
   if firingUnitCtx.reloadStartTime == nil then
     return false
@@ -64,7 +64,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param metResult {isMet: boolean} Result of ammunition depot meeting check
----@return boolean Whether reload conditions are met
+---@return boolean # Whether reload conditions are met
 local function isReadyToReloadResupplyUnit(resupplyUnitCtx, wsContext, metResult)
   if resupplyUnitCtx.reloadStartTime == nil then
     return false
@@ -115,7 +115,7 @@ end
 ---@param positionType string Position type ('RL'/'HA'/'AHA'/'FP', for error messages)
 ---@param wcs number? Weapon control status (optional)
 ---@param useLastCourse boolean? Whether to use the last waypoint in course (default: false)
----@return boolean Success status
+---@return boolean # Success status
 local function moveUnitToPosition(unitName, battery, positions, positionType, wcs, useLastCourse)
   local posCount = Utils.getCount(positions)
   if posCount == 0 then
@@ -395,7 +395,7 @@ end
 ---@param unit CMO__Unit|nil Unit object
 ---@param weaponDBID number Weapon database ID
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@return number Total ammunition consumed
+---@return number # Total ammunition consumed
 local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   if not unit then
     return 0
@@ -505,7 +505,7 @@ end
 ---@param firingUnit CMO__Unit Unit or group object
 ---@param percentage number Percentage threshold
 ---@param weaponDBID number Weapon database ID
----@return boolean Whether it is low ammunition
+---@return boolean # Whether it is low ammunition
 function Launcher.isLowAmmo(firingUnit, percentage, weaponDBID)
   local totalCurrent = 0
   local totalMax = 0
@@ -571,7 +571,7 @@ end
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
----@return {isMet: boolean, firingUnit: SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil}
+---@return {isMet: boolean, firingUnit: SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil} # Meeting status with resupply unit context 
 function Launcher.isMetWithResupplyUnits(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, firingUnit = nil } end
   local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
@@ -610,7 +610,7 @@ end
 ---@param wsContext SBJ__WeaponSystemContext Weapon system context
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
----@return {isMet: boolean, resupplyUnit: SBJ__ResupplyUnitContext|nil}
+---@return {isMet: boolean, resupplyUnit: SBJ__ResupplyUnitContext|nil} # Meeting status with ammo depot context 
 function Launcher.isMetWithAmmoDepot(config, wsContext, unit, isAuto)
   if not unit.group then return { isMet = false, resupplyUnit = nil } end
   local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)

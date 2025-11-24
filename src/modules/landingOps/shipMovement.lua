@@ -93,7 +93,7 @@ end
 ---@param longitude number|string Starting longitude
 ---@param bearing number Direction in degrees (0-360)
 ---@param distance number Distance in nautical miles
----@return CMO__Location New position coordinates
+---@return CMO__Location # New position coordinates
 local function getNextPosition(latitude, longitude, bearing, distance)
   return GameApi.World_GetPointFromBearing({
     LATITUDE = latitude,
@@ -173,7 +173,7 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
----@return boolean True if all ship movement orders were successfully issued
+---@return boolean # True if all ship movement orders were successfully issued
 function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units)
   local shipSettings = amphibOpsConfig.shipSettings
   local initialLocations = amphibOpsConfig.initialLocations

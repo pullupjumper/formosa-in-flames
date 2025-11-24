@@ -2,10 +2,10 @@ local GameApi = require("src.utils.gameApi")
 
 local RunwayRepairment = {}
 
----comment
----@param saveData SBJ__SaveData
----@param side string
----@param unit CMO__Unit
+---Handle runway damage events and record repair start time
+---@param saveData SBJ__SaveData Persistent save data
+---@param side string Faction name ("China" or other faction)
+---@param unit CMO__Unit The damaged runway unit
 function RunwayRepairment.whenRunwayIsDamaged(saveData, side, unit)
   local field = (side == 'China') and 'c' or 't'
 
@@ -20,10 +20,11 @@ function RunwayRepairment.whenRunwayIsDamaged(saveData, side, unit)
   end
 end
 
----comment
----@param config SBJ__CONFIG
----@param saveData SBJ__SaveData
----@param side string
+---Execute scheduled runway repair operations (called every 5 minutes)
+---Reduces damage by (startDP * percentagePerHour / 12 / 100) per interval
+---@param config SBJ__CONFIG Configuration containing repair rate settings
+---@param saveData SBJ__SaveData Persistent save data
+---@param side string Faction name ("China" or other faction)
 function RunwayRepairment.repairRunway(config, saveData, side)
   local field = (side == 'China') and 'c' or 't'
 

@@ -10,7 +10,7 @@ local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
 
 ---Initialize target list by scanning contacts and categorizing them
----@param saveData SBJ__SaveData
+---@param saveData SBJ__SaveData Persistent save data
 local function initTargetlist(saveData)
   local contacts = GameApi.ScenEdit_GetContacts('China')
   local bases = {
@@ -173,7 +173,7 @@ local function initTargetlist(saveData)
 end
 
 ---Initialize runway repair targets for both Taiwan and China
----@param saveData SBJ__SaveData
+---@param saveData SBJ__SaveData Persistent save data
 local function initRunways(saveData)
   local targetlist = TargetingProcess.filterTargetsByTypeAndBase(saveData.c.targetlist, {
     { baseName = 'Hualien AB',                    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },

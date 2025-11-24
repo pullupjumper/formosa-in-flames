@@ -6,9 +6,9 @@ local CommsJamming = {}
 
 
 ---Get distance-based modifier category
----@param config SBJ__CONFIG
+---@param config SBJ__CONFIG Configuration containing communication jamming parameters
 ---@param distance number Distance in nautical miles
----@return string|nil category Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
+---@return string|nil # Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
 local function getDistanceCategory(config, distance)
   local thresholds = config.c.commsJamming.distanceThresholds
 
@@ -30,7 +30,7 @@ end
 ---@param config SBJ__CONFIG Configuration containing communication jamming parameters
 ---@param saveData SBJ__SaveData Save data containing jammer, AEW, and C2 unit contexts
 ---@param affectedUnitGUID string GUID of the unit whose communication level is being calculated
----@return integer commModifier The calculated communication modifier
+---@return integer # The calculated communication modifier
 local function getCommsLevel(config, saveData, affectedUnitGUID)
   local commModifier = config.c.commsJamming.initialComms
 
@@ -118,7 +118,7 @@ end
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
----@return boolean success Whether jamming was successfully applied
+---@return boolean # Whether jamming was successfully applied
 local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jammer, distance)
   if affectedUnitCtx.isOutOfComms == false then
     if affectedUnitCtx.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
@@ -168,7 +168,7 @@ end
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
----@return boolean success Whether jamming was successfully applied
+---@return boolean # Whether jamming was successfully applied
 local function directionalJammingWithDistance(config, affectedUnitCtx, jammer, distance)
   if affectedUnitCtx.isOutOfComms == false then
     if affectedUnitCtx.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
@@ -213,7 +213,7 @@ end
 
 ---Find all airborne communication jammers from the jammer context table
 ---@param jammers table<string, SBJ__AircraftContext> Map of jammer GUIDs to aircraft contexts from saveData
----@return CMO__Unit[] airborneJammers List of active airborne jammer units with active jamming capabilities
+---@return CMO__Unit[] # List of active airborne jammer units with active jamming capabilities
 local function findJammers(jammers)
   local airborneJammers = {}
 
@@ -231,7 +231,7 @@ end
 
 ---Collect all SAM and radar units from IADS systems for jamming operations
 ---@param IADSContext SBJ__IADSContext IADS context containing ROCC and TAAOC command structures with their managed units
----@return table<string, SBJ__RadarContext> unitTable Map of unit GUIDs to radar/SAM unit contexts for jamming targets
+---@return table<string, SBJ__RadarContext> # Map of unit GUIDs to radar/SAM unit contexts for jamming targets
 local function findSAMAndRadar(IADSContext)
   local unitTemp = {}
   local unitCount = 0
@@ -276,9 +276,9 @@ function CommsJamming.handleCommsJamming(config, saveData)
   local totalAttempts = 0
 
   Logger.log("commsJamming",
-      "CommsJamming: Processing " .. #jammers .. " jammers against " ..
-      Utils.getCount(unitCtxs) .. " potential targets"
-    )
+    "CommsJamming: Processing " .. #jammers .. " jammers against " ..
+    Utils.getCount(unitCtxs) .. " potential targets"
+  )
 
   -- Apply jamming effects with distance caching
   for _, jammer in ipairs(jammers) do
@@ -318,7 +318,7 @@ function CommsJamming.handleCommsJamming(config, saveData)
     totalJammedUnits = totalJammedUnits + count
     totalAttempts = totalAttempts + jammerAttempts
     Logger.log("commsJamming", "CommsJamming: Jammer " ..
-        jammer.guid .. " processed " .. jammerAttempts .. " attempts, affected " .. count .. " units")
+      jammer.guid .. " processed " .. jammerAttempts .. " attempts, affected " .. count .. " units")
   end
 
   -- Handle aircraft communication quality
@@ -346,10 +346,10 @@ function CommsJamming.handleCommsJamming(config, saveData)
     end
   end
 
-  Logger.log("commsJamming", 
-      "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
-      " jamming attempts successful, " .. aircraftRTB .. "/" .. aircraftProcessed .. " aircraft ordered RTB"
-    )
+  Logger.log("commsJamming",
+    "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
+    " jamming attempts successful, " .. aircraftRTB .. "/" .. aircraftProcessed .. " aircraft ordered RTB"
+  )
 end
 
 ---Initialize communications jammer contexts for the specified side

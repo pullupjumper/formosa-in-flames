@@ -519,7 +519,7 @@
           <td>${signal.firstDetected || 'N/A'}</td>
           <td>${signal.lastDetected || 'N/A'}</td>
           <td class="text-right">${signal.detectionCount || 0}</td>
-          <td class="text-right">${signal.confidence * 100 || 0}%</td>
+          <td class="text-right">${Math.floor(signal.confidence * 100 || 0)}%</td>
           <td class="text-right">${signal.currentDetectionLevel || 0}</td>
         `;
 

@@ -67,7 +67,7 @@ local FORMATION = {
 ---@param heading number Heading angle
 ---@param distance number Distance
 ---@param angle number Angle offset
----@return table|nil Calculated position {latitude: number, longitude: number}
+---@return table|nil # Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
     LATITUDE = centerPoint.lat,
@@ -80,7 +80,7 @@ end
 ---Batch delete units in group
 ---@param groupName string Group name
 ---@param sideName string Side name
----@return boolean Whether cleanup was successful
+---@return boolean # Whether cleanup was successful
 local function cleanupExistingGroup(groupName, sideName)
   local group = GameApi.ScenEdit_GetUnit(groupName)
   if group and group.group and group.group.unitlist then
@@ -155,7 +155,7 @@ end
 ---@param firstRp CMO__Location First reference point
 ---@param verticalHeading number Vertical heading
 ---@param verticalDistance number Vertical distance
----@return table<string, CMO__Location> Positions of various ship types
+---@return table<string, CMO__Location> # Positions of various ship types
 local function calculateShipPositions(firstRp, verticalHeading, verticalDistance)
   local positions = {}
 
@@ -298,7 +298,7 @@ end
 ---Get SAG formation configuration
 ---@param sagDescriptor SBJ__SAGDescriptor Configuration object
 ---@param sideName string Side name ('China' | 'Taiwan')
----@return UnitGenerator_ShipFormationSpec[] Ship formation specification list
+---@return UnitGenerator_ShipFormationSpec[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == 'China' then
     return {
@@ -360,7 +360,7 @@ end
 
 ---Get CSG formation configuration
 ---@param csgDescriptor SBJ__CSGDescriptor Configuration object
----@return UnitGenerator_ShipFormationSpec[] CSG ship formation specification list
+---@return UnitGenerator_ShipFormationSpec[] # CSG ship formation specification list
 local function getCSGShipConfiguration(csgDescriptor)
   return {
     {
@@ -411,7 +411,7 @@ end
 
 ---Create formation ships
 ---@param formationConfig UnitGenerator_FormationConfig Formation configuration
----@return boolean Whether successful
+---@return boolean # Whether successful
 local function createShipFormation(formationConfig)
   -- Clean up existing group
   cleanupExistingGroup(formationConfig.groupName, formationConfig.sideName)
@@ -480,7 +480,7 @@ end
 ---Create SAG formations
 ---@param sagDescriptors table<string, SBJ__SAGDescriptor> Configuration object
 ---@param sideName string Side name
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.createSAGs(sagDescriptors, sideName)
   for _, sagDescriptor in pairs(sagDescriptors) do
     local formationConfig = {
@@ -535,7 +535,7 @@ end
 
 ---Create CSG formation
 ---@param csgDescriptor SBJ__CSGDescriptor Configuration object
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.createCSG(csgDescriptor)
   local formationConfig = {
     centerPoint = csgDescriptor.from.startingPoint,
@@ -579,7 +579,7 @@ end
 ---Add ships deployed at ports
 ---@param descriptors SBJ__AirbaseDeploymentDescriptor Configuration object
 ---@param sideName string Side name
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
   -- local field = (sideName == 'China') and 'c' or 't'
 
@@ -604,7 +604,7 @@ end
 ---Add submarines
 ---@param config SBJ__CONFIG Configuration object
 ---@param sideName string Side name
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.addSubmarines(config, sideName)
   if sideName ~= 'China' then
     return true -- Currently only supports Chinese submarines
@@ -659,7 +659,7 @@ end
 
 ---Add aircraft to airbases with specified loadouts and embarked units
 ---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configuration list
----@return boolean Whether aircraft addition was successful
+---@return boolean # Whether aircraft addition was successful
 function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
   for _, data in ipairs(airbaseDeploymentDescriptors) do
     local base = GameApi.ScenEdit_GetUnit(data.baseGUID)
@@ -697,7 +697,7 @@ end
 
 ---Remove base magazines
 ---@param baseGUID string Base GUID
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
@@ -721,8 +721,8 @@ end
 
 ---Add landing ships
 ---@param config SBJ__CONFIG Configuration object
----@param amphibOpsConfig SBJ__AmphibOpsConfig
----@return boolean Whether successful
+---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration containing ship settings and cargo
+---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(config, amphibOpsConfig)
   local descriptors = amphibOpsConfig.initialLocations
   local layoutConfig = amphibOpsConfig.shipSettings
@@ -755,7 +755,7 @@ end
 
 ---Remove landing ships
 ---@param config SBJ__CONFIG Configuration object
----@return boolean Whether successful
+---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
 
@@ -797,7 +797,7 @@ end
 ---Initialize aircraft units for Taiwan air operations
 ---@param config SBJ__CONFIG Configuration object containing platform and unit type definitions
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
----@return boolean Whether initialization was successful
+---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(config, context)
   local filteredUnits = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
 

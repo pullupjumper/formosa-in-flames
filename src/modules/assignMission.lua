@@ -5,7 +5,7 @@ local AssignMission = {}
 ---@param baseUnit CMO__Unit The base unit with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')
 ---@param platformDBID number The database ID of the platform to filter
----@return table<integer, CMO__Unit> A list of filtered embarked units
+---@return table<integer, CMO__Unit> # A list of filtered embarked units
 local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   local filteredPlatforms = {}
   if baseUnit == nil or #baseUnit.embarkedUnits[platformType] == 0 then return filteredPlatforms end
@@ -25,7 +25,7 @@ end
 
 ---@param unit CMO__Unit The unit to check
 ---@param mission SBJ__MissionEntry The mission settings
----@return boolean True if the unit can be assigned to the mission, false otherwise
+---@return boolean # True if the unit can be assigned to the mission, false otherwise
 local function canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
 end
@@ -67,7 +67,7 @@ end
 
 ---@param unitGuid string The GUID of the unit
 ---@param weaponDBID number The database ID of the weapon to filter by
----@return number The count of the specified weapon on the unit's loadout
+---@return number # The count of the specified weapon on the unit's loadout
 local function getWeaponCount(unitGuid, weaponDBID)
   local loadout = GameApi.ScenEdit_GetLoadout(unitGuid)
 
@@ -90,7 +90,7 @@ end
 ---@param unit CMO__Unit The unit to check
 ---@param weaponNum number The number of specified weapons on the unit
 ---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
----@return boolean True if the unit is eligible for the strike mission, false otherwise
+---@return boolean # True if the unit is eligible for the strike mission, false otherwise
 local function isUnitEligibleForStrikeMission(unit, weaponNum, unitDBID)
   return unit.readytime_v == 0 and unit.mission == nil and (weaponNum > 0 or unit.dbid == unitDBID)
 end
@@ -101,7 +101,7 @@ end
 ---@param unitDBID number|nil -- The database ID of the unit to filter by, or nil for any unit
 ---@param missionName string -- The name of the mission to assign units to
 ---@param isEscort boolean -- Whether the mission is an escort mission
----@return table<integer, string>|nil -- A list of assigned units
+---@return table<integer, string>|nil # -- A list of assigned units
 function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDBID, unitDBID, missionName, isEscort)
   ---@type CMO__Unit
   local airbase = GameApi.ScenEdit_GetUnit(fromUnit)

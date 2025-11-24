@@ -12,7 +12,7 @@ local ADVANCE_SECONDS = 300
 -- Strike Package Processing Functions (integrated from strikePackageProcessor)
 --------------------------------------------------------------------------------
 
---- Calculate the start time for weapon loading
+---Calculate the start time for weapon loading
 ---@param packageData SBJ__Package The strike package containing flight group data
 ---@return number|nil # Unix timestamp for when loadout should start, or nil if cannot be calculated
 local function calculateLoadoutStartTime(packageData)
@@ -39,7 +39,7 @@ local function calculateLoadoutStartTime(packageData)
   return loadoutStartTime
 end
 
---- Check if it's time to start weapon loading
+---Check if it's time to start weapon loading
 ---@param packageData SBJ__Package The strike package to check
 ---@return boolean # true if current time has reached or passed the loadout start time
 local function isTimeToStartLoadout(packageData)
@@ -65,8 +65,8 @@ local function isTimeToStartLoadout(packageData)
   return GameUtils.isAfterStartTime(loadoutStartTimeStr, ADVANCE_SECONDS)
 end
 
---- Set weapon loadouts for all flight groups in the package
---- Applies loadouts to aircraft at their bases and updates loadout status tracking
+---Set weapon loadouts for all flight groups in the package
+---Applies loadouts to aircraft at their bases and updates loadout status tracking
 ---@param packageData SBJ__Package The strike package containing flight group configurations
 local function initiateLoadoutForPackage(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
@@ -151,7 +151,7 @@ local function initiateLoadoutForPackage(packageData)
   Logger.log("air", "All loadouts initiated, expected ready at: " .. expectedReadyTimeStr)
 end
 
---- Check if weapon loading is complete
+---Check if weapon loading is complete
 ---@param packageData SBJ__Package The strike package to check
 ---@return boolean # true if loadout has been initiated and expected ready time has passed
 local function isLoadoutReady(packageData)
@@ -178,7 +178,7 @@ local function isLoadoutReady(packageData)
   return false
 end
 
---- Find the earliest departing flight group
+---Find the earliest departing flight group
 ---@param packageData SBJ__Package The strike package containing flight groups
 ---@return SBJ__MissionEntry|nil # The flight group with the earliest start time, or nil if none found
 local function findEarliestRole(packageData)
@@ -199,7 +199,7 @@ local function findEarliestRole(packageData)
   return earliestRole
 end
 
---- Creates a mission for a specific role if it doesn't exist.
+---Creates a mission for a specific role if it doesn't exist.
 ---@param packageData SBJ__Package The strike package containing mission parameters
 ---@param role string The role identifier (e.g., "striker", "escort", "wildWeasel", "jammer", "tanker")
 ---@return boolean # true if mission exists or was successfully created
@@ -233,13 +233,17 @@ local function createMission(packageData, role)
       if packageData[role].timeOnStation then
         mission['TimeOnTargetStation'] = packageData[role].timeOnStation
       end
+
+      if packageData[role].missionParams.type == "strike" then
+        GameApi.ScenEdit_SetDoctrine({ side = "China", mission = mission.name }, { automatic_evasion = false })
+      end
     end
   end
 
   return mission ~= nil
 end
 
---- Assigns all units in the package to their respective missions.
+---Assigns all units in the package to their respective missions.
 ---@param packageData SBJ__Package The strike package containing unit assignment data
 ---@return boolean # true if the primary striker units were successfully assigned
 local function assignUnits(packageData)
@@ -269,8 +273,8 @@ local function assignUnits(packageData)
   return strikerAssigned
 end
 
---- Processes a single strike package through its complete lifecycle
---- Handles weapon loading, mission creation, target assignment, and unit launch
+---Processes a single strike package through its complete lifecycle
+---Handles weapon loading, mission creation, target assignment, and unit launch
 ---@param config SBJ__CONFIG The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO state
 ---@param packageData SBJ__Package The strike package data to process
@@ -374,7 +378,7 @@ end
 -- Wave Management Functions
 --------------------------------------------------------------------------------
 
---- Checks if all packages in a wave have been launched.
+---Checks if all packages in a wave have been launched.
 ---@param waveData SBJ__Wave The wave containing multiple strike packages
 ---@return boolean # true if all packages in the wave have been launched
 local function isWaveFinished(waveData)
@@ -386,8 +390,8 @@ local function isWaveFinished(waveData)
   return true
 end
 
---- The main entry point for air strikes.
---- Iterates through ATO waves and packages, processing each strike package sequentially
+---The main entry point for air strikes.
+---Iterates through ATO waves and packages, processing each strike package sequentially
 ---@param config SBJ__CONFIG The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
 function AirTaskingOrder.airStrike(config, saveData)

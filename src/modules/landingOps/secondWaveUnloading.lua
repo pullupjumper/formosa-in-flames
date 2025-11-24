@@ -10,7 +10,7 @@ local SecondWaveUnloading = {}
 --- Uses spherical geometry to find the nearest point on the approach path
 ---@param zone SBJ__OperationZoneDescriptor Operation zone with offload area and LST settings
 ---@param unit CMO__Unit Barge unit to calculate course for
----@return CMO__Waypoint[]|nil Destination waypoint, or nil on error
+---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
 local function createCourseForBarge(zone, unit)
   local points = GameApi.ScenEdit_GetReferencePoints({ side = "China", area = zone.offloadArea })
 
@@ -58,7 +58,7 @@ end
 ---@param zone SBJ__OperationZoneDescriptor Operation zone with LST settings
 ---@param unit CMO__Unit RORO ship unit to calculate course for
 ---@param bargeDest CMO__Waypoint[] Barge's destination waypoint
----@return CMO__Waypoint[]|nil Two-waypoint course (approach, then barge position), or nil on error
+---@return CMO__Waypoint[]|nil # Two-waypoint course (approach, then barge position), or nil on error
 local function createCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
@@ -82,7 +82,7 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to track barge-RORO relationships
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
----@return boolean True if second wave unloading successfully started
+---@return boolean # True if second wave unloading successfully started
 function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, saveData, units)
   local operationalZones = amphibOpsConfig.operationalZones
   local roros = {}
@@ -131,7 +131,7 @@ end
 --- Vehicles are placed in a line formation based on bearing and spacing
 --- Used for unloading heavy equipment that cannot use ACVs
 ---@param params SBJ__VehicleOffloadParams Offload parameters (ship, number, bearing, distances)
----@return number|nil Number of vehicles successfully offloaded, or nil on error
+---@return number|nil # Number of vehicles successfully offloaded, or nil on error
 function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
@@ -188,7 +188,7 @@ end
 --- Returns true if bridge GUID exists but unit is destroyed
 ---@param saveData SBJ__SaveData Save data containing barge bridge tracking
 ---@param ship CMO__Unit Barge ship to check
----@return boolean True if bridge was created but is now destroyed
+---@return boolean # True if bridge was created but is now destroyed
 function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
   if saveData.c.PHIBOP.barges[ship.guid] and saveData.c.PHIBOP.barges[ship.guid].bridgeGUID then
     local bridge = GameApi.ScenEdit_GetUnit(saveData.c.PHIBOP.barges[ship.guid].bridgeGUID)
@@ -209,7 +209,7 @@ end
 --- Used to determine if barge is ready for vehicle transfer operations
 ---@param saveData SBJ__SaveData Save data containing barge bridge tracking
 ---@param ship CMO__Unit Barge ship to check
----@return boolean True if barge has an active bridge GUID
+---@return boolean # True if barge has an active bridge GUID
 function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
   return saveData.c.PHIBOP.barges[ship.guid].bridgeGUID ~= nil
 end
@@ -220,7 +220,7 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param barge CMO__Unit Barge ship
 ---@param roro CMO__Unit RORO ship
----@return SBJ__OperationZoneDescriptor|nil Operation zone descriptor, or nil if units not properly positioned
+---@return SBJ__OperationZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
 function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     local d = GameApi.Tool_Range(roro.guid, barge.guid)

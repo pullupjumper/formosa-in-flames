@@ -12,7 +12,7 @@ local Recon = {}
 ---@param unitCount number The number of units to launch
 ---@param unitDBID number The unit database ID to filter by
 ---@param unitType string The unit type to launch (e.g., 'Aircraft' or 'Boats')
----@return string[]|nil Returns array of launched unit GUIDs, or nil if no units launched
+---@return string[]|nil # Returns array of launched unit GUIDs, or nil if no units launched
 function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
@@ -53,7 +53,7 @@ end
 ---@param config SBJ__CONFIG Configuration data for platform DBIDs
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__TableOfWaypoints The reconnaissance course for WZ-8
----@return CMO__Unit|nil Returns the WZ-8 unit if successfully launched, nil otherwise
+---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 function Recon.launchWZ8(config, h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
     side = 'China',
@@ -98,7 +98,7 @@ end
 
 ---Handle reconnaissance launch phase
 ---@param entry SBJ__ReconQueueEntry Queue entry to process
----@return boolean launched Whether unit was successfully launched
+---@return boolean # Whether unit was successfully launched
 local function handleReconLaunch(entry)
   if entry.hasLaunched or not GameUtils.isAfterStartTime(entry.takeoffTime) then
     return false
@@ -120,7 +120,7 @@ end
 ---Handle reconnaissance tracking mode - continuously update course to track moving target
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param actualUnit CMO__Unit The reconnaissance unit
----@return boolean success Whether tracking was successfully updated
+---@return boolean # Whether tracking was successfully updated
 local function handleReconTracking(entry, actualUnit)
   -- Check if tracking target is assigned
   if not entry.trackingTargetGUID then
@@ -161,13 +161,13 @@ end
 
 ---Get platform-specific special operations based on successful reconnaissance
 ---Different UAV platforms trigger different specialized operations:
---- BZK-005: C2 command and control strike operations
---- WZ-8 (launched from H-6N): Anti-ship strike and airbase strike operations
+---BZK-005: C2 command and control strike operations
+---WZ-8 (launched from H-6N): Anti-ship strike and airbase strike operations
 ---@param config SBJ__CONFIG Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
----@return SBJ__Operation[] specialOperations Array of special operations to add
+---@return SBJ__Operation[] # Array of special operations to add
 local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
   local operations = {}
 
@@ -317,7 +317,6 @@ end
 ---1. Last executed operations in current schedule
 ---2. Next scheduled reconnaissance time
 ---3. Platform-specific special operations (BZK-005: C2 strike, WZ-8: Anti-ship strike)
----
 ---@param config SBJ__CONFIG Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
@@ -484,7 +483,7 @@ end
 ---@param units CMO__SideUnit Side units collection to search for available UAVs
 ---@param UAVDBID number UAV platform database ID to filter by
 ---@param target CMO__Contact Target contact to track
----@return boolean True if UAV was assigned to track target, false otherwise
+---@return boolean # True if UAV was assigned to track target, false otherwise
 function Recon.trackTarget(reconContext, units, UAVDBID, target)
   local UAV = nil
 

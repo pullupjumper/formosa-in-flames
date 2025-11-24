@@ -10,15 +10,15 @@
 ---@param attackerGUID string The GUID of the attacker unit
 ---@param contactGUID string The GUID of the target contact
 ---@param attackingSideGUID string The GUID of the attacking side
----@return table|nil Returns a weapon allocation table
+---@return table<integer, { weapon:number, qtyFired:number, shooter:string, target:string, qtyAssigned:number, weaponName:string }>|nil # Returns a weapon allocation table
 function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID) end
 
 --- Create a new flight plan for a mission
----@param side string The mission side
+---@param sideName string The mission side
 ---@param missionName string The mission name or GUID
 ---@param opts CMO__FlightPlanOptions The options for the flight plan
----@return table<number, any>|nil Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
-function ScenEdit_CreateMissionFlightPlan(side, missionName, opts) end
+---@return table<number, any>|nil # Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
+function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 --- Unit OODA (Observe, Orient, Decide, Act) loop characteristics
 ---@class CMO__OODA:table

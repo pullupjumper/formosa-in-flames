@@ -6,7 +6,7 @@ local AttackManager = {}
 ---Get weapon information for a unit
 ---@param unit CMO__Unit The unit to check
 ---@param weaponDBID number|nil Specific weapon DBID to look for
----@return {weaponDBID: number, mountDBID: number, availableWeapons: number, maxWeapons: number, assignedWeapons: number} Weapon information
+---@return {weaponDBID: number, mountDBID: number, availableWeapons: number, maxWeapons: number, assignedWeapons: number} # Weapon information
 local function getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0
   local maxWeaponCapacity = 0
@@ -56,7 +56,7 @@ end
 ---Get total ammunition already allocated for attacking a specific target
 ---@param contactGuid string The target contact's unique identifier
 ---@param side string The attacking side's name
----@return number Total ammunition currently allocated to attack this target
+---@return number # Total ammunition currently allocated to attack this target
 local function getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
@@ -80,7 +80,7 @@ end
 ---@param contact CMO__Contact The target contact
 ---@param weaponInfo table Weapon information
 ---@param totalAmmoRequested number Total amount of ammunition requested for attack
----@return boolean Whether the unit can fire
+---@return boolean # Whether the unit can fire
 local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   -- Check if unit is on hold
   local doctrine = GameApi.ScenEdit_GetDoctrine(unit.guid)
@@ -125,8 +125,8 @@ end
 ---@param ammoAlreadyAllocated number Amount of ammunition already allocated in this attack
 ---@param weaponDBID number Specific weapon DBID to use
 ---@param grpIdx number Current group index
----@return boolean Whether to advance to next battery
----@return number Number of weapons allocated
+---@return boolean success Whether to advance to next battery
+---@return number weaponsAllocated Number of weapons allocated
 local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlreadyAllocated, weaponDBID, grpIdx)
   local ammoAllocated = 0
   local advanceBattery = false
@@ -178,7 +178,7 @@ end
 ---@param contact CMO__Contact The target contact
 ---@param totalAmmoRequested number Total amount of ammunition requested for this attack
 ---@param weaponDBID number Specific weapon DBID to use
----@return table Results including allocated weapons
+---@return table # Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
   local weaponInfo = getWeaponInfo(unit, weaponDBID)
@@ -211,7 +211,7 @@ end
 ---@param grpIdx number Starting group index
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
 ---@param side string The side to use for the attack, default is 'China'
----@return table Results including next indices and number of weapons launched
+---@return table # Results including next indices and number of weapons launched
 function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
   local totalAmmoAllocated = 0
@@ -284,7 +284,7 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
 end
 
 ---@param opts SBJ__AttackContacts_Params
----@return number Total number of ammunition launched across all contacts
+---@return number # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(opts)
   local result = { btyIdx = 1, grpIdx = 1, launchedNum = 0 }
   local totalLaunchedNum = 0

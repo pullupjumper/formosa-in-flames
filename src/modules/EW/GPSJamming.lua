@@ -12,7 +12,7 @@ local GPSJamming = {}
 ---@param point CMO__Location Center point for the jamming zone
 ---@param sideName string Side name that owns the jammer (e.g., 'China', 'Taiwan')
 ---@param enemySideName string Enemy side name whose weapons will be jammed
----@return boolean success Whether the jamming zone was successfully created
+---@return boolean # Whether the jamming zone was successfully created
 local function addJammingZone(unit, descriptor, point, sideName, enemySideName)
   GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
@@ -50,7 +50,7 @@ end
 ---@param sideObj CMO__Side Side object that owns the zone
 ---@param sideName string Side name (e.g., 'China', 'Taiwan')
 ---@param isDeleted? boolean If true, also delete the jammer unit itself
----@return boolean success Whether the removal was successful
+---@return boolean # Whether the removal was successful
 local function removeEvent(descriptor, zone, sideObj, sideName, isDeleted)
   local myz = sideObj:getstandardzone(zone.guid)
 
@@ -73,7 +73,7 @@ end
 ---Should be called from 'Unit Enters Area' event trigger
 ---@param config SBJ__CONFIG Configuration object containing GPS jamming settings and weapon DBIDs
 ---@param sideName string Enemy side name whose weapons are being jammed (e.g., 'Taiwan', 'US')
----@return boolean success Whether jamming was successfully applied to the weapon
+---@return boolean # Whether jamming was successfully applied to the weapon
 function GPSJamming.jamming(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local side = sideConfig.field
@@ -150,7 +150,7 @@ end
 ---Iterates through all standard zones and removes matching GPS jamming zones and their units
 ---@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors indexed by name
 ---@param sideName string Side name that owns the jammers (e.g., 'China', 'Taiwan')
----@return number removedCount Number of jammers successfully removed
+---@return number # Number of jammers successfully removed
 function GPSJamming.removeJammers(jammerDescriptors, sideName)
   -- local side = getSideKey(sideName)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
@@ -190,6 +190,7 @@ function GPSJamming.addGPSJammer(config, descriptor, sideName)
   local point = { latitude = descriptor.point.lat, longitude = descriptor.point.lon }
 
   if unit then
+    GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
     local success = addJammingZone(unit, descriptor, point, sideName, enemySideName)
     return success, unit
   end
@@ -202,7 +203,7 @@ end
 ---@param config SBJ__CONFIG Configuration object containing platform DBIDs
 ---@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors to create
 ---@param sideName string Side name that will own the jammers (e.g., 'China', 'Taiwan')
----@return number successCount Number of jammers successfully created with zones
+---@return number # Number of jammers successfully created with zones
 function GPSJamming.addGPSJammers(config, jammerDescriptors, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
@@ -218,6 +219,8 @@ function GPSJamming.addGPSJammers(config, jammerDescriptors, sideName)
     )
 
     if unit and point then
+      GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+
       if addJammingZone(unit, descriptor, point, sideName, enemySideName) then
         successCount = successCount + 1
       end
@@ -253,7 +256,7 @@ end
 ---@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors indexed by name
 ---@param sideName string Side name that owns the jammer (e.g., 'China', 'Taiwan')
 ---@param name string Unique name/key of the jammer descriptor to remove
----@return boolean success Whether the zone was successfully found and removed
+---@return boolean # Whether the zone was successfully found and removed
 function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if sideObj == nil then return false end
