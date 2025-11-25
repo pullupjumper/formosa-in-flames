@@ -2,10 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 
---- Ship Movement
----
---- Landing ship movement and positioning calculations for amphibious operations,
---- including destination pre-calculation, formation management, and SAG coordination
 local ShipMovement = {}
 
 ---Move a ship to a target location with specified speed
@@ -58,7 +54,6 @@ local function handleNameType(unit, resultTable, nameType, shipSettings, isTesti
 end
 
 ---Handle Type 071 LPD movement with overflow support to LST area
----Type 071 ships can be assigned to either LPD area or LST area based on capacity
 ---When LPD area is full, overflow Type 071s are placed in LST area
 ---@param unit CMO__Unit The Type 071 ship to move
 ---@param resultTable table<string, table> Pre-calculated destination locations
@@ -108,8 +103,7 @@ local function getNextPosition(latitude, longitude, bearing, distance)
 end
 
 ---Handle Surface Action Group (SAG) movement to anchorage area
----Positions SAG ships in formation: Type 052D destroyers in center, Type 054A frigates at flanks
----In testing mode, ships are instantly teleported to their assigned positions
+---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param group SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
@@ -170,9 +164,7 @@ local function handleSAG(config, group, isTesting)
 end
 
 ---Move all amphibious assault ships from staging area to designated anchorage positions
----Routes different ship types to their pre-calculated positions based on ship class
----Handles amphibious assault ships (Type 075/076), landing ships (Type 071/072/073), and auxiliary vessels
----Also coordinates Surface Action Group movements for escort duties
+---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param config SBJ__Config Global configuration (used for SAG platform identification)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
@@ -235,10 +227,7 @@ function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units
 end
 
 ---Pre-calculate all destination positions for amphibious assault ships
----Generates a grid of anchorage positions for each ship type in each operational area
----Positions are calculated based on reference points with vertical and horizontal spacing
----Ship types are arranged in layers: Type 075 (LHD), Type 071 (LPD), Type 076, then LSTs
----Results are stored in saveData for later use during actual ship movement
+---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
 ---@param saveData SBJ__SaveData Save data where calculated positions will be stored
 function ShipMovement.calculateDestination(amphibOpsConfig, saveData)

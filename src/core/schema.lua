@@ -54,7 +54,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 -- Core configuration and persistent data structures
 
 --- Global configuration data structure
----@class SBJ__CONFIG:table
+---@class SBJ__Config:table
 
 --- Saved data structure for persistent state
 ---@class SBJ__SaveData:table
@@ -528,7 +528,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 --- Filter parameters for target selection and filtering
 ---@class SBJ__FilterParams:table
----@field config SBJ__CONFIG Configuration data
+---@field config SBJ__Config Configuration data
 ---@field saveData SBJ__SaveData Saved data
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array

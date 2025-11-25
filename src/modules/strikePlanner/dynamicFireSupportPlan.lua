@@ -5,17 +5,11 @@ local Logger = require("src.utils.logger")
 local Launcher = require("src.modules.launcher")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
---- Dynamic Fire Support Plan
----
---- Dynamic Fire Support Planning with BDA-based automated FSEM creation,
---- including target assessment, firing unit coordination, and strike scheduling
 local DynamicFireSupportPlan = {}
-
--- Local helper functions (private)
 
 ---Process individual FST template, perform target filtering and BDA assessment
 ---Routes to dynamic or fixed target processing, applies filters and damage assessment
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param FSTTemplate SBJ__FSTTemplate Fire Support Task template with target criteria
@@ -115,7 +109,7 @@ end
 
 ---Validate individual firing unit status and readiness
 ---Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
----@param config SBJ__CONFIG Global configuration table with firing unit state definitions
+---@param config SBJ__Config Global configuration table with firing unit state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param firingUnitGUID string The GUID of the battery/firing unit to validate
 ---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") used to locate battery data
@@ -151,7 +145,7 @@ end
 
 ---Check if firing units specified in template are available
 ---Filters battery list to only include unassigned batteries with valid status and ammunition
----@param config SBJ__CONFIG Global configuration table with battery state definitions
+---@param config SBJ__Config Global configuration table with battery state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
 ---@param firingUnitCtxs SBJ__FiringUnitContext[] Array of battery contexts from FST template
 ---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") for validation
@@ -207,7 +201,7 @@ end
 
 ---Create actual FSEM from template and evaluation results
 ---Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
 ---@param FSEMTemplate SBJ__FSEMTemplate Template defining FSEM structure and FST configurations
 ---@param evaluatedTargets table<string, CMO__Contact[]> Map of FST name to evaluated target arrays
@@ -287,7 +281,7 @@ end
 
 ---Process reconnaissance schedule entry, get FSEM template and execute evaluation
 ---Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
----@param config SBJ__CONFIG Global configuration table
+---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry triggering this operation
@@ -337,11 +331,9 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
   end
 end
 
--- Public functions (exported)
-
 ---Main execution function, process reconnaissance schedule and dynamically create FSEM
 ---Entry point for dynamic Fire Support Plan system, validates configuration and processes ground operations
----@param config SBJ__CONFIG Global configuration with battery and weapon system parameters
+---@param config SBJ__Config Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
 ---@return boolean # true if any ground operation was processed and executed, false if disabled or none ready

@@ -1,9 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 
---- Attack Manager
----
---- Coordinates weapon allocation and attack execution against contacts with multi-unit support
 local AttackManager = {}
 
 ---Get weapon information for a unit
@@ -181,7 +178,7 @@ end
 ---@param contact CMO__Contact The target contact
 ---@param totalAmmoRequested number Total amount of ammunition requested for this attack
 ---@param weaponDBID number Specific weapon DBID to use
----@return table # Results including allocated weapons
+---@return {ammoAllocated: number} # Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
   local weaponInfo = getWeaponInfo(unit, weaponDBID)
@@ -215,7 +212,7 @@ end
 ---@param grpIdx number Starting group index
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
 ---@param side string The side to use for the attack, default is 'China'
----@return table # Results including next indices and number of weapons launched
+---@return {btyIdx: number, grpIdx: number, launchedNum: number} # Results including next indices and number of weapons launched
 function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, btyIdx, grpIdx, weaponDBID, side)
   -- Initialize variables
   local totalAmmoAllocated = 0

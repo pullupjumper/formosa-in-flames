@@ -5,10 +5,6 @@ local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
---- Dynamic ATO Insertion
----
---- Dynamic Air Tasking Order insertion based on real-time intelligence,
---- including strike package generation, timing calculations, and aircraft allocation
 local DynamicATOInsertion = {}
 
 -- Time constants

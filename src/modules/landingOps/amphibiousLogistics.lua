@@ -2,15 +2,10 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local AssignMission = require("src.modules.assignMission")
 
---- Amphibious Logistics
----
---- Cargo transfer and logistics management for amphibious operations,
---- including cargo distribution, mission creation, and embarkation coordination
 local AmphibiousLogistics = {}
 
 ---Transfer cargo from one unit to another
----Deletes specified cargo items from source unit and creates them on destination unit
----Used for loading embarked aircraft and boats with troops and equipment
+---Deletes specified cargo from source unit and creates them on destination unit
 ---@param fromUnit CMO__Unit Source unit (typically the mother ship)
 ---@param toUnit CMO__Unit Destination unit (aircraft or boat to receive cargo)
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
@@ -43,7 +38,6 @@ function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
 end
 
 ---Delete specified cargo from a unit
----Removes cargo items matching the specified DBID from the unit's inventory
 ---Returns the actual number of items deleted (may be less than requested)
 ---@param fromUnit CMO__Unit Unit to remove cargo from
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
@@ -83,9 +77,7 @@ function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
 end
 
 ---Transfer cargo from base to multiple embarked units
----Distributes cargo items to all embarked platforms of a specific type matching DBID/loadout
----For aircraft, also filters by loadout ID to ensure correct weapon configuration
----Supports both single cargo list (all units get same cargo) and per-unit cargo lists
+---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
 ---@param fromUnit string GUID of the base unit containing embarked platforms
 ---@param platformType string Type of embarked unit ('Aircraft' or 'Boats')
 ---@param platformDBid number Database ID of the platform to receive cargo
@@ -139,8 +131,7 @@ function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid,
 end
 
 ---Get units in anchorage area and check their movement status
----Filters amphibious ships (LHD, LPD, LST) and checks if any are still moving
----Used to determine when all ships have arrived and are ready for cargo operations
+---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
 ---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit Unit list from the side (filtered for ships)
@@ -179,8 +170,7 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(config, amphibOpsConfig, un
 end
 
 ---Create a cargo transport mission for a specific platform type
----Sets up the mission zone, configuration, and doctrine
----Disables automatic evasion to ensure units complete cargo delivery
+---Sets up mission zone, configuration, and doctrine with automatic evasion disabled
 ---@param platformType string The type of platform to filter (e.g., 'tansportHelicopter', 'boat')
 ---@param zone SBJ__OperationZoneDescriptor Operation zone descriptor with mission settings
 ---@param missionName string Name for the cargo mission
@@ -208,8 +198,7 @@ local function handleCargoMission(platformType, zone, missionName)
 end
 
 ---Create cargo transport missions for all operational zones
----Sets up ferry missions for landing craft and transport helicopters
----Configures mission zones, settings, and doctrine (no automatic evasion)
+---Sets up ferry missions for landing craft and transport helicopters with configured doctrine
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@return boolean # True if all cargo missions were successfully created
 function AmphibiousLogistics.createCargoMissions(amphibOpsConfig)
@@ -237,9 +226,7 @@ function AmphibiousLogistics.createCargoMissions(amphibOpsConfig)
 end
 
 ---Transfer cargo to embarked units and assign them to missions
----Handles Type 075/076 LHDs (boats + transport/attack helicopters + recon UAVs)
----Handles Type 071 LPDs (boats + transport helicopters)
----Also processes transport aircraft from other bases
+---Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
 ---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
@@ -353,7 +340,6 @@ end
 
 ---Re-transfer cargo to embarked units for second wave operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
----Used when returning units need fresh cargo for subsequent landing waves
 ---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)

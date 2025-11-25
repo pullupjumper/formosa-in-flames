@@ -4,17 +4,9 @@ local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local AssignMission = require("src.modules.assignMission")
 
---- Air Tasking Order
----
---- ATO execution and coordination including strike package processing,
---- loadout management, mission assignment, and flight group orchestration
 local AirTaskingOrder = {}
 
 local ADVANCE_SECONDS = 300
-
---------------------------------------------------------------------------------
--- Strike Package Processing Functions (integrated from strikePackageProcessor)
---------------------------------------------------------------------------------
 
 ---Calculate the start time for weapon loading
 ---@param packageData SBJ__Package The strike package containing flight group data
@@ -377,10 +369,6 @@ local function processPackage(config, saveData, packageData)
     return false
   end
 end
-
---------------------------------------------------------------------------------
--- Wave Management Functions
---------------------------------------------------------------------------------
 
 ---Checks if all packages in a wave have been launched.
 ---@param waveData SBJ__Wave The wave containing multiple strike packages

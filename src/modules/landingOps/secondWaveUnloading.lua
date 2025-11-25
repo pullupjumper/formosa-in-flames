@@ -3,15 +3,10 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 
---- Second Wave Unloading
----
---- Second wave logistics operations using barges and RORO ships,
---- including vehicle offloading, bridge creation, and logistics chain coordination
 local SecondWaveUnloading = {}
 
 ---Calculate course for barge to reach offload area
----Projects the barge's position onto the LST approach bearing line
----Uses spherical geometry to find the nearest point on the approach path
+---Projects barge position onto LST approach bearing line using spherical geometry
 ---@param zone SBJ__OperationZoneDescriptor Operation zone with offload area and LST settings
 ---@param unit CMO__Unit Barge unit to calculate course for
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
@@ -57,8 +52,7 @@ local function createCourseForBarge(zone, unit)
 end
 
 ---Calculate course for RORO ship to follow barge to beach
----RORO ships follow barges to establish a logistics chain
----First waypoint is LST approach distance, second waypoint is barge destination
+---Returns two-waypoint course: first at LST approach distance, second at barge destination
 ---@param zone SBJ__OperationZoneDescriptor Operation zone with LST settings
 ---@param unit CMO__Unit RORO ship unit to calculate course for
 ---@param bargeDest CMO__Waypoint[] Barge's destination waypoint
@@ -79,9 +73,7 @@ local function createCourseForRORO(zone, unit, bargeDest)
 end
 
 ---Initiate second wave unloading operations
----Directs barges to offload areas and RORO ships to follow barges
----Creates logistics chain: RORO -> Barge -> Beach for vehicle delivery
----Tracks barge-RORO relationships in saveData for bridge creation
+---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
 ---@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to track barge-RORO relationships
@@ -131,9 +123,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, s
 end
 
 ---Offload vehicles from ship cargo to the beach
----Deletes cargo from ship and spawns facility units at calculated positions
----Vehicles are placed in a line formation based on bearing and spacing
----Used for unloading heavy equipment that cannot use ACVs
+---Deletes cargo from ship and spawns facility units in line formation at calculated positions
 ---@param params SBJ__VehicleOffloadParams Offload parameters (ship, number, bearing, distances)
 ---@return number|nil # Number of vehicles successfully offloaded, or nil on error
 function SecondWaveUnloading.offloadVehicles(params)
@@ -188,7 +178,6 @@ function SecondWaveUnloading.offloadVehicles(params)
 end
 
 ---Check if a barge's logistics bridge has been destroyed
----The bridge is a facility unit connecting barge to shore
 ---Returns true if bridge GUID exists but unit is destroyed
 ---@param saveData SBJ__SaveData Save data containing barge bridge tracking
 ---@param ship CMO__Unit Barge ship to check
@@ -209,8 +198,7 @@ function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
 end
 
 ---Check if a barge has an extended logistics bridge
----Bridge is created when barge reaches offload position
----Used to determine if barge is ready for vehicle transfer operations
+---Bridge is created when barge reaches offload position for vehicle transfer operations
 ---@param saveData SBJ__SaveData Save data containing barge bridge tracking
 ---@param ship CMO__Unit Barge ship to check
 ---@return boolean # True if barge has an active bridge GUID
@@ -219,8 +207,7 @@ function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
 end
 
 ---Get the operational zone for a barge-RORO pair
----Checks if both units are in the same ACV deployment area and within 1nm of each other
----Used to determine which zone configuration applies to the logistics chain
+---Checks if both units are in same ACV area and within 1nm of each other
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param barge CMO__Unit Barge ship
 ---@param roro CMO__Unit RORO ship

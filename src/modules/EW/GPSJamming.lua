@@ -3,10 +3,6 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 
---- GPS Jamming
----
---- GPS denial operations management including jamming zone creation,
---- weapon course deviation simulation, and jammer deployment coordination
 local GPSJamming = {}
 
 ---Add jamming zone for a GPS jammer unit
@@ -75,7 +71,7 @@ end
 ---Process GPS jamming for weapons entering jamming zone
 ---Checks if weapon is GPS-guided, applies random deviation to terminal waypoint based on jamming resistance
 ---Should be called from 'Unit Enters Area' event trigger
----@param config SBJ__CONFIG Configuration object containing GPS jamming settings and weapon DBIDs
+---@param config SBJ__Config Configuration object containing GPS jamming settings and weapon DBIDs
 ---@param sideName string Enemy side name whose weapons are being jammed (e.g., 'Taiwan', 'US')
 ---@return boolean # Whether jamming was successfully applied to the weapon
 function GPSJamming.jamming(config, sideName)
@@ -175,7 +171,7 @@ end
 
 ---Add a single GPS jammer
 ---Creates a GPS jammer unit at the specified location and sets up its jamming zone
----@param config SBJ__CONFIG Configuration object containing platform DBIDs
+---@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param descriptor SBJ__GPSJammerDescriptor Jammer configuration with name, location, zone name, and radius
 ---@param sideName string Side name that will own the jammer (e.g., 'China', 'Taiwan')
 ---@return boolean success Whether jammer was successfully created and zone set up
@@ -204,7 +200,7 @@ end
 ---Add all GPS jammers for a side
 ---Creates multiple GPS jammer units at randomized positions and sets up their jamming zones
 ---Uses retry logic to find valid placement locations within the random radius
----@param config SBJ__CONFIG Configuration object containing platform DBIDs
+---@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors to create
 ---@param sideName string Side name that will own the jammers (e.g., 'China', 'Taiwan')
 ---@return number # Number of jammers successfully created with zones

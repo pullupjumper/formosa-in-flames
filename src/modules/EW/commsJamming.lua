@@ -2,10 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
---- Communications Jamming
----
---- Communications jamming coordination for electronic warfare operations,
---- including omnidirectional and directional jamming, SAM/radar disruption, and aircraft communication monitoring
 local CommsJamming = {}
 
 

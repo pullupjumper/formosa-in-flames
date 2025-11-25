@@ -3,13 +3,7 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local Recon = require("src.modules.strikePlanner.recon")
 
---- TargetingProcess
----
---- Target selection and filtering for strike planning operations.
---- Provides functions for identifying infantry, naval, C2, and SAM targets
---- based on SIGINT, emissions analysis, and BDA evaluation.
 local TargetingProcess = {}
-
 
 ---Find infantry units within specified areas
 ---Filters contacts to identify ground infantry units (typed == 8) in target areas

@@ -42,20 +42,10 @@ The project uses a **modular event-driven architecture** centered around `src/co
 
 **Annotation Standards**:
 
-*Module Header* (required, placed after require statements):
-```lua
-local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
-
---- Module Name
----
---- Brief description and key features
-local ModuleName = {}
-```
-
 *Function Annotations*:
 ```lua
----Function description
+---Function description (maximum 2 lines)
+---Second line of description if needed
 ---@param name type Description
 ---@param optional? type Optional parameter description
 ---@return type # Description (single return)
@@ -63,8 +53,7 @@ local ModuleName = {}
 ```
 
 *Key Rules*:
-- **Function descriptions**: Use `---Description` (no space after `---`), start with uppercase letter
-- **Module header**: Use `--- Module Name` (with space after `---`) for module headers only
+- **Function descriptions**: Maximum 2 lines, use `---Description` (no space after `---`), start with uppercase letter
 - **Single return**: Use `#` separator → `---@return type # Description`
 - **Multiple returns**: Include variable names → `---@return type varName Description`
 - **Parameters**: No `--` separator, direct description after type

@@ -6,9 +6,6 @@ local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local gKH = require('src.core.gKH_State_Standalone')
 
---- Unit Status UI
----
---- HTML-based dashboard for monitoring unit status, IADS, artillery batteries, and inventory
 local UnitStatusUI = {}
 
 ---Count military units by type within operational zones

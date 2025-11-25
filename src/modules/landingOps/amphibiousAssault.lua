@@ -2,10 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 
---- Amphibious Assault
----
---- Core amphibious assault operations including LST beaching, ACV launches,
---- mission timing, and landing zone assessment
 local AmphibiousAssault = {}
 
 ---Set start time for a single landing mission
@@ -30,8 +26,7 @@ local function setMissionStartTime(mission)
 end
 
 ---Set start times for all amphibious assault missions across all operational zones
----Configures transport helicopters, landing craft, and attack helicopters
----Records the mission start timestamp in saveData for phase tracking
+---Configures transport helicopters, landing craft, attack helicopters and records start timestamp
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to record mission start time
 ---@return boolean # True if all mission start times were successfully set
@@ -79,10 +74,8 @@ local function isLST(unit)
   return false
 end
 
----Set course for Landing Ship Tanks to approach the beach
----LSTs in anchorage areas are directed toward their landing zones
----Surface Action Groups are moved to amphibious vehicle staging areas for support
----RORO ships and barges remain in anchorage and do not beach
+---Set course for LSTs to approach beach and move SAGs to staging areas
+---LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
 ---@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
@@ -130,8 +123,7 @@ function AmphibiousAssault.setCoursesForLSTs(config, amphibOpsConfig, units)
 end
 
 ---Count enemy ground force contacts in the air landing zone
----Used to assess landing zone threat level before committing air assault forces
----Only counts contacts of type 8 (ground units)
+---Only counts contacts of type 8 (ground units) to assess landing zone threat level
 ---@param contacts CMO__Contact Contact list from the side
 ---@param area CMO__ReferencePoint[] Reference points defining the air landing zone
 ---@return integer # Number of enemy ground units in the area
@@ -148,9 +140,7 @@ function AmphibiousAssault.countContactsInArea(contacts, area)
 end
 
 ---Launch Air Cushion Vehicles (ACVs) from an amphibious assault ship
----Deletes cargo from ship inventory and spawns ZTD-05 and ZBD-05 amphibious vehicles
----Vehicles are positioned in formation and directed toward the landing zone
----Prioritizes ZBD-05 (IFV) over ZTD-05 (light tank) when cargo is available
+---Spawns ZTD-05 and ZBD-05 amphibious vehicles in formation toward landing zone
 ---@param params SBJ__ACVDeploymentParams Deployment configuration (ship, bearing, distance, destination)
 ---@return number|nil # Number of ACVs successfully launched, or nil on failure
 function AmphibiousAssault.launchACV(params)
@@ -229,8 +219,7 @@ function AmphibiousAssault.launchACV(params)
 end
 
 ---Check if a ship is a ferry or Landing Ship Tank (LST)
----Used to identify ships capable of launching ACVs or beaching operations
----Includes Type 071 (LPD), Type 072 (LST variants), Type 073A (LSM), and ferries
+---Includes Type 071/072/073 and ferries capable of launching ACVs or beaching
 ---@param config SBJ__Config Global configuration for platform DBIDs
 ---@param ship CMO__Unit Ship unit to check
 ---@return boolean # True if ship is a ferry or LST
@@ -243,8 +232,7 @@ function AmphibiousAssault.isFerryOrLST(config, ship)
 end
 
 ---Get the operational zone for a ship based on its location
----Matches ship position against ACV deployment areas to determine assigned landing zone
----Used to retrieve zone-specific configuration for ACV launches
+---Matches ship position against ACV deployment areas to retrieve zone-specific configuration
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param ship CMO__Unit Ship unit to locate
 ---@return SBJ__OperationZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone

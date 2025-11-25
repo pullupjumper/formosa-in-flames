@@ -1,11 +1,6 @@
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
---- Game API Wrapper Module
----
---- Wraps all CMO ScenEdit_* and related API calls with centralized error handling.
---- All functions are automatically wrapped via metatable to provide safe execution through Utils.safeCall().
---- Never call ScenEdit_* functions directly - always use GameApi.* equivalents.
 ---@class GameApi
 local realApi = {}
 ---@type GameApi

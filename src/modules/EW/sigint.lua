@@ -3,17 +3,8 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
---- SIGINT (Signals Intelligence)
----
---- Signals intelligence collection and processing including detection probability
---- calculations, transmission tracking, and reconnaissance aircraft coordination
 local SIGINT = {}
 
--- ============================================================================
--- Constants and Configuration
--- ============================================================================
-
----SIGINT detection constants
 local SIGINT_CONSTANTS = {
   DETECTION_THRESHOLD = 60,
   MAX_DETECTION_RANGE = { 300, 340 },
@@ -38,10 +29,6 @@ local SIGINT_CONSTANTS = {
   MIN_POLYGON_POINTS = 3,
   DETECTION_SKIP_PROBABILITY = 0.3
 }
-
--- ============================================================================
--- Detection Algorithm Functions
--- ============================================================================
 
 ---Calculate SIGINT detection probability based on distance
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
@@ -136,12 +123,8 @@ local function isInArea(side, point, area)
   return SIGINT.isPointInPolygon(point, polygon)
 end
 
--- ============================================================================
--- Unit Analysis Functions
--- ============================================================================
-
 ---Check if unit is emitting signal with enhanced logic
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param unit CMO__Unit Unit object
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit data (Battery units check movement, C2 units always emit)
 ---@param enemySide string Enemy side name
@@ -185,10 +168,6 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
 
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
-
--- ============================================================================
--- Detection Core Functions
--- ============================================================================
 
 ---Perform SIGINT detection attempt for enemy unit
 ---Checks all airborne reconnaissance aircraft in SIGINT context for detection probability
@@ -291,10 +270,6 @@ local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isS
   }
 end
 
--- ============================================================================
--- State Management Functions
--- ============================================================================
-
 ---Update unit autodetectable state for SIGINT targets
 ---If unit is in a group, updates all group members; otherwise updates individual unit
 ---@param unit CMO__Unit Unit object to update (can be group leader or individual unit)
@@ -385,12 +360,8 @@ local function handleUndetected(sigintContext, unit)
   end
 end
 
--- ============================================================================
--- Public API
--- ============================================================================
-
 ---Enhanced SIGINT detection handler
----@param config SBJ__CONFIG Configuration object
+---@param config SBJ__Config Configuration object
 ---@param sigintContext SBJ__SIGINTContext SIGINT context
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit contexts to monitor (firing units and C2 nodes)
@@ -444,7 +415,7 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param config SBJ__CONFIG Configuration object containing platform DBIDs
+---@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param SIGINTContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized

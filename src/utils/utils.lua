@@ -1,13 +1,3 @@
---- Utilities Module
----
---- Foundation utility functions for common operations.
---- Provides:
---- - String manipulation (random text generation)
---- - Table operations (counting, inserting, deep copying)
---- - Date/time parsing and formatting
---- - Mathematical utilities (atan2, spherical center calculation)
---- - Safe function execution with error handling
---- - Mission name parsing
 local Utils = {}
 
 ---Generate a random string of uppercase letters
@@ -74,7 +64,9 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
   -- Calculate timestamp: we want it to be UTC → so first use os.time(utcTable) as local time
   -- Then add back offset to get the real UTC timestamp
   local localTimestamp = os.time(utcTable)
-  local tzOffset = os.difftime(os.time(), os.time(os.date("!*t")))
+  local date = os.date("!*t")
+  ---@cast date osdate
+  local tzOffset = os.difftime(os.time(), os.time(date))
   return localTimestamp - tzOffset + (16 * 3600)
 end
 

@@ -2,9 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 
---- IADS
----
---- Integrated Air Defense System coordination and command and control management
 local IADS = {}
 
 ---Disable units under C2 node by setting them out of communications

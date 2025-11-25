@@ -1,16 +1,5 @@
 local config = require("src.core.constants")
 
---- Logging Module
----
---- Bilingual logging system that automatically detects game/dev environment.
---- Provides different log levels:
---- - log(): Module-specific logging with verbose control
---- - error(): Always-on error logging
---- - warn(): Always-on warning logging
----
---- Environment detection:
---- - In-game: Uses ScenEdit_SpecialMessage with formatted box display
---- - Development: Uses standard print() output
 local Logger = {}
 
 -- Toggle whether in game (set by you in main)

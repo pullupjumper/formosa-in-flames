@@ -1,8 +1,5 @@
 local GameApi = require("src.utils.gameApi")
 
---- Assign Mission
----
---- Handles assignment of embarked units to missions with filtering and validation
 local AssignMission = {}
 
 ---Filter embarked platforms by type and database ID

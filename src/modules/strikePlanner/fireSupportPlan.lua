@@ -4,15 +4,11 @@ local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 
---- Fire Support Plan
----
---- Fire Support Execution Matrix (FSEM) management for coordinating ground-based
---- missile strikes, firing unit deployment, and fire support task execution
 local FireSupportPlan = {}
 
 ---Check if firing unit is ready to move to firing point
 ---A firing unit is ready when it's in HIDE state and has sufficient ammunition
----@param config SBJ__CONFIG Global configuration
+---@param config SBJ__Config Global configuration
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state and ammo info
 ---@param group CMO__Unit The actual unit group
 ---@return boolean # Returns true if unit is in HIDE state and not low on ammo
@@ -23,7 +19,7 @@ end
 
 ---Check if firing unit is not yet at firing point
 ---Returns true when unit state is not STATIC (firing position)
----@param config SBJ__CONFIG Global configuration
+---@param config SBJ__Config Global configuration
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state info
 ---@return boolean # Returns true if unit is not at STATIC (firing point) state
 local function isNotFiringUnitAtFiringPoint(config, firingUnitCtx)
@@ -31,9 +27,8 @@ local function isNotFiringUnitAtFiringPoint(config, firingUnitCtx)
 end
 
 ---Deploy firing units to firing point and check if all are in position
----Iterates through all firing units in the FST, moves ready units to firing points,
----and verifies if all units have reached their firing positions
----@param config SBJ__CONFIG Global configuration
+---Moves ready units to firing points and verifies if all units have reached their positions
+---@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state
 ---@param FST SBJ__FireSupportTask Fire Support Task containing firing units
 ---@return boolean # Returns true if all firing units are at firing point, false otherwise
@@ -64,7 +59,7 @@ end
 ---Process a Fire Support Task and check if all firing units are in position
 ---Checks if the task start time has been reached and deploys firing units to their firing points
 ---@param FST SBJ__FireSupportTask Fire Support Task to process
----@param config SBJ__CONFIG Global configuration
+---@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state
 ---@return boolean # Returns true if all firing units are in position, false otherwise
 local function processFST(FST, config, saveData)
@@ -95,8 +90,7 @@ local function isFSEMFinished(FSEM)
 end
 
 ---Execute all Fire Support Tasks within a FSEM
----Launches attacks on targets when start time is reached and minimum target count is met
----Marks tasks as finished after successful weapon launches
+---Launches attacks when start time reached and minimum target count met, marks tasks as finished
 ---@param FSEM SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
 local function executeFireSupportTasks(FSEM)
   for _, FST in ipairs(FSEM.FSTs) do
@@ -116,12 +110,8 @@ local function executeFireSupportTasks(FSEM)
 end
 
 ---Execute Fire Support Plan strikes for all active FSEMs
----Main entry point for fire support operations coordination
----Processes each FSEM in two phases:
----1. Deploy firing units to their firing points
----2. Execute strikes when all units are in position
----Marks FSEMs as finished when all their tasks are complete
----@param config SBJ__CONFIG Global configuration
+---Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
+---@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function FireSupportPlan.strike(config, saveData)
   for _, FSEM in pairs(saveData.c.ground.FSP) do

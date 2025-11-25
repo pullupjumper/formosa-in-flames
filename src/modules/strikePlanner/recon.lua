@@ -4,10 +4,6 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
---- Reconnaissance
----
---- Reconnaissance mission scheduling and management including UAV launches,
---- WZ-8 drone operations, target tracking, and dynamic operations coordination
 local Recon = {}
 
 ---Launch units from a base with specified parameters
@@ -54,7 +50,7 @@ function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
 end
 
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
----@param config SBJ__CONFIG Configuration data for platform DBIDs
+---@param config SBJ__Config Configuration data for platform DBIDs
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__TableOfWaypoints The reconnaissance course for WZ-8
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
@@ -163,11 +159,9 @@ local function handleReconRTB(actualUnit)
   Logger.log("recon", string.format("Unit %s returning to base", actualUnit.name))
 end
 
----Get platform-specific special operations based on successful reconnaissance
----Different UAV platforms trigger different specialized operations:
----BZK-005: C2 command and control strike operations
----WZ-8 (launched from H-6N): Anti-ship strike and airbase strike operations
----@param config SBJ__CONFIG Configuration data
+---Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
+---Each UAV platform triggers different specialized operations based on successful reconnaissance
+---@param config SBJ__Config Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
@@ -312,16 +306,9 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
   return operations
 end
 
----Schedule dynamic reconnaissance operations for next wave
----
----This function is ONLY called when reconnaissance mission completes successfully
----(UAV reached endTime with complete intelligence data)
----
----Generates next wave operations based on:
----1. Last executed operations in current schedule
----2. Next scheduled reconnaissance time
----3. Platform-specific special operations (BZK-005: C2 strike, WZ-8: Anti-ship strike)
----@param config SBJ__CONFIG Configuration data
+---Schedule dynamic operations for next wave based on completed reconnaissance and platform-specific operations
+---Only called when UAV completes successfully (reached endTime with complete intelligence)
+---@param config SBJ__Config Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
@@ -377,7 +364,7 @@ end
 
 ---Finish reconnaissance mission and conditionally schedule next operations
 ---Only schedules next wave operations if mission completed successfully (reached endTime with valid intelligence)
----@param config SBJ__CONFIG Configuration data
+---@param config SBJ__Config Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param LACMContext SBJ__LACMContext LACM context data
@@ -404,23 +391,9 @@ local function finishReconMission(config, reconSchedule, entry, LACMContext, suc
   end
 end
 
----Process reconnaissance queue and manage reconnaissance mission lifecycle
----Handles launch timing, in-flight management, endTime verification, and mission completion
----
----Mission Success Criteria:
----1. UAV must complete assigned reconnaissance course (#actualUnit.course == 0)
----2. Current game time must reach or pass entry.endTime (ensures full reconnaissance duration)
----3. UAV must remain operational (not destroyed) throughout the mission
----
----Mission Failure:
----- UAV destroyed before endTime: Intelligence incomplete, next operations not scheduled
----
----Mission Completion Flow:
----1. Launch phase: Deploy UAV at scheduled takeoffTime
----2. Flight phase: Monitor course completion and UAV status
----3. Loitering phase: If course complete but endTime not reached, UAV stays airborne
----4. Completion phase: When endTime reached, finish mission and schedule next operations
----@param config SBJ__CONFIG Configuration data for platform DBIDs
+---Process reconnaissance queue managing UAV launch, flight monitoring, and mission completion
+---Success requires UAV to complete course and reach endTime; failure if destroyed before endTime
+---@param config SBJ__Config Configuration data for platform DBIDs
 ---@param reconContext SBJ__ReconContext Reconnaissance context containing queue and temp tracking data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule containing assigned missions
 ---@param LACMContext SBJ__LACMContext LACM context data

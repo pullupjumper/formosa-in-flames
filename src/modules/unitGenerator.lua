@@ -3,14 +3,7 @@ local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 
---- Unit Generator
----
---- Unit creation with formation logic and cleanup for ships, aircraft, and amphibious forces
 local UnitGenerator = {}
-
--- ============================================================================
--- Module-private type definitions
--- ============================================================================
 
 ---Ship formation specification - defines a single ship's configuration within a formation
 ---Used to specify ship positioning, armament, and embarked units in naval groups
@@ -43,10 +36,6 @@ local UnitGenerator = {}
 ---| '"barge"'
 ---| '"roro"'
 
--- ============================================================================
--- Constants definition - Improve readability, eliminate magic numbers
--- ============================================================================
-
 local FORMATION = {
   ANGLES = {
     LEFT = -45,
@@ -59,10 +48,6 @@ local FORMATION = {
     FAR = 20
   }
 }
-
--- ============================================================================
--- Basic utility functions - Lowest level utility functions
--- ============================================================================
 
 ---Calculate formation position
 ---@param centerPoint {lat: number, lon: number} Center point coordinates {lat: number, lon: number}
@@ -92,11 +77,6 @@ local function cleanupExistingGroup(groupName, sideName)
   end
   return true
 end
-
--- ============================================================================
--- Unit management functions - Handle unit creation and embarking
--- ============================================================================
-
 
 ---Add embarked units (advanced version, supports mission assignment)
 ---@param embarkedUnits SBJ__EmbarkedUnit[] List of embarked units
@@ -292,11 +272,6 @@ local function createShipsByType(config, position, areaDescriptor, descriptor, s
   addUnitsByRP(params, unitDescriptor, shipConfig.embarkedUnits)
 end
 
--- ============================================================================
--- Formation configuration factory - Configuration-driven design
--- ============================================================================
-
-
 ---Get SAG formation configuration
 ---@param sagDescriptor SBJ__SAGDescriptor Configuration object
 ---@param sideName string Side name ('China' | 'Taiwan')
@@ -474,10 +449,6 @@ local function createShipFormation(formationConfig)
     formationConfig.groupName, #createdUnits))
   return true
 end
-
--- ============================================================================
--- Main functionality functions - Refactored version
--- ============================================================================
 
 ---Create SAG formations
 ---@param sagDescriptors table<string, SBJ__SAGDescriptor> Configuration object
@@ -718,8 +689,6 @@ function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
 
   return true
 end
-
--- addEmbarkedUnitsAdvanced already defined above
 
 ---Add landing ships
 ---@param config SBJ__Config Configuration object

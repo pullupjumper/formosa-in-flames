@@ -2,9 +2,6 @@ local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 
---- Launcher
----
---- TEL (Transporter Erector Launcher) management for mobile missile systems with automated repositioning
 local Launcher = {}
 
 

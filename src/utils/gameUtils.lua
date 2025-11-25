@@ -1,35 +1,16 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 
---- Game Utilities Module
----
---- Higher-level game operations built on top of GameAPI.
---- Provides utilities for:
---- - Side configuration management
---- - Positioning and distance calculations
---- - Mission and event creation
---- - Unit generation and placement
---- - Formation management
 local GameUtils = {}
 
--- ============================================================================
--- Constants definition
--- ============================================================================
-
 local sideConfigCache = {}
-
 local UNIT_CREATION = {
   MAX_ATTEMPTS = 50,
   RANDOM_TEXT_LENGTH = 2
 }
 
--- ============================================================================
--- Side Configuration Functions
--- ============================================================================
-
 ---Get or create cached side configuration
----Returns side configuration with field identifier and enemy side mapping
----Uses cache to avoid repeated creation of same configuration objects
+---Returns side configuration with field identifier, enemy side mapping, and display name
 ---@param sideName string Side name ('China', 'US', or other)
 ---@return SBJ__SideConfig # Side configuration with field, enemySide, and displayName
 function GameUtils.getCachedSideConfig(sideName)
@@ -56,10 +37,6 @@ function GameUtils.getCachedSideConfig(sideName)
   end
   return sideConfigCache[sideName]
 end
-
--- ============================================================================
--- Positioning Functions
--- ============================================================================
 
 ---Calculate the great circle distance between two points using Haversine formula
 ---@param lat1 number First point latitude (degrees)
@@ -169,10 +146,10 @@ function GameUtils.generateLocations(params)
     end
 
     local newLocation = GameApi.World_GetPointFromBearing({
-      LATITUDE = locationTemp.latitude,
-      LONGITUDE = locationTemp.longitude,
-      BEARING = bearingTemp,
-      DISTANCE = distanceTemp
+      latitude = locationTemp.latitude,
+      longitude = locationTemp.longitude,
+      bearing = bearingTemp,
+      distance = distanceTemp
     })
 
     if not newLocation then
@@ -309,9 +286,8 @@ function GameUtils.createMission(side, name, type, opts, emcon)
   return mission
 end
 
---- Creates, updates, or removes a "Unit Enters Area" event trigger in the CMO scenario
---- This function sets up an event system that executes a Lua script when units matching
---- a filter enter or exit a specified area during the simulation
+---Creates, updates, or removes a "Unit Enters Area" event trigger in the CMO scenario
+---Sets up event system that executes Lua script when units matching filter enter/exit specified area
 ---@param name string Event name (must be unique within the scenario)
 ---@param FilterType table Unit filter criteria (e.g., side name, unit type, or complex filter)
 ---@param area table Reference point area or area table defining the trigger zone
@@ -386,9 +362,7 @@ function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exi
 end
 
 ---Attempts to add a unit to the scenario with retry logic and random positioning
----This function tries to create a unit at a randomized position within a circular area.
----If unit creation fails (e.g., due to terrain constraints or API issues), it retries
----with different random positions up to the specified maximum attempts.
+---Retries with different random positions within circular area up to max attempts if creation fails
 ---@param name string Unique name for the unit to be created
 ---@param lat number Latitude coordinate of the center point for unit placement
 ---@param lon number Longitude coordinate of the center point for unit placement

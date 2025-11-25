@@ -1,9 +1,6 @@
 local math = require("math")
 local Utils = require("src.utils.utils")
 
---- Bearing Only Launch
----
---- Generates missile paths that avoid radar detection using waypoint routing
 local BearingOnlyLaunch = {}
 
 -- Earth radius (nautical miles)
