@@ -68,7 +68,7 @@ local function initiateLoadoutForPackage(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
   local timeToReady = packageData.timeToReady or (9 * 60)
 
-  Logger.log("air", "Starting loadout for package: " .. packageData.striker.missionParams.name)
+  Logger.log("air", "Starting loadout for package: " .. packageData.striker.missionCreationParams.name)
 
   for _, role in ipairs(roles) do
     if packageData[role] and packageData[role].loadoutID then
@@ -176,7 +176,7 @@ end
 
 ---Find the earliest departing flight group
 ---@param packageData SBJ__Package The strike package containing flight groups
----@return SBJ__MissionEntry|nil # The flight group with the earliest start time, or nil if none found
+---@return SBJ__MissionDeploymentDescriptor|nil # The flight group with the earliest start time, or nil if none found
 local function findEarliestRole(packageData)
   local earliestRole = nil
   local earliestTime = nil
@@ -200,16 +200,16 @@ end
 ---@param role string The role identifier (e.g., "striker", "escort", "wildWeasel", "jammer", "tanker")
 ---@return boolean # true if mission exists or was successfully created
 local function createMission(packageData, role)
-  local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionParams.name)
+  local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionCreationParams.name)
 
   if not mission then
-    Logger.log("air", "Mission not found, creating: " .. packageData[role].missionParams.name)
+    Logger.log("air", "Mission not found, creating: " .. packageData[role].missionCreationParams.name)
 
     mission = GameUtils.createMission(
       "China",
-      packageData[role].missionParams.name,
-      packageData[role].missionParams.type,
-      packageData[role].missionParams.opts,
+      packageData[role].missionCreationParams.name,
+      packageData[role].missionCreationParams.type,
+      packageData[role].missionCreationParams.opts,
       packageData[role].emcon
     )
 
@@ -230,7 +230,7 @@ local function createMission(packageData, role)
         mission['TimeOnTargetStation'] = packageData[role].timeOnStation
       end
 
-      if packageData[role].missionParams.type == "strike" then
+      if packageData[role].missionCreationParams.type == "strike" then
         GameApi.ScenEdit_SetDoctrine({ side = "China", mission = mission.name }, { automatic_evasion = false })
       end
     end
@@ -253,11 +253,11 @@ local function assignUnits(packageData)
         packageData[role].unitCount,
         packageData[role].weaponDBID,
         packageData[role].unitDBID, -- Handles jammer case where weaponDBID is 0
-        packageData[role].missionParams.name,
+        packageData[role].missionCreationParams.name,
         false
       )
       if role ~= 'tanker' and role ~= 'striker' then
-        GameApi.ScenEdit_CreateMissionFlightPlan('China', packageData[role].missionParams.name, {})
+        GameApi.ScenEdit_CreateMissionFlightPlan('China', packageData[role].missionCreationParams.name, {})
       end
 
       if role == "striker" and result and #result > 0 then
@@ -306,7 +306,8 @@ local function processPackage(config, saveData, packageData)
     end
   end
 
-  Logger.log("air", "All missions for package " .. packageData.striker.missionParams.name .. " created or verified.")
+  Logger.log("air",
+    "All missions for package " .. packageData.striker.missionCreationParams.name .. " created or verified.")
 
   if packageData.reconUAV then
     if not packageData.reconUAV.takeoffTime then
@@ -339,33 +340,33 @@ local function processPackage(config, saveData, packageData)
 
   -- 5. Find targets
   local evaluatedTargetlist = packageData.target.list
-  Logger.log("air", packageData.striker.missionParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
+  Logger.log("air", packageData.striker.missionCreationParams.name .. " found " .. #evaluatedTargetlist .. " targets.")
 
   if #evaluatedTargetlist < packageData.target.minTargetCount then
     Logger.log("air", "Not enough targets found for " ..
-      packageData.striker.missionParams.name .. ". Need " .. packageData.target.minTargetCount)
+      packageData.striker.missionCreationParams.name .. ". Need " .. packageData.target.minTargetCount)
     return false
   end
 
   -- 6. Assign targets to strike mission
   local targetsAssigned = GameApi.ScenEdit_AssignUnitAsTarget(
     evaluatedTargetlist,
-    packageData.striker.missionParams.name
+    packageData.striker.missionCreationParams.name
   )
 
   if not targetsAssigned then
     return false
   end
 
-  Logger.log("air", "Targets assigned to mission " .. packageData.striker.missionParams.name)
+  Logger.log("air", "Targets assigned to mission " .. packageData.striker.missionCreationParams.name)
 
   -- 7. Assign units to all missions
   if assignUnits(packageData) then
-    Logger.log("air", packageData.striker.missionParams.name ..
+    Logger.log("air", packageData.striker.missionCreationParams.name ..
       " status -> LAUNCHED. All loadouts ready, package has been launched.")
     return true -- Success
   else
-    Logger.error(packageData.striker.missionParams.name .. " failed to assign striker units.")
+    Logger.error(packageData.striker.missionCreationParams.name .. " failed to assign striker units.")
     return false
   end
 end

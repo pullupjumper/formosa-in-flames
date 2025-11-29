@@ -26,7 +26,7 @@ end
 
 ---Check if a unit can be assigned to a mission
 ---@param unit CMO__Unit The unit to check
----@param mission SBJ__MissionEntry The mission settings
+---@param mission SBJ__MissionDeploymentDescriptor The mission settings
 ---@return boolean # True if the unit can be assigned to the mission, false otherwise
 local function canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
@@ -34,7 +34,7 @@ end
 
 ---Process mission assignments for filtered platforms
 ---@param filteredPlatforms table<integer, CMO__Unit> A list of filtered embarked units
----@param mission SBJ__MissionEntry The mission to assign units to
+---@param mission SBJ__MissionDeploymentDescriptor The mission to assign units to
 local function processMissionAssignments(filteredPlatforms, mission)
   local count = 0
   for _, unit in ipairs(filteredPlatforms) do
@@ -54,7 +54,7 @@ end
 ---@param fromUnit string The unit guid with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Ship')
 ---@param platformDBID number The database ID of the platform to filter
----@param missions table<number, SBJ__MissionEntry> A list of missions to assign units to
+---@param missions table<number, SBJ__MissionDeploymentDescriptor> A list of missions to assign units to
 function AssignMission.assignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
 

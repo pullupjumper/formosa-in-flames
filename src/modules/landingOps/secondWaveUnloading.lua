@@ -7,7 +7,7 @@ local SecondWaveUnloading = {}
 
 ---Calculate course for barge to reach offload area
 ---Projects barge position onto LST approach bearing line using spherical geometry
----@param zone SBJ__OperationZoneDescriptor Operation zone with offload area and LST settings
+---@param zone SBJ__OperationalZoneDescriptor Operation zone with offload area and LST settings
 ---@param unit CMO__Unit Barge unit to calculate course for
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
 local function createCourseForBarge(zone, unit)
@@ -53,7 +53,7 @@ end
 
 ---Calculate course for RORO ship to follow barge to beach
 ---Returns two-waypoint course: first at LST approach distance, second at barge destination
----@param zone SBJ__OperationZoneDescriptor Operation zone with LST settings
+---@param zone SBJ__OperationalZoneDescriptor Operation zone with LST settings
 ---@param unit CMO__Unit RORO ship unit to calculate course for
 ---@param bargeDest CMO__Waypoint[] Barge's destination waypoint
 ---@return CMO__Waypoint[]|nil # Two-waypoint course (approach, then barge position), or nil on error
@@ -211,7 +211,7 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param barge CMO__Unit Barge ship
 ---@param roro CMO__Unit RORO ship
----@return SBJ__OperationZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
+---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
 function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     local d = GameApi.Tool_Range(roro.guid, barge.guid)

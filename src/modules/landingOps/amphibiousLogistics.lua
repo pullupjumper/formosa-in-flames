@@ -144,15 +144,15 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(config, amphibOpsConfig, un
   for _, item in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if unit and (unit.dbid == config.platform.TYPE_075
-          or unit.dbid == config.platform.TYPE_071
-          or unit.dbid == config.platform.TYPE_072III
-          or unit.dbid == config.platform.TYPE_072A
-          or unit.dbid == config.platform.TYPE_073A
-          or unit.dbid == config.platform.TYPE_072A_2
-          or unit.dbid == config.platform.TYPE_076
-          or unit.dbid == config.platform.FERRY
-          or unit.dbid == config.platform.BARGE) then
+    if unit and (unit.dbid == config.platform.TYPE_075 or
+          unit.dbid == config.platform.TYPE_071 or
+          unit.dbid == config.platform.TYPE_072III or
+          unit.dbid == config.platform.TYPE_072A or
+          unit.dbid == config.platform.TYPE_073A or
+          unit.dbid == config.platform.TYPE_072A_2 or
+          unit.dbid == config.platform.TYPE_076 or
+          unit.dbid == config.platform.FERRY or
+          unit.dbid == config.platform.BARGE) then
       if unit.unitstate ~= 'Unassigned' then
         isUnitMoving = true
         break
@@ -172,7 +172,7 @@ end
 ---Create a cargo transport mission for a specific platform type
 ---Sets up mission zone, configuration, and doctrine with automatic evasion disabled
 ---@param platformType string The type of platform to filter (e.g., 'tansportHelicopter', 'boat')
----@param zone SBJ__OperationZoneDescriptor Operation zone descriptor with mission settings
+---@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor with mission settings
 ---@param missionName string Name for the cargo mission
 ---@return boolean # True if mission was successfully created and configured
 local function handleCargoMission(platformType, zone, missionName)
@@ -213,8 +213,8 @@ function AmphibiousLogistics.createCargoMissions(amphibOpsConfig)
       end
     end
 
-    for _, mission in ipairs(zone.tansportHelicopter.missions) do
-      local result = handleCargoMission("tansportHelicopter", zone, mission.name)
+    for _, mission in ipairs(zone.transportHelicopter.missions) do
+      local result = handleCargoMission("transportHelicopter", zone, mission.name)
 
       if not result then
         return false
@@ -242,22 +242,22 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
           u.guid,
           'Boats',
           zone.boat.dbid,
-          zone.boat.cargoItemsForTransfer.type075[1].loadoutId,
-          zone.boat.cargoItemsForTransfer.type075[1].cargoItems
+          zone.boat.transferManifest.type075[1].loadoutId,
+          zone.boat.transferManifest.type075[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[1].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[1].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type075[1].loadoutId,
+          zone.transportHelicopter.transferManifest.type075[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[2].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[2].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type075[2].loadoutId,
+          zone.transportHelicopter.transferManifest.type075[2].cargoItems
         )
         AssignMission.assignEmbarkedUnitsToMissions(
           u.guid,
@@ -268,8 +268,8 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
         AssignMission.assignEmbarkedUnitsToMissions(
           u.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.missions
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.missions
         )
         AssignMission.assignEmbarkedUnitsToMissions(
           u.guid,
@@ -293,15 +293,15 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
           u.guid,
           'Boats',
           zone.boat.dbid,
-          zone.boat.cargoItemsForTransfer.type071[1].loadoutId,
-          zone.boat.cargoItemsForTransfer.type071[1].cargoItems
+          zone.boat.transferManifest.type071[1].loadoutId,
+          zone.boat.transferManifest.type071[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type071[1].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type071[1].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type071[1].loadoutId,
+          zone.transportHelicopter.transferManifest.type071[1].cargoItems
         )
         AssignMission.assignEmbarkedUnitsToMissions(
           u.guid,
@@ -312,8 +312,8 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
         AssignMission.assignEmbarkedUnitsToMissions(
           u.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.missions
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.missions
         )
       end
     end
@@ -360,22 +360,22 @@ function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
           unit.guid,
           'Boats',
           zone.boat.dbid,
-          zone.boat.cargoItemsForTransfer.type075[1].loadoutId,
-          zone.boat.cargoItemsForTransfer.type075[1].cargoItems
+          zone.boat.transferManifest.type075[1].loadoutId,
+          zone.boat.transferManifest.type075[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[1].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[1].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type075[1].loadoutId,
+          zone.transportHelicopter.transferManifest.type075[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[2].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type075[2].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type075[2].loadoutId,
+          zone.transportHelicopter.transferManifest.type075[2].cargoItems
         )
       end
 
@@ -384,15 +384,15 @@ function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
           unit.guid,
           'Boats',
           zone.boat.dbid,
-          zone.boat.cargoItemsForTransfer.type071[1].loadoutId,
-          zone.boat.cargoItemsForTransfer.type071[1].cargoItems
+          zone.boat.transferManifest.type071[1].loadoutId,
+          zone.boat.transferManifest.type071[1].cargoItems
         )
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Aircraft',
-          zone.tansportHelicopter.dbid,
-          zone.tansportHelicopter.cargoItemsForTransfer.type071[1].loadoutId,
-          zone.tansportHelicopter.cargoItemsForTransfer.type071[1].cargoItems
+          zone.transportHelicopter.dbid,
+          zone.transportHelicopter.transferManifest.type071[1].loadoutId,
+          zone.transportHelicopter.transferManifest.type071[1].cargoItems
         )
       end
     end

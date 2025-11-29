@@ -17,6 +17,7 @@ function TargetingProcess.findInfantry(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if contact.typed == 8 and contact:inArea(area) then
+        contact.posture = 3
         table.insert(targets, contact.guid)
       end
     end
@@ -62,16 +63,16 @@ function TargetingProcess.analyzeEmissions(opts)
   local SAMTargets = {}
 
   for _, area in ipairs(task.target.areas) do
-    for _, c in ipairs(contacts) do
-      local isSensor = c.emissions and
-          (c.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_MOUNTAIN or
-            c.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_WHITE_2 or
-            c.emissions[1]['sensor_dbid'] == config.sensor.TK2_CS_MPG25 or
-            c.emissions[1]['sensor_dbid'] == config.sensor.PAC3_MPQ65 or
-            c.emissions[1]['sensor_dbid'] == config.sensor.TC2_CS_MPQ90)
-      local isAgeLessThan = c.lastDetections and c.lastDetections[1].age <= task.target.contactAge
+    for _, contact in ipairs(contacts) do
+      local isSensor = contact.emissions and
+          (contact.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_MOUNTAIN or
+            contact.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_WHITE_2 or
+            contact.emissions[1]['sensor_dbid'] == config.sensor.TK2_CS_MPG25 or
+            contact.emissions[1]['sensor_dbid'] == config.sensor.PAC3_MPQ65 or
+            contact.emissions[1]['sensor_dbid'] == config.sensor.TC2_CS_MPQ90)
+      local isAgeLessThan = contact.lastDetections and contact.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
-      if c:inArea(area) and isSAM then table.insert(SAMTargets, c.guid) end
+      if contact:inArea(area) and isSAM then table.insert(SAMTargets, contact.guid) end
     end
   end
 
@@ -98,9 +99,10 @@ function TargetingProcess.findMobileTargets(opts)
   local targets = {}
 
   for _, area in ipairs(task.target.areas) do
-    for _, c in ipairs(contacts) do
-      if (c.typed == 8) and c:inArea(area) then
-        table.insert(targets, c.guid)
+    for _, contact in ipairs(contacts) do
+      if (contact.typed == 8) and contact:inArea(area) then
+        contact.posture = 3
+        table.insert(targets, contact.guid)
       end
     end
   end

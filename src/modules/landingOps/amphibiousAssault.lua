@@ -41,7 +41,7 @@ function AmphibiousAssault.setLandingMissionStartTime(amphibOpsConfig, saveData)
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, zone in ipairs(operationalZones) do
-    for _, mission in ipairs(zone.tansportHelicopter.missions) do
+    for _, mission in ipairs(zone.transportHelicopter.missions) do
       if not setMissionStartTime(mission) then
         return false
       end
@@ -235,7 +235,7 @@ end
 ---Matches ship position against ACV deployment areas to retrieve zone-specific configuration
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param ship CMO__Unit Ship unit to locate
----@return SBJ__OperationZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
+---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
 function AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     if ship:inArea(zone.ACV.area) then

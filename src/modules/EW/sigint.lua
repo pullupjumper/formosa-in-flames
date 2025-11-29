@@ -159,12 +159,12 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
   end
 
   -- Check if leaving restricted launch area (only for Battery units)
-  if not unitCtx.OPAREA.RL[1].area or #unitCtx.OPAREA.RL[1].area == 0 then
+  if not unitCtx.operationalArea.RL[1].area or #unitCtx.operationalArea.RL[1].area == 0 then
     return false, "No RL area defined"
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.OPAREA.RL.area) and unit.speed > 0
+  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL.area) and unit.speed > 0
 
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end

@@ -489,6 +489,398 @@ config.fixedFacilityCategory = {
   AIR_BASE = 9001
 }
 
+config.OPAREA = {
+  Pingtan = {
+    RL = { {
+      course = {
+        { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 25.30.13', lon = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_PINGTAN
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 25.30.02', lon = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_PINGTAN
+    } },
+    FP = {
+      {
+        course = {
+          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
+        },
+        area = config.c.area.FIRE_POINT_PINGTAN_1
+      },
+      {
+        course = {
+          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
+        },
+        area = config.c.area.FIRE_POINT_PINGTAN_2
+      },
+    },
+    AHA = { {
+      course = {
+        { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_PINGTAN
+    } },
+  },
+  Chinchew = {
+    RL = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_CHINCHEW
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_CHINCHEW
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_CHINCHEW_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
+    } },
+  },
+  Brigade635 = {
+    RL = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_CHINCHEW
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_CHINCHEW
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_CHINCHEW_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
+    } },
+  },
+  Brigade615 = {
+    RL = { {
+      course = {
+        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.16.56', lon = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE615
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 24.17.06', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE615
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE615_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.17.05', lon = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE615
+    } },
+  },
+  Brigade614 = {
+    RL = { {
+      course = {
+        { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 26.03.40', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE614
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 26.03.48', lon = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE614
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE614_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 26.03.47', lon = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE614
+    } },
+  },
+  Brigade636 = {
+    RL = { {
+      course = {
+        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.45.25', lon = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE636
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 24.45.33', lon = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE636
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE636_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.45.34', lon = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE636
+    } },
+  },
+  Brigade616 = {
+    RL = { {
+      course = {
+        { lat = 'N 25.54.31', lon = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE616
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 25.54.40', lon = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE616
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE616_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 25.54.38', lon = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE616
+    } },
+  },
+  Brigade613 = {
+    RL = { {
+      course = {
+        { lat = 'N 28.27.25', lon = 'E 117.51.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 28.27.26', lon = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 28.27.03', lon = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE613
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 28.27.12', lon = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE613
+    } },
+    FP = { {
+      course = {
+        { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE613_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 28.27.12', lon = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE613
+    } },
+  },
+  Brigade617 = {
+    RL = { {
+      course = {
+        { lat = 'N 29.09.32', lon = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 29.08.57', lon = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE617
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 29.09.01', lon = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE617
+    } },
+    FP = { {
+      course = {
+        { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE617_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 29.09.03', lon = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE617
+    } },
+  },
+  Brigade624 = {
+    RL = { {
+      course = {
+        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.RELOAD_POINT_BRIGADE624
+    } },
+    HA = { {
+      course = {
+        { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.HIDE_AREA_BRIGADE624
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.FIRE_POINT_BRIGADE624_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
+      },
+      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE624
+    } },
+  },
+  Pingzhen = {
+    RL = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.RELOAD_POINT_PINGZHEN
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
+    } },
+  },
+  Dadu = {
+    RL = { {
+      course = {
+        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.RELOAD_POINT_DADU
+    } },
+    FP = { {
+      course = {
+        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.FIRE_POINT_DADU_1
+    }, },
+    AHA = { {
+      course = {
+        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+      },
+      area = config.t.area.AMMO_HOLDING_AREA_DADU
+    } },
+  },
+  Quanxi = {
+    RL = { {
+      course = {},
+      area = config.t.area.RELOAD_POINT_QUANXI
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_PINGZHEN_1
+    }, },
+    AHA = { {
+      course = {},
+      area = config.t.area.AMMO_HOLDING_AREA_QUANXI
+    } },
+  },
+  Neipu = {
+    RL = { {
+      course = {},
+      area = config.t.area.RELOAD_POINT_NEIPU
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_NEIPU_1
+    }, },
+    AHA = { {
+      course = {},
+      area = config.t.area.AMMO_HOLDING_AREA_NEIPU
+    } },
+  },
+  Luzhu = {
+    RL = { {
+      course = {},
+      area = config.t.area.RELOAD_POINT_LUZHU
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_LUZHU_1
+    }, },
+    AHA = { {
+      course = {},
+      area = config.t.area.AMMO_HOLDING_AREA_LUZHU
+    } },
+  },
+  Dong = {
+    RL = { {
+      course = {},
+      area = config.t.area.RELOAD_POINT_DONG
+    } },
+    FP = { {
+      course = {},
+      area = config.t.area.FIRE_POINT_DONG_1
+    }, },
+    AHA = { {
+      course = {},
+      area = config.t.area.AMMO_HOLDING_AREA_DONG
+    } },
+  },
+}
 
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5
@@ -504,8 +896,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
   -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
@@ -609,73 +1001,10 @@ config.c.GPSJamming.GPSGuidedWeapons = {
 -- MLRS
 config.c.ground.mlrs.wpnDefault = 192
 config.c.ground.mlrs.ammoThreshold = 50
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.c.ground.mlrs.OPAREAs = {
-  pingtan = {
-    RL = { {
-      course = {
-        { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 25.30.13', lon = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_PINGTAN
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 25.30.02', lon = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_PINGTAN
-    } },
-    FP = {
-      {
-        course = {
-          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_PINGTAN_1
-      },
-      {
-        course = {
-          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
-        },
-        area = config.c.area.FIRE_POINT_PINGTAN_2
-      },
-    },
-    AHA = { {
-      course = {
-        { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_PINGTAN
-    } },
-  },
-  chinchew = {
-    RL = { {
-      course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_CHINCHEW
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_CHINCHEW
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_CHINCHEW_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
-    } },
-  },
+  Pingtan = config.OPAREA.Pingtan,
+  Chinchew = config.OPAREA.Chinchew,
 }
 config.c.ground.mlrs.contactAge = 30 * 60
 config.c.ground.mlrs.reloadTime = 30 * 60
@@ -683,36 +1012,9 @@ config.c.ground.mlrs.reloadTime = 30 * 60
 -- GLCM
 config.c.ground.glcm.wpnDefault = 48
 config.c.ground.glcm.ammoThreshold = 50
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.c.ground.glcm.OPAREAs = {
-  brigade635 = {
-    RL = { {
-      course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_CHINCHEW
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_CHINCHEW
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_CHINCHEW_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
-    } },
-  },
+  Brigade635 = config.OPAREA.Brigade635,
 }
 config.c.ground.glcm.contactAge = 30 * 60
 config.c.ground.glcm.reloadTime = 45 * 60
@@ -720,176 +1022,14 @@ config.c.ground.glcm.reloadTime = 45 * 60
 -- SRBM
 config.c.ground.srbm.wpnDefault = 36
 config.c.ground.srbm.ammoThreshold = 35
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.c.ground.srbm.OPAREAs = {
-  brigade615 = {
-    RL = { {
-      course = {
-        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.16.56', lon = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE615
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 24.17.06', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE615
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE615_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.17.05', lon = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE615
-    } },
-  },
-  brigade614 = {
-    RL = { {
-      course = {
-        { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 26.03.40', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE614
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 26.03.48', lon = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE614
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE614_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 26.03.47', lon = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE614
-    } },
-  },
-  brigade636 = {
-    RL = { {
-      course = {
-        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.45.25', lon = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE636
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 24.45.33', lon = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE636
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE636_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.45.34', lon = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE636
-    } },
-  },
-  brigade616 = {
-    RL = { {
-      course = {
-        { lat = 'N 25.54.31', lon = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE616
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 25.54.40', lon = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE616
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE616_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 25.54.38', lon = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE616
-    } },
-  },
-  brigade613 = {
-    RL = { {
-      course = {
-        { lat = 'N 28.27.25', lon = 'E 117.51.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 28.27.26', lon = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 28.27.03', lon = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE613
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 28.27.12', lon = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE613
-    } },
-    FP = { {
-      course = {
-        { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE613_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 28.27.12', lon = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE613
-    } },
-  },
-  brigade617 = {
-    RL = { {
-      course = {
-        { lat = 'N 29.09.32', lon = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 29.08.57', lon = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE617
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 29.09.01', lon = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE617
-    } },
-    FP = { {
-      course = {
-        { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE617_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 29.09.03', lon = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE617
-    } },
-  },
+  Brigade615 = config.OPAREA.Brigade615,
+  Brigade614 = config.OPAREA.Brigade614,
+  Brigade636 = config.OPAREA.Brigade636,
+  Brigade616 = config.OPAREA.Brigade616,
+  Brigade613 = config.OPAREA.Brigade613,
+  Brigade617 = config.OPAREA.Brigade617,
 }
 config.c.ground.srbm.contactAge = 30 * 60
 config.c.ground.srbm.reloadTime = 5 * 60
@@ -897,37 +1037,9 @@ config.c.ground.srbm.reloadTime = 5 * 60
 -- MRBM
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 35
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.c.ground.mrbm.OPAREAs = {
-  brigade624 = {
-    RL = { {
-      course = {
-        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.RELOAD_POINT_BRIGADE624
-    } },
-    HA = { {
-      course = {
-        { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.HIDE_AREA_BRIGADE624
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.FIRE_POINT_BRIGADE624_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
-      },
-      area = config.c.area.AMMO_HOLDING_AREA_BRIGADE624
-    } },
-  },
+  Brigade624 = config.OPAREA.Brigade624,
 }
 config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
@@ -970,7 +1082,7 @@ config.c.recon.courses = {
     { lon = 121.249386737925, lat = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
   }
 }
----@type table<string, SBJ__ReconUAVTemplate>
+---@type table<string, SBJ__ReconQueueEntryTemplate>
 config.c.recon.template = {
   BZK005_RECON_1 = {
     baseGUID = config.base.LONGTIAN_AAB,
@@ -1536,8 +1648,8 @@ config.c.PHIBOP.missionStartime = {
   boat = { 41 * 60, 61 * 60, },
   reconUAV = { 0 }
 }
----@type SBJ__AmphibiousLayoutConfig
-config.c.PHIBOP.shipSettings = {
+---@type SBJ__FormationSettings
+config.c.PHIBOP.formationSettings = {
   distanceBetweenLSTAndLPDArea = 13,
   horizontalDistance = 0.4,
   verticalDistance = 0.4,
@@ -1588,8 +1700,8 @@ config.c.PHIBOP.shipSettings = {
   ACVTransitDistance = 5,
   ACVHorizontalDistance = 0.05,
 }
----@type SBJ__AmphibOpsDescriptor[]
-config.c.PHIBOP.initialLocations = {
+---@type SBJ__AmphibiousOperationDescriptor[]
+config.c.PHIBOP.operations = {
   {
     name = 'Taoyuan',
     names = {
@@ -1600,7 +1712,7 @@ config.c.PHIBOP.initialLocations = {
     from = {
       areas = { {
         startingPoints = { type075 = { side = "China", area = config.c.area.STARTING_POINT_075_TAOYUAN } },
-        heading = config.c.PHIBOP.shipSettings.heading.north
+        heading = config.c.PHIBOP.formationSettings.heading.north
       } },
       stagingArea = config.c.area.AREA_OF_OPS_D,
       num = {
@@ -1622,7 +1734,7 @@ config.c.PHIBOP.initialLocations = {
             type075 = { side = "China", area = config.c.area.DESTINATION_075_TAOYUAN },
             type071 = { side = "China", area = config.c.area.DESTINATION_071_TAOYUAN },
           },
-          heading = config.c.PHIBOP.shipSettings.heading.west,
+          heading = config.c.PHIBOP.formationSettings.heading.west,
           num = {
             type075 = 2,
             type071 = 4,
@@ -1651,7 +1763,7 @@ config.c.PHIBOP.initialLocations = {
     from = {
       areas = { {
         startingPoints = { type075 = { side = "China", area = config.c.area.STARTING_POINT_075_SISHU } },
-        heading = config.c.PHIBOP.shipSettings.heading.sishu
+        heading = config.c.PHIBOP.formationSettings.heading.sishu
       } },
       stagingArea = config.c.area.AREA_OF_OPS_F,
       num = {
@@ -1674,7 +1786,7 @@ config.c.PHIBOP.initialLocations = {
             type075 = { side = "China", area = config.c.area.DESTINATION_075_SISHU },
             type071 = { side = "China", area = config.c.area.DESTINATION_071_SISHU },
           },
-          heading = config.c.PHIBOP.shipSettings.heading.sishu,
+          heading = config.c.PHIBOP.formationSettings.heading.sishu,
           num = {
             type075 = 1,
             type071 = 3,
@@ -1703,7 +1815,7 @@ config.c.PHIBOP.initialLocations = {
     from = {
       areas = { {
         startingPoints = { type075 = { side = "China", area = config.c.area.STARTING_POINT_075_PENGHU } },
-        heading = config.c.PHIBOP.shipSettings.heading.penghu
+        heading = config.c.PHIBOP.formationSettings.heading.penghu
       } },
       stagingArea = config.c.area.AREA_OF_OPS_E,
       num = {
@@ -1726,7 +1838,7 @@ config.c.PHIBOP.initialLocations = {
             type075 = { side = "China", area = config.c.area.DESTINATION_075_PENGHU },
             type071 = { side = "China", area = config.c.area.DESTINATION_071_PENGHU },
           },
-          heading = config.c.PHIBOP.shipSettings.heading.penghu,
+          heading = config.c.PHIBOP.formationSettings.heading.penghu,
           num = {
             type075 = 1,
             type071 = 1,
@@ -1746,7 +1858,7 @@ config.c.PHIBOP.initialLocations = {
     numOfContactsInAirLandingZone = 3
   },
 }
----@type SBJ__OperationZoneDescriptor[]
+---@type SBJ__OperationalZoneDescriptor[]
 config.c.PHIBOP.operationalZones = {
   {
     name = 'Taoyuan',
@@ -1778,7 +1890,7 @@ config.c.PHIBOP.operationalZones = {
         StationThrottleShip = 'Full',
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = 0,
@@ -1802,7 +1914,7 @@ config.c.PHIBOP.operationalZones = {
         }
       },
     },
-    tansportHelicopter = {
+    transportHelicopter = {
       dbid = config.platform.Z18,
       missions = {
         {
@@ -1839,7 +1951,7 @@ config.c.PHIBOP.operationalZones = {
         StationAltitudeAircraft = 304,
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = config.loadout.Z18_TRANSPORT_1,
@@ -1870,30 +1982,19 @@ config.c.PHIBOP.operationalZones = {
       }
     },
     LSTSettings = {
-      speed = config.c.PHIBOP.shipSettings.shipSpeed,
+      speed = config.c.PHIBOP.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.shipSettings.heading.west.vertical,
-        distance = config.c.PHIBOP.shipSettings.transitDistance
+        bearing = config.c.PHIBOP.formationSettings.heading.west.vertical,
+        distance = config.c.PHIBOP.formationSettings.transitDistance
       }
     },
     ACV = {
-      bearing = config.c.PHIBOP.shipSettings.heading.west.horizontal,
-      distance = config.c.PHIBOP.shipSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.shipSettings.ACVSpeed,
-      destination = config.c.PHIBOP.shipSettings.heading.west.destination,
+      bearing = config.c.PHIBOP.formationSettings.heading.west.horizontal,
+      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
+      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
+      destination = config.c.PHIBOP.formationSettings.heading.west.destination,
       area = config.c.area.AMPH_VEH_STAGING_AREA_TAOYUAN
     },
-    reconUAV = {
-      dbid = config.platform.GJ11,
-      missions = {
-        {
-          name = 'RECON/3',
-          loadoutId = config.loadout.GJ11_RECON,
-          num = 8,
-          startTime = config.c.PHIBOP.missionStartime.reconUAV[1],
-        },
-      }
-    }
   },
   {
     name = 'Sishu',
@@ -1925,7 +2026,7 @@ config.c.PHIBOP.operationalZones = {
         StationThrottleShip = 'Full',
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = 0,
@@ -1949,7 +2050,7 @@ config.c.PHIBOP.operationalZones = {
         }
       },
     },
-    tansportHelicopter = {
+    transportHelicopter = {
       dbid = config.platform.Z18,
       missions = {
         {
@@ -1986,7 +2087,7 @@ config.c.PHIBOP.operationalZones = {
         StationAltitudeAircraft = 304,
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = config.loadout.Z18_TRANSPORT_1,
@@ -2017,17 +2118,17 @@ config.c.PHIBOP.operationalZones = {
       }
     },
     LSTSettings = {
-      speed = config.c.PHIBOP.shipSettings.shipSpeed,
+      speed = config.c.PHIBOP.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
-        distance = config.c.PHIBOP.shipSettings.transitDistance
+        bearing = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
+        distance = config.c.PHIBOP.formationSettings.transitDistance
       }
     },
     ACV = {
-      bearing = config.c.PHIBOP.shipSettings.heading.sishu.horizontal,
-      distance = config.c.PHIBOP.shipSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.shipSettings.ACVSpeed,
-      destination = config.c.PHIBOP.shipSettings.heading.sishu.destination,
+      bearing = config.c.PHIBOP.formationSettings.heading.sishu.horizontal,
+      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
+      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
+      destination = config.c.PHIBOP.formationSettings.heading.sishu.destination,
       area = config.c.area.AMPH_VEH_STAGING_AREA_SHISHU
     }
   },
@@ -2061,7 +2162,7 @@ config.c.PHIBOP.operationalZones = {
         StationThrottleShip = 'Full',
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = 0,
@@ -2085,7 +2186,7 @@ config.c.PHIBOP.operationalZones = {
         }
       },
     },
-    tansportHelicopter = {
+    transportHelicopter = {
       dbid = config.platform.Z18,
       missions = {
         {
@@ -2122,7 +2223,7 @@ config.c.PHIBOP.operationalZones = {
         StationAltitudeAircraft = 304,
         isactive = false
       },
-      cargoItemsForTransfer = {
+      transferManifest = {
         type075 = {
           {
             loadoutId = config.loadout.Z18_TRANSPORT_1,
@@ -2153,17 +2254,17 @@ config.c.PHIBOP.operationalZones = {
       }
     },
     LSTSettings = {
-      speed = config.c.PHIBOP.shipSettings.shipSpeed,
+      speed = config.c.PHIBOP.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.shipSettings.heading.penghu.vertical,
-        distance = config.c.PHIBOP.shipSettings.transitDistance
+        bearing = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
+        distance = config.c.PHIBOP.formationSettings.transitDistance
       }
     },
     ACV = {
-      bearing = config.c.PHIBOP.shipSettings.heading.penghu.horizontal,
-      distance = config.c.PHIBOP.shipSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.shipSettings.ACVSpeed,
-      destination = config.c.PHIBOP.shipSettings.heading.penghu.destination,
+      bearing = config.c.PHIBOP.formationSettings.heading.penghu.horizontal,
+      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
+      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
+      destination = config.c.PHIBOP.formationSettings.heading.penghu.destination,
       area = config.c.area.AMPH_VEH_STAGING_AREA_PENGHU
     }
   },
@@ -2202,14 +2303,14 @@ config.c.PHIBOP.sag = {
       heading = 225
     },
     to = {
-      archorageArea = {
+      anchorageArea = {
         { lat = 'N 25.17.39', lon = 'E 120.56.04', desiredSpeed = 14, },
         { lat = 'N 25.17.32', lon = 'E 120.56.07', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
         { lat = 'N 25.05.36', lon = 'E 121.01.58', desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.shipSettings.heading.west.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
     area = config.c.area.AIRLANDING_TAOYUAN
   },
@@ -2224,14 +2325,14 @@ config.c.PHIBOP.sag = {
       heading = 225
     },
     to = {
-      archorageArea = {
+      anchorageArea = {
         { lat = 'N 25.33.23', lon = 'E 120.54.45', desiredSpeed = 14, },
         { lat = 'N 25.21.00', lon = 'E 121.04.12', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
         { lat = 'N 25.08.29', lon = 'E 121.10.20', desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.shipSettings.heading.west.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
     area = config.c.area.AIRLANDING_TAOYUAN
   },
@@ -2243,16 +2344,16 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { lat = 'N 23.29.19', lon = 'E 118.04.37', },
-      heading = config.c.PHIBOP.shipSettings.heading.penghu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
     to = {
-      archorageArea = {
+      anchorageArea = {
         { lat = 'N 23.32.46', lon = 'E 119.16.11', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
         { lat = 'N 23.32.34', lon = 'E 119.29.14', desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.shipSettings.heading.penghu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
     area = config.c.area.AIRLANDING_PENGHU,
   },
@@ -2264,16 +2365,16 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { lat = 'N 22.32.59', lon = 'E 118.04.52', },
-      heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
-      archorageArea = {
+      anchorageArea = {
         { lat = 'N 22.49.20', lon = 'E 119.55.57', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
         { lat = 'N 22.53.16', lon = 'E 120.07.39', desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     area = config.c.area.AIRLANDING_CHANGLONG,
   },
@@ -2285,16 +2386,16 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { lat = 'N 22.44.28', lon = 'E 118.01.16', },
-      heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
-      archorageArea = {
+      anchorageArea = {
         { lat = 'N 22.55.20', lon = 'E 119.52.25', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
         { lat = 'N 22.58.52', lon = 'E 120.05.48', desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.shipSettings.heading.sishu.vertical,
+      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     area = config.c.area.AIRLANDING_CHANGLONG,
   },
@@ -2493,7 +2594,7 @@ config.c.subSurface.slcm.randomRadius = 20
 -- Runway repairment
 config.c.repairRunway.percentagePerHour = 3
 
----@type table<string, SBJ__FSTTemplate[]>
+---@type table<string, SBJ__FireSupportTaskTemplate[]>
 config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
@@ -2777,7 +2878,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J16_AKD88,
         -- startTime = '2027-06-09 01:25:00',
-        missionParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = {
@@ -2787,7 +2888,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
         -- startTime = '2027-06-09 01:05:00',
-        missionParams = {
+        missionCreationParams = {
           name = 'SWEEP/AB/S/1',
           type = 'patrol',
           opts = {
@@ -2809,7 +2910,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.SU30_YJ91,
         -- startTime = '2027-06-09 01:05:00',
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/S/1',
           type = 'patrol',
           opts = {
@@ -2831,7 +2932,7 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = nil, -- Electronic warfare aircraft
         -- startTime = '2027-06-09 01:05:00', -- Escort launch time
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/S/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_SOUTH_PATROL }
@@ -2861,7 +2962,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J16_AKD88,
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/C', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/C', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = {
@@ -2870,7 +2971,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J20,
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
-        missionParams = {
+        missionCreationParams = {
           name = 'SWEEP/AB/C',
           type = 'patrol',
           opts = {
@@ -2891,7 +2992,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.SU30,
         unitCount = 8,
         loadoutID = config.loadout.SU30_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/C',
           type = 'patrol',
           opts = {
@@ -2912,7 +3013,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/C',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_CENTER_PATROL }
@@ -2942,7 +3043,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J16_AKD88,
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = {
@@ -2951,7 +3052,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J20,
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
-        missionParams = {
+        missionCreationParams = {
           name = 'SWEEP/AB/N/1',
           type = 'patrol',
           opts = {
@@ -2972,7 +3073,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.SU30,
         unitCount = 8,
         loadoutID = config.loadout.SU30_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/N/1',
           type = 'patrol',
           opts = {
@@ -2993,7 +3094,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/N/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_NORTH_PATROL }
@@ -3025,7 +3126,7 @@ config.c.packageTemplate = {
         loadoutID = config.loadout.H6K_YJ63,
         -- startTime = '2027-06-09 04:40:00',
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/S/2', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/S/2', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3054,7 +3155,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.H6K_YJ63,
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/N/2', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/N/2', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3084,7 +3185,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.SU30_KAB1500,
         -- startTime = '2027-06-09 05:40:00',
-        missionParams = { name = 'STRIKE/AB/S/3', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/S/3', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = {
@@ -3093,7 +3194,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J20,
         unitCount = 8,
         loadoutID = config.loadout.J20_PL15,
-        missionParams = {
+        missionCreationParams = {
           name = 'SWEEP/AB/S/2',
           type = 'patrol',
           opts = {
@@ -3114,7 +3215,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.SU30,
         unitCount = 8,
         loadoutID = config.loadout.SU30_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/S/3',
           type = 'patrol',
           opts = {
@@ -3135,7 +3236,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/S/3',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_SOUTH_PATROL }
@@ -3169,7 +3270,7 @@ config.c.packageTemplate = {
     --     unitCount = 12,
     --     loadoutID = config.loadout.J16_AKD88,
     --     startTime = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'STRIKE/AB/N/1',
     --       type = 'strike',
     --       opts = {
@@ -3190,7 +3291,7 @@ config.c.packageTemplate = {
     --     unitDBID = config.platform.J20,
     --     unitCount = 4,
     --     loadoutID = config.loadout.J20_PL15,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'SWEEP/AB/N/1',
     --       type = 'patrol',
     --       opts = {
@@ -3217,7 +3318,7 @@ config.c.packageTemplate = {
     --     unitDBID = config.platform.SU30,
     --     unitCount = 4,
     --     loadoutID = config.loadout.SU30_YJ91,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'SEAD/AB/N/1',
     --       type = 'patrol',
     --       opts = {
@@ -3244,7 +3345,7 @@ config.c.packageTemplate = {
     --     weaponDBID = 0,
     --     unitCount = 1,
     --     loadoutID = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'JAMMING/AB/N/1',
     --       type = 'support',
     --       opts = {
@@ -3265,7 +3366,7 @@ config.c.packageTemplate = {
     --     weaponDBID = 0,
     --     unitCount = 8,
     --     loadoutID = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'AAR/E',
     --       type = 'support',
     --       opts = {
@@ -3297,7 +3398,7 @@ config.c.packageTemplate = {
     --     unitCount = 12,
     --     loadoutID = config.loadout.J16_AKD88,
     --     startTime = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'STRIKE/AB/C/1',
     --       type = 'strike',
     --       opts = {
@@ -3317,7 +3418,7 @@ config.c.packageTemplate = {
     --     unitDBID = config.platform.J20,
     --     unitCount = 4,
     --     loadoutID = config.loadout.J20_PL15,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'SWEEP/AB/C/1',
     --       type = 'patrol',
     --       opts = {
@@ -3344,7 +3445,7 @@ config.c.packageTemplate = {
     --     unitDBID = config.platform.SU30,
     --     unitCount = 4,
     --     loadoutID = config.loadout.SU30_YJ91,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'SEAD/AB/C/1',
     --       type = 'patrol',
     --       opts = {
@@ -3371,7 +3472,7 @@ config.c.packageTemplate = {
     --     weaponDBID = 0,
     --     unitCount = 1,
     --     loadoutID = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'JAMMING/AB/C/1',
     --       type = 'support',
     --       opts = {
@@ -3392,7 +3493,7 @@ config.c.packageTemplate = {
     --     weaponDBID = 0,
     --     unitCount = 8,
     --     loadoutID = nil,
-    --     missionParams = {
+    --     missionCreationParams = {
     --       name = 'AAR/C',
     --       type = 'support',
     --       opts = {
@@ -3425,7 +3526,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J16_AKD88,
         startTime = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'STRIKE/AB/S/1',
           type = 'strike',
           opts = {
@@ -3445,7 +3546,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J20,
         unitCount = 4,
         loadoutID = config.loadout.J20_PL15,
-        missionParams = {
+        missionCreationParams = {
           name = 'SWEEP/AB/S/1',
           type = 'patrol',
           opts = {
@@ -3472,7 +3573,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.SU30,
         unitCount = 4,
         loadoutID = config.loadout.SU30_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/S/1',
           type = 'patrol',
           opts = {
@@ -3499,7 +3600,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/C/1',
           type = 'support',
           opts = {
@@ -3520,7 +3621,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 8,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'AAR/S',
           type = 'support',
           opts = {
@@ -3556,7 +3657,7 @@ config.c.packageTemplate = {
         loadoutID = config.loadout.J20_PL15,
         -- startTime = '2027-06-09 06:40:00',
         -- startTime = '2027-06-09 01:05:00',
-        missionParams = {
+        missionCreationParams = {
           name = 'AIR INTERCEPT/E',
           type = 'strike',
           opts = {
@@ -3579,7 +3680,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 3,
         loadoutID = nil,
-        missionParams = {
+        missionCreationParams = {
           name = 'AAR/E',
           type = 'support',
           opts = {
@@ -3611,7 +3712,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J15_LS6_500,
         -- startTime = '2027-06-09 07:00:00',
-        missionParams = { name = 'STRIKE/AB/JHI/1', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/JHI/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3621,7 +3722,7 @@ config.c.packageTemplate = {
       --   unitDBID = config.platform.J_15,
       --   unitCount = 8,
       --   loadoutID = config.loadout.J15_YJ91,
-      --   missionParams = {
+      --   missionCreationParams = {
       --     name = 'SWEAP/AB/JHI/1',
       --     type = 'patrol',
       --     opts = {
@@ -3642,7 +3743,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J15,
         unitCount = 8,
         loadoutID = config.loadout.J15_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/JHI/1',
           type = 'patrol',
           opts = {
@@ -3663,7 +3764,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = config.loadout.J15D_EW,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/JHI/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_JHI_PATROL }
@@ -3699,7 +3800,7 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = config.loadout.J15_LS6_500,
         startTime = nil,
-        missionParams = { name = 'STRIKE/AB/JIA/1', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'STRIKE/AB/JIA/1', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3709,7 +3810,7 @@ config.c.packageTemplate = {
       --   unitDBID = config.platform.J_15,
       --   unitCount = 8,
       --   loadoutID = config.loadout.J20_PL15,
-      --   missionParams = {
+      --   missionCreationParams = {
       --     name = 'SWEAP/AB/JIA/1',
       --     type = 'patrol',
       --     opts = {
@@ -3730,7 +3831,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.J15,
         unitCount = 8,
         loadoutID = config.loadout.J15_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/AB/JIA/1',
           type = 'patrol',
           opts = {
@@ -3751,7 +3852,7 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = config.loadout.J15D_EW,
-        missionParams = {
+        missionCreationParams = {
           name = 'JAMMING/AB/JIA/1',
           type = 'support',
           opts = { zone = config.c.area.TARGET_AREA_JIASHAN_PATROL }
@@ -3783,7 +3884,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J16_YJ83,
         -- startTime = '2027-06-09 02:40:00',
-        missionParams = { name = 'ASUW/N', type = 'strike', opts = { type = 'sea' } },
+        missionCreationParams = { name = 'ASUW/N', type = 'strike', opts = { type = 'sea' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3793,7 +3894,7 @@ config.c.packageTemplate = {
         unitDBID = config.platform.SU30,
         unitCount = 8,
         loadoutID = config.loadout.SU30_YJ91,
-        missionParams = {
+        missionCreationParams = {
           name = 'SEAD/ASUW/N',
           type = 'patrol',
           opts = {
@@ -3831,7 +3932,7 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = config.loadout.J10C_CS_BBC_5,
         -- startTime = '2027-06-09 01:30:00',
-        missionParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
+        missionCreationParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
         emcon = 'Radar=Passive;OECM=Active'
       },
       escort = nil,
@@ -3866,30 +3967,9 @@ config.t.GPSJamming.GPSGuidedWeapons = {
 -- MLRS
 config.t.ground.mlrs.wpnDefault = 144
 config.t.ground.mlrs.ammoThreshold = 25
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.t.ground.mlrs.OPAREAs = {
-  pingzhen = {
-    RL = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.RELOAD_POINT_PINGZHEN
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.FIRE_POINT_PINGZHEN_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    } },
-  },
+  Pingzhen = config.OPAREA.Pingzhen,
 }
 config.t.ground.mlrs.reloadTime = 30 * 60
 
@@ -3897,52 +3977,10 @@ config.t.ground.mlrs.reloadTime = 30 * 60
 -- SRBM
 config.t.ground.srbm.wpnDefault = 27
 config.t.ground.srbm.ammoThreshold = 25
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.t.ground.srbm.OPAREAs = {
-  pingzhen = {
-    RL = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.RELOAD_POINT_PINGZHEN
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.FIRE_POINT_PINGZHEN_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    } },
-  },
-  dadu = {
-    RL = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.RELOAD_POINT_DADU
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.FIRE_POINT_DADU_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.AMMO_HOLDING_AREA_DADU
-    } },
-  },
+  Pingzhen = config.OPAREA.Pingzhen,
+  Dadu = config.OPAREA.Dadu,
 }
 config.t.ground.srbm.reloadTime = 10 * 60
 
@@ -3950,36 +3988,10 @@ config.t.ground.srbm.reloadTime = 10 * 60
 -- GLCM
 config.t.ground.glcm.wpnDefault = 48
 config.t.ground.glcm.ammoThreshold = 25
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.t.ground.glcm.OPAREAs = {
-  quanxi = {
-    RL = { {
-      course = {},
-      area = config.t.area.RELOAD_POINT_QUANXI
-    } },
-    FP = { {
-      course = {},
-      area = config.t.area.FIRE_POINT_PINGZHEN_1
-    }, },
-    AHA = { {
-      course = {},
-      area = config.t.area.AMMO_HOLDING_AREA_QUANXI
-    } },
-  },
-  neipu = {
-    RL = { {
-      course = {},
-      area = config.t.area.RELOAD_POINT_NEIPU
-    } },
-    FP = { {
-      course = {},
-      area = config.t.area.FIRE_POINT_NEIPU_1
-    }, },
-    AHA = { {
-      course = {},
-      area = config.t.area.AMMO_HOLDING_AREA_NEIPU
-    } },
-  }
+  Quanxi = config.OPAREA.Quanxi,
+  Neipu = config.OPAREA.Neipu,
 }
 config.t.ground.glcm.reloadTime = 45 * 60
 
@@ -3987,94 +3999,13 @@ config.t.ground.glcm.reloadTime = 45 * 60
 -- ASCM
 config.t.ground.ascm.wpnDefault = 16
 config.t.ground.ascm.ammoThreshold = 25
----@type table<string, SBJ__OPAREA>
+---@type table<string, SBJ__OperationalArea>
 config.t.ground.ascm.OPAREAs = {
-  pingzhen = {
-    RL = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.RELOAD_POINT_PINGZHEN
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.FIRE_POINT_PINGZHEN_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
-    } },
-  },
-  dadu = {
-    RL = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.RELOAD_POINT_DADU
-    } },
-    FP = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.FIRE_POINT_DADU_1
-    }, },
-    AHA = { {
-      course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-      },
-      area = config.t.area.AMMO_HOLDING_AREA_DADU
-    } },
-  },
-  neipu = {
-    RL = { {
-      course = {},
-      area = config.t.area.RELOAD_POINT_NEIPU
-    } },
-    FP = { {
-      course = {},
-      area = config.t.area.FIRE_POINT_NEIPU_1
-    }, },
-    AHA = { {
-      course = {},
-      area = config.t.area.AMMO_HOLDING_AREA_NEIPU
-    } },
-  },
-  luzhu = {
-    RL = { {
-      course = {},
-      area = config.t.area.RELOAD_POINT_LUZHU
-    } },
-    FP = { {
-      course = {},
-      area = config.t.area.FIRE_POINT_LUZHU_1
-    }, },
-    AHA = { {
-      course = {},
-      area = config.t.area.AMMO_HOLDING_AREA_LUZHU
-    } },
-  },
-  dong = {
-    RL = { {
-      course = {},
-      area = config.t.area.RELOAD_POINT_DONG
-    } },
-    FP = { {
-      course = {},
-      area = config.t.area.FIRE_POINT_DONG_1
-    }, },
-    AHA = { {
-      course = {},
-      area = config.t.area.AMMO_HOLDING_AREA_DONG
-    } },
-  },
+  Pingzhen = config.OPAREA.Pingzhen,
+  Dadu = config.OPAREA.Dadu,
+  Neipu = config.OPAREA.Neipu,
+  Luzhu = config.OPAREA.Luzhu,
+  Dong = config.OPAREA.Dong,
 }
 config.t.ground.ascm.reloadTime = 45 * 60
 

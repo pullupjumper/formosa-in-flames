@@ -12,7 +12,7 @@ local DynamicFireSupportPlan = {}
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param FSTTemplate SBJ__FSTTemplate Fire Support Task template with target criteria
+---@param FSTTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
 ---@return CMO__Contact[] # Array of strike targets that passed filtering and assessment
 local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
@@ -203,7 +203,7 @@ end
 ---Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
----@param FSEMTemplate SBJ__FSEMTemplate Template defining FSEM structure and FST configurations
+---@param FSEMTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param evaluatedTargets table<string, CMO__Contact[]> Map of FST name to evaluated target arrays
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
 ---@return boolean # true if FSEM was successfully created and inserted, false if no valid FSTs

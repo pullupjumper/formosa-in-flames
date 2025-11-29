@@ -95,10 +95,10 @@ end
 ---@return CMO__Location # New position coordinates
 local function getNextPosition(latitude, longitude, bearing, distance)
   return GameApi.World_GetPointFromBearing({
-    LATITUDE = latitude,
-    LONGITUDE = longitude,
-    BEARING = bearing,
-    DISTANCE = distance,
+    latitude = latitude,
+    longitude = longitude,
+    bearing = bearing,
+    distance = distance,
   })
 end
 
@@ -114,10 +114,10 @@ local function handleSAG(config, group, isTesting)
     return
   end
 
-  unit.course = group.to.archorageArea
+  unit.course = group.to.anchorageArea
 
   if isTesting then
-    local count = #group.to.archorageArea
+    local count = #group.to.anchorageArea
     local type052d, type054a = 0, 0
 
     for _, u in ipairs(unit.group.unitlist) do
@@ -128,14 +128,14 @@ local function handleSAG(config, group, isTesting)
           if type052d == 0 then
             setShipPosition(
               ship,
-              group.to.archorageArea[count].lat,
-              group.to.archorageArea[count].lon,
+              group.to.anchorageArea[count].lat,
+              group.to.anchorageArea[count].lon,
               group.to.heading
             )
           else
             local point = getNextPosition(
-              group.to.archorageArea[count].lat,
-              group.to.archorageArea[count].lon,
+              group.to.anchorageArea[count].lat,
+              group.to.anchorageArea[count].lon,
               group.to.heading - 180,
               1.5
             )
@@ -148,8 +148,8 @@ local function handleSAG(config, group, isTesting)
         elseif ship.dbid == config.platform.TYPE_054A then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
-            group.to.archorageArea[count].lat,
-            group.to.archorageArea[count].lon,
+            group.to.anchorageArea[count].lat,
+            group.to.anchorageArea[count].lon,
             group.to.heading - angle,
             1.5
           )
@@ -171,9 +171,9 @@ end
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all ship movement orders were successfully issued
 function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units)
-  local shipSettings = amphibOpsConfig.shipSettings
-  local initialLocations = amphibOpsConfig.initialLocations
-  local calculations = saveData.c.PHIBOP.calculations
+  local formationSettings = amphibOpsConfig.formationSettings
+  local operations = amphibOpsConfig.operations
+  local calculationResult = saveData.c.PHIBOP.calculationResult
   local isTesting = saveData.c.PHIBOP.isTesting
   local allUnitsMoved = false
 
@@ -181,9 +181,9 @@ function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units
     local unit = GameApi.ScenEdit_GetUnit(unitData.guid)
 
     if unit then
-      for _, item in ipairs(initialLocations) do
-        if unit:inArea(item.from.stagingArea) then
-          local result = calculations[item.name].result
+      for _, operation in ipairs(operations) do
+        if unit:inArea(operation.from.stagingArea) then
+          local result = calculationResult[operation.name].result
           local matched = false
 
           for shipType, handler in pairs({
@@ -195,7 +195,7 @@ function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units
             type071 = handle071,
           }) do
             if unit.dbid == result[shipType].dbid then
-              handler(unit, result, shipType, shipSettings, isTesting)
+              handler(unit, result, shipType, formationSettings, isTesting)
               matched = true
               break
             end
@@ -208,7 +208,7 @@ function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units
               barge = handleNameType,
             }) do
               if unit.name == nameType:gsub("^%l", string.upper) then
-                handler(unit, result, nameType, shipSettings, isTesting)
+                handler(unit, result, nameType, formationSettings, isTesting)
                 break
               end
             end
@@ -231,142 +231,142 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
 ---@param saveData SBJ__SaveData Save data where calculated positions will be stored
 function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
-  local initialLocations = amphibOpsConfig.initialLocations
-  local shipSettings = amphibOpsConfig.shipSettings
+  local operations = amphibOpsConfig.operations
+  local formationSettings = amphibOpsConfig.formationSettings
 
-  for _, item in ipairs(initialLocations) do
-    for _, area in ipairs(item.to.areas) do
+  for _, operation in ipairs(operations) do
+    for _, area in ipairs(operation.to.areas) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
       local firstRp071 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
       local firstRp076 = GameApi.World_GetPointFromBearing({
         latitude = firstRp071.latitude,
         longitude = firstRp071.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRpBarge = GameApi.World_GetPointFromBearing({
         latitude = firstRp075.latitude,
         longitude = firstRp075.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.distanceBetweenLSTAndLPDArea
+        distance = formationSettings.distanceBetweenLSTAndLPDArea
       })
       local firstRpRORO = GameApi.World_GetPointFromBearing({
         latitude = firstRpBarge.latitude,
         longitude = firstRpBarge.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRp072a = GameApi.World_GetPointFromBearing({
         latitude = firstRpRORO.latitude,
         longitude = firstRpRORO.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRp072iii = GameApi.World_GetPointFromBearing({
         latitude = firstRp072a.latitude,
         longitude = firstRp072a.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRpFerry = GameApi.World_GetPointFromBearing({
         latitude = firstRp072iii.latitude,
         longitude = firstRp072iii.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRp071InLSTArea = GameApi.World_GetPointFromBearing({
         latitude = firstRpFerry.latitude,
         longitude = firstRpFerry.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
       local firstRp073a = GameApi.World_GetPointFromBearing({
         latitude = firstRp071InLSTArea.latitude,
         longitude = firstRp071InLSTArea.longitude,
         bearing = area.heading.vertical,
-        distance = shipSettings.verticalDistance
+        distance = formationSettings.verticalDistance
       })
 
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type075.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type075.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp075,
           num = area.num.type075,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type071.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type071.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp071,
           num = area.num.type071,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type076.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type076.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp076,
           num = area.num.type076,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.barge.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.barge.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpBarge,
           num = area.num.barge,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         })
       )
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.roro.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.roro.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpRORO,
           num = area.num.roro,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type072iii.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type072iii.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp072iii,
           num = area.num.type072iii,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type072a.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type072a.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp072a,
           num = area.num.type072a,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.ferry.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.ferry.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpFerry,
           num = area.num.ferry,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type073a.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type073a.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp073a,
           num = area.num.type073a,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculations[item.name].result.type071InLSTArea.locations,
+        saveData.c.PHIBOP.calculationResult[operation.name].result.type071InLSTArea.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp071InLSTArea,
           num = area.num.type071InLSTArea,
           bearing = area.heading.horizontal,
-          distance = shipSettings.horizontalDistance
+          distance = formationSettings.horizontalDistance
         }))
     end
   end

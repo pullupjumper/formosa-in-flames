@@ -57,10 +57,10 @@ local FORMATION = {
 ---@return table|nil # Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
-    LATITUDE = centerPoint.lat,
-    LONGITUDE = centerPoint.lon,
-    BEARING = heading + angle,
-    DISTANCE = distance,
+    latitude = centerPoint.lat,
+    longitude = centerPoint.lon,
+    bearing = heading + angle,
+    distance = distance,
   })
 end
 
@@ -205,8 +205,8 @@ end
 ---@param config SBJ__Config Configuration object
 ---@param position CMO__Location Position
 ---@param areaDescriptor SBJ__AmphibiousAreaDescriptor Area configuration
----@param descriptor SBJ__AmphibOpsDescriptor Item configuration
----@param shipSettings SBJ__AmphibiousLayoutConfig Amphibious layout configuration
+---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
+---@param shipSettings SBJ__FormationSettings Amphibious layout configuration
 ---@param cargoList table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@param shipType UnitGenerator_UnitType Ship type
 local function createShipsByType(config, position, areaDescriptor, descriptor, shipSettings, cargoList, shipType)
@@ -695,8 +695,8 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration containing ship settings and cargo
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(config, amphibOpsConfig)
-  local descriptors = amphibOpsConfig.initialLocations
-  local layoutConfig = amphibOpsConfig.shipSettings
+  local descriptors = amphibOpsConfig.operations
+  local layoutConfig = amphibOpsConfig.formationSettings
   local cargoList = amphibOpsConfig.cargoList
 
   for _, descriptor in ipairs(descriptors) do

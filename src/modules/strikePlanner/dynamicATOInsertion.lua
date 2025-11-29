@@ -331,9 +331,9 @@ local function calculateRoleAdvanceTime(packageData, role)
   end
 
   -- Get patrol zone reference point (using escort's patrol zone as reference)
-  local patrolZone = packageData.escort and packageData.escort.missionParams and
-      packageData.escort.missionParams.opts and
-      packageData.escort.missionParams.opts.patrolZone
+  local patrolZone = packageData.escort and packageData.escort.missionCreationParams and
+      packageData.escort.missionCreationParams.opts and
+      packageData.escort.missionCreationParams.opts.patrolZone
 
   if not patrolZone or #patrolZone == 0 then
     Logger.log("dynamicOperations", "No patrol zone found for advance time calculation")
@@ -403,7 +403,7 @@ local function calculateSupportAdvanceTime(packageData)
   local maxDistance = 0
   local furthestBase = nil
 
-  local rp = packageData.escort.missionParams.opts.patrolZone[1]
+  local rp = packageData.escort.missionCreationParams.opts.patrolZone[1]
   local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
 
   for _, base in ipairs(supportBases) do

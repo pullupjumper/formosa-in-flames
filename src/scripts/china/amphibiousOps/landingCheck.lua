@@ -71,7 +71,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
 end
 
 if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
-  local initialLocations = config.c.PHIBOP.initialLocations
+  local operations = config.c.PHIBOP.operations
   local elapsedTime = 0
   local amphibiousAssaultStartTime = saveData.c.PHIBOP.amphibiousAssaultStartTime
 
@@ -79,8 +79,8 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
     elapsedTime = currentTime - amphibiousAssaultStartTime
   end
 
-  local contactCount = AmphibiousAssault.countContactsInArea(contacts, initialLocations[1].airLandingZone)
-  local isContactCountLessThan = contactCount < initialLocations[1].numOfContactsInAirLandingZone
+  local contactCount = AmphibiousAssault.countContactsInArea(contacts, operations[1].airLandingZone)
+  local isContactCountLessThan = contactCount < operations[1].numOfContactsInAirLandingZone
   local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= config.c.PHIBOP.periodOfTime
   local shouldLaunchAmphibiousAssault = isContactCountLessThan or isTimeExceeded
 

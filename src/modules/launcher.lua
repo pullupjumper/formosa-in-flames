@@ -27,7 +27,7 @@ local CONSTANTS = {
 
 ---Find the area where the unit is located
 ---@param unit CMO__Unit Unit object
----@param OPAREAs table<string, SBJ__OPAREA> Position information table
+---@param OPAREAs table<string, SBJ__OperationalArea> Position information table
 ---@return string[]|nil # Area name or nil
 local function findUnitArea(unit, OPAREAs)
   for _, OPAREA in pairs(OPAREAs) do
@@ -159,7 +159,7 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.OPAREA.RL, 'RL', CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.RL, 'RL', CONSTANTS.WCS.HOLD)
 end
 
 ---Command firing unit to move to hide area (HA)
@@ -168,13 +168,13 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToHideArea(config, firingUnitCtx, firingUnit)
   -- Check if HA exists (some OPAREAs may not have HA)
-  if not firingUnitCtx.OPAREA.HA then
+  if not firingUnitCtx.operationalArea.HA then
     Logger.log("launcher", "launcher: No HA defined for firing unit " .. firingUnitCtx.name .. ", skipping hide movement")
     return
   end
 
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.OPAREA.HA, 'HA', CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.HA, 'HA', CONSTANTS.WCS.HOLD)
 end
 
 ---Command resupply unit to move to ammunition holding area (AHA)
@@ -183,7 +183,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveToAmmoHoldingArea(config, resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.OPAREA.AHA, 'AHA')
+  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.AHA, 'AHA')
 end
 
 ---Transfer ammunition from ammunition depot to resupply unit
@@ -209,7 +209,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.OPAREA.RL, 'RL', nil, true)
+  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.RL, 'RL', nil, true)
 end
 
 ---Handle automatic firing unit repositioning logic
@@ -277,7 +277,7 @@ local function handleAutomaticResupplyUnitRepositioning(config, wsContext, resup
   if resupplyUnitCtx.state == config.batteryState.STATIC then
     -- Check if unit is in any RL area
     local isInRLArea = false
-    for _, pos in ipairs(resupplyUnitCtx.OPAREA.RL) do
+    for _, pos in ipairs(resupplyUnitCtx.operationalArea.RL) do
       if resupplyUnit:inArea(pos.area) then
         isInRLArea = true
         break
@@ -529,7 +529,7 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 function Launcher.moveToFiringPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.OPAREA.FP, 'FP')
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.FP, 'FP')
 end
 
 ---Check if two types of units have met in the same area
@@ -537,12 +537,12 @@ end
 ---@param targetGuid string Target unit GUID to match
 ---@param counterpartList SBJ__FiringUnitContext[]|SBJ__ResupplyUnitContext[] List of counterpart units to check
 ---@param unit CMO__Unit Original unit for area checking
----@param OPAREAs table<string, SBJ__OPAREA> OPAREA configuration
+---@param operationalAreas table<string, SBJ__OperationalArea> OPAREA configuration
 ---@param config SBJ__Config Configuration
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean isMet Whether units have met
 ---@return table|nil context The matched context if met
-local function checkMeetingInArea(targetCtx, targetGuid, counterpartList, unit, OPAREAs, config, isAuto)
+local function checkMeetingInArea(targetCtx, targetGuid, counterpartList, unit, operationalAreas, config, isAuto)
   local isStateValid = true
 
   if isAuto then
@@ -552,7 +552,7 @@ local function checkMeetingInArea(targetCtx, targetGuid, counterpartList, unit, 
   end
 
   if targetCtx.guid == targetGuid and isStateValid then
-    local area = findUnitArea(unit, OPAREAs)
+    local area = findUnitArea(unit, operationalAreas)
     if not area then return false, nil end
 
     for _, counterpartCtx in pairs(counterpartList) do
@@ -584,7 +584,7 @@ function Launcher.isMetWithResupplyUnits(config, wsContext, unit, isAuto)
     -- Case: Resupply unit looking for firing units
     for _, resupplyUnitCtx in pairs(wsContext.resupplyUnits) do
       local isMet, ctx = checkMeetingInArea(
-        resupplyUnitCtx, unitGroup.guid, wsContext.firingUnits, unit, wsContext.OPAREAs, config, isAuto
+        resupplyUnitCtx, unitGroup.guid, wsContext.firingUnits, unit, wsContext.operationalAreas, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -594,7 +594,7 @@ function Launcher.isMetWithResupplyUnits(config, wsContext, unit, isAuto)
     -- Case: Firing unit looking for resupply units
     for _, firingUnitCtx in pairs(wsContext.firingUnits) do
       local isMet, ctx = checkMeetingInArea(
-        firingUnitCtx, unitGroup.guid, wsContext.resupplyUnits, unit, wsContext.OPAREAs, config, isAuto
+        firingUnitCtx, unitGroup.guid, wsContext.resupplyUnits, unit, wsContext.operationalAreas, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -628,9 +628,9 @@ function Launcher.isMetWithAmmoDepot(config, wsContext, unit, isAuto)
     if resupplyUnitCtx.guid == resupplyUnit.guid and isStateValid then
       local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition)
 
-      for _, OPAREA in pairs(wsContext.OPAREAs) do
+      for _, operationalArea in pairs(wsContext.operationalAreas) do
         -- Check all AHA areas in the array
-        for _, pos in ipairs(OPAREA.AHA) do
+        for _, pos in ipairs(operationalArea.AHA) do
           local isInSameArea = unit:inArea(pos.area) and (ammoDepot and ammoDepot:inArea(pos.area))
 
           if isInSameArea then
