@@ -128,14 +128,14 @@ local function handleSAG(config, group, isTesting)
           if type052d == 0 then
             setShipPosition(
               ship,
-              group.to.anchorageArea[count].lat,
-              group.to.anchorageArea[count].lon,
+              group.to.anchorageArea[count].latitude,
+              group.to.anchorageArea[count].longitude,
               group.to.heading
             )
           else
             local point = getNextPosition(
-              group.to.anchorageArea[count].lat,
-              group.to.anchorageArea[count].lon,
+              group.to.anchorageArea[count].latitude,
+              group.to.anchorageArea[count].longitude,
               group.to.heading - 180,
               1.5
             )
@@ -148,8 +148,8 @@ local function handleSAG(config, group, isTesting)
         elseif ship.dbid == config.platform.TYPE_054A then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
-            group.to.anchorageArea[count].lat,
-            group.to.anchorageArea[count].lon,
+            group.to.anchorageArea[count].latitude,
+            group.to.anchorageArea[count].longitude,
             group.to.heading - angle,
             1.5
           )

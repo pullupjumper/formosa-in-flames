@@ -493,36 +493,36 @@ config.OPAREA = {
   Pingtan = {
     RL = { {
       course = {
-        { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 25.30.13', lon = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.30.20', longitude = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.30.13', longitude = 'E 119.47.36', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_PINGTAN
     } },
     HA = { {
       course = {
-        { lat = 'N 25.30.02', lon = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.30.02', longitude = 'E 119.47.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_PINGTAN
     } },
     FP = {
       {
         course = {
-          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 25.25.45', lon = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { latitude = 'N 25.30.20', longitude = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { latitude = 'N 25.25.45', longitude = 'E 119.44.25', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
         area = config.c.area.FIRE_POINT_PINGTAN_1
       },
       {
         course = {
-          { lat = 'N 25.30.20', lon = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
-          { lat = 'N 25.27.22', lon = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { latitude = 'N 25.30.20', longitude = 'E 119.46.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+          { latitude = 'N 25.27.22', longitude = 'E 119.45.39', desiredSpeed = 30, presetThrottle = 'Flank' },
         },
         area = config.c.area.FIRE_POINT_PINGTAN_2
       },
     },
     AHA = { {
       course = {
-        { lat = 'N 25.30.31', lon = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.30.31', longitude = 'E 119.47.37', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_PINGTAN
     } },
@@ -530,27 +530,27 @@ config.OPAREA = {
   Chinchew = {
     RL = { {
       course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.44', longitude = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.36', longitude = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_CHINCHEW
     } },
     HA = { {
       course = {
-        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.31', longitude = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_CHINCHEW
     } },
     FP = { {
       course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.44', longitude = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.41.45', longitude = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_CHINCHEW_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.47.10', longitude = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
     } },
@@ -558,27 +558,27 @@ config.OPAREA = {
   Brigade635 = {
     RL = { {
       course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.46.36', lon = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.44', longitude = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.36', longitude = 'E 118.42.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_CHINCHEW
     } },
     HA = { {
       course = {
-        { lat = 'N 24.46.31', lon = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.31', longitude = 'E 118.41.51', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_CHINCHEW
     } },
     FP = { {
       course = {
-        { lat = 'N 24.46.44', lon = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.41.45', lon = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.46.44', longitude = 'E 118.40.37', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.41.45', longitude = 'E 118.43.18', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_CHINCHEW_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.47.10', lon = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.47.10', longitude = 'E 118.42.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_CHINCHEW
     } },
@@ -586,27 +586,27 @@ config.OPAREA = {
   Brigade615 = {
     RL = { {
       course = {
-        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.16.56', lon = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.17.32', longitude = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.16.56', longitude = 'E 115.58.12', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE615
     } },
     HA = { {
       course = {
-        { lat = 'N 24.17.06', lon = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.17.06', longitude = 'E 115.58.35', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE615
     } },
     FP = { {
       course = {
-        { lat = 'N 24.17.32', lon = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.17.05', lon = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.17.32', longitude = 'E 115.58.09', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.17.05', longitude = 'E 115.59.41', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE615_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.17.05', lon = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.17.05', longitude = 'E 115.58.00', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE615
     } },
@@ -614,27 +614,27 @@ config.OPAREA = {
   Brigade614 = {
     RL = { {
       course = {
-        { lat = 'N 26.04.01', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 26.03.40', lon = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.04.01', longitude = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.03.40', longitude = 'E 117.18.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE614
     } },
     HA = { {
       course = {
-        { lat = 'N 26.03.48', lon = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.03.48', longitude = 'E 117.19.11', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE614
     } },
     FP = { {
       course = {
-        { lat = 'N 26.04.18', lon = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 26.03.49', lon = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.04.18', longitude = 'E 117.18.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.03.49', longitude = 'E 117.20.05', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE614_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 26.03.47', lon = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 26.03.47', longitude = 'E 117.18.50', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE614
     } },
@@ -642,27 +642,27 @@ config.OPAREA = {
   Brigade636 = {
     RL = { {
       course = {
-        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.45.25', lon = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.52', longitude = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.25', longitude = 'E 113.40.29', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE636
     } },
     HA = { {
       course = {
-        { lat = 'N 24.45.33', lon = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.33', longitude = 'E 113.40.47', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE636
     } },
     FP = { {
       course = {
-        { lat = 'N 24.45.52', lon = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 24.45.52', lon = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.52', longitude = 'E 113.40.52', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.52', longitude = 'E 113.41.35', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE636_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.45.34', lon = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 24.45.34', longitude = 'E 113.40.14', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE636
     } },
@@ -670,25 +670,25 @@ config.OPAREA = {
   Brigade616 = {
     RL = { {
       course = {
-        { lat = 'N 25.54.31', lon = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.54.31', longitude = 'E 114.57.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE616
     } },
     HA = { {
       course = {
-        { lat = 'N 25.54.40', lon = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.54.40', longitude = 'E 114.57.42', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE616
     } },
     FP = { {
       course = {
-        { lat = 'N 25.55.33', lon = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.55.33', longitude = 'E 114.58.25', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE616_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 25.54.38', lon = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 25.54.38', longitude = 'E 114.57.06', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE616
     } },
@@ -696,29 +696,29 @@ config.OPAREA = {
   Brigade613 = {
     RL = { {
       course = {
-        { lat = 'N 28.27.25', lon = 'E 117.51.51', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 28.27.26', lon = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 28.27.03', lon = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 28.27.25', longitude = 'E 117.51.51', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 28.27.26', longitude = 'E 117.51.02', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 28.27.03', longitude = 'E 117.51.04', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE613
     } },
     HA = { {
       course = {
-        { lat = 'N 28.27.12', lon = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 28.27.12', longitude = 'E 117.51.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE613
     } },
     FP = { {
       course = {
-        { lat = 28.455760146701, lon = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 28.455941652975, lon = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 28.443410902986, lon = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 28.455760146701, longitude = 117.85790803852, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 28.455941652975, longitude = 117.86516402324, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 28.443410902986, longitude = 117.86719441616, desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE613_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 28.27.12', lon = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 28.27.12', longitude = 'E 117.50.55', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE613
     } },
@@ -726,27 +726,27 @@ config.OPAREA = {
   Brigade617 = {
     RL = { {
       course = {
-        { lat = 'N 29.09.32', lon = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 29.08.57', lon = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 29.09.32', longitude = 'E 119.36.38', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 29.08.57', longitude = 'E 119.36.31', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE617
     } },
     HA = { {
       course = {
-        { lat = 'N 29.09.01', lon = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 29.09.01', longitude = 'E 119.36.49', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE617
     } },
     FP = { {
       course = {
-        { lat = 29.158533243915, lon = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 29.158295428459, lon = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 29.158533243915, longitude = 119.61541712539, desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 29.158295428459, longitude = 119.62849131226, desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE617_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 29.09.03', lon = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 29.09.03', longitude = 'E 119.36.26', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE617
     } },
@@ -754,28 +754,28 @@ config.OPAREA = {
   Brigade624 = {
     RL = { {
       course = {
-        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.28.27', lon = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.28.29', lon = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.29.01', longitude = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.28.27', longitude = 'E 109.26.56', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.28.29', longitude = 'E 109.27.44', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.RELOAD_POINT_BRIGADE624
     } },
     HA = { {
       course = {
-        { lat = 'N 19.28.35', lon = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.28.35', longitude = 'E 109.27.22', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.HIDE_AREA_BRIGADE624
     } },
     FP = { {
       course = {
-        { lat = 'N 19.29.01', lon = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
-        { lat = 'N 19.29.40', lon = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.29.01', longitude = 'E 109.26.40', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.29.40', longitude = 'E 109.27.17', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.FIRE_POINT_BRIGADE624_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 19.28.12', lon = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
+        { latitude = 'N 19.28.12', longitude = 'E 109.27.21', desiredSpeed = 30, presetThrottle = 'Flank' },
       },
       area = config.c.area.AMMO_HOLDING_AREA_BRIGADE624
     } },
@@ -783,21 +783,21 @@ config.OPAREA = {
   Pingzhen = {
     RL = { {
       course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.57.13', lon = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.55.15', longitude = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.57.13', longitude = 'E 121.13.45', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_PINGZHEN
     } },
     FP = { {
       course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.53.01', lon = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.55.15', longitude = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.53.01', longitude = 'E 121.14.17', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.FIRE_POINT_PINGZHEN_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.55.15', lon = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.55.15', longitude = 'E 121.16.02', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_PINGZHEN
     } },
@@ -805,21 +805,21 @@ config.OPAREA = {
   Dadu = {
     RL = { {
       course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.09.09', lon = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.09.07', longitude = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.09.09', longitude = 'E 120.35.47', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.RELOAD_POINT_DADU
     } },
     FP = { {
       course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
-        { lat = 'N 24.11.43', lon = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.09.07', longitude = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.11.43', longitude = 'E 120.38.29', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.FIRE_POINT_DADU_1
     }, },
     AHA = { {
       course = {
-        { lat = 'N 24.09.07', lon = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
+        { latitude = 'N 24.09.07', longitude = 'E 120.36.27', desiredSpeed = 10, presetThrottle = 'Flank' },
       },
       area = config.t.area.AMMO_HOLDING_AREA_DADU
     } },
@@ -896,8 +896,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
   -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
@@ -916,42 +916,42 @@ config.c.IADS.randomRadius = 10
 ---@type SBJ__C2Descriptor[]
 config.c.IADS.C2Settings = {
   {
-    position = { lat = "N 25.30.37", lon = "E 119.30.54" },
+    position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_FUZHOU, },
     areaName = 'Fuzhou'
   },
   {
-    position = { lat = "N 25.19.12", lon = "E 119.06.36" },
+    position = { latitude = "N 25.19.12", longitude = "E 119.06.36" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_PUTIAN, },
     areaName = 'Putian'
   },
   {
-    position = { lat = "N 24.57.01", lon = "E 118.34.22" },
+    position = { latitude = "N 24.57.01", longitude = "E 118.34.22" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_CHANGZHOU, },
     areaName = 'Changzhou'
   },
   {
-    position = { lat = "N 24.43.19", lon = "E 118.12.29" },
+    position = { latitude = "N 24.43.19", longitude = "E 118.12.29" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_XIAMEN, },
     areaName = 'Xiamen'
   },
   {
-    position = { lat = "N 24.10.12", lon = "E 117.28.46" },
+    position = { latitude = "N 24.10.12", longitude = "E 117.28.46" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_ZHANGZHOU, },
     areaName = 'Zhangzhou'
   },
   {
-    position = { lat = "N 23.39.17", lon = "E 116.41.26" },
+    position = { latitude = "N 23.39.17", longitude = "E 116.41.26" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_SHANTOU, },
     areaName = 'Shantou'
   },
   {
-    position = { lat = "N 23.08.19", lon = "E 115.22.49" },
+    position = { latitude = "N 23.08.19", longitude = "E 115.22.49" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_SHANWEI, },
     areaName = 'Shanwei'
   },
   {
-    position = { lat = "N 24.06.12", lon = "E 116.05.36" },
+    position = { latitude = "N 24.06.12", longitude = "E 116.05.36" },
     areas = { config.c.area.MILITARY_SUB_DISTRICT_MEIZHOU, },
     areaName = 'Meizhou'
   },
@@ -1047,39 +1047,39 @@ config.c.ground.mrbm.reloadTime = 5 * 60
 -- Recon
 config.c.recon.courses = {
   WZ8 = {
-    { lat = 'N 24.59.45', lon = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.01.38', lon = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 21.55.32', lon = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.41.05', lon = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 22.57.13', lon = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 23.28.13', lon = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 24.15.54', lon = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { lat = 'N 25.14.02', lon = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 24.59.45', longitude = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 24.01.38', longitude = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 21.55.32', longitude = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 22.41.05', longitude = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 22.57.13', longitude = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 23.28.13', longitude = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 24.15.54', longitude = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = 'N 25.14.02', longitude = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
   },
   H6N = {
-    { lat = '31.4291627579406', lon = '116.708479118499', desiredAltitude = 13716, desiredSpeed = 450 },
-    { lat = 'N 29.47.52',       lon = 'E 119.19.47',      desiredAltitude = 13716, desiredSpeed = 450 },
-    { lat = 'N 25.57.34',       lon = 'E 121.32.45',      desiredAltitude = 13716, desiredSpeed = 550 },
+    { latitude = '31.4291627579406', longitude = '116.708479118499', desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = 'N 29.47.52',       longitude = 'E 119.19.47',      desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = 'N 25.57.34',       longitude = 'E 121.32.45',      desiredAltitude = 13716, desiredSpeed = 550 },
   },
   BZK005_1 = {
-    { lon = 119.651011005704, lat = 25.6118001826929, desiredSpeed = 115 },
-    { lon = 121.238926932242, lat = 25.459719525138,  desiredSpeed = 115 },
-    { lon = 120.926681879442, lat = 25.2124494777565, desiredSpeed = 115 },
-    { lon = 120.929674562224, lat = 24.991467160603,  desiredSpeed = 115 },
-    { lon = 120.479387627427, lat = 24.2630653534717, desiredSpeed = 115 },
+    { longitude = 119.651011005704, latitude = 25.6118001826929, desiredSpeed = 115 },
+    { longitude = 121.238926932242, latitude = 25.459719525138,  desiredSpeed = 115 },
+    { longitude = 120.926681879442, latitude = 25.2124494777565, desiredSpeed = 115 },
+    { longitude = 120.929674562224, latitude = 24.991467160603,  desiredSpeed = 115 },
+    { longitude = 120.479387627427, latitude = 24.2630653534717, desiredSpeed = 115 },
   },
   BZK005_2 = {
-    { lon = 118.031467210727, lat = 23.9011198341539, desiredSpeed = 115 },
-    { lon = 120.074966412556, lat = 23.5745839530736, desiredSpeed = 115 },
-    { lon = 119.894517624583, lat = 23.1838444302557, desiredSpeed = 115 },
-    { lon = 119.884596562779, lat = 22.8618144043299, desiredSpeed = 115 },
-    { lon = 120.200631279976, lat = 22.571862857163,  desiredSpeed = 115 },
-    { lon = 120.536274602033, lat = 22.1911994531482, desiredSpeed = 115 },
+    { longitude = 118.031467210727, latitude = 23.9011198341539, desiredSpeed = 115 },
+    { longitude = 120.074966412556, latitude = 23.5745839530736, desiredSpeed = 115 },
+    { longitude = 119.894517624583, latitude = 23.1838444302557, desiredSpeed = 115 },
+    { longitude = 119.884596562779, latitude = 22.8618144043299, desiredSpeed = 115 },
+    { longitude = 120.200631279976, latitude = 22.571862857163,  desiredSpeed = 115 },
+    { longitude = 120.536274602033, latitude = 22.1911994531482, desiredSpeed = 115 },
   },
   GJ11 = {
-    { lon = 120.954426817633, lat = 25.4296233744497, desiredSpeed = 450, desiredAltitude = 100 },
-    { lon = 121.087994141654, lat = 25.0506579616447, desiredSpeed = 450, desiredAltitude = 100 },
-    { lon = 121.249386737925, lat = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
+    { longitude = 120.954426817633, latitude = 25.4296233744497, desiredSpeed = 450, desiredAltitude = 100 },
+    { longitude = 121.087994141654, latitude = 25.0506579616447, desiredSpeed = 450, desiredAltitude = 100 },
+    { longitude = 121.249386737925, latitude = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
   }
 }
 ---@type table<string, SBJ__ReconQueueEntryTemplate>
@@ -1087,67 +1087,49 @@ config.c.recon.template = {
   BZK005_RECON_1 = {
     baseGUID = config.base.LONGTIAN_AAB,
     unitDBID = config.platform.BZK005,
-    unitGUID = nil,
     course = config.c.recon.courses.BZK005_1,
     unitCount = 1,
     speed = 115,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = false
   },
   BZK005_RECON_2 = {
     baseGUID = config.base.SHANTOU_WAISHA_AB,
     unitDBID = config.platform.BZK005,
-    unitGUID = nil,
     course = config.c.recon.courses.BZK005_2,
     unitCount = 1,
     speed = 115,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = false
   },
   WZ8_RECON_ISLAND = {
     baseGUID = config.base.LIUAN_AB,
     unitDBID = config.platform.H6N,
-    unitGUID = nil,
     course = config.c.recon.courses.H6N,
     unitCount = 1,
     speed = 450,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = true
   },
   WZ7_RECON_1 = {
     baseGUID = config.base.LONGTIAN_AAB,
     unitDBID = config.platform.WZ7,
-    unitGUID = nil,
     course = config.c.recon.courses.BZK005_1,
     unitCount = 1,
     speed = 450,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = false
   },
   TB001_RECON_1 = {
     baseGUID = config.base.LONGTIAN_AAB,
     unitDBID = config.platform.TB001,
-    unitGUID = nil,
     course = config.c.recon.courses.BZK005_1,
     unitCount = 1,
     speed = 135,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = false
   },
   GJ11_RECON = {
     baseGUID = 'Type 076',
     unitDBID = config.platform.GJ11,
-    unitGUID = nil,
     course = config.c.recon.courses.GJ11,
     unitCount = 1,
     speed = 600,
-    takeoffTime = nil,
-    endTime = nil,
     isTracking = false
   }
 }
@@ -1660,39 +1642,39 @@ config.c.PHIBOP.formationSettings = {
       horizontal  = 220 - 90,
       vertical    = 220,
       destination = {
-        { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
       }
     },
     west = {
       horizontal = 150 - 90,
       vertical = 150,
       destination = {
-        { lat = 'N 25.04.52', lon = 'E 121.10.05', },
-        { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+        { latitude = 'N 25.04.52', longitude = 'E 121.10.05', },
+        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
       }
     },
     south = {
       horizontal = 45 - 90,
       vertical = 45,
       destination = {
-        { lat = 'N 25.04.44', lon = 'E 121.13.54', },
+        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
       }
     },
     penghu = {
       horizontal = 82 - 90,
       vertical = 82,
       destination = {
-        { lat = 'N 23.31.00', lon = 'E 119.33.54', },
-        { lat = 'N 23.31.35', lon = 'E 119.35.36', },
-        { lat = 'N 23.34.09', lon = 'E 119.37.41', },
+        { latitude = 'N 23.31.00', longitude = 'E 119.33.54', },
+        { latitude = 'N 23.31.35', longitude = 'E 119.35.36', },
+        { latitude = 'N 23.34.09', longitude = 'E 119.37.41', },
       }
     },
     sishu = {
       horizontal = 73 - 90,
       vertical = 73,
       destination = {
-        { lat = 'N 22.56.39', lon = 'E 120.10.37', },
-        { lat = 'N 22.57.14', lon = 'E 120.12.09', },
+        { latitude = 'N 22.56.39', longitude = 'E 120.10.37', },
+        { latitude = 'N 22.57.14', longitude = 'E 120.12.09', },
       }
     },
   },
@@ -2299,16 +2281,16 @@ config.c.PHIBOP.sag = {
       type052d = { dbid = config.platform.TYPE_052D, }
     },
     from = {
-      startingPoint = { lat = 'N 26.54.18', lon = 'E 121.31.38', },
+      startingPoint = { latitude = 'N 26.54.18', longitude = 'E 121.31.38', },
       heading = 225
     },
     to = {
       anchorageArea = {
-        { lat = 'N 25.17.39', lon = 'E 120.56.04', desiredSpeed = 14, },
-        { lat = 'N 25.17.32', lon = 'E 120.56.07', desiredSpeed = 14, },
+        { latitude = 'N 25.17.39', longitude = 'E 120.56.04', desiredSpeed = 14, },
+        { latitude = 'N 25.17.32', longitude = 'E 120.56.07', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { lat = 'N 25.05.36', lon = 'E 121.01.58', desiredSpeed = 14, },
+        { latitude = 'N 25.05.36', longitude = 'E 121.01.58', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
@@ -2321,16 +2303,16 @@ config.c.PHIBOP.sag = {
       type052d = { dbid = config.platform.TYPE_052D, }
     },
     from = {
-      startingPoint = { lat = 'N 26.13.13', lon = 'E 120.59.55', },
+      startingPoint = { latitude = 'N 26.13.13', longitude = 'E 120.59.55', },
       heading = 225
     },
     to = {
       anchorageArea = {
-        { lat = 'N 25.33.23', lon = 'E 120.54.45', desiredSpeed = 14, },
-        { lat = 'N 25.21.00', lon = 'E 121.04.12', desiredSpeed = 14, },
+        { latitude = 'N 25.33.23', longitude = 'E 120.54.45', desiredSpeed = 14, },
+        { latitude = 'N 25.21.00', longitude = 'E 121.04.12', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { lat = 'N 25.08.29', lon = 'E 121.10.20', desiredSpeed = 14, },
+        { latitude = 'N 25.08.29', longitude = 'E 121.10.20', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
@@ -2343,15 +2325,15 @@ config.c.PHIBOP.sag = {
       type052d = { dbid = config.platform.TYPE_052D, }
     },
     from = {
-      startingPoint = { lat = 'N 23.29.19', lon = 'E 118.04.37', },
+      startingPoint = { latitude = 'N 23.29.19', longitude = 'E 118.04.37', },
       heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
     to = {
       anchorageArea = {
-        { lat = 'N 23.32.46', lon = 'E 119.16.11', desiredSpeed = 14, },
+        { latitude = 'N 23.32.46', longitude = 'E 119.16.11', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { lat = 'N 23.32.34', lon = 'E 119.29.14', desiredSpeed = 14, },
+        { latitude = 'N 23.32.34', longitude = 'E 119.29.14', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
@@ -2364,15 +2346,15 @@ config.c.PHIBOP.sag = {
       type052d = { dbid = config.platform.TYPE_052D, }
     },
     from = {
-      startingPoint = { lat = 'N 22.32.59', lon = 'E 118.04.52', },
+      startingPoint = { latitude = 'N 22.32.59', longitude = 'E 118.04.52', },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
-        { lat = 'N 22.49.20', lon = 'E 119.55.57', desiredSpeed = 14, },
+        { latitude = 'N 22.49.20', longitude = 'E 119.55.57', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { lat = 'N 22.53.16', lon = 'E 120.07.39', desiredSpeed = 14, },
+        { latitude = 'N 22.53.16', longitude = 'E 120.07.39', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
@@ -2385,15 +2367,15 @@ config.c.PHIBOP.sag = {
       type052d = { dbid = config.platform.TYPE_052D, }
     },
     from = {
-      startingPoint = { lat = 'N 22.44.28', lon = 'E 118.01.16', },
+      startingPoint = { latitude = 'N 22.44.28', longitude = 'E 118.01.16', },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
-        { lat = 'N 22.55.20', lon = 'E 119.52.25', desiredSpeed = 14, },
+        { latitude = 'N 22.55.20', longitude = 'E 119.52.25', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { lat = 'N 22.58.52', lon = 'E 120.05.48', desiredSpeed = 14, },
+        { latitude = 'N 22.58.52', longitude = 'E 120.05.48', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
@@ -2504,13 +2486,13 @@ config.c.surface.lacm.csg = {
     },
   },
   from = {
-    startingPoint = { lat = 'N 21.09.59', lon = 'E 120.48.05', },
+    startingPoint = { latitude = 'N 21.09.59', longitude = 'E 120.48.05', },
     heading = 83
   },
   to = {
     area = {
-      { lat = 'N 21.14.11', lon = 'E 121.34.36', },
-      { lat = 'N 21.32.59', lon = 'E 122.12.58', },
+      { latitude = 'N 21.14.11', longitude = 'E 121.34.36', },
+      { latitude = 'N 21.32.59', longitude = 'E 122.12.58', },
     },
     -- heading = CONFIG.c.PHIBOP.shipInfo.heading.west.vertical,
   },
@@ -2530,12 +2512,12 @@ config.c.subSurface.slcm.submarines = {
     name = "407",
     guid = '',
     course = {
-      { lat = 'N 25.07.57', lon = 'E 122.46.06', presetDepth = 3 },
-      { lat = 'N 24.33.33', lon = 'E 122.05.57', presetDepth = 3 },
-      { lat = 'N 24.30.54', lon = 'E 122.48.02', presetDepth = 3 },
+      { latitude = 'N 25.07.57', longitude = 'E 122.46.06', presetDepth = 3 },
+      { latitude = 'N 24.33.33', longitude = 'E 122.05.57', presetDepth = 3 },
+      { latitude = 'N 24.30.54', longitude = 'E 122.48.02', presetDepth = 3 },
     },
     from = {
-      startingPoint = { lat = 'N 25.05.32', lon = 'E 122.11.39' },
+      startingPoint = { latitude = 'N 25.05.32', longitude = 'E 122.11.39' },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
@@ -2544,12 +2526,12 @@ config.c.subSurface.slcm.submarines = {
     name = "408",
     guid = '',
     course = {
-      { lat = 'N 25.11.06', lon = 'E 122.42.15', presetDepth = 3 },
-      { lat = 'N 24.33.33', lon = 'E 122.08.38', presetDepth = 3 },
-      { lat = 'N 25.09.37', lon = 'E 122.06.45', presetDepth = 3 },
+      { latitude = 'N 25.11.06', longitude = 'E 122.42.15', presetDepth = 3 },
+      { latitude = 'N 24.33.33', longitude = 'E 122.08.38', presetDepth = 3 },
+      { latitude = 'N 25.09.37', longitude = 'E 122.06.45', presetDepth = 3 },
     },
     from = {
-      startingPoint = { lat = 'N 24.32.30', lon = 'E 122.47.45', },
+      startingPoint = { latitude = 'N 24.32.30', longitude = 'E 122.47.45', },
       heading = 270
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
@@ -2558,12 +2540,12 @@ config.c.subSurface.slcm.submarines = {
     name = "409",
     guid = '',
     course = {
-      { lat = 23.1405738004732, lon = 122.453896349795, presetDepth = 3 },
-      { lat = 24.3097078500905, lon = 122.142301456749, presetDepth = 3 },
-      { lat = 23.3573584800694, lon = 121.777514450334, presetDepth = 3 }
+      { latitude = 23.1405738004732, longitude = 122.453896349795, presetDepth = 3 },
+      { latitude = 24.3097078500905, longitude = 122.142301456749, presetDepth = 3 },
+      { latitude = 23.3573584800694, longitude = 121.777514450334, presetDepth = 3 }
     },
     from = {
-      startingPoint = { lat = 'N 23.29.41', lon = 'E 122.39.12', },
+      startingPoint = { latitude = 'N 23.29.41', longitude = 'E 122.39.12', },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
@@ -2572,12 +2554,12 @@ config.c.subSurface.slcm.submarines = {
     name = "410",
     guid = '',
     course = {
-      { lat = 24.2344610141018, lon = 122.681795983267, presetDepth = 3 },
-      { lat = 23.4458260682078, lon = 121.855392759008, presetDepth = 3 },
-      { lat = 24.280771111992,  lon = 121.981212557257, presetDepth = 3 }
+      { latitude = 24.2344610141018, longitude = 122.681795983267, presetDepth = 3 },
+      { latitude = 23.4458260682078, longitude = 121.855392759008, presetDepth = 3 },
+      { latitude = 24.280771111992,  longitude = 121.981212557257, presetDepth = 3 }
     },
     from = {
-      startingPoint = { lat = 'N 22.41.17', lon = 'E 122.01.36', },
+      startingPoint = { latitude = 'N 22.41.17', longitude = 'E 122.01.36', },
       heading = 30
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
@@ -4347,7 +4329,7 @@ config.t.surface.sag = {
     },
     missionName = 'ASW/E',
     from = {
-      startingPoint = { lat = 'N 24.28.47', lon = 'E 122.25.49', },
+      startingPoint = { latitude = 'N 24.28.47', longitude = 'E 122.25.49', },
       heading = 0
     },
   },

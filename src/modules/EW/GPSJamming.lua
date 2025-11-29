@@ -184,10 +184,10 @@ function GPSJamming.addGPSJammer(config, descriptor, sideName)
     unitname = descriptor.name,
     dbid = config.platform.GPS_JAMMER,
     type = 'Facility',
-    latitude = descriptor.point.lat,
-    longitude = descriptor.point.lon
+    latitude = descriptor.point.latitude,
+    longitude = descriptor.point.longitude
   })
-  local point = { latitude = descriptor.point.lat, longitude = descriptor.point.lon }
+  local point = { latitude = descriptor.point.latitude, longitude = descriptor.point.longitude }
 
   if unit then
     GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
@@ -212,8 +212,8 @@ function GPSJamming.addGPSJammers(config, jammerDescriptors, sideName)
   for _, descriptor in pairs(jammerDescriptors) do
     local unit, point = GameUtils.tryAddUnit(
       descriptor.name,
-      descriptor.point.lat,
-      descriptor.point.lon,
+      descriptor.point.latitude,
+      descriptor.point.longitude,
       descriptor.randomRadius,
       config.platform.GPS_JAMMER
     )

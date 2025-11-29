@@ -118,7 +118,7 @@ function BearingOnlyLaunch.generateMissilePaths(params)
       local flightTime = totalDistance / speed * 3600 -- seconds
       table.insert(result, {
         waypoints = {
-          { lat = wpLat, lon = wpLon }
+          { latitude = wpLat, longitude = wpLon }
         },
         launchTime = now - flightTime
       })

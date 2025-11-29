@@ -321,7 +321,6 @@ local function processPackage(config, saveData, packageData)
       local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
           config.c.ground.srbm.reloadTime - flightTime
       local endTime = takeoffTime + flightTime
-
       packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
       packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime)
 

@@ -65,7 +65,7 @@ function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
 end
 
 ---Calculate total path distance and transit time for a route
----@param waypoints table<integer, {lat: number, lon: number}> Array of waypoints defining the route
+---@param waypoints CMO__TableOfWaypoints Array of waypoints defining the route
 ---@param speedKnots number Transit speed in knots
 ---@return number totalDistance Total path distance in nautical miles
 ---@return number totalTime Total transit time in seconds
@@ -86,10 +86,10 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
     local point2 = waypoints[i + 1]
 
     local distance = GameUtils.calculateDistance(
-      point1.lat,
-      point1.lon,
-      point2.lat,
-      point2.lon
+      point1.latitude,
+      point1.longitude,
+      point2.latitude,
+      point2.longitude
     )
 
     totalDistance = totalDistance + distance
@@ -103,8 +103,8 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
 end
 
 ---Generate a random position within a circular area around a center point
----@param xLatitude number Center point latitude
----@param xLongitude number Center point longitude
+---@param xLatitude number|string Center point latitude
+---@param xLongitude number|string Center point longitude
 ---@param maxRadius number Maximum radius for random positioning (nautical miles)
 ---@return CMO__Location|nil # Random position within the circle, or nil if generation fails
 function GameUtils.circularRandomPosition(xLatitude, xLongitude, maxRadius)
@@ -364,19 +364,19 @@ end
 ---Attempts to add a unit to the scenario with retry logic and random positioning
 ---Retries with different random positions within circular area up to max attempts if creation fails
 ---@param name string Unique name for the unit to be created
----@param lat number Latitude coordinate of the center point for unit placement
----@param lon number Longitude coordinate of the center point for unit placement
+---@param latitude number|string Latitude coordinate of the center point for unit placement
+---@param longitude number|string Longitude coordinate of the center point for unit placement
 ---@param randomRadius number Maximum distance in nautical miles from center point for random placement
----@param unitDBID number Database ID of the unit type to create (must be valid CMO platform DBID)
----@param attempt? number Current attempt number (used internally for recursion, defaults to 1)
----@param max_attempts? number Maximum number of placement attempts before giving up (defaults to 50)
+---@param unitDBID integer Database ID of the unit type to create (must be valid CMO platform DBID)
+---@param attempt? integer Current attempt number (used internally for recursion, defaults to 1)
+---@param maxAttempts? number Maximum number of placement attempts before giving up (defaults to 50)
 ---@return CMO__Unit|nil unit The created unit object if successful, nil if all attempts failed
 ---@return CMO__Location|nil point The final position where unit was placed, nil if creation failed
-function GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt, max_attempts)
+function GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID, attempt, maxAttempts)
   attempt = attempt or 1
-  max_attempts = max_attempts or 50
+  maxAttempts = maxAttempts or 50
 
-  local point = GameUtils.circularRandomPosition(lat, lon, randomRadius)
+  local point = GameUtils.circularRandomPosition(latitude, longitude, randomRadius)
   local unit
 
   if point then
@@ -393,17 +393,17 @@ function GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt, m
 
   if unit then
     return unit, point
-  elseif attempt < max_attempts then
-    return GameUtils.tryAddUnit(name, lat, lon, randomRadius, unitDBID, attempt + 1, max_attempts)
+  elseif attempt < maxAttempts then
+    return GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID, attempt + 1, maxAttempts)
   else
-    print("Failed to create jammer unit after " .. max_attempts .. " attempts: " .. name)
+    print("Failed to create jammer unit after " .. maxAttempts .. " attempts: " .. name)
     return nil, nil
   end
 end
 
 ---Attempt to create a single unit (with retry mechanism)
 ---@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
----@param maxAttempts number|nil Maximum number of attempts
+---@param maxAttempts integer|nil Maximum number of attempts
 ---@return CMO__Unit|nil # Created unit if successful, nil if all attempts failed
 function GameUtils.tryCreateUnit(unitDescriptor, maxAttempts)
   maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
@@ -433,8 +433,8 @@ function GameUtils.createRandomUnits(descriptor)
   for i = 1, descriptor.count do
     local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
     local point = GameUtils.circularRandomPosition(
-      descriptor.centerPoint.lat,
-      descriptor.centerPoint.lon,
+      descriptor.centerPoint.latitude,
+      descriptor.centerPoint.longitude,
       descriptor.randomRadius
     )
     local unitDescriptor

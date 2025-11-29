@@ -75,14 +75,14 @@ saveData.c.GPSJamming.jammers = {
   ['1st Bn, 1st ECM Bde'] = {
     zoneName = 'JAMMING ZONE/1',
     name = '1st Bn, 1st ECM Bde',
-    point = { lat = 'N 25.28.17', lon = 'E 119.35.17' },
+    point = { latitude = 'N 25.28.17', longitude = 'E 119.35.17' },
     randomRadius = config.c.GPSJamming.randomRadius,
     radius = config.c.GPSJamming.radius
   },
   ['2nd Bn, 1st ECM Bde'] = {
     zoneName = 'JAMMING ZONE/2',
     name = '2nd Bn, 1st ECM Bde',
-    point = { lat = 'N 24.43.49', lon = 'E 118.29.41' },
+    point = { latitude = 'N 24.43.49', longitude = 'E 118.29.41' },
     randomRadius = config.c.GPSJamming.randomRadius,
     radius = config.c.GPSJamming.radius
   },
@@ -852,14 +852,14 @@ saveData.t.GPSJamming.jammers = {
   ['Comms & Info Coy, 584th Mech Bde'] = {
     zoneName = '(Taiwan) Jamming Zone/1',
     name = 'Comms & Info Coy, 584th Mech Bde',
-    point = { lat = nil, lon = nil },
+    point = { latitude = nil, longitude = nil },
     randomRadius = config.t.GPSJamming.randomRadius,
     radius = config.t.GPSJamming.radius
   },
   ['Comms & Info Coy, 269th Mech Bde'] = {
     zoneName = '(Taiwan) Jamming Zone/2',
     name = 'Comms & Info Coy, 269th Mech Bde',
-    point = { lat = nil, lon = nil },
+    point = { latitude = nil, longitude = nil },
     randomRadius = config.t.GPSJamming.randomRadius,
     radius = config.t.GPSJamming.radius
   },

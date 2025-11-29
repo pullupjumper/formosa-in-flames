@@ -78,7 +78,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Linear placement parameters for positioning multiple units in a line
 ---Temporary parameter pack used for unit placement functions
 ---@class SBJ__LinearPlacementParams:table
----@field initialLocation {latitude:number|string, longitude:number|string} Starting position
+---@field initialLocation CMO__Location Starting position
 ---@field num number Number of units to place
 ---@field bearing number Direction angle (degrees)
 ---@field distance number Distance between units (nautical miles)
@@ -86,7 +86,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Random units descriptor for creating multiple units at random positions
 ---@class SBJ__RandomUnitsDescriptor:table
----@field centerPoint {lat:number, lon:number} Center point for random positioning
+---@field centerPoint CMO__Waypoint Center point for random positioning
 ---@field randomRadius number Maximum radius from center point (nautical miles)
 ---@field autodetectable boolean Whether units are automatically detectable
 ---@field unitname string Base name for created units (random suffix will be added if useRandomSuffix is true)
@@ -159,7 +159,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Departure point definition with starting coordinates and heading
 ---@class SBJ__DeparturePoint:table
----@field startingPoint {lat:number, lon:number} Starting coordinates
+---@field startingPoint CMO__Location Starting coordinates
 ---@field heading number Initial heading angle
 
 ---Destination area definition with waypoints
@@ -169,27 +169,21 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Destination staging area with anchorage and vehicle staging zones
 ---Extends destination area with additional staging and anchorage areas
 ---@class SBJ__DestinationStagingArea:SBJ__DestinationArea
----@field anchorageArea CMO__Location[] Anchorage area waypoints
----@field amphibiousVehicleStagingArea CMO__Location[] Amphibious vehicle staging area waypoints
+---@field anchorageArea CMO__TableOfWaypoints Anchorage area waypoints
+---@field amphibiousVehicleStagingArea CMO__TableOfWaypoints Amphibious vehicle staging area waypoints
 ---@field heading number Formation heading angle
 
 ---Formation heading configuration
 ---@class SBJ__FormationHeading:table
 ---@field horizontal number Horizontal spacing angle
 ---@field vertical number Vertical spacing angle
----@field destination CMO__Location[] Destination waypoints
-
----Submarine waypoint definition with depth control
----@class SBJ__SubmarineWaypoint:table
----@field lat number|string Latitude coordinate (can be number or string format like 'N 25.07.57')
----@field lon number|string Longitude coordinate (can be number or string format like 'E 122.46.06')
----@field presetDepth number Preset depth for this waypoint (depth in meters)
+---@field destination CMO__TableOfWaypoints Destination waypoints
 
 ---Submarine descriptor for SLCM operations
 ---@class SBJ__SubmarineDescriptor:table
 ---@field name string Submarine name/identifier
 ---@field guid string Submarine unit GUID (empty string if not yet created)
----@field course SBJ__SubmarineWaypoint[] Submarine patrol route waypoints
+---@field course CMO__TableOfWaypoints Submarine patrol route waypoints
 ---@field from SBJ__DeparturePoint Starting location with heading
 ---@field weaponDBID number Weapon database ID for SLCM
 
@@ -591,7 +585,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Missile path definition with waypoints and timing
 ---@class SBJ__MissilePath
----@field waypoints table<integer, CMO__Location> Missile waypoint list
+---@field waypoints CMO__TableOfWaypoints Missile waypoint list
 ---@field launchTime number Launch time (UTC timestamp)
 
 
@@ -604,16 +598,16 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__ReconQueueEntryTemplate:table
 ---@field baseGUID string Base GUID where UAV is stationed
 ---@field unitDBID number UAV platform database ID
----@field unitGUID? string UAV unit GUID (nil if not yet created)
 ---@field course CMO__TableOfWaypoints Waypoints for reconnaissance route
 ---@field unitCount number Number of UAVs to deploy
 ---@field speed number Cruise speed in knots for tracking mode
 ---@field takeoffTime? string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS" (optional)
----@field isTracking? boolean Whether to track this reconnaissance mission (optional)
 ---@field endTime? string Scheduled end time in format "YYYY-MM-DD HH:MM:SS" (optional)
+---@field isTracking? boolean Whether to track this reconnaissance mission (optional)
 
 ---Reconnaissance queue entry extending template with execution state
 ---@class SBJ__ReconQueueEntry:SBJ__ReconQueueEntryTemplate
+---@field unitGUID? string UAV unit GUID (nil if not yet created)
 ---@field hasLaunched boolean Whether reconnaissance mission has launched
 ---@field isFinished? boolean Whether reconnaissance mission has finished (optional)
 ---@field trackingTargetGUID? string Target contact GUID being tracked (optional, only used when isTracking is true)
@@ -642,7 +636,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance-driven operation schedule
 
 ---Reconnaissance schedule entry for intelligence gathering operations
----@class SBJ__ReconScheduleEntry
+---@class SBJ__ReconScheduleEntry:table
 ---@field time string Reconnaissance time in format "2027-06-09 14:30:00"
 ---@field type string Reconnaissance type: "satellite", "aircraft", or "UAV"
 ---@field delay number Delay trigger time (seconds)
@@ -686,7 +680,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field loadoutStatus SBJ__LoadoutStatus Loadout preparation status
 
 ---Wave execution state with packages and activation status
----@class SBJ__Wave:table
+---@class SBJ__Wave:SBJ__WaveTemplate
 ---@field packages SBJ__Package[] Array of packages in this wave
 ---@field hasLaunched boolean Whether wave has launched
 ---@field isActivated boolean Whether wave is activated

@@ -19,7 +19,7 @@ local UnitGenerator = {}
 ---Formation configuration for internal ship creation
 ---Used internally by createShipFormation() to configure ship group formations
 ---@class UnitGenerator_FormationConfig
----@field centerPoint {lat:number, lon:number} Formation center point coordinates
+---@field centerPoint CMO__Location Formation center point coordinates
 ---@field heading number Formation heading angle
 ---@field groupName string Ship group name
 ---@field sideName string Side name (e.g., 'China', 'Taiwan')
@@ -50,15 +50,15 @@ local FORMATION = {
 }
 
 ---Calculate formation position
----@param centerPoint {lat: number, lon: number} Center point coordinates {lat: number, lon: number}
+---@param centerPoint CMO__Location Center point coordinates
 ---@param heading number Heading angle
 ---@param distance number Distance
 ---@param angle number Angle offset
 ---@return table|nil # Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
-    latitude = centerPoint.lat,
-    longitude = centerPoint.lon,
+    latitude = centerPoint.latitude,
+    longitude = centerPoint.longitude,
     bearing = heading + angle,
     distance = distance,
   })
@@ -779,6 +779,8 @@ function UnitGenerator.initAircraftContexts(config, context)
 
   local aewCount = 0
   local acCount = 0
+  context.AEW = {}
+  context.AC = {}
 
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
