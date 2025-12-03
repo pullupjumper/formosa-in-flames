@@ -42,7 +42,6 @@ config.c.PHIBOP = {}
 config.c.recon = {}
 config.c.GPSJamming = {}
 config.c.commsJamming = {}
-config.c.repairRunway = {}
 ---@type SBJ__IADSConfig
 config.c.IADS = {}
 config.c.SIGINT = {}
@@ -52,7 +51,6 @@ config.t.ground.mlrs = {}
 config.t.ground.glcm = {}
 config.t.ground.srbm = {}
 config.t.ground.ascm = {}
-config.t.repairRunway = {}
 config.t.IADS = {}
 config.t.air = {}
 config.t.air.landBased = {}
@@ -61,6 +59,69 @@ config.t.GPSJamming = {}
 config.u = {}
 config.u.SIGINT = {}
 config.s = {}
+
+---@type SBJ__TargetScanningConfig
+config.targetScanning = {
+  distanceThreshold = 1, -- nautical miles
+  taiwanAirBases = {
+    'Jiashan AB',
+    'Hualien AB',
+    'Taitung/Jhihhang AB',
+    'Pingtung North AB',
+    'Pingtung South AB',
+    'Gangshan AB',
+    'Tainan AB',
+    'Guiren AAB',
+    'Magong AB',
+    'Chiayi AB',
+    'Ching Chuang Kang AB',
+    'Hsinchu AB',
+    'Longtan AAB',
+    'Taipei Songshan Airport',
+    'Taoyuan International Airport',
+    'Hsinchu Field Airdrome',
+    'Minxiong Emergency Highway Strip',
+    'Madou Emergency Highway Strip',
+    'Rende Emergency Highway Strip',
+    'Tainan Field Airdrome',
+  },
+  taiwanPorts = {
+    'Kaohsiung Port',
+    'Donggang Wharf',
+    'Port of Taipei',
+    'Port of Keelung',
+    'Suao Port',
+    'HuangGang Fishing Harbor',
+    'Magong Port',
+  },
+  targetCategories = {
+    airfield = {
+      runwayPattern = 'Runway %(%d+m%)',
+      taxiwayPattern = 'Taxiway',
+      shelterPattern = 'Shelter',
+      hangarPattern = 'Hangar',
+      tarmacPattern = 'Tarmac',
+      helipadPattern = 'Helipad',
+      ammoBunkerPattern = 'Ammo Bunker',
+      ammoRevetmentPattern = 'Ammo Revetment',
+    },
+    port = {
+      pierPattern = 'Pier',
+    },
+    radar = {
+      radarPattern = 'Radar',
+    },
+    sam = {
+      skyBowPattern = 'Sky Bow',
+    },
+    asm = {
+      asmPattern = 'ASM',
+    },
+    c2 = {
+      hengshanPattern = 'Hengshan ROC command',
+    }
+  }
+}
 
 config.c.area = {
   MILITARY_SUB_DISTRICT_FUZHOU = { 'RP-85138', 'RP-85139', 'RP-85140', 'RP-85141', },
@@ -489,7 +550,7 @@ config.fixedFacilityCategory = {
   AIR_BASE = 9001
 }
 
-config.OPAREA = {
+config.operationalArea = {
   Pingtan = {
     RL = { {
       course = {
@@ -1002,9 +1063,9 @@ config.c.GPSJamming.GPSGuidedWeapons = {
 config.c.ground.mlrs.wpnDefault = 192
 config.c.ground.mlrs.ammoThreshold = 50
 ---@type table<string, SBJ__OperationalArea>
-config.c.ground.mlrs.OPAREAs = {
-  Pingtan = config.OPAREA.Pingtan,
-  Chinchew = config.OPAREA.Chinchew,
+config.c.ground.mlrs.operationalAreas = {
+  Pingtan = config.operationalArea.Pingtan,
+  Chinchew = config.operationalArea.Chinchew,
 }
 config.c.ground.mlrs.contactAge = 30 * 60
 config.c.ground.mlrs.reloadTime = 30 * 60
@@ -1013,8 +1074,8 @@ config.c.ground.mlrs.reloadTime = 30 * 60
 config.c.ground.glcm.wpnDefault = 48
 config.c.ground.glcm.ammoThreshold = 50
 ---@type table<string, SBJ__OperationalArea>
-config.c.ground.glcm.OPAREAs = {
-  Brigade635 = config.OPAREA.Brigade635,
+config.c.ground.glcm.operationalAreas = {
+  Brigade635 = config.operationalArea.Brigade635,
 }
 config.c.ground.glcm.contactAge = 30 * 60
 config.c.ground.glcm.reloadTime = 45 * 60
@@ -1023,13 +1084,13 @@ config.c.ground.glcm.reloadTime = 45 * 60
 config.c.ground.srbm.wpnDefault = 36
 config.c.ground.srbm.ammoThreshold = 35
 ---@type table<string, SBJ__OperationalArea>
-config.c.ground.srbm.OPAREAs = {
-  Brigade615 = config.OPAREA.Brigade615,
-  Brigade614 = config.OPAREA.Brigade614,
-  Brigade636 = config.OPAREA.Brigade636,
-  Brigade616 = config.OPAREA.Brigade616,
-  Brigade613 = config.OPAREA.Brigade613,
-  Brigade617 = config.OPAREA.Brigade617,
+config.c.ground.srbm.operationalAreas = {
+  Brigade615 = config.operationalArea.Brigade615,
+  Brigade614 = config.operationalArea.Brigade614,
+  Brigade636 = config.operationalArea.Brigade636,
+  Brigade616 = config.operationalArea.Brigade616,
+  Brigade613 = config.operationalArea.Brigade613,
+  Brigade617 = config.operationalArea.Brigade617,
 }
 config.c.ground.srbm.contactAge = 30 * 60
 config.c.ground.srbm.reloadTime = 5 * 60
@@ -1038,8 +1099,8 @@ config.c.ground.srbm.reloadTime = 5 * 60
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 35
 ---@type table<string, SBJ__OperationalArea>
-config.c.ground.mrbm.OPAREAs = {
-  Brigade624 = config.OPAREA.Brigade624,
+config.c.ground.mrbm.operationalAreas = {
+  Brigade624 = config.operationalArea.Brigade624,
 }
 config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
@@ -2574,7 +2635,29 @@ config.c.subSurface.slcm.randomRadius = 20
 
 
 -- Runway repairment
-config.c.repairRunway.percentagePerHour = 3
+---@type SBJ__RunwayRepairConfig
+config.repairRunway = {
+  percentagePerHour = 3,
+  runwayDBIDs = { 55, 43, 757, 1422, 1424, 1423, 1421 },
+  airBases = {
+    'Hualien AB',
+    'Taitung/Jhihhang AB',
+    'Ching Chuang Kang AB',
+    'Chiayi AB',
+    'Tainan AB',
+    'Pingtung South AB',
+    'Pingtung North AB',
+    'Magong AB',
+    'Hsinchu AB',
+    'Jiashan AB',
+    'Guiren AAB',
+    'Longtan AAB',
+    'Gangshan AB',
+    'Taipei Songshan Airport',
+    'Taoyuan International Airport',
+  },
+  runwaySubTypes = { 'Runway %(%d+m%)', 'Taxiway' }
+}
 
 ---@type table<string, SBJ__FireSupportTaskTemplate[]>
 config.c.FSTTemplate = {
@@ -3950,8 +4033,8 @@ config.t.GPSJamming.GPSGuidedWeapons = {
 config.t.ground.mlrs.wpnDefault = 144
 config.t.ground.mlrs.ammoThreshold = 25
 ---@type table<string, SBJ__OperationalArea>
-config.t.ground.mlrs.OPAREAs = {
-  Pingzhen = config.OPAREA.Pingzhen,
+config.t.ground.mlrs.operationalAreas = {
+  Pingzhen = config.operationalArea.Pingzhen,
 }
 config.t.ground.mlrs.reloadTime = 30 * 60
 
@@ -3960,9 +4043,9 @@ config.t.ground.mlrs.reloadTime = 30 * 60
 config.t.ground.srbm.wpnDefault = 27
 config.t.ground.srbm.ammoThreshold = 25
 ---@type table<string, SBJ__OperationalArea>
-config.t.ground.srbm.OPAREAs = {
-  Pingzhen = config.OPAREA.Pingzhen,
-  Dadu = config.OPAREA.Dadu,
+config.t.ground.srbm.operationalAreas = {
+  Pingzhen = config.operationalArea.Pingzhen,
+  Dadu = config.operationalArea.Dadu,
 }
 config.t.ground.srbm.reloadTime = 10 * 60
 
@@ -3971,9 +4054,9 @@ config.t.ground.srbm.reloadTime = 10 * 60
 config.t.ground.glcm.wpnDefault = 48
 config.t.ground.glcm.ammoThreshold = 25
 ---@type table<string, SBJ__OperationalArea>
-config.t.ground.glcm.OPAREAs = {
-  Quanxi = config.OPAREA.Quanxi,
-  Neipu = config.OPAREA.Neipu,
+config.t.ground.glcm.operationalAreas = {
+  Quanxi = config.operationalArea.Quanxi,
+  Neipu = config.operationalArea.Neipu,
 }
 config.t.ground.glcm.reloadTime = 45 * 60
 
@@ -3982,18 +4065,14 @@ config.t.ground.glcm.reloadTime = 45 * 60
 config.t.ground.ascm.wpnDefault = 16
 config.t.ground.ascm.ammoThreshold = 25
 ---@type table<string, SBJ__OperationalArea>
-config.t.ground.ascm.OPAREAs = {
-  Pingzhen = config.OPAREA.Pingzhen,
-  Dadu = config.OPAREA.Dadu,
-  Neipu = config.OPAREA.Neipu,
-  Luzhu = config.OPAREA.Luzhu,
-  Dong = config.OPAREA.Dong,
+config.t.ground.ascm.operationalAreas = {
+  Pingzhen = config.operationalArea.Pingzhen,
+  Dadu = config.operationalArea.Dadu,
+  Neipu = config.operationalArea.Neipu,
+  Luzhu = config.operationalArea.Luzhu,
+  Dong = config.operationalArea.Dong,
 }
 config.t.ground.ascm.reloadTime = 45 * 60
-
-
--- Runway repairment
-config.t.repairRunway.percentagePerHour = 3
 
 
 -- IADS

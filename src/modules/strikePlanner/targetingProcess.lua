@@ -5,6 +5,230 @@ local Recon = require("src.modules.strikePlanner.recon")
 
 local TargetingProcess = {}
 
+---Check if location is within threshold distance from contact
+---@param location CMO__Location|nil Base location coordinates
+---@param guid string Contact GUID
+---@param threshold number Distance threshold in nautical miles
+---@return boolean # True if within threshold, false otherwise
+local function isNearby(location, guid, threshold)
+  if not location then
+    return false
+  end
+
+  local distance = GameApi.Tool_Range(location, guid)
+  if not distance then
+    return false
+  end
+
+  return distance <= threshold
+end
+
+---Initialize location map for bases or ports from contacts
+---@param contacts CMO__Contact[] Array of contacts
+---@param locationNames string[] Array of location names to find
+---@return table<string, CMO__Location> # Map of location names to coordinates
+local function initializeLocationMap(contacts, locationNames)
+  local locations = {}
+
+  for _, name in ipairs(locationNames) do
+    locations[name] = nil
+  end
+
+  for _, contact in ipairs(contacts) do
+    for _, name in ipairs(locationNames) do
+      if string.find(contact.type_description, name) then
+        locations[name] = { latitude = contact.latitude, longitude = contact.longitude }
+        break
+      end
+    end
+  end
+
+  return locations
+end
+
+---Match contact against airfield-related patterns
+---@param description string Contact type description
+---@param baseLocations table<string, CMO__Location> Map of base locations
+---@param guid string Contact GUID
+---@param threshold number Distance threshold in nautical miles
+---@param patterns SBJ__AirfieldPatterns Airfield pattern configuration
+---@return SBJ__TargetEntry|nil # Target entry or nil if no match
+local function matchAirfieldTarget(description, baseLocations, guid, threshold, patterns)
+  -- Check runway and taxiway patterns
+  if string.match(description, patterns.runwayPattern) or
+      string.find(description, patterns.taxiwayPattern) then
+    for baseName, location in pairs(baseLocations) do
+      if isNearby(location, guid, threshold) then
+        return {
+          name = baseName .. '/' .. description,
+          guid = guid,
+          category = 'Airfield',
+          subType = description,
+        }
+      end
+    end
+  end
+
+  -- Check shelter, hangar, tarmac, and helipad patterns
+  if string.find(description, patterns.shelterPattern) or
+      string.find(description, patterns.hangarPattern) or
+      string.find(description, patterns.tarmacPattern) or
+      string.find(description, patterns.helipadPattern) then
+    for baseName, location in pairs(baseLocations) do
+      if isNearby(location, guid, threshold) then
+        return {
+          name = baseName .. '/' .. description,
+          guid = guid,
+          category = 'Airfield',
+          subType = description,
+        }
+      end
+    end
+  end
+
+  -- Check ammo bunker and revetment patterns
+  if string.find(description, patterns.ammoBunkerPattern) or
+      string.find(description, patterns.ammoRevetmentPattern) then
+    for baseName, location in pairs(baseLocations) do
+      if isNearby(location, guid, threshold) then
+        return {
+          name = baseName .. '/' .. description,
+          guid = guid,
+          category = 'Airfield',
+          subType = description,
+        }
+      end
+    end
+  end
+
+  return nil
+end
+
+---Match contact against port-related patterns
+---@param description string Contact type description
+---@param portLocations table<string, CMO__Location> Map of port locations
+---@param guid string Contact GUID
+---@param threshold number Distance threshold in nautical miles
+---@param patterns SBJ__PortPatterns Port pattern configuration
+---@return SBJ__TargetEntry|nil # Target entry or nil if no match
+local function matchPortTarget(description, portLocations, guid, threshold, patterns)
+  if string.find(description, patterns.pierPattern) then
+    for portName, location in pairs(portLocations) do
+      if isNearby(location, guid, threshold) then
+        return {
+          name = portName .. '/' .. description,
+          guid = guid,
+          category = 'Port',
+          subType = description,
+        }
+      end
+    end
+  end
+
+  return nil
+end
+
+---Match contact against standalone target patterns (Radar, SAM, ASM, C2)
+---@param description string Contact type description
+---@param guid string Contact GUID
+---@param patterns SBJ__TargetCategoryPatterns Target category patterns configuration
+---@return SBJ__TargetEntry|nil # Target entry or nil if no match
+local function matchStandaloneTarget(description, guid, patterns)
+  if string.find(description, patterns.radar.radarPattern) then
+    return {
+      name = description,
+      guid = guid,
+      category = 'ISR',
+      subType = description,
+    }
+  end
+
+  if string.find(description, patterns.sam.skyBowPattern) then
+    return {
+      name = description,
+      guid = guid,
+      category = 'SAM',
+      subType = description,
+    }
+  end
+
+  if string.find(description, patterns.asm.asmPattern) then
+    return {
+      name = description,
+      guid = guid,
+      category = 'ASM',
+      subType = description,
+    }
+  end
+
+  if string.find(description, patterns.c2.hengshanPattern) then
+    return {
+      name = description,
+      guid = guid,
+      category = 'C2',
+      subType = description,
+    }
+  end
+
+  return nil
+end
+
+---Scan and categorize contacts into a target list
+---Performs single-pass scanning of contacts to identify and categorize targets
+---Results are directly assigned to saveData.c.targetlist
+---@param sideName string Side name to get contacts from (e.g., 'China')
+---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, taiwanAirBases, taiwanPorts, and targetCategories
+---@param saveData SBJ__SaveData Persistent save data
+function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
+  local contacts = GameApi.ScenEdit_GetContacts(sideName)
+
+  if not contacts then
+    Logger.warn(string.format("Failed to get %s contacts", sideName))
+    saveData.c.targetlist = {}
+    return
+  end
+
+  local threshold = scanConfig.distanceThreshold
+
+  -- Initialize location maps for bases and ports
+  local baseLocations = initializeLocationMap(contacts, scanConfig.taiwanAirBases)
+  local portLocations = initializeLocationMap(contacts, scanConfig.taiwanPorts)
+  local targetlist = {}
+  ---@cast targetlist SBJ__TargetEntry[]
+
+  -- Single pass through contacts to categorize all targets
+  for _, contact in ipairs(contacts) do
+    local target = nil
+
+    -- Try matching airfield targets
+    target = matchAirfieldTarget(contact.type_description, baseLocations, contact.guid, threshold,
+      scanConfig.targetCategories.airfield)
+    if target then
+      table.insert(targetlist, target)
+      goto continue
+    end
+
+    -- Try matching port targets
+    target = matchPortTarget(contact.type_description, portLocations, contact.guid, threshold,
+      scanConfig.targetCategories.port)
+    if target then
+      table.insert(targetlist, target)
+      goto continue
+    end
+
+    -- Try matching standalone targets (Radar, SAM, ASM, C2)
+    target = matchStandaloneTarget(contact.type_description, contact.guid, scanConfig.targetCategories)
+    if target then
+      table.insert(targetlist, target)
+    end
+
+    ::continue::
+  end
+
+  saveData.c.targetlist = targetlist
+  Logger.log("targetingProcess", string.format("Scanned %d targets for %s", #targetlist, sideName))
+end
+
 ---Find infantry units within specified areas
 ---Filters contacts to identify ground infantry units (typed == 8) in target areas
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information

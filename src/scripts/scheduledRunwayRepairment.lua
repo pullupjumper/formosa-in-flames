@@ -10,5 +10,5 @@ if saveData == nil then
   return
 end
 
-RunwayRepairment.repairRunway(config, saveData, 'China')
-RunwayRepairment.repairRunway(config, saveData, 'Taiwan')
+RunwayRepairment.repairRunway(config, saveData.c.repairRunway.runways)
+RunwayRepairment.repairRunway(config, saveData.t.repairRunway.runways)

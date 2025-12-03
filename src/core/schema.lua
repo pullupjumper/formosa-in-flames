@@ -503,6 +503,60 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 -- ============================================================================
 -- Strike planning and targeting types for strikePlanner module
 
+---Airfield pattern configuration for target matching
+---@class SBJ__AirfieldPatterns:table
+---@field runwayPattern string Lua pattern for runway matching (e.g., 'Runway %(%d+m%)')
+---@field taxiwayPattern string Lua pattern for taxiway matching
+---@field shelterPattern string Lua pattern for aircraft shelter matching
+---@field hangarPattern string Lua pattern for hangar matching
+---@field tarmacPattern string Lua pattern for tarmac matching
+---@field helipadPattern string Lua pattern for helipad matching
+---@field ammoBunkerPattern string Lua pattern for ammunition bunker matching
+---@field ammoRevetmentPattern string Lua pattern for ammunition revetment matching
+
+---Port pattern configuration for target matching
+---@class SBJ__PortPatterns:table
+---@field pierPattern string Lua pattern for pier matching
+
+---Radar pattern configuration for target matching
+---@class SBJ__RadarPatterns:table
+---@field radarPattern string Lua pattern for radar facility matching
+
+---SAM pattern configuration for target matching
+---@class SBJ__SAMPatterns:table
+---@field skyBowPattern string Lua pattern for Sky Bow SAM system matching
+
+---ASM pattern configuration for target matching
+---@class SBJ__ASMPatterns:table
+---@field asmPattern string Lua pattern for anti-ship missile system matching
+
+---C2 pattern configuration for target matching
+---@class SBJ__C2Patterns:table
+---@field hengshanPattern string Lua pattern for Hengshan command center matching
+
+---Target category patterns configuration
+---@class SBJ__TargetCategoryPatterns:table
+---@field airfield SBJ__AirfieldPatterns Airfield-related patterns
+---@field port SBJ__PortPatterns Port-related patterns
+---@field radar SBJ__RadarPatterns Radar facility patterns
+---@field sam SBJ__SAMPatterns SAM system patterns
+---@field asm SBJ__ASMPatterns ASM system patterns
+---@field c2 SBJ__C2Patterns Command and control patterns
+
+---Target scanning configuration for contact categorization
+---@class SBJ__TargetScanningConfig:table
+---@field distanceThreshold number Maximum distance threshold in nautical miles for base/port proximity matching
+---@field taiwanAirBases string[] Array of Taiwan airbase names to scan for
+---@field taiwanPorts string[] Array of Taiwan port names to scan for
+---@field targetCategories SBJ__TargetCategoryPatterns Pattern configurations for each target category
+
+---Target entry representing a scanned and categorized target
+---@class SBJ__TargetEntry:table
+---@field name string Target display name (format: "BaseName/Description" for base-related targets, or just "Description" for standalone targets)
+---@field guid string Target contact GUID
+---@field category string Target category ('Airfield', 'Port', 'ISR', 'SAM', 'ASM', 'C2')
+---@field subType string Target sub-type description (e.g., 'Runway (3000m)', 'Shelter', 'Pier', 'Radar')
+
 ---Target query parameter for filtering targets by base name and facility sub-types
 ---@class SBJ__TargetQueryParam:table
 ---@field baseName? string Base name pattern for matching (optional, if omitted matches all)
@@ -821,3 +875,26 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__LandBasedPlatformContext:table
 ---@field AC table<string, SBJ__AircraftContext> Aircraft context data structure indexed by GUID
 ---@field AEW table<string, SBJ__AircraftContext> AEW aircraft context data structure indexed by GUID
+
+
+-- ============================================================================
+-- Runway Repairment
+-- ============================================================================
+-- Runway damage assessment and repair management types
+
+---Runway entry for tracking runway damage and repair progress
+---@class SBJ__RunwayEntry:table
+---@field guid string Runway unit GUID
+---@field startTime number|nil Repair operation start timestamp, nil if not yet started
+
+---Unified runway repair configuration for all factions
+---@class SBJ__RunwayRepairConfig:table
+---@field percentagePerHour number Repair percentage per hour
+---@field runwayDBIDs number[] List of runway database IDs to repair (China)
+---@field airBases string[] List of Taiwan airbases with runways to repair (Taiwan)
+---@field runwaySubTypes string[] Array of runway facility sub-type patterns to match (Taiwan)
+
+---Runway repair context managing runway damage repair operations
+---@class SBJ__RunwayRepairmentContext:table
+---@field isActivated boolean Whether runway repair system is activated
+---@field runways SBJ__RunwayEntry[] Array of runways being tracked for repair
