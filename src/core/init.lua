@@ -8,6 +8,7 @@ local IADS = require("src.modules.IADS")
 local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
 local RunwayRepairment = require("src.modules.runwayRepairment")
+local GameApi = require("src.utils.gameApi")
 
 if config.isSaved then
   gKH.State.SaveTableToKey(saveData, "SaveData")
@@ -15,7 +16,39 @@ end
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
+local function initEventActions()
+  local actionNames = {
+    "scripts\\china\\amphibiousOps\\landingCheck.lua",
+    "scripts\\china\\amphibiousOps\\launchACV.lua",
+    "scripts\\china\\amphibiousOps\\neutralizeAirlandingZone.lua",
+    "scripts\\china\\amphibiousOps\\offloadVehicles.lua",
+    "scripts\\china\\EW\\collectSIGINT.lua",
+    "scripts\\china\\EW\\commsJamming.lua",
+    "scripts\\china\\launcher\\moveToPosition.lua",
+    "scripts\\china\\launcher\\scheduledReloadHideCheck.lua",
+    "scripts\\china\\aircraftLanding.lua",
+    "scripts\\china\\CSGEnterArea.lua",
+    "scripts\\china\\H6NLaunchWZ8.lua",
+    "scripts\\china\\scheduledStrikePlanner.lua",
+    "scripts\\score\\destroyUnits.lua",
+    "scripts\\score\\successfulLanding.lua",
+    "scripts\\score\\taiwaneseAssetIsDestroy.lua",
+    "scripts\\taiwan\\launcher\\moveToPosition.lua",
+    "scripts\\taiwan\\launcher\\scheduledReloadHideCheck.lua",
+    "scripts\\taiwan\\activiateANTISHIPMission.lua",
+    "scripts\\taiwan\\aircraftLanding.lua",
+    "scripts\\us\\collectSIGINT.lua",
+    "scripts\\runwayIsDamaged.lua",
+    "scripts\\scheduledRunwayRepairment.lua",
+  }
+
+  for _, name in ipairs(actionNames) do
+    GameApi.ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name, ScriptText = [[]] })
+  end
+end
+
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
+  initEventActions()
   ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
   UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
   TargetingProcess.scanTargets('China', config.targetScanning, saveData)

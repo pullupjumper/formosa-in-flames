@@ -22,10 +22,15 @@ def process_lua_content(content):
     """
     Process Lua content:
     1. Remove require statements.
-    2. Remove module-level return {} or return ModuleName.
-    3. If return ModuleName is removed, change 'local ModuleName = {}' to 'ModuleName = {}'.
+    2. Remove ALL comments (including LuaLS annotations and block comments).
+    3. Remove module-level return {} or return ModuleName.
+    4. If return ModuleName is removed, change 'local ModuleName = {}' to 'ModuleName = {}'.
     """
-    # 1. Remove require statements - comprehensive approach
+    # First, remove block comments --[[ ... ]]
+    # Use non-greedy matching to handle multiple block comments
+    content = re.sub(r'--\[\[.*?\]\]', '', content, flags=re.DOTALL)
+
+    # 1. Remove require statements and comments - comprehensive approach
     # Split content into lines for line-by-line processing
     lines = content.splitlines()
     filtered_lines = []
@@ -34,8 +39,12 @@ def process_lua_content(content):
         # Check if line contains a require statement
         stripped_line = line.strip()
 
-        # Skip empty lines and comments (we'll add them back)
-        if not stripped_line or stripped_line.startswith('--'):
+        # Skip ALL comment lines (including LuaLS annotations like ---@type, ---@param, etc.)
+        if stripped_line.startswith('--'):
+            continue  # Remove this line entirely
+
+        # Skip empty lines for now (we'll clean them up later)
+        if not stripped_line:
             filtered_lines.append(line)
             continue
 
@@ -51,9 +60,15 @@ def process_lua_content(content):
                 # If a line contains 'require(' and is not a comment, remove it
                 is_require_line = True
 
-        # If it's not a require line, keep it
+        # If it's not a require line, keep it (but remove inline comments)
         if not is_require_line:
-            filtered_lines.append(line)
+            # Remove inline comments (e.g., "local x = 5 -- comment")
+            if '--' in line:
+                code_part = line.split('--')[0].rstrip()
+                if code_part:  # Only keep if there's actual code
+                    filtered_lines.append(code_part)
+            else:
+                filtered_lines.append(line)
 
     # Rejoin the lines
     content = '\n'.join(filtered_lines)
@@ -235,6 +250,34 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
                     print(f"  ✗ Error processing file {input_file_path}: {e}")
                     error_count += 1
 
+    # Special post-processing: inject scripts into init.lua
+    print("\n" + "=" * 70)
+    init_lua_path = os.path.join(slim_dir, "core", "init.lua")
+    if os.path.exists(init_lua_path):
+        try:
+            print("🔧 Post-processing init.lua with script injection...")
+
+            # Load all processed scripts
+            scripts_mapping = load_scripts_mapping(slim_dir)
+
+            # Read current init.lua content
+            with open(init_lua_path, "r", encoding="utf-8") as f:
+                init_content = f.read()
+
+            # Inject scripts
+            modified_init_content = inject_scripts_into_init(init_content, scripts_mapping)
+
+            # Write back to init.lua
+            with open(init_lua_path, "w", encoding="utf-8") as f:
+                f.write(modified_init_content)
+
+            print("✅ init.lua post-processing completed")
+        except Exception as e:
+            print(f"❌ Error post-processing init.lua: {e}")
+            error_count += 1
+    else:
+        print(f"⚠️ Warning: init.lua not found at {init_lua_path}")
+
     return processed_count, error_count
 
 
@@ -359,6 +402,186 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                                  "getWCSSettingTemplate", content)
 
     return content
+
+
+def load_scripts_mapping(slim_dir: str) -> Dict[str, str]:
+    """
+    Load all processed script files from slim/scripts directory.
+    Returns a mapping of {action_name -> script_content}
+    Example: {"scripts\\china\\CSGEnterArea.lua" -> "actual code"}
+    """
+    scripts_mapping = {}
+    scripts_dir = os.path.join(slim_dir, "scripts")
+
+    if not os.path.exists(scripts_dir):
+        print(f"⚠️ Warning: Scripts directory '{scripts_dir}' does not exist")
+        return scripts_mapping
+
+    print(f"📜 Loading script files from '{scripts_dir}'...")
+
+    for root, _, files in os.walk(scripts_dir):
+        for file_name in files:
+            if file_name.endswith(".lua"):
+                script_path = os.path.join(root, file_name)
+                # Get relative path from slim_dir (e.g., "scripts/china/CSGEnterArea.lua")
+                relative_path = os.path.relpath(script_path, slim_dir)
+                # Normalize path separators to backslashes (Windows style) to match action names in init.lua
+                # Use replace to ensure consistency regardless of OS
+                action_name = relative_path.replace(os.sep, "\\")
+
+                try:
+                    with open(script_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    scripts_mapping[action_name] = content
+                    print(f"  ✓ Loaded {action_name}")
+                except Exception as e:
+                    print(f"  ✗ Error loading {action_name}: {e}")
+
+    print(f"📊 Total scripts loaded: {len(scripts_mapping)}")
+    return scripts_mapping
+
+
+def get_long_string_level(content: str) -> int:
+    """
+    Determine the required level for Lua long string brackets.
+    Returns the minimum number of '=' needed to avoid conflicts.
+    Example: level 0 -> [[ ... ]], level 1 -> [=[ ... ]=], etc.
+    """
+    level = 0
+    while level <= 10:  # Safety limit
+        # Check if the current level's closing bracket exists in content
+        closing = ']' + ('=' * level) + ']'
+        if closing not in content:
+            return level
+        level += 1
+    return 10  # Fallback to level 10
+
+
+def inject_scripts_into_init(init_content: str, scripts_mapping: Dict[str, str]) -> str:
+    """
+    Inject script contents into init.lua's initEventActions function.
+    Expands the for loop and replaces each ScriptText = [[]] with actual content
+    """
+    if not scripts_mapping:
+        print("⚠️ No scripts to inject")
+        return init_content
+
+    print("💉 Injecting scripts into init.lua...")
+
+    # Parse actionNames table and extract all action names
+    action_names = []
+    in_action_names = False
+    lines = init_content.split('\n')
+
+    for line in lines:
+        if 'local actionNames = {' in line:
+            in_action_names = True
+            continue
+        if in_action_names:
+            if '}' in line and not line.strip().startswith('--'):
+                break
+            # Extract string from line like: "scripts\\china\\CSGEnterArea.lua",
+            match = re.search(r'["\']([^"\']+)["\']', line)
+            if match:
+                # Convert Lua escaped backslashes (\\) to single backslash (\)
+                action_name = match.group(1).replace('\\\\', '\\')
+                action_names.append(action_name)
+
+    print(f"📋 Found {len(action_names)} action names in init.lua")
+
+    # Now replace the entire for loop with expanded ScenEdit_SetAction calls
+    result_lines = []
+    i = 0
+    injected_count = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Detect start of for loop
+        if 'for _, name in ipairs(actionNames) do' in line:
+
+            # Get the indentation of the for loop
+            indent = len(line) - len(line.lstrip())
+            indent_str = ' ' * indent
+
+            # Skip the for loop and its content until 'end'
+            result_lines.append(line)  # Keep the for loop line commented out
+            result_lines[-1] = indent_str + '-- ' + line.strip() + ' -- Expanded below'
+            i += 1
+
+            # Skip lines until we find the 'end' of the for loop
+            loop_depth = 1
+            while i < len(lines) and loop_depth > 0:
+                curr_line = lines[i].strip()
+                if curr_line.startswith('for ') or curr_line.startswith('if ') or curr_line.startswith('function '):
+                    loop_depth += 1
+                elif curr_line == 'end' or curr_line.startswith('end '):
+                    loop_depth -= 1
+                    if loop_depth == 0:
+                        result_lines.append(indent_str + '-- ' + curr_line + ' -- End of expanded loop')
+                        i += 1  # Move past the for loop's end
+                        break
+                # Comment out the original loop content
+                if lines[i].strip() and not lines[i].strip().startswith('--'):
+                    result_lines.append(indent_str + '-- ' + lines[i].strip())
+                else:
+                    result_lines.append(lines[i])
+                i += 1
+
+            # Now inject the expanded code
+            for action_name in action_names:
+                # Escape backslashes for Lua string literal (only for the action name)
+                escaped_action_name = action_name.replace('\\', '\\\\')
+
+                if action_name in scripts_mapping:
+                    script_content = scripts_mapping[action_name]
+
+                    # Process each line: remove comments and add space (NO semicolons for now)
+                    # This simplifies debugging
+                    processed_lines = []
+
+                    script_lines = script_content.splitlines()
+                    for script_i, script_line in enumerate(script_lines):
+                        stripped = script_line.rstrip()
+                        stripped_left = stripped.lstrip()
+
+                        # Skip empty lines and ALL comment lines (including LuaLS annotations)
+                        if not stripped or stripped_left.startswith('--'):
+                            continue  # Skip this line entirely
+
+                        # Just add space at the end, no semicolons
+                        processed_lines.append(script_line + ' ')
+
+                    processed_content = '\n'.join(processed_lines)
+
+                    # Determine the required long string level to avoid conflicts
+                    level = get_long_string_level(processed_content)
+                    equals = '=' * level
+                    opening_bracket = f'[{equals}['
+                    closing_bracket = f']{equals}]'
+
+                    # Use Lua long string syntax to preserve newlines and avoid escaping
+                    result_lines.append(f'{indent_str}GameApi.ScenEdit_SetAction({{ mode = \'update\', type = \'LuaScript\', name = "{escaped_action_name}", ScriptText = {opening_bracket}\n{processed_content}\n{closing_bracket} }})')
+                    injected_count += 1
+                    print(f"  ✓ Injected {action_name} (long string level: {level})")
+                else:
+                    # Keep the original call with empty ScriptText if script not found
+                    result_lines.append(f'{indent_str}GameApi.ScenEdit_SetAction({{ mode = \'update\', type = \'LuaScript\', name = "{escaped_action_name}", ScriptText = [[]] }})')
+                    print(f"  ⚠️ Script not found for action: {action_name}")
+
+            # After injecting scripts, i now points to the line after 'for loop's end'
+            # which is initEventActions' end. We need to continue processing from there.
+            # Decrement i so that the outer loop's i += 1 will process the current line
+            i -= 1
+
+        else:
+            result_lines.append(line)
+
+        i += 1
+
+    print(f"📊 Total scripts injected: {injected_count}/{len(action_names)}")
+
+    return '\n'.join(result_lines)
 
 
 # =============================================================================
@@ -807,7 +1030,7 @@ Examples:
     parser.add_argument(
         "--output",
         default=None,
-        help="Output filename (default: slim/merged_scenario.lua)")
+        help="Output filename (default: slim/main.lua)")
     parser.add_argument(
         "--include-schema",
         action="store_true",
@@ -830,7 +1053,7 @@ Examples:
 
     # Set default output path
     if args.output is None:
-        args.output = os.path.join(args.slim_dir, "merged_scenario.lua")
+        args.output = os.path.join(args.slim_dir, "main.lua")
 
     # Run build process
     success = build_scenario(args)
