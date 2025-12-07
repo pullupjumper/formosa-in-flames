@@ -59,6 +59,14 @@ elseif positionType == 'HA' then
     end
   end
 elseif positionType == 'RL' then
+  if contacts then
+    for _, contact in ipairs(contacts) do
+      if unit and unit.guid == contact.actualunitid then
+        contact:DropContact()
+      end
+    end
+  end
+
   for _, wpnSystem in ipairs(wpnSystems) do
     if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
       local result = Launcher.isMetWithResupplyUnits(config, saveData.t.ground[wpnSystem], unit, false)
@@ -69,6 +77,14 @@ elseif positionType == 'RL' then
     end
   end
 elseif positionType == 'AHA' then
+  if contacts then
+    for _, contact in ipairs(contacts) do
+      if unit and unit.guid == contact.actualunitid then
+        contact:DropContact()
+      end
+    end
+  end
+
   for _, wpnSystem in ipairs(wpnSystems) do
     if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
       local result = Launcher.isMetWithAmmoDepot(config, saveData.t.ground[wpnSystem], unit, false)

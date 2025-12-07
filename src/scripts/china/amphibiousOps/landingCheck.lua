@@ -53,8 +53,8 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
       saveData.c.PHIBOP.isWaitingForShipArrival = false
       saveData.c.PHIBOP.isWaitingForAmphibiousAssault = true
       saveData.c.PHIBOP.amphibiousAssaultStartTime = currentTime
-      ---@type SBJ__ReconQueueEntry
       local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
+      ---@cast entry SBJ__ReconQueueEntry
       local distance, flightTime = GameUtils.calculatePathDistanceAndTime(
         entry.course,
         entry.speed

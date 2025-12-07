@@ -957,8 +957,8 @@ config.batteryState = {
 
 --Setup start time
 config.c.triggers = {
-  amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  -- amphibiousOps = { startTime = '2027-06-09 1:00:00' },
+  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
+  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
   launchLACM = { startTime = '2027-06-09 06:00:00' },
   launchSLCM = { startTime = '2027-06-09 06:30:00' },
   -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
@@ -966,8 +966,8 @@ config.c.triggers = {
 
 
 -- SIGINT
--- CONFIG.c.SIGINT.maxCount = 6
-config.c.SIGINT.maxCount = 1
+config.c.SIGINT.maxCount = 6
+-- config.c.SIGINT.maxCount = 1
 config.c.SIGINT.maxRange = 2.5
 
 -- IADS
@@ -2351,7 +2351,7 @@ config.c.PHIBOP.sag = {
         { latitude = 'N 25.17.32', longitude = 'E 120.56.07', desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 25.05.36', longitude = 'E 121.01.58', desiredSpeed = 14, },
+        { latitude = 'N 25.06.19', longitude = 'E 121.04.15', desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
@@ -4436,7 +4436,7 @@ config.t.surface.deployedShips = {
 
 -- SIGINT
 -- CONFIG.u.SIGINT.maxCount = 5
-config.u.SIGINT.maxCount = 1
+config.u.SIGINT.maxCount = config.c.SIGINT.maxCount
 
 
 -- Score

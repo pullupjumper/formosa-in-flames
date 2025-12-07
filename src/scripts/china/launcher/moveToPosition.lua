@@ -5,7 +5,6 @@ local GameApi = require("src.utils.gameApi")
 local Launcher = require('src.modules.launcher')
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
-local contacts = GameApi.ScenEdit_GetContacts('Taiwan')
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -24,6 +23,7 @@ if not unit then
   return
 end
 
+local contacts = GameApi.ScenEdit_GetContacts(unit.side)
 local positionType = ''
 local wpnSystems = { 'srbm', 'mrbm', 'mlrs', 'glcm', 'ascm' }
 
@@ -69,6 +69,14 @@ elseif positionType == 'HA' then
     end
   end
 elseif positionType == 'RL' then
+  if contacts then
+    for _, contact in ipairs(contacts) do
+      if unit and unit.guid == contact.actualunitid then
+        contact:DropContact()
+      end
+    end
+  end
+
   for _, wpnSystem in ipairs(wpnSystems) do
     if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
       local result = Launcher.isMetWithResupplyUnits(config, saveData.c.ground[wpnSystem], unit, true)
@@ -79,6 +87,14 @@ elseif positionType == 'RL' then
     end
   end
 elseif positionType == 'AHA' then
+  if contacts then
+    for _, contact in ipairs(contacts) do
+      if unit and unit.guid == contact.actualunitid then
+        contact:DropContact()
+      end
+    end
+  end
+
   for _, wpnSystem in ipairs(wpnSystems) do
     if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
       local result = Launcher.isMetWithAmmoDepot(config, saveData.c.ground[wpnSystem], unit, true)

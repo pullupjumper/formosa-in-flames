@@ -41,7 +41,10 @@ if unit then
         "Destroyed a communications jammer."
       )
       saveData.c.commsJamming.jammers[unit.guid] = nil
-    elseif unit.dbid == config.platform.WZ8 or unit.dbid == config.platform.BZK005 then
+    elseif unit.dbid == config.platform.WZ8 or
+        unit.dbid == config.platform.BZK005 or
+        unit.dbid == config.platform.WZ7 or
+        unit.dbid == config.platform.GJ11 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.uav),
@@ -98,23 +101,15 @@ if unit then
       )
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
       GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, 'China', unit.name)
-    elseif unit.dbid == config.platform.AMMO then
+    elseif unit.dbid == config.platform.AMMO or unit.dbid == config.platform.AMMO_TRUCK then
+      local text = unit.dbid == config.platform.AMMO and "ammo revetment." or "ammunition truck."
       Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
       Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
       Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAmmo),
-        "You have destroyed a ammo revetment."
-      )
-    elseif unit.dbid == config.platform.AMMO_TRUCK then
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
-      GameApi.ScenEdit_SetScore(
-        "Taiwan",
-        (score + config.s.destroyingAmmoTruck),
-        "You have destroyed an ammunition truck."
+        "You have destroyed a " .. text
       )
     elseif unit.dbid == config.platform.HQ22 or
         unit.dbid == config.platform.S300 or

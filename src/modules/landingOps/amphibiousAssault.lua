@@ -14,9 +14,9 @@ local function setMissionStartTime(mission)
     return false
   end
 
-  local startTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + mission.startTime))
-
+  local startTime = os.date("%Y-%m-%d %H:%M:%S", (currentTime + mission.startTime))
   local m = GameApi.ScenEdit_GetMission("China", mission.name)
+
   if not m then
     return false
   end

@@ -878,55 +878,55 @@ saveData.c.dynamicOperations.generatedOperations = {
   ground = {} -- Track generated ground operations
 }
 saveData.c.dynamicOperations.reconSchedule = {
-  {
-    -- time = "2027-06-09 02:14:00",
-    time = "2027-06-09 01:00:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {
-      {
-        type = "air",
-        executed = false,
-        template = {
-          name = "STRIKE/AB/W/1",
-          isFirstWave = true,
-          strikeInterval = 30 * 60,
-          packages = config.c.packageTemplate.STRIKE_AB_W_1
-        }
-      },
-      -- {
-      --   type = "air",
-      --   executed = false,
-      --   template = {
-      --     name = "STRIKE/AB/W/AAR/1",
-      --     isFirstWave = true,
-      --     strikeInterval = 30 * 60,
-      --     packages = config.c.packageTemplate.STRIKE_AB_W_AAR_1
-      --   }
-      -- },
-      {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "INFRASTRUCTURE/1",
-          strikeInterval = 0,
-          isFirstWave = true,
-          FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_1
-        }
-      },
-      {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "HELIPAD/1",
-          strikeInterval = 0,
-          isFirstWave = true,
-          FSTs = config.c.FSTTemplate.STRIKE_HELIPAD_1
-        }
-      }
-    }
-  },
+  -- {
+  --   -- time = "2027-06-09 02:14:00",
+  --   time = "2027-06-09 01:00:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {
+  --     {
+  --       type = "air",
+  --       executed = false,
+  --       template = {
+  --         name = "STRIKE/AB/W/1",
+  --         isFirstWave = true,
+  --         strikeInterval = 30 * 60,
+  --         packages = config.c.packageTemplate.STRIKE_AB_W_1
+  --       }
+  --     },
+  --     -- {
+  --     --   type = "air",
+  --     --   executed = false,
+  --     --   template = {
+  --     --     name = "STRIKE/AB/W/AAR/1",
+  --     --     isFirstWave = true,
+  --     --     strikeInterval = 30 * 60,
+  --     --     packages = config.c.packageTemplate.STRIKE_AB_W_AAR_1
+  --     --   }
+  --     -- },
+  --     {
+  --       type = "ground",
+  --       executed = false,
+  --       template = {
+  --         name = "INFRASTRUCTURE/1",
+  --         strikeInterval = 0,
+  --         isFirstWave = true,
+  --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_1
+  --       }
+  --     },
+  --     {
+  --       type = "ground",
+  --       executed = false,
+  --       template = {
+  --         name = "HELIPAD/1",
+  --         strikeInterval = 0,
+  --         isFirstWave = true,
+  --         FSTs = config.c.FSTTemplate.STRIKE_HELIPAD_1
+  --       }
+  --     }
+  --   }
+  -- },
   -- {
   --   -- time = "2027-06-09 03:00:00",
   --   time = "2027-06-09 02:14:00",
