@@ -257,15 +257,21 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
         try:
             print("🔧 Post-processing init.lua with script injection...")
 
-            # Load all processed scripts
+            # Step 1: Load all processed event scripts
             scripts_mapping = load_scripts_mapping(slim_dir)
 
             # Read current init.lua content
             with open(init_lua_path, "r", encoding="utf-8") as f:
                 init_content = f.read()
 
-            # Inject scripts
+            # Step 2: Inject event scripts into initEventActions
             modified_init_content = inject_scripts_into_init(init_content, scripts_mapping)
+
+            # Step 3: Load all processed special action scripts
+            special_actions_mapping = load_special_actions_mapping(slim_dir)
+
+            # Step 4: Inject special action scripts into initSpecialActions
+            modified_init_content = inject_special_actions_into_init(modified_init_content, special_actions_mapping)
 
             # Write back to init.lua
             with open(init_lua_path, "w", encoding="utf-8") as f:
@@ -441,6 +447,47 @@ def load_scripts_mapping(slim_dir: str) -> Dict[str, str]:
     return scripts_mapping
 
 
+def load_special_actions_mapping(slim_dir: str) -> Dict[str, str]:
+    """
+    Load all processed special action script files from slim/scripts/*/specialActions directories.
+    Returns a mapping of {relative_path -> script_content}
+    Example: {"scripts\\china\\specialActions\\addACs.lua" -> "actual code"}
+    """
+    special_actions_mapping = {}
+
+    # Define the special actions directories to scan
+    special_actions_dirs = [
+        os.path.join(slim_dir, "scripts", "china", "specialActions"),
+        os.path.join(slim_dir, "scripts", "taiwan", "specialActions")
+    ]
+
+    print(f"📜 Loading special action script files...")
+
+    for special_dir in special_actions_dirs:
+        if not os.path.exists(special_dir):
+            print(f"⚠️ Warning: Special actions directory '{special_dir}' does not exist")
+            continue
+
+        for file_name in os.listdir(special_dir):
+            if file_name.endswith(".lua"):
+                script_path = os.path.join(special_dir, file_name)
+                # Get relative path from slim_dir (e.g., "scripts/china/specialActions/addACs.lua")
+                relative_path = os.path.relpath(script_path, slim_dir)
+                # Normalize path separators to backslashes (Windows style) to match paths in init.lua
+                action_path = relative_path.replace(os.sep, "\\")
+
+                try:
+                    with open(script_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    special_actions_mapping[action_path] = content
+                    print(f"  ✓ Loaded {action_path}")
+                except Exception as e:
+                    print(f"  ✗ Error loading {action_path}: {e}")
+
+    print(f"📊 Total special action scripts loaded: {len(special_actions_mapping)}")
+    return special_actions_mapping
+
+
 def get_long_string_level(content: str) -> int:
     """
     Determine the required level for Lua long string brackets.
@@ -580,6 +627,152 @@ def inject_scripts_into_init(init_content: str, scripts_mapping: Dict[str, str])
         i += 1
 
     print(f"📊 Total scripts injected: {injected_count}/{len(action_names)}")
+
+    return '\n'.join(result_lines)
+
+
+def inject_special_actions_into_init(init_content: str, special_actions_mapping: Dict[str, str]) -> str:
+    """
+    Inject special action script contents into init.lua's initSpecialActions function.
+    Expands the for loop and replaces each ScriptText = [[]] with actual content
+    """
+    if not special_actions_mapping:
+        print("⚠️ No special action scripts to inject")
+        return init_content
+
+    print("💉 Injecting special action scripts into init.lua...")
+
+    # Parse actions table and extract all action entries
+    actions = []
+    in_actions_table = False
+    lines = init_content.split('\n')
+
+    for i, line in enumerate(lines):
+        if 'local actions = {' in line:
+            in_actions_table = True
+            continue
+        if in_actions_table:
+            if '}' in line and not line.strip().startswith('--') and not '{' in line:
+                break
+            # Extract action entry: { path = "...", actionName = "..." }
+            # Match lines like: { path = "src\\scripts\\china\\specialActions\\addACs.lua", actionName = "Add aircraft" },
+            # Allow optional whitespace and trailing comma
+            match = re.search(r'\{\s*path\s*=\s*["\']([^"\']+)["\']\s*,\s*actionName\s*=\s*["\']([^"\']+)["\']\s*\}\s*,?', line)
+            if match:
+                # Convert Lua escaped backslashes (\\) to single backslash (\)
+                path = match.group(1).replace('\\\\', '\\')
+                action_name = match.group(2)
+                actions.append({'path': path, 'actionName': action_name})
+
+    print(f"📋 Found {len(actions)} special actions in init.lua")
+
+    # Now replace the entire for loop with expanded ScenEdit_SetSpecialAction calls
+    result_lines = []
+    i = 0
+    injected_count = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Detect start of for loop for special actions
+        if 'for index, action in ipairs(actions) do' in line:
+
+            # Get the indentation of the for loop
+            indent = len(line) - len(line.lstrip())
+            indent_str = ' ' * indent
+
+            # Skip the for loop and its content until 'end'
+            result_lines.append(line)  # Keep the for loop line commented out
+            result_lines[-1] = indent_str + '-- ' + line.strip() + ' -- Expanded below'
+            i += 1
+
+            # Skip lines until we find the 'end' of the for loop
+            loop_depth = 1
+            while i < len(lines) and loop_depth > 0:
+                curr_line = lines[i].strip()
+                if curr_line.startswith('for ') or curr_line.startswith('if ') or curr_line.startswith('function '):
+                    loop_depth += 1
+                elif curr_line == 'end' or curr_line.startswith('end '):
+                    loop_depth -= 1
+                    if loop_depth == 0:
+                        result_lines.append(indent_str + '-- ' + curr_line + ' -- End of expanded loop')
+                        i += 1  # Move past the for loop's end
+                        break
+                # Comment out the original loop content
+                if lines[i].strip() and not lines[i].strip().startswith('--'):
+                    result_lines.append(indent_str + '-- ' + lines[i].strip())
+                else:
+                    result_lines.append(lines[i])
+                i += 1
+
+            # Now inject the expanded code
+            for action_entry in actions:
+                path = action_entry['path']
+                action_name = action_entry['actionName']
+
+                # Convert src\scripts\... path to scripts\... path (remove "src\" prefix)
+                # This matches the structure in special_actions_mapping
+                if path.startswith('src\\'):
+                    script_path = path[4:]  # Remove "src\" prefix
+                else:
+                    script_path = path
+
+                # Escape backslashes for Lua string literal and extract side name
+                # path format: "scripts\\china\\specialActions\\addACs.lua"
+                match = re.search(r'scripts\\([^\\]+)\\', script_path)
+                if match:
+                    side_name = match.group(1)
+                else:
+                    side_name = 'Unknown'
+
+                # Escape strings for Lua
+                escaped_action_name = action_name.replace('"', '\\"')
+
+                if script_path in special_actions_mapping:
+                    script_content = special_actions_mapping[script_path]
+
+                    # Process each line: remove comments and add space
+                    processed_lines = []
+
+                    script_lines = script_content.splitlines()
+                    for script_line in script_lines:
+                        stripped = script_line.rstrip()
+                        stripped_left = stripped.lstrip()
+
+                        # Skip empty lines and ALL comment lines (including LuaLS annotations)
+                        if not stripped or stripped_left.startswith('--'):
+                            continue  # Skip this line entirely
+
+                        # Just add space at the end, no semicolons
+                        processed_lines.append(script_line + ' ')
+
+                    processed_content = '\n'.join(processed_lines)
+
+                    # Determine the required long string level to avoid conflicts
+                    level = get_long_string_level(processed_content)
+                    equals = '=' * level
+                    opening_bracket = f'[{equals}['
+                    closing_bracket = f']{equals}]'
+
+                    # Use Lua long string syntax to preserve newlines and avoid escaping
+                    result_lines.append(f'{indent_str}GameApi.ScenEdit_SetSpecialAction({{ mode = \'update\', ActionNameOrID = "{escaped_action_name}", side = "{side_name}", ScriptText = {opening_bracket}\n{processed_content}\n{closing_bracket} }})')
+                    injected_count += 1
+                    print(f"  ✓ Injected {script_path} (side: {side_name}, action: {action_name}, level: {level})")
+                else:
+                    # Keep the original call with empty ScriptText if script not found
+                    result_lines.append(f'{indent_str}GameApi.ScenEdit_SetSpecialAction({{ mode = \'update\', ActionNameOrID = "{escaped_action_name}", side = "{side_name}", ScriptText = [[]] }})')
+                    print(f"  ⚠️ Script not found for special action: {script_path}")
+
+            # After injecting scripts, i now points to the line after 'for loop's end'
+            # Decrement i so that the outer loop's i += 1 will process the current line
+            i -= 1
+
+        else:
+            result_lines.append(line)
+
+        i += 1
+
+    print(f"📊 Total special action scripts injected: {injected_count}/{len(actions)}")
 
     return '\n'.join(result_lines)
 

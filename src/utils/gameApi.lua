@@ -607,6 +607,19 @@ function realApi.ScenEdit_EventX()
   return result
 end
 
+---Update special action settings
+---@param opts CMO__SpecialActionUpdate Special action update parameters
+---@return boolean|nil # Updated special action information
+function realApi.ScenEdit_SetSpecialAction(opts)
+  local result = ScenEdit_SetSpecialAction(opts)
+
+  if not result then
+    error("Failed to set special action with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
