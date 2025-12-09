@@ -1,6 +1,6 @@
 ﻿local gKH = require('src.core.gKH_State_Standalone')
 local SIGINT = require('src.modules.EW.sigint')
-local config = require('src.core.constants')
+local config = require('src.core.config')
 local Logger = require("src.utils.logger")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")

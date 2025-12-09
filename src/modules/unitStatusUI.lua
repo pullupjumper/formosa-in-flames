@@ -5,6 +5,7 @@ local Utils = require("src.utils.utils")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local gKH = require('src.core.gKH_State_Standalone')
+local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
@@ -32,43 +33,43 @@ function UnitStatusUI.countUnitsInEachArea(config)
       local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
       if unit and unit:inArea(zone.area) then
-        if unit.dbid == config.platform.ZBD05 then
+        if unit.dbid == constants.PLATFORMS.ZBD05 then
           item['ZBD-05'] = item['ZBD-05'] + 1
         end
 
-        if unit.dbid == config.platform.ZTD05 then
+        if unit.dbid == constants.PLATFORMS.ZTD05 then
           item['ZTD-05'] = item['ZTD-05'] + 1
         end
 
-        if unit.dbid == config.platform.PLL05 then
+        if unit.dbid == constants.PLATFORMS.PLL05 then
           item['PLL-05'] = item['PLL-05'] + 1
         end
 
-        if unit.dbid == config.platform.PLZ96 then
+        if unit.dbid == constants.PLATFORMS.PLZ96 then
           item['PLZ-96'] = item['PLZ-96'] + 1
         end
 
-        if unit.dbid == config.platform.PGZ09 then
+        if unit.dbid == constants.PLATFORMS.PGZ09 then
           item['PGZ-09'] = item['PGZ-09'] + 1
         end
 
-        if unit.dbid == config.platform.PGZ95 then
+        if unit.dbid == constants.PLATFORMS.PGZ95 then
           item['PGZ-95'] = item['PGZ-95'] + 1
         end
 
-        if unit.dbid == config.platform.SA15 then
+        if unit.dbid == constants.PLATFORMS.SA15 then
           item['SA-15'] = item['SA-15'] + 1
         end
 
-        if unit.dbid == config.platform.MC then
+        if unit.dbid == constants.PLATFORMS.MC then
           item['AirborneCorps'] = item['AirborneCorps'] + 1
         end
 
-        if unit.dbid == config.platform.HMMWV then
+        if unit.dbid == constants.PLATFORMS.HMMWV then
           item['HMMWV'] = item['HMMWV'] + 1
         end
 
-        if unit.dbid == config.platform.ZBD03 then
+        if unit.dbid == constants.PLATFORMS.ZBD03 then
           item['ZBD-03'] = item['ZBD-03'] + 1
         end
       end
@@ -87,9 +88,8 @@ local function getWCSSettingTemplate()
 end
 
 ---Display HTML dialog for EMCON settings configuration
----@param config SBJ__Config Configuration table
-function UnitStatusUI.wcsSettingTable(config)
-  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.FACILITY)
+function UnitStatusUI.wcsSettingTable()
+  local units = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not units then
     return
@@ -104,7 +104,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.PAC3 then
+        if unit and unit.dbid == constants.PLATFORMS.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -117,7 +117,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.PAC3 then
+        if unit and unit.dbid == constants.PLATFORMS.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -132,7 +132,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.CUSTOMED_TK3 then
+        if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -145,7 +145,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.CUSTOMED_TK3 then
+        if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -160,7 +160,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.TC2 then
+        if unit and unit.dbid == constants.PLATFORMS.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -173,7 +173,7 @@ function UnitStatusUI.wcsSettingTable(config)
       for index, value in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
-        if unit and unit.dbid == config.platform.TC2 then
+        if unit and unit.dbid == constants.PLATFORMS.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
@@ -539,14 +539,14 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         -- Apply GPS jamming unit deployments
         if jammerDescriptors then
           for _, descriptor in ipairs(jammerDescriptors) do
-            GPSJamming.addGPSJammer(config, descriptor, sideName)
+            GPSJamming.addGPSJammer(descriptor, sideName)
           end
         end
 
         -- Apply aircraft and loadout configurations
         if abDeploymentDescriptors then
           UnitGenerator.addAircraft(abDeploymentDescriptors)
-          UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
+          UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
         end
       end
     end

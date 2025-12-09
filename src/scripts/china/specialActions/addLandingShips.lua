@@ -1,8 +1,8 @@
 local UnitGenerator = require('src.modules.unitGenerator')
-local config = require('src.core.constants')
+local config = require('src.core.config')
 
 -- Remove existing landing ships
-UnitGenerator.removeLandingShips(config)
+UnitGenerator.removeLandingShips()
 
 -- Add new landing ships
-UnitGenerator.addLandingShips(config, config.c.PHIBOP)
+UnitGenerator.addLandingShips(config.c.PHIBOP)

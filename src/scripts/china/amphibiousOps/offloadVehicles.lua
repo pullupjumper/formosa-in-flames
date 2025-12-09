@@ -2,7 +2,8 @@ local gKH = require('src.core.gKH_State_Standalone')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
-local config = require("src.core.constants")
+local config = require("src.core.config")
+local constants = require("src.core.constants")
 local ship = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -27,7 +28,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, 
     type      = 'Facility',
     latitude  = ship.latitude,
     longitude = ship.longitude,
-    dbid      = config.platform.BRIDGE,
+    dbid      = constants.PLATFORMS.BRIDGE,
     unitname  = 'bridge',
   })
 

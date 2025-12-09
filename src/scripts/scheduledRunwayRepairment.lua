@@ -1,7 +1,7 @@
 local gKH = require('src.core.gKH_State_Standalone')
 local Logger = require("src.utils.logger")
 local RunwayRepairment = require("src.modules.runwayRepairment")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 

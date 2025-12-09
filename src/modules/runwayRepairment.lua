@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local constants = require("src.core.constants")
 
 local RunwayRepairment = {}
 
@@ -24,7 +25,7 @@ function RunwayRepairment.initRunways(config, saveData)
   end
 
   -- Initialize China runways from facility units
-  local facilities = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.FACILITY)
+  local facilities = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not facilities then
     return

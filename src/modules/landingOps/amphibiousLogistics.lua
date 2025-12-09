@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local AssignMission = require("src.modules.assignMission")
+local constants = require("src.core.constants")
 
 local AmphibiousLogistics = {}
 
@@ -132,11 +133,10 @@ end
 
 ---Get units in anchorage area and check their movement status
 ---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
----@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit Unit list from the side (filtered for ships)
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
-function AmphibiousLogistics.getUnitsInAnchorageArea(config, amphibOpsConfig, units)
+function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
   local unitsInAnchorageArea = {}
   local isUnitMoving = false
@@ -144,15 +144,15 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(config, amphibOpsConfig, un
   for _, item in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(item.guid)
 
-    if unit and (unit.dbid == config.platform.TYPE_075 or
-          unit.dbid == config.platform.TYPE_071 or
-          unit.dbid == config.platform.TYPE_072III or
-          unit.dbid == config.platform.TYPE_072A or
-          unit.dbid == config.platform.TYPE_073A or
-          unit.dbid == config.platform.TYPE_072A_2 or
-          unit.dbid == config.platform.TYPE_076 or
-          unit.dbid == config.platform.FERRY or
-          unit.dbid == config.platform.BARGE) then
+    if unit and (unit.dbid == constants.PLATFORMS.TYPE_075 or
+          unit.dbid == constants.PLATFORMS.TYPE_071 or
+          unit.dbid == constants.PLATFORMS.TYPE_072III or
+          unit.dbid == constants.PLATFORMS.TYPE_072A or
+          unit.dbid == constants.PLATFORMS.TYPE_073A or
+          unit.dbid == constants.PLATFORMS.TYPE_072A_2 or
+          unit.dbid == constants.PLATFORMS.TYPE_076 or
+          unit.dbid == constants.PLATFORMS.FERRY or
+          unit.dbid == constants.PLATFORMS.BARGE) then
       if unit.unitstate ~= 'Unassigned' then
         isUnitMoving = true
         break
@@ -227,16 +227,15 @@ end
 
 ---Transfer cargo to embarked units and assign them to missions
 ---Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
----@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
 ---@return boolean # True if all transfers and assignments completed successfully
-function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInAnchorageArea)
+function AmphibiousLogistics.transferAndAssign(amphibOpsConfig, unitsInAnchorageArea)
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, zone in ipairs(operationalZones) do
     for _, u in ipairs(unitsInAnchorageArea) do
-      if (u.dbid == config.platform.TYPE_075 or u.dbid == config.platform.TYPE_076) and
+      if (u.dbid == constants.PLATFORMS.TYPE_075 or u.dbid == constants.PLATFORMS.TYPE_076) and
           u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
@@ -288,7 +287,7 @@ function AmphibiousLogistics.transferAndAssign(config, amphibOpsConfig, unitsInA
         -- end
       end
 
-      if u.dbid == config.platform.TYPE_071 and u:inArea(zone.anchorageArea) then
+      if u.dbid == constants.PLATFORMS.TYPE_071 and u:inArea(zone.anchorageArea) then
         AmphibiousLogistics.transferCargo(
           u.guid,
           'Boats',
@@ -340,11 +339,10 @@ end
 
 ---Re-transfer cargo to embarked units for second wave operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
----@param config SBJ__Config Global configuration for platform DBIDs
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all cargo was successfully re-transferred
-function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
+function AmphibiousLogistics.retransferCargos(amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, zone in ipairs(operationalZones) do
@@ -355,7 +353,7 @@ function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
         return false
       end
 
-      if unit and (unit.dbid == config.platform.TYPE_075 or unit.dbid == config.platform.TYPE_076) then
+      if unit and (unit.dbid == constants.PLATFORMS.TYPE_075 or unit.dbid == constants.PLATFORMS.TYPE_076) then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',
@@ -379,7 +377,7 @@ function AmphibiousLogistics.retransferCargos(config, amphibOpsConfig, units)
         )
       end
 
-      if unit and unit.dbid == config.platform.TYPE_071 then
+      if unit and unit.dbid == constants.PLATFORMS.TYPE_071 then
         AmphibiousLogistics.transferCargo(
           unit.guid,
           'Boats',

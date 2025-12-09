@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local constants = require("src.core.constants")
 
 local AmphibiousAssault = {}
 
@@ -76,11 +77,10 @@ end
 
 ---Set course for LSTs to approach beach and move SAGs to staging areas
 ---LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
----@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all LST courses were successfully set
-function AmphibiousAssault.setCoursesForLSTs(config, amphibOpsConfig, units)
+function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, item in ipairs(units) do
@@ -220,14 +220,13 @@ end
 
 ---Check if a ship is a ferry or Landing Ship Tank (LST)
 ---Includes Type 071/072/073 and ferries capable of launching ACVs or beaching
----@param config SBJ__Config Global configuration for platform DBIDs
 ---@param ship CMO__Unit Ship unit to check
 ---@return boolean # True if ship is a ferry or LST
-function AmphibiousAssault.isFerryOrLST(config, ship)
-  return (ship.dbid == config.platform.TYPE_071 or
-    ship.dbid == config.platform.TYPE_072III or
-    ship.dbid == config.platform.TYPE_072A or
-    ship.dbid == config.platform.TYPE_073A or
+function AmphibiousAssault.isFerryOrLST(ship)
+  return (ship.dbid == constants.PLATFORMS.TYPE_071 or
+    ship.dbid == constants.PLATFORMS.TYPE_072III or
+    ship.dbid == constants.PLATFORMS.TYPE_072A or
+    ship.dbid == constants.PLATFORMS.TYPE_073A or
     ship.name == 'Ferry')
 end
 

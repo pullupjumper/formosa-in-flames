@@ -1,13 +1,13 @@
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local GameApi = require("src.utils.gameApi")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local ship = GameApi.ScenEdit_UnitX()
 
 if not ship then
   return
 end
 
-if AmphibiousAssault.isFerryOrLST(config, ship) then
+if AmphibiousAssault.isFerryOrLST(ship) then
   local zone = AmphibiousAssault.getShipZone(config.c.PHIBOP, ship)
 
   if zone then

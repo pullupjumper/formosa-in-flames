@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local constants = require("src.core.constants")
 
 local GPSJamming = {}
 
@@ -171,18 +172,17 @@ end
 
 ---Add a single GPS jammer
 ---Creates a GPS jammer unit at the specified location and sets up its jamming zone
----@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param descriptor SBJ__GPSJammerDescriptor Jammer configuration with name, location, zone name, and radius
 ---@param sideName string Side name that will own the jammer (e.g., 'China', 'Taiwan')
 ---@return boolean success Whether jammer was successfully created and zone set up
 ---@return CMO__Unit|nil unit The created jammer unit, or nil if creation failed
-function GPSJamming.addGPSJammer(config, descriptor, sideName)
+function GPSJamming.addGPSJammer(descriptor, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
   local unit = GameApi.ScenEdit_AddUnit({
     side = sideName,
     unitname = descriptor.name,
-    dbid = config.platform.GPS_JAMMER,
+    dbid = constants.PLATFORMS.GPS_JAMMER,
     type = 'Facility',
     latitude = descriptor.point.latitude,
     longitude = descriptor.point.longitude
@@ -200,11 +200,10 @@ end
 ---Add all GPS jammers for a side
 ---Creates multiple GPS jammer units at randomized positions and sets up their jamming zones
 ---Uses retry logic to find valid placement locations within the random radius
----@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors to create
 ---@param sideName string Side name that will own the jammers (e.g., 'China', 'Taiwan')
 ---@return number # Number of jammers successfully created with zones
-function GPSJamming.addGPSJammers(config, jammerDescriptors, sideName)
+function GPSJamming.addGPSJammers(jammerDescriptors, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
   local successCount = 0
@@ -215,7 +214,7 @@ function GPSJamming.addGPSJammers(config, jammerDescriptors, sideName)
       descriptor.point.latitude,
       descriptor.point.longitude,
       descriptor.randomRadius,
-      config.platform.GPS_JAMMER
+      constants.PLATFORMS.GPS_JAMMER
     )
 
     if unit and point then

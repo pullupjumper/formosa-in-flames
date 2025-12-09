@@ -1,9 +1,10 @@
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local ship = GameApi.ScenEdit_UnitX()
 local contacts = GameApi.ScenEdit_GetContacts('China')
+local constants = require("src.core.constants")
 
 if not contacts then
   return
@@ -13,7 +14,7 @@ if not ship then
   return
 end
 
-if ship and ship.group and ship.dbid == config.platform.TYPE_052D then
+if ship and ship.group and ship.dbid == constants.PLATFORMS.TYPE_052D then
   local filteredContacts = {}
 
   for _, contact in ipairs(contacts) do

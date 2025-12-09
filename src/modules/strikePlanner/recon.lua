@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local constants = require("src.core.constants")
 
 local Recon = {}
 
@@ -50,16 +51,15 @@ function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
 end
 
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
----@param config SBJ__Config Configuration data for platform DBIDs
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__TableOfWaypoints The reconnaissance course for WZ-8
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
-function Recon.launchWZ8(config, h6n, course)
+function Recon.launchWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
     side = 'China',
     type = 'Aircraft',
     name = 'WZ-8',
-    dbid = config.platform.WZ8,
+    dbid = constants.PLATFORMS.WZ8,
     latitude = h6n.latitude,
     longitude = h6n.longitude,
     loadoutid = 32885,
@@ -170,7 +170,7 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
   local operations = {}
 
   -- Each entry has only one unitDBID, check which platform it is
-  if entry.unitDBID == config.platform.BZK005 then
+  if entry.unitDBID == constants.PLATFORMS.BZK005 then
     -- BZK-005 reconnaissance: Schedule C2 (Command & Control) strike operations
     if not DynamicOperationsUtils.hasOperation(reconSchedule, "C2/1", "ground") then
       table.insert(operations, {
@@ -192,7 +192,7 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
       local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
       table.insert(operations, nextOperation)
     end
-  elseif entry.unitDBID == config.platform.GJ11 then
+  elseif entry.unitDBID == constants.PLATFORMS.GJ11 then
     -- GJ-11 reconnaissance: Schedule CAS operations
     if not DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/1", "air") then
       table.insert(operations, {
@@ -214,7 +214,7 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
       local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
       table.insert(operations, nextOperation)
     end
-  elseif entry.unitDBID == config.platform.H6N then
+  elseif entry.unitDBID == constants.PLATFORMS.H6N then
     -- WZ-8 reconnaissance (launched from H-6N): Schedule anti-ship strike operations
     if not DynamicOperationsUtils.hasOperation(reconSchedule, "ANTISHIP/1", "ground") then
       table.insert(operations, {

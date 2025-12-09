@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local Recon = require("src.modules.strikePlanner.recon")
+local constants = require("src.core.constants")
 
 local TargetingProcess = {}
 
@@ -264,7 +265,7 @@ function TargetingProcess.findAirborne(opts)
     for _, contact in ipairs(contacts) do
       if contact.emissions and contact.emissions[1] then
         local emission = contact.emissions[1]['sensor_dbid']
-        if (emission == config.sensor.P3C_SEAVUE or emission == config.sensor.E2K_APS145) and
+        if (emission == constants.SENSORS.P3C_SEAVUE or emission == constants.SENSORS.E2K_APS145) and
             contact.typed == 0 and
             contact:inArea(area) then
           table.insert(targets, contact.guid)
@@ -289,11 +290,11 @@ function TargetingProcess.analyzeEmissions(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       local isSensor = contact.emissions and
-          (contact.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_MOUNTAIN or
-            contact.emissions[1]['sensor_dbid'] == config.sensor.TK3_LONG_WHITE_2 or
-            contact.emissions[1]['sensor_dbid'] == config.sensor.TK2_CS_MPG25 or
-            contact.emissions[1]['sensor_dbid'] == config.sensor.PAC3_MPQ65 or
-            contact.emissions[1]['sensor_dbid'] == config.sensor.TC2_CS_MPQ90)
+          (contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK3_LONG_MOUNTAIN or
+            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK3_LONG_WHITE_2 or
+            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK2_CS_MPG25 or
+            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.PAC3_MPQ65 or
+            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TC2_CS_MPQ90)
       local isAgeLessThan = contact.lastDetections and contact.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
       if contact:inArea(area) and isSAM then table.insert(SAMTargets, contact.guid) end
@@ -343,7 +344,7 @@ end
 local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
   local isTracking = false
-  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -360,7 +361,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
           table.insert(targets, guid)
 
           if not isTracking and tm.type == 'mobile' then
-            isTracking = Recon.trackTarget(saveData.c.recon, filteredUnits, config.platform.BZK005, contact)
+            isTracking = Recon.trackTarget(saveData.c.recon, filteredUnits, constants.PLATFORMS.BZK005, contact)
           end
         end
       end
@@ -400,7 +401,7 @@ function TargetingProcess.findNavalTargets(opts)
   local config = opts.config
   local navalTargets = {}
   local hasTracked = false
-  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -415,7 +416,7 @@ function TargetingProcess.findNavalTargets(opts)
         table.insert(navalTargets, contact.guid)
 
         if not hasTracked then
-          hasTracked = Recon.trackTarget(saveData.c.recon, filteredUnits, config.platform.WZ8, contact)
+          hasTracked = Recon.trackTarget(saveData.c.recon, filteredUnits, constants.PLATFORMS.WZ8, contact)
           Logger.log("recon", "hasTracked: " .. tostring(hasTracked))
         end
       end

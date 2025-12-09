@@ -1,4 +1,4 @@
-local config = require("src.core.constants")
+local config = require("src.core.config")
 
 local Logger = {}
 

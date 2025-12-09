@@ -1,72 +1,52 @@
-local config = require('src.core.constants')
+local config = require('src.core.config')
+local constants = require('src.core.constants')
 
 ---@class SBJ__SaveData
 local saveData = {}
 saveData.c = {}
 saveData.c.targetlist = {}
----@type SBJ__AirOperationsContext
-saveData.c.air = {}
-saveData.c.air.landBased = {}
-saveData.c.air.shipBased = {}
----@type SBJ__DynamicOperationsContext
-saveData.c.dynamicOperations = {}
----@type SBJ__GroundForceContext
-saveData.c.ground = {}
-saveData.c.ground.mlrs = {}
-saveData.c.ground.srbm = {}
-saveData.c.ground.mrbm = {}
-saveData.c.ground.glcm = {}
-saveData.c.ground.ascm = {}
-saveData.c.surface = {}
----@type SBJ__LACMContext
-saveData.c.surface.lacm = {}
-saveData.c.subSurface = {}
-saveData.c.subSurface.slcm = {}
----@type SBJ__PHIBOPContext
-saveData.c.PHIBOP = {}
----@type SBJ__ReconContext
-saveData.c.recon = {}
-saveData.c.GPSJamming = {}
----@type SBJ__CommsJammingContext
-saveData.c.commsJamming = {}
----@type SBJ__IADSContext
-saveData.c.IADS = {}
----@type SBJ__SIGINTContext
-saveData.c.SIGINT = {}
 saveData.t = {}
----@type SBJ__GroundForceContext
-saveData.t.ground = {}
-saveData.t.ground.mlrs = {}
-saveData.t.ground.glcm = {}
-saveData.t.ground.srbm = {}
-saveData.t.ground.ascm = {}
----@type SBJ__IADSContext
-saveData.t.IADS = {}
-saveData.t.air = {}
----@type SBJ__LandBasedPlatformContext
-saveData.t.air.landBased = {}
-saveData.t.GPSJamming = {}
 saveData.u = {}
----@type SBJ__SIGINTContext
-saveData.u.SIGINT = {}
 saveData.s = {}
 
--- SIGINT
+
+-- ============================================================================
+-- SIGINT (China)
+-- ============================================================================
+
+---@type SBJ__SIGINTContext
+saveData.c.SIGINT = {}
 saveData.c.SIGINT.isActivated = true
 saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
 saveData.c.SIGINT.RA = {}
 saveData.c.SIGINT.transmissions = {}
 
 
--- IADS
+-- ============================================================================
+-- IADS (China)
+-- ============================================================================
+
+---@type SBJ__IADSContext
+saveData.c.IADS = {}
 saveData.c.IADS.isActivated = true
 saveData.c.IADS.C2 = {}
 
--- Comms jamming
+
+-- ============================================================================
+-- Communications Jamming (China)
+-- ============================================================================
+
+---@type SBJ__CommsJammingContext
+saveData.c.commsJamming = {}
 saveData.c.commsJamming.isActivated = true
 saveData.c.commsJamming.jammers = {}
 
--- GPS Jamming
+
+-- ============================================================================
+-- GPS Jamming (China)
+-- ============================================================================
+
+saveData.c.GPSJamming = {}
 saveData.c.GPSJamming.isActivated = true
 ---@type table<string, SBJ__GPSJammerDescriptor>
 saveData.c.GPSJamming.jammers = {
@@ -86,7 +66,13 @@ saveData.c.GPSJamming.jammers = {
   },
 }
 
--- MLRS
+
+-- ============================================================================
+-- MLRS (China)
+-- ============================================================================
+
+saveData.c.ground = {}
+saveData.c.ground.mlrs = {}
 saveData.c.ground.mlrs.isActivated = true
 saveData.c.ground.mlrs.reloadTime = config.c.ground.mlrs.reloadTime
 saveData.c.ground.mlrs.operationalAreas = config.c.ground.mlrs.operationalAreas
@@ -134,7 +120,7 @@ saveData.c.ground.mlrs.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.mlrs.operationalAreas.Pingtan,
-    weaponDBID = config.weapon.FD280,
+    weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOERV4D',
   },
@@ -145,14 +131,18 @@ saveData.c.ground.mlrs.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.mlrs.operationalAreas.Chinchew,
-    weaponDBID = config.weapon.FD280,
+    weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HNBRRE2PRRG9',
   },
 }
 
 
--- GLCM
+-- ============================================================================
+-- GLCM (China)
+-- ============================================================================
+
+saveData.c.ground.glcm = {}
 saveData.c.ground.glcm.isActivated = true
 saveData.c.ground.glcm.reloadTime = config.c.ground.glcm.reloadTime
 saveData.c.ground.glcm.operationalAreas = config.c.ground.glcm.operationalAreas
@@ -184,14 +174,18 @@ saveData.c.ground.glcm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.glcm.operationalAreas.Brigade635,
-    weaponDBID = config.weapon.CJ10,
+    weaponDBID = constants.WEAPONS.CJ10,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVG88',
   },
 }
 
 
--- SRBM
+-- ============================================================================
+-- SRBM (China)
+-- ============================================================================
+
+saveData.c.ground.srbm = {}
 saveData.c.ground.srbm.isActivated = true
 saveData.c.ground.srbm.reloadTime = config.c.ground.srbm.reloadTime
 saveData.c.ground.srbm.operationalAreas = config.c.ground.srbm.operationalAreas
@@ -303,7 +297,7 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade615,
-    weaponDBID = config.weapon.DF11A,
+    weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVL7D',
   },
@@ -314,7 +308,7 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade614,
-    weaponDBID = config.weapon.DF11A,
+    weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVLSG',
   },
@@ -325,7 +319,7 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade636,
-    weaponDBID = config.weapon.DF16A,
+    weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVMO1',
   },
@@ -336,7 +330,7 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade616,
-    weaponDBID = config.weapon.DF15C,
+    weaponDBID = constants.WEAPONS.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVOSN',
   },
@@ -347,7 +341,7 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade613,
-    weaponDBID = config.weapon.DF15B,
+    weaponDBID = constants.WEAPONS.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVPNC',
   },
@@ -358,13 +352,18 @@ saveData.c.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade617,
-    weaponDBID = config.weapon.DF16A,
+    weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVQ6P',
   },
 }
 
--- MRBM
+
+-- ============================================================================
+-- MRBM (China)
+-- ============================================================================
+
+saveData.c.ground.mrbm = {}
 saveData.c.ground.mrbm.isActivated = true
 saveData.c.ground.mrbm.reloadTime = config.c.ground.mrbm.reloadTime
 saveData.c.ground.mrbm.operationalAreas = config.c.ground.mrbm.operationalAreas
@@ -396,18 +395,24 @@ saveData.c.ground.mrbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.mrbm.operationalAreas.Brigade624,
-    weaponDBID = config.weapon.DF21D,
+    weaponDBID = constants.WEAPONS.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HNCOR6HG2KF9',
   },
 }
 
--- Recon
+
+-- ============================================================================
+-- Reconnaissance (China)
+-- ============================================================================
+
+---@type SBJ__ReconContext
+saveData.c.recon = {}
 saveData.c.recon.isActivated = true
 saveData.c.recon.queue = {
   {
-    baseGUID = config.base.LIUAN_AB,
-    unitDBID = config.platform.H6N,
+    baseGUID = constants.BASES.LIUAN_AB,
+    unitDBID = constants.PLATFORMS.H6N,
     unitGUID = nil,
     course = config.c.recon.courses.H6N,
     unitCount = 1,
@@ -422,17 +427,34 @@ saveData.c.recon.queue = {
   },
 }
 
--- Fire support plan
+
+-- ============================================================================
+-- Fire Support Plan (China)
+-- ============================================================================
+
 saveData.c.ground.isActivated = true
 saveData.c.ground.FSP = {}
 
--- Air tasking order (NEW VERSION WITH LOADOUT SUPPORT)
+
+-- ============================================================================
+-- Air Tasking Order (China)
+-- ============================================================================
+
+---@type SBJ__AirOperationsContext
+saveData.c.air = {}
+saveData.c.air.landBased = {}
+saveData.c.air.shipBased = {}
 saveData.c.air.isActivated = true
 saveData.c.air.ATO = {}
 
 
 
--- Amphibious ops
+-- ============================================================================
+-- Amphibious Operations (China)
+-- ============================================================================
+
+---@type SBJ__PHIBOPContext
+saveData.c.PHIBOP = {}
 saveData.c.PHIBOP.startTime = config.c.triggers.amphibiousOps.startTime
 saveData.c.PHIBOP.isTesting = true
 saveData.c.PHIBOP.isShipsStartedMoving = true
@@ -445,71 +467,97 @@ saveData.c.PHIBOP.calculationResult = {
   ['Taoyuan'] = {
     name = 'Taoyuan',
     result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = config.platform.BARGE, },
+      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
+      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
+      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
+      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
+      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
+      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
     }
   },
   ['Penghu'] = {
     name = 'Penghu',
     result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = config.platform.BARGE, },
+      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
+      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
+      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
+      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
+      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
+      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
     }
   },
   ['Sishu'] = {
     name = 'Sishu',
     result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = config.platform.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = config.platform.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = config.platform.BARGE, },
+      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
+      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
+      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
+      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
+      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
+      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
     }
   },
 }
 saveData.c.PHIBOP.barges = {}
 
--- Land strike from DDG
+
+-- ============================================================================
+-- Land Attack Cruise Missiles - Surface Launch (China)
+-- ============================================================================
+
+saveData.c.surface = {}
+---@type SBJ__LACMContext
+saveData.c.surface.lacm = {}
 saveData.c.surface.lacm.isActivated = false
 saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 
--- SLCM
+-- ============================================================================
+-- Submarine-Launched Cruise Missiles (China)
+-- ============================================================================
+
+saveData.c.subSurface = {}
+saveData.c.subSurface.slcm = {}
 saveData.c.subSurface.slcm.isActivated = true
 saveData.c.subSurface.slcm.startTime = config.c.triggers.launchSLCM.startTime
 
 
--- Runway repairment
+-- ============================================================================
+-- Runway Repair (China)
+-- ============================================================================
+
 ---@type SBJ__RunwayRepairmentContext
 saveData.c.repairRunway = {}
 saveData.c.repairRunway.isActivated = false
 saveData.c.repairRunway.runways = {}
 
--- Ground force
+
+-- ============================================================================
+-- Ground Forces (Taiwan)
+-- ============================================================================
+
+---@type SBJ__GroundForceContext
+saveData.t.ground = {}
 saveData.t.ground.isActivated = true
 
--- MLRS
+
+-- ============================================================================
+-- MLRS (Taiwan)
+-- ============================================================================
+
+saveData.t.ground.mlrs = {}
 saveData.t.ground.mlrs.isActivated = true
 saveData.t.ground.mlrs.reloadTime = config.t.ground.mlrs.reloadTime
 saveData.t.ground.mlrs.operationalAreas = config.t.ground.mlrs.operationalAreas
@@ -541,14 +589,18 @@ saveData.t.ground.mlrs.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.mlrs.operationalAreas.Pingzhen,
-    weaponDBID = config.weapon.MK45_AMLRS,
+    weaponDBID = constants.WEAPONS.MK45_AMLRS,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7RT1I581BB',
   },
 }
 
 
--- SRBM
+-- ============================================================================
+-- SRBM (Taiwan)
+-- ============================================================================
+
+saveData.t.ground.srbm = {}
 saveData.t.ground.srbm.isActivated = true
 saveData.t.ground.srbm.reloadTime = config.t.ground.srbm.reloadTime
 saveData.t.ground.srbm.operationalAreas = config.t.ground.srbm.operationalAreas
@@ -580,7 +632,7 @@ saveData.t.ground.srbm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.srbm.operationalAreas.Dadu,
-    weaponDBID = config.weapon.ATACMS,
+    weaponDBID = constants.WEAPONS.ATACMS,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVSFS',
   },
@@ -588,7 +640,11 @@ saveData.t.ground.srbm.firingUnits = {
 
 
 
--- GLCM
+-- ============================================================================
+-- GLCM (Taiwan)
+-- ============================================================================
+
+saveData.t.ground.glcm = {}
 saveData.t.ground.glcm.isActivated = true
 saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.operationalAreas = config.t.ground.glcm.operationalAreas
@@ -636,7 +692,7 @@ saveData.t.ground.glcm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.glcm.operationalAreas.Quanxi,
-    weaponDBID = config.weapon.HF2E,
+    weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVTHT',
   },
@@ -647,7 +703,7 @@ saveData.t.ground.glcm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.glcm.operationalAreas.Neipu,
-    weaponDBID = config.weapon.HF2E,
+    weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN7R5QOIVUDC',
   }
@@ -656,7 +712,11 @@ saveData.t.ground.glcm.firingUnits = {
 
 
 
--- ASM
+-- ============================================================================
+-- ASCM (Taiwan)
+-- ============================================================================
+
+saveData.t.ground.ascm = {}
 saveData.t.ground.ascm.isActivated = true
 saveData.t.ground.ascm.reloadTime = config.t.ground.ascm.reloadTime
 saveData.t.ground.ascm.operationalAreas = config.t.ground.ascm.operationalAreas
@@ -704,7 +764,7 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
@@ -715,7 +775,7 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
@@ -726,7 +786,7 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Dong,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN9JFGVR07U5',
   },
@@ -737,7 +797,7 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Dong,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN9JFGVR07U5',
   },
@@ -748,7 +808,7 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN87KFOFSGUB',
   },
@@ -759,34 +819,43 @@ saveData.t.ground.ascm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.t.ground.ascm.operationalAreas.Dong,
-    weaponDBID = config.weapon.HF3,
+    weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = 'IC8B0X-0HN9JFGVR07U5',
   },
 }
 saveData.t.ground.ascm.test = {
   isAntishipMissionActivated = false,
-  nai1 = config.t.area.groundAscmTestNai1,
-  nai2 = config.t.area.groundAscmTestNai2,
+  nai1 = constants.AREAS.groundAscmTestNai1,
+  nai2 = constants.AREAS.groundAscmTestNai2,
   shipNumInNai1 = 4,
   helicopterNumInNai2 = 4
 }
 
--- Runway repairment
+
+-- ============================================================================
+-- Runway Repair (Taiwan)
+-- ============================================================================
+
 ---@type SBJ__RunwayRepairmentContext
 saveData.t.repairRunway = {}
 saveData.t.repairRunway.isActivated = false
 saveData.t.repairRunway.runways = {}
 
 
--- IADS
+-- ============================================================================
+-- IADS (Taiwan)
+-- ============================================================================
+
+---@type SBJ__IADSContext
+saveData.t.IADS = {}
 saveData.t.IADS.isActivated = true
 saveData.t.IADS.ROCC = {
   ['IC8B0X-0HNC3OB4KJKIF'] = {
     name = 'ROCC/North',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJKIF',
-    areas = { config.t.area.THEATER_OF_OPS_3RD, },
+    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
     SAM = {},
     radar = {}
   },
@@ -794,7 +863,7 @@ saveData.t.IADS.ROCC = {
     name = 'ROCC/East',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJKTC',
-    areas = { config.t.area.THEATER_OF_OPS_2ND, config.t.area.THEATER_OF_OPS_5TH, },
+    areas = { constants.AREAS.THEATER_OF_OPS_2ND, constants.AREAS.THEATER_OF_OPS_5TH, },
     SAM = {},
     radar = {}
   },
@@ -802,7 +871,7 @@ saveData.t.IADS.ROCC = {
     name = 'ROCC/South',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC3OB4KJL2M',
-    areas = { config.t.area.THEATER_OF_OPS_4TH, },
+    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
     SAM = {},
     radar = {}
   },
@@ -812,39 +881,51 @@ saveData.t.IADS.TAAOC = {
     name = 'TAAOC/3rd OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKTVU7',
-    areas = { config.t.area.THEATER_OF_OPS_3RD, },
+    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
     SAM = {},
   },
   ['IC8B0X-0HN41D1QKU1ED'] = {
     name = 'TAAOC/5th OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU1ED',
-    areas = { config.t.area.THEATER_OF_OPS_5TH, },
+    areas = { constants.AREAS.THEATER_OF_OPS_5TH, },
     SAM = {},
   },
   ['IC8B0X-0HN41D1QKU0JP'] = {
     name = 'TAAOC/4th OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HN41D1QKU0JP',
-    areas = { config.t.area.THEATER_OF_OPS_4TH, },
+    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
     SAM = {},
   },
   ['IC8B0X-0HNC27TV5Q0AS'] = {
     name = 'TAAOC/2nd OPAREA',
     msg = 'Radio source, C2',
     guid = 'IC8B0X-0HNC27TV5Q0AS',
-    areas = { config.t.area.THEATER_OF_OPS_2ND, },
+    areas = { constants.AREAS.THEATER_OF_OPS_2ND, },
     SAM = {},
   },
 }
 
 
--- Aircraft
+-- ============================================================================
+-- Aircraft (Taiwan)
+-- ============================================================================
+
+saveData.t.air = {}
+---@type SBJ__LandBasedPlatformContext
+saveData.t.air.landBased = {}
 ---@type table<string, SBJ__LandBasedPlatformContext>
 saveData.t.air.landBased.AEW = {}
 ---@type table<string, SBJ__LandBasedPlatformContext>
 saveData.t.air.landBased.AC = {}
 
+
+-- ============================================================================
+-- GPS Jamming (Taiwan)
+-- ============================================================================
+
+saveData.t.GPSJamming = {}
 ---@type table<string, SBJ__GPSJammerDescriptor>
 saveData.t.GPSJamming.jammers = {
   ['Comms & Info Coy, 584th Mech Bde'] = {
@@ -864,13 +945,24 @@ saveData.t.GPSJamming.jammers = {
 }
 
 
--- SIGINT
+-- ============================================================================
+-- SIGINT (US)
+-- ============================================================================
+
+---@type SBJ__SIGINTContext
+saveData.u.SIGINT = {}
 saveData.u.SIGINT.isActivated = true
 saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
 saveData.u.SIGINT.RA = {}
 saveData.u.SIGINT.transmissions = {}
 
--- Dynamic Operations (unified reconnaissance schedule)
+
+-- ============================================================================
+-- Dynamic Operations (China)
+-- ============================================================================
+
+---@type SBJ__DynamicOperationsContext
+saveData.c.dynamicOperations = {}
 saveData.c.dynamicOperations.enabled = true
 saveData.c.dynamicOperations.lastEvaluationTime = nil
 saveData.c.dynamicOperations.generatedOperations = {

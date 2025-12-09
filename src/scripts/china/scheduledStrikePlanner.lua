@@ -2,13 +2,14 @@ local gKH = require('src.core.gKH_State_Standalone')
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local Recon = require("src.modules.strikePlanner.recon")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
 local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
+local constants = require("src.core.constants")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 local contacts = GameApi.ScenEdit_GetContacts('China')
@@ -40,7 +41,7 @@ if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c
 
   for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(value)
-    if unit and unit.dbid == config.platform.TYPE_055 then
+    if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
       table.insert(ships, { guid = value, weaponDBID = config.c.surface.lacm.weaponDBID })
     end
   end

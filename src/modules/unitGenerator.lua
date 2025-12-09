@@ -2,6 +2,7 @@ local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local constants = require("src.core.constants")
 
 local UnitGenerator = {}
 
@@ -202,51 +203,50 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
 end
 
 ---Create ships by type
----@param config SBJ__Config Configuration object
 ---@param position CMO__Location Position
 ---@param areaDescriptor SBJ__AmphibiousAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
 ---@param shipSettings SBJ__FormationSettings Amphibious layout configuration
 ---@param cargoList table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@param shipType UnitGenerator_UnitType Ship type
-local function createShipsByType(config, position, areaDescriptor, descriptor, shipSettings, cargoList, shipType)
+local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoList, shipType)
   local shipConfigs = {
     type075 = {
-      dbid = config.platform.TYPE_075,
+      dbid = constants.PLATFORMS.TYPE_075,
       name = 'Type 075',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.Z10,       loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     type071 = {
-      dbid = config.platform.TYPE_071,
+      dbid = constants.PLATFORMS.TYPE_071,
       name = 'Type 071',
       cargo = cargoList.type071,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 4 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
     type076 = {
-      dbid = config.platform.TYPE_076,
+      dbid = constants.PLATFORMS.TYPE_076,
       name = 'Type 076',
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.Z18,       loadouts = { { loadoutId = config.loadout.Z18_TRANSPORT_1, num = 6 }, { loadoutId = config.loadout.Z18_TRANSPORT_2, num = 6 } } },
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.Z10,       loadouts = { { loadoutId = config.loadout.Z10_ATTACK, num = 13 } } },
-        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = config.platform.GJ11,      loadouts = { { loadoutId = config.loadout.GJ11_RECON, num = 8 } } },
-        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = config.platform.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = 'China', type = 'aircraft', name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
+        { side = 'China', type = 'ship',     name = 'Warbird',           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
-    barge = { dbid = config.platform.BARGE, name = 'Barge', cargo = nil, embarkedUnits = nil },
-    roro = { dbid = config.platform.FERRY, name = 'RORO', cargo = cargoList.barge, embarkedUnits = nil },
-    type072a = { dbid = config.platform.TYPE_072A, name = 'Type 072A', cargo = cargoList.type072a, embarkedUnits = nil },
-    type072iii = { dbid = config.platform.TYPE_072III, name = 'Type 072III', cargo = cargoList.type072iii, embarkedUnits = nil },
-    ferry = { dbid = config.platform.FERRY, name = 'Ferry', cargo = cargoList.ferry, embarkedUnits = nil },
-    type073a = { dbid = config.platform.TYPE_073A, name = 'Type 073A', cargo = cargoList.type073a, embarkedUnits = nil }
+    barge = { dbid = constants.PLATFORMS.BARGE, name = 'Barge', cargo = nil, embarkedUnits = nil },
+    roro = { dbid = constants.PLATFORMS.FERRY, name = 'RORO', cargo = cargoList.barge, embarkedUnits = nil },
+    type072a = { dbid = constants.PLATFORMS.TYPE_072A, name = 'Type 072A', cargo = cargoList.type072a, embarkedUnits = nil },
+    type072iii = { dbid = constants.PLATFORMS.TYPE_072III, name = 'Type 072III', cargo = cargoList.type072iii, embarkedUnits = nil },
+    ferry = { dbid = constants.PLATFORMS.FERRY, name = 'Ferry', cargo = cargoList.ferry, embarkedUnits = nil },
+    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = 'Type 073A', cargo = cargoList.type073a, embarkedUnits = nil }
   }
 
   local shipConfig = shipConfigs[shipType]
@@ -592,7 +592,7 @@ function UnitGenerator.addSubmarines(config, sideName)
 
     local addedUnit = GameUtils.createRandomUnits({
       centerPoint = unit.from.startingPoint,
-      dbids = { config.platform.TYPE_093B },
+      dbids = { constants.PLATFORMS.TYPE_093B },
       count = 1,
       randomRadius = config.c.subSurface.slcm.randomRadius,
       sideName = sideName,
@@ -691,10 +691,9 @@ function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
 end
 
 ---Add landing ships
----@param config SBJ__Config Configuration object
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration containing ship settings and cargo
 ---@return boolean # Whether successful
-function UnitGenerator.addLandingShips(config, amphibOpsConfig)
+function UnitGenerator.addLandingShips(amphibOpsConfig)
   local descriptors = amphibOpsConfig.operations
   local layoutConfig = amphibOpsConfig.formationSettings
   local cargoList = amphibOpsConfig.cargoList
@@ -708,15 +707,15 @@ function UnitGenerator.addLandingShips(config, amphibOpsConfig)
         firstRp075, areaDescriptor.heading.vertical, layoutConfig.verticalDistance)
 
       -- Create various ship types
-      createShipsByType(config, positions.type075, areaDescriptor, descriptor, layoutConfig, cargoList, 'type075')
-      createShipsByType(config, positions.type071, areaDescriptor, descriptor, layoutConfig, cargoList, 'type071')
-      createShipsByType(config, positions.type076, areaDescriptor, descriptor, layoutConfig, cargoList, 'type076')
-      createShipsByType(config, positions.barge, areaDescriptor, descriptor, layoutConfig, cargoList, 'barge')
-      createShipsByType(config, positions.roro, areaDescriptor, descriptor, layoutConfig, cargoList, 'roro')
-      createShipsByType(config, positions.type072a, areaDescriptor, descriptor, layoutConfig, cargoList, 'type072a')
-      createShipsByType(config, positions.type072iii, areaDescriptor, descriptor, layoutConfig, cargoList, 'type072iii')
-      createShipsByType(config, positions.ferry, areaDescriptor, descriptor, layoutConfig, cargoList, 'ferry')
-      createShipsByType(config, positions.type073a, areaDescriptor, descriptor, layoutConfig, cargoList, 'type073a')
+      createShipsByType(positions.type075, areaDescriptor, descriptor, layoutConfig, cargoList, 'type075')
+      createShipsByType(positions.type071, areaDescriptor, descriptor, layoutConfig, cargoList, 'type071')
+      createShipsByType(positions.type076, areaDescriptor, descriptor, layoutConfig, cargoList, 'type076')
+      createShipsByType(positions.barge, areaDescriptor, descriptor, layoutConfig, cargoList, 'barge')
+      createShipsByType(positions.roro, areaDescriptor, descriptor, layoutConfig, cargoList, 'roro')
+      createShipsByType(positions.type072a, areaDescriptor, descriptor, layoutConfig, cargoList, 'type072a')
+      createShipsByType(positions.type072iii, areaDescriptor, descriptor, layoutConfig, cargoList, 'type072iii')
+      createShipsByType(positions.ferry, areaDescriptor, descriptor, layoutConfig, cargoList, 'ferry')
+      createShipsByType(positions.type073a, areaDescriptor, descriptor, layoutConfig, cargoList, 'type073a')
     end
   end
 
@@ -725,10 +724,9 @@ function UnitGenerator.addLandingShips(config, amphibOpsConfig)
 end
 
 ---Remove landing ships
----@param config SBJ__Config Configuration object
 ---@return boolean # Whether successful
-function UnitGenerator.removeLandingShips(config)
-  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
+function UnitGenerator.removeLandingShips()
+  local unitsFromChina = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.SHIP)
 
   if not unitsFromChina then
     return false
@@ -737,15 +735,15 @@ function UnitGenerator.removeLandingShips(config)
   local removedCount = 0
 
   local landingShipDBIDs = {
-    config.platform.TYPE_075,
-    config.platform.TYPE_071,
-    config.platform.TYPE_072III,
-    config.platform.TYPE_072A,
-    config.platform.TYPE_073A,
-    config.platform.TYPE_072A_2,
-    config.platform.TYPE_076,
-    config.platform.FERRY,
-    config.platform.BARGE
+    constants.PLATFORMS.TYPE_075,
+    constants.PLATFORMS.TYPE_071,
+    constants.PLATFORMS.TYPE_072III,
+    constants.PLATFORMS.TYPE_072A,
+    constants.PLATFORMS.TYPE_073A,
+    constants.PLATFORMS.TYPE_072A_2,
+    constants.PLATFORMS.TYPE_076,
+    constants.PLATFORMS.FERRY,
+    constants.PLATFORMS.BARGE
   }
 
   for _, u in ipairs(unitsFromChina) do
@@ -766,11 +764,10 @@ function UnitGenerator.removeLandingShips(config)
 end
 
 ---Initialize aircraft units for Taiwan air operations
----@param config SBJ__Config Configuration object containing platform and unit type definitions
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
 ---@return boolean # Whether initialization was successful
-function UnitGenerator.initAircraftContexts(config, context)
-  local filteredUnits = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(config.unitType.AIRCRAFT)
+function UnitGenerator.initAircraftContexts(context)
+  local filteredUnits = GameApi.VP_GetSide({ side = 'Taiwan' }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     Logger.log("unitGenerator", "No Taiwan aircraft units found for initialization")
@@ -785,7 +782,7 @@ function UnitGenerator.initAircraftContexts(config, context)
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == config.platform.E2K then
+    if actualUnit and actualUnit.type == 'Aircraft' and actualUnit.dbid == constants.PLATFORMS.E2K then
       context.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,

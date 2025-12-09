@@ -24,12 +24,14 @@ python tools/build_lua_scenario.py
 ```
 
 ### Development Mode
-Set `config.isDevMode = true` in `src/core/constants.lua` for development features including console logging.
+Set `config.isDevMode = true` in `src/core/config.lua` for development features including console logging.
 
 ## Architecture Overview
 
 ### Core System Design
-The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Configuration is centralized in `src/core/constants.lua` using nested namespaces (`.c`, `.t`, `.u`, `.s` for different factions).
+The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Configuration is split into two files:
+- `src/core/config.lua` - Runtime configuration values (weapon counts, timing, operational parameters) using nested namespaces (`.c`, `.t`, `.u`, `.s` for different factions)
+- `src/core/constants.lua` - Immutable constants (platform DBIDs, base GUIDs, weapon IDs, area definitions)
 
 ### Key Architectural Patterns
 
@@ -79,13 +81,40 @@ function Utils.safeCall(funcName, func, ...)
 **Error Handling Strategy**: All CMO API calls through `GameAPI` are automatically wrapped with error handling via `setmetatable`. The metatable's `__index` method intercepts all API calls and wraps them in `Utils.safeCall()`, providing centralized error handling with automatic logging through the bilingual `Logger` module. Errors are logged with context and functions return `nil` on failure. Never call raw `ScenEdit_*` functions directly - always use the `GameAPI.*` wrappers.
 
 **Configuration Management**:
-- All platform DBIDs, base GUIDs, and operational parameters are constants in `src/core/constants.lua`
-- Use structured namespacing:
+The project uses a two-tier configuration system for better organization and maintainability:
+
+**Runtime Configuration** (`src/core/config.lua`):
+- Operational parameters that may need tuning (weapon defaults, ammunition thresholds, reload times)
+- Timing configurations (trigger start times, intervals)
+- Tactical settings (jamming ranges, detection parameters)
+- Uses prominent section header format for easy navigation:
+  ```lua
+  -- ============================================================================
+  -- Configuration Section Name
+  -- ============================================================================
+  ```
+- Structured namespacing:
   - `config.c.*` (China) - Chinese faction configuration
   - `config.t.*` (Taiwan) - Taiwanese faction configuration
   - `config.u.*` (US) - US faction configuration
-  - `config.s.*` (Scoring) - Scoring system configuration defining point values for unit destruction events
-- Never hardcode military platform IDs or coordinates
+  - `config.s.*` (Scoring) - Scoring system configuration
+  - `config.batteryState.*` - TEL battery state enumeration
+  - `config.repairRunway.*` - Runway repair configuration
+  - `config.targetScanning.*` - Target scanning configuration
+
+**Immutable Constants** (`src/core/constants.lua`):
+- Platform database IDs (DBIDs) for units, weapons, and systems
+- Base GUIDs identifying specific installations
+- Weapon system identifiers
+- Geographic area definitions and coordinates
+- Loadout identifiers
+- Never modify these at runtime - they define the game's data model
+
+**Best Practices**:
+- Use `config.*` for values that control gameplay behavior and may need adjustment
+- Use `constants.*` for immutable identifiers that reference game database entries
+- Never hardcode DBIDs, GUIDs, or coordinates directly in logic
+- Reference from appropriate configuration file based on whether value is mutable
 
 **Scoring System** (`config.s.*`):
 The scoring configuration defines point values awarded or deducted when units are destroyed. Event handlers reference these values:
@@ -97,9 +126,10 @@ The scoring configuration defines point values awarded or deducted when units ar
 
 **Core Systems** (`src/core/`):
 - `init.lua` - Main entry point and system orchestration
-- `constants.lua` - Centralized configuration (platform DBIDs, base GUIDs, operational areas)
+- `config.lua` - Runtime configuration values (weapon counts, timing, tactical parameters) organized by faction with prominent section headers
+- `constants.lua` - Immutable constants (platform DBIDs, base GUIDs, weapon IDs, area definitions)
 - `schema.lua` - Type definitions with LuaLS annotations
-- `saveData.lua` - Persistent state management
+- `saveData.lua` - Persistent state management with prominent section headers for organization
 
 **Utilities** (`src/utils/`):
 - `gameApi.lua` - **Critical**: CMO API wrapper with error handling - use for all API calls
@@ -174,7 +204,7 @@ Event handlers in `src/scripts/` are organized by faction and event type, coordi
 
 **Unit Enters Area Event Scripts**:
 - `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` - Air landing zone neutralization operations
-- `src/scripts/china/recon/H6NLaunchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
+- `src/scripts/china/H6NLaunchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
 - `src/scripts/china/CSGEnterArea.lua` - China Carrier Strike Group area entry handling
 - `src/scripts/china/launcher/moveToPosition.lua` - China TEL move to each positions
 - `src/scripts/taiwan/launcher/moveToPosition.lua` - Taiwan TEL move to each positions

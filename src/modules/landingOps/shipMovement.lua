@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local constants = require("src.core.constants")
 
 local ShipMovement = {}
 
@@ -104,10 +105,9 @@ end
 
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
----@param config SBJ__Config Global configuration for platform DBIDs
 ---@param group SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
-local function handleSAG(config, group, isTesting)
+local function handleSAG(group, isTesting)
   local unit = GameApi.ScenEdit_GetUnit(group.groupName)
 
   if not unit then
@@ -124,7 +124,7 @@ local function handleSAG(config, group, isTesting)
       local ship = GameApi.ScenEdit_GetUnit(u)
 
       if ship then
-        if ship.dbid == config.platform.TYPE_052D then
+        if ship.dbid == constants.PLATFORMS.TYPE_052D then
           if type052d == 0 then
             setShipPosition(
               ship,
@@ -145,7 +145,7 @@ local function handleSAG(config, group, isTesting)
           end
 
           type052d = type052d + 1
-        elseif ship.dbid == config.platform.TYPE_054A then
+        elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
             group.to.anchorageArea[count].latitude,
@@ -165,12 +165,11 @@ end
 
 ---Move all amphibious assault ships from staging area to designated anchorage positions
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
----@param config SBJ__Config Global configuration (used for SAG platform identification)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all ship movement orders were successfully issued
-function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units)
+function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, units)
   local formationSettings = amphibOpsConfig.formationSettings
   local operations = amphibOpsConfig.operations
   local calculationResult = saveData.c.PHIBOP.calculationResult
@@ -219,7 +218,7 @@ function ShipMovement.moveToStagingArea(config, amphibOpsConfig, saveData, units
   end
 
   for _, group in pairs(amphibOpsConfig.sag) do
-    handleSAG(config, group, isTesting)
+    handleSAG(group, isTesting)
   end
 
   allUnitsMoved = true

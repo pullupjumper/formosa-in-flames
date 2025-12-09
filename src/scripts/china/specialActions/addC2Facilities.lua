@@ -1,4 +1,4 @@
-local config = require('src.core.constants')
+local config = require('src.core.config')
 local Logger = require("src.utils.logger")
 local gKH = require('src.core.gKH_State_Standalone')
 local IADS = require("src.modules.IADS")
@@ -10,8 +10,8 @@ if not saveData then
   return
 end
 
-IADS.removeC2Facilities(config, config.c.IADS)
+IADS.removeC2Facilities(config.c.IADS)
 IADS.addC2Facilities(config.c.IADS)
-IADS.initC2FacilitiesContext(config, config.c.IADS, saveData.c.IADS)
+IADS.initC2FacilitiesContext(config.c.IADS, saveData.c.IADS)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

@@ -1,6 +1,6 @@
 local gKH = require('src.core.gKH_State_Standalone')
 local Logger = require("src.utils.logger")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
 local Launcher = require('src.modules.launcher')
 local unit = GameApi.ScenEdit_UnitX()

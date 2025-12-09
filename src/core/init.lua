@@ -1,6 +1,6 @@
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Logger = require("src.utils.logger")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
@@ -77,25 +77,25 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
   ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
-  UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
+  UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
   TargetingProcess.scanTargets('China', config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
   if saveData.t.IADS.isActivated then
-    IADS.initC2Contexts(config, saveData.t.IADS)
+    IADS.initC2Contexts(saveData.t.IADS)
   end
 
   if saveData.c.IADS.isActivated then
-    IADS.initC2FacilitiesContext(config, config.c.IADS, saveData.c.IADS)
+    IADS.initC2FacilitiesContext(config.c.IADS, saveData.c.IADS)
   end
 
   if saveData.c.commsJamming.isActivated then
-    CommsJamming.initCommsJammersContext(config, saveData, 'China')
+    CommsJamming.initCommsJammersContext(saveData, 'China')
   end
 
   if saveData.u.SIGINT.isActivated then
-    SIGINT.initReconAircraftContexts(config, saveData.u.SIGINT, 'US')
-    SIGINT.initReconAircraftContexts(config, saveData.c.SIGINT, 'China')
+    SIGINT.initReconAircraftContexts(saveData.u.SIGINT, 'US')
+    SIGINT.initReconAircraftContexts(saveData.c.SIGINT, 'China')
   end
 
   if config.isDevMode then

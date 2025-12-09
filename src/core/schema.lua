@@ -846,7 +846,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field ratio {C2:number} C2 facility ratio multiplier
 ---@field C2FacilityDBIDs number[] Database IDs for C2 facility types
 ---@field randomRadius number Random deployment radius (nautical miles)
----@field C2Settings SBJ__C2Descriptor[] C2 node deployment descriptors
+---@field C2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
 ---IADS context managing air defense system state
 ---Tracks all Command and Control nodes and system activation status

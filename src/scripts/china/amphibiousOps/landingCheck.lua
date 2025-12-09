@@ -3,16 +3,17 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
-local config = require("src.core.constants")
+local config = require("src.core.config")
 local ShipMovement = require('src.modules.landingOps.shipMovement')
 local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
 local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
 local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
 local UnitStatusUI = require("src.modules.unitStatusUI")
+local constants = require("src.core.constants")
 local contacts = GameApi.ScenEdit_GetContacts('China')
 local currentTime = GameApi.ScenEdit_CurrentTime()
 ---@type CMO__SideUnit[]
-local filteredShips = GameApi.VP_GetSide({ side = 'China' }):unitsBy(config.unitType.SHIP)
+local filteredShips = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.SHIP)
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -32,7 +33,7 @@ if saveData == nil then
 end
 
 if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.PHIBOP.startTime) then
-  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(config, config.c.PHIBOP, saveData, filteredShips)
+  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(config.c.PHIBOP, saveData, filteredShips)
 
   if hasIssuedShipMovementOrder then
     saveData.c.PHIBOP.isWaitingForShipArrival = true
@@ -41,12 +42,12 @@ if saveData.c.PHIBOP.isShipsStartedMoving and GameUtils.isAfterStartTime(saveDat
 end
 
 if saveData.c.PHIBOP.isWaitingForShipArrival then
-  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, config.c.PHIBOP, filteredShips)
+  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config.c.PHIBOP, filteredShips)
   local hasArrived = Utils.getCount(result.units) > 15 and not result.isUnitMoving
 
   if hasArrived then
     local creatingCompleted = AmphibiousLogistics.createCargoMissions(config.c.PHIBOP)
-    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config, config.c.PHIBOP, result.units)
+    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config.c.PHIBOP, result.units)
     local hasAssignedAndTransfered = creatingCompleted and transferingCompleted
 
     if hasAssignedAndTransfered then
@@ -86,7 +87,7 @@ if saveData.c.PHIBOP.isWaitingForAmphibiousAssault then
 
   if shouldLaunchAmphibiousAssault then
     local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config.c.PHIBOP, saveData)
-    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config, config.c.PHIBOP, filteredShips)
+    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config.c.PHIBOP, filteredShips)
     local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
 
     if hasLaunchedAmphibiousAssault then
@@ -117,7 +118,7 @@ if saveData.c.PHIBOP.airlandingMissionStartTime ~= nil then
   local isTimeExceeded = elapsedTime >= (3600 * 2)
 
   if isTimeExceeded then
-    local hasTransfered = AmphibiousLogistics.retransferCargos(config, config.c.PHIBOP, filteredShips)
+    local hasTransfered = AmphibiousLogistics.retransferCargos(config.c.PHIBOP, filteredShips)
 
     if hasTransfered then
       saveData.c.PHIBOP.airlandingMissionStartTime = currentTime

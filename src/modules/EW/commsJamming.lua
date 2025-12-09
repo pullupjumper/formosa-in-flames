@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+local constants = require("src.core.constants")
 
 local CommsJamming = {}
 
@@ -355,11 +356,10 @@ end
 ---Initialize communications jammer contexts for the specified side
 ---Scans all aircraft on the side and creates contexts for Y-9, J-15D, and J-16D electronic warfare aircraft
 ---Contexts include OODA, communication levels, thresholds, and jamming state tracking
----@param config SBJ__Config Configuration containing platform DBIDs for jammer identification (Y9, J15D, J16D)
 ---@param saveData SBJ__SaveData Save data where jammer contexts will be stored in c.commsJamming.jammers
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
-function CommsJamming.initCommsJammersContext(config, saveData, sideName)
-  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(config.unitType.AIRCRAFT)
+function CommsJamming.initCommsJammersContext(saveData, sideName)
+  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -368,9 +368,9 @@ function CommsJamming.initCommsJammersContext(config, saveData, sideName)
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if actualUnit and (actualUnit.dbid == config.platform.Y9 or
-          actualUnit.dbid == config.platform.J15D or
-          actualUnit.dbid == config.platform.J16D) then
+    if actualUnit and (actualUnit.dbid == constants.PLATFORMS.Y9 or
+          actualUnit.dbid == constants.PLATFORMS.J15D or
+          actualUnit.dbid == constants.PLATFORMS.J16D) then
       saveData.c.commsJamming.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,

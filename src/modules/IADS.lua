@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
+local constants = require("src.core.constants")
 
 local IADS = {}
 
@@ -79,7 +80,7 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
     if actualUnit == nil then goto continue end
     local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
 
-    if (actualUnit.dbid == config.platform.JY26 or actualUnit.dbid == config.platform.YLC8B) then
+    if (actualUnit.dbid == constants.PLATFORMS.JY26 or actualUnit.dbid == constants.PLATFORMS.YLC8B) then
       if distance < temp.distance then
         temp.unit = actualUnit
         temp.distance = distance
@@ -97,10 +98,10 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
 
       local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
 
-      if actualUnit.dbid == config.platform.HQ22 or
-          actualUnit.dbid == config.platform.S300 or
-          actualUnit.dbid == config.platform.S400 or
-          actualUnit.dbid == config.platform.HQ12 then
+      if actualUnit.dbid == constants.PLATFORMS.HQ22 or
+          actualUnit.dbid == constants.PLATFORMS.S300 or
+          actualUnit.dbid == constants.PLATFORMS.S400 or
+          actualUnit.dbid == constants.PLATFORMS.HQ12 then
         if distance < temp.distance then
           temp.unit = actualUnit
           temp.distance = distance
@@ -122,7 +123,7 @@ end
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 settings, facility DBIDs, and deployment parameters
 ---@return boolean # True if all C2 facilities were successfully created, false if any creation failed
 function IADS.addC2Facilities(IADSConfig)
-  for _, setting in ipairs(IADSConfig.C2Settings) do
+  for _, setting in ipairs(IADSConfig.C2Deployments) do
     local units = GameUtils.createRandomUnits({
       centerPoint = setting.position,
       dbids = IADSConfig.C2FacilityDBIDs,
@@ -145,19 +146,18 @@ function IADS.addC2Facilities(IADSConfig)
 end
 
 ---Initialize C2 facilities context for China's IADS with radar and SAM associations
----@param config SBJ__Config Global configuration containing platform DBIDs and unit types
 ---@param IADSConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
 ---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
-function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
-  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
+function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
+  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
   IADSContext.C2 = {}
 
   if not filteredUnits then
     return false
   end
 
-  for _, setting in ipairs(IADSConfig.C2Settings) do
+  for _, setting in ipairs(IADSConfig.C2Deployments) do
     local facilities = {}
 
     for _, u in ipairs(filteredUnits) do
@@ -195,10 +195,10 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
       for _, area in ipairs(C2Ctx.areas) do
         if actualUnit and actualUnit:inArea(area) then
           -- SAM systems
-          if (actualUnit.dbid == config.platform.HQ22 or
-                actualUnit.dbid == config.platform.S300 or
-                actualUnit.dbid == config.platform.S400 or
-                actualUnit.dbid == config.platform.HQ12) and
+          if (actualUnit.dbid == constants.PLATFORMS.HQ22 or
+                actualUnit.dbid == constants.PLATFORMS.S300 or
+                actualUnit.dbid == constants.PLATFORMS.S400 or
+                actualUnit.dbid == constants.PLATFORMS.HQ12) and
               not string.find(actualUnit.name, 'DECOY') then
             IADSContext.C2[C2GUID].SAM[actualUnit.guid] = {
               name = actualUnit.name,
@@ -212,7 +212,7 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
           end
 
           -- Radar systems
-          if actualUnit.dbid == config.platform.JY26 or actualUnit.dbid == config.platform.YLC8B then
+          if actualUnit.dbid == constants.PLATFORMS.JY26 or actualUnit.dbid == constants.PLATFORMS.YLC8B then
             IADSContext.C2[C2GUID].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -233,10 +233,9 @@ function IADS.initC2FacilitiesContext(config, IADSConfig, IADSContext)
 end
 
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
----@param config SBJ__Config Global configuration containing platform DBIDs for Taiwan's air defense systems
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
-function IADS.initC2Contexts(config, IADSContext)
-  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(config.unitType.FACILITY)
+function IADS.initC2Contexts(IADSContext)
+  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
@@ -248,7 +247,7 @@ function IADS.initC2Contexts(config, IADSContext)
     for _, C2Ctx in pairs(IADSContext.ROCC) do
       for _, area in ipairs(C2Ctx.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.CUSTOMED_TK3 or actualUnit.dbid == config.platform.PAC3 then
+          if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or actualUnit.dbid == constants.PLATFORMS.PAC3 then
             IADSContext.ROCC[C2Ctx.guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -260,10 +259,10 @@ function IADS.initC2Contexts(config, IADSContext)
             }
           end
 
-          if actualUnit.dbid == config.platform.FPS117 or
-              actualUnit.dbid == config.platform.TPS43F or
-              actualUnit.dbid == config.platform.HR3000 or
-              actualUnit.dbid == config.platform.GE592 then
+          if actualUnit.dbid == constants.PLATFORMS.FPS117 or
+              actualUnit.dbid == constants.PLATFORMS.TPS43F or
+              actualUnit.dbid == constants.PLATFORMS.HR3000 or
+              actualUnit.dbid == constants.PLATFORMS.GE592 then
             IADSContext.ROCC[C2Ctx.guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -281,7 +280,7 @@ function IADS.initC2Contexts(config, IADSContext)
     for _, C2Ctx in pairs(IADSContext.TAAOC) do
       for _, area in ipairs(C2Ctx.areas) do
         if actualUnit ~= nil and actualUnit:inArea(area) then
-          if actualUnit.dbid == config.platform.TC2 or actualUnit.dbid == config.platform.SKY_GUARD then
+          if actualUnit.dbid == constants.PLATFORMS.TC2 or actualUnit.dbid == constants.PLATFORMS.SKY_GUARD then
             IADSContext.TAAOC[C2Ctx.guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -299,11 +298,10 @@ function IADS.initC2Contexts(config, IADSContext)
 end
 
 ---Remove C2 facility units from scenario by deleting units matching configured DBIDs
----@param config SBJ__Config Global configuration containing unit type definitions
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
-function IADS.removeC2Facilities(config, IADSConfig)
-  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(config.unitType.FACILITY)
+function IADS.removeC2Facilities(IADSConfig)
+  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 
   if not filteredUnits then

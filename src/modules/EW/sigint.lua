@@ -2,6 +2,7 @@
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+local constants = require("src.core.constants")
 
 local SIGINT = {}
 
@@ -132,11 +133,11 @@ end
 ---@return string reason Reason for emission status
 local function isUnitEmitting(config, unit, unitCtx, enemySide)
   -- Check for specific platform types that always emit
-  if unit.dbid == config.platform.C2 then
+  if unit.dbid == constants.PLATFORMS.C2 then
     return true, "Platform type 46 (always emitting)"
   end
 
-  if unit.dbid == config.platform.BUNKER_SECTOR_CONTROL_STATION then
+  if unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
     return true, "Platform type 78 (always emitting)"
   end
 
@@ -415,12 +416,11 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param config SBJ__Config Configuration object containing platform DBIDs
 ---@param SIGINTContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized
-function SIGINT.initReconAircraftContexts(config, SIGINTContext, sideName)
-  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(config.unitType.AIRCRAFT)
+function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
+  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     Logger.warn(string.format("No aircraft units found for side '%s'", sideName))
@@ -432,7 +432,7 @@ function SIGINT.initReconAircraftContexts(config, SIGINTContext, sideName)
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit and unit.type == 'Aircraft' and
-        (unit.dbid == config.platform.RC135V or unit.dbid == config.platform.Y9DZ) then
+        (unit.dbid == constants.PLATFORMS.RC135V or unit.dbid == constants.PLATFORMS.Y9DZ) then
       SIGINTContext.RA[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,

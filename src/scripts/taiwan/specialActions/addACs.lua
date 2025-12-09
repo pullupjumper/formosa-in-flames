@@ -1,5 +1,5 @@
 local UnitGenerator = require('src.modules.unitGenerator')
-local config = require('src.core.constants')
+local config = require('src.core.config')
 local gKH = require('src.core.gKH_State_Standalone')
 local Logger = require("src.utils.logger")
 ---@type SBJ__SaveData
@@ -11,6 +11,6 @@ if not saveData then
 end
 
 UnitGenerator.addAircraft(config.t.air.landBased.deployedACs)
-UnitGenerator.initAircraftContexts(config, saveData.t.air.landBased)
+UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
