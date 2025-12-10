@@ -1,6 +1,6 @@
-local GPSJamming = require('src.modules.EW.GPSJamming')
+local GPSJamming = require("src.modules.EW.GPSJamming")
 local Logger = require("src.utils.logger")
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -9,5 +9,5 @@ if not saveData then
   return
 end
 
-GPSJamming.removeJammers(saveData.c.GPSJamming.jammers, 'China')
-GPSJamming.addGPSJammers(saveData.c.GPSJamming.jammers, 'China')
+GPSJamming.removeJammers(saveData.c.GPSJamming.jammers, "China")
+GPSJamming.addGPSJammers(saveData.c.GPSJamming.jammers, "China")

@@ -1,5 +1,5 @@
 local GameApi = require("src.utils.gameApi")
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -9,9 +9,9 @@ if saveData == nil then
   return
 end
 
-GameApi.ScenEdit_GetMission('China', 'CAP/E').isactive = true
-GameApi.ScenEdit_GetMission('China', 'ASW/CSG').isactive = false
-GameApi.ScenEdit_GetMission('China', 'ASW/PATROL AC').isactive = false
+GameApi.ScenEdit_GetMission("China", "CAP/E").isactive = true
+GameApi.ScenEdit_GetMission("China", "ASW/CSG").isactive = false
+GameApi.ScenEdit_GetMission("China", "ASW/PATROL AC").isactive = false
 saveData.c.surface.lacm.isActivated = true
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

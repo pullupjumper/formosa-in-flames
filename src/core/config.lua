@@ -4,7 +4,7 @@ local constants = require("src.core.constants")
 local config = {}
 config.isDevMode = true
 config.isSaved = true
-config.difficulty = 'normal'
+config.difficulty = "normal"
 
 -- Logging configuration
 config.logging = {
@@ -34,61 +34,61 @@ config.s = {}
 config.targetScanning = {
   distanceThreshold = 1, -- nautical miles
   taiwanAirBases = {
-    'Jiashan AB',
-    'Hualien AB',
-    'Taitung/Jhihhang AB',
-    'Pingtung North AB',
-    'Pingtung South AB',
-    'Gangshan AB',
-    'Tainan AB',
-    'Guiren AAB',
-    'Magong AB',
-    'Chiayi AB',
-    'Ching Chuang Kang AB',
-    'Hsinchu AB',
-    'Longtan AAB',
-    'Taipei Songshan Airport',
-    'Taoyuan International Airport',
-    'Hsinchu Field Airdrome',
-    'Minxiong Emergency Highway Strip',
-    'Madou Emergency Highway Strip',
-    'Rende Emergency Highway Strip',
-    'Tainan Field Airdrome',
+    "Jiashan AB",
+    "Hualien AB",
+    "Taitung/Jhihhang AB",
+    "Pingtung North AB",
+    "Pingtung South AB",
+    "Gangshan AB",
+    "Tainan AB",
+    "Guiren AAB",
+    "Magong AB",
+    "Chiayi AB",
+    "Ching Chuang Kang AB",
+    "Hsinchu AB",
+    "Longtan AAB",
+    "Taipei Songshan Airport",
+    "Taoyuan International Airport",
+    "Hsinchu Field Airdrome",
+    "Minxiong Emergency Highway Strip",
+    "Madou Emergency Highway Strip",
+    "Rende Emergency Highway Strip",
+    "Tainan Field Airdrome",
   },
   taiwanPorts = {
-    'Kaohsiung Port',
-    'Donggang Wharf',
-    'Port of Taipei',
-    'Port of Keelung',
-    'Suao Port',
-    'HuangGang Fishing Harbor',
-    'Magong Port',
+    "Kaohsiung Port",
+    "Donggang Wharf",
+    "Port of Taipei",
+    "Port of Keelung",
+    "Suao Port",
+    "HuangGang Fishing Harbor",
+    "Magong Port",
   },
   targetCategories = {
     airfield = {
-      runwayPattern = 'Runway %(%d+m%)',
-      taxiwayPattern = 'Taxiway',
-      shelterPattern = 'Shelter',
-      hangarPattern = 'Hangar',
-      tarmacPattern = 'Tarmac',
-      helipadPattern = 'Helipad',
-      ammoBunkerPattern = 'Ammo Bunker',
-      ammoRevetmentPattern = 'Ammo Revetment',
+      runwayPattern = "Runway %(%d+m%)",
+      taxiwayPattern = "Taxiway",
+      shelterPattern = "Shelter",
+      hangarPattern = "Hangar",
+      tarmacPattern = "Tarmac",
+      helipadPattern = "Helipad",
+      ammoBunkerPattern = "Ammo Bunker",
+      ammoRevetmentPattern = "Ammo Revetment",
     },
     port = {
-      pierPattern = 'Pier',
+      pierPattern = "Pier",
     },
     radar = {
-      radarPattern = 'Radar',
+      radarPattern = "Radar",
     },
     sam = {
-      skyBowPattern = 'Sky Bow',
+      skyBowPattern = "Sky Bow",
     },
     asm = {
-      asmPattern = 'ASM',
+      asmPattern = "ASM",
     },
     c2 = {
-      hengshanPattern = 'Hengshan ROC command',
+      hengshanPattern = "Hengshan ROC command",
     }
   }
 }
@@ -96,6 +96,8 @@ config.targetScanning = {
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5
 config.readytime = 5 * 60
+
+
 --- Battery states for the ground units
 ---@enum batteryState
 config.batteryState = {
@@ -111,11 +113,11 @@ config.batteryState = {
 -- ============================================================================
 
 config.c.triggers = {
-  -- amphibiousOps = { startTime = '2027-06-09 02:40:00' },
-  amphibiousOps = { startTime = '2027-06-09 1:00:00' },
-  launchLACM = { startTime = '2027-06-09 06:00:00' },
-  launchSLCM = { startTime = '2027-06-09 06:30:00' },
-  -- launchSLCM = { startTime = '2027-06-09 01:00:00' },
+  -- amphibiousOps = { startTime = "2027-06-09 02:40:00" },
+  amphibiousOps = { startTime = "2027-06-09 1:00:00" },
+  launchLACM = { startTime = "2027-06-09 06:00:00" },
+  launchSLCM = { startTime = "2027-06-09 06:30:00" },
+  -- launchSLCM = { startTime = "2027-06-09 01:00:00" },
 }
 
 
@@ -143,42 +145,42 @@ config.c.IADS.C2Deployments = {
   {
     position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_FUZHOU, },
-    areaName = 'Fuzhou'
+    areaName = "Fuzhou"
   },
   {
     position = { latitude = "N 25.19.12", longitude = "E 119.06.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_PUTIAN, },
-    areaName = 'Putian'
+    areaName = "Putian"
   },
   {
     position = { latitude = "N 24.57.01", longitude = "E 118.34.22" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_CHANGZHOU, },
-    areaName = 'Changzhou'
+    areaName = "Changzhou"
   },
   {
     position = { latitude = "N 24.43.19", longitude = "E 118.12.29" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_XIAMEN, },
-    areaName = 'Xiamen'
+    areaName = "Xiamen"
   },
   {
     position = { latitude = "N 24.10.12", longitude = "E 117.28.46" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_ZHANGZHOU, },
-    areaName = 'Zhangzhou'
+    areaName = "Zhangzhou"
   },
   {
     position = { latitude = "N 23.39.17", longitude = "E 116.41.26" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANTOU, },
-    areaName = 'Shantou'
+    areaName = "Shantou"
   },
   {
     position = { latitude = "N 23.08.19", longitude = "E 115.22.49" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANWEI, },
-    areaName = 'Shanwei'
+    areaName = "Shanwei"
   },
   {
     position = { latitude = "N 24.06.12", longitude = "E 116.05.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_MEIZHOU, },
-    areaName = 'Meizhou'
+    areaName = "Meizhou"
   },
 }
 
@@ -308,19 +310,19 @@ config.c.ground.mrbm.reloadTime = 5 * 60
 config.c.recon = {}
 config.c.recon.courses = {
   WZ8 = {
-    { latitude = 'N 24.59.45', longitude = 'E 121.59.21', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 24.01.38', longitude = 'E 121.37.51', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 21.55.32', longitude = 'E 120.51.30', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 22.41.05', longitude = 'E 120.27.58', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 22.57.13', longitude = 'E 120.12.37', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 23.28.13', longitude = 'E 120.22.57', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 24.15.54', longitude = 'E 120.38.12', desiredAltitude = 30480, desiredSpeed = 3300 },
-    { latitude = 'N 25.14.02', longitude = 'E 121.21.47', desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 24.59.45", longitude = "E 121.59.21", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 24.01.38", longitude = "E 121.37.51", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 21.55.32", longitude = "E 120.51.30", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 22.41.05", longitude = "E 120.27.58", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 22.57.13", longitude = "E 120.12.37", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 23.28.13", longitude = "E 120.22.57", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 24.15.54", longitude = "E 120.38.12", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 25.14.02", longitude = "E 121.21.47", desiredAltitude = 30480, desiredSpeed = 3300 },
   },
   H6N = {
-    { latitude = '31.4291627579406', longitude = '116.708479118499', desiredAltitude = 13716, desiredSpeed = 450 },
-    { latitude = 'N 29.47.52',       longitude = 'E 119.19.47',      desiredAltitude = 13716, desiredSpeed = 450 },
-    { latitude = 'N 25.57.34',       longitude = 'E 121.32.45',      desiredAltitude = 13716, desiredSpeed = 550 },
+    { latitude = "31.4291627579406", longitude = "116.708479118499", desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 29.47.52",       longitude = "E 119.19.47",      desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 25.57.34",       longitude = "E 121.32.45",      desiredAltitude = 13716, desiredSpeed = 550 },
   },
   BZK005_1 = {
     { longitude = 119.651011005704, latitude = 25.6118001826929, desiredSpeed = 115 },
@@ -386,7 +388,7 @@ config.c.recon.template = {
     isTracking = false
   },
   GJ11_RECON = {
-    baseGUID = 'Type 076',
+    baseGUID = "Type 076",
     unitDBID = constants.PLATFORMS.GJ11,
     course = config.c.recon.courses.GJ11,
     unitCount = 1,
@@ -406,340 +408,340 @@ config.c.air.shipBased = {}
 ---@type SBJ__AirbaseDeploymentDescriptor[]
 config.c.air.landBased.deployedACs = {
   {
-    name = 'Huizhou Pingtan AB (PLAAF)',
+    name = "Huizhou Pingtan AB (PLAAF)",
     baseGUID = constants.BASES.HUIZHOU_PINGTAN_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.Y8Q_CUB,
-        platformName = 'Y-8Q CUB',
-        name = '1st Naval AF Div',
+        platformName = "Y-8Q CUB",
+        name = "1st Naval AF Div",
         loadouts = {
-          { name = 'ASW Patrol', loadoutId = constants.LOADOUTS.Y8Q_ASW, num = 3, missionName = 'ASW/PATROL AC' },
+          { name = "ASW Patrol", loadoutId = constants.LOADOUTS.Y8Q_ASW, num = 3, missionName = "ASW/PATROL AC" },
         }
       }
     }
   },
   {
-    name = 'Shantou Waisha AB (PLAAF)',
+    name = "Shantou Waisha AB (PLAAF)",
     baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16,
-        platformName = 'J-16',
-        name = '7th Air Bde',
+        platformName = "J-16",
+        name = "7th Air Bde",
         loadouts = {
-          { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 },
+          { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.BZK005,
-        platformName = 'BZK-005',
-        name = '60th Det, PLARF UAV Reg',
+        platformName = "BZK-005",
+        name = "60th Det, PLARF UAV Reg",
         loadouts = {
           { loadoutId = constants.LOADOUTS.BZK005_RECON, num = 6 },
         }
       },
     },
     loadouts = {
-      { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 }, --AKD-88 X 2
+      { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 }, --AKD-88 X 2
     }
   },
   {
-    name = 'Zhangpu AAB',
+    name = "Zhangpu AAB",
     baseGUID = constants.BASES.ZHANGPU_AAB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.SU30,
-        platformName = 'Su-30',
-        name = '804th Air Bde',
+        platformName = "Su-30",
+        name = "804th Air Bde",
         loadouts = {
-          { name = 'KAB-1500 Strike', loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 },
+          { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16D,
-        platformName = 'J-16D',
-        name = '40th Air Bde',
+        platformName = "J-16D",
+        name = "40th Air Bde",
         loadouts = {
-          { name = 'Electronic Warfare', loadoutId = constants.LOADOUTS.J16D_OECM, num = 4 },
+          { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM, num = 4 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.IL76,
-        platformName = 'Il-76',
-        name = '39th Air Reg',
+        platformName = "Il-76",
+        name = "39th Air Reg",
         loadouts = {
-          { name = 'Transport', loadoutId = constants.LOADOUTS.IL76_TRANSPORT, num = 3 },
+          { name = "Transport", loadoutId = constants.LOADOUTS.IL76_TRANSPORT, num = 3 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.Y9DZ,
-        platformName = 'Y-9DZ',
-        name = '60th Air Reg',
+        platformName = "Y-9DZ",
+        name = "60th Air Reg",
         loadouts = {
-          { name = 'SIGINT', loadoutId = constants.LOADOUTS.Y9DZ_SIGINT, num = 3, missionName = 'SIGINT' },
+          { name = "SIGINT", loadoutId = constants.LOADOUTS.Y9DZ_SIGINT, num = 3, missionName = "SIGINT" },
         }
       },
     },
     loadouts = {
-      { name = 'KAB-1500 Strike',    loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
-      { name = 'Electronic Warfare', loadoutId = constants.LOADOUTS.J16D_OECM,    num = 4 },
+      { name = "KAB-1500 Strike",    loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
+      { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM,    num = 4 },
     }
   },
   {
-    name = 'Zhangzhou-Longxi AB (PLAAF)',
+    name = "Zhangzhou-Longxi AB (PLAAF)",
     baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.SU30,
-        platformName = 'Su-30',
-        name = '804th Air Bde',
+        platformName = "Su-30",
+        name = "804th Air Bde",
         loadouts = {
-          { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 },
         }
       }
     },
     loadouts = {
-      { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 }, --YJ-91 X 2
+      { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 }, --YJ-91 X 2
     }
   },
   {
-    name = 'Huian AAB',
+    name = "Huian AAB",
     baseGUID = constants.BASES.HUIAN_AAB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16,
-        platformName = 'J-16',
-        name = '40th Air Bde',
+        platformName = "J-16",
+        name = "40th Air Bde",
         loadouts = {
-          { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
+          { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J20,
-        platformName = 'J-20',
-        name = '41st Air Bde',
+        platformName = "J-20",
+        name = "41st Air Bde",
         loadouts = {
-          { name = 'PL-15 AAM', loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
+          { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
         }
       },
     },
     loadouts = {
-      { name = 'PL-15 AAM',     loadoutId = constants.LOADOUTS.J20_PL15,  num = 12 }, --PL-15 X 4
-      { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 2
+      { name = "PL-15 AAM",     loadoutId = constants.LOADOUTS.J20_PL15,  num = 12 }, --PL-15 X 4
+      { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 2
     }
   },
   {
-    name = 'Longtian AAB',
+    name = "Longtian AAB",
     baseGUID = constants.BASES.LONGTIAN_AAB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.BZK005,
-        platformName = 'BZK-005',
-        name = '62nd Det, PLARF UAV Reg',
+        platformName = "BZK-005",
+        name = "62nd Det, PLARF UAV Reg",
         loadouts = {
-          { name = 'Reconnaissance', loadoutId = constants.LOADOUTS.BZK005_RECON, num = 6 },
+          { name = "Reconnaissance", loadoutId = constants.LOADOUTS.BZK005_RECON, num = 6 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.SU30,
-        platformName = 'Su-30',
-        name = '804th Air Bde',
+        platformName = "Su-30",
+        name = "804th Air Bde",
         loadouts = {
-          { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
         }
       }
     },
     loadouts = {
-      { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 }, --YJ-91 X 2
+      { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 }, --YJ-91 X 2
     }
   },
   {
-    name = 'Xingning AB (PLAAF)',
+    name = "Xingning AB (PLAAF)",
     baseGUID = constants.BASES.XINGNING_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.H6K,
-        platformName = 'H-6K',
-        name = '29th Air Reg',
+        platformName = "H-6K",
+        name = "29th Air Reg",
         loadouts = {
-          { name = 'YJ-63 Strike', loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 },
+          { name = "YJ-63 Strike", loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 },
         }
       }
     },
     loadouts = {
-      { name = 'YJ-63 Strike', loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 }, --YJ-63 X 4
+      { name = "YJ-63 Strike", loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 }, --YJ-63 X 4
     }
   },
   {
-    name = 'Shuimen AAB (PLAAF)',
+    name = "Shuimen AAB (PLAAF)",
     baseGUID = constants.BASES.SHUIMEN_AAB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.SU30,
-        platformName = 'Su-30',
-        name = '804th Air Bde',
+        platformName = "Su-30",
+        name = "804th Air Bde",
         loadouts = {
-          { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16,
-        platformName = 'J-16',
-        name = '40th Air Bde',
+        platformName = "J-16",
+        name = "40th Air Bde",
         loadouts = {
-          { name = 'YJ-83 Anti-Ship', loadoutId = constants.LOADOUTS.J16_YJ83, num = 8 },
+          { name = "YJ-83 Anti-Ship", loadoutId = constants.LOADOUTS.J16_YJ83, num = 8 },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.KJ500,
-        platformName = 'KJ-500',
-        name = '75th Air Reg',
+        platformName = "KJ-500",
+        name = "75th Air Reg",
         loadouts = {
-          { name = 'AEW', loadoutId = constants.LOADOUTS.KJ500_AEW, num = 3, missionName = 'AEW/N' },
+          { name = "AEW", loadoutId = constants.LOADOUTS.KJ500_AEW, num = 3, missionName = "AEW/N" },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.HY6U_BADGER,
-        platformName = 'HY-6U Badger',
-        name = '23rd Air Reg',
+        platformName = "HY-6U Badger",
+        name = "23rd Air Reg",
         loadouts = {
-          { name = 'Aerial Refueling', loadoutId = constants.LOADOUTS.HY6U_AAR, num = 8, },
+          { name = "Aerial Refueling", loadoutId = constants.LOADOUTS.HY6U_AAR, num = 8, },
         }
       },
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J10C,
-        platformName = 'J-10C',
-        name = '25th Air Bde',
+        platformName = "J-10C",
+        name = "25th Air Bde",
         loadouts = {
-          { name = 'CS-BBC-5 Strike', loadoutId = constants.LOADOUTS.J10C_CS_BBC_5, num = 8 },
+          { name = "CS-BBC-5 Strike", loadoutId = constants.LOADOUTS.J10C_CS_BBC_5, num = 8 },
         }
       },
     },
     loadouts = {
-      { name = 'YJ-91 ARM',       loadoutId = constants.LOADOUTS.SU30_YJ91,     num = 8 }, --YJ-91 X 2
-      { name = 'YJ-83 Anti-Ship', loadoutId = constants.LOADOUTS.J16_YJ83,      num = 8 }, --YJ-83 X 2
-      { name = 'CS-BBC-5 Strike', loadoutId = constants.LOADOUTS.J10C_CS_BBC_5, num = 8 }, --CS-BBC-5 X 2
+      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,     num = 8 }, --YJ-91 X 2
+      { name = "YJ-83 Anti-Ship", loadoutId = constants.LOADOUTS.J16_YJ83,      num = 8 }, --YJ-83 X 2
+      { name = "CS-BBC-5 Strike", loadoutId = constants.LOADOUTS.J10C_CS_BBC_5, num = 8 }, --CS-BBC-5 X 2
     }
   },
   {
-    name = 'Anqing AB (PLAAF)',
+    name = "Anqing AB (PLAAF)",
     baseGUID = constants.BASES.ANQING_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.H6K,
-        platformName = 'H-6K',
-        name = '28th Air Reg',
+        platformName = "H-6K",
+        name = "28th Air Reg",
         loadouts = {
-          { name = 'YJ-63 Strike', loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 },
+          { name = "YJ-63 Strike", loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 },
         }
       }
     },
     loadouts = {
-      { name = 'YJ-63 Strike', loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 }, --YJ-63 X 4
+      { name = "YJ-63 Strike", loadoutId = constants.LOADOUTS.H6K_YJ63, num = 12 }, --YJ-63 X 4
     }
   },
   {
-    name = 'Wuhu AB (PLAAF)',
+    name = "Wuhu AB (PLAAF)",
     baseGUID = constants.BASES.WUHU_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J20,
-        platformName = 'J-20',
-        name = '9th Air Bde',
+        platformName = "J-20",
+        name = "9th Air Bde",
         loadouts = {
-          { name = 'PL-15 AAM', loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
+          { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
         }
       }
     },
     loadouts = {
-      { name = 'PL-15 AAM', loadoutId = constants.LOADOUTS.J20_PL15, num = 12 }, --PL-15 X 4
+      { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J20_PL15, num = 12 }, --PL-15 X 4
     }
   },
   {
-    name = 'Liuan AB',
+    name = "Liuan AB",
     baseGUID = constants.BASES.LIUAN_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.H6N,
-        platformName = 'H-6N',
-        name = '107th Air Reg',
+        platformName = "H-6N",
+        name = "107th Air Reg",
         loadouts = {
-          { name = 'Transport', loadoutId = constants.LOADOUTS.H6N_TRANSPORT, num = 4 },
+          { name = "Transport", loadoutId = constants.LOADOUTS.H6N_TRANSPORT, num = 4 },
         }
       }
     }
   },
   {
-    name = 'Taizhou AB (PLAAF)',
+    name = "Taizhou AB (PLAAF)",
     baseGUID = constants.BASES.TAIZHOU_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.SU30,
-        platformName = 'Su-30',
-        name = '94th Air Bde',
+        platformName = "Su-30",
+        name = "94th Air Bde",
         loadouts = {
-          { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 12 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 12 },
         }
       }
     },
     loadouts = {
-      { name = 'YJ-91 ARM', loadoutId = constants.LOADOUTS.SU30_YJ91, num = 12 }, --YJ-91 X 4
+      { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 12 }, --YJ-91 X 4
     }
   },
   -- {
-  --   name = 'Rugao AB (PLAAF)',
+  --   name = "Rugao AB (PLAAF)",
   --   baseGUID = constants.BASES.RUGAO_AB,
   --   embarkedUnits = {
   --     {
-  --       side = 'China',
-  --       type = 'Air',
+  --       side = "China",
+  --       type = "Air",
   --       dbid = constants.PLATFORMS.J16,
-  --       name = '7th Air Bde',
+  --       name = "7th Air Bde",
   --       loadouts = {
   --         { loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
   --         { loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 },
@@ -752,33 +754,33 @@ config.c.air.landBased.deployedACs = {
   --   }
   -- },
   {
-    name = 'Nanchang Xiangtang AB (PLAAF)',
+    name = "Nanchang Xiangtang AB (PLAAF)",
     baseGUID = constants.BASES.XIAHGTANG_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16D,
-        platformName = 'J-16D',
-        name = '40th Air Bde',
+        platformName = "J-16D",
+        name = "40th Air Bde",
         loadouts = {
-          { name = 'Electronic Warfare', loadoutId = constants.LOADOUTS.J16D_OECM, num = 8 },
+          { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM, num = 8 },
         }
       }
     },
     loadouts = {
-      { name = 'Electronic Warfare', loadoutId = constants.LOADOUTS.J16D_OECM, num = 8 },
+      { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM, num = 8 },
     }
   },
   -- {
-  --   name = 'Wuyishan AB',
+  --   name = "Wuyishan AB",
   --   baseGUID = constants.BASES.WUYISHAN_AB,
   --   embarkedUnits = {
   --     {
-  --       side = 'China',
-  --       type = 'Air',
+  --       side = "China",
+  --       type = "Air",
   --       dbid = constants.PLATFORMS.J20,
-  --       name = '41st Air Bde',
+  --       name = "41st Air Bde",
   --       loadouts = {
   --         { loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
   --       }
@@ -789,22 +791,22 @@ config.c.air.landBased.deployedACs = {
   --   }
   -- },
   {
-    name = 'Jiaxing AB (PLAAF)',
+    name = "Jiaxing AB (PLAAF)",
     baseGUID = constants.BASES.JIAXING_AB,
     embarkedUnits = {
       {
-        side = 'China',
-        type = 'Air',
+        side = "China",
+        type = "Air",
         dbid = constants.PLATFORMS.J16,
-        platformName = 'J-16',
-        name = '78th Air Bde',
+        platformName = "J-16",
+        name = "78th Air Bde",
         loadouts = {
-          { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
+          { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
         }
       }
     },
     loadouts = {
-      { name = 'AKD-88 Strike', loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 4
+      { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 4
     }
   },
 }
@@ -916,39 +918,39 @@ config.c.PHIBOP.formationSettings = {
       horizontal  = 220 - 90,
       vertical    = 220,
       destination = {
-        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
+        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
       }
     },
     west = {
       horizontal = 150 - 90,
       vertical = 150,
       destination = {
-        { latitude = 'N 25.04.52', longitude = 'E 121.10.05', },
-        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
+        { latitude = "N 25.04.52", longitude = "E 121.10.05", },
+        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
       }
     },
     south = {
       horizontal = 45 - 90,
       vertical = 45,
       destination = {
-        { latitude = 'N 25.04.44', longitude = 'E 121.13.54', },
+        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
       }
     },
     penghu = {
       horizontal = 82 - 90,
       vertical = 82,
       destination = {
-        { latitude = 'N 23.31.00', longitude = 'E 119.33.54', },
-        { latitude = 'N 23.31.35', longitude = 'E 119.35.36', },
-        { latitude = 'N 23.34.09', longitude = 'E 119.37.41', },
+        { latitude = "N 23.31.00", longitude = "E 119.33.54", },
+        { latitude = "N 23.31.35", longitude = "E 119.35.36", },
+        { latitude = "N 23.34.09", longitude = "E 119.37.41", },
       }
     },
     sishu = {
       horizontal = 73 - 90,
       vertical = 73,
       destination = {
-        { latitude = 'N 22.56.39', longitude = 'E 120.10.37', },
-        { latitude = 'N 22.57.14', longitude = 'E 120.12.09', },
+        { latitude = "N 22.56.39", longitude = "E 120.10.37", },
+        { latitude = "N 22.57.14", longitude = "E 120.12.09", },
       }
     },
   },
@@ -959,11 +961,11 @@ config.c.PHIBOP.formationSettings = {
 ---@type SBJ__AmphibiousOperationDescriptor[]
 config.c.PHIBOP.operations = {
   {
-    name = 'Taoyuan',
+    name = "Taoyuan",
     names = {
-      'Air Assault Bn',
-      'Combined Arms Bn',
-      '5th Landing Ship Div'
+      "Air Assault Bn",
+      "Combined Arms Bn",
+      "5th Landing Ship Div"
     },
     from = {
       areas = { {
@@ -1010,11 +1012,11 @@ config.c.PHIBOP.operations = {
     numOfContactsInAirLandingZone = 3
   },
   {
-    name = 'Sishu',
+    name = "Sishu",
     names = {
-      'Air Assault Bn',
-      'Combined Arms Bn',
-      '5th Landing Ship Div'
+      "Air Assault Bn",
+      "Combined Arms Bn",
+      "5th Landing Ship Div"
     },
     from = {
       areas = { {
@@ -1062,11 +1064,11 @@ config.c.PHIBOP.operations = {
     numOfContactsInAirLandingZone = 3
   },
   {
-    name = 'Penghu',
+    name = "Penghu",
     names = {
-      'Air Assault Bn',
-      'Combined Arms Bn',
-      '5th Landing Ship Div'
+      "Air Assault Bn",
+      "Combined Arms Bn",
+      "5th Landing Ship Div"
     },
     from = {
       areas = { {
@@ -1117,7 +1119,7 @@ config.c.PHIBOP.operations = {
 ---@type SBJ__OperationalZoneDescriptor[]
 config.c.PHIBOP.operationalZones = {
   {
-    name = 'Taoyuan',
+    name = "Taoyuan",
     baseGUID = constants.BASES.PINGTAN_PORT,
     anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
     LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
@@ -1127,13 +1129,13 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.TYPE_726A,
       missions = {
         {
-          name = 'LANDING/TAO/1/1',
+          name = "LANDING/TAO/1/1",
           loadoutId = 0,
           num = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
-          name = 'LANDING/TAO/1/2',
+          name = "LANDING/TAO/1/2",
           loadoutId = 0,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
@@ -1141,9 +1143,9 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.LANDING_TAOYUAN,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleShip = 'Full',
-        StationThrottleShip = 'Full',
+        Subtype = "delivery",
+        TransitThrottleShip = "Full",
+        StationThrottleShip = "Full",
         isactive = false
       },
       transferManifest = {
@@ -1174,25 +1176,25 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z18,
       missions = {
         {
-          name = 'AIRLANDING/TAO/1/1',
+          name = "AIRLANDING/TAO/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
-          name = 'AIRLANDING/TAO/1/2',
+          name = "AIRLANDING/TAO/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
-          name = 'AIRLANDING/TAO/2/1',
+          name = "AIRLANDING/TAO/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
-          name = 'AIRLANDING/TAO/2/2',
+          name = "AIRLANDING/TAO/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
@@ -1200,10 +1202,10 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.AIRLANDING_TAOYUAN,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleAircraft = 'Military',
+        Subtype = "delivery",
+        TransitThrottleAircraft = "Military",
         TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = 'Afterburner',
+        StationThrottleAircraft = "Afterburner",
         StationAltitudeAircraft = 304,
         isactive = false
       },
@@ -1230,7 +1232,7 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z10,
       missions = {
         {
-          name = 'CAS/E',
+          name = "CAS/E",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           num = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
@@ -1253,7 +1255,7 @@ config.c.PHIBOP.operationalZones = {
     },
   },
   {
-    name = 'Sishu',
+    name = "Sishu",
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
     LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
@@ -1263,13 +1265,13 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.TYPE_726A,
       missions = {
         {
-          name = 'LANDING/SISHU/1/1',
+          name = "LANDING/SISHU/1/1",
           loadoutId = 0,
           num = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
-          name = 'LANDING/SISHU/1/2',
+          name = "LANDING/SISHU/1/2",
           loadoutId = 0,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
@@ -1277,9 +1279,9 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.LANDING_SISHU,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleShip = 'Full',
-        StationThrottleShip = 'Full',
+        Subtype = "delivery",
+        TransitThrottleShip = "Full",
+        StationThrottleShip = "Full",
         isactive = false
       },
       transferManifest = {
@@ -1310,25 +1312,25 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z18,
       missions = {
         {
-          name = 'AIRLANDING/CHANGLONG/1/1',
+          name = "AIRLANDING/CHANGLONG/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
-          name = 'AIRLANDING/CHANGLONG/1/2',
+          name = "AIRLANDING/CHANGLONG/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
-          name = 'AIRLANDING/CHANGLONG/2/1',
+          name = "AIRLANDING/CHANGLONG/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
-          name = 'AIRLANDING/CHANGLONG/2/2',
+          name = "AIRLANDING/CHANGLONG/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
@@ -1336,10 +1338,10 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.AIRLANDING_CHANGLONG,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleAircraft = 'Military',
+        Subtype = "delivery",
+        TransitThrottleAircraft = "Military",
         TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = 'Afterburner',
+        StationThrottleAircraft = "Afterburner",
         StationAltitudeAircraft = 304,
         isactive = false
       },
@@ -1366,7 +1368,7 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z10,
       missions = {
         {
-          name = 'CAS/S',
+          name = "CAS/S",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           num = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
@@ -1389,7 +1391,7 @@ config.c.PHIBOP.operationalZones = {
     }
   },
   {
-    name = 'Penghu',
+    name = "Penghu",
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
     LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
@@ -1399,13 +1401,13 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.TYPE_726A,
       missions = {
         {
-          name = 'LANDING/PENGHU/1/1',
+          name = "LANDING/PENGHU/1/1",
           loadoutId = 0,
           num = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
-          name = 'LANDING/PENGHU/1/2',
+          name = "LANDING/PENGHU/1/2",
           loadoutId = 0,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
@@ -1413,9 +1415,9 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.LANDING_PENGHU,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleShip = 'Full',
-        StationThrottleShip = 'Full',
+        Subtype = "delivery",
+        TransitThrottleShip = "Full",
+        StationThrottleShip = "Full",
         isactive = false
       },
       transferManifest = {
@@ -1446,25 +1448,25 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z18,
       missions = {
         {
-          name = 'AIRLANDING/PENGHU/1/1',
+          name = "AIRLANDING/PENGHU/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
-          name = 'AIRLANDING/PENGHU/1/2',
+          name = "AIRLANDING/PENGHU/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
-          name = 'AIRLANDING/PENGHU/2/1',
+          name = "AIRLANDING/PENGHU/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
-          name = 'AIRLANDING/PENGHU/2/2',
+          name = "AIRLANDING/PENGHU/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           num = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
@@ -1472,10 +1474,10 @@ config.c.PHIBOP.operationalZones = {
       },
       zone = constants.AREAS.AIRLANDING_PENGHU,
       settings = {
-        Subtype = 'delivery',
-        TransitThrottleAircraft = 'Military',
+        Subtype = "delivery",
+        TransitThrottleAircraft = "Military",
         TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = 'Afterburner',
+        StationThrottleAircraft = "Afterburner",
         StationAltitudeAircraft = 304,
         isactive = false
       },
@@ -1502,7 +1504,7 @@ config.c.PHIBOP.operationalZones = {
       dbid = constants.PLATFORMS.Z10,
       missions = {
         {
-          name = 'CAS/PENGHU',
+          name = "CAS/PENGHU",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           num = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
@@ -1527,12 +1529,12 @@ config.c.PHIBOP.operationalZones = {
 }
 config.c.PHIBOP.transportAircraft = {
   {
-    name = 'Zhangpu AAB',
+    name = "Zhangpu AAB",
     guid = constants.BASES.ZHANGPU_AAB,
     dbid = constants.PLATFORMS.IL76,
     missions = {
       {
-        name = 'AIRLANDING/PENGHU/2/2',
+        name = "AIRLANDING/PENGHU/2/2",
         loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
         num = 3,
         startTime = 0
@@ -1548,108 +1550,108 @@ config.c.PHIBOP.transportAircraft = {
 }
 ---@type table<string, SBJ__SAGDescriptor>
 config.c.PHIBOP.sag = {
-  ['SAG 173'] = {
-    groupName = 'SAG 173',
+  ["SAG 173"] = {
+    groupName = "SAG 173",
     unitList = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = 'N 26.54.18', longitude = 'E 121.31.38', },
+      startingPoint = { latitude = "N 26.54.18", longitude = "E 121.31.38", },
       heading = 225
     },
     to = {
       anchorageArea = {
-        { latitude = 'N 25.17.39', longitude = 'E 120.56.04', desiredSpeed = 14, },
-        { latitude = 'N 25.17.32', longitude = 'E 120.56.07', desiredSpeed = 14, },
+        { latitude = "N 25.17.39", longitude = "E 120.56.04", desiredSpeed = 14, },
+        { latitude = "N 25.17.32", longitude = "E 120.56.07", desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 25.06.19', longitude = 'E 121.04.15', desiredSpeed = 14, },
+        { latitude = "N 25.06.19", longitude = "E 121.04.15", desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
     area = constants.AREAS.AIRLANDING_TAOYUAN
   },
-  ['SAG 155'] = {
-    groupName = 'SAG 155',
+  ["SAG 155"] = {
+    groupName = "SAG 155",
     unitList = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = 'N 26.13.13', longitude = 'E 120.59.55', },
+      startingPoint = { latitude = "N 26.13.13", longitude = "E 120.59.55", },
       heading = 225
     },
     to = {
       anchorageArea = {
-        { latitude = 'N 25.33.23', longitude = 'E 120.54.45', desiredSpeed = 14, },
-        { latitude = 'N 25.21.00', longitude = 'E 121.04.12', desiredSpeed = 14, },
+        { latitude = "N 25.33.23", longitude = "E 120.54.45", desiredSpeed = 14, },
+        { latitude = "N 25.21.00", longitude = "E 121.04.12", desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 25.08.29', longitude = 'E 121.10.20', desiredSpeed = 14, },
+        { latitude = "N 25.08.29", longitude = "E 121.10.20", desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
     },
     area = constants.AREAS.AIRLANDING_TAOYUAN
   },
-  ['SAG 167'] = {
-    groupName = 'SAG 167',
+  ["SAG 167"] = {
+    groupName = "SAG 167",
     unitList = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = 'N 23.29.19', longitude = 'E 118.04.37', },
+      startingPoint = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
       heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
     to = {
       anchorageArea = {
-        { latitude = 'N 23.32.46', longitude = 'E 119.16.11', desiredSpeed = 14, },
+        { latitude = "N 23.32.46", longitude = "E 119.16.11", desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 23.32.34', longitude = 'E 119.29.14', desiredSpeed = 14, },
+        { latitude = "N 23.32.34", longitude = "E 119.29.14", desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
     },
     area = constants.AREAS.AIRLANDING_PENGHU,
   },
-  ['SAG 154'] = {
-    groupName = 'SAG 154',
+  ["SAG 154"] = {
+    groupName = "SAG 154",
     unitList = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = 'N 22.32.59', longitude = 'E 118.04.52', },
+      startingPoint = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
-        { latitude = 'N 22.49.20', longitude = 'E 119.55.57', desiredSpeed = 14, },
+        { latitude = "N 22.49.20", longitude = "E 119.55.57", desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 22.53.16', longitude = 'E 120.07.39', desiredSpeed = 14, },
+        { latitude = "N 22.53.16", longitude = "E 120.07.39", desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     area = constants.AREAS.AIRLANDING_CHANGLONG,
   },
-  ['SAG 175'] = {
-    groupName = 'SAG 175',
+  ["SAG 175"] = {
+    groupName = "SAG 175",
     unitList = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = 'N 22.44.28', longitude = 'E 118.01.16', },
+      startingPoint = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
-        { latitude = 'N 22.55.20', longitude = 'E 119.52.25', desiredSpeed = 14, },
+        { latitude = "N 22.55.20", longitude = "E 119.52.25", desiredSpeed = 14, },
       },
       amphibiousVehicleStagingArea = {
-        { latitude = 'N 22.58.52', longitude = 'E 120.05.48', desiredSpeed = 14, },
+        { latitude = "N 22.58.52", longitude = "E 120.05.48", desiredSpeed = 14, },
       },
       heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
     },
@@ -1667,48 +1669,48 @@ config.c.surface.lacm = {}
 config.c.surface.lacm.weaponDBID = constants.WEAPONS.YJ21
 ---@type SBJ__CSGDescriptor
 config.c.surface.lacm.csg = {
-  groupName = 'CSG',
+  groupName = "CSG",
   unitList = {
     type002 = {
       dbid = constants.PLATFORMS.TYPE_002,
       embarkedUnits = {
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.J15,
-          platformName = 'J-15',
-          name = '2nd Carrier Air Wing',
+          platformName = "J-15",
+          name = "2nd Carrier Air Wing",
           loadouts = {
             { loadoutId = constants.LOADOUTS.J15_YJ91,    num = 16 },
             { loadoutId = constants.LOADOUTS.J15_LS6_500, num = 24 },
           }
         },
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.Z18F_SEA_EAGLE,
-          platformName = 'Z-18F Sea Eagle',
-          name = '10th Naval Air Bde',
+          platformName = "Z-18F Sea Eagle",
+          name = "10th Naval Air Bde",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.Z18F_CARRIER_ASW, num = 6, missionName = 'ASW/CSG' },
+            { loadoutId = constants.LOADOUTS.Z18F_CARRIER_ASW, num = 6, missionName = "ASW/CSG" },
           }
         },
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.Z18J,
-          platformName = 'Z-18J',
-          name = '10th Naval Air Bde',
+          platformName = "Z-18J",
+          name = "10th Naval Air Bde",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.Z18J_AEW, num = 3, missionName = 'AEW/CSG' },
+            { loadoutId = constants.LOADOUTS.Z18J_AEW, num = 3, missionName = "AEW/CSG" },
           }
         },
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.J15D,
-          platformName = 'J-15D',
-          name = '2nd Carrier Air Wing',
+          platformName = "J-15D",
+          name = "2nd Carrier Air Wing",
           loadouts = {
             { loadoutId = constants.LOADOUTS.J15D_EW, num = 3, },
           }
@@ -1723,13 +1725,13 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_055,
       embarkedUnits = {
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.KA28,
-          platformName = 'Ka-28',
-          name = '10th Naval Air Bde',
+          platformName = "Ka-28",
+          name = "10th Naval Air Bde",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.KA28_ASW, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = constants.LOADOUTS.KA28_ASW, num = 1, missionName = "ASW/CSG" },
           }
         },
       }
@@ -1738,13 +1740,13 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_054A,
       embarkedUnits = {
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.KA28,
-          platformName = 'Ka-28',
-          name = '10th Naval Air Bde',
+          platformName = "Ka-28",
+          name = "10th Naval Air Bde",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.KA28_ASW, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = constants.LOADOUTS.KA28_ASW, num = 1, missionName = "ASW/CSG" },
           }
         },
       }
@@ -1753,34 +1755,34 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_901,
       embarkedUnits = {
         {
-          side = 'China',
-          type = 'Air',
+          side = "China",
+          type = "Air",
           dbid = constants.PLATFORMS.Z18F_SEA_EAGLE,
-          platformName = 'Z-18F Sea Eagle',
-          name = '10th Naval Air Bde',
+          platformName = "Z-18F Sea Eagle",
+          name = "10th Naval Air Bde",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.Z18F_CARRIER_ASW, num = 1, missionName = 'ASW/CSG' },
+            { loadoutId = constants.LOADOUTS.Z18F_CARRIER_ASW, num = 1, missionName = "ASW/CSG" },
           }
         },
       }
     },
   },
   from = {
-    startingPoint = { latitude = 'N 21.09.59', longitude = 'E 120.48.05', },
+    startingPoint = { latitude = "N 21.09.59", longitude = "E 120.48.05", },
     heading = 83
   },
   to = {
     area = {
-      { latitude = 'N 21.14.11', longitude = 'E 121.34.36', },
-      { latitude = 'N 21.32.59', longitude = 'E 122.12.58', },
+      { latitude = "N 21.14.11", longitude = "E 121.34.36", },
+      { latitude = "N 21.32.59", longitude = "E 122.12.58", },
     },
     -- heading = CONFIG.c.PHIBOP.shipInfo.heading.west.vertical,
   },
 }
 config.c.surface.lacm.targetlist = {
-  '6Z8LM5-0HMIJ7B89BC71',
-  '6Z8LM5-0HMIJ7B89BC73',
-  '6Z8LM5-0HMIJ7B89BC6V',
+  "6Z8LM5-0HMIJ7B89BC71",
+  "6Z8LM5-0HMIJ7B89BC73",
+  "6Z8LM5-0HMIJ7B89BC6V",
 }
 
 
@@ -1793,67 +1795,67 @@ config.c.subSurface.slcm = {}
 config.c.subSurface.slcm.weaponDBID = constants.WEAPONS.CJ10_SLCM
 ---@type table<string, SBJ__SubmarineDescriptor>
 config.c.subSurface.slcm.submarines = {
-  ['407'] = {
+  ["407"] = {
     name = "407",
-    guid = '',
+    guid = "",
     course = {
-      { latitude = 'N 25.07.57', longitude = 'E 122.46.06', presetDepth = 3 },
-      { latitude = 'N 24.33.33', longitude = 'E 122.05.57', presetDepth = 3 },
-      { latitude = 'N 24.30.54', longitude = 'E 122.48.02', presetDepth = 3 },
+      { latitude = "N 25.07.57", longitude = "E 122.46.06", presetDepth = 3 },
+      { latitude = "N 24.33.33", longitude = "E 122.05.57", presetDepth = 3 },
+      { latitude = "N 24.30.54", longitude = "E 122.48.02", presetDepth = 3 },
     },
     from = {
-      startingPoint = { latitude = 'N 25.05.32', longitude = 'E 122.11.39' },
+      startingPoint = { latitude = "N 25.05.32", longitude = "E 122.11.39" },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  ['408'] = {
+  ["408"] = {
     name = "408",
-    guid = '',
+    guid = "",
     course = {
-      { latitude = 'N 25.11.06', longitude = 'E 122.42.15', presetDepth = 3 },
-      { latitude = 'N 24.33.33', longitude = 'E 122.08.38', presetDepth = 3 },
-      { latitude = 'N 25.09.37', longitude = 'E 122.06.45', presetDepth = 3 },
+      { latitude = "N 25.11.06", longitude = "E 122.42.15", presetDepth = 3 },
+      { latitude = "N 24.33.33", longitude = "E 122.08.38", presetDepth = 3 },
+      { latitude = "N 25.09.37", longitude = "E 122.06.45", presetDepth = 3 },
     },
     from = {
-      startingPoint = { latitude = 'N 24.32.30', longitude = 'E 122.47.45', },
+      startingPoint = { latitude = "N 24.32.30", longitude = "E 122.47.45", },
       heading = 270
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  ['409'] = {
+  ["409"] = {
     name = "409",
-    guid = '',
+    guid = "",
     course = {
       { latitude = 23.1405738004732, longitude = 122.453896349795, presetDepth = 3 },
       { latitude = 24.3097078500905, longitude = 122.142301456749, presetDepth = 3 },
       { latitude = 23.3573584800694, longitude = 121.777514450334, presetDepth = 3 }
     },
     from = {
-      startingPoint = { latitude = 'N 23.29.41', longitude = 'E 122.39.12', },
+      startingPoint = { latitude = "N 23.29.41", longitude = "E 122.39.12", },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
-  ['410'] = {
+  ["410"] = {
     name = "410",
-    guid = '',
+    guid = "",
     course = {
       { latitude = 24.2344610141018, longitude = 122.681795983267, presetDepth = 3 },
       { latitude = 23.4458260682078, longitude = 121.855392759008, presetDepth = 3 },
       { latitude = 24.280771111992,  longitude = 121.981212557257, presetDepth = 3 }
     },
     from = {
-      startingPoint = { latitude = 'N 22.41.17', longitude = 'E 122.01.36', },
+      startingPoint = { latitude = "N 22.41.17", longitude = "E 122.01.36", },
       heading = 30
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
 }
 config.c.subSurface.slcm.targetlist = {
-  '6Z8LM5-0HMIJ7B89BCF3',
-  '6Z8LM5-0HMIJ7B89BCF4',
-  '6Z8LM5-0HMIJ7B89BCF5',
+  "6Z8LM5-0HMIJ7B89BCF3",
+  "6Z8LM5-0HMIJ7B89BCF4",
+  "6Z8LM5-0HMIJ7B89BCF5",
 }
 config.c.subSurface.slcm.randomRadius = 20
 
@@ -1867,23 +1869,23 @@ config.repairRunway = {
   percentagePerHour = 3,
   runwayDBIDs = { 55, 43, 757, 1422, 1424, 1423, 1421 },
   airBases = {
-    'Hualien AB',
-    'Taitung/Jhihhang AB',
-    'Ching Chuang Kang AB',
-    'Chiayi AB',
-    'Tainan AB',
-    'Pingtung South AB',
-    'Pingtung North AB',
-    'Magong AB',
-    'Hsinchu AB',
-    'Jiashan AB',
-    'Guiren AAB',
-    'Longtan AAB',
-    'Gangshan AB',
-    'Taipei Songshan Airport',
-    'Taoyuan International Airport',
+    "Hualien AB",
+    "Taitung/Jhihhang AB",
+    "Ching Chuang Kang AB",
+    "Chiayi AB",
+    "Tainan AB",
+    "Pingtung South AB",
+    "Pingtung North AB",
+    "Magong AB",
+    "Hsinchu AB",
+    "Jiashan AB",
+    "Guiren AAB",
+    "Longtan AAB",
+    "Gangshan AB",
+    "Taipei Songshan Airport",
+    "Taoyuan International Airport",
   },
-  runwaySubTypes = { 'Runway %(%d+m%)', 'Taxiway' }
+  runwaySubTypes = { "Runway %(%d+m%)", "Taxiway" }
 }
 
 
@@ -1895,16 +1897,16 @@ config.repairRunway = {
 config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
-      name = 'RADAR',
-      wpnSystem = 'SRBM',
+      name = "RADAR",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ', weaponDBID = constants.WEAPONS.DF11A },
-        { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8', weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
         objs = {
-          { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+          { baseName = nil, subTypes = { "Radar", "Hengshan ROC command", "Sky Bow" } },
         },
         areas = {},
         filterNames = nil,
@@ -1914,24 +1916,24 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'RUNWAY',
-      wpnSystem = 'SRBM',
+      name = "RUNWAY",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3', weaponDBID = constants.WEAPONS.DF16A },
-        { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI', weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Hualien AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Taitung/Jhihhang AB',  subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Chiayi AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Tainan AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Pingtung South AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Pingtung North AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Magong AB',            subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Hsinchu AB',           subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = "Hualien AB",           subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Taitung/Jhihhang AB",  subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Chiayi AB",            subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Tainan AB",            subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Pingtung South AB",    subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Pingtung North AB",    subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Magong AB",            subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Hsinchu AB",           subTypes = { "Runway %(%d+m%)", "Taxiway" } },
         },
         areas = {},
         filterNames = nil,
@@ -1941,19 +1943,19 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'PORT',
-      wpnSystem = 'SRBM',
+      name = "PORT",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9', weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Port of Keelung', subTypes = { 'Pier' } },
-          { baseName = 'Suao Port',       subTypes = { 'Pier' } },
-          { baseName = 'Kaohsiung Port',  subTypes = { 'Pier' } },
-          { baseName = 'Magong Port',     subTypes = { 'Pier' } },
-          { baseName = nil,               subTypes = { 'ASM' } },
+          { baseName = "Port of Keelung", subTypes = { "Pier" } },
+          { baseName = "Suao Port",       subTypes = { "Pier" } },
+          { baseName = "Kaohsiung Port",  subTypes = { "Pier" } },
+          { baseName = "Magong Port",     subTypes = { "Pier" } },
+          { baseName = nil,               subTypes = { "ASM" } },
         },
         areas = {},
         filterNames = nil,
@@ -1963,18 +1965,18 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'SHELTER',
-      wpnSystem = 'SRBM',
+      name = "SHELTER",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE', weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = "Chiayi AB",            subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung South AB",    subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Magong AB",            subTypes = { "Shelter", "Tarmac", "Hangar" } },
         },
         areas = {},
         filterNames = nil,
@@ -1986,16 +1988,16 @@ config.c.FSTTemplate = {
   },
   STRIKE_INFRASTRUCTURE_2 = {
     {
-      name = 'RADAR',
-      wpnSystem = 'SRBM',
+      name = "RADAR",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '614th Bde', guid = 'X58F5H-0HN1LQGRV8HNQ', weaponDBID = constants.WEAPONS.DF11A },
-        { name = '613rd Bde', guid = 'X58F5H-0HN1G2DEBC7O8', weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
         objs = {
-          { baseName = nil, subTypes = { 'Radar', 'Hengshan ROC command', 'Sky Bow' } },
+          { baseName = nil, subTypes = { "Radar", "Hengshan ROC command", "Sky Bow" } },
         },
         areas = {},
         filterNames = nil,
@@ -2005,29 +2007,29 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'RUNWAY',
-      wpnSystem = 'SRBM',
+      name = "RUNWAY",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '636th Bde', guid = 'IC8B0X-0HN822OHANPB3', weaponDBID = constants.WEAPONS.DF16A },
-        { name = '617th Bde', guid = 'IC8B0X-0HN822OHANRHI', weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Hualien AB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Taitung/Jhihhang AB',     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Ching Chuang Kang AB',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Chiayi AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Tainan AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Pingtung South AB',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Pingtung North AB',       subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Magong AB',               subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Hsinchu AB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Taitung/Jhihhang AB',     subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Guiren AAB',              subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Longtan AAB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Gangshan AB',             subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Taipei Songshan Airport', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = "Hualien AB",              subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Taitung/Jhihhang AB",     subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Ching Chuang Kang AB",    subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Chiayi AB",               subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Tainan AB",               subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Pingtung South AB",       subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Pingtung North AB",       subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Magong AB",               subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Hsinchu AB",              subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Taitung/Jhihhang AB",     subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Guiren AAB",              subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Longtan AAB",             subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Gangshan AB",             subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Taipei Songshan Airport", subTypes = { "Runway %(%d+m%)", "Taxiway" } },
         },
         areas = {},
         filterNames = nil,
@@ -2037,21 +2039,21 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'PORT',
-      wpnSystem = 'SRBM',
+      name = "PORT",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '615th Bde', guid = 'X58F5H-0HN1G2IFLNKG9', weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Port of Keelung',          subTypes = { 'Pier' } },
-          { baseName = 'Suao Port',                subTypes = { 'Pier' } },
-          { baseName = 'Kaohsiung Port',           subTypes = { 'Pier' } },
-          { baseName = 'Magong Port',              subTypes = { 'Pier' } },
-          { baseName = 'HuangGang Fishing Harbor', subTypes = { 'Terminal' } },
-          { baseName = 'Donggang Wharf',           subTypes = { 'Terminal' } },
-          { baseName = nil,                        subTypes = { 'ASM' } },
+          { baseName = "Port of Keelung",          subTypes = { "Pier" } },
+          { baseName = "Suao Port",                subTypes = { "Pier" } },
+          { baseName = "Kaohsiung Port",           subTypes = { "Pier" } },
+          { baseName = "Magong Port",              subTypes = { "Pier" } },
+          { baseName = "HuangGang Fishing Harbor", subTypes = { "Terminal" } },
+          { baseName = "Donggang Wharf",           subTypes = { "Terminal" } },
+          { baseName = nil,                        subTypes = { "ASM" } },
         },
         areas = {},
         filterNames = nil,
@@ -2061,22 +2063,22 @@ config.c.FSTTemplate = {
       },
     },
     {
-      name = 'SHELTER',
-      wpnSystem = 'SRBM',
+      name = "SHELTER",
+      wpnSystem = "SRBM",
       firingUnits = {
-        { name = '616th Bde', guid = 'X58F5H-0HN1G2IFLF6QE', weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung South AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Magong AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung North AB',    subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Hsinchu AB',           subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Gangshan AB',          subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Tainan AB',            subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
+          { baseName = "Chiayi AB",            subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung South AB",    subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Magong AB",            subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung North AB",    subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Hsinchu AB",           subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Gangshan AB",          subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Tainan AB",            subTypes = { "Shelter", "Tarmac", "Hangar" } },
         },
         areas = {},
         filterNames = nil,
@@ -2091,7 +2093,7 @@ config.c.FSTTemplate = {
       name = "ANTISHIP",
       wpnSystem = "MRBM",
       firingUnits = {
-        { name = '624th Bde', guid = 'IC8B0X-0HNCOR6HG2JE1', weaponDBID = constants.WEAPONS.DF21D }
+        { name = "624th Bde", guid = "IC8B0X-0HNCOR6HG2JE1", weaponDBID = constants.WEAPONS.DF21D }
       },
       target = {
         list = {},
@@ -2106,32 +2108,32 @@ config.c.FSTTemplate = {
   },
   STRIKE_C2_1 = {
     {
-      name = 'PINGTAN',
-      wpnSystem = 'MLRS',
+      name = "PINGTAN",
+      wpnSystem = "MLRS",
       firingUnits = {
-        { name = '1st Bn, 1st Rockets Arty Bde', guid = 'IC8B0X-0HND05GGU36EN', weaponDBID = constants.WEAPONS.FD280 }
+        { name = "1st Bn, 1st Rockets Arty Bde", guid = "IC8B0X-0HND05GGU36EN", weaponDBID = constants.WEAPONS.FD280 }
       },
       target = {
         list = {},
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_NORTH },
-        filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+        filterNames = { "analyzeEmissions", "findRadioDirection" },
         contactAge = config.c.ground.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8
       },
     },
     {
-      name = 'CHINCHEW',
-      wpnSystem = 'MLRS',
+      name = "CHINCHEW",
+      wpnSystem = "MLRS",
       firingUnits = {
-        { name = '6th Bn, 73rd Arty Bde', guid = 'IC8B0X-0HNBRRE2PRQAL', weaponDBID = constants.WEAPONS.FD280 }
+        { name = "6th Bn, 73rd Arty Bde", guid = "IC8B0X-0HNBRRE2PRQAL", weaponDBID = constants.WEAPONS.FD280 }
       },
       target = {
         list = {},
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_CENTER },
-        filterNames = { 'analyzeEmissions', 'findRadioDirection' },
+        filterNames = { "analyzeEmissions", "findRadioDirection" },
         contactAge = config.c.ground.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8
@@ -2140,19 +2142,19 @@ config.c.FSTTemplate = {
   },
   STRIKE_HELIPAD_1 = {
     {
-      name = 'HELIPAD',
-      wpnSystem = 'GLCM',
+      name = "HELIPAD",
+      wpnSystem = "GLCM",
       firingUnits = {
-        { name = '635th Bde', guid = '6Z8LM5-0HMN97ERAUODK', weaponDBID = constants.WEAPONS.CJ10 }
+        { name = "635th Bde", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10 }
       },
       target = {
         list = {},
         objs = {
-          { baseName = 'Guiren AAB',                       subTypes = { 'Helipad' } },
-          { baseName = 'Longtan AAB',                      subTypes = { 'Helipad' } },
-          { baseName = 'Minxiong Emergency Highway Strip', subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Madou Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
-          { baseName = 'Rende Emergency Highway Strip',    subTypes = { 'Runway %(%d+m%)', 'Taxiway' } },
+          { baseName = "Guiren AAB",                       subTypes = { "Helipad" } },
+          { baseName = "Longtan AAB",                      subTypes = { "Helipad" } },
+          { baseName = "Minxiong Emergency Highway Strip", subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Madou Emergency Highway Strip",    subTypes = { "Runway %(%d+m%)", "Taxiway" } },
+          { baseName = "Rende Emergency Highway Strip",    subTypes = { "Runway %(%d+m%)", "Taxiway" } },
         },
         areas = {},
         filterNames = nil,
@@ -2180,9 +2182,9 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.J16,
         unitCount = 12,
         loadoutID = constants.LOADOUTS.J16_AKD88,
-        -- startTime = '2027-06-09 01:25:00',
-        missionCreationParams = { name = 'STRIKE/AB/S/1', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        -- startTime = "2027-06-09 01:25:00",
+        missionCreationParams = { name = "STRIKE/AB/S/1", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = {
         baseGUID = constants.BASES.HUIAN_AAB,
@@ -2190,12 +2192,12 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.J20,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J20_PL15,
-        -- startTime = '2027-06-09 01:05:00',
+        -- startTime = "2027-06-09 01:05:00",
         missionCreationParams = {
-          name = 'SWEEP/AB/S/1',
-          type = 'patrol',
+          name = "SWEEP/AB/S/1",
+          type = "patrol",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2204,7 +2206,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       wildWeasel = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
@@ -2212,12 +2214,12 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.SU30,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
-        -- startTime = '2027-06-09 01:05:00',
+        -- startTime = "2027-06-09 01:05:00",
         missionCreationParams = {
-          name = 'SEAD/AB/S/1',
-          type = 'patrol',
+          name = "SEAD/AB/S/1",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2226,7 +2228,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
         baseGUID = constants.BASES.ZHANGPU_AAB,
@@ -2234,21 +2236,21 @@ config.c.packageTemplate = {
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = nil, -- Electronic warfare aircraft
-        -- startTime = '2027-06-09 01:05:00', -- Escort launch time
+        -- startTime = "2027-06-09 01:05:00", -- Escort launch time
         missionCreationParams = {
-          name = 'JAMMING/AB/S/1',
-          type = 'support',
+          name = "JAMMING/AB/S/1",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = config.c.recon.template.BZK005_RECON_1,
       target = {
         list = {},
         objs = {
-          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } }
+          { baseName = "Pingtung South AB", subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung North AB", subTypes = { "Shelter", "Tarmac", "Hangar" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_SOUTH },
         filterNames = {},
@@ -2265,8 +2267,8 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = constants.LOADOUTS.J16_AKD88,
         startTime = nil,
-        missionCreationParams = { name = 'STRIKE/AB/C', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        missionCreationParams = { name = "STRIKE/AB/C", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = {
         baseGUID = constants.BASES.HUIAN_AAB,
@@ -2275,10 +2277,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J20_PL15,
         missionCreationParams = {
-          name = 'SWEEP/AB/C',
-          type = 'patrol',
+          name = "SWEEP/AB/C",
+          type = "patrol",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2287,7 +2289,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       wildWeasel = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
@@ -2296,10 +2298,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/C',
-          type = 'patrol',
+          name = "SEAD/AB/C",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2308,7 +2310,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
         baseGUID = constants.BASES.ZHANGPU_AAB,
@@ -2317,19 +2319,19 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'JAMMING/AB/C',
-          type = 'support',
+          name = "JAMMING/AB/C",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_CENTER_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
-          { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } }
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Ammo Bunker" } },
+          { baseName = "Chiayi AB",            subTypes = { "Shelter", "Ammo Bunker" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_CENTER },
         filterNames = {},
@@ -2346,8 +2348,8 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = constants.LOADOUTS.J16_AKD88,
         startTime = nil,
-        missionCreationParams = { name = 'STRIKE/AB/N/1', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        missionCreationParams = { name = "STRIKE/AB/N/1", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = {
         baseGUID = constants.BASES.HUIAN_AAB,
@@ -2356,10 +2358,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J20_PL15,
         missionCreationParams = {
-          name = 'SWEEP/AB/N/1',
-          type = 'patrol',
+          name = "SWEEP/AB/N/1",
+          type = "patrol",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2368,7 +2370,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       wildWeasel = {
         baseGUID = constants.BASES.LONGTIAN_AAB,
@@ -2377,10 +2379,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/N/1',
-          type = 'patrol',
+          name = "SEAD/AB/N/1",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2389,7 +2391,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
         baseGUID = constants.BASES.ZHANGPU_AAB,
@@ -2398,18 +2400,18 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'JAMMING/AB/N/1',
-          type = 'support',
+          name = "JAMMING/AB/N/1",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_NORTH_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } }
+          { baseName = "Hsinchu AB", subTypes = { "Shelter", "Helipad", "Ammo Bunker" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_NORTH },
         filterNames = {},
@@ -2427,10 +2429,10 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.H6K,
         unitCount = 12,
         loadoutID = constants.LOADOUTS.H6K_YJ63,
-        -- startTime = '2027-06-09 04:40:00',
+        -- startTime = "2027-06-09 04:40:00",
         startTime = nil,
-        missionCreationParams = { name = 'STRIKE/AB/S/2', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        missionCreationParams = { name = "STRIKE/AB/S/2", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       wildWeasel = nil,
@@ -2440,11 +2442,11 @@ config.c.packageTemplate = {
       target = {
         list = {},
         objs = {
-          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } }
+          { baseName = "Pingtung South AB", subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung North AB", subTypes = { "Shelter", "Tarmac", "Hangar" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_SOUTH },
-        filterNames = { 'findC2' },
+        filterNames = { "findC2" },
         contactAge = 60 * 60,
         minTargetCount = 1
       },
@@ -2458,8 +2460,8 @@ config.c.packageTemplate = {
         unitCount = 12,
         loadoutID = constants.LOADOUTS.H6K_YJ63,
         startTime = nil,
-        missionCreationParams = { name = 'STRIKE/AB/N/2', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        missionCreationParams = { name = "STRIKE/AB/N/2", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       wildWeasel = nil,
@@ -2469,10 +2471,10 @@ config.c.packageTemplate = {
       target = {
         list = {},
         objs = {
-          { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } }
+          { baseName = "Hsinchu AB", subTypes = { "Shelter", "Helipad", "Ammo Bunker" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_NORTH },
-        filterNames = { 'findC2' },
+        filterNames = { "findC2" },
         contactAge = 60 * 60,
         minTargetCount = 1
       },
@@ -2487,9 +2489,9 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.SU30,
         unitCount = 12,
         loadoutID = constants.LOADOUTS.SU30_KAB1500,
-        -- startTime = '2027-06-09 05:40:00',
-        missionCreationParams = { name = 'STRIKE/AB/S/3', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        -- startTime = "2027-06-09 05:40:00",
+        missionCreationParams = { name = "STRIKE/AB/S/3", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = {
         baseGUID = constants.BASES.HUIAN_AAB,
@@ -2498,10 +2500,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J20_PL15,
         missionCreationParams = {
-          name = 'SWEEP/AB/S/2',
-          type = 'patrol',
+          name = "SWEEP/AB/S/2",
+          type = "patrol",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2510,7 +2512,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       wildWeasel = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
@@ -2519,10 +2521,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/S/3',
-          type = 'patrol',
+          name = "SEAD/AB/S/3",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2531,7 +2533,7 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
         baseGUID = constants.BASES.ZHANGPU_AAB,
@@ -2540,23 +2542,23 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'JAMMING/AB/S/3',
-          type = 'support',
+          name = "JAMMING/AB/S/3",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Pingtung South AB', subTypes = { 'Ammo Bunker' } },
-          { baseName = 'Tainan AB',         subTypes = { 'Ammo Bunker' } },
-          { baseName = 'Magong AB',         subTypes = { 'Ammo Bunker' } }
+          { baseName = "Pingtung South AB", subTypes = { "Ammo Bunker" } },
+          { baseName = "Tainan AB",         subTypes = { "Ammo Bunker" } },
+          { baseName = "Magong AB",         subTypes = { "Ammo Bunker" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_SOUTH },
-        filterNames = { 'findC2' },
+        filterNames = { "findC2" },
         contactAge = 60 * 60,
         minTargetCount = 1
       },
@@ -2574,19 +2576,19 @@ config.c.packageTemplate = {
     --     loadoutID = constants.LOADOUTS.J16_AKD88,
     --     startTime = nil,
     --     missionCreationParams = {
-    --       name = 'STRIKE/AB/N/1',
-    --       type = 'strike',
+    --       name = "STRIKE/AB/N/1",
+    --       type = "strike",
     --       opts = {
-    --         type = 'land',
+    --         type = "land",
     --         -- TankerUsage = 1,
-    --         -- TankerMissionList = { 'AAR/E' },
+    --         -- TankerMissionList = { "AAR/E" },
     --         -- FuelQtyToStartLookingForTanker_airborne = 85,
     --         -- MaxReceiversInQueuePerTanker_airborne = 1,
     --         -- LaunchMissionWithoutTankersInPlace = true,
     --         -- TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   escort = {
     --     baseGUID = constants.BASES.WUHU_AB,
@@ -2595,10 +2597,10 @@ config.c.packageTemplate = {
     --     unitCount = 4,
     --     loadoutID = constants.LOADOUTS.J20_PL15,
     --     missionCreationParams = {
-    --       name = 'SWEEP/AB/N/1',
-    --       type = 'patrol',
+    --       name = "SWEEP/AB/N/1",
+    --       type = "patrol",
     --       opts = {
-    --         type = 'aaw',
+    --         type = "aaw",
     --         OneThirdRule = false,
     --         FlightSize = 4,
     --         CheckOPAREA = false,
@@ -2606,14 +2608,14 @@ config.c.packageTemplate = {
     --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
     --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/E' },
+    --         TankerMissionList = { "AAR/E" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   wildWeasel = {
     --     baseGUID = constants.BASES.TAIZHOU_AB,
@@ -2622,10 +2624,10 @@ config.c.packageTemplate = {
     --     unitCount = 4,
     --     loadoutID = constants.LOADOUTS.SU30_YJ91,
     --     missionCreationParams = {
-    --       name = 'SEAD/AB/N/1',
-    --       type = 'patrol',
+    --       name = "SEAD/AB/N/1",
+    --       type = "patrol",
     --       opts = {
-    --         type = 'sead',
+    --         type = "sead",
     --         OneThirdRule = false,
     --         FlightSize = 4,
     --         CheckOPAREA = false,
@@ -2633,14 +2635,14 @@ config.c.packageTemplate = {
     --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
     --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/E' },
+    --         TankerMissionList = { "AAR/E" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   jammer = {
     --     baseGUID = constants.BASES.XIAHGTANG_AB,
@@ -2649,19 +2651,19 @@ config.c.packageTemplate = {
     --     unitCount = 1,
     --     loadoutID = nil,
     --     missionCreationParams = {
-    --       name = 'JAMMING/AB/N/1',
-    --       type = 'support',
+    --       name = "JAMMING/AB/N/1",
+    --       type = "support",
     --       opts = {
     --         zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/E' },
+    --         TankerMissionList = { "AAR/E" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   tanker = {
     --     baseGUID = constants.BASES.SHUIMEN_AAB,
@@ -2670,21 +2672,21 @@ config.c.packageTemplate = {
     --     unitCount = 8,
     --     loadoutID = nil,
     --     missionCreationParams = {
-    --       name = 'AAR/E',
-    --       type = 'support',
+    --       name = "AAR/E",
+    --       type = "support",
     --       opts = {
     --         OneThirdRule = false,
     --         FlightSize = 2,
     --         zone = constants.AREAS.AAR_PATROL_2
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Passive'
+    --     emcon = "Radar=Passive;OECM=Passive"
     --   },
     --   reconUAV = nil,
     --   target = {
     --     list = {},
     --     objs = {
-    --       { baseName = 'Hsinchu AB', subTypes = { 'Shelter', 'Helipad', 'Ammo Bunker' } }
+    --       { baseName = "Hsinchu AB", subTypes = { "Shelter", "Helipad", "Ammo Bunker" } }
     --     },
     --     areas = { constants.AREAS.AREA_OF_OPS_NORTH },
     --     filterNames = {},
@@ -2702,18 +2704,18 @@ config.c.packageTemplate = {
     --     loadoutID = constants.LOADOUTS.J16_AKD88,
     --     startTime = nil,
     --     missionCreationParams = {
-    --       name = 'STRIKE/AB/C/1',
-    --       type = 'strike',
+    --       name = "STRIKE/AB/C/1",
+    --       type = "strike",
     --       opts = {
-    --         type = 'land',
-    --         TankerMissionList = { 'AAR/C' },
+    --         type = "land",
+    --         TankerMissionList = { "AAR/C" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   escort = {
     --     baseGUID = constants.BASES.WUHU_AB,
@@ -2722,10 +2724,10 @@ config.c.packageTemplate = {
     --     unitCount = 4,
     --     loadoutID = constants.LOADOUTS.J20_PL15,
     --     missionCreationParams = {
-    --       name = 'SWEEP/AB/C/1',
-    --       type = 'patrol',
+    --       name = "SWEEP/AB/C/1",
+    --       type = "patrol",
     --       opts = {
-    --         type = 'aaw',
+    --         type = "aaw",
     --         OneThirdRule = false,
     --         FlightSize = 4,
     --         CheckOPAREA = false,
@@ -2733,14 +2735,14 @@ config.c.packageTemplate = {
     --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
     --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/C' },
+    --         TankerMissionList = { "AAR/C" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 50
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   wildWeasel = {
     --     baseGUID = constants.BASES.TAIZHOU_AB,
@@ -2749,10 +2751,10 @@ config.c.packageTemplate = {
     --     unitCount = 4,
     --     loadoutID = constants.LOADOUTS.SU30_YJ91,
     --     missionCreationParams = {
-    --       name = 'SEAD/AB/C/1',
-    --       type = 'patrol',
+    --       name = "SEAD/AB/C/1",
+    --       type = "patrol",
     --       opts = {
-    --         type = 'sead',
+    --         type = "sead",
     --         OneThirdRule = false,
     --         FlightSize = 4,
     --         CheckOPAREA = false,
@@ -2760,14 +2762,14 @@ config.c.packageTemplate = {
     --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
     --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/C' },
+    --         TankerMissionList = { "AAR/C" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 60
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   jammer = {
     --     baseGUID = constants.BASES.XIAHGTANG_AB,
@@ -2776,19 +2778,19 @@ config.c.packageTemplate = {
     --     unitCount = 1,
     --     loadoutID = nil,
     --     missionCreationParams = {
-    --       name = 'JAMMING/AB/C/1',
-    --       type = 'support',
+    --       name = "JAMMING/AB/C/1",
+    --       type = "support",
     --       opts = {
     --         zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
     --         TankerUsage = 1,
-    --         TankerMissionList = { 'AAR/C' },
+    --         TankerMissionList = { "AAR/C" },
     --         FuelQtyToStartLookingForTanker_airborne = 85,
     --         MaxReceiversInQueuePerTanker_airborne = 1,
     --         LaunchMissionWithoutTankersInPlace = true,
     --         TankerMaxDistance_airborne = 70
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Active'
+    --     emcon = "Radar=Passive;OECM=Active"
     --   },
     --   tanker = {
     --     baseGUID = constants.BASES.SHUIMEN_AAB,
@@ -2797,22 +2799,22 @@ config.c.packageTemplate = {
     --     unitCount = 8,
     --     loadoutID = nil,
     --     missionCreationParams = {
-    --       name = 'AAR/C',
-    --       type = 'support',
+    --       name = "AAR/C",
+    --       type = "support",
     --       opts = {
     --         OneThirdRule = false,
     --         FlightSize = 4,
     --         zone = constants.AREAS.AAR_PATROL
     --       }
     --     },
-    --     emcon = 'Radar=Passive;OECM=Passive'
+    --     emcon = "Radar=Passive;OECM=Passive"
     --   },
     --   reconUAV = nil,
     --   target = {
     --     list = {},
     --     objs = {
-    --       { baseName = 'Ching Chuang Kang AB', subTypes = { 'Shelter', 'Ammo Bunker' } },
-    --       { baseName = 'Chiayi AB',            subTypes = { 'Shelter', 'Ammo Bunker' } }
+    --       { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Ammo Bunker" } },
+    --       { baseName = "Chiayi AB",            subTypes = { "Shelter", "Ammo Bunker" } }
     --     },
     --     areas = { constants.AREAS.AREA_OF_OPS_CENTER },
     --     filterNames = {},
@@ -2830,18 +2832,18 @@ config.c.packageTemplate = {
         loadoutID = constants.LOADOUTS.J16_AKD88,
         startTime = nil,
         missionCreationParams = {
-          name = 'STRIKE/AB/S/1',
-          type = 'strike',
+          name = "STRIKE/AB/S/1",
+          type = "strike",
           opts = {
-            type = 'land',
-            TankerMissionList = { 'AAR/S' },
+            type = "land",
+            TankerMissionList = { "AAR/S" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = {
         baseGUID = constants.BASES.WUHU_AB,
@@ -2850,10 +2852,10 @@ config.c.packageTemplate = {
         unitCount = 4,
         loadoutID = constants.LOADOUTS.J20_PL15,
         missionCreationParams = {
-          name = 'SWEEP/AB/S/1',
-          type = 'patrol',
+          name = "SWEEP/AB/S/1",
+          type = "patrol",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2861,14 +2863,14 @@ config.c.packageTemplate = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { 'AAR/S' },
+            TankerMissionList = { "AAR/S" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       wildWeasel = {
         baseGUID = constants.BASES.TAIZHOU_AB,
@@ -2877,10 +2879,10 @@ config.c.packageTemplate = {
         unitCount = 4,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/S/1',
-          type = 'patrol',
+          name = "SEAD/AB/S/1",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -2888,14 +2890,14 @@ config.c.packageTemplate = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { 'AAR/S' },
+            TankerMissionList = { "AAR/S" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 60
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
         baseGUID = constants.BASES.XIAHGTANG_AB,
@@ -2904,19 +2906,19 @@ config.c.packageTemplate = {
         unitCount = 1,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'JAMMING/AB/C/1',
-          type = 'support',
+          name = "JAMMING/AB/C/1",
+          type = "support",
           opts = {
             zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { 'AAR/S' },
+            TankerMissionList = { "AAR/S" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
             TankerMaxDistance_airborne = 50
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = {
         baseGUID = constants.BASES.SHUIMEN_AAB,
@@ -2925,22 +2927,22 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'AAR/S',
-          type = 'support',
+          name = "AAR/S",
+          type = "support",
           opts = {
             OneThirdRule = false,
             FlightSize = 4,
             zone = constants.AREAS.AAR_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Passive'
+        emcon = "Radar=Passive;OECM=Passive"
       },
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Pingtung South AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } },
-          { baseName = 'Pingtung North AB', subTypes = { 'Shelter', 'Tarmac', 'Hangar' } }
+          { baseName = "Pingtung South AB", subTypes = { "Shelter", "Tarmac", "Hangar" } },
+          { baseName = "Pingtung North AB", subTypes = { "Shelter", "Tarmac", "Hangar" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_SOUTH },
         filterNames = {},
@@ -2958,21 +2960,21 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.J20,
         unitCount = 6,
         loadoutID = constants.LOADOUTS.J20_PL15,
-        -- startTime = '2027-06-09 06:40:00',
-        -- startTime = '2027-06-09 01:05:00',
+        -- startTime = "2027-06-09 06:40:00",
+        -- startTime = "2027-06-09 01:05:00",
         missionCreationParams = {
-          name = 'AIR INTERCEPT/E',
-          type = 'strike',
+          name = "AIR INTERCEPT/E",
+          type = "strike",
           opts = {
-            type = 'aaw',
+            type = "aaw",
             TankerUsage = 1,
-            TankerMissionList = { 'AAR/E' },
+            TankerMissionList = { "AAR/E" },
             FuelQtyToStartLookingForTanker_airborne = 65,
             MaxReceiversInQueuePerTanker_airborne = 2,
             LaunchMissionWithoutTankersInPlace = true
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       wildWeasel = nil,
@@ -2984,22 +2986,22 @@ config.c.packageTemplate = {
         unitCount = 3,
         loadoutID = nil,
         missionCreationParams = {
-          name = 'AAR/E',
-          type = 'support',
+          name = "AAR/E",
+          type = "support",
           opts = {
             OneThirdRule = false,
             FlightSize = 1,
             zone = constants.AREAS.AAR_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Passive'
+        emcon = "Radar=Passive;OECM=Passive"
       },
       reconUAV = nil,
       target = {
         list = {},
         objs = nil,
         areas = { constants.AREAS.AREA_OF_OPS_PACIFIC },
-        filterNames = { 'findAirborne' },
+        filterNames = { "findAirborne" },
         contactAge = 60 * 60,
         minTargetCount = 1
       }
@@ -3009,27 +3011,27 @@ config.c.packageTemplate = {
     {
       timeToReady = config.readytime,
       striker = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
         unitDBID = constants.PLATFORMS.J15,
         unitCount = 12,
         loadoutID = constants.LOADOUTS.J15_LS6_500,
-        -- startTime = '2027-06-09 07:00:00',
-        missionCreationParams = { name = 'STRIKE/AB/JHI/1', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        -- startTime = "2027-06-09 07:00:00",
+        missionCreationParams = { name = "STRIKE/AB/JHI/1", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       -- escort = {
-      --   baseGUID = 'CSG',
+      --   baseGUID = "CSG",
       --   weaponDBID = constants.WEAPONS.PL15,
       --   unitDBID = constants.PLATFORMS.J_15,
       --   unitCount = 8,
       --   loadoutID = constants.LOADOUTS.J15_YJ91,
       --   missionCreationParams = {
-      --     name = 'SWEAP/AB/JHI/1',
-      --     type = 'patrol',
+      --     name = "SWEAP/AB/JHI/1",
+      --     type = "patrol",
       --     opts = {
-      --       type = 'aaw',
+      --       type = "aaw",
       --       OneThirdRule = false,
       --       FlightSize = 4,
       --       CheckOPAREA = false,
@@ -3038,19 +3040,19 @@ config.c.packageTemplate = {
       --       patrolZone = constants.AREASs.TARGET_AREA_JHI_PATROL
       --     }
       --   },
-      --   emcon = 'Radar=Passive;OECM=Active'
+      --   emcon = "Radar=Passive;OECM=Active"
       -- },
       wildWeasel = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.YJ91_ASM,
         unitDBID = constants.PLATFORMS.J15,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J15_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/JHI/1',
-          type = 'patrol',
+          name = "SEAD/AB/JHI/1",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -3059,27 +3061,27 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_JHI_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         unitDBID = constants.PLATFORMS.J15D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = constants.LOADOUTS.J15D_EW,
         missionCreationParams = {
-          name = 'JAMMING/AB/JHI/1',
-          type = 'support',
+          name = "JAMMING/AB/JHI/1",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_JHI_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Jhihhang AB', subTypes = { 'Shelter' } }
+          { baseName = "Jhihhang AB", subTypes = { "Shelter" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_EAST },
         filterNames = nil,
@@ -3097,27 +3099,27 @@ config.c.packageTemplate = {
         loadoutStartTime = nil
       },
       striker = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
         unitDBID = constants.PLATFORMS.J15,
         unitCount = 12,
         loadoutID = constants.LOADOUTS.J15_LS6_500,
         startTime = nil,
-        missionCreationParams = { name = 'STRIKE/AB/JIA/1', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        missionCreationParams = { name = "STRIKE/AB/JIA/1", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       -- escort = {
-      --   baseGUID = '6Z8LM5-0HMIJ3QGCRQ5F',
+      --   baseGUID = "6Z8LM5-0HMIJ3QGCRQ5F",
       --   weaponDBID = constants.WEAPONS.PL15,
       --   unitDBID = constants.PLATFORMS.J_15,
       --   unitCount = 8,
       --   loadoutID = constants.LOADOUTS.J20_PL15,
       --   missionCreationParams = {
-      --     name = 'SWEAP/AB/JIA/1',
-      --     type = 'patrol',
+      --     name = "SWEAP/AB/JIA/1",
+      --     type = "patrol",
       --     opts = {
-      --       type = 'aaw',
+      --       type = "aaw",
       --       OneThirdRule = false,
       --       FlightSize = 4,
       --       CheckOPAREA = false,
@@ -3126,19 +3128,19 @@ config.c.packageTemplate = {
       --       patrolZone = constants.AREASs.TARGET_AREA_JIASHAN_PATROL
       --     }
       --   },
-      --   emcon = 'Radar=Passive;OECM=Active'
+      --   emcon = "Radar=Passive;OECM=Active"
       -- },
       wildWeasel = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.YJ91_ASM,
         unitDBID = constants.PLATFORMS.J15,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J15_YJ91,
         missionCreationParams = {
-          name = 'SEAD/AB/JIA/1',
-          type = 'patrol',
+          name = "SEAD/AB/JIA/1",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -3147,27 +3149,27 @@ config.c.packageTemplate = {
             patrolZone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = {
-        baseGUID = 'CSG',
+        baseGUID = "CSG",
         unitDBID = constants.PLATFORMS.J15D,
         weaponDBID = 0,
         unitCount = 1,
         loadoutID = constants.LOADOUTS.J15D_EW,
         missionCreationParams = {
-          name = 'JAMMING/AB/JIA/1',
-          type = 'support',
+          name = "JAMMING/AB/JIA/1",
+          type = "support",
           opts = { zone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
       reconUAV = nil,
       target = {
         list = {},
         objs = {
-          { baseName = 'Jiashan AB', subTypes = { 'Shelter' } }
+          { baseName = "Jiashan AB", subTypes = { "Shelter" } }
         },
         areas = { constants.AREAS.AREA_OF_OPS_EAST },
         filterNames = nil,
@@ -3186,9 +3188,9 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.J16,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J16_YJ83,
-        -- startTime = '2027-06-09 02:40:00',
-        missionCreationParams = { name = 'ASUW/N', type = 'strike', opts = { type = 'sea' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        -- startTime = "2027-06-09 02:40:00",
+        missionCreationParams = { name = "ASUW/N", type = "strike", opts = { type = "sea" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       wildWeasel = {
@@ -3198,10 +3200,10 @@ config.c.packageTemplate = {
         unitCount = 8,
         loadoutID = constants.LOADOUTS.SU30_YJ91,
         missionCreationParams = {
-          name = 'SEAD/ASUW/N',
-          type = 'patrol',
+          name = "SEAD/ASUW/N",
+          type = "patrol",
           opts = {
-            type = 'sead',
+            type = "sead",
             OneThirdRule = false,
             FlightSize = 4,
             CheckOPAREA = false,
@@ -3209,7 +3211,7 @@ config.c.packageTemplate = {
             zone = constants.AREAS.AREA_OF_OPS_D
           }
         },
-        emcon = 'Radar=Passive;OECM=Active'
+        emcon = "Radar=Passive;OECM=Active"
       },
       jammer = nil,
       tanker = nil,
@@ -3218,7 +3220,7 @@ config.c.packageTemplate = {
         list = {},
         objs = nil,
         areas = { constants.AREAS.AREA_OF_OPS_D },
-        filterNames = { 'findNavalTargets' },
+        filterNames = { "findNavalTargets" },
         contactAge = 60 * 60,
         minTargetCount = 1
       },
@@ -3234,9 +3236,9 @@ config.c.packageTemplate = {
         unitDBID = constants.PLATFORMS.J10C,
         unitCount = 8,
         loadoutID = constants.LOADOUTS.J10C_CS_BBC_5,
-        -- startTime = '2027-06-09 01:30:00',
-        missionCreationParams = { name = 'CAS/N', type = 'strike', opts = { type = 'land' } },
-        emcon = 'Radar=Passive;OECM=Active'
+        -- startTime = "2027-06-09 01:30:00",
+        missionCreationParams = { name = "CAS/N", type = "strike", opts = { type = "land" } },
+        emcon = "Radar=Passive;OECM=Active"
       },
       escort = nil,
       wildWeasel = nil,
@@ -3247,7 +3249,7 @@ config.c.packageTemplate = {
         list = {},
         objs = nil,
         areas = { constants.AREAS.LANDING_TAOYUAN },
-        filterNames = { 'findInfantry' },
+        filterNames = { "findInfantry" },
         contactAge = 60 * 60,
         minTargetCount = 1
       },
@@ -3354,307 +3356,307 @@ config.t.air.landBased.wpnNum = 8
 ---@type SBJ__AirbaseDeploymentDescriptor[]
 config.t.air.landBased.deployedACs = {
   {
-    name = 'Ching Chuang Kang AB',
+    name = "Ching Chuang Kang AB",
     baseGUID = constants.BASES.CHING_CHUANG_KANG_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.IDF,
-        platformName = 'IDF',
-        name = '3rd Tactical Fighter Wing',
+        platformName = "IDF",
+        name = "3rd Tactical Fighter Wing",
         loadouts = {
-          { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 8 },
+          { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 8 },
         }
       }
     },
     loadouts = {
-      { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
-    name = 'Chiayi AB',
+    name = "Chiayi AB",
     baseGUID = constants.BASES.CHIAYI_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK20,
-        platformName = 'F-16V Block 20',
-        name = '4th Tactical Fighter Wing',
+        platformName = "F-16V Block 20",
+        name = "4th Tactical Fighter Wing",
         loadouts = {
-          { name = 'AMRAAM', loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM, num = 8 },
+          { name = "AMRAAM", loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM, num = 8 },
         }
       }
     },
     loadouts = {
-      { name = 'AMRAAM',  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = 'Harpoon', loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = 'GBU',     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
-    name = 'Tainan AB',
+    name = "Tainan AB",
     baseGUID = constants.BASES.TAINAN_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.IDF,
-        platformName = 'IDF',
-        name = '1st Tactical Fighter Wing',
+        platformName = "IDF",
+        name = "1st Tactical Fighter Wing",
         loadouts = {
-          { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 4 },
+          { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 4 },
         }
       }
     },
     loadouts = {
-      { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
-    name = 'Magong AB',
+    name = "Magong AB",
     baseGUID = constants.BASES.MAGONG_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.IDF,
-        platformName = 'IDF',
-        name = '1st Tactical Fighter Wing',
+        platformName = "IDF",
+        name = "1st Tactical Fighter Wing",
         loadouts = {
-          { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 4 },
+          { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = 4 },
         }
       }
     },
     loadouts = {
-      { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
-    name = 'Guiren AAB',
+    name = "Guiren AAB",
     baseGUID = constants.BASES.GUIREN_AAB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.AH1W,
-        platformName = 'AH-1W',
-        name = '603rd Air Cavalry Bde',
+        platformName = "AH-1W",
+        name = "603rd Air Cavalry Bde",
         loadouts = {
-          { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = 8, missionName = 'ASUW/ACV/PENGHU' },
+          { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = 8, missionName = "ASUW/ACV/PENGHU" },
         }
       }
     },
     loadouts = {
-      { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
-    name = 'Pingtung North AB',
+    name = "Pingtung North AB",
     baseGUID = constants.BASES.PINGTUNG_NORTH_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.E2K,
-        platformName = 'E-2K',
-        name = '6th Mixed Wing',
+        platformName = "E-2K",
+        name = "6th Mixed Wing",
         loadouts = {
-          { name = 'AEW', loadoutId = constants.LOADOUTS.E2K_AEW, num = 3, missionName = 'FERRY/2' },
+          { name = "AEW", loadoutId = constants.LOADOUTS.E2K_AEW, num = 3, missionName = "FERRY/2" },
         }
       },
     }
   },
   {
-    name = 'Pingtung South AB',
+    name = "Pingtung South AB",
     baseGUID = constants.BASES.PINGTUNG_SOUTH_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.P3C,
-        platformName = 'P-3C',
-        name = '6th Mixed Wing',
+        platformName = "P-3C",
+        name = "6th Mixed Wing",
         loadouts = {
-          { name = 'ASW Patrol', loadoutId = constants.LOADOUTS.P3C_ASW, num = 3, missionName = 'ASW/E' },
+          { name = "ASW Patrol", loadoutId = constants.LOADOUTS.P3C_ASW, num = 3, missionName = "ASW/E" },
         }
       },
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.C130HE,
-        platformName = 'C-130HE',
-        name = '6th Mixed Wing',
+        platformName = "C-130HE",
+        name = "6th Mixed Wing",
         loadouts = {
-          { name = 'Electronic Warfare', loadoutId = constants.LOADOUTS.C130HE_EW, num = 1, missionName = 'FERRY/2' },
+          { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.C130HE_EW, num = 1, missionName = "FERRY/2" },
         }
       },
     }
   },
   {
-    name = 'Taitung/Jhihhang AB',
+    name = "Taitung/Jhihhang AB",
     baseGUID = constants.BASES.TAITUNG_JHIHHANG_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK70,
-        platformName = 'F-16V Block 70',
-        name = '7th Tactical Fighter Wing',
+        platformName = "F-16V Block 70",
+        name = "7th Tactical Fighter Wing",
         loadouts = {
-          { name = 'SLAM-ER', loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = 8, missionName = 'FERRY/3' },
+          { name = "SLAM-ER", loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = 8, missionName = "FERRY/3" },
         }
       }
     },
     loadouts = {
-      { name = 'SLAM-ER', loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = config.t.air.landBased.wpnNum }, --SLAMER X 2
-      { name = 'JDAM',    loadoutId = constants.LOADOUTS.F16V_BLK70_JDAM,    num = config.t.air.landBased.wpnNum }, --JDAM X 4
-      { name = 'HARM',    loadoutId = constants.LOADOUTS.F16V_BLK70_HARM,    num = config.t.air.landBased.wpnNum }, --HARM X 2
-      { name = 'JSOW',    loadoutId = constants.LOADOUTS.F16V_BLK70_JSOW,    num = config.t.air.landBased.wpnNum }, --JSOW X 4
+      { name = "SLAM-ER", loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = config.t.air.landBased.wpnNum }, --SLAMER X 2
+      { name = "JDAM",    loadoutId = constants.LOADOUTS.F16V_BLK70_JDAM,    num = config.t.air.landBased.wpnNum }, --JDAM X 4
+      { name = "HARM",    loadoutId = constants.LOADOUTS.F16V_BLK70_HARM,    num = config.t.air.landBased.wpnNum }, --HARM X 2
+      { name = "JSOW",    loadoutId = constants.LOADOUTS.F16V_BLK70_JSOW,    num = config.t.air.landBased.wpnNum }, --JSOW X 4
     }
   },
   {
-    name = 'Jiashan AB',
+    name = "Jiashan AB",
     baseGUID = constants.BASES.JIASHAN_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.MQ9B,
-        platformName = 'MQ-9B',
-        name = '5th Tactical Mixed Wing',
+        platformName = "MQ-9B",
+        name = "5th Tactical Mixed Wing",
         loadouts = {
-          { name = 'Reconnaissance', loadoutId = constants.LOADOUTS.MQ9B_RECON, num = 3, missionName = 'AEW/S' },
+          { name = "Reconnaissance", loadoutId = constants.LOADOUTS.MQ9B_RECON, num = 3, missionName = "AEW/S" },
         }
       },
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK20,
-        platformName = 'F-16V Block 20',
-        name = '5th Tactical Mixed Wing',
+        platformName = "F-16V Block 20",
+        name = "5th Tactical Mixed Wing",
         loadouts = {
-          { name = 'Harpoon', loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = 8, },
+          { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = 8, },
         }
       }
     },
     loadouts = {
-      { name = 'AMRAAM',  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = 'Harpoon', loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = 'GBU',     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
-    name = 'Hsinchu AB',
+    name = "Hsinchu AB",
     baseGUID = constants.BASES.HSINCHU_AB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.MIRAGE2000,
-        platformName = 'Mirage 2000',
-        name = '2nd Tactical Fighter Wing',
+        platformName = "Mirage 2000",
+        name = "2nd Tactical Fighter Wing",
         loadouts = {
-          { name = 'MICA AAM', loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = 8, },
+          { name = "MICA AAM", loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = 8, },
         }
       }
     },
     loadouts = {
-      { name = 'MICA AAM', loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = config.t.air.landBased.wpnNum }, --MICA X 4
+      { name = "MICA AAM", loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = config.t.air.landBased.wpnNum }, --MICA X 4
 
     }
   },
   {
-    name = 'Longtan AAB',
+    name = "Longtan AAB",
     baseGUID = constants.BASES.LONGTAN_AAB,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.AH64E,
-        platformName = 'AH-64E',
-        name = '601st Air Cavalry Bde',
+        platformName = "AH-64E",
+        name = "601st Air Cavalry Bde",
         loadouts = {
-          { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = 8, missionName = 'ASUW/ACV/W' },
+          { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = 8, missionName = "ASUW/ACV/W" },
         }
       }
     },
     loadouts = {
-      { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
   },
   {
-    name = 'Taoyuan International Airport',
+    name = "Taoyuan International Airport",
     baseGUID = constants.BASES.TAOYUAN_AIRPORT,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Air',
+        side = "Taiwan",
+        type = "Air",
         dbid = constants.PLATFORMS.CHUNG_SHYANG_II,
-        platformName = 'Chung Shyang II',
-        name = '1st Maritime Tactical Recon Sqn',
+        platformName = "Chung Shyang II",
+        name = "1st Maritime Tactical Recon Sqn",
         loadouts = {
-          { name = 'Reconnaissance', loadoutId = constants.LOADOUTS.CHUNG_SHYANG_II_RECON, num = 3, missionName = 'RECON/3' },
+          { name = "Reconnaissance", loadoutId = constants.LOADOUTS.CHUNG_SHYANG_II_RECON, num = 3, missionName = "RECON/3" },
         }
       }
     }
   },
   {
-    name = 'Rende Emergency Highway Strip',
+    name = "Rende Emergency Highway Strip",
     baseGUID = constants.BASES.RENDE_STRIP,
     loadouts = {
-      { name = 'Wan Chien', loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
     }
   },
   {
-    name = 'Madou Emergency Highway Strip',
+    name = "Madou Emergency Highway Strip",
     baseGUID = constants.BASES.MADOU_STRIP,
     loadouts = {
-      { name = 'AMRAAM',  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = 'Harpoon', loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = 'GBU',     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
-    name = 'Minxiong Emergency Highway Strip',
+    name = "Minxiong Emergency Highway Strip",
     baseGUID = constants.BASES.MINXIONG_STRIP,
     loadouts = {
-      { name = 'AMRAAM',  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = 'Harpoon', loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = 'GBU',     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
     }
   },
   {
-    name = 'Tainan Field Airdrome',
+    name = "Tainan Field Airdrome",
     baseGUID = constants.BASES.TAINAN_FIELD_AIRDROME,
     loadouts = {
-      { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
     }
   },
   {
-    name = 'Hsinchu Field Airdrome ',
+    name = "Hsinchu Field Airdrome ",
     baseGUID = constants.BASES.HSINCHU_FIELD_AIRDROME,
     loadouts = {
-      { name = 'Hellfire', loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
     }
   },
 }
 config.t.surface = {}
 ---@type table<string, SBJ__SAGDescriptor>
 config.t.surface.sag = {
-  ['264th Sqn'] = {
-    groupName = '264th Sqn',
+  ["264th Sqn"] = {
+    groupName = "264th Sqn",
     unitList = {
       kidd = {
         dbid = constants.PLATFORMS.KIDD,
         embarkedUnits = {
           {
-            side = 'Taiwan',
-            type = 'Air',
+            side = "Taiwan",
+            type = "Air",
             dbid = constants.PLATFORMS.S70C,
-            platformName = 'S-70C',
-            name = '2nd ASW Aviation Grp',
+            platformName = "S-70C",
+            name = "2nd ASW Aviation Grp",
             loadouts = {
               { loadoutId = constants.LOADOUTS.S70C_ASW, num = 2 },
             }
@@ -3665,11 +3667,11 @@ config.t.surface.sag = {
         dbid = constants.PLATFORMS.KANG_DING,
         embarkedUnits = {
           {
-            side = 'Taiwan',
-            type = 'Air',
+            side = "Taiwan",
+            type = "Air",
             dbid = constants.PLATFORMS.S70C,
-            platformName = 'S-70C',
-            name = '2nd ASW Aviation Grp',
+            platformName = "S-70C",
+            name = "2nd ASW Aviation Grp",
             loadouts = {
               { loadoutId = constants.LOADOUTS.S70C_ASW, num = 1 },
             }
@@ -3677,9 +3679,9 @@ config.t.surface.sag = {
         }
       },
     },
-    missionName = 'ASW/E',
+    missionName = "ASW/E",
     from = {
-      startingPoint = { latitude = 'N 24.28.47', longitude = 'E 122.25.49', },
+      startingPoint = { latitude = "N 24.28.47", longitude = "E 122.25.49", },
       heading = 0
     },
   },
@@ -3687,15 +3689,15 @@ config.t.surface.sag = {
 ---@type SBJ__AirbaseDeploymentDescriptor[]
 config.t.surface.deployedShips = {
   {
-    name = 'Port of Keelung',
+    name = "Port of Keelung",
     baseGUID = constants.BASES.PORT_OF_KEELUNG,
     embarkedUnits = {
       {
-        side = 'Taiwan',
-        type = 'Ship',
+        side = "Taiwan",
+        type = "Ship",
         dbid = constants.PLATFORMS.TA_CHIANG,
-        platformName = 'Ta Chiang',
-        name = '131st Fleet',
+        platformName = "Ta Chiang",
+        name = "131st Fleet",
         loadouts = {
           { loadoutId = 0, num = 6 },
         }

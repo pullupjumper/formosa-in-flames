@@ -34,14 +34,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Zone definition (No-Navigation or Exclusion Zone)
 ---@class CMO__Zone:table
 ---@field guid string The GUID of the zone (READ ONLY)
----@field type string The type of the zone: 'NoNavZone' = 0, 'ExclusionZone' = 1
+---@field type string The type of the zone: "NoNavZone" = 0, "ExclusionZone" = 1
 ---@field description string The description of the zone
 ---@field isactive boolean Zone is currently active
 ---@field area CMO__TableOfReferencePoints A set of reference points marking the zone (can be updated by a list of RPs or a table of new RP values)
 ---@field affects? table List of unit types (ship, submarine, aircraft, facility)
 ---@field locked? boolean Zone is locked or not
 ---@field markas? string Posture of violator of exclusion zone
----@field relativeto? string Unit name or unit GUID of unit to make this zone's area relative to (undocumented - the side of the unit must match)
+---@field relativeto? string Unit name or unit GUID of unit to make this zone"s area relative to (undocumented - the side of the unit must match)
 ---@field rename? string Name to rename the description/name to (only applies for calls to ScenEdit_SetZone)
 ---@field enablers table Table of enablers for the zone (undocumented)
 
@@ -65,7 +65,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Side configuration for faction settings
 ---@class SBJ__SideConfig:table
----@field field string Side field identifier ('c' for China, 'u' for US, 't' for Taiwan)
+---@field field string Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
 ---@field enemySide string Enemy side name
 ---@field displayName string Human-readable side name
 
@@ -90,8 +90,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field randomRadius number Maximum radius from center point (nautical miles)
 ---@field autodetectable boolean Whether units are automatically detectable
 ---@field unitname string Base name for created units (random suffix will be added if useRandomSuffix is true)
----@field sideName string Side name (e.g., 'China', 'Taiwan', 'US')
----@field unitType string Unit type (e.g., 'Facility', 'Ship', 'Submarine', 'Aircraft')
+---@field sideName string Side name (e.g., "China", "Taiwan", "US")
+---@field unitType string Unit type (e.g., "Facility", "Ship", "Submarine", "Aircraft")
 ---@field count number Number of units to create
 ---@field dbids number[] Array of database IDs to randomly select from
 ---@field useRandomSuffix? boolean Optional: Whether to append random text suffix to unit names (defaults to true)
@@ -134,8 +134,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Embarked unit configuration for ships and airbases
 ---@class SBJ__EmbarkedUnit:table
----@field side string Side name (e.g., 'China', 'Taiwan', 'US')
----@field type string Unit type (e.g., 'Aircraft', 'Helicopter')
+---@field side string Side name (e.g., "China", "Taiwan", "US")
+---@field type string Unit type (e.g., "Aircraft", "Helicopter")
 ---@field name string Unit name
 ---@field platformName string Display name of aircraft platform
 ---@field dbid number Unit database ID
@@ -224,7 +224,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Operation zone calculation result containing all ship type positions
 ---Stores calculated ship formation positions for each ship type in the operation zone
 ---@class SBJ__OperationZoneCalculationResult:table
----@field name string Operation zone name (e.g., 'Taoyuan', 'Penghu', 'Sishu')
+---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
 ---@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
 
 ---Amphibious operations context managing all amphibious operation state
@@ -331,7 +331,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Ship type starting point configuration
 ---@class SBJ__ShipTypeStartPoint:table
----@field side string Side name (e.g., 'China', 'Taiwan')
+---@field side string Side name (e.g., "China", "Taiwan")
 ---@field area string[] Area reference points array
 
 ---Fleet composition configuration for amphibious operations
@@ -365,7 +365,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Includes departure, destination, air landing zones, and participating forces
 ---Used for scenario initialization and deployment planning
 ---@class SBJ__AmphibiousOperationDescriptor:table
----@field name string Operation name (e.g., 'Taoyuan', 'Sishu', 'Penghu')
+---@field name string Operation name (e.g., "Taoyuan", "Sishu", "Penghu")
 ---@field names string[] Unit name array
 ---@field from SBJ__AmphibiousLocationDescriptor Departure configuration
 ---@field to SBJ__AmphibiousLocationDescriptor Destination configuration
@@ -505,7 +505,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Airfield pattern configuration for target matching
 ---@class SBJ__AirfieldPatterns:table
----@field runwayPattern string Lua pattern for runway matching (e.g., 'Runway %(%d+m%)')
+---@field runwayPattern string Lua pattern for runway matching (e.g., "Runway %(%d+m%)")
 ---@field taxiwayPattern string Lua pattern for taxiway matching
 ---@field shelterPattern string Lua pattern for aircraft shelter matching
 ---@field hangarPattern string Lua pattern for hangar matching
@@ -554,8 +554,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__TargetEntry:table
 ---@field name string Target display name (format: "BaseName/Description" for base-related targets, or just "Description" for standalone targets)
 ---@field guid string Target contact GUID
----@field category string Target category ('Airfield', 'Port', 'ISR', 'SAM', 'ASM', 'C2')
----@field subType string Target sub-type description (e.g., 'Runway (3000m)', 'Shelter', 'Pier', 'Radar')
+---@field category string Target category ("Airfield", "Port", "ISR", "SAM", "ASM", "C2")
+---@field subType string Target sub-type description (e.g., "Runway (3000m)", "Shelter", "Pier", "Radar")
 
 ---Target query parameter for filtering targets by base name and facility sub-types
 ---@class SBJ__TargetQueryParam:table
@@ -751,7 +751,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field name string Jammer unit identifier
 ---@field zoneName string Associated jamming zone name for area creation
 ---@field point CMO__Location Deployment coordinates
----@field randomRadius number Position randomization radius (kilometers)
+---@field randomRadius number Position randomization radius (nautical miles)
 ---@field radius number GPS jamming effectiveness radius (nautical miles)
 
 ---SIGINT detection configuration parameters

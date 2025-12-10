@@ -18,7 +18,7 @@ function Recon.launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
-    base = GameApi.ScenEdit_GetUnit(baseGUID, 'China')
+    base = GameApi.ScenEdit_GetUnit(baseGUID, "China")
   end
 
   if not base then
@@ -56,9 +56,9 @@ end
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 function Recon.launchWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
-    side = 'China',
-    type = 'Aircraft',
-    name = 'WZ-8',
+    side = "China",
+    type = "Aircraft",
+    name = "WZ-8",
     dbid = constants.PLATFORMS.WZ8,
     latitude = h6n.latitude,
     longitude = h6n.longitude,
@@ -72,10 +72,10 @@ function Recon.launchWZ8(h6n, course)
     return
   end
 
-  local arcT = { 'PB1', 'PB2', 'SB1', 'SB2', 'SMF1', 'PMF2' }
+  local arcT = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
   local updatedUnit = GameApi.ScenEdit_UpdateUnit({
     guid = wz8.guid,
-    mode = 'add_sensor',
+    mode = "add_sensor",
     dbid = 4576,
     arc_detect = arcT,
     arc_track = arcT
@@ -104,7 +104,7 @@ local function handleReconLaunch(entry)
     return false
   end
 
-  local units = Recon.launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, 'Aircraft')
+  local units = Recon.launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, "Aircraft")
 
   if units and #units > 0 then
     entry.unitGUID = units[1]
@@ -134,7 +134,7 @@ local function handleReconTracking(entry, actualUnit)
     return false
   end
 
-  local target = GameApi.ScenEdit_GetContact('China', entry.trackingTargetGUID)
+  local target = GameApi.ScenEdit_GetContact("China", entry.trackingTargetGUID)
 
   if not target then
     Logger.log("recon", string.format("Tracking target lost: %s", entry.trackingTargetGUID))
@@ -146,7 +146,7 @@ local function handleReconTracking(entry, actualUnit)
     latitude = target.latitude,
     longitude = target.longitude,
     desiredSpeed = entry.speed,
-    presetThrottle = 'Military'
+    presetThrottle = "Military"
   } }
 
   return true
@@ -479,7 +479,7 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
   for _, u in ipairs(units) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if actualUnit and actualUnit.dbid == UAVDBID and actualUnit.condition == 'Airborne' then
+    if actualUnit and actualUnit.dbid == UAVDBID and actualUnit.condition == "Airborne" then
       local distance = GameApi.Tool_Range(
         { latitude = actualUnit.latitude, longitude = actualUnit.longitude }, target.guid
       )

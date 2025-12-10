@@ -37,7 +37,7 @@ end
 function realApi.ScenEdit_AttackContact(attackerID, contactId, opts)
   local result = ScenEdit_AttackContact(attackerID, contactId, opts)
   if not result then
-    error('Failed to attack contact: ' .. tostring(contactId) .. ' with attacker: ' .. tostring(attackerID))
+    error("Failed to attack contact: " .. tostring(contactId) .. " with attacker: " .. tostring(attackerID))
   end
   return result
 end
@@ -102,7 +102,7 @@ function realApi.ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
   local result = ScenEdit_AssignUnitToMission(guid, missionName, isEscort)
 
   if not result then
-    error('Failed to assign')
+    error("Failed to assign")
   end
 
   return result
@@ -624,9 +624,9 @@ setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
 
-    if type(targetFunc) == 'function' then
+    if type(targetFunc) == "function" then
       return function(...)
-        local result, err = Utils.safeCall('GameApi.' .. key, targetFunc, ...)
+        local result, err = Utils.safeCall("GameApi." .. key, targetFunc, ...)
 
         if err then
           Logger.error(err)

@@ -43,7 +43,7 @@ local function initEventActions()
   }
 
   for _, name in ipairs(actionNames) do
-    GameApi.ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name, ScriptText = [[]] })
+    GameApi.ScenEdit_SetAction({ mode = "update", type = "LuaScript", name = name, ScriptText = [[]] })
   end
 end
 
@@ -68,7 +68,7 @@ local function initSpecialActions()
   for _, action in ipairs(actions) do
     local sideName = string.match(action.path, "scripts\\([^\\]+)\\")
     GameApi.ScenEdit_SetSpecialAction({
-      mode = 'update', ActionNameOrID = action.actionName, side = sideName, ScriptText = [[]]
+      mode = "update", ActionNameOrID = action.actionName, side = sideName, ScriptText = [[]]
     })
   end
 end
@@ -78,7 +78,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initSpecialActions()
   ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
-  TargetingProcess.scanTargets('China', config.targetScanning, saveData)
+  TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
   if saveData.t.IADS.isActivated then
@@ -90,19 +90,19 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.commsJamming.isActivated then
-    CommsJamming.initCommsJammersContext(saveData, 'China')
+    CommsJamming.initCommsJammersContext(saveData, "China")
   end
 
   if saveData.u.SIGINT.isActivated then
-    SIGINT.initReconAircraftContexts(saveData.u.SIGINT, 'US')
-    SIGINT.initReconAircraftContexts(saveData.c.SIGINT, 'China')
+    SIGINT.initReconAircraftContexts(saveData.u.SIGINT, "US")
+    SIGINT.initReconAircraftContexts(saveData.c.SIGINT, "China")
   end
 
   if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
-    Logger.log("init", 'Init data and save.')
+    Logger.log("init", "Init data and save.")
   else
-    Logger.log("init", 'Does not init data.')
+    Logger.log("init", "Does not init data.")
   end
 end
 

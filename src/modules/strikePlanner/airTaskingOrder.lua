@@ -85,11 +85,11 @@ local function initiateLoadoutForPackage(packageData)
 
       -- Get the base
       local base = GameApi.ScenEdit_GetUnit(roleData.baseGUID)
-      if base and #base.embarkedUnits['Aircraft'] > 0 then
+      if base and #base.embarkedUnits["Aircraft"] > 0 then
         local unitsProcessed = 0
 
         -- Only set loadout for aircraft matching unitDBID
-        for _, unitGUID in ipairs(base.embarkedUnits['Aircraft']) do
+        for _, unitGUID in ipairs(base.embarkedUnits["Aircraft"]) do
           if unitsProcessed >= unitCount then
             break -- Processed sufficient number of units
           end
@@ -214,20 +214,20 @@ local function createMission(packageData, role)
     )
 
     if mission and packageData[role].endTime then
-      mission['OnDeactivateDelete'] = true
-      mission['OnDeactivateRTB'] = true
+      mission["OnDeactivateDelete"] = true
+      mission["OnDeactivateRTB"] = true
 
       -- if role == 'striker' and packageData[role].startTime then
       --   mission['TakeOffTime'] = packageData[role].startTime
       -- end
       if packageData[role].startTime then
-        mission['TakeOffTime'] = packageData[role].startTime
+        mission["TakeOffTime"] = packageData[role].startTime
       end
 
-      mission['endtime'] = packageData[role].endTime
+      mission["endtime"] = packageData[role].endTime
 
       if packageData[role].timeOnStation then
-        mission['TimeOnTargetStation'] = packageData[role].timeOnStation
+        mission["TimeOnTargetStation"] = packageData[role].timeOnStation
       end
 
       if packageData[role].missionCreationParams.type == "strike" then
@@ -256,8 +256,8 @@ local function assignUnits(packageData)
         packageData[role].missionCreationParams.name,
         false
       )
-      if role ~= 'tanker' and role ~= 'striker' then
-        GameApi.ScenEdit_CreateMissionFlightPlan('China', packageData[role].missionCreationParams.name, {})
+      if role ~= "tanker" and role ~= "striker" then
+        GameApi.ScenEdit_CreateMissionFlightPlan("China", packageData[role].missionCreationParams.name, {})
       end
 
       if role == "striker" and result and #result > 0 then
@@ -299,7 +299,7 @@ local function processPackage(config, saveData, packageData)
     if packageData[role] then
       local missionCreated = createMission(packageData, role)
 
-      if role == 'striker' and not missionCreated then
+      if role == "striker" and not missionCreated then
         Logger.error("Critical failure: Could not create striker mission. Aborting package.")
         return false -- If primary mission creation fails, abort entire process
       end

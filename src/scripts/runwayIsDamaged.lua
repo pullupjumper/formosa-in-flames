@@ -1,4 +1,4 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local RunwayRepairment = require("src.modules.runwayRepairment")

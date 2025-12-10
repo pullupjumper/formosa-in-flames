@@ -675,7 +675,7 @@ def inject_special_actions_into_init(init_content: str, special_actions_mapping:
         line = lines[i]
 
         # Detect start of for loop for special actions
-        if 'for index, action in ipairs(actions) do' in line:
+        if 'for _, action in ipairs(actions) do' in line:
 
             # Get the indentation of the for loop
             indent = len(line) - len(line.lstrip())

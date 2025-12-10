@@ -14,13 +14,13 @@ local function getDistanceCategory(config, distance)
   local thresholds = config.c.commsJamming.distanceThresholds
 
   if distance < thresholds.close then
-    return 'close'
+    return "close"
   elseif distance < thresholds.medium then
-    return 'medium'
+    return "medium"
   elseif distance < thresholds.far then
-    return 'far'
+    return "far"
   elseif distance < thresholds.distant then
-    return 'distant'
+    return "distant"
   end
 
   return nil
@@ -38,7 +38,7 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
   for _, jammerCtx in pairs(saveData.c.commsJamming.jammers) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammerCtx.guid)
 
-    if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
+    if actualJammer and actualJammer.condition == "Airborne" and actualJammer.jammer then
       commModifier = config.c.commsJamming.baseJammingPower +
           GameApi.Tool_Range(affectedUnitGUID, actualJammer.guid) ^ config.c.commsJamming.distanceExponent +
           commModifier
@@ -48,7 +48,7 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
   for _, AEWCtx in pairs(saveData.t.air.landBased.AEW) do
     local actualAEW = GameApi.ScenEdit_GetUnit(AEWCtx.guid)
 
-    if actualAEW and actualAEW.condition == 'Airborne' then
+    if actualAEW and actualAEW.condition == "Airborne" then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualAEW.guid)
       local category = getDistanceCategory(config, distance)
 
@@ -221,7 +221,7 @@ local function findJammers(jammers)
   for _, jammer in pairs(jammers) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammer.guid)
 
-    if actualJammer and actualJammer.condition == 'Airborne' and actualJammer.jammer then
+    if actualJammer and actualJammer.condition == "Airborne" and actualJammer.jammer then
       table.insert(airborneJammers, actualJammer)
     end
   end
@@ -329,7 +329,7 @@ function CommsJamming.handleCommsJamming(config, saveData)
   for _, aircraftCtx in pairs(saveData.t.air.landBased.AC) do
     local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftCtx.guid)
 
-    if actualAircraft and actualAircraft.condition == 'Airborne' then
+    if actualAircraft and actualAircraft.condition == "Airborne" then
       aircraftProcessed = aircraftProcessed + 1
       local oldCommLevel = aircraftCtx.commsLevel or 0
       aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(config, saveData, actualAircraft.guid)

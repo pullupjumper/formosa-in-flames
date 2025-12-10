@@ -1,4 +1,4 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
@@ -12,7 +12,7 @@ local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInserti
 local constants = require("src.core.constants")
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
-local contacts = GameApi.ScenEdit_GetContacts('China')
+local contacts = GameApi.ScenEdit_GetContacts("China")
 
 if not contacts then
   Logger.error("contacts is nil")
@@ -39,7 +39,7 @@ end
 if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
-  for _, value in ipairs(GameApi.ScenEdit_GetUnit('CSG').group.unitlist) do
+  for _, value in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(value)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
       table.insert(ships, { guid = value, weaponDBID = config.c.surface.lacm.weaponDBID })

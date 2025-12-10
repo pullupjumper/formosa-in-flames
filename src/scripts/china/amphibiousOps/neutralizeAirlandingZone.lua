@@ -3,7 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local config = require("src.core.config")
 local AttackManager = require("src.modules.strikePlanner.attackManager")
 local ship = GameApi.ScenEdit_UnitX()
-local contacts = GameApi.ScenEdit_GetContacts('China')
+local contacts = GameApi.ScenEdit_GetContacts("China")
 local constants = require("src.core.constants")
 
 if not contacts then

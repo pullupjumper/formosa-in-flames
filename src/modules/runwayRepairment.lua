@@ -18,14 +18,14 @@ function RunwayRepairment.initRunways(config, saveData)
   local targetlist = TargetingProcess.filterTargetsByTypeAndBase(saveData.c.targetlist, taiwanAirBases)
 
   for _, guid in ipairs(targetlist) do
-    local contact = GameApi.ScenEdit_GetContact('China', guid)
+    local contact = GameApi.ScenEdit_GetContact("China", guid)
     if contact then
       table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
     end
   end
 
   -- Initialize China runways from facility units
-  local facilities = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local facilities = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not facilities then
     return
@@ -51,7 +51,7 @@ end
 ---@param side string Faction name ("China" or other faction)
 ---@param unit CMO__Unit The damaged runway unit
 function RunwayRepairment.whenRunwayIsDamaged(saveData, side, unit)
-  local field = (side == 'China') and 'c' or 't'
+  local field = (side == "China") and "c" or "t"
 
   if not saveData[field].repairRunway.isActivated then
     saveData[field].repairRunway.isActivated = true
@@ -75,7 +75,7 @@ function RunwayRepairment.repairRunway(config, runways)
       GameApi.ScenEdit_SetUnitDamage({
         guid = actualRunway.guid,
         dp = -actualRunway.damage.startdp * config.repairRunway.percentagePerHour / 12 / 100,
-        fires = 'NoFire'
+        fires = "NoFire"
       })
     end
   end

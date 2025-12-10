@@ -1,4 +1,4 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
@@ -10,19 +10,19 @@ local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 ---@type CMO__SideUnit[]
-local filteredUnits = GameApi.VP_GetSide({ side = 'China' })
+local filteredUnits = GameApi.VP_GetSide({ side = "China" })
     :unitsBy(constants.UNIT_TYPES.FACILITY, constants.FIXED_FACILITY_CATEGORIES.MOBILE_VEHICLE)
 
 if saveData == nil then
-  Logger.error('saveData is nil')
+  Logger.error("saveData is nil")
   return
 end
 
 if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
-  if unit.type == 'Aircraft' then
-    if unit.condition == 'Parked' and unit.dbid == constants.PLATFORMS.Z10 then
+  if unit.type == "Aircraft" then
+    if unit.condition == "Parked" and unit.dbid == constants.PLATFORMS.Z10 then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.destroyingAircraftOnTheGround),
@@ -63,7 +63,7 @@ if unit then
     end
   end
 
-  if unit.type == 'Ship' then
+  if unit.type == "Ship" then
     if unit.dbid == constants.PLATFORMS.TYPE_071 or
         unit.dbid == constants.PLATFORMS.TYPE_072III or
         unit.dbid == constants.PLATFORMS.TYPE_072A or
@@ -78,7 +78,7 @@ if unit then
     end
   end
 
-  if unit.type == 'Submarine' then
+  if unit.type == "Submarine" then
     GameApi.ScenEdit_SetScore(
       "Taiwan",
       (score + config.s.sub),
@@ -86,11 +86,11 @@ if unit then
     )
   end
 
-  if unit.type == 'Facility' then
+  if unit.type == "Facility" then
     if unit.dbid == constants.PLATFORMS.PHL16 or
         unit.dbid == constants.PLATFORMS.PHL03 or
-        string.find(unit.name, 'DF') or
-        string.find(unit.name, 'CJ') then
+        string.find(unit.name, "DF") or
+        string.find(unit.name, "CJ") then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
         (score + config.s.tel),
@@ -103,7 +103,7 @@ if unit then
         "You have destroyed a GPS jammer."
       )
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
-      GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, 'China', unit.name)
+      GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, "China", unit.name)
     elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
       local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
       Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
@@ -118,14 +118,14 @@ if unit then
         unit.dbid == constants.PLATFORMS.S300 or
         unit.dbid == constants.PLATFORMS.S400 or
         unit.dbid == constants.PLATFORMS.HQ12 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, "SAM", unit)
       IADS.activateNearestRadar(
         config,
         filteredUnits,
         unit
       )
     elseif unit.dbid == constants.PLATFORMS.JY26 or unit.dbid == constants.PLATFORMS.YLC8B then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, 'radar', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, "radar", unit)
       IADS.activateNearestRadar(
         config,
         filteredUnits,
@@ -146,7 +146,7 @@ if unit then
     end
   end
 
-  if unit.type == 'Ground unit' then
+  if unit.type == "Ground unit" then
 
   end
 end

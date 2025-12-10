@@ -1,19 +1,19 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local config = require("src.core.config")
-local ShipMovement = require('src.modules.landingOps.shipMovement')
-local AmphibiousLogistics = require('src.modules.landingOps.amphibiousLogistics')
-local AmphibiousAssault = require('src.modules.landingOps.amphibiousAssault')
-local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
+local ShipMovement = require("src.modules.landingOps.shipMovement")
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local UnitStatusUI = require("src.modules.unitStatusUI")
 local constants = require("src.core.constants")
-local contacts = GameApi.ScenEdit_GetContacts('China')
+local contacts = GameApi.ScenEdit_GetContacts("China")
 local currentTime = GameApi.ScenEdit_CurrentTime()
 ---@type CMO__SideUnit[]
-local filteredShips = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.SHIP)
+local filteredShips = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -100,7 +100,7 @@ end
 
 if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
   local result = UnitStatusUI.countUnitsInEachArea(config)
-  local hasEstablishedBeachheads = Utils.getCount(result) > 0 and result['Taoyuan']['ZBD-05'] >= 1
+  local hasEstablishedBeachheads = Utils.getCount(result) > 0 and result["Taoyuan"]["ZBD-05"] >= 1
 
   if hasEstablishedBeachheads then
     local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(

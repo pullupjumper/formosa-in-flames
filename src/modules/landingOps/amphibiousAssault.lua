@@ -69,7 +69,7 @@ end
 ---@param unit CMO__Unit Ship unit to check
 ---@return boolean # True if unit is an LST (not RORO or Barge)
 local function isLST(unit)
-  if unit.name ~= 'RORO' and unit.name ~= 'Barge' then
+  if unit.name ~= "RORO" and unit.name ~= "Barge" then
     return true
   end
   return false
@@ -88,7 +88,7 @@ function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
 
     if unit then
       for _, zone in ipairs(operationalZones) do
-        if unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
           local destination = GameApi.World_GetPointFromBearing({
             latitude = unit.latitude,
             longitude = unit.longitude,
@@ -163,9 +163,9 @@ function AmphibiousAssault.launchACV(params)
   if ztd > 0 then
     for i = 1, ztd, 1 do
       local addedUnit = GameApi.ScenEdit_AddUnit({
-        side = 'China',
-        type = 'Vehicle',
-        name = 'ZTD-05',
+        side = "China",
+        type = "Vehicle",
+        name = "ZTD-05",
         dbid = 240,
         latitude = ACVlocations[i].latitude,
         longitude = ACVlocations[i].longitude,
@@ -175,13 +175,13 @@ function AmphibiousAssault.launchACV(params)
         return
       end
 
-      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = "no" })
 
       if not doctrine then
         return
       end
 
-      addedUnit.throttle = 'Full'
+      addedUnit.throttle = "Full"
       addedUnit.course = destination
       index = i
       count = count + 1
@@ -191,9 +191,9 @@ function AmphibiousAssault.launchACV(params)
   if zbd > 0 then
     for i = index + 1, index + zbd, 1 do
       local addedUnit = GameApi.ScenEdit_AddUnit({
-        side = 'China',
-        type = 'Vehicle',
-        name = 'ZBD-05',
+        side = "China",
+        type = "Vehicle",
+        name = "ZBD-05",
         dbid = 241,
         LATITUDE = ACVlocations[i].latitude,
         LONGITUDE = ACVlocations[i].longitude,
@@ -203,13 +203,13 @@ function AmphibiousAssault.launchACV(params)
         return
       end
 
-      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = 'no' })
+      local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = "no" })
 
       if not doctrine then
         return
       end
 
-      addedUnit.throttle = 'Full'
+      addedUnit.throttle = "Full"
       addedUnit.course = destination
       count = count + 1
     end
@@ -227,7 +227,7 @@ function AmphibiousAssault.isFerryOrLST(ship)
     ship.dbid == constants.PLATFORMS.TYPE_072III or
     ship.dbid == constants.PLATFORMS.TYPE_072A or
     ship.dbid == constants.PLATFORMS.TYPE_073A or
-    ship.name == 'Ferry')
+    ship.name == "Ferry")
 end
 
 ---Get the operational zone for a ship based on its location

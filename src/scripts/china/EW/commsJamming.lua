@@ -1,4 +1,4 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local CommsJamming = require("src.modules.EW.commsJamming")

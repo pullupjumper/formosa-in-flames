@@ -341,7 +341,7 @@ local function calculateRoleAdvanceTime(packageData, role)
   end
 
   local rp = patrolZone[1]
-  local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = rp })
 
   if not point then
     Logger.log("dynamicOperations", "Reference point not found: " .. tostring(rp))
@@ -404,7 +404,7 @@ local function calculateSupportAdvanceTime(packageData)
   local furthestBase = nil
 
   local rp = packageData.escort.missionCreationParams.opts.patrolZone[1]
-  local point = GameApi.ScenEdit_GetReferencePoint({ side = 'China', name = rp })
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = rp })
 
   for _, base in ipairs(supportBases) do
     -- local distance = GameApi.Tool_Range(base.baseGUID, targetGUIDs[1])
@@ -453,7 +453,7 @@ local function calculateStrikerFlightTime(packageData)
     return TIME_CONSTANTS.MISSION_DURATION -- fallback to constant
   end
 
-  local range = GameApi.ScenEdit_QueryDB('weapon', packageData.striker.weaponDBID).ranges.land.max
+  local range = GameApi.ScenEdit_QueryDB("weapon", packageData.striker.weaponDBID).ranges.land.max
   local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1]) - range
   -- local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1])
 

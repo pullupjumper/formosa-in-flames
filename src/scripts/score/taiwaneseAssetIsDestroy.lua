@@ -1,4 +1,4 @@
-local gKH = require('src.core.gKH_State_Standalone')
+local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
@@ -11,14 +11,14 @@ local unit = GameApi.ScenEdit_UnitX()
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then
-  Logger.error('saveData is nil')
+  Logger.error("saveData is nil")
   return
 end
 
 if unit then
   local score = GameApi.ScenEdit_GetScore("Taiwan")
 
-  if unit.type == 'Facility' then
+  if unit.type == "Facility" then
     if unit.dbid == constants.PLATFORMS.UNDERGROUND_SHELTER then
       GameApi.ScenEdit_SetScore(
         "Taiwan",
@@ -35,19 +35,19 @@ if unit then
         unit.dbid == constants.PLATFORMS.TPS43F or
         unit.dbid == constants.PLATFORMS.HR3000 or
         unit.dbid == constants.PLATFORMS.GE592 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, 'radar', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, "radar", unit)
     elseif unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or unit.dbid == constants.PLATFORMS.PAC3 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, "SAM", unit)
     elseif unit.dbid == constants.PLATFORMS.TC2 or unit.dbid == constants.PLATFORMS.SKY_GUARD then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.TAAOC, 'SAM', unit)
+      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.TAAOC, "SAM", unit)
     elseif unit.dbid == constants.PLATFORMS.C2 or unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
       IADS.processC2Disruption(saveData.t.IADS, unit)
     elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
-      GPSJamming.removeJammingZoneByName(saveData.t.GPSJamming.jammers, 'Taiwan', unit.name)
+      GPSJamming.removeJammingZoneByName(saveData.t.GPSJamming.jammers, "Taiwan", unit.name)
     end
   end
 
-  if unit.type == 'Aircraft' then
+  if unit.type == "Aircraft" then
     if unit.dbid == constants.PLATFORMS.E2K then
       saveData.t.air.landBased.AEW[unit.guid] = nil
     else

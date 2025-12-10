@@ -21,7 +21,21 @@ busted modules/assignMission_spec.lua
 ```bash
 # Process Lua modules for deployment (removes requires, cleans modules)
 python tools/build_lua_scenario.py
+
+# On Windows Traditional Chinese systems, set UTF-8 encoding (script uses emoji characters)
+PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py
+
+# Clean only (src -> slim)
+PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py --clean-only
+
+# Merge only (slim -> main.lua)
+PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py --merge-only
 ```
+
+**Windows Encoding Note**:
+- Windows Traditional Chinese systems default to CP950 encoding, which cannot display emoji characters (🚀, 🧹, 💉, etc.) used in Python scripts
+- Must set `PYTHONIOENCODING=utf-8` environment variable before execution
+- This is a Windows OS limitation, not a code issue
 
 ### Development Mode
 Set `config.isDevMode = true` in `src/core/config.lua` for development features including console logging.

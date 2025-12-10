@@ -1,5 +1,5 @@
-local UnitGenerator = require('src.modules.unitGenerator')
-local config = require('src.core.config')
+local UnitGenerator = require("src.modules.unitGenerator")
+local config = require("src.core.config")
 
 -- Remove existing landing ships
 UnitGenerator.removeLandingShips()

@@ -1,5 +1,5 @@
-local gKH = require('src.core.gKH_State_Standalone')
-local SecondWaveUnloading = require('src.modules.landingOps.secondWaveUnloading')
+local gKH = require("src.core.gKH_State_Standalone")
+local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
@@ -18,18 +18,18 @@ if not ship then
   return
 end
 
-if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, ship) then
+if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(saveData, ship) then
   ship.course = nil
   ship.manualSpeed = 0
   ship.holdposition = true
 
   local bridge = GameApi.ScenEdit_AddUnit({
-    side      = 'China',
-    type      = 'Facility',
+    side      = "China",
+    type      = "Facility",
     latitude  = ship.latitude,
     longitude = ship.longitude,
     dbid      = constants.PLATFORMS.BRIDGE,
-    unitname  = 'bridge',
+    unitname  = "bridge",
   })
 
   if not bridge then
@@ -39,7 +39,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.hasExtendedBridge(saveData, 
   saveData.c.PHIBOP.barges[ship.guid].bridgeGUID = bridge.guid
 end
 
-if ship.name == 'Barge' and not SecondWaveUnloading.isBridgeDestroyed(saveData, ship) then
+if ship.name == "Barge" and not SecondWaveUnloading.isBridgeDestroyed(saveData, ship) then
   for _, guid in ipairs(saveData.c.PHIBOP.barges[ship.guid].roros) do
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
@@ -59,7 +59,7 @@ if ship.name == 'Barge' and not SecondWaveUnloading.isBridgeDestroyed(saveData, 
   end
 end
 
-if ship.name == 'RORO' then
+if ship.name == "RORO" then
   ship.course = nil
   ship.manualSpeed = 0
   ship.holdposition = true

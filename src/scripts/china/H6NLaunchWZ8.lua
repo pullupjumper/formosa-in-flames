@@ -1,5 +1,5 @@
-local gKH = require('src.core.gKH_State_Standalone')
-local Recon = require('src.modules.strikePlanner.recon')
+local gKH = require("src.core.gKH_State_Standalone")
+local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")

@@ -103,7 +103,7 @@ local function executeFireSupportTasks(FSEM)
 
       if result > 0 then
         FST.isFinished = true
-        Logger.log("ground", 'Fired ' .. result .. ' missiles for ' .. FST.name)
+        Logger.log("ground", "Fired " .. result .. " missiles for " .. FST.name)
       end
     end
   end

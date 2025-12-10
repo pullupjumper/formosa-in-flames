@@ -43,11 +43,11 @@ end
 ---@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return number # The UTC timestamp corresponding to the datetime string
 function Utils.parseDatetimeToTimestamp(datetimeStr)
-  local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
+  local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
 
   if not (year and month and day and hour and min and sec) then
-    error('Invalid datetime format: ' .. tostring(datetimeStr))
+    error("Invalid datetime format: " .. tostring(datetimeStr))
   end
 
   -- First convert to UTC table
@@ -183,7 +183,7 @@ end
 ---@param original T The table to deep copy
 ---@return T # A deep copy of the original table
 function Utils.deepCopy(original)
-  if type(original) ~= 'table' then
+  if type(original) ~= "table" then
     return original
   end
 
@@ -208,11 +208,11 @@ end
 ---@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
 ---@return {date: string, time: string} # Object with date in "YYYY/MM/DD" format and time in "HH:MM:SS" format
 function Utils.formatDateTime(datetimeStr)
-  local pattern = '(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)'
+  local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
   local year, month, day, hour, min, sec = datetimeStr:match(pattern)
 
   if not (year and month and day and hour and min and sec) then
-    error('Invalid datetime format: ' .. tostring(datetimeStr))
+    error("Invalid datetime format: " .. tostring(datetimeStr))
   end
 
   return {

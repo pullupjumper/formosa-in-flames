@@ -26,25 +26,25 @@ end
 function IADS.processC2Disruption(IADSContext, C2)
   -- Check China C2 nodes
   if IADSContext.C2 and IADSContext.C2[C2.guid] then
-    disableUnitsUnderC2Node(IADSContext.C2[C2.guid], 'radar')
-    disableUnitsUnderC2Node(IADSContext.C2[C2.guid], 'SAM')
+    disableUnitsUnderC2Node(IADSContext.C2[C2.guid], "radar")
+    disableUnitsUnderC2Node(IADSContext.C2[C2.guid], "SAM")
     IADSContext.C2[C2.guid] = nil
-    Logger.log("IADS", C2.name .. '\'s C2 is destroyed')
+    Logger.log("IADS", C2.name .. "'s C2 is destroyed")
   end
 
   -- Check Taiwan ROCC nodes
   if IADSContext.ROCC and IADSContext.ROCC[C2.guid] then
-    disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], 'radar')
-    disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], 'SAM')
+    disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], "radar")
+    disableUnitsUnderC2Node(IADSContext.ROCC[C2.guid], "SAM")
     IADSContext.ROCC[C2.guid] = nil
-    Logger.log("IADS", C2.name .. '\'s ROCC is destroyed')
+    Logger.log("IADS", C2.name .. "'s ROCC is destroyed")
   end
 
   -- Check Taiwan TAAOC nodes
   if IADSContext.TAAOC and IADSContext.TAAOC[C2.guid] then
-    disableUnitsUnderC2Node(IADSContext.TAAOC[C2.guid], 'SAM')
+    disableUnitsUnderC2Node(IADSContext.TAAOC[C2.guid], "SAM")
     IADSContext.TAAOC[C2.guid] = nil
-    Logger.log("IADS", C2.name .. '\'s TAAOC is destroyed')
+    Logger.log("IADS", C2.name .. "'s TAAOC is destroyed")
   end
 end
 
@@ -58,7 +58,7 @@ function IADS.removeDestroyedUnitContextFromIADS(C2TypeContext, type, destroyedU
     for _, area in pairs(ctx.areas) do
       if destroyedUnit:inArea(area) and C2TypeContext[ctx.guid] then
         C2TypeContext[ctx.guid][type][destroyedUnit.guid] = nil
-        Logger.log("IADS", destroyedUnit.name .. '\'s ' .. type .. ' is destroyed')
+        Logger.log("IADS", destroyedUnit.name .. "'s " .. type .. " is destroyed")
       end
     end
   end
@@ -114,8 +114,8 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
 
   -- Activate the nearest radar found
   if temp.unit ~= nil then
-    GameApi.ScenEdit_SetEMCON('Unit', temp.unit.guid, 'Radar=Active')
-    Logger.log("IADS", tostring(temp.unit.name) .. '\'s radar is activated.')
+    GameApi.ScenEdit_SetEMCON("Unit", temp.unit.guid, "Radar=Active")
+    Logger.log("IADS", tostring(temp.unit.name) .. "'s radar is activated.")
   end
 end
 
@@ -129,8 +129,8 @@ function IADS.addC2Facilities(IADSConfig)
       dbids = IADSConfig.C2FacilityDBIDs,
       count = 3,
       randomRadius = IADSConfig.randomRadius,
-      sideName = 'China',
-      unitType = 'Facility',
+      sideName = "China",
+      unitType = "Facility",
       unitname = "Suspected C2 Facility#",
       autodetectable = true
     })
@@ -150,7 +150,7 @@ end
 ---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
 function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
-  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   IADSContext.C2 = {}
 
   if not filteredUnits then
@@ -177,8 +177,8 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
     if #facilities > 0 then
       local randomIdx = math.random(#facilities)
       IADSContext.C2[facilities[randomIdx].guid] = {
-        name = facilities[randomIdx].name .. '/' .. setting.areaName,
-        msg = 'Radio source, ' .. facilities[randomIdx].name,
+        name = facilities[randomIdx].name .. "/" .. setting.areaName,
+        msg = "Radio source, " .. facilities[randomIdx].name,
         guid = facilities[randomIdx].guid,
         areas = setting.areas,
         SAM = {},
@@ -199,7 +199,7 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
                 actualUnit.dbid == constants.PLATFORMS.S300 or
                 actualUnit.dbid == constants.PLATFORMS.S400 or
                 actualUnit.dbid == constants.PLATFORMS.HQ12) and
-              not string.find(actualUnit.name, 'DECOY') then
+              not string.find(actualUnit.name, "DECOY") then
             IADSContext.C2[C2GUID].SAM[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -207,7 +207,7 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
               currOODA = actualUnit.OODA,
               isOutOfComms = false,
               outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
+              EMCONSetting = "Radar=Passive"
             }
           end
 
@@ -220,7 +220,7 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
               currOODA = actualUnit.OODA,
               isOutOfComms = false,
               outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
+              EMCONSetting = "Radar=Passive"
             }
           end
         end
@@ -255,7 +255,7 @@ function IADS.initC2Contexts(IADSContext)
               currOODA = actualUnit.OODA,
               isOutOfComms = false,
               outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
+              EMCONSetting = "Radar=Passive"
             }
           end
 
@@ -270,7 +270,7 @@ function IADS.initC2Contexts(IADSContext)
               currOODA = actualUnit.OODA,
               isOutOfComms = false,
               outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
+              EMCONSetting = "Radar=Passive"
             }
           end
         end
@@ -288,7 +288,7 @@ function IADS.initC2Contexts(IADSContext)
               currOODA = actualUnit.OODA,
               isOutOfComms = false,
               outofcomms = 0,
-              EMCONSetting = 'Radar=Passive'
+              EMCONSetting = "Radar=Passive"
             }
           end
         end
@@ -301,7 +301,7 @@ end
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
 function IADS.removeC2Facilities(IADSConfig)
-  local filteredUnits = GameApi.VP_GetSide({ name = 'China' }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 
   if not filteredUnits then
@@ -313,7 +313,7 @@ function IADS.removeC2Facilities(IADSConfig)
     if actualUnit then
       for _, DBID in ipairs(IADSConfig.C2FacilityDBIDs) do
         if actualUnit.dbid == DBID then
-          GameApi.ScenEdit_DeleteUnit({ side = 'China', guid = actualUnit.guid })
+          GameApi.ScenEdit_DeleteUnit({ side = "China", guid = actualUnit.guid })
           removedCount = removedCount + 1
           break
         end

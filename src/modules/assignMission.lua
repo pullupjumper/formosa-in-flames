@@ -17,7 +17,7 @@ local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit and unit.dbid == platformDBID then
-      unit.manualSpeed = 'OFF'
+      unit.manualSpeed = "OFF"
       table.insert(filteredPlatforms, unit)
     end
   end
@@ -116,7 +116,7 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, num, weaponDB
     return nil -- Early return
   end
 
-  if #airbase.embarkedUnits['Aircraft'] == 0 then return nil end
+  if #airbase.embarkedUnits["Aircraft"] == 0 then return nil end
 
   ---@type CMO__Mission
   local m = GameApi.ScenEdit_GetMission(airbase.side, missionName)

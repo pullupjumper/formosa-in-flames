@@ -1,3 +1,3 @@
-local UnitStatusUI = require('src.modules.unitStatusUI')
+local UnitStatusUI = require("src.modules.unitStatusUI")
 
 UnitStatusUI.wcsSettingTable()

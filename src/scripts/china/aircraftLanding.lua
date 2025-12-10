@@ -35,7 +35,7 @@ if unit then
     -- end
 
     unit.readytime = config.readytime
-    unit.mission = ''
+    unit.mission = ""
   end
 
   -- if unit.dbid == constants.PLATFORMS.Z_18 then

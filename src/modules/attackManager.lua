@@ -10,31 +10,31 @@ local AttackManager = {}
 local function getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0
   local maxWeaponCapacity = 0
-  local mountDBID = unit.mounts[1]['mount_dbid']
+  local mountDBID = unit.mounts[1]["mount_dbid"]
   local mountIndex = 1
   local wpnIndex = 1
 
   -- Find the specified weapon or use the first available weapon with ammo
   for mountIdx, mount in ipairs(unit.mounts) do
-    for wpnIdx, wpn in ipairs(mount['mount_weapons']) do
-      if (weaponDBID == nil and wpn['wpn_default'] > 0) or wpn['wpn_dbid'] == weaponDBID then
+    for wpnIdx, wpn in ipairs(mount["mount_weapons"]) do
+      if (weaponDBID == nil and wpn["wpn_default"] > 0) or wpn["wpn_dbid"] == weaponDBID then
         wpnIndex = wpnIdx
         mountIndex = mountIdx
-        mountDBID = mount['mount_dbid']
-        availableWeapons = availableWeapons + wpn['wpn_current']
-        maxWeaponCapacity = maxWeaponCapacity + wpn['wpn_maxcap']
+        mountDBID = mount["mount_dbid"]
+        availableWeapons = availableWeapons + wpn["wpn_current"]
+        maxWeaponCapacity = maxWeaponCapacity + wpn["wpn_maxcap"]
       end
     end
   end
 
   -- If no weaponDBID was provided, use the one we found
   if weaponDBID == nil then
-    weaponDBID = unit.mounts[mountIndex]['mount_weapons'][wpnIndex]['wpn_dbid']
+    weaponDBID = unit.mounts[mountIndex]["mount_weapons"][wpnIndex]["wpn_dbid"]
   end
 
   -- Get currently assigned weapons
   local alreadyAllocatedWeapons = 0
-  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation(unit.guid, '', '')
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation(unit.guid, "", "")
 
   if not weaponAllocations then
     weaponAllocations = {}
@@ -60,7 +60,7 @@ end
 local function getAmmoAllocatedForTarget(contactGuid, side)
   local totalTargetAmmoCount = 0
 
-  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation('', contactGuid, side)
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation("", contactGuid, side)
 
   if not weaponAllocations then
     weaponAllocations = {}
@@ -89,7 +89,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
     return false
   end
 
-  local isHold = doctrine.weapon_control_status_land == 2 or doctrine.weapon_control_status_land == '2'
+  local isHold = doctrine.weapon_control_status_land == 2 or doctrine.weapon_control_status_land == "2"
 
   if isHold then
     return false
@@ -97,13 +97,13 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
-    Logger.log("attackManager", 'No weapons available, no need to fire more')
+    Logger.log("attackManager", "No weapons available, no need to fire more")
     return false
   end
 
   -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
-    Logger.log("attackManager", 'Maximum weapon allocation reached, no need to fire more')
+    Logger.log("attackManager", "Maximum weapon allocation reached, no need to fire more")
     return false
   end
 
@@ -111,7 +111,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
-    Logger.log("attackManager", 'Target already has sufficient weapons allocated, no need to fire more')
+    Logger.log("attackManager", "Target already has sufficient weapons allocated, no need to fire more")
     return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 
@@ -157,7 +157,7 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
     local result = GameApi.ScenEdit_AttackContact(
       guid,
       contact.guid,
-      { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
+      { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
 
     if result then
@@ -193,7 +193,7 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
     local result = GameApi.ScenEdit_AttackContact(
       unit.guid,
       contact.guid,
-      { mode = '1', qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
+      { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
 
     if result then
@@ -294,7 +294,7 @@ function AttackManager.attackContacts(opts)
   local qty = opts.qty or 1
   local firingUnits = opts.firingUnits
   local weaponDBID = opts.weaponDBID
-  local side = opts.side or 'China'
+  local side = opts.side or "China"
 
   for _, contact in ipairs(contacts) do
     result = AttackManager.attackContact(

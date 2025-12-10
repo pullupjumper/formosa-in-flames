@@ -213,7 +213,7 @@ local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isS
   -- Detection logic
   for _, ctx in pairs(sigintContext.RA) do
     local actualReconAC = GameApi.ScenEdit_GetUnit(ctx.guid)
-    if not actualReconAC or actualReconAC.condition ~= 'Airborne' then
+    if not actualReconAC or actualReconAC.condition ~= "Airborne" then
       goto continue
     end
 
@@ -296,7 +296,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   local transmission = sigintContext.transmissions[unitCtx.guid]
 
   if not transmission then
-    local unitType = (string.find(unitCtx.name, 'ROCC') or string.find(unitCtx.name, 'TAAOC')) and 'C2' or 'mobile'
+    local unitType = (string.find(unitCtx.name, "ROCC") or string.find(unitCtx.name, "TAAOC")) and "C2" or "mobile"
     transmission = {
       name = unitCtx.name,
       guid = unitCtx.guid,
@@ -431,7 +431,7 @@ function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if unit and unit.type == 'Aircraft' and
+    if unit and unit.type == "Aircraft" and
         (unit.dbid == constants.PLATFORMS.RC135V or unit.dbid == constants.PLATFORMS.Y9DZ) then
       SIGINTContext.RA[unit.guid] = {
         guid = unit.guid,

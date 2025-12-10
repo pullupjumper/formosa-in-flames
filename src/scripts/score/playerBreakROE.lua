@@ -10,7 +10,7 @@ if unit then
     "Taiwan", (score + config.s.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )
-  Logger.log("score", 'You have attacked first to cause a military esclaion.')
+  Logger.log("score", "You have attacked first to cause a military esclaion.")
 end
 -- ScenEdit_SpecialMessage('Taiwan', 'enter')
 -- if unit then

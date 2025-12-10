@@ -1,4 +1,4 @@
-local UnitGenerator = require('src.modules.unitGenerator')
-local config = require('src.core.config')
+local UnitGenerator = require("src.modules.unitGenerator")
+local config = require("src.core.config")
 
-UnitGenerator.createSAGs(config.t.surface.sag, 'Taiwan')
+UnitGenerator.createSAGs(config.t.surface.sag, "Taiwan")

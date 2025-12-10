@@ -61,9 +61,9 @@ local function matchAirfieldTarget(description, baseLocations, guid, threshold, 
     for baseName, location in pairs(baseLocations) do
       if isNearby(location, guid, threshold) then
         return {
-          name = baseName .. '/' .. description,
+          name = baseName .. "/" .. description,
           guid = guid,
-          category = 'Airfield',
+          category = "Airfield",
           subType = description,
         }
       end
@@ -78,9 +78,9 @@ local function matchAirfieldTarget(description, baseLocations, guid, threshold, 
     for baseName, location in pairs(baseLocations) do
       if isNearby(location, guid, threshold) then
         return {
-          name = baseName .. '/' .. description,
+          name = baseName .. "/" .. description,
           guid = guid,
-          category = 'Airfield',
+          category = "Airfield",
           subType = description,
         }
       end
@@ -93,9 +93,9 @@ local function matchAirfieldTarget(description, baseLocations, guid, threshold, 
     for baseName, location in pairs(baseLocations) do
       if isNearby(location, guid, threshold) then
         return {
-          name = baseName .. '/' .. description,
+          name = baseName .. "/" .. description,
           guid = guid,
-          category = 'Airfield',
+          category = "Airfield",
           subType = description,
         }
       end
@@ -117,9 +117,9 @@ local function matchPortTarget(description, portLocations, guid, threshold, patt
     for portName, location in pairs(portLocations) do
       if isNearby(location, guid, threshold) then
         return {
-          name = portName .. '/' .. description,
+          name = portName .. "/" .. description,
           guid = guid,
-          category = 'Port',
+          category = "Port",
           subType = description,
         }
       end
@@ -139,7 +139,7 @@ local function matchStandaloneTarget(description, guid, patterns)
     return {
       name = description,
       guid = guid,
-      category = 'ISR',
+      category = "ISR",
       subType = description,
     }
   end
@@ -148,7 +148,7 @@ local function matchStandaloneTarget(description, guid, patterns)
     return {
       name = description,
       guid = guid,
-      category = 'SAM',
+      category = "SAM",
       subType = description,
     }
   end
@@ -157,7 +157,7 @@ local function matchStandaloneTarget(description, guid, patterns)
     return {
       name = description,
       guid = guid,
-      category = 'ASM',
+      category = "ASM",
       subType = description,
     }
   end
@@ -166,7 +166,7 @@ local function matchStandaloneTarget(description, guid, patterns)
     return {
       name = description,
       guid = guid,
-      category = 'C2',
+      category = "C2",
       subType = description,
     }
   end
@@ -264,7 +264,7 @@ function TargetingProcess.findAirborne(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if contact.emissions and contact.emissions[1] then
-        local emission = contact.emissions[1]['sensor_dbid']
+        local emission = contact.emissions[1]["sensor_dbid"]
         if (emission == constants.SENSORS.P3C_SEAVUE or emission == constants.SENSORS.E2K_APS145) and
             contact.typed == 0 and
             contact:inArea(area) then
@@ -290,11 +290,11 @@ function TargetingProcess.analyzeEmissions(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       local isSensor = contact.emissions and
-          (contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK3_LONG_MOUNTAIN or
-            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK3_LONG_WHITE_2 or
-            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TK2_CS_MPG25 or
-            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.PAC3_MPQ65 or
-            contact.emissions[1]['sensor_dbid'] == constants.SENSORS.TC2_CS_MPQ90)
+          (contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK3_LONG_MOUNTAIN or
+            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK3_LONG_WHITE_2 or
+            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK2_CS_MPG25 or
+            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.PAC3_MPQ65 or
+            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TC2_CS_MPQ90)
       local isAgeLessThan = contact.lastDetections and contact.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
       if contact:inArea(area) and isSAM then table.insert(SAMTargets, contact.guid) end
@@ -344,14 +344,14 @@ end
 local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
   local isTracking = false
-  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
   end
 
   for _, guid in ipairs(contacts) do
-    local contact = GameApi.ScenEdit_GetContact('China', guid)
+    local contact = GameApi.ScenEdit_GetContact("China", guid)
 
     if contact then
       for _, tm in pairs(saveData.c.SIGINT.transmissions) do
@@ -360,7 +360,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
         if distance and isWithinRange(config, distance, tm) then
           table.insert(targets, guid)
 
-          if not isTracking and tm.type == 'mobile' then
+          if not isTracking and tm.type == "mobile" then
             isTracking = Recon.trackTarget(saveData.c.recon, filteredUnits, constants.PLATFORMS.BZK005, contact)
           end
         end
@@ -401,7 +401,7 @@ function TargetingProcess.findNavalTargets(opts)
   local config = opts.config
   local navalTargets = {}
   local hasTracked = false
-  local filteredUnits = GameApi.VP_GetSide({ side = 'China' }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -437,8 +437,8 @@ function TargetingProcess.findC2(opts)
 
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
-      if (string.find(contact.type_description, 'ROCC') ~= nil or
-            string.find(contact.type_description, 'TAAOC') ~= nil) and
+      if (string.find(contact.type_description, "ROCC") ~= nil or
+            string.find(contact.type_description, "TAAOC") ~= nil) and
           contact:inArea(area) then
         table.insert(targets, contact.guid)
       end
@@ -461,13 +461,13 @@ function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
     return false
   end
 
-  local isHelipad = string.find(target.type_description, 'Helipad') ~= nil
+  local isHelipad = string.find(target.type_description, "Helipad") ~= nil
   local BDA = target.BDA
   local detections = target.lastDetections
-  local hasEvaluated = BDA and not (BDA['STRUCTURAL'] == 'Heavy damage') and
+  local hasEvaluated = BDA and not (BDA["STRUCTURAL"] == "Heavy damage") and
       (detections and detections[1].age <= contactAge) and
       not isHelipad
-  local isHelipadEmbarkedWithHelicopter = isHelipad and #actualUnit.embarkedUnits['Aircraft'] > 0
+  local isHelipadEmbarkedWithHelicopter = isHelipad and #actualUnit.embarkedUnits["Aircraft"] > 0
   return hasEvaluated or isHelipadEmbarkedWithHelicopter or isFirstWave
 end
 
@@ -479,12 +479,12 @@ end
 function TargetingProcess.assessTargetsDamage(task, isFirstWave)
   local evaluatedTargetlist = {}
 
-  if type(task.target.list) ~= 'table' or #task.target.list == 0 then
+  if type(task.target.list) ~= "table" or #task.target.list == 0 then
     return evaluatedTargetlist
   end
 
   for _, guid in ipairs(task.target.list) do
-    local actualTarget = GameApi.ScenEdit_GetContact('China', guid)
+    local actualTarget = GameApi.ScenEdit_GetContact("China", guid)
 
     if actualTarget and TargetingProcess.evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)

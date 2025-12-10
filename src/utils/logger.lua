@@ -51,7 +51,7 @@ function Logger.log(moduleName, message)
   if moduleConfig and moduleConfig.verbose then
     local formattedMessage = string.format("[%s] %s", moduleName, message)
     if Logger.inGame then
-      printBox('playerside', "[LOG] " .. formattedMessage)
+      printBox("playerside", "[LOG] " .. formattedMessage)
     else
       print("[LOG] " .. formattedMessage)
     end
@@ -62,7 +62,7 @@ end
 ---@param message string Error message
 function Logger.error(message)
   if Logger.inGame then
-    printBox('playerside', "[ERROR] " .. message)
+    printBox("playerside", "[ERROR] " .. message)
   else
     print("[ERROR] " .. message)
   end
@@ -72,7 +72,7 @@ end
 ---@param message string Warning message
 function Logger.warn(message)
   if Logger.inGame then
-    printBox('playerside', "[WARN] " .. message)
+    printBox("playerside", "[WARN] " .. message)
   else
     print("[WARN] " .. message)
   end

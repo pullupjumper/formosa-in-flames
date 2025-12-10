@@ -15,15 +15,15 @@ local GPSJamming = {}
 ---@param enemySideName string Enemy side name whose weapons will be jammed
 ---@return boolean # Whether the jamming zone was successfully created
 local function addJammingZone(unit, descriptor, point, sideName, enemySideName)
-  GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+  GameApi.ScenEdit_SetEMCON("Unit", unit.guid, "OECM=Active")
 
   local area = GameUtils.newArea(point, {
     side = sideName,
-    shape = 'circle',
+    shape = "circle",
     distance = descriptor.radius
   })
 
-  if area and type(area) == 'table' then
+  if area and type(area) == "table" then
     GameApi.ScenEdit_AddZone(sideName, -925, {
       description = descriptor.zoneName,
       area = area
@@ -33,8 +33,8 @@ local function addJammingZone(unit, descriptor, point, sideName, enemySideName)
       descriptor.zoneName,
       { TargetSide = enemySideName, TargetType = 6 },
       area,
-      'GPSJamming.jamming(config, \"' .. sideName .. '\")',
-      'add',
+      "GPSJamming.jamming(config, \\\"" .. sideName .. "\\\")",
+      "add",
       false,
       true,
       true
@@ -64,7 +64,7 @@ local function removeEvent(descriptor, zone, sideObj, sideName, isDeleted)
   if isDeleted then
     GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = descriptor.name })
   end
-  GameUtils.unitEntersAreaEvent(descriptor.zoneName, {}, {}, '', 'remove', false, false, false)
+  GameUtils.unitEntersAreaEvent(descriptor.zoneName, {}, {}, "", "remove", false, false, false)
   Logger.log("GPSJamming", "[GPS Jamming] Removed GPS jamming zone: " .. descriptor.zoneName)
   return true
 end
@@ -118,19 +118,19 @@ function GPSJamming.jamming(config, sideName)
 
           -- We change the course of the weapon assigning the new latitude and longitude info
           if count == 1 or count == 0 then -- If the unit only has the terminal point
-            weaponU.target = { latitude = lat, longitude = lon, GUID = 'BOL' }
-            weaponU.course = { { latitude = lat, longitude = lon, TypeOf = 'TerminalPoint' } }
+            weaponU.target = { latitude = lat, longitude = lon, GUID = "BOL" }
+            weaponU.course = { { latitude = lat, longitude = lon, TypeOf = "TerminalPoint" } }
           else -- For weapons with a predefined course of waypoints, we maintain all the waypoints
             local newCourse = {}
             for k, v in ipairs(weaponU.course) do
               if k ~= count then
                 newCourse[k] = v
               else
-                newCourse[k] = { latitude = lat, longitude = lon, TypeOf = 'TerminalPoint' }
+                newCourse[k] = { latitude = lat, longitude = lon, TypeOf = "TerminalPoint" }
               end
             end
             weaponU.course = newCourse
-            weaponU.target = { latitude = lat, longitude = lon, GUID = 'BOL' }
+            weaponU.target = { latitude = lat, longitude = lon, GUID = "BOL" }
           end
         else
           Logger.error("[GPS Jamming] Weapon " .. weaponU.name .. " has no course data")
@@ -183,14 +183,14 @@ function GPSJamming.addGPSJammer(descriptor, sideName)
     side = sideName,
     unitname = descriptor.name,
     dbid = constants.PLATFORMS.GPS_JAMMER,
-    type = 'Facility',
+    type = "Facility",
     latitude = descriptor.point.latitude,
     longitude = descriptor.point.longitude
   })
   local point = { latitude = descriptor.point.latitude, longitude = descriptor.point.longitude }
 
   if unit then
-    GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+    GameApi.ScenEdit_SetEMCON("Unit", unit.guid, "OECM=Active")
     local success = addJammingZone(unit, descriptor, point, sideName, enemySideName)
     return success, unit
   end
@@ -218,7 +218,7 @@ function GPSJamming.addGPSJammers(jammerDescriptors, sideName)
     )
 
     if unit and point then
-      GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
+      GameApi.ScenEdit_SetEMCON("Unit", unit.guid, "OECM=Active")
 
       if addJammingZone(unit, descriptor, point, sideName, enemySideName) then
         successCount = successCount + 1

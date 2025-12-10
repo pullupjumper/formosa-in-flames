@@ -15,22 +15,22 @@ local UNIT_CREATION = {
 ---@return SBJ__SideConfig # Side configuration with field, enemySide, and displayName
 function GameUtils.getCachedSideConfig(sideName)
   if not sideConfigCache[sideName] then
-    if sideName == 'China' then
+    if sideName == "China" then
       sideConfigCache[sideName] = {
-        field = 'c',
-        enemySide = 'Taiwan',
-        displayName = 'China'
+        field = "c",
+        enemySide = "Taiwan",
+        displayName = "China"
       }
-    elseif sideName == 'US' then
+    elseif sideName == "US" then
       sideConfigCache[sideName] = {
-        field = 'u',
-        enemySide = 'China',
-        displayName = 'United States'
+        field = "u",
+        enemySide = "China",
+        displayName = "United States"
       }
     else
       sideConfigCache[sideName] = {
-        field = 't',
-        enemySide = 'China',
+        field = "t",
+        enemySide = "China",
         displayName = sideName
       }
     end
@@ -177,7 +177,7 @@ function GameUtils.newArea(position, mode)
   local rpTable = {}
   local a = 1
   --Circle
-  if shape == 'circle' then
+  if shape == "circle" then
     local distance = mode.distance
     for i = 0, 359, 45 do
       local location = GameApi.World_GetPointFromBearing({
@@ -200,7 +200,7 @@ function GameUtils.newArea(position, mode)
         end
       end
     end
-  elseif shape == 'square' then
+  elseif shape == "square" then
     local distance = mode.distance
     for i = 0, 3 do
       local b = 45 + (90 * i) + bear_offset
@@ -276,7 +276,7 @@ function GameUtils.createMission(side, name, type, opts, emcon)
   end
 
   if emcon then
-    local result = GameApi.ScenEdit_SetEMCON('mission', name, emcon)
+    local result = GameApi.ScenEdit_SetEMCON("mission", name, emcon)
 
     if not result then
       return
@@ -303,12 +303,12 @@ function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exi
   if isActive == nil then isActive = true end
   if exit == nil then exit = false end
 
-  if mode == 'add' then
+  if mode == "add" then
     -- Create the trigger component that monitors unit movement
     local result = GameApi.ScenEdit_SetTrigger({
-      description = name .. '',
-      mode = 'add',
-      type = 'UnitEntersArea',
+      description = name .. "",
+      mode = "add",
+      type = "UnitEntersArea",
       TargetFilter = FilterType,
       Area = area,
       ExitArea = exit -- Controls whether this triggers on enter (false) or exit (true)
@@ -320,9 +320,9 @@ function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exi
 
     -- Create the action component that executes the specified Lua script
     local actionResult = GameApi.ScenEdit_SetAction({
-      mode = 'add',
-      type = 'LuaScript',
-      name = name .. '',
+      mode = "add",
+      type = "LuaScript",
+      name = name .. "",
       ScriptText = script
     })
 
@@ -331,16 +331,16 @@ function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exi
     end
 
     -- Create the event and link the trigger and action together
-    GameApi.ScenEdit_SetEvent(name, { mode = 'add', IsRepeatable = isRepeatable, isActive = isActive, isShown = true })
-    GameApi.ScenEdit_SetEventTrigger(name, { mode = 'add', name = name .. '' })
-    GameApi.ScenEdit_SetEventAction(name, { mode = 'add', name = name .. '' })
-  elseif mode == 'update' then
+    GameApi.ScenEdit_SetEvent(name, { mode = "add", IsRepeatable = isRepeatable, isActive = isActive, isShown = true })
+    GameApi.ScenEdit_SetEventTrigger(name, { mode = "add", name = name .. "" })
+    GameApi.ScenEdit_SetEventAction(name, { mode = "add", name = name .. "" })
+  elseif mode == "update" then
     -- Update existing trigger if new area parameters are provided
     if area ~= nil then
       GameApi.ScenEdit_SetTrigger({
-        description = name .. '',
-        mode = 'update',
-        type = 'UnitEntersArea',
+        description = name .. "",
+        mode = "update",
+        type = "UnitEntersArea",
         TargetFilter = FilterType,
         Area = area,
         ExitArea = exit
@@ -348,14 +348,14 @@ function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exi
     end
     -- Update existing action if new script is provided
     if script ~= nil then
-      GameApi.ScenEdit_SetAction({ mode = 'update', type = 'LuaScript', name = name .. '', ScriptText = script })
+      GameApi.ScenEdit_SetAction({ mode = "update", type = "LuaScript", name = name .. "", ScriptText = script })
     end
-  elseif mode == 'remove' then
+  elseif mode == "remove" then
     -- Remove all components of the event system
 
-    GameApi.ScenEdit_SetEvent(name, { mode = 'remove' })
-    GameApi.ScenEdit_SetTrigger({ description = name .. '', mode = 'remove' })
-    GameApi.ScenEdit_SetAction({ description = name .. '', mode = 'remove' })
+    GameApi.ScenEdit_SetEvent(name, { mode = "remove" })
+    GameApi.ScenEdit_SetTrigger({ description = name .. "", mode = "remove" })
+    GameApi.ScenEdit_SetAction({ description = name .. "", mode = "remove" })
   end
 
   return true
@@ -381,10 +381,10 @@ function GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID,
 
   if point then
     unit = GameApi.ScenEdit_AddUnit({
-      type = 'Facility',
+      type = "Facility",
       unitname = name,
       dbid = unitDBID,
-      side = 'China',
+      side = "China",
       latitude = point.latitude,
       longitude = point.longitude,
       autodetectable = false

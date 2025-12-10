@@ -89,7 +89,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, s
 
     if unit then
       for _, zone in ipairs(operationalZones) do
-        if unit.name == 'Barge' and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.name == "Barge" and unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
           local destination = createCourseForBarge(zone, unit)
           if destination then
             unit.course = { destination }
@@ -99,7 +99,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, s
           end
         end
 
-        if unit.name == 'RORO' and unit.type == 'Ship' and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.name == "RORO" and unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
           table.insert(roros, { unit = unit, zone = zone })
         end
       end
@@ -152,14 +152,14 @@ function SecondWaveUnloading.offloadVehicles(params)
   for index, v in ipairs(cargoList) do
     ship:deleteUnitCargo(v.guid)
 
-    local type = 'Facility'
+    local type = "Facility"
 
     if v.type == 2 then
-      type = 'Ground unit'
+      type = "Ground unit"
     end
 
     local u = GameApi.ScenEdit_AddUnit({
-      side      = 'China',
+      side      = "China",
       type      = type,
       latitude  = ACVlocations[index].latitude,
       longitude = ACVlocations[index].longitude,
@@ -187,7 +187,7 @@ function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
     local bridge = GameApi.ScenEdit_GetUnit(saveData.c.PHIBOP.barges[ship.guid].bridgeGUID)
 
     if not bridge then
-      Logger.log("PHIBOP", 'Bridge is destroyed')
+      Logger.log("PHIBOP", "Bridge is destroyed")
       return true
     end
 

@@ -85,7 +85,7 @@ local function setUnitProperties(params)
 
   local unitSetParams = {
     guid = unit.guid,
-    manualthrottle = params.throttle or 'Stop',
+    manualthrottle = params.throttle or "Stop",
     manualSpeed = params.speed or 0,
     holdposition = params.holdPosition ~= nil and params.holdPosition or true
   }
@@ -134,7 +134,7 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
 
   -- Use last waypoint if requested and course is an array
   local course = position.course
-  if useLastCourse and type(course) == 'table' and #course > 0 then
+  if useLastCourse and type(course) == "table" and #course > 0 then
     course = course[#course]
   end
 
@@ -142,7 +142,7 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
     local unit = GameApi.ScenEdit_GetUnit(guid)
     setUnitProperties({
       unit = unit,
-      throttle = 'Flank',
+      throttle = "Flank",
       speed = CONSTANTS.REPOSITION_SPEED,
       course = course,
       holdPosition = false,
@@ -159,7 +159,7 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.RL, 'RL', CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.RL, "RL", CONSTANTS.WCS.HOLD)
 end
 
 ---Command firing unit to move to hide area (HA)
@@ -174,7 +174,7 @@ local function moveToHideArea(config, firingUnitCtx, firingUnit)
   end
 
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.HA, 'HA', CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.HA, "HA", CONSTANTS.WCS.HOLD)
 end
 
 ---Command resupply unit to move to ammunition holding area (AHA)
@@ -183,7 +183,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveToAmmoHoldingArea(config, resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.AHA, 'AHA')
+  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.AHA, "AHA")
 end
 
 ---Transfer ammunition from ammunition depot to resupply unit
@@ -209,7 +209,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.RL, 'RL', nil, true)
+  moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.RL, "RL", nil, true)
 end
 
 ---Handle automatic firing unit repositioning logic
@@ -262,7 +262,7 @@ local function handleManualFiringUnitReload(config, wsContext, firingUnitCtx, fi
     Launcher.reload(firingUnitCtx, wsContext.resupplyUnits[firingUnitCtx.resupplyUnit], firingUnitCtx.weaponDBID)
 
     if config.isDevMode then
-      GameApi.ScenEdit_MsgBox('Missile reload is finished/' .. firingUnitCtx.name, 1)
+      GameApi.ScenEdit_MsgBox("Missile reload is finished/" .. firingUnitCtx.name, 1)
     end
   end
 end
@@ -298,7 +298,7 @@ local function handleAutomaticResupplyUnitRepositioning(config, wsContext, resup
       moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUnit)
 
       if config.isDevMode then
-        GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. resupplyUnitCtx.name, 1)
+        GameApi.ScenEdit_MsgBox("Ammo transload is finished/" .. resupplyUnitCtx.name, 1)
       end
     end
   end
@@ -324,7 +324,7 @@ local function handleManualResupplyUnitReload(config, wsContext, resupplyUnitCtx
     transferAmmunition(resupplyUnitCtx, wsContext.ammunitions[resupplyUnitCtx.ammunition])
 
     if config.isDevMode then
-      GameApi.ScenEdit_MsgBox('Ammo transload is finished/' .. resupplyUnitCtx.name, 1)
+      GameApi.ScenEdit_MsgBox("Ammo transload is finished/" .. resupplyUnitCtx.name, 1)
     end
   end
 end
@@ -529,7 +529,7 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 function Launcher.moveToFiringPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.FP, 'FP')
+  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.FP, "FP")
 end
 
 ---Check if two types of units have met in the same area
