@@ -1,6 +1,7 @@
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local constants = require("src.core.constants")
 
 local Launcher = {}
 
@@ -11,18 +12,13 @@ local Launcher = {}
 ---@field speed number? Speed (default: 0)
 ---@field course CMO__TableOfWaypoints? Waypoints (optional)
 ---@field holdPosition boolean? Whether to hold position (default: true)
----@field wcs number? Weapon control status: 1=Free, 2=Hold (optional)
+---@field wcs integer? Weapon control status: 1=Free, 2=Hold (optional)
 ---@field formation table? Formation settings (optional)
 
 -- Module constants
-local CONSTANTS = {
+local BATTERY_CONSTANTS = {
   REPOSITION_SPEED = 30,                -- Speed (km/h) when moving between positions
   MANUAL_RELOAD_DELAY_MULTIPLIER = 100, -- Time multiplier for manual reload mode
-  -- Weapon Control Status
-  WCS = {
-    FREE = 1, -- Free fire
-    HOLD = 2, -- Hold fire
-  }
 }
 
 ---Find the area where the unit is located
@@ -113,7 +109,7 @@ end
 ---@param battery CMO__Unit Unit group
 ---@param positions table Position array
 ---@param positionType string Position type ('RL'/'HA'/'AHA'/'FP', for error messages)
----@param wcs number? Weapon control status (optional)
+---@param wcs integer? Weapon control status (optional)
 ---@param useLastCourse boolean? Whether to use the last waypoint in course (default: false)
 ---@return boolean # Success status
 local function moveUnitToPosition(unitName, battery, positions, positionType, wcs, useLastCourse)
@@ -143,7 +139,7 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
     setUnitProperties({
       unit = unit,
       throttle = "Flank",
-      speed = CONSTANTS.REPOSITION_SPEED,
+      speed = BATTERY_CONSTANTS.REPOSITION_SPEED,
       course = course,
       holdPosition = false,
       wcs = wcs
@@ -159,7 +155,13 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.RL, "RL", CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(
+    firingUnitCtx.name,
+    firingUnit,
+    firingUnitCtx.operationalArea.RL,
+    "RL",
+    constants.WCS.HOLD
+  )
 end
 
 ---Command firing unit to move to hide area (HA)
@@ -174,7 +176,13 @@ local function moveToHideArea(config, firingUnitCtx, firingUnit)
   end
 
   firingUnitCtx.state = config.batteryState.REPOSITIONING
-  moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.HA, "HA", CONSTANTS.WCS.HOLD)
+  moveUnitToPosition(
+    firingUnitCtx.name,
+    firingUnit,
+    firingUnitCtx.operationalArea.HA,
+    "HA",
+    constants.WCS.HOLD
+  )
 end
 
 ---Command resupply unit to move to ammunition holding area (AHA)
@@ -251,7 +259,7 @@ local function handleManualFiringUnitReload(config, wsContext, firingUnitCtx, fi
   if firingUnitCtx.reloadStartTime == nil then
     -- In manual mode, set a far future time to prevent automatic completion
     firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
-        wsContext.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
+        wsContext.reloadTime * BATTERY_CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
   local result = Launcher.isMetWithResupplyUnits(config, wsContext, firingUnit, isAuto)
@@ -314,7 +322,7 @@ local function handleManualResupplyUnitReload(config, wsContext, resupplyUnitCtx
   if resupplyUnitCtx.reloadStartTime == nil then
     -- In manual mode, set a far future time to prevent automatic completion
     resupplyUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() +
-        wsContext.reloadTime * CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
+        wsContext.reloadTime * BATTERY_CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
   local result = Launcher.isMetWithAmmoDepot(config, wsContext, resupplyUnit, isAuto)
@@ -473,7 +481,7 @@ function Launcher.setWCSToFree(config, firingUnitCtx, firingUnit)
       setUnitProperties({
         unit = u,
         holdPosition = true,
-        wcs = CONSTANTS.WCS.FREE, -- Free fire
+        wcs = constants.WCS.FREE, -- Free fire
         formation = { spacing = 0, transpose = true }
       })
     end
@@ -494,7 +502,7 @@ function Launcher.setStateToHIDE(config, firingUnitCtx, firingUnit)
       setUnitProperties({
         unit = u,
         holdPosition = true,
-        wcs = CONSTANTS.WCS.HOLD, -- Hold fire while hiding
+        wcs = constants.WCS.HOLD, -- Hold fire while hiding
         formation = { spacing = 0, transpose = true }
       })
     end

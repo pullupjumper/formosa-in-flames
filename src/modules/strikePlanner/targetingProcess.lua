@@ -242,7 +242,7 @@ function TargetingProcess.findInfantry(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if contact.typed == 8 and contact:inArea(area) then
-        contact.posture = 3
+        contact.posture = "H"
         table.insert(targets, contact.guid)
       end
     end
@@ -326,7 +326,7 @@ function TargetingProcess.findMobileTargets(opts)
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if (contact.typed == 8) and contact:inArea(area) then
-        contact.posture = 3
+        contact.posture = "H"
         table.insert(targets, contact.guid)
       end
     end

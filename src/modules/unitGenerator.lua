@@ -121,6 +121,13 @@ local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
     local createdUnit = GameApi.ScenEdit_AddUnit(unitDescriptor)
 
     if createdUnit and unitDescriptor.cargo then
+      if createdUnit.type == "Ship" then
+        GameApi.ScenEdit_SetDoctrine(
+          { side = createdUnit.side, guid = createdUnit.guid },
+          { weapon_control_status_land = constants.WCS.HOLD }
+        )
+      end
+
       for _, cargoItem in ipairs(unitDescriptor.cargo) do
         for i = 1, cargoItem.num do
           createdUnit:createUnitCargo(cargoItem.type, cargoItem.dbid)
@@ -491,6 +498,10 @@ function UnitGenerator.createSAGs(sagDescriptors, sideName)
     local group = GameApi.ScenEdit_GetUnit(sagDescriptor.groupName)
     if group then
       GameApi.ScenEdit_SetEMCON("Unit", group.guid, "Radar=Active")
+      GameApi.ScenEdit_SetDoctrine(
+        { side = group.side, unitname = group.name },
+        { weapon_control_status_land = constants.WCS.HOLD }
+      )
     end
 
     -- Set mission (for Taiwan)

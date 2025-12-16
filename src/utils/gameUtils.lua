@@ -97,7 +97,7 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
 
   -- Calculate time in seconds
   -- Time = Distance / Speed (in hours), then convert to seconds
-  local totalTime = (totalDistance / speedKnots) * 3600
+  local totalTime = math.floor((totalDistance / speedKnots) * 3600) + 120
 
   return totalDistance, totalTime
 end

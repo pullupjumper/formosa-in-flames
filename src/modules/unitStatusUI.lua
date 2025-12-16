@@ -105,7 +105,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.PAC3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",
@@ -118,7 +118,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.PAC3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",
@@ -133,7 +133,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",
@@ -146,7 +146,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",
@@ -161,7 +161,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.TC2 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 2 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",
@@ -174,7 +174,7 @@ function UnitStatusUI.wcsSettingTable()
         local unit = GameApi.ScenEdit_GetUnit(value.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.TC2 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = 1 })
+          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
           GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
             unit.guid,
             "Green",

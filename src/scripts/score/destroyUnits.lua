@@ -55,11 +55,11 @@ if unit then
       )
 
       -- Remove from reconnaissance queue
-      for index, entry in ipairs(saveData.c.recon.queue) do
-        if entry.unitGUID == unit.guid then
-          saveData.c.recon.queue[index] = nil
-        end
-      end
+      -- for index, entry in ipairs(saveData.c.recon.queue) do
+      --   if entry.unitGUID == unit.guid then
+      --     saveData.c.recon.queue[index] = nil
+      --   end
+      -- end
     end
   end
 

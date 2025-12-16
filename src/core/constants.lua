@@ -142,43 +142,43 @@ constants.AREAS = {
 
 constants.BASES = {
   -- China Bases (PLAAF / PLAN)
-  HUIZHOU_PINGTAN_AB     = "6Z8LM5-0HMLLL9B5QBF0",   -- Huizhou Pingtan AB (PLAAF)
-  SHANTOU_WAISHA_AB      = "6Z8LM5-0HMLLEF9H5P44",   -- Shantou Waisha AB (PLAAF)
-  ZHANGPU_AAB            = "X58F5H-0HN00TRR0Q1JQ",   -- Zhangpu AAB
-  ZHANGZHOU_LONGXI_AB    = "6Z8LM5-0HMIJ3QGCRQ2G",   -- Zhangzhou-Longxi AB (PLAAF)
-  HUIAN_AAB              = "6Z8LM5-0HMIJ3QGCRQ5F",   -- Huian AAB
-  LONGTIAN_AAB           = "6Z8LM5-0HMIJ3QGCRQC4",   -- Longtian AAB
-  XINGNING_AB            = "6Z8LM5-0HMLLEF9H7VDF",   -- Xingning AB (PLAAF)
-  SHUIMEN_AAB            = "6Z8LM5-0HMMJDEFRFJ4V",   -- Shuimen AAB (PLAAF)
-  ANQING_AB              = "6Z8LM5-0HMIJ7B8971MA",   -- Anqing AB (PLAAF)
-  WUHU_AB                = "6Z8LM5-0HMIJ7B896RA9",   -- Wuhu AB (PLAAF)
-  LIUAN_AB               = "X58F5H-0HMRAQFR07T2V",   -- Liuan AB
-  PINGTAN_PORT           = "6Z8LM5-0HMMNGU6J8P2N",   -- Pingtan Port (Amphibious Ops)
-  KWANG_CHOW_WAN_NB      = "6Z8LM5-0HMJV6AONGLAU",   -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
-  TAIZHOU_AB             = "IC8B0X-0HNFDVSDK067T",   -- Taizhou AB
-  WUYISHAN_AB            = "IC8B0X-0HNFDVSDK0AM9",   -- Wuyishan AB
-  RUGAO_AB               = "X58F5H-0HN201E9DHM1C",   -- Rugao AB
-  XIAHGTANG_AB           = "6Z8LM5-0HMIJ7B89707I",   -- Xiahgtang AB (PLAAF)
-  JIAXING_AB             = "6Z8LM5-0HMITKFQH25Q8",   -- Jiaxing AB (PLAAF)
+  HUIZHOU_PINGTAN_AB     = "6Z8LM5-0HMLLL9B5QBF0", -- Huizhou Pingtan AB (PLAAF)
+  SHANTOU_WAISHA_AB      = "6Z8LM5-0HMLLEF9H5P44", -- Shantou Waisha AB (PLAAF)
+  ZHANGPU_AAB            = "X58F5H-0HN00TRR0Q1JQ", -- Zhangpu AAB
+  ZHANGZHOU_LONGXI_AB    = "6Z8LM5-0HMIJ3QGCRQ2G", -- Zhangzhou-Longxi AB (PLAAF)
+  HUIAN_AAB              = "6Z8LM5-0HMIJ3QGCRQ5F", -- Huian AAB
+  LONGTIAN_AAB           = "6Z8LM5-0HMIJ3QGCRQC4", -- Longtian AAB
+  XINGNING_AB            = "6Z8LM5-0HMLLEF9H7VDF", -- Xingning AB (PLAAF)
+  SHUIMEN_AAB            = "6Z8LM5-0HMMJDEFRFJ4V", -- Shuimen AAB (PLAAF)
+  ANQING_AB              = "6Z8LM5-0HMIJ7B8971MA", -- Anqing AB (PLAAF)
+  WUHU_AB                = "6Z8LM5-0HMIJ7B896RA9", -- Wuhu AB (PLAAF)
+  LIUAN_AB               = "X58F5H-0HMRAQFR07T2V", -- Liuan AB
+  PINGTAN_PORT           = "6Z8LM5-0HMMNGU6J8P2N", -- Pingtan Port (Amphibious Ops)
+  KWANG_CHOW_WAN_NB      = "6Z8LM5-0HMJV6AONGLAU", -- Kwang Chow Wan Naval Base (PLAN) (Amphibious Ops)
+  TAIZHOU_AB             = "IC8B0X-0HNFDVSDK067T", -- Taizhou AB
+  WUYISHAN_AB            = "IC8B0X-0HNFDVSDK0AM9", -- Wuyishan AB
+  RUGAO_AB               = "X58F5H-0HN201E9DHM1C", -- Rugao AB
+  XIAHGTANG_AB           = "6Z8LM5-0HMIJ7B89707I", -- Xiahgtang AB (PLAAF)
+  JIAXING_AB             = "6Z8LM5-0HMITKFQH25Q8", -- Jiaxing AB (PLAAF)
   -- Taiwan Bases
-  CHING_CHUANG_KANG_AB   = "6Z8LM5-0HMIHS2L949R0",   -- Ching Chuang Kang AB (Taiwan)
-  CHIAYI_AB              = "6Z8LM5-0HMIJ3QGCHSUB",   -- Chiayi AB (Taiwan)
-  TAINAN_AB              = "6Z8LM5-0HMIJ3QGCHVVS",   -- Tainan AB (Taiwan)
-  MAGONG_AB              = "6Z8LM5-0HMISSTNL3T8K",   -- Magong AB (Taiwan)
-  GUIREN_AAB             = "IC8B0X-0HN37BVOG0T9O",   -- Guiren AAB (Taiwan)
-  PINGTUNG_NORTH_AB      = "IC8B0X-0HNCTPETEF6GG",   -- Pingtung North AB (Taiwan)
-  TAITUNG_JHIHHANG_AB    = "6Z8LM5-0HMIJ3QGCI3V3",   -- Taitung/Jhihhang AB (Taiwan)
-  JIASHAN_AB             = "IC8B0X-0HNCTPETEF5C1",   -- Jiashan AB (Taiwan)
-  HSINCHU_AB             = "6Z8LM5-0HMIK08HEK556",   -- Hsinchu AB (Taiwan)
-  LONGTAN_AAB            = "IC8B0X-0HN3ADVRF2U7P",   -- Longtan AAB (Taiwan)
-  TAOYUAN_AIRPORT        = "6Z8LM5-0HMJ1GE4HSIU5",   -- Taoyuan International Airport (Taiwan)
-  RENDE_STRIP            = "X58F5H-0HMU28MM77N82",   -- Rende Emergency Highway Strip (Taiwan)
-  MADOU_STRIP            = "X58F5H-0HMU28MM7836P",   -- Madou Emergency Highway Strip (Taiwan)
-  MINXIONG_STRIP         = "X58F5H-0HMU28MM78J9P",   -- Minxiong Emergency Highway Strip (Taiwan)
-  TAINAN_FIELD_AIRDROME  = "IC8B0X-0HN81FNLB6M8Q",   -- Tainan Field Airdrome (Taiwan)
-  HSINCHU_FIELD_AIRDROME = "IC8B0X-0HN81FNLB2OPJ",   -- Hsinchu Field Airdrome (Taiwan)
-  PORT_OF_KEELUNG        = "X58F5H-0HMSMDQJ7LEUI",   -- Port of Keelung (Taiwan)
-  PINGTUNG_SOUTH_AB      = "IC8B0X-0HNCTPETEF6F9",   -- Pingtung South AB (Taiwan)
+  CHING_CHUANG_KANG_AB   = "6Z8LM5-0HMIHS2L949R0", -- Ching Chuang Kang AB (Taiwan)
+  CHIAYI_AB              = "6Z8LM5-0HMIJ3QGCHSUB", -- Chiayi AB (Taiwan)
+  TAINAN_AB              = "6Z8LM5-0HMIJ3QGCHVVS", -- Tainan AB (Taiwan)
+  MAGONG_AB              = "6Z8LM5-0HMISSTNL3T8K", -- Magong AB (Taiwan)
+  GUIREN_AAB             = "IC8B0X-0HN37BVOG0T9O", -- Guiren AAB (Taiwan)
+  PINGTUNG_NORTH_AB      = "IC8B0X-0HNCTPETEF6GG", -- Pingtung North AB (Taiwan)
+  TAITUNG_JHIHHANG_AB    = "6Z8LM5-0HMIJ3QGCI3V3", -- Taitung/Jhihhang AB (Taiwan)
+  JIASHAN_AB             = "IC8B0X-0HNCTPETEF5C1", -- Jiashan AB (Taiwan)
+  HSINCHU_AB             = "6Z8LM5-0HMIK08HEK556", -- Hsinchu AB (Taiwan)
+  LONGTAN_AAB            = "IC8B0X-0HN3ADVRF2U7P", -- Longtan AAB (Taiwan)
+  TAOYUAN_AIRPORT        = "6Z8LM5-0HMJ1GE4HSIU5", -- Taoyuan International Airport (Taiwan)
+  RENDE_STRIP            = "X58F5H-0HMU28MM77N82", -- Rende Emergency Highway Strip (Taiwan)
+  MADOU_STRIP            = "X58F5H-0HMU28MM7836P", -- Madou Emergency Highway Strip (Taiwan)
+  MINXIONG_STRIP         = "X58F5H-0HMU28MM78J9P", -- Minxiong Emergency Highway Strip (Taiwan)
+  TAINAN_FIELD_AIRDROME  = "IC8B0X-0HN81FNLB6M8Q", -- Tainan Field Airdrome (Taiwan)
+  HSINCHU_FIELD_AIRDROME = "IC8B0X-0HN81FNLB2OPJ", -- Hsinchu Field Airdrome (Taiwan)
+  PORT_OF_KEELUNG        = "X58F5H-0HMSMDQJ7LEUI", -- Port of Keelung (Taiwan)
+  PINGTUNG_SOUTH_AB      = "IC8B0X-0HNCTPETEF6F9", -- Pingtung South AB (Taiwan)
 }
 
 constants.PLATFORMS = {
@@ -216,7 +216,7 @@ constants.PLATFORMS = {
   J16 = 4926,
   SU30 = 4652,
   H6K = 1731,
-  TYPE_072A_2 = 4601,   -- Original comment was also Type 072A, added _2 to distinguish from DBID 4602
+  TYPE_072A_2 = 4601, -- Original comment was also Type 072A, added _2 to distinguish from DBID 4602
   TC2 = 4141,
   SKY_GUARD = 1092,
   Y9 = 4203,
@@ -297,6 +297,7 @@ constants.SENSORS = {
   PAC3_MPQ65 = 2498,
   GPS_JAMMER = 2539,
   TC2_CS_MPQ90 = 6381,
+  WZ8_RADAR = 4576,
 }
 
 constants.LOADOUTS = {
@@ -348,37 +349,39 @@ constants.LOADOUTS = {
   MIRAGE2000_MICA = 5732,
   AH64E_HELLFIRE = 15213,
   CHUNG_SHYANG_II_RECON = 28116,
+  WZ8_RECON = 32885,
 }
 
 constants.WEAPONS = {
-  FD280 = 4472,         -- FD280 Multiple Launch Rocket System
-  CJ10 = 2122,          -- CJ-10 Cruise Missile
-  DF11A = 2142,         -- DF-11A Short-Range Ballistic Missile
-  DF16A = 4511,         -- DF-16A Short-Range Ballistic Missile
-  DF15C = 2145,         -- DF-15C Short-Range Ballistic Missile
-  DF15B = 40,           -- DF-15B Short-Range Ballistic Missile
-  DF21D = 2105,         -- DF-21D Medium-Range Ballistic Missile
-  YJ21 = 4058,          -- YJ-18A Land Attack Cruise Missile
-  CJ10_SLCM = 3716,     -- YJ-18 Submarine-Launched Cruise Missile
-  AKD88 = 2876,         -- AKD-88 Air-to-Surface Missile
-  PL15 = 3413,          -- PL-15 Air-to-Air Missile
-  YJ91_ARM = 2875,      -- YJ-91 Anti-Radiation Missile
-  YJ63 = 2107,          -- YJ-63 Air-Launched Cruise Missile
-  KAB1500 = 3077,       -- KAB-1500 Laser-Guided Bomb
-  LS_6_500 = 3226,      -- LS-6-500 Glide Bomb
-  CS_BBC_5 = 4541,      -- CS-BBC-5 Glide Bomb (Submunitions)
-  YJ91_ASM = 276,       -- YJ-91 Anti-Ship Missile
-  YJ83 = 2137,          -- YJ-83 Anti-Ship Missile
-  MK45_AMLRS = 2948,    -- MK45 AMLRS Multiple Launch Rocket System
-  ATACMS = 1717,        -- ATACMS Tactical Missile System
-  HF2E = 3228,          -- HF-2E Anti-Ship Cruise Missile
-  HF3 = 1133,           -- HF-2 Anti-Ship Missile
-  MK48_TORPEDO = 905,   -- MK-48 Torpedo
-  HARPOON_II = 816,     -- Harpoon II
-  JSOW = 826,           -- JSOW
-  WAN_CHIEN = 3026,     -- Wan Chien
-  SLAMER = 452,         -- SLAMER
-  JDAM = 554,           -- JDAM
+  FD280 = 4472,       -- FD280 Multiple Launch Rocket System
+  CJ10 = 2122,        -- CJ-10 Cruise Missile
+  DF11A = 2142,       -- DF-11A Short-Range Ballistic Missile
+  DF16A = 4511,       -- DF-16A Short-Range Ballistic Missile
+  DF15C = 2145,       -- DF-15C Short-Range Ballistic Missile
+  DF15B = 40,         -- DF-15B Short-Range Ballistic Missile
+  DF21D = 2105,       -- DF-21D Medium-Range Ballistic Missile
+  YJ21 = 4058,        -- YJ-18A Land Attack Cruise Missile
+  CJ10_SLCM = 3716,   -- YJ-18 Submarine-Launched Cruise Missile
+  AKD88 = 2876,       -- AKD-88 Air-to-Surface Missile
+  PL15 = 3413,        -- PL-15 Air-to-Air Missile
+  YJ91_ARM = 2875,    -- YJ-91 Anti-Radiation Missile
+  YJ63 = 2107,        -- YJ-63 Air-Launched Cruise Missile
+  KAB1500 = 3077,     -- KAB-1500 Laser-Guided Bomb
+  LS_6_500 = 3226,    -- LS-6-500 Glide Bomb
+  CS_BBC_5 = 4541,    -- CS-BBC-5 Glide Bomb (Submunitions)
+  YJ91_ASM = 276,     -- YJ-91 Anti-Ship Missile
+  YJ83 = 2137,        -- YJ-83 Anti-Ship Missile
+  MK45_AMLRS = 2948,  -- MK45 AMLRS Multiple Launch Rocket System
+  ATACMS = 1717,      -- ATACMS Tactical Missile System
+  HF2E = 3228,        -- HF-2E Anti-Ship Cruise Missile
+  HF3 = 1133,         -- HF-2 Anti-Ship Missile
+  MK48_TORPEDO = 905, -- MK-48 Torpedo
+  HARPOON_II = 816,   -- Harpoon II
+  JSOW = 826,         -- JSOW
+  WAN_CHIEN = 3026,   -- Wan Chien
+  SLAMER = 452,       -- SLAMER
+  JDAM = 554,         -- JDAM
+  HPJ_38 = 2691,      -- H/PJ-38 130mm
 }
 
 constants.UNIT_TYPES = {
@@ -813,6 +816,12 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_DONG
     } },
   },
+}
+
+constants.WCS = {
+  FREE = 0,
+  TIGHT = 1,
+  HOLD = 2,
 }
 
 return constants

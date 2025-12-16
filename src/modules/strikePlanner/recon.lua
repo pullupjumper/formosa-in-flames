@@ -62,7 +62,7 @@ function Recon.launchWZ8(h6n, course)
     dbid = constants.PLATFORMS.WZ8,
     latitude = h6n.latitude,
     longitude = h6n.longitude,
-    loadoutid = 32885,
+    loadoutid = constants.LOADOUTS.WZ8_RECON,
     altitude = 20574,
     heading = 180,
     speed = 3300
@@ -76,7 +76,7 @@ function Recon.launchWZ8(h6n, course)
   local updatedUnit = GameApi.ScenEdit_UpdateUnit({
     guid = wz8.guid,
     mode = "add_sensor",
-    dbid = 4576,
+    dbid = constants.SENSORS.WZ8_RADAR,
     arc_detect = arcT,
     arc_track = arcT
   })
@@ -152,13 +152,6 @@ local function handleReconTracking(entry, actualUnit)
   return true
 end
 
----Handle reconnaissance return to base
----@param actualUnit CMO__Unit The reconnaissance unit
-local function handleReconRTB(actualUnit)
-  actualUnit:RTB(true)
-  Logger.log("recon", string.format("Unit %s returning to base", actualUnit.name))
-end
-
 ---Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
 ---Each UAV platform triggers different specialized operations based on successful reconnaissance
 ---@param config SBJ__Config Configuration data
@@ -206,7 +199,20 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
         }
       })
 
-      return operations
+      -- return operations
+    end
+
+    if not DynamicOperationsUtils.hasOperation(reconSchedule, "C2/1", "ground") then
+      table.insert(operations, {
+        type = "ground",
+        executed = false,
+        template = {
+          name = "C2/1",
+          strikeInterval = 0,
+          isFirstWave = false,
+          FSTs = config.c.FSTTemplate.STRIKE_C2_1
+        }
+      })
     end
 
     local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/", "air")
@@ -316,9 +322,9 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
   local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
 
   -- Check if there are operations to schedule and next recon time exists
-  if not result.nextReconTime or (#result.air == 0 and #result.ground == 0) then
-    return
-  end
+  -- if not result.nextReconTime or (#result.air == 0 and #result.ground == 0) then
+  --   return
+  -- end
 
   local nextReconTime = Utils.parseDatetimeToTimestamp(result.nextReconTime)
   local endTime = Utils.parseDatetimeToTimestamp(entry.endTime)
@@ -331,16 +337,6 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
 
   -- Generate next wave operations
   local operations = {}
-
-  -- for _, operation in ipairs(result.air) do
-  --   local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-  --   table.insert(operations, newOperation)
-  -- end
-
-  -- for _, operation in ipairs(result.ground) do
-  --   local newOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-  --   table.insert(operations, newOperation)
-  -- end
 
   -- Add platform-specific operations
   local specialOps = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
