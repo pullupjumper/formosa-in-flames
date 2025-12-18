@@ -113,8 +113,8 @@ config.batteryState = {
 -- ============================================================================
 
 config.c.triggers = {
-  -- amphibiousOps = { startTime = "2027-06-09 02:40:00" },
-  amphibiousOps = { startTime = "2027-06-09 1:00:00" },
+  amphibiousOps = { startTime = "2027-06-09 02:40:00" },
+  -- amphibiousOps = { startTime = "2027-06-09 1:00:00" },
   launchLACM = { startTime = "2027-06-09 06:00:00" },
   launchSLCM = { startTime = "2027-06-09 06:30:00" },
   -- launchSLCM = { startTime = "2027-06-09 01:00:00" },
@@ -345,7 +345,7 @@ config.c.recon.courses = {
     { longitude = 121.249386737925, latitude = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
   }
 }
----@type table<string, SBJ__ReconQueueEntryTemplate>
+---@type table<string, SBJ__ReconQueueEntryTemplateUAV>
 config.c.recon.template = {
   BZK005_RECON_1 = {
     baseGUID = constants.BASES.LONGTIAN_AAB,
@@ -394,6 +394,32 @@ config.c.recon.template = {
     unitCount = 1,
     speed = 600,
     isTracking = false
+  }
+}
+---@type table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>>
+config.c.recon.reconStrikeMatrix = {
+  UAV = {
+    BZK005 = {
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    GJ11 = {
+      { name = "CAS/N/1",     type = "air", },
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    H6N = {
+      { name = "ANTISHIP/1",    type = "ground" },
+      { name = "ASUW/N/1",      type = "air" },
+      { name = "STRIKE/AB/E/1", type = "air" },
+      { name = "STRIKE/AB/W/1", type = "air" }
+    },
+  },
+  satellite = {
+    EOS = {
+      { name = "STRIKE/AB/W/1",           type = "air" },
+      { name = "STRIKE/AB/E/1",           type = "air" },
+      { name = "STRIKE/HELIPAD/1",        type = "ground" },
+      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+    }
   }
 }
 

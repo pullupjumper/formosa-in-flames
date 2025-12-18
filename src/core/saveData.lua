@@ -411,6 +411,7 @@ saveData.c.recon = {}
 saveData.c.recon.isActivated = true
 saveData.c.recon.queue = {
   {
+    type = "UAV",
     baseGUID = constants.BASES.LIUAN_AB,
     unitDBID = constants.PLATFORMS.H6N,
     unitGUID = nil,
@@ -424,6 +425,29 @@ saveData.c.recon.queue = {
     isFinished = false,
     trackingTargetGUID = nil,
     speed = 450
+  },
+  {
+    type = "satellite",
+    -- endTime = "2027-06-09 01:00:00",
+    endTime = "2027-06-09 04:40:00",
+    isFinished = false,
+  },
+  {
+    type = "satellite",
+    -- endTime = "2027-06-09 01:00:00",
+    endTime = "2027-06-09 05:44:00",
+    isFinished = false,
+  },
+  {
+    type = "satellite",
+    -- endTime = "2027-06-09 01:30:00",
+    endTime = "2027-06-09 08:04:00",
+    isFinished = false,
+  },
+  {
+    type = "satellite",
+    endTime = "2027-06-09 11:25:00",
+    isFinished = false,
   },
 }
 
@@ -1001,7 +1025,7 @@ saveData.c.dynamicOperations.reconSchedule = {
   --       type = "ground",
   --       executed = false,
   --       template = {
-  --         name = "INFRASTRUCTURE/1",
+  --         name = "STRIKE/INFRASTRUCTURE/1",
   --         strikeInterval = 0,
   --         isFirstWave = true,
   --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_1
@@ -1011,7 +1035,7 @@ saveData.c.dynamicOperations.reconSchedule = {
   --       type = "ground",
   --       executed = false,
   --       template = {
-  --         name = "HELIPAD/1",
+  --         name = "STRIKE/HELIPAD/1",
   --         strikeInterval = 0,
   --         isFirstWave = true,
   --         FSTs = config.c.FSTTemplate.STRIKE_HELIPAD_1
@@ -1040,7 +1064,7 @@ saveData.c.dynamicOperations.reconSchedule = {
   --       type = "ground",
   --       executed = false,
   --       template = {
-  --         name = "INFRASTRUCTURE/2",
+  --         name = "STRIKE/INFRASTRUCTURE/2",
   --         strikeInterval = 0,
   --         isFirstWave = false,
   --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_2
@@ -1060,7 +1084,7 @@ saveData.c.dynamicOperations.reconSchedule = {
   --       type = "ground",
   --       executed = false,
   --       template = {
-  --         name = "C2/1",
+  --         name = "STRIKE/C2/1",
   --         strikeInterval = 0,
   --         isFirstWave = false,
   --         FSTs = config.c.FSTTemplate.STRIKE_C2
@@ -1087,27 +1111,27 @@ saveData.c.dynamicOperations.reconSchedule = {
   --     }
   --   }
   -- },
-  {
-    time = "2027-06-09 05:44:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {}
-  },
-  {
-    time = "2027-06-09 08:04:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {}
-  },
-  {
-    time = "2027-06-09 11:25:00",
-    type = "satellite",
-    delay = 0,
-    executed = false,
-    operations = {}
-  }
+  -- {
+  --   time = "2027-06-09 05:44:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {}
+  -- },
+  -- {
+  --   time = "2027-06-09 08:04:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {}
+  -- },
+  -- {
+  --   time = "2027-06-09 11:25:00",
+  --   type = "satellite",
+  --   delay = 0,
+  --   executed = false,
+  --   operations = {}
+  -- }
 }
 
 return saveData

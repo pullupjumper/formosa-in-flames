@@ -648,28 +648,57 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 -- ============================================================================
 -- Reconnaissance and intelligence types for recon module
 
----Reconnaissance UAV template configuration for defining reconnaissance UAV mission parameters
----@class SBJ__ReconQueueEntryTemplate:table
+---Base reconnaissance queue entry template with shared fields
+---@class SBJ__ReconQueueEntryBase:table
+---@field type string Reconnaissance type: "UAV"|"satellite"|"aircraft"
+---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
+
+---UAV reconnaissance queue entry template
+---Complete configuration for UAV reconnaissance missions including launch and flight parameters
+---@class SBJ__ReconQueueEntryTemplateUAV:SBJ__ReconQueueEntryBase
 ---@field baseGUID string Base GUID where UAV is stationed
 ---@field unitDBID number UAV platform database ID
 ---@field course CMO__TableOfWaypoints Waypoints for reconnaissance route
 ---@field unitCount number Number of UAVs to deploy
 ---@field speed number Cruise speed in knots for tracking mode
----@field takeoffTime? string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS" (optional)
----@field endTime? string Scheduled end time in format "YYYY-MM-DD HH:MM:SS" (optional)
+---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
 ---@field isTracking? boolean Whether to track this reconnaissance mission (optional)
 
----Reconnaissance queue entry extending template with execution state
----@class SBJ__ReconQueueEntry:SBJ__ReconQueueEntryTemplate
+---Satellite reconnaissance queue entry template
+---Simplified configuration for satellite reconnaissance requiring only timing information
+---@class SBJ__ReconQueueEntryTemplateSatellite:SBJ__ReconQueueEntryBase
+-- No additional fields beyond base - satellites only need type and endTime
+
+---Union type for all reconnaissance entry templates
+---@alias SBJ__ReconQueueEntryTemplate SBJ__ReconQueueEntryTemplateUAV|SBJ__ReconQueueEntryTemplateSatellite
+
+---UAV reconnaissance queue entry with execution state
+---@class SBJ__ReconQueueEntryUAV:SBJ__ReconQueueEntryTemplateUAV
 ---@field unitGUID? string UAV unit GUID (nil if not yet created)
 ---@field hasLaunched boolean Whether reconnaissance mission has launched
 ---@field isFinished? boolean Whether reconnaissance mission has finished (optional)
 ---@field trackingTargetGUID? string Target contact GUID being tracked (optional, only used when isTracking is true)
 
+---Satellite reconnaissance queue entry with execution state
+---@class SBJ__ReconQueueEntrySatellite:SBJ__ReconQueueEntryTemplateSatellite
+---@field isFinished? boolean Whether reconnaissance mission has finished (optional)
+
+---Union type for all reconnaissance queue entries with execution state
+---@alias SBJ__ReconQueueEntry SBJ__ReconQueueEntryUAV|SBJ__ReconQueueEntrySatellite
+
 ---Reconnaissance context managing reconnaissance operations state
 ---@class SBJ__ReconContext:table
 ---@field isActivated boolean Whether reconnaissance system is activated
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
+
+---Reconnaissance-Strike mapping entry
+---Defines strike mission to execute after reconnaissance platform detects target
+---@class SBJ__ReconStrikeMapping
+---@field name string Strike mission name
+---@field type "air"|"ground" Strike mission type
+
+---Reconnaissance platform type
+---@alias SBJ__ReconPlatformType "UAV"|"satellite"|"surface"|"subsurface"
 
 
 -- ============================================================================
@@ -718,7 +747,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field wildWeasel? SBJ__MissionDeploymentDescriptor Wild Weasel configuration (optional)
 ---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
 ---@field tanker? SBJ__MissionDeploymentDescriptor Tanker configuration (optional)
----@field reconUAV? SBJ__ReconQueueEntryTemplate Reconnaissance UAV configuration (optional)
+---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
 ---@field timeToReady? number Ready time in minutes (optional)
 
 ---Loadout status tracking for mission preparation

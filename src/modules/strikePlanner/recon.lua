@@ -97,7 +97,7 @@ function Recon.launchWZ8(h6n, course)
 end
 
 ---Handle reconnaissance launch phase
----@param entry SBJ__ReconQueueEntry Queue entry to process
+---@param entry SBJ__ReconQueueEntryUAV Queue entry to process (UAV only)
 ---@return boolean # Whether unit was successfully launched
 local function handleReconLaunch(entry)
   if entry.hasLaunched or not GameUtils.isAfterStartTime(entry.takeoffTime) then
@@ -118,7 +118,7 @@ local function handleReconLaunch(entry)
 end
 
 ---Handle reconnaissance tracking mode - continuously update course to track moving target
----@param entry SBJ__ReconQueueEntry Queue entry
+---@param entry SBJ__ReconQueueEntryUAV Queue entry (UAV only)
 ---@param actualUnit CMO__Unit The reconnaissance unit
 ---@return boolean # Whether tracking was successfully updated
 local function handleReconTracking(entry, actualUnit)
@@ -162,150 +162,43 @@ end
 local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
   local operations = {}
 
-  -- Each entry has only one unitDBID, check which platform it is
-  if entry.unitDBID == constants.PLATFORMS.BZK005 then
-    -- BZK-005 reconnaissance: Schedule C2 (Command & Control) strike operations
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, "C2/1", "ground") then
-      table.insert(operations, {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "C2/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.STRIKE_C2_1
-        }
-      })
+  for key, platformModel in pairs(config.c.recon.reconStrikeMatrix[entry.type]) do
+    if entry.unitDBID == constants.PLATFORMS[key] then
+      for _, strikeMapping in ipairs(platformModel) do
+        if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
+          if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.isActivated then
+            Logger.log("recon", "LACM not activated, skipping STRIKE/AB/E/1 operation")
+            goto continue
+          end
 
-      return operations
-    end
+          local newOperation = {
+            type = strikeMapping.type,
+            executed = false,
+            template = {
+              name = strikeMapping.name,
+              isFirstWave = true,
+            }
+          }
 
-    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "C2/", "ground")
-    if existing and operation then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-      table.insert(operations, nextOperation)
-    end
-  elseif entry.unitDBID == constants.PLATFORMS.GJ11 then
-    -- GJ-11 reconnaissance: Schedule CAS operations
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/1", "air") then
-      table.insert(operations, {
-        type = "air",
-        executed = false,
-        template = {
-          name = "CAS/N/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          packages = config.c.packageTemplate.CAS_N_1
-        }
-      })
+          if strikeMapping.type == "air" then
+            newOperation.template.packages = config.c.packageTemplate[string.gsub(strikeMapping.name, "/", "_")]
+            newOperation.template.strikeInterval = 30 * 60
+          elseif strikeMapping.type == "ground" then
+            newOperation.template.FSTs = config.c.FSTTemplate[string.gsub(strikeMapping.name, "/", "_")]
+            newOperation.template.strikeInterval = 0
+          end
 
-      -- return operations
-    end
+          table.insert(operations, newOperation)
+        end
 
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, "C2/1", "ground") then
-      table.insert(operations, {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "C2/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.STRIKE_C2_1
-        }
-      })
-    end
-
-    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "CAS/N/", "air")
-    if existing and operation then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-      table.insert(operations, nextOperation)
-    end
-  elseif entry.unitDBID == constants.PLATFORMS.H6N then
-    -- WZ-8 reconnaissance (launched from H-6N): Schedule anti-ship strike operations
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, "ANTISHIP/1", "ground") then
-      table.insert(operations, {
-        type = "ground",
-        executed = false,
-        template = {
-          name = "ANTISHIP/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          FSTs = config.c.FSTTemplate.ANTISHIP_1
-        }
-      })
-
-      return operations
-    end
-
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, "ASUW/N/1 ", "air") then
-      table.insert(operations, {
-        type = "air",
-        executed = false,
-        template = {
-          name = "ASUW/N/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          packages = config.c.packageTemplate.ASUW_N_1
-        }
-      })
-
-      return operations
-    end
-
-    -- If LACM operations activated: Schedule airbase strike operations
-    if LACMContext.isActivated and not DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/E/1", "air") then
-      table.insert(operations, {
-        type = "air",
-        executed = false,
-        template = {
-          name = "STRIKE/AB/E/1",
-          strikeInterval = 0,
-          isFirstWave = false,
-          packages = config.c.packageTemplate.STRIKE_AB_E_1
-        }
-      })
-
-      return operations
-    end
-
-    local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/W/", "air")
-    if existing and operation then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
-      table.insert(operations, nextOperation)
-    end
-
-    local strikeInfrastructureOpExisting, strikeInfrastructureOp = DynamicOperationsUtils.hasOperation(
-      reconSchedule, "STRIKE/INFRASTRUCTURE/", "ground"
-    )
-    if strikeInfrastructureOpExisting and strikeInfrastructureOp then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeInfrastructureOp, config)
-      table.insert(operations, nextOperation)
-    end
-
-    local strikeHelipadOpExisting, strikeHelipadOp = DynamicOperationsUtils.hasOperation(
-      reconSchedule, "STRIKE/HELIPAD/", "ground"
-    )
-    if strikeHelipadOpExisting and strikeHelipadOp then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeHelipadOp, config)
-      table.insert(operations, nextOperation)
-    end
-
-    local asuWOpExisting, asuWOp = DynamicOperationsUtils.hasOperation(reconSchedule, "ASUW/N/", "air")
-    if asuWOpExisting and asuWOp then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(asuWOp, config)
-      table.insert(operations, nextOperation)
-    end
-
-    local antiShipOpExisting, antiShipOp = DynamicOperationsUtils.hasOperation(reconSchedule, "ANTISHIP/", "ground")
-    if antiShipOpExisting and antiShipOp then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(antiShipOp, config)
-      table.insert(operations, nextOperation)
-    end
-
-    local strikeEastExisting, strikeEastOp = DynamicOperationsUtils.hasOperation(reconSchedule, "STRIKE/AB/E/", "air")
-    if LACMContext.isActivated and strikeEastExisting and strikeEastOp then
-      local nextOperation = DynamicOperationsUtils.generateNextOperation(strikeEastOp, config)
-      table.insert(operations, nextOperation)
+        local baseName, currentNumber = strikeMapping.name:match("^(.+/)(%d+)$")
+        local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, baseName, strikeMapping.type)
+        if existing and operation then
+          local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+          table.insert(operations, nextOperation)
+        end
+        ::continue::
+      end
     end
   end
 
@@ -326,14 +219,14 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
   --   return
   -- end
 
-  local nextReconTime = Utils.parseDatetimeToTimestamp(result.nextReconTime)
-  local endTime = Utils.parseDatetimeToTimestamp(entry.endTime)
+  -- local nextReconTime = Utils.parseDatetimeToTimestamp(result.nextReconTime)
+  -- local endTime = Utils.parseDatetimeToTimestamp(entry.endTime)
 
   -- Only schedule if current recon completed before next scheduled recon
   -- This ensures next wave operations are inserted in the correct time slot
-  if endTime >= nextReconTime then
-    return
-  end
+  -- if endTime >= nextReconTime then
+  --   return
+  -- end
 
   -- Generate next wave operations
   local operations = {}
@@ -348,7 +241,7 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
   if #operations > 0 then
     table.insert(reconSchedule, {
       time = entry.endTime,
-      type = "UAV",
+      type = entry.type,
       delay = 0,
       executed = false,
       operations = operations
@@ -400,48 +293,58 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
   end
 
   for _, entry in ipairs(reconContext.queue) do
-    -- Phase 1: Launch reconnaissance units when time comes
-    if not entry.hasLaunched then
-      handleReconLaunch(entry)
-      goto continue
-    end
-
-    -- Phase 2: In-flight management (monitor UAV status, verify endTime, handle mission completion)
-    if entry.hasLaunched and not entry.isFinished then
-      local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
-      local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
-
-      -- Check if UAV was destroyed
-      if not actualUnit then
-        Logger.log("recon", string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
-        -- Mission success depends on whether endTime was reached (intelligence collection completed)
-        finishReconMission(config, reconSchedule, entry, LACMContext, isEndTimeReached)
+    if entry.type == "UAV" then
+      -- Phase 1: Launch reconnaissance units when time comes
+      if not entry.hasLaunched then
+        handleReconLaunch(entry)
         goto continue
       end
 
-      -- UAV exists: check if still flying course
-      if #actualUnit.course > 0 then
-        goto continue
-      end
+      -- Phase 2: In-flight management (monitor UAV status, verify endTime, handle mission completion)
+      if entry.hasLaunched and not entry.isFinished then
+        local actualUnit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
+        local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
 
-      -- Course completed: check if endTime reached
-      if not isEndTimeReached then
-        -- Course complete but endTime not reached: loiter and wait for full reconnaissance duration
-        Logger.log("recon", string.format("UAV %s completed course but waiting for endTime: %s",
-          actualUnit.name, entry.endTime))
-        goto continue
-      end
+        -- Check if UAV was destroyed
+        if not actualUnit then
+          Logger.log("recon", string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
+          -- Mission success depends on whether endTime was reached (intelligence collection completed)
+          finishReconMission(config, reconSchedule, entry, LACMContext, isEndTimeReached)
+          goto continue
+        end
 
-      -- Both course and endTime completed: process mission completion
-      if entry.isTracking and entry.trackingTargetGUID then
-        -- Tracking mode: continue tracking target
-        local success = handleReconTracking(entry, actualUnit)
-        if not success then
-          Logger.log("recon", string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
+        -- UAV exists: check if still flying course
+        if #actualUnit.course > 0 then
+          goto continue
+        end
+
+        -- Course completed: check if endTime reached
+        if not isEndTimeReached then
+          -- Course complete but endTime not reached: loiter and wait for full reconnaissance duration
+          Logger.log("recon", string.format("UAV %s completed course but waiting for endTime: %s",
+            actualUnit.name, entry.endTime))
+          goto continue
+        end
+
+        -- Both course and endTime completed: process mission completion
+        if entry.isTracking and entry.trackingTargetGUID then
+          -- Tracking mode: continue tracking target
+          local success = handleReconTracking(entry, actualUnit)
+          if not success then
+            Logger.log("recon", string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
+            finishReconMission(config, reconSchedule, entry, LACMContext, true)
+          end
+        else
+          -- Normal reconnaissance: mission complete
           finishReconMission(config, reconSchedule, entry, LACMContext, true)
         end
-      else
-        -- Normal reconnaissance: mission complete
+      end
+    elseif entry.type == "satellite" then
+      local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
+      Logger.log("recon", string.format("Processing satellite recon entry, endTime reached: %s",
+        tostring(isEndTimeReached)))
+
+      if not entry.isFinished and isEndTimeReached then
         finishReconMission(config, reconSchedule, entry, LACMContext, true)
       end
     end
@@ -462,7 +365,8 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   -- Check if any UAV in queue is already tracking this target
   for _, entry in ipairs(reconContext.queue) do
-    if entry.trackingTargetGUID == target.guid and entry.unitGUID then
+    -- Only check UAV type entries (satellite entries don't have tracking fields)
+    if entry.type == "UAV" and entry.trackingTargetGUID == target.guid and entry.unitGUID then
       local unit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
       if unit then
         return true
@@ -494,7 +398,8 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
   -- Find queue entry for this UAV
   local queueEntry = nil
   for _, entry in ipairs(reconContext.queue) do
-    if entry.unitGUID == UAV.guid then
+    -- Only check UAV type entries
+    if entry.type == "UAV" and entry.unitGUID == UAV.guid then
       queueEntry = entry
       break
     end
