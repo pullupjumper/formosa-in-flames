@@ -29,8 +29,8 @@ function UnitStatusUI.countUnitsInEachArea(config)
       ["HMMWV"] = 0,
       ["ZBD-03"] = 0
     }
-    for _, value in ipairs(unitsFromChina) do
-      local unit = GameApi.ScenEdit_GetUnit(value.guid)
+    for _, u in ipairs(unitsFromChina) do
+      local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
       if unit and unit:inArea(zone.area) then
         if unit.dbid == constants.PLATFORMS.ZBD05 then
@@ -89,9 +89,9 @@ end
 
 ---Display HTML dialog for EMCON settings configuration
 function UnitStatusUI.wcsSettingTable()
-  local units = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
-  if not units then
+  if not filteredUnits then
     return
   end
 
@@ -101,8 +101,8 @@ function UnitStatusUI.wcsSettingTable()
 
   if form["pressed"] and form["pressed"] == "Done" then
     if form["pac23"] and string.gsub(form["pac23"], "%'", "") == "on" then
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
@@ -114,8 +114,8 @@ function UnitStatusUI.wcsSettingTable()
         end
       end
     else
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.PAC3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
@@ -129,8 +129,8 @@ function UnitStatusUI.wcsSettingTable()
     end
 
     if form["skybow3"] and string.gsub(form["skybow3"], "%'", "") == "on" then
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
@@ -142,8 +142,8 @@ function UnitStatusUI.wcsSettingTable()
         end
       end
     else
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
@@ -157,8 +157,8 @@ function UnitStatusUI.wcsSettingTable()
     end
 
     if form["tc2"] and string.gsub(form["tc2"], "%'", "") == "on" then
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
@@ -170,8 +170,8 @@ function UnitStatusUI.wcsSettingTable()
         end
       end
     else
-      for index, value in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(value.guid)
+      for index, u in ipairs(filteredUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
         if unit and unit.dbid == constants.PLATFORMS.TC2 then
           GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
@@ -194,45 +194,52 @@ end
 ---@return string # JSON formatted artillery battery status data
 local function createBatteryDataString(config, saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local key = sideConfig.field
+  local field = sideConfig.field
   local wpnSystems = { ... }
-
   local rows = {}
 
-  for index, wpnSystem in pairs(wpnSystems) do
-    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].resupplyUnits then
-      for k, value in pairs(saveData[key].ground[wpnSystem].resupplyUnits) do
-        rows[k] = {}
+  for _, wpnSystem in pairs(wpnSystems) do
+    ---@type table<string, SBJ__ResupplyUnitContext>|nil
+    local resupplyUnitCtxs = saveData[field].ground[wpnSystem] and
+        saveData[field].ground[wpnSystem].resupplyUnits
+
+    if resupplyUnitCtxs then
+      for key, ctx in pairs(resupplyUnitCtxs) do
+        rows[key] = {}
       end
     end
   end
 
-  for index, wpnSystem in pairs(wpnSystems) do
-    if saveData[key].ground[wpnSystem] and saveData[key].ground[wpnSystem].firingUnits then
-      for _, bty in pairs(saveData[key].ground[wpnSystem].firingUnits) do
-        local name = bty.name
+  for _, wpnSystem in pairs(wpnSystems) do
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData[field].ground[wpnSystem]
+    ---@type SBJ__FiringUnitContext[]|nil
+    local firingUnitCtxs = wpnSystemCtx and wpnSystemCtx.firingUnits
+
+    if wpnSystemCtx and firingUnitCtxs then
+      for _, ctx in pairs(firingUnitCtxs) do
+        local name = ctx.name
         local status = ""
-        local missilesInAmmoVehicles = saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit]
+        local missilesInAmmoVehicles = wpnSystemCtx.resupplyUnits[ctx.resupplyUnit].wpnCurrent
+        local ammoSec = wpnSystemCtx.resupplyUnits[ctx.resupplyUnit]
+        local reloadTime = config[field].ground[wpnSystem].reloadTime / 60
+        local missilesInAHA = wpnSystemCtx.ammunitions[wpnSystemCtx.resupplyUnits[ctx.resupplyUnit].ammunition]
             .wpnCurrent
-        local ammoSec = saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit]
-        local reloadTime = config[key].ground[wpnSystem].reloadTime / 60
-        local missilesInAHA = saveData[key].ground[wpnSystem].ammunitions
-            [saveData[key].ground[wpnSystem].resupplyUnits[bty.resupplyUnit].ammunition].wpnCurrent
         local batteryReloadTime = nil
         local ammoSectionReloadTime = nil
 
-        if bty.state == 0 then
+        if ctx.state == 0 then
           status = "STATIC"
-        elseif bty.state == 1 then
+        elseif ctx.state == 1 then
           status = "REPOSITIONING"
-        elseif bty.state == 2 then
+        elseif ctx.state == 2 then
           status = "RELOAD"
         else
           status = "HIDE"
         end
 
-        if bty.reloadStartTime ~= nil then
-          batteryReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - bty.reloadStartTime) / 60) * 100 +
+        if ctx.reloadStartTime ~= nil then
+          batteryReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 +
                 0.5) /
               100
 
@@ -241,7 +248,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
           end
         end
 
-        if bty.reloadStartTime == nil then
+        if ctx.reloadStartTime == nil then
           batteryReloadTime = 0
         end
 
@@ -260,7 +267,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         end
 
         if sideName == "China" then
-          table.insert(rows[bty.resupplyUnit], {
+          table.insert(rows[ctx.resupplyUnit], {
             name = name,
             type = wpnSystem,
             status = status,
@@ -271,7 +278,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
             defaultReloadTime = reloadTime
           })
         else
-          table.insert(rows[bty.resupplyUnit], {
+          table.insert(rows[ctx.resupplyUnit], {
             name = name,
             type = wpnSystem,
             status = status,
@@ -295,15 +302,16 @@ end
 ---@return string # JSON formatted ammunition inventory data
 local function createMagazineDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local key = sideConfig.field
-
+  local field = sideConfig.field
   local rows = {}
+  ---@type SBJ__AirbaseDeploymentDescriptor[]
+  local descriptors = config[field].air.landBased.deployedACs
 
-  for index, item in ipairs(config[key].air.landBased.deployedACs) do
-    local base = GameApi.ScenEdit_GetUnit(item.baseGUID)
+  for _, descriptor in ipairs(descriptors) do
+    local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
 
-    if base and item.loadouts then
-      local obj = { name = item.name, wpns = {} }
+    if base and descriptor.loadouts then
+      local obj = { name = descriptor.name, wpns = {} }
 
       for _, magazine in ipairs(base.magazines) do
         for _, wpn in ipairs(magazine["mag_weapons"]) do
@@ -328,50 +336,54 @@ end
 ---@return string # JSON formatted C2 status data
 local function createC2NodeDataString(saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local key = sideConfig.field
-
+  local field = sideConfig.field
   local rows = {}
   local types = { ... }
 
   for _, type in pairs(types) do
-    for index, item in pairs(saveData[key].IADS[type]) do
-      if rows[type] == nil then
-        rows[type] = {}
-      end
+    ---@type table<string, SBJ__C2Context>|nil
+    local C2Ctxs = saveData[field].IADS[type]
 
-      rows[type][item.guid] = { name = item.name }
-
-      if item.SAM then
-        rows[type][item.guid]["SAM"] = {}
-
-        for _, sam in pairs(item.SAM) do
-          local unit = GameApi.ScenEdit_GetUnit(sam.guid)
-          local isDestroyed = unit == nil
-          rows[type][item.guid]["SAM"][sam.guid] = {
-            name = sam.name,
-            OODADetection = tostring(sam.currOODA.detection) .. "/" .. tostring(sam.OODA.detection),
-            OODATargeting = tostring(sam.currOODA.targeting) .. "/" .. tostring(sam.OODA.targeting),
-            isOutOfComms = sam.isOutOfComms,
-            EMCONSetting = sam.EMCONSetting,
-            isDestroyed = isDestroyed
-          }
+    if C2Ctxs then
+      for _, C2Ctx in pairs(C2Ctxs) do
+        if rows[type] == nil then
+          rows[type] = {}
         end
-      end
 
-      if item.radar then
-        rows[type][item.guid]["radar"] = {}
+        rows[type][C2Ctx.guid] = { name = C2Ctx.name }
 
-        for _, radar in pairs(item.radar) do
-          local unit = GameApi.ScenEdit_GetUnit(radar.guid)
-          local isDestroyed = unit == nil
-          rows[type][item.guid]["radar"][radar.guid] = {
-            name = radar.name,
-            OODADetection = tostring(radar.currOODA.detection) .. "/" .. tostring(radar.OODA.detection),
-            OODATargeting = tostring(radar.currOODA.targeting) .. "/" .. tostring(radar.OODA.targeting),
-            isOutOfComms = radar.isOutOfComms,
-            EMCONSetting = radar.EMCONSetting,
-            isDestroyed = isDestroyed
-          }
+        if C2Ctx.SAM then
+          rows[type][C2Ctx.guid]["SAM"] = {}
+
+          for _, SAMCtx in pairs(C2Ctx.SAM) do
+            local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
+            local isDestroyed = unit == nil
+            rows[type][C2Ctx.guid]["SAM"][SAMCtx.guid] = {
+              name = SAMCtx.name,
+              OODADetection = tostring(SAMCtx.currOODA.detection) .. "/" .. tostring(SAMCtx.OODA.detection),
+              OODATargeting = tostring(SAMCtx.currOODA.targeting) .. "/" .. tostring(SAMCtx.OODA.targeting),
+              isOutOfComms = SAMCtx.isOutOfComms,
+              EMCONSetting = SAMCtx.EMCONSetting,
+              isDestroyed = isDestroyed
+            }
+          end
+        end
+
+        if C2Ctx.radar then
+          rows[type][C2Ctx.guid]["radar"] = {}
+
+          for _, radarCtx in pairs(C2Ctx.radar) do
+            local unit = GameApi.ScenEdit_GetUnit(radarCtx.guid)
+            local isDestroyed = unit == nil
+            rows[type][C2Ctx.guid]["radar"][radarCtx.guid] = {
+              name = radarCtx.name,
+              OODADetection = tostring(radarCtx.currOODA.detection) .. "/" .. tostring(radarCtx.OODA.detection),
+              OODATargeting = tostring(radarCtx.currOODA.targeting) .. "/" .. tostring(radarCtx.OODA.targeting),
+              isOutOfComms = radarCtx.isOutOfComms,
+              EMCONSetting = radarCtx.EMCONSetting,
+              isDestroyed = isDestroyed
+            }
+          end
         end
       end
     end
@@ -386,13 +398,15 @@ end
 ---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local key = sideConfig.field
-
+  local field = sideConfig.field
   local rows = {}
-  for _, data in pairs(saveData[key].SIGINT.transmissions) do
-    local copy = Utils.deepCopy(data)
-    copy.firstDetected = os.date("!%Y-%m-%d %H:%M:%S", data.firstDetected)
-    copy.lastDetected = os.date("!%Y-%m-%d %H:%M:%S", data.lastDetected)
+  ---@type table<string, SBJ__RadioTransmissionContext>
+  local transmissions = saveData[field].SIGINT.transmissions
+
+  for _, transmission in pairs(transmissions) do
+    local copy = Utils.deepCopy(transmission)
+    copy.firstDetected = os.date("!%Y-%m-%d %H:%M:%S", transmission.firstDetected)
+    copy.lastDetected = os.date("!%Y-%m-%d %H:%M:%S", transmission.lastDetected)
     table.insert(rows, copy)
   end
 
@@ -417,11 +431,13 @@ end
 ---@return string # JSON formatted GPS jamming unit data
 local function createGPSJammingDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local side = sideConfig.field
-
+  local field = sideConfig.field
+  ---@type table<string, SBJ__GPSJammerDescriptor>
+  local descriptors = saveData[field].GPSJamming.jammers
   local rows = {}
-  for _, data in pairs(saveData[side].GPSJamming.jammers) do
-    local row = Utils.deepCopy(data)
+
+  for _, descriptor in pairs(descriptors) do
+    local row = Utils.deepCopy(descriptor)
     table.insert(rows, row)
   end
 
@@ -434,11 +450,13 @@ end
 ---@return string # JSON formatted deployed aircraft data with coordinates
 local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local side = sideConfig.field
+  local field = sideConfig.field
   local rows = {}
+  ---@type SBJ__AirbaseDeploymentDescriptor[]
+  local descriptors = config[field].air.landBased.deployedACs
 
-  for _, data in pairs(config[side].air.landBased.deployedACs) do
-    local row = Utils.deepCopy(data)
+  for _, descriptor in pairs(descriptors) do
+    local row = Utils.deepCopy(descriptor)
     local base = GameApi.ScenEdit_GetUnit(row.baseGUID)
 
     if base then

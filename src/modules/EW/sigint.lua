@@ -58,12 +58,12 @@ end
 ---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides)
 ---@return number # Distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
-  local constants = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
-  local randomFactor = (config and config.randomFactor) or constants.RANDOM_FACTOR
+  local consts = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
+  local randomFactor = (config and config.randomFactor) or consts.RANDOM_FACTOR
 
-  local baseDeviation = (constants.BASE_COEFFICIENT * (baseDistance ^ 3.8518)) / constants.POWER_DIVISOR
-  local randomDeviation = ((math.random(-randomFactor * baseDistance, randomFactor * baseDistance) ^ 2) / constants.RANDOM_DIVISOR) /
-      constants.RANDOM_POWER_DIVISOR * ((baseDistance ^ constants.DISTANCE_POWER) / constants.DISTANCE_DIVISOR)
+  local baseDeviation = (consts.BASE_COEFFICIENT * (baseDistance ^ 3.8518)) / consts.POWER_DIVISOR
+  local randomDeviation = ((math.random(-randomFactor * baseDistance, randomFactor * baseDistance) ^ 2) / consts.RANDOM_DIVISOR) /
+      consts.RANDOM_POWER_DIVISOR * ((baseDistance ^ consts.DISTANCE_POWER) / consts.DISTANCE_DIVISOR)
 
   return baseDeviation + randomDeviation
 end
@@ -166,7 +166,6 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
 
   local lastCoursePoint = unit.course[courseCount]
   local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL.area) and unit.speed > 0
-
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
 
@@ -420,6 +419,7 @@ end
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized
 function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
+  ---@type CMO__SideUnit[]
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then

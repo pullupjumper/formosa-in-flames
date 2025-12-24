@@ -71,6 +71,7 @@ saveData.c.GPSJamming.jammers = {
 -- MLRS (China)
 -- ============================================================================
 
+---@type SBJ__GroundForceContext
 saveData.c.ground = {}
 saveData.c.ground.mlrs = {}
 saveData.c.ground.mlrs.isActivated = true
@@ -415,7 +416,7 @@ saveData.c.recon.queue = {
     baseGUID = constants.BASES.LIUAN_AB,
     unitDBID = constants.PLATFORMS.H6N,
     unitGUID = nil,
-    course = config.c.recon.courses.H6N,
+    course = constants.COURSES.H6N,
     unitCount = 1,
     -- takeoffTime = "2027-06-09 01:20:00",
     takeoffTime = "2027-06-09 01:00:00",
@@ -428,8 +429,8 @@ saveData.c.recon.queue = {
   },
   {
     type = "satellite",
-    -- endTime = "2027-06-09 01:00:00",
-    endTime = "2027-06-09 04:40:00",
+    endTime = "2027-06-09 01:00:00",
+    -- endTime = "2027-06-09 04:40:00",
     isFinished = false,
   },
   {
@@ -450,7 +451,31 @@ saveData.c.recon.queue = {
     isFinished = false,
   },
 }
-
+saveData.c.recon.reconStrikeMatrix = {
+  UAV = {
+    BZK005 = {
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    GJ11 = {
+      { name = "CAS/N/1",     type = "air", },
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    H6N = {
+      { name = "ANTISHIP/1",    type = "ground" },
+      { name = "ASUW/N/1",      type = "air" },
+      { name = "STRIKE/AB/E/1", type = "air" },
+      { name = "STRIKE/AB/W/1", type = "air" }
+    },
+  },
+  satellite = {
+    EOS = {
+      { name = "STRIKE/AB/W/1",           type = "air" },
+      { name = "STRIKE/AB/E/1",           type = "air" },
+      { name = "STRIKE/HELIPAD/1",        type = "ground" },
+      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+    }
+  }
+}
 
 -- ============================================================================
 -- Fire Support Plan (China)

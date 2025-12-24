@@ -28,7 +28,7 @@ end
 ---Handle ship movement for standard amphibious assault ship types
 ---Assigns next available location from pre-calculated positions and increments index
 ---@param unit CMO__Unit The ship unit to move
----@param resultTable table<string, table> Pre-calculated destination locations for all ship types
+---@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations for all ship types
 ---@param shipType string Ship type identifier (type075, type076, type072iii, etc.)
 ---@param shipSettings table<string, number> Ship movement configuration
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
@@ -42,7 +42,7 @@ end
 ---Handle ship movement for auxiliary vessels identified by name (ferry, RORO, barge)
 ---Similar to handleShipType but uses ship name instead of DBID for matching
 ---@param unit CMO__Unit The ship unit to move
----@param resultTable table<string, table> Pre-calculated destination locations
+---@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations
 ---@param nameType string Ship name type (ferry, RORO, barge)
 ---@param shipSettings table<string, number> Ship movement configuration
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
@@ -57,7 +57,7 @@ end
 ---Handle Type 071 LPD movement with overflow support to LST area
 ---When LPD area is full, overflow Type 071s are placed in LST area
 ---@param unit CMO__Unit The Type 071 ship to move
----@param resultTable table<string, table> Pre-calculated destination locations
+---@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations
 ---@param shipType string Ship type identifier (always "type071")
 ---@param shipSettings table<string, number> Ship movement configuration
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
@@ -76,14 +76,14 @@ end
 
 ---Set ship position and heading instantly (used in testing mode)
 ---@param ship CMO__Unit The ship unit to reposition
----@param lat number|string Latitude coordinate
----@param lon number|string Longitude coordinate
+---@param latitude number|string Latitude coordinate
+---@param longitude number|string Longitude coordinate
 ---@param bearing number Ship heading in degrees
-local function setShipPosition(ship, lat, lon, bearing)
+local function setShipPosition(ship, latitude, longitude, bearing)
   GameApi.ScenEdit_SetUnit({
     guid = ship.guid,
-    latitude = lat,
-    longitude = lon,
+    latitude = latitude,
+    longitude = longitude,
     heading = bearing,
   })
 end
@@ -105,42 +105,42 @@ end
 
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
----@param group SBJ__SAGDescriptor SAG group descriptor with destination and unit list
+---@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
-local function handleSAG(group, isTesting)
-  local unit = GameApi.ScenEdit_GetUnit(group.groupName)
+local function handleSAG(descriptor, isTesting)
+  local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
 
   if not unit then
     return
   end
 
-  unit.course = group.to.anchorageArea
+  unit.course = descriptor.to.anchorageArea
 
   if isTesting then
-    local count = #group.to.anchorageArea
+    local count = #descriptor.to.anchorageArea
     local type052d, type054a = 0, 0
 
-    for _, u in ipairs(unit.group.unitlist) do
-      local ship = GameApi.ScenEdit_GetUnit(u)
+    for _, guid in ipairs(unit.group.unitlist) do
+      local ship = GameApi.ScenEdit_GetUnit(guid)
 
       if ship then
         if ship.dbid == constants.PLATFORMS.TYPE_052D then
           if type052d == 0 then
             setShipPosition(
               ship,
-              group.to.anchorageArea[count].latitude,
-              group.to.anchorageArea[count].longitude,
-              group.to.heading
+              descriptor.to.anchorageArea[count].latitude,
+              descriptor.to.anchorageArea[count].longitude,
+              descriptor.to.heading
             )
           else
             local point = getNextPosition(
-              group.to.anchorageArea[count].latitude,
-              group.to.anchorageArea[count].longitude,
-              group.to.heading - 180,
+              descriptor.to.anchorageArea[count].latitude,
+              descriptor.to.anchorageArea[count].longitude,
+              descriptor.to.heading - 180,
               1.5
             )
             if point then
-              setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+              setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
             end
           end
 
@@ -148,13 +148,13 @@ local function handleSAG(group, isTesting)
         elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
           local angle = (type054a == 0) and -45 or 45
           local point = getNextPosition(
-            group.to.anchorageArea[count].latitude,
-            group.to.anchorageArea[count].longitude,
-            group.to.heading - angle,
+            descriptor.to.anchorageArea[count].latitude,
+            descriptor.to.anchorageArea[count].longitude,
+            descriptor.to.heading - angle,
             1.5
           )
           if point then
-            setShipPosition(ship, point.latitude, point.longitude, group.to.heading)
+            setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
           end
           type054a = type054a + 1
         end
@@ -167,17 +167,17 @@ end
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
----@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all ship movement orders were successfully issued
-function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, units)
+function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits)
   local formationSettings = amphibOpsConfig.formationSettings
   local operations = amphibOpsConfig.operations
   local calculationResult = saveData.c.PHIBOP.calculationResult
   local isTesting = saveData.c.PHIBOP.isTesting
   local allUnitsMoved = false
 
-  for _, unitData in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(unitData.guid)
+  for _, u in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
       for _, operation in ipairs(operations) do
@@ -217,8 +217,8 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, units)
     end
   end
 
-  for _, group in pairs(amphibOpsConfig.sag) do
-    handleSAG(group, isTesting)
+  for _, SAGDescriptor in pairs(amphibOpsConfig.sag) do
+    handleSAG(SAGDescriptor, isTesting)
   end
 
   allUnitsMoved = true

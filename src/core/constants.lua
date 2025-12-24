@@ -818,6 +818,44 @@ constants.OPERATIONAL_AREAS = {
   },
 }
 
+constants.COURSES = {
+  WZ8 = {
+    { latitude = "N 24.59.45", longitude = "E 121.59.21", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 24.01.38", longitude = "E 121.37.51", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 21.55.32", longitude = "E 120.51.30", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 22.41.05", longitude = "E 120.27.58", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 22.57.13", longitude = "E 120.12.37", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 23.28.13", longitude = "E 120.22.57", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 24.15.54", longitude = "E 120.38.12", desiredAltitude = 30480, desiredSpeed = 3300 },
+    { latitude = "N 25.14.02", longitude = "E 121.21.47", desiredAltitude = 30480, desiredSpeed = 3300 },
+  },
+  H6N = {
+    { latitude = "31.4291627579406", longitude = "116.708479118499", desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 29.47.52",       longitude = "E 119.19.47",      desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 25.57.34",       longitude = "E 121.32.45",      desiredAltitude = 13716, desiredSpeed = 550 },
+  },
+  BZK005_1 = {
+    { longitude = 119.651011005704, latitude = 25.6118001826929, desiredSpeed = 115 },
+    { longitude = 121.238926932242, latitude = 25.459719525138,  desiredSpeed = 115 },
+    { longitude = 120.926681879442, latitude = 25.2124494777565, desiredSpeed = 115 },
+    { longitude = 120.929674562224, latitude = 24.991467160603,  desiredSpeed = 115 },
+    { longitude = 120.479387627427, latitude = 24.2630653534717, desiredSpeed = 115 },
+  },
+  BZK005_2 = {
+    { longitude = 118.031467210727, latitude = 23.9011198341539, desiredSpeed = 115 },
+    { longitude = 120.074966412556, latitude = 23.5745839530736, desiredSpeed = 115 },
+    { longitude = 119.894517624583, latitude = 23.1838444302557, desiredSpeed = 115 },
+    { longitude = 119.884596562779, latitude = 22.8618144043299, desiredSpeed = 115 },
+    { longitude = 120.200631279976, latitude = 22.571862857163,  desiredSpeed = 115 },
+    { longitude = 120.536274602033, latitude = 22.1911994531482, desiredSpeed = 115 },
+  },
+  GJ11 = {
+    { longitude = 120.954426817633, latitude = 25.4296233744497, desiredSpeed = 450, desiredAltitude = 100 },
+    { longitude = 121.087994141654, latitude = 25.0506579616447, desiredSpeed = 450, desiredAltitude = 100 },
+    { longitude = 121.249386737925, latitude = 25.1186720471747, desiredSpeed = 450, desiredAltitude = 100 },
+  }
+}
+
 constants.WCS = {
   FREE = 0,
   TIGHT = 1,

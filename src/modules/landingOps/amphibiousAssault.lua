@@ -83,8 +83,8 @@ end
 function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 
-  for _, item in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(item.guid)
+  for _, u in ipairs(units) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
       for _, zone in ipairs(operationalZones) do
@@ -109,14 +109,14 @@ function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
     end
   end
 
-  for _, group in pairs(amphibOpsConfig.sag) do
-    local unit = GameApi.ScenEdit_GetUnit(group.groupName)
+  for _, descriptor in pairs(amphibOpsConfig.sag) do
+    local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
 
     if not unit then
       return false
     end
 
-    unit.course = group.to.amphibiousVehicleStagingArea
+    unit.course = descriptor.to.amphibiousVehicleStagingArea
   end
 
   return true
@@ -142,7 +142,7 @@ end
 ---Launch Air Cushion Vehicles (ACVs) from an amphibious assault ship
 ---Spawns ZTD-05 and ZBD-05 amphibious vehicles in formation toward landing zone
 ---@param params SBJ__ACVDeploymentParams Deployment configuration (ship, bearing, distance, destination)
----@return number|nil # Number of ACVs successfully launched, or nil on failure
+---@return integer|nil # Number of ACVs successfully launched, or nil on failure
 function AmphibiousAssault.launchACV(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end

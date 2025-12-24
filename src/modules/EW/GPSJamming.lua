@@ -153,7 +153,6 @@ end
 ---@param sideName string Side name that owns the jammers (e.g., 'China', 'Taiwan')
 ---@return number # Number of jammers successfully removed
 function GPSJamming.removeJammers(jammerDescriptors, sideName)
-  -- local side = getSideKey(sideName)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if sideObj == nil then return 0 end
 

@@ -17,8 +17,11 @@ local function calculateLoadoutStartTime(packageData)
 
   -- Find the earliest start time among all flight groups
   for _, role in ipairs(roles) do
-    if packageData[role] and packageData[role].startTime then
-      local startTimeTimestamp = Utils.parseDatetimeToTimestamp(packageData[role].startTime)
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole and missionRole.startTime then
+      local startTimeTimestamp = Utils.parseDatetimeToTimestamp(missionRole.startTime)
       if not earliestStartTime or startTimeTimestamp < earliestStartTime then
         earliestStartTime = startTimeTimestamp
       end
@@ -37,7 +40,7 @@ end
 
 ---Check if it's time to start weapon loading
 ---@param packageData SBJ__Package The strike package to check
----@return boolean # true if current time has reached or passed the loadout start time
+---@return boolean # True if current time has reached or passed the loadout start time
 local function isTimeToStartLoadout(packageData)
   -- Get the package-level loadoutStatus
   local loadoutStatus = packageData.loadoutStatus
@@ -71,11 +74,13 @@ local function initiateLoadoutForPackage(packageData)
   Logger.log("air", "Starting loadout for package: " .. packageData.striker.missionCreationParams.name)
 
   for _, role in ipairs(roles) do
-    if packageData[role] and packageData[role].loadoutID then
-      local roleData = packageData[role]
-      local loadoutID = roleData.loadoutID
-      local unitCount = roleData.unitCount
-      local targetUnitDBID = roleData.unitDBID
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole and missionRole.loadoutID then
+      local loadoutID = missionRole.loadoutID
+      local unitCount = missionRole.unitCount
+      local targetUnitDBID = missionRole.unitDBID
 
       -- If no unitDBID is specified, skip this role
       if not targetUnitDBID then
@@ -84,7 +89,7 @@ local function initiateLoadoutForPackage(packageData)
       end
 
       -- Get the base
-      local base = GameApi.ScenEdit_GetUnit(roleData.baseGUID)
+      local base = GameApi.ScenEdit_GetUnit(missionRole.baseGUID)
       if base and #base.embarkedUnits["Aircraft"] > 0 then
         local unitsProcessed = 0
 
@@ -149,7 +154,7 @@ end
 
 ---Check if weapon loading is complete
 ---@param packageData SBJ__Package The strike package to check
----@return boolean # true if loadout has been initiated and expected ready time has passed
+---@return boolean # True if loadout has been initiated and expected ready time has passed
 local function isLoadoutReady(packageData)
   local loadoutStatus = packageData.loadoutStatus
   if not loadoutStatus then
@@ -183,11 +188,14 @@ local function findEarliestRole(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
 
   for _, role in ipairs(roles) do
-    if packageData[role] and packageData[role].startTime then
-      local startTime = Utils.parseDatetimeToTimestamp(packageData[role].startTime)
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole and missionRole.startTime then
+      local startTime = Utils.parseDatetimeToTimestamp(missionRole.startTime)
       if not earliestTime or startTime < earliestTime then
         earliestTime = startTime
-        earliestRole = packageData[role]
+        earliestRole = missionRole
       end
     end
   end
@@ -198,39 +206,41 @@ end
 ---Creates a mission for a specific role if it doesn't exist.
 ---@param packageData SBJ__Package The strike package containing mission parameters
 ---@param role string The role identifier (e.g., "striker", "escort", "wildWeasel", "jammer", "tanker")
----@return boolean # true if mission exists or was successfully created
+---@return boolean # True if mission exists or was successfully created
 local function createMission(packageData, role)
-  local mission = GameApi.ScenEdit_GetMission("China", packageData[role].missionCreationParams.name)
+  ---@type SBJ__MissionDeploymentDescriptor
+  local missionRole = packageData[role]
+  local mission = GameApi.ScenEdit_GetMission("China", missionRole.missionCreationParams.name)
 
   if not mission then
-    Logger.log("air", "Mission not found, creating: " .. packageData[role].missionCreationParams.name)
+    Logger.log("air", "Mission not found, creating: " .. missionRole.missionCreationParams.name)
 
     mission = GameUtils.createMission(
       "China",
-      packageData[role].missionCreationParams.name,
-      packageData[role].missionCreationParams.type,
-      packageData[role].missionCreationParams.opts,
-      packageData[role].emcon
+      missionRole.missionCreationParams.name,
+      missionRole.missionCreationParams.type,
+      missionRole.missionCreationParams.opts,
+      missionRole.emcon
     )
 
-    if mission and packageData[role].endTime then
+    if mission and missionRole.endTime then
       mission["OnDeactivateDelete"] = true
       mission["OnDeactivateRTB"] = true
 
-      -- if role == 'striker' and packageData[role].startTime then
-      --   mission['TakeOffTime'] = packageData[role].startTime
+      -- if role == 'striker' and missionRole.startTime then
+      --   mission['TakeOffTime'] = missionRole.startTime
       -- end
-      if packageData[role].startTime then
-        mission["TakeOffTime"] = packageData[role].startTime
+      if missionRole.startTime then
+        mission["TakeOffTime"] = missionRole.startTime
       end
 
-      mission["endtime"] = packageData[role].endTime
+      mission["endtime"] = missionRole.endTime
 
-      if packageData[role].timeOnStation then
-        mission["TimeOnTargetStation"] = packageData[role].timeOnStation
+      if missionRole.timeOnStation then
+        mission["TimeOnTargetStation"] = missionRole.timeOnStation
       end
 
-      if packageData[role].missionCreationParams.type == "strike" then
+      if missionRole.missionCreationParams.type == "strike" then
         GameApi.ScenEdit_SetDoctrine({ side = "China", mission = mission.name }, { automatic_evasion = false })
       end
     end
@@ -241,23 +251,26 @@ end
 
 ---Assigns all units in the package to their respective missions.
 ---@param packageData SBJ__Package The strike package containing unit assignment data
----@return boolean # true if the primary striker units were successfully assigned
+---@return boolean # True if the primary striker units were successfully assigned
 local function assignUnits(packageData)
   local roles = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
   local strikerAssigned = false
 
   for _, role in ipairs(roles) do
-    if packageData[role] then
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole then
       local result = AssignMission.assignEmbarkedUnitToStrikeMission(
-        packageData[role].baseGUID,
-        packageData[role].unitCount,
-        packageData[role].weaponDBID,
-        packageData[role].unitDBID, -- Handles jammer case where weaponDBID is 0
-        packageData[role].missionCreationParams.name,
+        missionRole.baseGUID,
+        missionRole.unitCount,
+        missionRole.weaponDBID,
+        missionRole.unitDBID, -- Handles jammer case where weaponDBID is 0
+        missionRole.missionCreationParams.name,
         false
       )
       if role ~= "tanker" and role ~= "striker" then
-        GameApi.ScenEdit_CreateMissionFlightPlan("China", packageData[role].missionCreationParams.name, {})
+        GameApi.ScenEdit_CreateMissionFlightPlan("China", missionRole.missionCreationParams.name, {})
       end
 
       if role == "striker" and result and #result > 0 then
@@ -274,7 +287,7 @@ end
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO state
 ---@param packageData SBJ__Package The strike package data to process
----@return boolean # true if package was successfully launched, false if still in preparation
+---@return boolean # True if package was successfully launched, false if still in preparation
 local function processPackage(config, saveData, packageData)
   -- 1. Check if weapon loading start time has been reached
   if not isTimeToStartLoadout(packageData) then
@@ -296,7 +309,10 @@ local function processPackage(config, saveData, packageData)
   local roles = { "tanker", "striker", "escort", "wildWeasel", "jammer", }
 
   for _, role in ipairs(roles) do
-    if packageData[role] then
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole then
       local missionCreated = createMission(packageData, role)
 
       if role == "striker" and not missionCreated then
@@ -372,7 +388,7 @@ end
 
 ---Checks if all packages in a wave have been launched.
 ---@param waveData SBJ__Wave The wave containing multiple strike packages
----@return boolean # true if all packages in the wave have been launched
+---@return boolean # True if all packages in the wave have been launched
 local function isWaveFinished(waveData)
   for _, packageData in ipairs(waveData.packages) do
     if not packageData.hasLaunched then

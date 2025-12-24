@@ -104,7 +104,7 @@ if saveData.c.PHIBOP.isWaitingForSecondWaveUnloading then
 
   if hasEstablishedBeachheads then
     local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(
-      config, config.c.PHIBOP, saveData, filteredShips
+      config.c.PHIBOP, saveData, filteredShips
     )
 
     if hasStartedSecondWaveUnloading then

@@ -14,7 +14,7 @@ local DynamicFireSupportPlan = {}
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param FSTTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
----@return CMO__Contact[] # Array of strike targets that passed filtering and assessment
+---@return string[] # Array of target GUIDs that passed filtering and assessment
 local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
   -- Choose different assessment methods based on target type
   local strikeTargets = {}
@@ -41,6 +41,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
 
     -- Call corresponding function in TargetingProcess
     for _, filterName in ipairs(FSTTemplate.target.filterNames) do
+      ---@type fun(opts: SBJ__FilterParams): string[]|nil
       local targetingFunction = TargetingProcess[filterName]
 
       if targetingFunction then
@@ -72,6 +73,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
       Logger.log("dynamicOperations", "Filtered " .. #filteredTargets .. " candidate targets")
 
       -- Perform BDA assessment
+      ---@type SBJ__Task
       local task = { target = { list = filteredTargets, contactAge = FSTTemplate.target.contactAge } }
       strikeTargets = TargetingProcess.assessTargetsDamage(task, isFirstWave)
     end
@@ -124,6 +126,7 @@ local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSys
 
   -- Get battery data from weapon system
   local weaponSystemLower = string.lower(wpnSystem)
+  ---@type SBJ__FiringUnitContext|nil
   local firingUnitCtx = saveData.c.ground[weaponSystemLower] and
       saveData.c.ground[weaponSystemLower].firingUnits and
       saveData.c.ground[weaponSystemLower].firingUnits[firingUnitGUID]

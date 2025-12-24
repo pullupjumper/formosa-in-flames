@@ -6,37 +6,6 @@ local constants = require("src.core.constants")
 
 local UnitGenerator = {}
 
----Ship formation specification - defines a single ship's configuration within a formation
----Used to specify ship positioning, armament, and embarked units in naval groups
----@class UnitGenerator_ShipFormationSpec
----@field dbid number Ship platform database ID
----@field unitname string Ship unit name
----@field distance number Distance from formation center (nautical miles)
----@field angle number Angle offset from formation heading (degrees)
----@field embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked aircraft/boats (optional)
----@field loadouts SBJ__Loadout[]|nil Ammunition stockpile configuration (optional)
-
-
----Formation configuration for internal ship creation
----Used internally by createShipFormation() to configure ship group formations
----@class UnitGenerator_FormationConfig
----@field centerPoint CMO__Location Formation center point coordinates
----@field heading number Formation heading angle
----@field groupName string Ship group name
----@field sideName string Side name (e.g., 'China', 'Taiwan')
----@field unitTypes UnitGenerator_ShipFormationSpec[] Array of ship configurations to create
-
----@alias UnitGenerator_UnitType
----| '"type075"'
----| '"type071"'
----| '"type076"'
----| '"type072iii"'
----| '"type072a"'
----| '"type073a"'
----| '"ferry"'
----| '"barge"'
----| '"roro"'
-
 local FORMATION = {
   ANGLES = {
     LEFT = -45,
@@ -55,7 +24,7 @@ local FORMATION = {
 ---@param heading number Heading angle
 ---@param distance number Distance
 ---@param angle number Angle offset
----@return table|nil # Calculated position {latitude: number, longitude: number}
+---@return CMO__Location|nil # Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
     latitude = centerPoint.latitude,
@@ -70,7 +39,7 @@ end
 ---@param sideName string Side name
 ---@return boolean # Whether cleanup was successful
 local function cleanupExistingGroup(groupName, sideName)
-  local group = GameApi.ScenEdit_GetUnit(groupName)
+  local group = GameApi.ScenEdit_GetUnit(groupName, sideName)
   if group and group.group and group.group.unitlist then
     for _, guid in ipairs(group.group.unitlist) do
       GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
@@ -81,8 +50,8 @@ end
 
 ---Add embarked units (advanced version, supports mission assignment)
 ---@param embarkedUnits SBJ__EmbarkedUnit[] List of embarked units
----@param baseGuid string Base unit GUID
-local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGuid)
+---@param baseGUID string Base unit GUID
+local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGUID)
   for _, embarkedUnit in ipairs(embarkedUnits) do
     for _, loadout in ipairs(embarkedUnit.loadouts) do
       for i = 1, loadout.num do
@@ -91,7 +60,7 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGuid)
           type = embarkedUnit.type,
           dbid = embarkedUnit.dbid,
           unitname = embarkedUnit.name .. " #" .. Utils.randomTxt(2),
-          base = baseGuid,
+          base = baseGUID,
         }
 
         if loadout.loadoutId ~= 0 then
@@ -110,7 +79,7 @@ end
 
 ---Add units by reference point
 ---@param params SBJ__LinearPlacementParams Linear placement parameters
----@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
+---@param unitDescriptor SBJ__UnitDescriptor Unit descriptor
 ---@param embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
 local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
   local locations = GameUtils.generateLocations(params)
@@ -213,9 +182,9 @@ end
 ---@param position CMO__Location Position
 ---@param areaDescriptor SBJ__AmphibiousAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
----@param shipSettings SBJ__FormationSettings Amphibious layout configuration
+---@param shipSettings SBJ__AmphibiousFormationSettings Amphibious layout configuration
 ---@param cargoList table<string, SBJ__CargoDescriptor[]> Cargo list
----@param shipType UnitGenerator_UnitType Ship type
+---@param shipType SBJ__AmphibiousShipType Ship type
 local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoList, shipType)
   local shipConfigs = {
     type075 = {
@@ -259,6 +228,7 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
   local shipConfig = shipConfigs[shipType]
   if not shipConfig then return end
 
+  ---@type SBJ__LinearPlacementParams
   local params = {
     initialLocation = position,
     bearing = areaDescriptor.heading.horizontal,
@@ -282,7 +252,7 @@ end
 ---Get SAG formation configuration
 ---@param sagDescriptor SBJ__SAGDescriptor Configuration object
 ---@param sideName string Side name ('China' | 'Taiwan')
----@return UnitGenerator_ShipFormationSpec[] # Ship formation specification list
+---@return SBJ__ShipFormationSpec[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == "China" then
     return {
@@ -322,21 +292,21 @@ local function getSAGShipConfiguration(sagDescriptor, sideName)
         unitname = "Keelung",
         distance = 0,
         angle = 0,
-        embarkedUnits = nil -- Embarked units handled separately during creation
+        embarkedUnits = sagDescriptor.unitList.kidd.embarkedUnits
       },
       {
         dbid = sagDescriptor.unitList.kangDing.dbid,
         unitname = "KangDing",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.LEFT,
-        embarkedUnits = nil
+        embarkedUnits = sagDescriptor.unitList.kangDing.embarkedUnits
       },
       {
         dbid = sagDescriptor.unitList.kangDing.dbid,
         unitname = "KangDing",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.RIGHT,
-        embarkedUnits = nil
+        embarkedUnits = sagDescriptor.unitList.kangDing.embarkedUnits
       }
     }
   end
@@ -344,7 +314,7 @@ end
 
 ---Get CSG formation configuration
 ---@param csgDescriptor SBJ__CSGDescriptor Configuration object
----@return UnitGenerator_ShipFormationSpec[] # CSG ship formation specification list
+---@return SBJ__ShipFormationSpec[] # CSG ship formation specification list
 local function getCSGShipConfiguration(csgDescriptor)
   return {
     {
@@ -394,13 +364,14 @@ local function getCSGShipConfiguration(csgDescriptor)
 end
 
 ---Create formation ships
----@param formationConfig UnitGenerator_FormationConfig Formation configuration
+---@param formationConfig SBJ__SAGFormationConfig Formation configuration
 ---@return boolean # Whether successful
 local function createShipFormation(formationConfig)
   -- Clean up existing group
   cleanupExistingGroup(formationConfig.groupName, formationConfig.sideName)
 
   local createdUnits = {}
+  local leader = nil
 
   -- Create ships at various positions
   for _, shipConfig in ipairs(formationConfig.shipTypes) do
@@ -431,6 +402,10 @@ local function createShipFormation(formationConfig)
     if unit then
       table.insert(createdUnits, unit)
 
+      if shipConfig.angle == 0 then
+        leader = unit
+      end
+
       -- Add embarked units
       if shipConfig.embarkedUnits then
         addEmbarkedUnitsAdvanced(shipConfig.embarkedUnits, unit.guid)
@@ -454,6 +429,12 @@ local function createShipFormation(formationConfig)
 
   Logger.log("unitGenerator", string.format("Successfully created formation %s with %d ships",
     formationConfig.groupName, #createdUnits))
+
+  if leader then
+    leader.group.lead = leader.guid
+    Logger.log("unitGenerator", string.format("Set %s as group leader", leader.guid))
+  end
+
   return true
 end
 
@@ -477,38 +458,16 @@ function UnitGenerator.createSAGs(sagDescriptors, sideName)
       return false
     end
 
-    -- Handle embarked units separately (for Taiwan)
-    if sideName == "Taiwan" then
-      local group = GameApi.ScenEdit_GetUnit(sagDescriptor.groupName)
-      if group and group.group and group.group.unitlist then
-        for i, unitGuid in ipairs(group.group.unitlist) do
-          local unit = GameApi.ScenEdit_GetUnit(unitGuid)
-          if unit then
-            if unit.name:find("Keelung") and sagDescriptor.unitList and sagDescriptor.unitList.kidd then
-              addEmbarkedUnitsAdvanced(sagDescriptor.unitList.kidd.embarkedUnits, unit.guid)
-            elseif unit.name:find("KangDing") and sagDescriptor.unitList and sagDescriptor.unitList.kangDing then
-              addEmbarkedUnitsAdvanced(sagDescriptor.unitList.kangDing.embarkedUnits, unit.guid)
-            end
-          end
-        end
-      end
-    end
-
-    -- Set radar status
-    local group = GameApi.ScenEdit_GetUnit(sagDescriptor.groupName)
-    if group then
-      GameApi.ScenEdit_SetEMCON("Unit", group.guid, "Radar=Active")
+    local actualSAG = GameApi.ScenEdit_GetUnit(sagDescriptor.groupName, sideName)
+    if actualSAG then
+      GameApi.ScenEdit_SetEMCON("Unit", actualSAG.guid, "Radar=Active")
       GameApi.ScenEdit_SetDoctrine(
-        { side = group.side, unitname = group.name },
+        { side = actualSAG.side, unitname = actualSAG.name },
         { weapon_control_status_land = constants.WCS.HOLD }
       )
-    end
 
-    -- Set mission (for Taiwan)
-    if sideName == "Taiwan" and sagDescriptor.missionName then
-      local kidd = GameApi.ScenEdit_GetUnit(sagDescriptor.groupName)
-      if kidd then
-        kidd.mission = sagDescriptor.missionName
+      if sagDescriptor.missionName then
+        actualSAG.mission = sagDescriptor.missionName
       end
     end
   end
@@ -565,8 +524,6 @@ end
 ---@param sideName string Side name
 ---@return boolean # Whether successful
 function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
-  -- local field = (sideName == 'China') and 'c' or 't'
-
   for _, descriptor in ipairs(descriptors) do
     local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
 
@@ -645,11 +602,11 @@ end
 ---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configuration list
 ---@return boolean # Whether aircraft addition was successful
 function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
-  for _, data in ipairs(airbaseDeploymentDescriptors) do
-    local base = GameApi.ScenEdit_GetUnit(data.baseGUID)
+  for _, descriptor in ipairs(airbaseDeploymentDescriptors) do
+    local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
 
     if not base then
-      base = GameApi.ScenEdit_GetUnit(data.name)
+      base = GameApi.ScenEdit_GetUnit(descriptor.name)
     end
 
     if base and base.embarkedUnits.Aircraft then
@@ -658,16 +615,16 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
       end
     end
 
-    if data.embarkedUnits then
-      addEmbarkedUnitsAdvanced(data.embarkedUnits, data.baseGUID)
+    if descriptor.embarkedUnits then
+      addEmbarkedUnitsAdvanced(descriptor.embarkedUnits, descriptor.baseGUID)
     end
 
-    if data.loadouts then
-      UnitGenerator.removeMagazinesByBaseGUID(data.baseGUID)
+    if descriptor.loadouts then
+      UnitGenerator.removeMagazinesByBaseGUID(descriptor.baseGUID)
 
-      for _, loadout in ipairs(data.loadouts) do
+      for _, loadout in ipairs(descriptor.loadouts) do
         GameApi.ScenEdit_FillMagsForLoadout({
-          unit = data.name,
+          unit = descriptor.name,
           loadoutid = loadout.loadoutId,
           quantity = loadout.num
         })
@@ -737,9 +694,10 @@ end
 ---Remove landing ships
 ---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips()
-  local unitsFromChina = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
+  ---@type CMO__SideUnit[]
+  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
 
-  if not unitsFromChina then
+  if not filteredUnits then
     return false
   end
 
@@ -757,7 +715,7 @@ function UnitGenerator.removeLandingShips()
     constants.PLATFORMS.BARGE
   }
 
-  for _, u in ipairs(unitsFromChina) do
+  for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit then
       for _, dbid in ipairs(landingShipDBIDs) do
@@ -778,6 +736,7 @@ end
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
 ---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(context)
+  ---@type CMO__SideUnit[]
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then

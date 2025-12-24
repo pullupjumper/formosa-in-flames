@@ -6,10 +6,11 @@ local AttackManager = {}
 ---Get weapon information for a unit
 ---@param unit CMO__Unit The unit to check
 ---@param weaponDBID number|nil Specific weapon DBID to look for
----@return {weaponDBID: number, mountDBID: number, availableWeapons: number, maxWeapons: number, assignedWeapons: number} # Weapon information
+---@return {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} # Weapon information
 local function getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0
   local maxWeaponCapacity = 0
+  ---@type number
   local mountDBID = unit.mounts[1]["mount_dbid"]
   local mountIndex = 1
   local wpnIndex = 1
@@ -29,6 +30,7 @@ local function getWeaponInfo(unit, weaponDBID)
 
   -- If no weaponDBID was provided, use the one we found
   if weaponDBID == nil then
+    ---@type number
     weaponDBID = unit.mounts[mountIndex]["mount_weapons"][wpnIndex]["wpn_dbid"]
   end
 
@@ -54,13 +56,12 @@ local function getWeaponInfo(unit, weaponDBID)
 end
 
 ---Get total ammunition already allocated for attacking a specific target
----@param contactGuid string The target contact's unique identifier
----@param side string The attacking side's name
----@return number # Total ammunition currently allocated to attack this target
-local function getAmmoAllocatedForTarget(contactGuid, side)
+---@param contactGUID string The target contact's unique identifier
+---@param sideName string The attacking side's name
+---@return integer # Total ammunition currently allocated to attack this target
+local function getAmmoAllocatedForTarget(contactGUID, sideName)
   local totalTargetAmmoCount = 0
-
-  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation("", contactGuid, side)
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation("", contactGUID, sideName)
 
   if not weaponAllocations then
     weaponAllocations = {}
@@ -78,8 +79,8 @@ end
 ---Check if a unit can fire at a contact
 ---@param unit CMO__Unit The unit to check
 ---@param contact CMO__Contact The target contact
----@param weaponInfo table Weapon information
----@param totalAmmoRequested number Total amount of ammunition requested for attack
+---@param weaponInfo {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} Weapon information
+---@param totalAmmoRequested integer Total amount of ammunition requested for attack
 ---@return boolean # Whether the unit can fire
 local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   -- Check if unit is on hold
@@ -121,12 +122,12 @@ end
 ---Process a group unit and attempt to allocate weapons for attack
 ---@param groupUnit CMO__Unit The group unit to process
 ---@param contact CMO__Contact The target contact
----@param totalAmmoRequested number Total amount of ammunition requested for this attack
----@param ammoAlreadyAllocated number Amount of ammunition already allocated in this attack
+---@param totalAmmoRequested integer Total amount of ammunition requested for this attack
+---@param ammoAlreadyAllocated integer Amount of ammunition already allocated in this attack
 ---@param weaponDBID number Specific weapon DBID to use
----@param grpIdx number Current group index
+---@param grpIdx integer Current group index
 ---@return boolean success Whether to advance to next battery
----@return number weaponsAllocated Number of weapons allocated
+---@return integer weaponsAllocated Number of weapons allocated
 local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlreadyAllocated, weaponDBID, grpIdx)
   local ammoAllocated = 0
   local advanceBattery = false
@@ -136,6 +137,7 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
     return true, 0 -- Move to next battery, no weapons allocated
   end
 
+  ---@type string
   local guid = groupUnit.group.unitlist[grpIdx]
   local unit = GameApi.ScenEdit_GetUnit(guid)
 
@@ -154,13 +156,13 @@ local function processUnitGroup(groupUnit, contact, totalAmmoRequested, ammoAlre
     local ammoToAllocate = math.min(ammoNeeded, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result = GameApi.ScenEdit_AttackContact(
+    local success = GameApi.ScenEdit_AttackContact(
       guid,
       contact.guid,
       { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
 
-    if result then
+    if success then
       ammoAllocated = ammoToAllocate
     end
   end
@@ -176,9 +178,9 @@ end
 ---Process a single unit and attempt to allocate weapons for attack
 ---@param unit CMO__Unit The unit to process
 ---@param contact CMO__Contact The target contact
----@param totalAmmoRequested number Total amount of ammunition requested for this attack
+---@param totalAmmoRequested integer Total amount of ammunition requested for this attack
 ---@param weaponDBID number Specific weapon DBID to use
----@return {ammoAllocated: number} # Results including allocated weapons
+---@return {ammoAllocated: integer} # Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
   local weaponInfo = getWeaponInfo(unit, weaponDBID)
@@ -190,13 +192,13 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
 
     -- Attack the contact
-    local result = GameApi.ScenEdit_AttackContact(
+    local success = GameApi.ScenEdit_AttackContact(
       unit.guid,
       contact.guid,
       { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
     )
 
-    if result then
+    if success then
       return { ammoAllocated = ammoToAllocate }
     end
   end
@@ -206,20 +208,19 @@ end
 
 ---Attack a single contact with weapon allocation from firing units
 ---@param contactGUID string The target contact to attack
----@param ammoToAllocate number Total amount of ammunition to allocate for this attack
----@param firingUnits table<string, SBJ__FiringUnitContext> Array of firing units to use for attack
----@param btyIdx number Starting firing unit index
----@param grpIdx number Starting group index
+---@param ammoToAllocate integer Total amount of ammunition to allocate for this attack
+---@param firingUnits SBJ__FiringUnit[] Array of firing units to use for attack
+---@param btyIdx integer Starting firing unit index
+---@param grpIdx integer Starting group index
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
----@param side string The side to use for the attack, default is 'China'
----@return {btyIdx: number, grpIdx: number, launchedNum: number} # Results including next indices and number of weapons launched
-function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, btyIdx, grpIdx, weaponDBID, side)
+---@param sideName string The side to use for the attack, default is 'China'
+---@return {btyIdx: integer, grpIdx: integer, ammoAllocated: integer} # Results including next indices and number of weapons launched
+function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, btyIdx, grpIdx, weaponDBID, sideName)
   -- Initialize variables
   local totalAmmoAllocated = 0
   local attemptCount = 0
   local maxAttempts = 50
-
-  local contact = GameApi.ScenEdit_GetContact(side, contactGUID)
+  local contact = GameApi.ScenEdit_GetContact(sideName, contactGUID)
 
   if contact == nil then
     Logger.error("AttackContact: Contact not found with GUID: " .. tostring(contactGUID))
@@ -230,12 +231,17 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
 
     -- Process each firing unit until we've allocated enough ammo or tried all firing units
     while btyIdx <= #firingUnits and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
-      local actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[btyIdx].guid)
-      local wpnDBID = weaponDBID or firingUnits[btyIdx].weaponDBID
+      ---@type SBJ__FiringUnit
+      local firingUnit = firingUnits[btyIdx]
+      local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.guid)
+      local wpnDBID = weaponDBID or firingUnit.weaponDBID
 
       if not actualUnit then
-        actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[btyIdx].name, side)
-        if not actualUnit then break end
+        actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name, sideName)
+
+        if not actualUnit then
+          break
+        end
       end
 
       -- Handle differently based on whether it's a group or individual unit
@@ -257,7 +263,9 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
         end
 
         -- Wrap around to first firing unit if needed
-        if btyIdx > #firingUnits then btyIdx = 1 end
+        if btyIdx > #firingUnits then
+          btyIdx = 1
+        end
 
         -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
@@ -271,7 +279,9 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
 
         -- Move to next firing unit
         btyIdx = btyIdx + 1
-        if btyIdx > #firingUnits then btyIdx = 1 end
+        if btyIdx > #firingUnits then
+          btyIdx = 1
+        end
 
         -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
@@ -285,16 +295,16 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, b
 end
 
 ---Attack multiple contacts with weapon allocation from firing units
----@param opts SBJ__AttackContacts_Params Attack parameters
----@return number # Total number of ammunition launched across all contacts
+---@param opts SBJ__AttackParams Attack parameters
+---@return integer # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(opts)
-  local result = { btyIdx = 1, grpIdx = 1, launchedNum = 0 }
-  local totalLaunchedNum = 0
+  local result = { btyIdx = 1, grpIdx = 1, ammoAllocated = 0 }
+  local totalAmmoAllocated = 0
   local contacts = opts.contacts or {}
   local qty = opts.qty or 1
   local firingUnits = opts.firingUnits
   local weaponDBID = opts.weaponDBID
-  local side = opts.side or "China"
+  local sideName = opts.sideName or "China"
 
   for _, contact in ipairs(contacts) do
     result = AttackManager.attackContact(
@@ -304,13 +314,13 @@ function AttackManager.attackContacts(opts)
       result.btyIdx,
       result.grpIdx,
       weaponDBID,
-      side
+      sideName
     )
 
-    totalLaunchedNum = totalLaunchedNum + result.ammoAllocated
+    totalAmmoAllocated = totalAmmoAllocated + result.ammoAllocated
   end
 
-  return totalLaunchedNum
+  return totalAmmoAllocated
 end
 
 return AttackManager

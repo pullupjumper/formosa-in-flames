@@ -1,6 +1,5 @@
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local constants = require("src.core.constants")
@@ -155,16 +154,31 @@ end
 ---Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
 ---Each UAV platform triggers different specialized operations based on successful reconnaissance
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@return SBJ__Operation[] # Array of special operations to add
-local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+local function getPlatformSpecialOperations(config, reconContext, reconSchedule, entry, LACMContext)
   local operations = {}
 
-  for key, platformModel in pairs(config.c.recon.reconStrikeMatrix[entry.type]) do
-    if entry.unitDBID == constants.PLATFORMS[key] then
-      for _, strikeMapping in ipairs(platformModel) do
+  ---@type table<string, SBJ__ReconStrikeMapping[]>|nil
+  local strikeMatrix = reconContext.reconStrikeMatrix[entry.type]
+
+  if not strikeMatrix then
+    Logger.error(string.format("No strike mappings found for platform type: %s", tostring(entry.type)))
+    return operations
+  end
+
+  for platformName, strikeMappings in pairs(strikeMatrix) do
+    local dbid = constants.PLATFORMS[platformName]
+
+    if not dbid then
+      Logger.log("recon", string.format("Platform not found in constants: %s", platformName))
+    end
+
+    if entry.unitDBID == dbid then
+      for _, strikeMapping in ipairs(strikeMappings) do
         if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
           if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.isActivated then
             Logger.log("recon", "LACM not activated, skipping STRIKE/AB/E/1 operation")
@@ -208,10 +222,11 @@ end
 ---Schedule dynamic operations for next wave based on completed reconnaissance and platform-specific operations
 ---Only called when UAV completes successfully (reached endTime with complete intelligence)
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
-local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+local function scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext)
   local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
 
   -- Check if there are operations to schedule and next recon time exists
@@ -232,7 +247,7 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
   local operations = {}
 
   -- Add platform-specific operations
-  local specialOps = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+  local specialOps = getPlatformSpecialOperations(config, reconContext, reconSchedule, entry, LACMContext)
   for _, op in ipairs(specialOps) do
     table.insert(operations, op)
   end
@@ -254,13 +269,14 @@ end
 ---Finish reconnaissance mission and conditionally schedule next operations
 ---Only schedules next wave operations if mission completed successfully (reached endTime with valid intelligence)
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param success boolean Mission success status:
 ---  - true: UAV completed full reconnaissance duration (reached endTime), schedule next operations
 ---  - false: Mission failed (UAV destroyed before endTime), skip scheduling due to incomplete intelligence
-local function finishReconMission(config, reconSchedule, entry, LACMContext, success)
+local function finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, success)
   -- Prevent double execution
   if entry.isFinished then
     return
@@ -271,7 +287,7 @@ local function finishReconMission(config, reconSchedule, entry, LACMContext, suc
   if success then
     -- Mission successful: UAV survived until endTime and completed reconnaissance duration
     -- Intelligence data is complete and reliable, safe to schedule next wave operations
-    scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+    scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext)
     Logger.log("recon", string.format("Recon mission completed successfully, scheduling next operations"))
   else
     -- Mission failed: UAV destroyed or lost before completing reconnaissance duration
@@ -283,7 +299,7 @@ end
 ---Process reconnaissance queue managing UAV launch, flight monitoring, and mission completion
 ---Success requires UAV to complete course and reach endTime; failure if destroyed before endTime
 ---@param config SBJ__Config Configuration data for platform DBIDs
----@param reconContext SBJ__ReconContext Reconnaissance context containing queue and temp tracking data
+---@param reconContext SBJ__ReconContext Reconnaissance context
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule containing assigned missions
 ---@param LACMContext SBJ__LACMContext LACM context data
 function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
@@ -309,7 +325,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
         if not actualUnit then
           Logger.log("recon", string.format("Recon unit destroyed or missing: %s", tostring(entry.unitGUID)))
           -- Mission success depends on whether endTime was reached (intelligence collection completed)
-          finishReconMission(config, reconSchedule, entry, LACMContext, isEndTimeReached)
+          finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, isEndTimeReached)
           goto continue
         end
 
@@ -332,20 +348,18 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
           local success = handleReconTracking(entry, actualUnit)
           if not success then
             Logger.log("recon", string.format("Tracking failed for unit %s, but recon completed", actualUnit.name))
-            finishReconMission(config, reconSchedule, entry, LACMContext, true)
+            finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, true)
           end
         else
           -- Normal reconnaissance: mission complete
-          finishReconMission(config, reconSchedule, entry, LACMContext, true)
+          finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, true)
         end
       end
     elseif entry.type == "satellite" then
       local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
-      Logger.log("recon", string.format("Processing satellite recon entry, endTime reached: %s",
-        tostring(isEndTimeReached)))
 
       if not entry.isFinished and isEndTimeReached then
-        finishReconMission(config, reconSchedule, entry, LACMContext, true)
+        finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, true)
       end
     end
 
@@ -356,11 +370,16 @@ end
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to continuously track the target
 ---@param reconContext SBJ__ReconContext Reconnaissance context for tracking UAV assignments
----@param units CMO__SideUnit Side units collection to search for available UAVs
+---@param units CMO__SideUnit[] Side units collection to search for available UAVs
 ---@param UAVDBID number UAV platform database ID to filter by
 ---@param target CMO__Contact Target contact to track
 ---@return boolean # True if UAV was assigned to track target, false otherwise
 function Recon.trackTarget(reconContext, units, UAVDBID, target)
+  -- Input validation
+  if not reconContext or not reconContext.queue then
+    return false
+  end
+
   local UAV = nil
 
   -- Check if any UAV in queue is already tracking this target

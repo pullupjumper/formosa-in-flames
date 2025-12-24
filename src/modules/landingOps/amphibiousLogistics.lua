@@ -11,16 +11,16 @@ local AmphibiousLogistics = {}
 ---@param toUnit CMO__Unit Destination unit (aircraft or boat to receive cargo)
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
 function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
-  local cargoGuidList = {}
+  local filteredCargos = {}
   local count = 0
 
   if fromUnit == nil or fromUnit.cargo[1].cargo == nil then
     return
   end
 
-  for k, v in ipairs(fromUnit.cargo[1].cargo) do
-    if v.dbid == cargoItem.dbid then
-      table.insert(cargoGuidList, v.guid)
+  for _, element in ipairs(fromUnit.cargo[1].cargo) do
+    if element.dbid == cargoItem.dbid then
+      table.insert(filteredCargos, element.guid)
       count = count + 1
     end
 
@@ -29,8 +29,8 @@ function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
     end
   end
 
-  for k, v in ipairs(cargoGuidList) do
-    fromUnit:deleteUnitCargo(v)
+  for _, guid in ipairs(filteredCargos) do
+    fromUnit:deleteUnitCargo(guid)
   end
 
   for i = 1, cargoItem.num, 1 do
@@ -42,9 +42,9 @@ end
 ---Returns the actual number of items deleted (may be less than requested)
 ---@param fromUnit CMO__Unit Unit to remove cargo from
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
----@return number # Number of cargo items actually deleted
+---@return integer # Number of cargo items actually deleted
 function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
-  local cargoGuidList = {}
+  local filteredCargos = {}
   local count = 0
   local resultCount = 0
 
@@ -55,9 +55,9 @@ function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
     return 0
   end
 
-  for k, v in ipairs(fromUnit.cargo[1].cargo) do
-    if v.dbid == cargoItem.dbid then
-      table.insert(cargoGuidList, v.guid)
+  for _, element in ipairs(fromUnit.cargo[1].cargo) do
+    if element.dbid == cargoItem.dbid then
+      table.insert(filteredCargos, element.guid)
       count = count + 1
     end
 
@@ -66,8 +66,8 @@ function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
     end
   end
 
-  for k, v in ipairs(cargoGuidList) do
-    local result = fromUnit:deleteUnitCargo(v)
+  for _, guid in ipairs(filteredCargos) do
+    local result = fromUnit:deleteUnitCargo(guid)
 
     if result then
       resultCount = resultCount + 1
@@ -81,10 +81,10 @@ end
 ---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
 ---@param fromUnit string GUID of the base unit containing embarked platforms
 ---@param platformType string Type of embarked unit ('Aircraft' or 'Boats')
----@param platformDBid number Database ID of the platform to receive cargo
+---@param platformDBID number Database ID of the platform to receive cargo
 ---@param loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)
----@param cargoItems SBJ__CargoDescriptor[] Cargo items to transfer (single list or per-unit)
-function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid, loadoutDBID, cargoItems)
+---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
+function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
   if not base then
@@ -94,17 +94,17 @@ function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid,
   local platforms = base.embarkedUnits[platformType]
   local baseContainingCargo = base
 
-  if platforms ~= nil then
+  if platforms then
     local count = Utils.getCount(cargoItems)
 
-    for k, v in ipairs(platforms) do
-      local unit = GameApi.ScenEdit_GetUnit(v)
+    for idx, guid in ipairs(platforms) do
+      local unit = GameApi.ScenEdit_GetUnit(guid)
 
       if unit then
         if platformType == "Aircraft" then
-          if unit.dbid == platformDBid and unit.loadoutdbid == loadoutDBID then
+          if unit.dbid == platformDBID and unit.loadoutdbid == loadoutDBID then
             if count > 1 then
-              for _, item in ipairs(cargoItems[k]) do
+              for _, item in ipairs(cargoItems[idx]) do
                 AmphibiousLogistics.updateCargo(baseContainingCargo, unit, item)
               end
             else
@@ -114,9 +114,9 @@ function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBid,
             end
           end
         else
-          if unit.dbid == platformDBid then
+          if unit.dbid == platformDBID then
             if count > 1 then
-              for _, item in ipairs(cargoItems[k]) do
+              for _, item in ipairs(cargoItems[idx]) do
                 AmphibiousLogistics.updateCargo(baseContainingCargo, unit, item)
               end
             else
@@ -134,15 +134,15 @@ end
 ---Get units in anchorage area and check their movement status
 ---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@param units CMO__SideUnit Unit list from the side (filtered for ships)
+---@param filteredUnits CMO__SideUnit Unit list from the side (filtered for ships)
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
-function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, units)
+function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, filteredUnits)
   local operationalZones = amphibOpsConfig.operationalZones
   local unitsInAnchorageArea = {}
   local isUnitMoving = false
 
-  for _, item in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(item.guid)
+  for _, u in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit and (unit.dbid == constants.PLATFORMS.TYPE_075 or
           unit.dbid == constants.PLATFORMS.TYPE_071 or
@@ -176,13 +176,15 @@ end
 ---@param missionName string Name for the cargo mission
 ---@return boolean # True if mission was successfully created and configured
 local function handleCargoMission(platformType, zone, missionName)
-  local m = GameApi.ScenEdit_AddMission("China", missionName, "Cargo", { zone = zone[platformType].zone })
+  ---@type SBJ__BoatMissionDescriptor|SBJ__TransportHelicopterDescriptor
+  local descriptor = zone[platformType]
+  local m = GameApi.ScenEdit_AddMission("China", missionName, "Cargo", { zone = descriptor.zone })
 
   if not m then
     return false
   end
 
-  m = GameApi.ScenEdit_SetMission("China", missionName, zone[platformType].settings)
+  m = GameApi.ScenEdit_SetMission("China", missionName, descriptor.settings)
 
   if not m then
     return false
@@ -276,15 +278,6 @@ function AmphibiousLogistics.transferAndAssign(amphibOpsConfig, unitsInAnchorage
           zone.attackHelicopter.dbid,
           zone.attackHelicopter.missions
         )
-
-        -- if zone.reconUAV then
-        --   AssignMission.assignEmbarkedUnitsToMissions(
-        --     u.guid,
-        --     'Aircraft',
-        --     zone.reconUAV.dbid,
-        --     zone.reconUAV.missions
-        --   )
-        -- end
       end
 
       if u.dbid == constants.PLATFORMS.TYPE_071 and u:inArea(zone.anchorageArea) then
@@ -346,8 +339,8 @@ function AmphibiousLogistics.retransferCargos(amphibOpsConfig, units)
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, zone in ipairs(operationalZones) do
-    for _, item in ipairs(units) do
-      local unit = GameApi.ScenEdit_GetUnit(item.guid)
+    for _, u in ipairs(units) do
+      local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
       if not unit then
         return false

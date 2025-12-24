@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local constants = require("src.core.constants")
+local GameUtils = require("src.utils.gameUtils")
 
 local RunwayRepairment = {}
 
@@ -48,16 +49,16 @@ end
 
 ---Handle runway damage events and record repair start time
 ---@param saveData SBJ__SaveData Persistent save data
----@param side string Faction name ("China" or other faction)
+---@param sideName string Faction name ("China" or other faction)
 ---@param unit CMO__Unit The damaged runway unit
-function RunwayRepairment.whenRunwayIsDamaged(saveData, side, unit)
-  local field = (side == "China") and "c" or "t"
+function RunwayRepairment.whenRunwayIsDamaged(saveData, sideName, unit)
+  local sideCfg = GameUtils.getCachedSideConfig(sideName)
 
-  if not saveData[field].repairRunway.isActivated then
-    saveData[field].repairRunway.isActivated = true
+  if not saveData[sideCfg.field].repairRunway.isActivated then
+    saveData[sideCfg.field].repairRunway.isActivated = true
   end
 
-  for _, runway in ipairs(saveData[field].repairRunway.runways) do
+  for _, runway in ipairs(saveData[sideCfg.field].repairRunway.runways) do
     if unit and unit.guid == runway.guid and runway.startTime == nil then
       runway.startTime = GameApi.ScenEdit_CurrentTime()
     end

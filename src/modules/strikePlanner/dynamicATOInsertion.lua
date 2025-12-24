@@ -26,7 +26,7 @@ local TIME_CONSTANTS = {
 ---Collect all currently assigned aircraft from active ATO waves
 ---Counts aircraft already assigned to missions across all active ATO waves to prevent over-allocation
 ---@param saveData SBJ__SaveData The persistent save data containing ATO wave information
----@return table<string, number> # Map of base GUID to assigned aircraft count
+---@return table<string, integer> # Map of base GUID to assigned aircraft count
 local function collectAssignedAircraft(saveData)
   local assignedAircraft = {}
 
@@ -73,7 +73,7 @@ end
 ---Counts embarked aircraft matching the required DBID that are not assigned to missions
 ---@param baseGUID string The GUID of the air base to check
 ---@param requiredUnitDBID number The required aircraft unit database ID (DBID) to filter by
----@return number # Number of available unassigned aircraft of the specified type
+---@return integer # Number of available unassigned aircraft of the specified type
 local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   -- Try to get the base unit
   local baseUnit = GameApi.ScenEdit_GetUnit(baseGUID)
@@ -112,10 +112,10 @@ end
 
 ---Validate aircraft availability for a specific role
 ---Checks if base has sufficient aircraft after accounting for existing assignments
----@param roleData table Role configuration containing baseGUID, unitCount, and unitDBID
+---@param roleData SBJ__MissionDeploymentDescriptor Role configuration containing baseGUID, unitCount, and unitDBID
 ---@param roleName string Role name for error messages (e.g., "striker", "escort", "SEAD")
----@param packageIndex number Package index for error messages
----@param assignedAircraft table<string, number> Map of base GUID to currently assigned aircraft count
+---@param packageIndex integer Package index for error messages
+---@param assignedAircraft table<string, integer> Map of base GUID to currently assigned aircraft count
 ---@return boolean success true if sufficient aircraft available
 ---@return string|nil errorMessage Error message if validation fails, nil on success
 local function validateAircraftRole(roleData, roleName, packageIndex, assignedAircraft)
@@ -142,8 +142,8 @@ end
 ---Validates both target count meets minimum requirements and all roles have available aircraft
 ---@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
 ---@param packageTargets string[] Array of target GUIDs found for this package
----@param packageIndex number Index of the package for logging
----@param assignedAircraft table<string, number> Map of base GUID to currently assigned aircraft count
+---@param packageIndex integer Index of the package for logging
+---@param assignedAircraft table<string, integer> Map of base GUID to currently assigned aircraft count
 ---@return boolean success true if package is valid and can be executed
 ---@return string|nil reason Reason string (error message on failure, success message on pass)
 local function validateIndividualPackage(packageData, packageTargets, packageIndex, assignedAircraft)
@@ -184,7 +184,7 @@ end
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for tracking
----@param packageIndex number Package index for logging
+---@param packageIndex integer Package index for logging
 ---@return string[] # Array of target GUIDs matching the filter criteria
 local function processDynamicTargets(packageData, contacts, config, saveData, packageIndex)
   local strikeTargets = {}
@@ -206,6 +206,7 @@ local function processDynamicTargets(packageData, contacts, config, saveData, pa
   }
 
   for _, filterName in ipairs(packageData.target.filterNames) do
+    ---@type fun(opts: SBJ__FilterParams): string[]|nil
     local targetingFunction = TargetingProcess[filterName]
 
     if targetingFunction then
@@ -228,7 +229,7 @@ end
 ---@param packageData SBJ__PackageTemplate Package configuration with fixed target definitions
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
----@param packageIndex number Package index for logging
+---@param packageIndex integer Package index for logging
 ---@return string[] # Array of target GUIDs that passed BDA assessment
 local function processFixedTargets(packageData, saveData, isFirstWave, packageIndex)
   local strikeTargets = {}
@@ -261,7 +262,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param isFirstWave boolean Whether this is the first wave
----@param packageIndex number Package index for logging
+---@param packageIndex integer Package index for logging
 ---@return string[] # Array of target GUIDs found for this package
 local function processPackageTargets(packageData, contacts, config, saveData, isFirstWave, packageIndex)
   local strikeTargets = {}
@@ -322,15 +323,19 @@ end
 ---Computes flight time from role's base to patrol zone using distance-based speed calculation
 ---@param packageData SBJ__PackageTemplate Package configuration containing role data and patrol zone
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
----@return number # Flight time in seconds for the role to reach patrol zone
+---@return integer # Flight time in seconds for the role to reach patrol zone
 local function calculateRoleAdvanceTime(packageData, role)
+  ---@type SBJ__MissionDeploymentDescriptor|nil
+  local missionRole = packageData[role]
+
   -- Validate role exists in package
-  if not packageData[role] or not packageData[role].baseGUID then
+  if not missionRole or not missionRole.baseGUID then
     Logger.log("dynamicOperations", "Role " .. role .. " not found in package or missing baseGUID")
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
   -- Get patrol zone reference point (using escort's patrol zone as reference)
+  ---@type string[]|nil
   local patrolZone = packageData.escort and packageData.escort.missionCreationParams and
       packageData.escort.missionCreationParams.opts and
       packageData.escort.missionCreationParams.opts.patrolZone
@@ -350,8 +355,7 @@ local function calculateRoleAdvanceTime(packageData, role)
 
   -- Calculate distance from role's base to patrol zone
   local distance = GameApi.Tool_Range(
-    packageData[role].baseGUID,
-    { latitude = point.latitude, longitude = point.longitude }
+    missionRole.baseGUID, { latitude = point.latitude, longitude = point.longitude }
   )
 
   if not distance or distance <= 0 then
@@ -379,9 +383,10 @@ end
 ---Calculate support advance time based on furthest base distance
 ---Finds the furthest support base from patrol zone and calculates required advance time
 ---@param packageData SBJ__PackageTemplate Package configuration containing all support roles (escort, wildWeasel, jammer)
----@return number # Flight time in seconds for furthest support base to reach patrol zone
+---@return integer # Flight time in seconds for furthest support base to reach patrol zone
 local function calculateSupportAdvanceTime(packageData)
   -- Collect all support bases
+  ---@type {role: string, baseGUID: string}[]
   local supportBases = {}
   if packageData.escort and packageData.escort.baseGUID then
     table.insert(supportBases, { role = "escort", baseGUID = packageData.escort.baseGUID })
@@ -402,7 +407,7 @@ local function calculateSupportAdvanceTime(packageData)
   -- Find the furthest base
   local maxDistance = 0
   local furthestBase = nil
-
+  ---@type string
   local rp = packageData.escort.missionCreationParams.opts.patrolZone[1]
   local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = rp })
 
@@ -444,8 +449,8 @@ end
 
 ---Calculate striker flight time to target
 ---Computes flight time from striker base to target accounting for weapon range
----@param packageData table Package data containing striker baseGUID, weaponDBID, and target list
----@return number # Flight time in seconds from base to weapon release point
+---@param packageData SBJ__PackageTemplate Package data containing striker baseGUID, weaponDBID, and target list
+---@return integer # Flight time in seconds from base to weapon release point
 local function calculateStrikerFlightTime(packageData)
   if not packageData.striker or not packageData.striker.baseGUID or
       not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
@@ -482,9 +487,9 @@ end
 ---Calculate mission timing for a package
 ---Determines striker start and end times based on support advance time and strike intervals
 ---@param packageData SBJ__PackageTemplate Package configuration with role and timing information
----@param packageIndex number Index of the package (1-based)
+---@param packageIndex integer Index of the package (1-based)
 ---@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
----@param strikeInterval number Time interval in seconds between consecutive strikes
+---@param strikeInterval integer Time interval in seconds between consecutive strikes
 ---@return {strikerStart: string, strikerEnd: string} # Table with striker start/end times in "YYYY-MM-DD HH:MM:SS" format
 local function calculatePackageTiming(packageData, packageIndex, previousPackage, strikeInterval)
   local timing = {}
@@ -537,7 +542,7 @@ end
 ---Computes when support aircraft should launch to arrive before striker
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
 ---@param packageData SBJ__PackageTemplate Package data containing striker timing and role configurations
----@return {startTime: string, endTime: string} # Table with start/end times in "YYYY-MM-DD HH:MM:SS" format
+---@return {startTime: string, endTime: string, timeOnStation: string|nil} # Table with start/end times in "YYYY-MM-DD HH:MM:SS" format
 local function calculateRoleTiming(role, packageData)
   local strikerTimestamp = Utils.parseDatetimeToTimestamp(packageData.striker.startTime)
   local timing = {}
@@ -580,9 +585,9 @@ end
 ---Create a single package with proper timing
 ---Converts package template to executable package with calculated timings for all roles
 ---@param packageData SBJ__PackageTemplate Package template configuration
----@param packageIndex number Index of the package (1-based)
+---@param packageIndex integer Index of the package (1-based)
 ---@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
----@param strikeInterval number Time interval in seconds between consecutive strikes
+---@param strikeInterval integer Time interval in seconds between consecutive strikes
 ---@return SBJ__Package # Executable package with complete timing and loadout status
 local function createPackageWithTiming(packageData, packageIndex, previousPackage, strikeInterval)
   -- Calculate main timing
@@ -599,18 +604,21 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   -- Set support role timing
   local supportRoles = { "escort", "wildWeasel", "jammer", "tanker" }
   for _, role in ipairs(supportRoles) do
-    if packageData[role] then
-      if not packageData[role].startTime or not packageData[role].endTime then
+    ---@type SBJ__MissionDeploymentDescriptor|nil
+    local missionRole = packageData[role]
+
+    if missionRole then
+      if not missionRole.startTime or not missionRole.endTime then
         local roleTiming = calculateRoleTiming(role, packageData)
 
         if role ~= "tanker" then
-          packageData[role].startTime = packageData[role].startTime or roleTiming.startTime
+          missionRole.startTime = missionRole.startTime or roleTiming.startTime
         end
 
-        packageData[role].endTime = packageData[role].endTime or roleTiming.endTime
+        missionRole.endTime = missionRole.endTime or roleTiming.endTime
 
         if roleTiming.timeOnStation then
-          packageData[role].timeOnStation = roleTiming.timeOnStation
+          missionRole.timeOnStation = roleTiming.timeOnStation
         end
       end
     end
@@ -643,7 +651,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data to insert wave into
 ---@param packageTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param reconType string Reconnaissance type identifier used for wave naming
----@return boolean # true if wave was successfully inserted, false on failure
+---@return boolean # True if wave was successfully inserted, false on failure
 local function insertATOWave(saveData, packageTemplate, reconType)
   if not saveData.c.air.ATO then
     Logger.error("ATO structure not initialized")
@@ -693,7 +701,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing recon schedule
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@return boolean # true if any recon event was triggered and processed, false if none ready or failed
+---@return boolean # True if any recon event was triggered and processed, false if none ready or failed
 local function processReconSchedule(config, saveData, contacts)
   local reconSchedule = saveData.c.dynamicOperations.reconSchedule
 
@@ -789,7 +797,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@return boolean # true if processing completed successfully, false if disabled or failed
+---@return boolean # True if processing completed successfully, false if disabled or failed
 function DynamicATOInsertion.process(config, saveData, contacts)
   if not config or not saveData then
     Logger.error("Dynamic ATO Insertion: Invalid config or saveData")

@@ -74,18 +74,19 @@ end
 
 ---Initiate second wave unloading operations
 ---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
----@param config SBJ__Config Global configuration (unused but kept for consistency)
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data to track barge-RORO relationships
----@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if second wave unloading successfully started
-function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, saveData, units)
+function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData, filteredUnits)
   local operationalZones = amphibOpsConfig.operationalZones
+  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
   local roros = {}
+  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
   local barges = {}
 
-  for _, item in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(item.guid)
+  for _, u in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
       for _, zone in ipairs(operationalZones) do
@@ -106,14 +107,14 @@ function SecondWaveUnloading.startSecondWaveUnloading(config, amphibOpsConfig, s
     end
   end
 
-  for _, item in ipairs(roros) do
+  for _, roro in ipairs(roros) do
     for _, barge in ipairs(barges) do
-      if barge.unit:inArea(item.zone.LSTAnchorageArea) then
-        table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, item.unit.guid)
-        local course = createCourseForRORO(item.zone, item.unit, barge.dest)
+      if barge.unit:inArea(roro.zone.LSTAnchorageArea) then
+        table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, roro.unit.guid)
+        local course = createCourseForRORO(roro.zone, roro.unit, barge.dest)
         if course then
-          item.unit.course = course
-          item.unit.manualSpeed = item.zone.LSTSettings.speed
+          roro.unit.course = course
+          roro.unit.manualSpeed = roro.zone.LSTSettings.speed
         end
       end
     end
@@ -125,7 +126,7 @@ end
 ---Offload vehicles from ship cargo to the beach
 ---Deletes cargo from ship and spawns facility units in line formation at calculated positions
 ---@param params SBJ__VehicleOffloadParams Offload parameters (ship, number, bearing, distances)
----@return number|nil # Number of vehicles successfully offloaded, or nil on error
+---@return integer|nil # Number of vehicles successfully offloaded, or nil on error
 function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
@@ -136,12 +137,13 @@ function SecondWaveUnloading.offloadVehicles(params)
     distance = params.distance,
     firstDistance = params.firstDistance
   })
-  local cargoList = {}
+  ---@type { guid: string, dbid: number, name: string, type: number }[]
+  local cargoItems = {}
   local count = 0
   local resultCount = 0
 
-  for _, v in ipairs(ship.cargo[1].cargo) do
-    table.insert(cargoList, { guid = v.guid, dbid = v.dbid, name = v.name, type = v.Type })
+  for _, item in ipairs(ship.cargo[1].cargo) do
+    table.insert(cargoItems, { guid = item.guid, dbid = item.dbid, name = item.name, type = item.Type })
     count = count + 1
 
     if count == params.num then
@@ -149,25 +151,24 @@ function SecondWaveUnloading.offloadVehicles(params)
     end
   end
 
-  for index, v in ipairs(cargoList) do
-    ship:deleteUnitCargo(v.guid)
-
+  for idx, item in ipairs(cargoItems) do
+    ship:deleteUnitCargo(item.guid)
     local type = "Facility"
 
-    if v.type == 2 then
+    if item.type == 2 then
       type = "Ground unit"
     end
 
-    local u = GameApi.ScenEdit_AddUnit({
+    local vehicle = GameApi.ScenEdit_AddUnit({
       side      = "China",
       type      = type,
-      latitude  = ACVlocations[index].latitude,
-      longitude = ACVlocations[index].longitude,
-      dbid      = v.dbid,
-      unitname  = v.name,
+      latitude  = ACVlocations[idx].latitude,
+      longitude = ACVlocations[idx].longitude,
+      dbid      = item.dbid,
+      unitname  = item.name,
     })
 
-    if not u then
+    if not vehicle then
       return
     end
 
@@ -214,9 +215,9 @@ end
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
 function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
-    local d = GameApi.Tool_Range(roro.guid, barge.guid)
+    local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
-    if d and roro:inArea(zone.ACV.area) and barge:inArea(zone.ACV.area) and d < 1 then
+    if distance and roro:inArea(zone.ACV.area) and barge:inArea(zone.ACV.area) and distance < 1 then
       return zone
     end
   end

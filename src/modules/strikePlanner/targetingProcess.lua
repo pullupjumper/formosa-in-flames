@@ -344,6 +344,7 @@ end
 local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
   local isTracking = false
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -401,6 +402,7 @@ function TargetingProcess.findNavalTargets(opts)
   local config = opts.config
   local navalTargets = {}
   local hasTracked = false
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -453,7 +455,7 @@ end
 ---@param target CMO__Contact Contact object to evaluate
 ---@param contactAge number Maximum acceptable contact age in seconds
 ---@param isFirstWave boolean If true, accepts all targets; if false, applies BDA filtering
----@return boolean # true if target is valid for strike (not heavily damaged, recent detection, or first wave)
+---@return boolean # True if target is valid for strike (not heavily damaged, recent detection, or first wave)
 function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
   local actualUnit = GameApi.ScenEdit_GetUnit(target.actualunitid)
 

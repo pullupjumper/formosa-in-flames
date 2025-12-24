@@ -45,6 +45,31 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field rename? string Name to rename the description/name to (only applies for calls to ScenEdit_SetZone)
 ---@field enablers table Table of enablers for the zone (undocumented)
 
+---Formation configuration for unit groupings
+---@class CMO__FormationGroup:table
+---@field name string The name of the formation
+---@field spacing number The spacing of the formation
+---@field spacing_unit string Multipler to the spacing if required (Opertional)
+---@field bearing number The type of formationDesired bearing of formation lead (0-360)
+---@field transpose boolean Units jump to the new stations immediately
+
+---Weapon load information on a mount
+---@class CMO__Mount:table
+---@field mount_dbid number The database ID of the mount
+---@field mount_name string The name of the mount
+---@field mount_GUID string The GUID of the mount
+---@field mount_status string The status of the mount (Active/Inactive/Destroyed)
+---@field mount_statusR string Reason why inoperative [if not operational]
+---@field mount_damage string Damage Severity [if not operational]
+---@field mount_weapons CMO__WeaponLoaded[] Table of weapon loads on mount
+
+---Cargo item information on a unit
+---@class CMO__CargoInfo:table
+---@field name string The name of the unit
+---@field guid string The GUID of the unit
+---@field cargo CMO__Cargo[] Table of cargo items on the unit
+
+
 
 -- ============================================================================
 -- Core Configuration & Data
@@ -96,6 +121,39 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field dbids number[] Array of database IDs to randomly select from
 ---@field useRandomSuffix? boolean Optional: Whether to append random text suffix to unit names (defaults to true)
 
+---Unit descriptor for creating units with specific properties
+---@class SBJ__UnitDescriptor:CMO__SetUnitDescriptor
+---@field cargo SBJ__CargoDescriptor[] Cargo items to load onto the unit
+
+---Ship formation specification - defines a single ship's configuration within a formation
+---Used to specify ship positioning, armament, and embarked units in naval groups
+---@class SBJ__ShipFormationSpec
+---@field dbid number Ship platform database ID
+---@field unitname string Ship unit name
+---@field distance number Distance from formation center (nautical miles)
+---@field angle number Angle offset from formation heading (degrees)
+---@field embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked aircraft/boats (optional)
+---@field loadouts SBJ__Loadout[]|nil Ammunition stockpile configuration (optional)
+
+---Formation configuration for internal ship creation
+---Used internally by createShipFormation() to configure ship group formations
+---@class SBJ__SAGFormationConfig
+---@field centerPoint CMO__Location Formation center point coordinates
+---@field heading number Formation heading angle
+---@field groupName string Ship group name
+---@field sideName string Side name (e.g., 'China', 'Taiwan')
+---@field shipTypes SBJ__ShipFormationSpec[] Array of ship configurations to create
+
+---@alias SBJ__AmphibiousShipType
+---| '"type075"'
+---| '"type071"'
+---| '"type076"'
+---| '"type072iii"'
+---| '"type072a"'
+---| '"type073a"'
+---| '"ferry"'
+---| '"barge"'
+---| '"roro"'
 
 -- ============================================================================
 -- Cargo & Logistics
@@ -150,7 +208,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field dbid? number  Database ID if the object is a ship
 ---@field embarkedUnits SBJ__EmbarkedUnit[] Aircraft units stationed at this base
 ---@field loadouts SBJ__Loadout[] Ammunition stockpile in base magazines
-
+---@field latitude? number Airbase latitude coordinate (optional)
+---@field longitude? number Airbase longitude coordinate (optional)
 
 -- ============================================================================
 -- Naval Operations
@@ -248,12 +307,13 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field ship CMO__Unit Parent landing ship
 ---@field speed number ACV movement speed (knots)
 ---@field destination CMO__TableOfWaypoints ACV destination waypoints
+---@field num integer Number of ACVs to deploy
 
 ---Vehicle offload parameters for unloading vehicles from landing ships
 ---Temporary parameter pack used for vehicle offloading functions
 ---@class SBJ__VehicleOffloadParams:table
 ---@field ship CMO__Unit Landing ship to offload from
----@field num number Number of vehicles to offload
+---@field num integer Number of vehicles to offload
 ---@field bearing number Offload direction (degrees)
 ---@field distance number Distance between vehicles (nautical miles)
 ---@field firstDistance number Distance for first vehicle (nautical miles)
@@ -262,7 +322,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__LandingMissionDescriptor:table
 ---@field name string Mission name
 ---@field loadoutId number Loadout configuration ID
----@field num number Number of units
+---@field num integer Number of units
 ---@field startTime number Mission start time
 
 ---Air Cushion Vehicle deployment configuration
@@ -294,6 +354,15 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field dbid number Attack helicopter platform database ID
 ---@field missions SBJ__LandingMissionDescriptor[] CAS mission descriptors
 
+---Transport aircraft configuration for airlift operations
+---Defines transport aircraft deployment from airbases for airborne assault missions
+---@class SBJ__TransportAircraftDescriptor:table
+---@field name string Airbase name where transport aircraft are stationed
+---@field guid string Airbase GUID reference
+---@field dbid number Transport aircraft platform database ID
+---@field missions SBJ__LandingMissionDescriptor[] Air landing mission descriptors
+---@field cargoItemsForTransfer SBJ__LoadoutCargoManifest[] Cargo manifest for airlift operations
+
 ---Landing Ship Tank movement configuration
 ---Defines LST approach to beach
 ---@class SBJ__LSTMovementDescriptor:table
@@ -318,7 +387,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Formation settings for amphibious operation layouts
 ---Defines spacing and movement parameters for amphibious assault ship formations
 ---Used internally for calculating ship positions during landing operations
----@class SBJ__FormationSettings:table
+---@class SBJ__AmphibiousFormationSettings:table
 ---@field distanceBetweenLSTAndLPDArea string Distance between LST and LPD staging areas
 ---@field horizontalDistance number Horizontal spacing between ships in formation
 ---@field verticalDistance number Vertical spacing between ships in formation
@@ -331,22 +400,22 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Ship type starting point configuration
 ---@class SBJ__ShipTypeStartPoint:table
----@field side string Side name (e.g., "China", "Taiwan")
+---@field sideName string Side name (e.g., "China", "Taiwan")
 ---@field area string[] Area reference points array
 
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
 ---@class SBJ__FleetComposition:table
----@field type075 number Number of Type 075 amphibious assault ships
----@field type071 number Number of Type 071 amphibious transport docks
----@field type076 number Number of Type 076 amphibious assault ships
----@field type072iii number Number of Type 072III landing ships
----@field type072a number Number of Type 072A landing ships
----@field type073a number Number of Type 073A landing craft
----@field type071InLSTArea? number Number of Type 071 ships in LST area (optional)
----@field ferry number Number of ferries
----@field roro number Number of roll-on/roll-off ships
----@field barge number Number of barges
+---@field type075 integer Number of Type 075 amphibious assault ships
+---@field type071 integer Number of Type 071 amphibious transport docks
+---@field type076 integer Number of Type 076 amphibious assault ships
+---@field type072iii integer Number of Type 072III landing ships
+---@field type072a integer Number of Type 072A landing ships
+---@field type073a integer Number of Type 073A landing craft
+---@field type071InLSTArea? integer Number of Type 071 ships in LST area (optional)
+---@field ferry integer Number of ferries
+---@field roro integer Number of roll-on/roll-off ships
+---@field barge integer Number of barges
 
 ---Amphibious operation area descriptor
 ---@class SBJ__AmphibiousAreaDescriptor:table
@@ -370,7 +439,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field from SBJ__AmphibiousLocationDescriptor Departure configuration
 ---@field to SBJ__AmphibiousLocationDescriptor Destination configuration
 ---@field airLandingZone string[] Air landing zone reference area
----@field numOfContactsInAirLandingZone number Number of contacts required in air landing zone
+---@field numOfContactsInAirLandingZone integer Number of contacts required in air landing zone
 
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including
@@ -380,10 +449,10 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field cargoList table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field cargoListForTransfer table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartime table<string, number[]> Mission start times by type (seconds)
----@field formationSettings SBJ__FormationSettings Ship formation layout configuration
+---@field formationSettings SBJ__AmphibiousFormationSettings Ship formation layout configuration
 ---@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
 ---@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors
----@field transportAircraft table[] Transport aircraft configuration
+---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@field sag table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
 
 ---Land-Attack Cruise Missile context managing LACM operations state
@@ -409,12 +478,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__MissionDeploymentDescriptor:table
 ---@field baseGUID string The GUID of the base to use for the mission
 ---@field missionCreationParams SBJ__MissionCreationParams The parameters for the mission
----@field unitCount number The number of units to assign to the mission
----@field weaponDBID? number The weapon DBID to use for the mission (optional)
----@field unitDBID? number The unit DBID to use for the mission (optional)
+---@field unitCount integer The number of units to assign to the mission
+---@field weaponDBID number The weapon DBID to use for the mission
+---@field unitDBID number The unit DBID to use for the mission
 ---@field loadoutId? number The loadout ID to filter by, 0 for any loadout (optional)
 ---@field startTime string The start time of the mission
 ---@field endTime? string The end time of the mission (optional)
+---@field timeOnStation? string The time on station (optional)
+---@field emcon string The EMCON settings for the mission
 
 ---Air operations context managing air tasking orders and aircraft status
 ---@class SBJ__AirOperationsContext:table
@@ -496,6 +567,16 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field glcm SBJ__WeaponSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__WeaponSystemContext Anti-Ship Cruise Missile system
 ---@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
+
+---Unit property setting parameters for ground units
+---@class SBJ__SetUnitPropertiesParams
+---@field unit CMO__Unit Unit object (required)
+---@field throttle string? Throttle setting (default: 'Stop')
+---@field speed number? Speed (default: 0)
+---@field course CMO__TableOfWaypoints? Waypoints (optional)
+---@field holdPosition boolean? Whether to hold position (default: true)
+---@field wcs integer? Weapon control status: 1=Free, 2=Hold (optional)
+---@field formation CMO__FormationGroup? Formation settings (optional)
 
 
 -- ============================================================================
@@ -619,12 +700,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field FSTs SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes
----@class SBJ__AttackContacts_Params:table
+---@class SBJ__AttackParams:table
 ---@field contacts table<integer, string> A table of contact GUIDs to attack
----@field qty number The number of salvos to launch
----@field firingUnits table<string, SBJ__FiringUnitContext> A table of firing units to use for the attack
+---@field qty integer The number of salvos to launch
+---@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
 ---@field weaponDBID? number The weapon DBID to use for the attack (if not specified, the default weapon will be used)
----@field side? string The side to use for the attack (if not specified, the side of the first firing unit will be used)
+---@field sideName? string The side to use for the attack (if not specified, the side of the first firing unit will be used)
 
 ---Parameters for generating missile flight paths
 ---@class SBJ__GenerateMissilePaths_Params
@@ -650,8 +731,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Base reconnaissance queue entry template with shared fields
 ---@class SBJ__ReconQueueEntryBase:table
----@field type string Reconnaissance type: "UAV"|"satellite"|"aircraft"
----@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
+---@field type string Reconnaissance type: "UAV"|"satellite"
+---@field endTime? string Scheduled end time in format "YYYY-MM-DD HH:MM:SS" (optional)
 
 ---UAV reconnaissance queue entry template
 ---Complete configuration for UAV reconnaissance missions including launch and flight parameters
@@ -690,6 +771,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__ReconContext:table
 ---@field isActivated boolean Whether reconnaissance system is activated
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
+---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings indexed by platform type
 
 ---Reconnaissance-Strike mapping entry
 ---Defines strike mission to execute after reconnaissance platform detects target
@@ -698,7 +780,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field type "air"|"ground" Strike mission type
 
 ---Reconnaissance platform type
----@alias SBJ__ReconPlatformType "UAV"|"satellite"|"surface"|"subsurface"
+---@alias SBJ__ReconPlatformType "UAV"|"satellite"
 
 
 -- ============================================================================

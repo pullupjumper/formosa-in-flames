@@ -9,14 +9,21 @@ local IADS = {}
 ---@param C2Context SBJ__C2Context The C2 context containing the units to disable
 ---@param type string Unit type to disable ('radar' or 'SAM')
 local function disableUnitsUnderC2Node(C2Context, type)
-  for _, data in pairs(C2Context[type]) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(data.guid)
+  ---@type table<string, SBJ__RadarContext>|nil
+  local ctxs = C2Context[type]
 
-    if actualUnit == nil then goto continue end
-    GameApi.ScenEdit_SetUnit({ guid = data.guid, outofcomms = true })
-    data.isOutOfComms = true
+  if ctxs then
+    for _, ctx in pairs(ctxs) do
+      local actualUnit = GameApi.ScenEdit_GetUnit(ctx.guid)
 
-    ::continue::
+      if not actualUnit then
+        goto continue
+      end
+
+      GameApi.ScenEdit_SetUnit({ guid = ctx.guid, outofcomms = true })
+      ctx.isOutOfComms = true
+      ::continue::
+    end
   end
 end
 
@@ -70,16 +77,18 @@ end
 ---@param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
 function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
   local temp = { unit = nil, distance = config.radarDistance }
-
   local latitude = destroyedRadar.latitude
   local longitude = destroyedRadar.longitude
 
   -- First priority: Search for dedicated radars (JY-26, YLC-8B)
-  for _, value in ipairs(sideUnits) do
-    local actualUnit = GameApi.ScenEdit_GetUnit(value.guid)
-    if actualUnit == nil then goto continue end
-    local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
+  for _, u in ipairs(sideUnits) do
+    local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
+    if actualUnit == nil then
+      goto continue
+    end
+
+    local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
     if (actualUnit.dbid == constants.PLATFORMS.JY26 or actualUnit.dbid == constants.PLATFORMS.YLC8B) then
       if distance < temp.distance then
         temp.unit = actualUnit
@@ -92,12 +101,14 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
 
   -- Second priority: If no dedicated radars, search for SAM system radars
   if temp.unit == nil then
-    for _, value in ipairs(sideUnits) do
-      local actualUnit = GameApi.ScenEdit_GetUnit(value.guid)
-      if actualUnit == nil then goto continue end
+    for _, u in ipairs(sideUnits) do
+      local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
+
+      if not actualUnit then
+        goto continue
+      end
 
       local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
-
       if actualUnit.dbid == constants.PLATFORMS.HQ22 or
           actualUnit.dbid == constants.PLATFORMS.S300 or
           actualUnit.dbid == constants.PLATFORMS.S400 or
@@ -113,7 +124,7 @@ function IADS.activateNearestRadar(config, sideUnits, destroyedRadar)
   end
 
   -- Activate the nearest radar found
-  if temp.unit ~= nil then
+  if temp.unit then
     GameApi.ScenEdit_SetEMCON("Unit", temp.unit.guid, "Radar=Active")
     Logger.log("IADS", tostring(temp.unit.name) .. "'s radar is activated.")
   end
@@ -150,6 +161,7 @@ end
 ---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
 function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   IADSContext.C2 = {}
 
@@ -176,10 +188,12 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
 
     if #facilities > 0 then
       local randomIdx = math.random(#facilities)
-      IADSContext.C2[facilities[randomIdx].guid] = {
-        name = facilities[randomIdx].name .. "/" .. setting.areaName,
-        msg = "Radio source, " .. facilities[randomIdx].name,
-        guid = facilities[randomIdx].guid,
+      ---@type CMO__Unit
+      local randomFacility = facilities[randomIdx]
+      IADSContext.C2[randomFacility.guid] = {
+        name = randomFacility.name .. "/" .. setting.areaName,
+        msg = "Radio source, " .. randomFacility.name,
+        guid = randomFacility.guid,
         areas = setting.areas,
         SAM = {},
         radar = {}
@@ -235,6 +249,7 @@ end
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 function IADS.initC2Contexts(IADSContext)
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
@@ -246,7 +261,7 @@ function IADS.initC2Contexts(IADSContext)
 
     for _, C2Ctx in pairs(IADSContext.ROCC) do
       for _, area in ipairs(C2Ctx.areas) do
-        if actualUnit ~= nil and actualUnit:inArea(area) then
+        if actualUnit and actualUnit:inArea(area) then
           if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or actualUnit.dbid == constants.PLATFORMS.PAC3 then
             IADSContext.ROCC[C2Ctx.guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
@@ -301,6 +316,7 @@ end
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
 function IADS.removeC2Facilities(IADSConfig)
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 
@@ -310,6 +326,7 @@ function IADS.removeC2Facilities(IADSConfig)
 
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
+
     if actualUnit then
       for _, DBID in ipairs(IADSConfig.C2FacilityDBIDs) do
         if actualUnit.dbid == DBID then

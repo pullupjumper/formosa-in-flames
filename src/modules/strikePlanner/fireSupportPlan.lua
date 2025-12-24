@@ -41,6 +41,7 @@ local function shouldDeployToFiringPoint(config, saveData, FST)
     if not actualFiringUnit then
       allFiringUnitsInPosition = false
     else
+      ---@type SBJ__FiringUnitContext
       local firingUnitCtx = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[firingUnit.guid]
 
       if isFiringUnitReady(config, firingUnitCtx, actualFiringUnit) then
