@@ -1096,13 +1096,13 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "LANDING/TAO/1/1",
           loadoutId = 0,
-          num = 1,
+          unitCount = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
           name = "LANDING/TAO/1/2",
           loadoutId = 0,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
         },
       },
@@ -1143,25 +1143,25 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "AIRLANDING/TAO/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/TAO/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/TAO/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/TAO/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
@@ -1199,7 +1199,7 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "CAS/E",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          num = 13,
+          unitCount = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
         },
       }
@@ -1232,13 +1232,13 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "LANDING/SISHU/1/1",
           loadoutId = 0,
-          num = 1,
+          unitCount = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
           name = "LANDING/SISHU/1/2",
           loadoutId = 0,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
         },
       },
@@ -1279,25 +1279,25 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "AIRLANDING/CHANGLONG/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/CHANGLONG/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
@@ -1335,7 +1335,7 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "CAS/S",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          num = 13,
+          unitCount = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
         },
       }
@@ -1368,13 +1368,13 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "LANDING/PENGHU/1/1",
           loadoutId = 0,
-          num = 1,
+          unitCount = 1,
           startTime = config.c.PHIBOP.missionStartime.boat[1],
         },
         {
           name = "LANDING/PENGHU/1/2",
           loadoutId = 0,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.boat[2],
         },
       },
@@ -1415,25 +1415,25 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "AIRLANDING/PENGHU/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/PENGHU/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/PENGHU/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/PENGHU/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          num = 3,
+          unitCount = 3,
           startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
         },
       },
@@ -1471,7 +1471,7 @@ config.c.PHIBOP.operationalZones = {
         {
           name = "CAS/PENGHU",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          num = 13,
+          unitCount = 13,
           startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
         },
       }
@@ -1501,7 +1501,7 @@ config.c.PHIBOP.transportAircraft = {
       {
         name = "AIRLANDING/PENGHU/2/2",
         loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
-        num = 3,
+        unitCount = 3,
         startTime = 0
       },
     },
@@ -1864,8 +1864,8 @@ config.c.FSTTemplate = {
       name = "RADAR",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "614th Bde", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
@@ -1883,8 +1883,8 @@ config.c.FSTTemplate = {
       name = "RUNWAY",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "636th Bde", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
@@ -1910,7 +1910,7 @@ config.c.FSTTemplate = {
       name = "PORT",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "615th Bde", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
@@ -1932,7 +1932,7 @@ config.c.FSTTemplate = {
       name = "SHELTER",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "616th Bde", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
@@ -1955,8 +1955,8 @@ config.c.FSTTemplate = {
       name = "RADAR",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "614th Bde", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
@@ -1974,8 +1974,8 @@ config.c.FSTTemplate = {
       name = "RUNWAY",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "636th Bde", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
@@ -2006,7 +2006,7 @@ config.c.FSTTemplate = {
       name = "PORT",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "615th Bde", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
@@ -2030,7 +2030,7 @@ config.c.FSTTemplate = {
       name = "SHELTER",
       wpnSystem = "SRBM",
       firingUnits = {
-        { name = "616th Bde", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
@@ -2057,7 +2057,7 @@ config.c.FSTTemplate = {
       name = "ANTISHIP",
       wpnSystem = "MRBM",
       firingUnits = {
-        { name = "624th Bde", guid = "IC8B0X-0HNCOR6HG2JE1", weaponDBID = constants.WEAPONS.DF21D }
+        { name = "624th Bde, PLARF", guid = "IC8B0X-0HNCOR6HG2JE1", weaponDBID = constants.WEAPONS.DF21D }
       },
       target = {
         list = {},
@@ -2109,7 +2109,7 @@ config.c.FSTTemplate = {
       name = "HELIPAD",
       wpnSystem = "GLCM",
       firingUnits = {
-        { name = "635th Bde", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10 }
+        { name = "635th Bde, PLARF", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10 }
       },
       target = {
         list = {},
@@ -3300,6 +3300,7 @@ config.t.ground.ascm.operationalAreas = {
   Dong = constants.OPERATIONAL_AREAS.DONG,
 }
 config.t.ground.ascm.reloadTime = 45 * 60
+-- config.t.ground.ascm.reloadTime = 5 * 60
 
 
 -- ============================================================================

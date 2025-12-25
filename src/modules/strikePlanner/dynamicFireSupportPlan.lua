@@ -113,15 +113,15 @@ end
 ---Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
 ---@param config SBJ__Config Global configuration table with firing unit state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
----@param firingUnitGUID string The GUID of the battery/firing unit to validate
+---@param firingUnitName string The name of the battery/firing unit to validate
 ---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") used to locate battery data
 ---@return boolean success true if firing unit is ready for use (exists, in HIDE state, has ammo)
 ---@return string|nil errorReason Error reason if firing unit is not valid, nil on success
-local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
+local function validateFiringUnitStatus(config, saveData, firingUnitName, wpnSystem)
   -- Check if unit exists in game
-  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitGUID)
+  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
   if not actualUnit then
-    return false, "Cannot find actual unit: " .. firingUnitGUID
+    return false, "Cannot find actual unit: " .. firingUnitName
   end
 
   -- Get battery data from weapon system
@@ -129,10 +129,10 @@ local function validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSys
   ---@type SBJ__FiringUnitContext|nil
   local firingUnitCtx = saveData.c.ground[weaponSystemLower] and
       saveData.c.ground[weaponSystemLower].firingUnits and
-      saveData.c.ground[weaponSystemLower].firingUnits[firingUnitGUID]
+      saveData.c.ground[weaponSystemLower].firingUnits[firingUnitName]
 
   if not firingUnitCtx then
-    return false, "Cannot find battery data: " .. firingUnitGUID
+    return false, "Cannot find battery data: " .. firingUnitName
   end
 
   -- Check operational status
@@ -150,38 +150,36 @@ end
 ---Filters battery list to only include unassigned batteries with valid status and ammunition
 ---@param config SBJ__Config Global configuration table with battery state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
----@param firingUnitCtxs SBJ__FiringUnitContext[] Array of battery contexts from FST template
+---@param firingUnits SBJ__FiringUnit[] Array of firing unit contexts specified in FST template
 ---@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") for validation
 ---@return SBJ__FiringUnitContext[] # Array of available batteries ready for assignment
-local function checkFiringUnitAvailability(config, saveData, firingUnitCtxs, wpnSystem)
+local function checkFiringUnitAvailability(config, saveData, firingUnits, wpnSystem)
   local availableFiringUnitCtxs = {}
   local assignedFiringUnitCtxs = collectAssignedFiringUnits(saveData)
 
   -- Check each specified battery in template
-  for _, firingUnitCtx in ipairs(firingUnitCtxs) do
-    local firingUnitGUID = firingUnitCtx.guid
-
+  for _, firingUnit in ipairs(firingUnits) do
     -- Check if already assigned to another FST
-    if assignedFiringUnitCtxs[firingUnitGUID] then
-      Logger.log("dynamicOperations", firingUnitCtx.name .. " already assigned to other FST")
+    if assignedFiringUnitCtxs[firingUnit.name] then
+      Logger.log("dynamicOperations", firingUnit.name .. " already assigned to other FST")
     else
       -- Validate battery status and readiness
-      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnitGUID, wpnSystem)
+      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnit.name, wpnSystem)
 
       if isValid then
-        table.insert(availableFiringUnitCtxs, firingUnitCtx)
+        table.insert(availableFiringUnitCtxs, firingUnit)
       else
         if reason and reason:find("Cannot find") then
           Logger.error(reason)
         else
-          Logger.log("dynamicOperations", "Battery " .. firingUnitCtx.name .. " - " .. reason)
+          Logger.log("dynamicOperations", "Battery " .. firingUnit.name .. " - " .. reason)
         end
       end
     end
   end
 
   Logger.log("dynamicOperations",
-    "Check completed, available firing units: " .. #availableFiringUnitCtxs .. "/" .. #firingUnitCtxs)
+    "Check completed, available firing units: " .. #availableFiringUnitCtxs .. "/" .. #firingUnits)
   return availableFiringUnitCtxs
 end
 

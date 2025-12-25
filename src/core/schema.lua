@@ -322,7 +322,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__LandingMissionDescriptor:table
 ---@field name string Mission name
 ---@field loadoutId number Loadout configuration ID
----@field num integer Number of units
+---@field unitCount integer Number of units
 ---@field startTime number Mission start time
 
 ---Air Cushion Vehicle deployment configuration
@@ -525,6 +525,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Tracks ammunition unit status and remaining ammunition counts
 ---@class SBJ__AmmunitionContext:table
 ---@field guid string Ammunition unit GUID
+---@field name string Ammunition unit name
 ---@field wpnCurrent number Current available ammunition count
 ---@field wpnDefault number Default/maximum ammunition count
 

@@ -36,13 +36,13 @@ local function shouldDeployToFiringPoint(config, saveData, FST)
   local allFiringUnitsInPosition = true
 
   for _, firingUnit in ipairs(FST.firingUnits) do
-    local actualFiringUnit = GameApi.ScenEdit_GetUnit(firingUnit.guid)
+    local actualFiringUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
 
     if not actualFiringUnit then
       allFiringUnitsInPosition = false
     else
       ---@type SBJ__FiringUnitContext
-      local firingUnitCtx = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[firingUnit.guid]
+      local firingUnitCtx = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[firingUnit.name]
 
       if isFiringUnitReady(config, firingUnitCtx, actualFiringUnit) then
         Launcher.moveToFiringPoint(config, firingUnitCtx, actualFiringUnit)

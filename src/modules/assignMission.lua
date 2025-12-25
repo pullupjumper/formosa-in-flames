@@ -6,7 +6,7 @@ local AssignMission = {}
 ---@param baseUnit CMO__Unit The base unit with embarked units
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')
 ---@param platformDBID number The database ID of the platform to filter
----@return table<integer, CMO__Unit> # A list of filtered embarked units
+---@return CMO__Unit[] # A list of filtered embarked units
 local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   local filteredPlatforms = {}
 
@@ -43,7 +43,7 @@ local function processMissionAssignments(filteredPlatforms, mission)
   local count = 0
 
   for _, unit in ipairs(filteredPlatforms) do
-    if count >= mission.num then
+    if count >= mission.unitCount then
       break
     end
 

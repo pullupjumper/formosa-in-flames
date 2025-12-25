@@ -3,6 +3,7 @@ local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
+local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -21,7 +22,7 @@ if unit then
   for _, entry in ipairs(saveData.c.recon.queue) do
     if entry.unitGUID == unit.guid then
       local course = nil
-      course = config.c.recon.courses.WZ8
+      course = constants.COURSES.WZ8
       local wz8 = Recon.launchWZ8(unit, course)
 
       if wz8 then
