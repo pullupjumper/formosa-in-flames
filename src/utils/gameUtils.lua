@@ -469,4 +469,53 @@ function GameUtils.createRandomUnits(descriptor)
   return units
 end
 
+---Extract unit type from unit name and convert to subordinate echelon
+---Searches through comma-separated parts sequentially until unit type is found
+---Converts to subordinate echelon: Bde→Bn, Bn→Coy, Coy/Sqn→Plt
+---@param unitName string Unit name
+---@return string|nil # Converted unit type (Bn/Coy/Plt), or nil if not found
+function GameUtils.extractUnitType(unitName)
+  -- Iterate through each comma-separated part
+  for part in unitName:gmatch("([^,]+)") do
+    local unitType = part:match("Bde") or
+        part:match("Bn") or
+        part:match("Coy") or
+        part:match("Sqn")
+
+    if unitType then
+      if unitType == "Bde" then
+        unitType = "Bn"
+      elseif unitType == "Bn" then
+        unitType = "Coy"
+      elseif unitType == "Coy" or unitType == "Sqn" then
+        unitType = "Plt"
+      end
+      return unitType
+    end
+  end
+
+  return nil
+end
+
+---Format unit name with ordinal number suffix
+---Generates unit names like "1st Bn", "2nd Coy", "3rd Plt", "4th Bn", etc.
+---@param num integer Ordinal number (1, 2, 3, ...)
+---@param unitType string Unit type (e.g., "Bn", "Coy", "Plt")
+---@param suffix string Additional suffix string to append after unit type
+---@return string # Formatted unit name with ordinal suffix
+function GameUtils.formatOrdinalUnitName(num, unitType, suffix)
+  local ordinal
+  if num == 1 then
+    ordinal = tostring(num) .. "st"
+  elseif num == 2 then
+    ordinal = tostring(num) .. "nd"
+  elseif num == 3 then
+    ordinal = tostring(num) .. "rd"
+  else
+    ordinal = tostring(num) .. "th"
+  end
+
+  return ordinal .. " " .. unitType .. suffix
+end
+
 return GameUtils

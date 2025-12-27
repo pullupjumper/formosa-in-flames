@@ -2,21 +2,27 @@ local constants = {}
 
 constants.AREAS = {
   RELOAD_POINT_PINGZHEN = { "RP-100174", "RP-100175", "RP-100176", "RP-100177" },
+  HIDE_AREA_PINGZHEN = { "RP-114535", "RP-114536", "RP-114537", "RP-114538" },
   FIRE_POINT_PINGZHEN_1 = { "RP-44300", "RP-44301", "RP-44302", "RP-44303" },
   AMMO_HOLDING_AREA_PINGZHEN = { "RP-114539", "RP-114540", "RP-114541", "RP-114542" },
   RELOAD_POINT_DADU = { "RP-101781", "RP-101782", "RP-101783", "RP-101784" },
+  HIDE_AREA_DADU = { "RP-114551", "RP-114552", "RP-114553", "RP-114554" },
   FIRE_POINT_DADU_1 = { "RP-101785", "RP-101786", "RP-101787", "RP-101788" },
   AMMO_HOLDING_AREA_DADU = { "RP-114555", "RP-114556", "RP-114557", "RP-114558" },
   RELOAD_POINT_QUANXI = { "RP-100170", "RP-100171", "RP-100172", "RP-100173" },
+  HIDE_AREA_QUANXI = { "RP-114543", "RP-114544", "RP-114545", "RP-114546" },
   FIRE_POINT_QUANXI_1 = { "RP-44300", "RP-44301", "RP-44302", "RP-44303" },
   AMMO_HOLDING_AREA_QUANXI = { "RP-114547", "RP-114548", "RP-114549", "RP-114550" },
   RELOAD_POINT_NEIPU = { "RP-100166", "RP-100167", "RP-100168", "RP-100169" },
+  HIDE_AREA_NEIPU = { "RP-114559", "RP-114560", "RP-114561", "RP-114562" },
   FIRE_POINT_NEIPU_1 = { "RP-44288", "RP-44289", "RP-44290", "RP-44291" },
   AMMO_HOLDING_AREA_NEIPU = { "RP-114563", "RP-114564", "RP-114565", "RP-114566" },
   RELOAD_POINT_LUZHU = { "RP-107197", "RP-107198", "RP-107199", "RP-107200" },
+  HIDE_AREA_LUZHU = { "RP-114431", "RP-114432", "RP-114433", "RP-114434" },
   FIRE_POINT_LUZHU_1 = { "RP-107201", "RP-107202", "RP-107203", "RP-107204" },
   AMMO_HOLDING_AREA_LUZHU = { "RP-114435", "RP-114436", "RP-114437", "RP-114438" },
   RELOAD_POINT_DONG = { "RP-116585", "RP-116586", "RP-116587", "RP-116588" },
+  HIDE_AREA_DONG = { "RP-116589", "RP-116590", "RP-116591", "RP-116592" },
   FIRE_POINT_DONG_1 = { "RP-116593", "RP-116594", "RP-116595", "RP-116596" },
   AMMO_HOLDING_AREA_DONG = { "RP-116581", "RP-116582", "RP-116583", "RP-116584" },
   THEATER_OF_OPS_3RD = { "RP-83642", "RP-83643", "RP-83644", "RP-83645" },
@@ -280,6 +286,16 @@ constants.PLATFORMS = {
   AH64E = 2419,
   CHUNG_SHYANG_II = 5035,
   TA_CHIANG = 3441,
+  CSS11_MOD1 = 2885, --DF-16A
+  CSS6_MOD2 = 4397,  --DF-15C
+  CSS6_MOD3 = 4396,  --DF-15B
+  CSS7_MOD2 = 4395,  --DF-11A
+  CSS5_MOD5 = 1669,  --DF-21D
+  CH_SSC_9 = 4399,   --CJ-10A
+  HF3 = 3531,
+  HF2E = 2587,
+  LT2000 = 2251,
+  HIMARS = 2446
 }
 
 constants.SENSORS = {
@@ -354,11 +370,11 @@ constants.LOADOUTS = {
 
 constants.WEAPONS = {
   FD280 = 4472,       -- FD280 Multiple Launch Rocket System
-  CJ10 = 2122,        -- CJ-10 Cruise Missile
+  CJ10A = 4515,       -- CJ-10A Cruise Missile
   DF11A = 2142,       -- DF-11A Short-Range Ballistic Missile
   DF16A = 4511,       -- DF-16A Short-Range Ballistic Missile
   DF15C = 2145,       -- DF-15C Short-Range Ballistic Missile
-  DF15B = 40,         -- DF-15B Short-Range Ballistic Missile
+  DF15B = 4509,       -- DF-15B Short-Range Ballistic Missile
   DF21D = 2105,       -- DF-21D Medium-Range Ballistic Missile
   YJ21 = 4058,        -- YJ-18A Land Attack Cruise Missile
   CJ10_SLCM = 3716,   -- YJ-18 Submarine-Launched Cruise Missile
@@ -719,10 +735,16 @@ constants.OPERATIONAL_AREAS = {
   PINGZHEN = {
     RL = { {
       course = {
-        { latitude = "N 24.55.15", longitude = "E 121.16.02", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.57.13", longitude = "E 121.13.45", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.58.05", longitude = "E 121.14.26", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.57.08", longitude = "E 121.13.34", desiredSpeed = 10, presetThrottle = "Flank" },
       },
       area = constants.AREAS.RELOAD_POINT_PINGZHEN
+    } },
+    HA = { {
+      course = {
+        { longitude = 121.221227094132, latitude = 24.9616387895855, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
+      area = constants.AREAS.HIDE_AREA_PINGZHEN
     } },
     FP = { {
       course = {
@@ -742,9 +764,15 @@ constants.OPERATIONAL_AREAS = {
     RL = { {
       course = {
         { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.09.09", longitude = "E 120.35.47", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.09.03", longitude = "E 120.35.48", desiredSpeed = 10, presetThrottle = "Flank" },
       },
       area = constants.AREAS.RELOAD_POINT_DADU
+    } },
+    HA = { {
+      course = {
+        { longitude = 120.589821349405, latitude = 24.1559842079347, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
+      area = constants.AREAS.HIDE_AREA_DADU
     } },
     FP = { {
       course = {
@@ -762,57 +790,105 @@ constants.OPERATIONAL_AREAS = {
   },
   QUANXI = {
     RL = { {
-      course = {},
+      course = {
+        { longitude = 121.179149023446, latitude = 24.7548412166634, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 121.161117811075, latitude = 24.7448213059531, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.RELOAD_POINT_QUANXI
     } },
+    HA = { {
+      course = {
+        { longitude = 121.162516333524, latitude = 24.7543716717316, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
+      area = constants.AREAS.HIDE_AREA_QUANXI
+    } },
     FP = { {
-      course = {},
+      course = {
+        { longitude = 121.181657018384, latitude = 24.7581044314196, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 121.166583134758, latitude = 24.7982814982329, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.FIRE_POINT_PINGZHEN_1
     }, },
     AHA = { {
-      course = {},
+      course = {
+        { longitude = 121.162860203748, latitude = 24.7349448104926, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.AMMO_HOLDING_AREA_QUANXI
     } },
   },
   NEIPU = {
     RL = { {
-      course = {},
+      course = { { longitude = 120.571632791171, latitude = 22.6161659351347, presetThrottle = 'Flank', desiredSpeed = 10 } },
       area = constants.AREAS.RELOAD_POINT_NEIPU
     } },
+    HA = { {
+      course = { { longitude = 120.570964156615, latitude = 22.611499688403, presetThrottle = 'Flank', desiredSpeed = 10 } },
+      area = constants.AREAS.HIDE_AREA_NEIPU
+    } },
     FP = { {
-      course = {},
+      course = { { longitude = 120.586114743326, latitude = 22.59100072935, presetThrottle = 'Flank', desiredSpeed = 10 } },
       area = constants.AREAS.FIRE_POINT_NEIPU_1
     }, },
     AHA = { {
-      course = {},
+      course = { { longitude = 120.570952099511, latitude = 22.6197721668878, presetThrottle = 'Flank', desiredSpeed = 10 } },
       area = constants.AREAS.AMMO_HOLDING_AREA_NEIPU
     } },
   },
   LUZHU = {
     RL = { {
-      course = {},
+      course = {
+        { longitude = 121.281989734655, latitude = 25.1097631655077, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 121.270666657797, latitude = 25.0888221064414, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.RELOAD_POINT_LUZHU
     } },
+    HA = { {
+      course = {
+        { longitude = "E 121.16.08", latitude = "N 25.05.54", presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
+      area = constants.AREAS.HIDE_AREA_LUZHU
+    } },
     FP = { {
-      course = {},
+      course = {
+        { longitude = 121.269481491653, latitude = 25.0982908744975, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.FIRE_POINT_LUZHU_1
     }, },
     AHA = { {
-      course = {},
+      course = {
+        { longitude = "N 25.04.44", latitude = "E 121.16.42", presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.AMMO_HOLDING_AREA_LUZHU
     } },
   },
   DONG = {
     RL = { {
-      course = {},
+      course = {
+        { longitude = 120.191077772224, latitude = 22.9661322579385, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 120.218578452291, latitude = 22.9684370553959, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 120.206723697215, latitude = 22.9878644814624, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.RELOAD_POINT_DONG
     } },
+    HA = { {
+      course = {
+        { longitude = 120.202558172184, latitude = 22.9807310705356, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
+      area = constants.AREAS.HIDE_AREA_DONG
+    } },
     FP = { {
-      course = {},
+      course = {
+        { longitude = 120.217736845027, latitude = 22.9764260820491, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 120.213207981986, latitude = 22.9681240060408, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 120.185310873882, latitude = 22.9670171679084, presetThrottle = 'Flank', desiredSpeed = 10 },
+        { longitude = 120.180049825109, latitude = 22.9729687929043, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.FIRE_POINT_DONG_1
     }, },
     AHA = { {
-      course = {},
+      course = {
+        { longitude = 120.20315506959, latitude = 22.9961443656098, presetThrottle = 'Flank', desiredSpeed = 10 }
+      },
       area = constants.AREAS.AMMO_HOLDING_AREA_DONG
     } },
   },

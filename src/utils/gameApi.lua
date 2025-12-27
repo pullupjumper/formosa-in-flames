@@ -620,6 +620,13 @@ function realApi.ScenEdit_SetSpecialAction(opts)
   return result
 end
 
+---Clear all unit magazines
+---@param opts CMO__UnitSelector Unit selector
+---@return boolean # True if successfully cleared
+function realApi.ScenEdit_ClearAllMagazines(opts)
+  return ScenEdit_ClearAllMagazines(opts)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

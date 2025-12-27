@@ -258,7 +258,7 @@ config.c.ground.mlrs.reloadTime = 30 * 60
 -- ============================================================================
 
 config.c.ground.glcm = {}
-config.c.ground.glcm.wpnDefault = 48
+config.c.ground.glcm.wpnDefault = 120
 config.c.ground.glcm.ammoThreshold = 50
 ---@type table<string, SBJ__OperationalArea>
 config.c.ground.glcm.operationalAreas = {
@@ -2109,7 +2109,7 @@ config.c.FSTTemplate = {
       name = "HELIPAD",
       wpnSystem = "GLCM",
       firingUnits = {
-        { name = "635th Bde, PLARF", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10 }
+        { name = "635th Bde, PLARF", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10A }
       },
       target = {
         list = {},
@@ -3232,7 +3232,7 @@ config.t.GPSJamming.randomRadius = 20 -- random radius
 config.t.GPSJamming.radius = 11
 config.t.GPSJamming.GPSGuidedWeapons = {
   { dbid = constants.WEAPONS.FD280,    jammingResistance = 50 },
-  { dbid = constants.WEAPONS.CJ10,     jammingResistance = 50 },
+  { dbid = constants.WEAPONS.CJ10A,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.AKD88,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.LS_6_500, jammingResistance = 50 },
   { dbid = constants.WEAPONS.CS_BBC_5, jammingResistance = 50 },

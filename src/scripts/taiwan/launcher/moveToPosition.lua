@@ -48,10 +48,13 @@ elseif positionType == "HA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
-      for _, firingUnitCtx in pairs(saveData.t.ground[wpnSystem].firingUnits) do
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
         if unit then
-          if firingUnitCtx.guid == unit.guid and firingUnitCtx.state == config.batteryState.REPOSITIONING then
+          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
             Launcher.setStateToHIDE(config, firingUnitCtx, unit)
           end
         end
@@ -68,8 +71,11 @@ elseif positionType == "RL" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
-      local result = Launcher.isMetWithResupplyUnits(config, saveData.t.ground[wpnSystem], unit, false)
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      local result = Launcher.isMetWithResupplyUnits(config, wpnSystemCtx, unit, false)
 
       if result.isMet then
         Launcher.setReloadStartTime(config, result.firingUnit, unit, false)
@@ -86,8 +92,11 @@ elseif positionType == "AHA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.t.ground[wpnSystem] and saveData.t.ground[wpnSystem].isActivated then
-      local result = Launcher.isMetWithAmmoDepot(config, saveData.t.ground[wpnSystem], unit, false)
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      local result = Launcher.isMetWithAmmoDepot(config, wpnSystemCtx, unit, false)
 
       if result.isMet then
         Launcher.setReloadStartTime(config, result.resupplyUnit, unit, false)

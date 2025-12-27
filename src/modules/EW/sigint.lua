@@ -298,7 +298,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
     local unitType = (string.find(unitCtx.name, "ROCC") or string.find(unitCtx.name, "TAAOC")) and "C2" or "mobile"
     transmission = {
       name = unitCtx.name,
-      guid = unitCtx.guid,
+      guid = unit.guid,
       msg = unitCtx.msg,
       type = unitType,
       latitude = result.latitude,
@@ -311,7 +311,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
       detectionCount = 0,
       confidence = result.confidence
     }
-    sigintContext.transmissions[unitCtx.guid] = transmission
+    sigintContext.transmissions[unit.guid] = transmission
   end
 
   -- Update transmission data
@@ -376,8 +376,15 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
   local detectedCount = 0
 
   for _, unitCtx in pairs(unitContexts) do
+    local actualUnit
+
+    if unitCtx.weaponDBID then
+      actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.name, enemySide)
+    else
+      actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.guid)
+    end
     -- Get actual unit
-    local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.guid)
+    -- local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.guid)
     if not actualUnit then
       goto continue
     end
@@ -393,8 +400,8 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
     local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
 
     -- Perform SIGINT detection
-    local result = getSIGINT(sigintContext, unitCtx.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
-    results[unitCtx.guid] = result
+    local result = getSIGINT(sigintContext, actualUnit.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
+    results[actualUnit.guid] = result
 
     -- Update transmission data based on result
     if result.isDetected then

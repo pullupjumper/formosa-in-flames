@@ -126,6 +126,7 @@ saveData.c.ground.mlrs.firingUnits = {
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
+    dbid = constants.PLATFORMS.PHL16
   },
   ["6th Bn, 73rd Arty Bde"] = {
     name = "6th Bn, 73rd Arty Bde",
@@ -137,6 +138,7 @@ saveData.c.ground.mlrs.firingUnits = {
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Bn, 73rd Arty Bde",
+    dbid = constants.PLATFORMS.PHL16
   },
 }
 
@@ -153,17 +155,17 @@ saveData.c.ground.glcm.ammunitions = {
   ["Ammo Revetment, 635th Bde, PLARF"] = {
     guid = "IC8B0X-0HN99I5RL5KR9",
     name = "Ammo Revetment, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.glcm.wpnDefault,
-    wpnDefault = config.c.ground.glcm.wpnDefault,
+    wpnCurrent = config.c.ground.glcm.wpnDefault / 2,
+    wpnDefault = config.c.ground.glcm.wpnDefault / 2,
   },
 }
 saveData.c.ground.glcm.resupplyUnits = {
   ["Ammo Sec, 635th Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVG88",
     name = "Ammo Sec, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.glcm.wpnDefault,
-    wpnDefault = config.c.ground.glcm.wpnDefault,
-    unitCount = 8,
+    wpnCurrent = config.c.ground.glcm.wpnDefault / 2,
+    wpnDefault = config.c.ground.glcm.wpnDefault / 2,
+    unitCount = 5,
     operationalArea = config.c.ground.glcm.operationalAreas.Brigade635,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -178,9 +180,10 @@ saveData.c.ground.glcm.firingUnits = {
     reloadStartTime = nil,
     state = config.batteryState.HIDE,
     operationalArea = config.c.ground.glcm.operationalAreas.Brigade635,
-    weaponDBID = constants.WEAPONS.CJ10,
+    weaponDBID = constants.WEAPONS.CJ10A,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
+    dbid = constants.PLATFORMS.CH_SSC_9
   },
 }
 
@@ -237,7 +240,7 @@ saveData.c.ground.srbm.resupplyUnits = {
     name = "Ammo Sec, 615th Bde, PLARF",
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
-    unitCount = 9,
+    unitCount = 6,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade615,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -248,7 +251,7 @@ saveData.c.ground.srbm.resupplyUnits = {
     name = "Ammo Sec, 614th Bde, PLARF",
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
-    unitCount = 9,
+    unitCount = 6,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade614,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -270,7 +273,7 @@ saveData.c.ground.srbm.resupplyUnits = {
     name = "Ammo Sec, 616th Bde, PLARF",
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
-    unitCount = 9,
+    unitCount = 6,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade616,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -281,7 +284,7 @@ saveData.c.ground.srbm.resupplyUnits = {
     name = "Ammo Sec, 613rd Bde, PLARF",
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
-    unitCount = 9,
+    unitCount = 6,
     operationalArea = config.c.ground.srbm.operationalAreas.Brigade613,
     reloadStartTime = nil,
     state = config.batteryState.STATIC,
@@ -310,6 +313,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS7_MOD2
   },
   ["614th Bde, PLARF"] = {
     guid = "X58F5H-0HN1LQGRV8HNQ",
@@ -321,6 +325,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS7_MOD2
   },
   ["636th Bde, PLARF"] = {
     guid = "IC8B0X-0HN822OHANPB3",
@@ -332,6 +337,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS11_MOD1
   },
   ["616th Bde, PLARF"] = {
     guid = "X58F5H-0HN1G2IFLF6QE",
@@ -343,6 +349,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS6_MOD2
   },
   ["613rd Bde, PLARF"] = {
     guid = "X58F5H-0HN1G2DEBC7O8",
@@ -354,6 +361,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS6_MOD3
   },
   ["617th Bde, PLARF"] = {
     guid = "IC8B0X-0HN822OHANRHI",
@@ -365,6 +373,7 @@ saveData.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS11_MOD1
   },
 }
 
@@ -409,6 +418,7 @@ saveData.c.ground.mrbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
+    dbid = constants.PLATFORMS.CSS5_MOD5
   },
 }
 
@@ -652,6 +662,7 @@ saveData.t.ground.mlrs.firingUnits = {
     weaponDBID = constants.WEAPONS.MK45_AMLRS,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
+    dbid = constants.PLATFORMS.LT2000
   },
 }
 
@@ -696,6 +707,7 @@ saveData.t.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.ATACMS,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
+    dbid = constants.PLATFORMS.HIMARS
   },
 }
 
@@ -758,6 +770,7 @@ saveData.t.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.HF2E
   },
   ["642nd Bn, 791st AFAD & Arty Bde"] = {
     guid = "X58F5H-0HN1ESDRTLGU7",
@@ -769,6 +782,7 @@ saveData.t.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.HF2E
   }
 }
 
@@ -832,6 +846,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
+    dbid = constants.PLATFORMS.HF3
   },
   ["4th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "4th Hai Feng Shore-based ASM MOB Sqn",
@@ -843,6 +858,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
+    dbid = constants.PLATFORMS.HF3
   },
   ["1st Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "1st Hai Feng Shore-based ASM MOB Sqn",
@@ -854,6 +870,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
+    dbid = constants.PLATFORMS.HF3
   },
   ["3rd Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "3rd Hai Feng Shore-based ASM MOB Sqn",
@@ -865,6 +882,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
+    dbid = constants.PLATFORMS.HF3
   },
   ["5th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "5th Hai Feng Shore-based ASM MOB Sqn",
@@ -876,6 +894,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
+    dbid = constants.PLATFORMS.HF3
   },
   ["6th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "6th Hai Feng Shore-based ASM MOB Sqn",
@@ -887,6 +906,7 @@ saveData.t.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
+    dbid = constants.PLATFORMS.HF3
   },
 }
 saveData.t.ground.ascm.test = {

@@ -38,10 +38,13 @@ end
 
 if positionType == "FP" then
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
-      for _, firingUnitCtx in pairs(saveData.c.ground[wpnSystem].firingUnits) do
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
         if unit then
-          if firingUnitCtx.guid == unit.guid and firingUnitCtx.state == config.batteryState.REPOSITIONING then
+          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
             Launcher.setWCSToFree(config, firingUnitCtx, unit)
           end
         end
@@ -58,10 +61,13 @@ elseif positionType == "HA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
-      for _, firingUnitCtx in pairs(saveData.c.ground[wpnSystem].firingUnits) do
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
         if unit then
-          if firingUnitCtx.guid == unit.guid and firingUnitCtx.state == config.batteryState.REPOSITIONING then
+          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
             Launcher.setStateToHIDE(config, firingUnitCtx, unit)
           end
         end
@@ -78,8 +84,11 @@ elseif positionType == "RL" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
-      local result = Launcher.isMetWithResupplyUnits(config, saveData.c.ground[wpnSystem], unit, true)
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      local result = Launcher.isMetWithResupplyUnits(config, wpnSystemCtx, unit, true)
 
       if result.isMet then
         Launcher.setReloadStartTime(config, result.firingUnit, unit, true)
@@ -96,8 +105,10 @@ elseif positionType == "AHA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
-      local result = Launcher.isMetWithAmmoDepot(config, saveData.c.ground[wpnSystem], unit, true)
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+    if wpnSystemCtx and wpnSystemCtx.isActivated then
+      local result = Launcher.isMetWithAmmoDepot(config, wpnSystemCtx, unit, true)
 
       if result.isMet then
         Launcher.setReloadStartTime(config, result.resupplyUnit, unit, true)

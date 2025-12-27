@@ -2,6 +2,7 @@ local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
+local GameUtils = require("src.utils.gameUtils")
 
 local Launcher = {}
 
@@ -542,7 +543,7 @@ end
 
 ---Check if two types of units have met in the same area
 ---@param targetCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Target unit context (firing unit or resupply unit)
----@param targetGUID string Target unit GUID to match
+---@param targetName string Target unit name to match
 ---@param counterpartList SBJ__FiringUnitContext[]|SBJ__ResupplyUnitContext[] List of counterpart units to check
 ---@param unit CMO__Unit Original unit for area checking
 ---@param operationalAreas table<string, SBJ__OperationalArea> OPAREA configuration
@@ -550,7 +551,7 @@ end
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean isMet Whether units have met
 ---@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil context The matched context if met
-local function checkMeetingInArea(targetCtx, targetGUID, counterpartList, unit, operationalAreas, config, isAuto)
+local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, operationalAreas, config, isAuto)
   local isStateValid = true
 
   if isAuto then
@@ -559,7 +560,7 @@ local function checkMeetingInArea(targetCtx, targetGUID, counterpartList, unit, 
     isStateValid = (targetCtx.state == repoState or targetCtx.state == reloadState)
   end
 
-  if targetCtx.guid == targetGUID and isStateValid then
+  if targetCtx.name == targetName and isStateValid then
     local area = findUnitArea(unit, operationalAreas)
     if not area then return false, nil end
 
@@ -586,13 +587,13 @@ function Launcher.isMetWithResupplyUnits(config, wsCtx, unit, isAuto)
   if not unitGroup then return { isMet = false, firingUnit = nil } end
 
   -- Determine unit type by checking which collection contains this GUID
-  local isResupplyUnit = wsCtx.resupplyUnits[unitGroup.guid] ~= nil
+  local isResupplyUnit = wsCtx.resupplyUnits[unitGroup.name] ~= nil
 
   if isResupplyUnit then
     -- Case: Resupply unit looking for firing units
     for _, resupplyUnitCtx in pairs(wsCtx.resupplyUnits) do
       local isMet, ctx = checkMeetingInArea(
-        resupplyUnitCtx, unitGroup.guid, wsCtx.firingUnits, unit, wsCtx.operationalAreas, config, isAuto
+        resupplyUnitCtx, unitGroup.name, wsCtx.firingUnits, unit, wsCtx.operationalAreas, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -602,7 +603,7 @@ function Launcher.isMetWithResupplyUnits(config, wsCtx, unit, isAuto)
     -- Case: Firing unit looking for resupply units
     for _, firingUnitCtx in pairs(wsCtx.firingUnits) do
       local isMet, ctx = checkMeetingInArea(
-        firingUnitCtx, unitGroup.guid, wsCtx.resupplyUnits, unit, wsCtx.operationalAreas, config, isAuto
+        firingUnitCtx, unitGroup.name, wsCtx.resupplyUnits, unit, wsCtx.operationalAreas, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -633,7 +634,7 @@ function Launcher.isMetWithAmmoDepot(config, wsCtx, unit, isAuto)
       isStateValid = (resupplyUnitCtx.state == repoState or resupplyUnitCtx.state == reloadState)
     end
 
-    if resupplyUnitCtx.guid == resupplyUnit.guid and isStateValid then
+    if resupplyUnitCtx.name == resupplyUnit.name and isStateValid then
       local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
 
       for _, operationalArea in pairs(wsCtx.operationalAreas) do
@@ -672,14 +673,14 @@ function Launcher.handleSupplyAssetDestruction(unit, wsCtx)
 
   if isAmmunitionDepot then
     -- Handle ammunition depot destruction
-    local ammoDepotCtx = wsCtx.ammunitions[unit.guid]
+    local ammoDepotCtx = wsCtx.ammunitions[unit.name]
 
     if ammoDepotCtx and ammoDepotCtx.wpnCurrent > 0 then
       ammoDepotCtx.wpnCurrent = 0
     end
   else
     -- Handle resupply unit destruction (part of a group)
-    local resupplyUnitCtx = wsCtx.resupplyUnits[unit.group.guid]
+    local resupplyUnitCtx = wsCtx.resupplyUnits[unit.group.name]
 
     if resupplyUnitCtx and resupplyUnitCtx.wpnCurrent > 0 then
       -- Reduce ammunition proportionally when one unit in the resupply unit is destroyed
@@ -689,6 +690,110 @@ function Launcher.handleSupplyAssetDestruction(unit, wsCtx)
         resupplyUnitCtx.wpnCurrent = 0
       else
         resupplyUnitCtx.wpnCurrent = resupplyUnitCtx.wpnCurrent - ammoPerUnit
+      end
+    end
+  end
+end
+
+---Add launchers to the game
+---@param groundForceCtx SBJ__GroundForceContext Ground force context
+---@param wpnSystems string[] Weapon systems
+---@param sideName string Side name
+function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
+  for _, wpnSystem in pairs(wpnSystems) do
+    ---@type SBJ__WeaponSystemContext|nil
+    local wpnCtx = groundForceCtx[wpnSystem]
+
+    if wpnCtx then
+      for _, firingUnitCtx in pairs(wpnCtx.firingUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
+
+        if unit then
+          if unit.group and unit.group.unitlist then
+            for _, guid in ipairs(unit.group.unitlist) do
+              GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
+            end
+          end
+        end
+
+        local count = wpnCtx.resupplyUnits[firingUnitCtx.resupplyUnit].unitCount
+        local len = #firingUnitCtx.operationalArea.HA[1].course
+        local type = GameUtils.extractUnitType(firingUnitCtx.name)
+
+        for i = 1, count do
+          local name = GameUtils.formatOrdinalUnitName(i, type or "", ", " .. firingUnitCtx.name)
+          local addedUnit = GameApi.ScenEdit_AddUnit({
+            side = sideName,
+            unitname = name,
+            dbid = firingUnitCtx.dbid,
+            type = "Facility",
+            group = firingUnitCtx.name,
+            latitude = firingUnitCtx.operationalArea.HA[1].course[len].latitude,
+            longitude = firingUnitCtx.operationalArea.HA[1].course[len].longitude
+          })
+
+          if addedUnit then
+            GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
+            local totalRemovedWpnCount = 0
+            local removedWpnDBID
+
+            for _, mount in ipairs(addedUnit.mounts) do
+              for _, wpn in ipairs(mount.mount_weapons) do
+                if wpn.wpn_current > 0 and wpn.wpn_dbid ~= firingUnitCtx.weaponDBID then
+                  totalRemovedWpnCount = totalRemovedWpnCount + wpn.wpn_current
+                  removedWpnDBID = wpn.wpn_dbid
+                end
+              end
+            end
+
+            if totalRemovedWpnCount > 0 and removedWpnDBID ~= nil then
+              GameApi.ScenEdit_AddReloadsToUnit({
+                side = sideName,
+                guid = addedUnit.guid,
+                wpn_dbid = removedWpnDBID,
+                number = totalRemovedWpnCount,
+                remove = true
+              })
+
+              GameApi.ScenEdit_AddReloadsToUnit({
+                side = sideName,
+                guid = addedUnit.guid,
+                wpn_dbid = firingUnitCtx.weaponDBID,
+                number = totalRemovedWpnCount,
+              })
+            end
+          end
+        end
+      end
+
+      for _, resupplyUnitCtx in pairs(wpnCtx.resupplyUnits) do
+        local ammoTrucks = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
+
+        if ammoTrucks then
+          if ammoTrucks.group and ammoTrucks.group.unitlist then
+            for _, guid in ipairs(ammoTrucks.group.unitlist) do
+              GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
+            end
+          end
+        end
+
+        local count = resupplyUnitCtx.unitCount
+        local len = #resupplyUnitCtx.operationalArea.RL[1].course
+        local type = GameUtils.extractUnitType(resupplyUnitCtx.name)
+        local restStr = resupplyUnitCtx.name:match("Ammo Sec(.*)") or (", " .. resupplyUnitCtx.name)
+
+        for i = 1, count do
+          local name = GameUtils.formatOrdinalUnitName(i, type or "", restStr)
+          GameApi.ScenEdit_AddUnit({
+            side = sideName,
+            unitname = "Ammo Sec, " .. name,
+            dbid = constants.PLATFORMS.AMMO_TRUCK,
+            type = "Facility",
+            group = resupplyUnitCtx.name,
+            latitude = resupplyUnitCtx.operationalArea.RL[1].course[len].latitude,
+            longitude = resupplyUnitCtx.operationalArea.RL[1].course[len].longitude
+          })
+        end
       end
     end
   end

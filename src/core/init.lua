@@ -57,12 +57,14 @@ local function initSpecialActions()
     { path = "src\\scripts\\china\\specialActions\\addSAGs.lua",                 actionName = "Add SAGs" },
     { path = "src\\scripts\\china\\specialActions\\addSubmarines.lua",           actionName = "Add submarines" },
     { path = "src\\scripts\\china\\specialActions\\unitStatusMenu.lua",          actionName = "Unit status menu" },
+    { path = "src\\scripts\\china\\specialActions\\addLaunchers.lua",            actionName = "Add launchers" },
     { path = "src\\scripts\\taiwan\\specialActions\\addACs.lua",                 actionName = "Add aircraft" },
     { path = "src\\scripts\\taiwan\\specialActions\\addDeployedShipsAtPort.lua", actionName = "Add deployed ships at port" },
     { path = "src\\scripts\\taiwan\\specialActions\\addSAGs.lua",                actionName = "Add SAGs" },
     { path = "src\\scripts\\taiwan\\specialActions\\WCSSettingMenu.lua",         actionName = "WCS setting menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",         actionName = "Unit status menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",              actionName = "Setup menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\addLaunchers.lua",           actionName = "Add launchers" },
   }
 
   for _, action in ipairs(actions) do

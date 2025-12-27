@@ -228,21 +228,21 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Destination staging area with anchorage and vehicle staging zones
 ---Extends destination area with additional staging and anchorage areas
 ---@class SBJ__DestinationStagingArea:SBJ__DestinationArea
----@field anchorageArea CMO__TableOfWaypoints Anchorage area waypoints
----@field amphibiousVehicleStagingArea CMO__TableOfWaypoints Amphibious vehicle staging area waypoints
+---@field anchorageArea CMO__Waypoint[] Anchorage area waypoints
+---@field amphibiousVehicleStagingArea CMO__Waypoint[] Amphibious vehicle staging area waypoints
 ---@field heading number Formation heading angle
 
 ---Formation heading configuration
 ---@class SBJ__FormationHeading:table
 ---@field horizontal number Horizontal spacing angle
 ---@field vertical number Vertical spacing angle
----@field destination CMO__TableOfWaypoints Destination waypoints
+---@field destination CMO__Waypoint[] Destination waypoints
 
 ---Submarine descriptor for SLCM operations
 ---@class SBJ__SubmarineDescriptor:table
 ---@field name string Submarine name/identifier
 ---@field guid string Submarine unit GUID (empty string if not yet created)
----@field course CMO__TableOfWaypoints Submarine patrol route waypoints
+---@field course CMO__Waypoint[] Submarine patrol route waypoints
 ---@field from SBJ__DeparturePoint Starting location with heading
 ---@field weaponDBID number Weapon database ID for SLCM
 
@@ -306,7 +306,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field distance number Deployment distance (nautical miles)
 ---@field ship CMO__Unit Parent landing ship
 ---@field speed number ACV movement speed (knots)
----@field destination CMO__TableOfWaypoints ACV destination waypoints
+---@field destination CMO__Waypoint[] ACV destination waypoints
 ---@field num integer Number of ACVs to deploy
 
 ---Vehicle offload parameters for unloading vehicles from landing ships
@@ -330,7 +330,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field bearing number Deployment direction (degrees)
 ---@field distance number Horizontal spacing between ACVs (nautical miles)
 ---@field speed number ACV transit speed (knots)
----@field destination CMO__TableOfWaypoints Destination waypoints
+---@field destination CMO__Waypoint[] Destination waypoints
 ---@field area string[] Staging area reference points
 
 ---Amphibious landing platform base descriptor
@@ -510,7 +510,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Position definition with course and area reference points
 ---@class SBJ__Position:table
----@field course CMO__TableOfWaypoints Waypoints to area
+---@field course CMO__Waypoint[] Waypoints to area
 ---@field area string[] Area reference points, e.g., {"rp-100","rp-101","rp-102","rp-103","rp-104"}
 
 ---Operational area definition with multiple tactical position types
@@ -537,15 +537,16 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
 ---@field reloadStartTime? number Reload operation start timestamp, nil if not currently reloading
 ---@field state batteryState Current unit state (STATIC/HIDE, etc.)
----@field ammunition string Associated ammunition unit GUID for this resupply unit
+---@field ammunition string Associated ammunition unit name for this resupply unit
 
 ---Firing unit context data structure
 ---Extends resupply unit context with weapon system configuration
 ---@class SBJ__FiringUnitContext:SBJ__ResupplyUnitContext
 ---@field weaponDBID number The weapon database ID to use for the firing unit
 ---@field ammoThreshold number The ammunition threshold for the firing unit, if not specified, the default value will be used
----@field resupplyUnit string The resupply unit GUID associated with this firing unit
+---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
+---@field dbid number The firing unit database ID
 
 ---Weapon system context data structure
 ---Consolidates all components of a complete weapon system (firing units, resupply units, ammunition)
@@ -574,7 +575,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field unit CMO__Unit Unit object (required)
 ---@field throttle string? Throttle setting (default: 'Stop')
 ---@field speed number? Speed (default: 0)
----@field course CMO__TableOfWaypoints? Waypoints (optional)
+---@field course CMO__Waypoint[]? Waypoints (optional)
 ---@field holdPosition boolean? Whether to hold position (default: true)
 ---@field wcs integer? Weapon control status: 1=Free, 2=Hold (optional)
 ---@field formation CMO__FormationGroup? Formation settings (optional)
@@ -721,7 +722,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Missile path definition with waypoints and timing
 ---@class SBJ__MissilePath
----@field waypoints CMO__TableOfWaypoints Missile waypoint list
+---@field waypoints CMO__Waypoint[] Missile waypoint list
 ---@field launchTime number Launch time (UTC timestamp)
 
 
@@ -740,7 +741,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__ReconQueueEntryTemplateUAV:SBJ__ReconQueueEntryBase
 ---@field baseGUID string Base GUID where UAV is stationed
 ---@field unitDBID number UAV platform database ID
----@field course CMO__TableOfWaypoints Waypoints for reconnaissance route
+---@field course CMO__Waypoint[] Waypoints for reconnaissance route
 ---@field unitCount number Number of UAVs to deploy
 ---@field speed number Cruise speed in knots for tracking mode
 ---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
