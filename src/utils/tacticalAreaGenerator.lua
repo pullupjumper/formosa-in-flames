@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
+local GameUtils = require("src.utils.gameUtils")
 
 local TacticalAreaGenerator = {}
 
@@ -48,7 +49,6 @@ end
 ---@return boolean # True if overlaps with U-shape
 local function checkFirePointOverlapsWithUShape(squareLat, squareLon, centerLat, centerLon, uShapeMaxDist, squareSize,
                                                 margin)
-  local GameUtils = require("src.utils.gameUtils")
   local distanceToCenter = GameUtils.calculateDistance(centerLat, centerLon, squareLat, squareLon)
 
   -- Check if square is too close to U-shape
@@ -60,6 +60,315 @@ local function checkFirePointOverlapsWithUShape(squareLat, squareLon, centerLat,
   return distanceToCenter < minSafeDistance
 end
 
+---Calculate center point of square from four vertices
+---@param vertices CMO__Location[] Four vertices of the square
+---@return CMO__Location # Center point coordinates
+local function calculateSquareCenter(vertices)
+  assert(#vertices == 4, "Square must have exactly 4 vertices")
+
+  local sumLat = 0
+  local sumLon = 0
+  for _, vertex in ipairs(vertices) do
+    sumLat = sumLat + vertex.latitude
+    sumLon = sumLon + vertex.longitude
+  end
+
+  return {
+    latitude = sumLat / 4,
+    longitude = sumLon / 4
+  }
+end
+
+---Check if a point is inside a square area defined by vertices
+---Uses distance-based approximation suitable for geographic coordinates
+---@param pointLat number Point latitude
+---@param pointLon number Point longitude
+---@param squareVertices CMO__Location[] Four vertices of the square
+---@return boolean # True if point is inside the square
+local function isPointInSquare(pointLat, pointLon, squareVertices)
+  assert(#squareVertices == 4, "Square must have exactly 4 vertices")
+
+  local squareCenter = calculateSquareCenter(squareVertices)
+  local centerLat = squareCenter.latitude
+  local centerLon = squareCenter.longitude
+
+  -- Calculate distance from point to square center
+  local distToCenter = GameUtils.calculateDistance(centerLat, centerLon, pointLat, pointLon)
+
+  -- Calculate square's half-diagonal (approximate radius)
+  local squareSize = GameUtils.calculateDistance(
+    squareVertices[1].latitude, squareVertices[1].longitude,
+    squareVertices[2].latitude, squareVertices[2].longitude
+  )
+  local squareRadius = math.sqrt(2) * squareSize / 2
+
+  -- Point is inside if distance to center is less than half-diagonal
+  -- This treats the square as a circle (conservative approximation)
+  return distToCenter < (squareRadius * 0.85) -- 0.85 factor to approximate square inscribed circle
+end
+
+---Check if a line segment intersects with a square area
+---@param startLat number Start point latitude
+---@param startLon number Start point longitude
+---@param endLat number End point latitude
+---@param endLon number End point longitude
+---@param squareVertices CMO__Location[] Four vertices of the square
+---@param margin number Safety margin in nautical miles
+---@return boolean # True if path intersects the square
+local function checkPathIntersectsSquare(startLat, startLon, endLat, endLon, squareVertices, margin)
+  local squareCenter = calculateSquareCenter(squareVertices)
+  local centerLat = squareCenter.latitude
+  local centerLon = squareCenter.longitude
+
+  -- Calculate square size and effective radius with margin
+  local squareSize = GameUtils.calculateDistance(
+    squareVertices[1].latitude, squareVertices[1].longitude,
+    squareVertices[2].latitude, squareVertices[2].longitude
+  )
+  local squareRadius = (math.sqrt(2) * squareSize / 2) + margin
+
+  -- Calculate distances from endpoints to square center
+  local startDist = GameUtils.calculateDistance(centerLat, centerLon, startLat, startLon)
+  local endDist = GameUtils.calculateDistance(centerLat, centerLon, endLat, endLon)
+
+  -- Quick rejection: if both endpoints are far from square
+  if startDist > (squareRadius * 2) and endDist > (squareRadius * 2) then
+    return false
+  end
+
+  -- Calculate minimum distance from square center to the line segment
+  -- Using parametric line representation: P(t) = start + t * (end - start), t ∈ [0,1]
+
+  -- Vector from start to end
+  local dx = endLat - startLat
+  local dy = endLon - startLon
+
+  -- Vector from start to center
+  local fx = centerLat - startLat
+  local fy = centerLon - startLon
+
+  -- Project center onto line segment
+  local segmentLengthSq = dx * dx + dy * dy
+
+  if segmentLengthSq < 0.0000001 then
+    -- Start and end are essentially the same point
+    return startDist < squareRadius
+  end
+
+  local t = (fx * dx + fy * dy) / segmentLengthSq
+  t = math.max(0, math.min(1, t)) -- Clamp to [0,1]
+
+  -- Closest point on segment to center
+  local closestLat = startLat + t * dx
+  local closestLon = startLon + t * dy
+
+  -- Distance from center to closest point on segment
+  local minDist = GameUtils.calculateDistance(centerLat, centerLon, closestLat, closestLon)
+
+  -- Path intersects if minimum distance is less than square radius
+  return minDist < squareRadius
+end
+
+---Generate avoidance waypoint to bypass a square obstacle
+---@param startLat number Start point latitude
+---@param startLon number Start point longitude
+---@param endLat number End point latitude
+---@param endLon number End point longitude
+---@param squareVertices CMO__Location[] Four vertices of the obstacle square
+---@param avoidanceDistance number Distance to detour around obstacle in nautical miles
+---@return CMO__Location # Avoidance waypoint coordinates
+local function generateSquareAvoidanceWaypoint(startLat, startLon, endLat, endLon, squareVertices, avoidanceDistance)
+  local squareCenter = calculateSquareCenter(squareVertices)
+  local centerLat = squareCenter.latitude
+  local centerLon = squareCenter.longitude
+
+  -- Calculate path midpoint
+  local midLat = (startLat + endLat) / 2
+  local midLon = (startLon + endLon) / 2
+
+  -- Calculate bearing from path midpoint to obstacle center
+  local bearingToObstacle = GameApi.Tool_Bearing(
+    { latitude = midLat, longitude = midLon },
+    { latitude = centerLat, longitude = centerLon }
+  )
+
+  -- Calculate two candidate avoidance points (perpendicular to the obstacle direction)
+  local leftBearing = (bearingToObstacle + 90) % 360
+  local rightBearing = (bearingToObstacle - 90 + 360) % 360
+
+  local leftWaypoint = GameApi.World_GetPointFromBearing({
+    latitude = centerLat,
+    longitude = centerLon,
+    bearing = leftBearing,
+    distance = avoidanceDistance
+  })
+
+  local rightWaypoint = GameApi.World_GetPointFromBearing({
+    latitude = centerLat,
+    longitude = centerLon,
+    bearing = rightBearing,
+    distance = avoidanceDistance
+  })
+
+  -- Choose the waypoint that results in shorter total path length
+  local leftPathLength = GameUtils.calculateDistance(startLat, startLon, leftWaypoint.latitude, leftWaypoint.longitude) +
+      GameUtils.calculateDistance(leftWaypoint.latitude, leftWaypoint.longitude, endLat, endLon)
+
+  local rightPathLength = GameUtils.calculateDistance(startLat, startLon, rightWaypoint.latitude,
+        rightWaypoint.longitude) +
+      GameUtils.calculateDistance(rightWaypoint.latitude, rightWaypoint.longitude, endLat, endLon)
+
+  if leftPathLength < rightPathLength then
+    return leftWaypoint
+  else
+    return rightWaypoint
+  end
+end
+
+---Check if a line segment intersects with U-shape wall area
+---@param startLat number Start point latitude
+---@param startLon number Start point longitude
+---@param endLat number End point latitude
+---@param endLon number End point longitude
+---@param uShapeCenterLat number U-shape center latitude
+---@param uShapeCenterLon number U-shape center longitude
+---@param uShapeMaxDist number U-shape maximum distance from center (outer radius)
+---@param uShapeInnerDist number U-shape inner rectangle approximate radius
+---@param margin number Safety margin in nautical miles
+---@return boolean # True if path intersects U-shape wall
+local function checkPathIntersectsUShape(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
+                                         uShapeMaxDist, uShapeInnerDist, margin)
+  -- Calculate distances from start and end points to U-shape center
+  local startDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, startLat, startLon)
+  local endDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, endLat, endLon)
+
+  -- If both points are inside the inner area, no avoidance needed
+  -- (path stays within U-shape interior)
+  if startDist < uShapeInnerDist and endDist < uShapeInnerDist then
+    return false
+  end
+
+  -- If both points are far outside, check path midpoint
+  if startDist > (uShapeMaxDist + margin) and endDist > (uShapeMaxDist + margin) then
+    return false
+  end
+
+  -- Otherwise, check multiple sample points along the path
+  -- This catches paths that are tangent to or cross through U-shape
+  local numSamples = 5
+  for i = 0, numSamples do
+    local t = i / numSamples
+    local sampleLat = startLat + t * (endLat - startLat)
+    local sampleLon = startLon + t * (endLon - startLon)
+    local sampleDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, sampleLat, sampleLon)
+
+    -- Check if sample point is in the wall area (between inner and outer boundaries)
+    if sampleDist > uShapeInnerDist and sampleDist < (uShapeMaxDist + margin) then
+      return true
+    end
+  end
+
+  return false
+end
+
+---Generate avoidance waypoint to bypass U-shape
+---@param startLat number Start point latitude
+---@param startLon number Start point longitude
+---@param endLat number End point latitude
+---@param endLon number End point longitude
+---@param uShapeCenterLat number U-shape center latitude
+---@param uShapeCenterLon number U-shape center longitude
+---@param openingAngle number U-shape opening direction in degrees
+---@param avoidanceDistance number Distance to detour around U-shape in nautical miles
+---@return CMO__Location # Avoidance waypoint coordinates
+local function generateAvoidanceWaypoint(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
+                                         openingAngle, avoidanceDistance)
+  -- Calculate bearing from U-shape center to path midpoint
+  local midLat = (startLat + endLat) / 2
+  local midLon = (startLon + endLon) / 2
+
+  local bearingToMid = GameApi.Tool_Bearing(
+    { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
+    { latitude = midLat, longitude = midLon }
+  )
+
+  -- Determine if we should route through the opening or around the sides
+  -- Calculate angle difference between path and opening
+  local angleDiff = math.abs((bearingToMid - openingAngle + 180) % 360 - 180)
+
+  -- If path crosses through opening area (within 90 degrees of opening direction), use opening
+  -- Otherwise, route around the opposite side
+  local avoidanceBearing
+  if angleDiff < 90 then
+    -- Route through opening
+    avoidanceBearing = openingAngle
+  else
+    -- Route around the side opposite to the opening
+    avoidanceBearing = (openingAngle + 180) % 360
+  end
+
+  -- Generate waypoint at avoidance distance from U-shape center
+  return GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = avoidanceBearing,
+    distance = avoidanceDistance
+  })
+end
+
+---Generate path with optional U-shape avoidance waypoint
+---Creates a waypoint array from start to end, inserting avoidance waypoint if needed
+---@param startLat number Start point latitude
+---@param startLon number Start point longitude
+---@param endLat number End point latitude
+---@param endLon number End point longitude
+---@param uShapeCenterLat number U-shape center latitude
+---@param uShapeCenterLon number U-shape center longitude
+---@param uShapeMaxDist number U-shape maximum distance from center
+---@param uShapeInnerDist number U-shape inner rectangle approximate radius
+---@param openingAngle number U-shape opening direction in degrees
+---@param avoidanceMargin number Safety margin for intersection check
+---@param avoidanceDistance number Distance for avoidance waypoint
+---@return SBJ__PathWaypoint[] # Array of waypoints forming the path
+local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
+                                         uShapeMaxDist, uShapeInnerDist, openingAngle, avoidanceMargin,
+                                         avoidanceDistance)
+  local waypoints = {}
+
+  -- Add start waypoint
+  table.insert(waypoints, {
+    latitude = startLat,
+    longitude = startLon
+  })
+
+  -- Check if direct path intersects U-shape
+  local intersectsUShape = checkPathIntersectsUShape(
+    startLat, startLon, endLat, endLon,
+    uShapeCenterLat, uShapeCenterLon,
+    uShapeMaxDist, uShapeInnerDist, avoidanceMargin
+  )
+
+  if intersectsUShape then
+    local avoidanceWp = generateAvoidanceWaypoint(
+      startLat, startLon, endLat, endLon,
+      uShapeCenterLat, uShapeCenterLon,
+      openingAngle, avoidanceDistance
+    )
+    table.insert(waypoints, {
+      latitude = avoidanceWp.latitude,
+      longitude = avoidanceWp.longitude
+    })
+  end
+
+  -- Add end waypoint
+  table.insert(waypoints, {
+    latitude = endLat,
+    longitude = endLon
+  })
+
+  return waypoints
+end
+
 -- ============================================================================
 -- Public API Functions
 -- ============================================================================
@@ -69,7 +378,7 @@ end
 ---@param centerLon number Center longitude in degrees
 ---@param size number Square size in nautical miles
 ---@param rotationAngle number Rotation angle in degrees
----@return table<CMO__Location> # Array of 4 vertices forming a square
+---@return CMO__Location[] # Array of 4 vertices forming a square
 function TacticalAreaGenerator.generateSquareVertices(centerLat, centerLon, size, rotationAngle)
   local halfSize = size / 2
   local diagonalDist = math.sqrt(2) * halfSize
@@ -99,34 +408,33 @@ end
 ---@param margin number Safety margin in nautical miles
 ---@return boolean # True if squares overlap (including margin)
 function TacticalAreaGenerator.checkSquaresOverlap(center1Lat, center1Lon, center2Lat, center2Lon, squareSize, margin)
-  local GameUtils = require("src.utils.gameUtils")
   local distance = GameUtils.calculateDistance(center1Lat, center1Lon, center2Lat, center2Lon)
   return distance < (squareSize + margin)
 end
 
 ---Generate U-shaped area vertices with specified configuration
 ---Returns ordered vertices forming a U-shape (3 sides closed, 1 side open), and optionally generates internal squares and fire points
----@param config SBJ__UShapeAreaConfig Configuration object for U-shaped area generation
+---@param areaConfig SBJ__UShapeAreaConfig Configuration object for U-shaped area generation
 ---@return SBJ__UShapeAreaResult result Contains uShapeVertices and optionally ammoArea, hideArea, reloadArea, firePoints with vertices
-function TacticalAreaGenerator.generateUShapeVertices(config)
+function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
   -- Validate required fields
-  assert(config.centerLat, "config.centerLat is required")
-  assert(config.centerLon, "config.centerLon is required")
-  assert(config.thickness, "config.thickness is required")
-  assert(config.width, "config.width is required")
-  assert(config.height, "config.height is required")
-  assert(config.openingAngle, "config.openingAngle is required")
+  assert(areaConfig.centerLat, "config.centerLat is required")
+  assert(areaConfig.centerLon, "config.centerLon is required")
+  assert(areaConfig.thickness, "config.thickness is required")
+  assert(areaConfig.width, "config.width is required")
+  assert(areaConfig.height, "config.height is required")
+  assert(areaConfig.openingAngle, "config.openingAngle is required")
 
   local result = {}
   local vertices = {}
 
   -- Extract config values
-  local centerLat = config.centerLat
-  local centerLon = config.centerLon
-  local thickness = config.thickness
-  local width = config.width
-  local height = config.height
-  local openingAngle = config.openingAngle
+  local centerLat = areaConfig.centerLat
+  local centerLon = areaConfig.centerLon
+  local thickness = areaConfig.thickness
+  local width = areaConfig.width
+  local height = areaConfig.height
+  local openingAngle = areaConfig.openingAngle
 
   -- Calculate half dimensions for positioning from center
   local halfWidth = width / 2
@@ -210,15 +518,15 @@ function TacticalAreaGenerator.generateUShapeVertices(config)
   result.uShapeVertices = vertices
 
   -- Generate three non-overlapping squares inside if internalSquares config is specified
-  if config.internalSquares then
+  if areaConfig.internalSquares then
     local internalSquares = TacticalAreaGenerator.generateInternalSquares(
       innerCorners,
       openingAngle,
-      config.internalSquares.size,
+      areaConfig.internalSquares.size,
       width - 2 * thickness,
       height - thickness,
-      config.internalSquares.marginToWall,
-      config.internalSquares.marginBetweenSquares
+      areaConfig.internalSquares.marginToWall,
+      areaConfig.internalSquares.marginBetweenSquares
     )
 
     result.ammoArea = internalSquares.ammoArea
@@ -227,16 +535,16 @@ function TacticalAreaGenerator.generateUShapeVertices(config)
   end
 
   -- Generate fire points on circle perimeter if firePoints config is specified
-  if config.firePoints then
+  if areaConfig.firePoints then
     result.firePoints = TacticalAreaGenerator.generateFirePoints(
       centerLat,
       centerLon,
-      config.firePoints.radius,
-      config.firePoints.squareSize,
-      config.firePoints.count,
-      config.firePoints.angleRange or 360,
+      areaConfig.firePoints.radius,
+      areaConfig.firePoints.squareSize,
+      areaConfig.firePoints.count,
+      areaConfig.firePoints.angleRange or 360,
       openingAngle,
-      config.firePoints.margin or 0.1,
+      areaConfig.firePoints.margin or 0.1,
       vertices,
       width,
       height
@@ -247,14 +555,14 @@ function TacticalAreaGenerator.generateUShapeVertices(config)
 end
 
 ---Generate three non-overlapping squares inside the U-shape's internal rectangle
----@param innerCorners table<CMO__Location> Four corners of internal rectangle
+---@param innerCorners CMO__Location[] Four corners of internal rectangle
 ---@param openingAngle number Opening direction in degrees
 ---@param squareSize number Size of squares in nautical miles
 ---@param innerWidth number Width of internal rectangle in nautical miles
 ---@param innerHeight number Height of internal rectangle in nautical miles
 ---@param marginToWall? number Safety margin between squares and U-shape walls in nm (default: 0.1)
 ---@param marginBetweenSquares? number Safety margin between squares in nm (default: 0.1)
----@return table areas Contains ammoArea, hideArea, reloadArea with vertices arrays
+---@return {ammoArea: CMO__Location[], hideArea: CMO__Location[], reloadArea: CMO__Location[]} # Contains ammoArea, hideArea, reloadArea with vertices arrays
 function TacticalAreaGenerator.generateInternalSquares(innerCorners, openingAngle, squareSize, innerWidth, innerHeight,
                                                        marginToWall, marginBetweenSquares)
   local areas = {}
@@ -282,6 +590,7 @@ function TacticalAreaGenerator.generateInternalSquares(innerCorners, openingAngl
   end
 
   -- Generate three square centers
+  ---@type CMO__Location[]
   local centers = {}
   local areaNames = { "ammoArea", "hideArea", "reloadArea" }
 
@@ -298,7 +607,7 @@ function TacticalAreaGenerator.generateInternalSquares(innerCorners, openingAngl
       for _, existingCenter in ipairs(centers) do
         if TacticalAreaGenerator.checkSquaresOverlap(
               tonumber(candidate.latitude) or 0, tonumber(candidate.longitude) or 0,
-              existingCenter.latitude, existingCenter.longitude,
+              tonumber(existingCenter.latitude) or 0, tonumber(existingCenter.longitude) or 0,
               squareSize, squareMargin
             ) then
           overlap = true
@@ -318,12 +627,24 @@ function TacticalAreaGenerator.generateInternalSquares(innerCorners, openingAngl
   end
 
   -- Generate vertices for each square
-  areas.ammoArea = TacticalAreaGenerator.generateSquareVertices(centers[1].latitude, centers[1].longitude, squareSize,
-    openingAngle)
-  areas.hideArea = TacticalAreaGenerator.generateSquareVertices(centers[2].latitude, centers[2].longitude, squareSize,
-    openingAngle)
-  areas.reloadArea = TacticalAreaGenerator.generateSquareVertices(centers[3].latitude, centers[3].longitude, squareSize,
-    openingAngle)
+  areas.ammoArea = TacticalAreaGenerator.generateSquareVertices(
+    tonumber(centers[1].latitude) or 0,
+    tonumber(centers[1].longitude) or 0,
+    squareSize,
+    openingAngle
+  )
+  areas.hideArea = TacticalAreaGenerator.generateSquareVertices(
+    tonumber(centers[2].latitude) or 0,
+    tonumber(centers[2].longitude) or 0,
+    squareSize,
+    openingAngle
+  )
+  areas.reloadArea = TacticalAreaGenerator.generateSquareVertices(
+    tonumber(centers[3].latitude) or 0,
+    tonumber(centers[3].longitude) or 0,
+    squareSize,
+    openingAngle
+  )
 
   return areas
 end
@@ -340,9 +661,10 @@ end
 ---@param uShapeVertices table<CMO__Location> U-shape vertices for collision detection
 ---@param uShapeWidth number U-shape width in nautical miles
 ---@param uShapeHeight number U-shape height in nautical miles
----@return table<table<CMO__Location>> # Array of fire point areas, each with 4 vertices
+---@return table<integer, CMO__Location[]> # Array of fire point areas, each with 4 vertices
 function TacticalAreaGenerator.generateFirePoints(centerLat, centerLon, radius, squareSize, count, angleRange,
                                                   openingAngle, margin, uShapeVertices, uShapeWidth, uShapeHeight)
+  ---@type {center:CMO__Location, vertices:CMO__Location[]}[]
   local firePoints = {}
   local maxAttempts = 200
 
@@ -388,7 +710,7 @@ function TacticalAreaGenerator.generateFirePoints(centerLat, centerLon, radius, 
         for _, existingFirePoint in ipairs(firePoints) do
           if TacticalAreaGenerator.checkSquaresOverlap(
                 tonumber(candidate.latitude) or 0, tonumber(candidate.longitude) or 0,
-                existingFirePoint.center.latitude, existingFirePoint.center.longitude,
+                tonumber(existingFirePoint.center.latitude) or 0, tonumber(existingFirePoint.center.longitude) or 0,
                 squareSize, margin
               ) then
             valid = false
@@ -432,6 +754,97 @@ function TacticalAreaGenerator.generateFirePoints(centerLat, centerLon, radius, 
   end
 
   return firePointVertices
+end
+
+---Calculate movement paths between tactical positions with U-shape avoidance
+---Generates optimized paths for TEL movement between different tactical zones
+---@param pathConfig SBJ__MovementPathsConfig Configuration for path calculation
+---@return SBJ__MovementPaths # Movement paths organized by type (FP, HA, RL, AHA)
+function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
+  -- Validate required fields
+  assert(pathConfig.centerLat, "config.centerLat is required")
+  assert(pathConfig.centerLon, "config.centerLon is required")
+  assert(pathConfig.width, "config.width is required")
+  assert(pathConfig.height, "config.height is required")
+  assert(pathConfig.thickness, "config.thickness is required")
+  assert(pathConfig.openingAngle, "config.openingAngle is required")
+  assert(pathConfig.ammoArea, "config.ammoArea is required")
+  assert(pathConfig.hideArea, "config.hideArea is required")
+  assert(pathConfig.reloadArea, "config.reloadArea is required")
+
+  local avoidanceMargin = pathConfig.avoidanceMargin or 0.3
+  local paths = {
+    FP = {},
+    HA = { waypoints = {} },
+    RL = {},
+    AHA = { waypoints = {} }
+  }
+
+  -- Calculate U-shape bounding parameters
+  local uShapeMaxDist = math.sqrt((pathConfig.width / 2) ^ 2 + (pathConfig.height / 2) ^ 2)
+  local avoidanceDistance = uShapeMaxDist + avoidanceMargin + 0.5 -- Extra buffer for detour
+
+  -- Calculate inner rectangle dimensions for collision detection
+  local innerWidth = pathConfig.width - 2 * pathConfig.thickness
+  local innerHeight = pathConfig.height - pathConfig.thickness
+  local uShapeInnerDist = math.sqrt((innerWidth / 2) ^ 2 + (innerHeight / 2) ^ 2)
+
+  -- Calculate center points of tactical zones
+  local ammoCtr = calculateSquareCenter(pathConfig.ammoArea)
+  local hideCtr = calculateSquareCenter(pathConfig.hideArea)
+  local reloadCtr = calculateSquareCenter(pathConfig.reloadArea)
+
+  -- Generate HA path: Reload Area -> Hide Area
+  paths.HA.waypoints = generatePathWithAvoidance(
+    tonumber(reloadCtr.latitude) or 0, tonumber(reloadCtr.longitude) or 0,
+    tonumber(hideCtr.latitude) or 0, tonumber(hideCtr.longitude) or 0,
+    pathConfig.centerLat, pathConfig.centerLon,
+    uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
+    avoidanceMargin, avoidanceDistance
+  )
+
+  -- Generate AHA path: Reload Area -> Ammo Holding Area
+  paths.AHA.waypoints = generatePathWithAvoidance(
+    tonumber(reloadCtr.latitude) or 0, tonumber(reloadCtr.longitude) or 0,
+    tonumber(ammoCtr.latitude) or 0, tonumber(ammoCtr.longitude) or 0,
+    pathConfig.centerLat, pathConfig.centerLon,
+    uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
+    avoidanceMargin, avoidanceDistance
+  )
+
+  -- Generate FP paths: Hide Area -> each Fire Point
+  if pathConfig.firePoints then
+    for i, firePoint in ipairs(pathConfig.firePoints) do
+      local fpCtr = calculateSquareCenter(firePoint)
+      paths.FP[i] = {
+        waypoints = generatePathWithAvoidance(
+          tonumber(hideCtr.latitude) or 0, tonumber(hideCtr.longitude) or 0,
+          tonumber(fpCtr.latitude) or 0, tonumber(fpCtr.longitude) or 0,
+          pathConfig.centerLat, pathConfig.centerLon,
+          uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
+          avoidanceMargin, avoidanceDistance
+        )
+      }
+    end
+  end
+
+  -- Generate RL paths: each Fire Point -> Reload Area
+  if pathConfig.firePoints then
+    for i, firePoint in ipairs(pathConfig.firePoints) do
+      local fpCtr = calculateSquareCenter(firePoint)
+      paths.RL[i] = {
+        waypoints = generatePathWithAvoidance(
+          tonumber(fpCtr.latitude) or 0, tonumber(fpCtr.longitude) or 0,
+          tonumber(reloadCtr.latitude) or 0, tonumber(reloadCtr.longitude) or 0,
+          pathConfig.centerLat, pathConfig.centerLon,
+          uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
+          avoidanceMargin, avoidanceDistance
+        )
+      }
+    end
+  end
+
+  return paths
 end
 
 -- ============================================================================
@@ -483,6 +896,56 @@ end
 --       area = firePoint
 --     })
 --   end
+-- end
+
+-- -- 計算移動路徑
+-- if result.ammoArea and result.hideArea and result.reloadArea then
+--   local paths = TacticalAreaGenerator.calculateMovementPaths({
+--     centerLat = u.latitude,
+--     centerLon = u.longitude,
+--     width = 2.5,
+--     height = 2.5,
+--     thickness = 0.5,
+--     openingAngle = 30,
+--     ammoArea = result.ammoArea,
+--     hideArea = result.hideArea,
+--     reloadArea = result.reloadArea,
+--     firePoints = result.firePoints,
+--     avoidanceMargin = 0.3  -- 迴避U型的安全距離 (海里)
+--   })
+
+--   -- 使用路徑範例: Hide Area -> Fire Point
+--   for i, path in ipairs(paths.FP) do
+--     print("Path from Hide Area to Fire Point " .. i .. ":")
+--     for j, waypoint in ipairs(path.waypoints) do
+--       print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
+--     end
+--   end
+
+--   -- 使用路徑範例: Reload Area -> Hide Area
+--   print("Path from Reload Area to Hide Area:")
+--   for j, waypoint in ipairs(paths.HA.waypoints) do
+--     print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
+--   end
+
+--   -- 使用路徑範例: Fire Point -> Reload Area
+--   for i, path in ipairs(paths.RL) do
+--     print("Path from Fire Point " .. i .. " to Reload Area:")
+--     for j, waypoint in ipairs(path.waypoints) do
+--       print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
+--     end
+--   end
+
+--   -- 使用路徑範例: Reload Area -> Ammo Holding Area
+--   print("Path from Reload Area to Ammo Holding Area:")
+--   for j, waypoint in ipairs(paths.AHA.waypoints) do
+--     print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
+--   end
+----u.course=paths.AHA.waypoints
+----u.course=paths.HA.waypoints
+----u.course=paths.FP[1].waypoints
+----u.course=paths.FP[2].waypoints
+----u.course=paths.AHA.waypoints
 -- end
 
 return TacticalAreaGenerator

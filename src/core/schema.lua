@@ -1049,8 +1049,40 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---U-shaped area generation result
 ---Contains all generated vertices for U-shape, internal zones, and fire points
 ---@class SBJ__UShapeAreaResult:table
----@field uShapeVertices table<CMO__Location> Array of 8 vertices forming U-shape polygon
----@field ammoArea? table<CMO__Location> Ammo holding area vertices (4 points) if internal squares configured
----@field hideArea? table<CMO__Location> Hide area vertices (4 points) if internal squares configured
----@field reloadArea? table<CMO__Location> Reload area vertices (4 points) if internal squares configured
----@field firePoints? table<table<CMO__Location>> Array of fire point areas, each with 4 vertices, if fire points configured
+---@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
+---@field ammoArea? CMO__Location[] Ammo holding area vertices (4 points) if internal squares configured
+---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
+---@field reloadArea? CMO__Location[] Reload area vertices (4 points) if internal squares configured
+---@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured
+
+---Path waypoint for TEL movement routes
+---@class SBJ__PathWaypoint:table
+---@field latitude number Waypoint latitude coordinate
+---@field longitude number Waypoint longitude coordinate
+
+---Movement path between two tactical positions
+---@class SBJ__MovementPath:table
+---@field waypoints SBJ__PathWaypoint[] Array of waypoints forming the path
+
+---Movement path calculation configuration
+---Parameters for calculating tactical movement paths with U-shape avoidance
+---@class SBJ__MovementPathsConfig:table
+---@field centerLat number U-shape center latitude in degrees
+---@field centerLon number U-shape center longitude in degrees
+---@field width number U-shape width in nautical miles
+---@field height number U-shape height in nautical miles
+---@field thickness number U-shape wall thickness in nautical miles
+---@field openingAngle number U-shape opening direction in degrees (0=North, 90=East, 180=South, 270=West)
+---@field ammoArea CMO__Location[] Ammo holding area vertices (4 points)
+---@field hideArea CMO__Location[] Hide area vertices (4 points)
+---@field reloadArea CMO__Location[] Reload area vertices (4 points)
+---@field firePoints? table<integer, CMO__Location[]> Fire point areas array, each with 4 vertices (optional)
+---@field avoidanceMargin? number Safety margin for U-shape avoidance in nautical miles (default: 0.3)
+
+---Movement paths configuration for tactical area
+---Maps path types to their waypoint arrays
+---@class SBJ__MovementPaths:table
+---@field FP table<integer, SBJ__MovementPath> Fire Point paths: hide area -> each fire point
+---@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
+---@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
+---@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
