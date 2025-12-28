@@ -1011,3 +1011,46 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__RunwayRepairmentContext:table
 ---@field isActivated boolean Whether runway repair system is activated
 ---@field runways SBJ__RunwayEntry[] Array of runways being tracked for repair
+
+
+-- ============================================================================
+-- Tactical Area Generation
+-- ============================================================================
+-- Types for generating tactical area layouts (U-shaped areas, fire points, etc.)
+
+---Internal squares configuration for U-shaped area
+---Defines three functional zones inside U-shaped tactical area (ammo, hide, reload)
+---@class SBJ__UShapeInternalSquaresConfig:table
+---@field size number Square size in nautical miles
+---@field marginToWall? number Safety margin between squares and U-shape walls (default: 0.1 nm)
+---@field marginBetweenSquares? number Safety margin between squares (default: 0.1 nm)
+
+---Fire points configuration for U-shaped area
+---Defines fire point positions on circle perimeter around U-shaped area
+---@class SBJ__UShapeFirePointsConfig:table
+---@field radius number Radius of circle for fire point placement in nautical miles
+---@field squareSize number Size of fire point squares in nautical miles
+---@field count number Number of fire points to generate
+---@field angleRange? number Angular range for placement in degrees, 360=full circle (default: 360)
+---@field margin? number Safety margin between fire points in nautical miles (default: 0.1 nm)
+
+---U-shaped tactical area configuration
+---Complete configuration for generating U-shaped area with optional internal zones and fire points
+---@class SBJ__UShapeAreaConfig:table
+---@field centerLat number Center latitude in degrees
+---@field centerLon number Center longitude in degrees
+---@field thickness number Wall thickness in nautical miles
+---@field width number Total width of the shape in nautical miles
+---@field height number Total height of the shape in nautical miles
+---@field openingAngle number Opening direction in degrees (0=North, 90=East, 180=South, 270=West)
+---@field internalSquares? SBJ__UShapeInternalSquaresConfig Optional internal functional zones configuration
+---@field firePoints? SBJ__UShapeFirePointsConfig Optional fire points configuration
+
+---U-shaped area generation result
+---Contains all generated vertices for U-shape, internal zones, and fire points
+---@class SBJ__UShapeAreaResult:table
+---@field uShapeVertices table<CMO__Location> Array of 8 vertices forming U-shape polygon
+---@field ammoArea? table<CMO__Location> Ammo holding area vertices (4 points) if internal squares configured
+---@field hideArea? table<CMO__Location> Hide area vertices (4 points) if internal squares configured
+---@field reloadArea? table<CMO__Location> Reload area vertices (4 points) if internal squares configured
+---@field firePoints? table<table<CMO__Location>> Array of fire point areas, each with 4 vertices, if fire points configured
