@@ -79,152 +79,6 @@ local function calculateSquareCenter(vertices)
   }
 end
 
----Check if a point is inside a square area defined by vertices
----Uses distance-based approximation suitable for geographic coordinates
----@param pointLat number Point latitude
----@param pointLon number Point longitude
----@param squareVertices CMO__Location[] Four vertices of the square
----@return boolean # True if point is inside the square
-local function isPointInSquare(pointLat, pointLon, squareVertices)
-  assert(#squareVertices == 4, "Square must have exactly 4 vertices")
-
-  local squareCenter = calculateSquareCenter(squareVertices)
-  local centerLat = squareCenter.latitude
-  local centerLon = squareCenter.longitude
-
-  -- Calculate distance from point to square center
-  local distToCenter = GameUtils.calculateDistance(centerLat, centerLon, pointLat, pointLon)
-
-  -- Calculate square's half-diagonal (approximate radius)
-  local squareSize = GameUtils.calculateDistance(
-    squareVertices[1].latitude, squareVertices[1].longitude,
-    squareVertices[2].latitude, squareVertices[2].longitude
-  )
-  local squareRadius = math.sqrt(2) * squareSize / 2
-
-  -- Point is inside if distance to center is less than half-diagonal
-  -- This treats the square as a circle (conservative approximation)
-  return distToCenter < (squareRadius * 0.85) -- 0.85 factor to approximate square inscribed circle
-end
-
----Check if a line segment intersects with a square area
----@param startLat number Start point latitude
----@param startLon number Start point longitude
----@param endLat number End point latitude
----@param endLon number End point longitude
----@param squareVertices CMO__Location[] Four vertices of the square
----@param margin number Safety margin in nautical miles
----@return boolean # True if path intersects the square
-local function checkPathIntersectsSquare(startLat, startLon, endLat, endLon, squareVertices, margin)
-  local squareCenter = calculateSquareCenter(squareVertices)
-  local centerLat = squareCenter.latitude
-  local centerLon = squareCenter.longitude
-
-  -- Calculate square size and effective radius with margin
-  local squareSize = GameUtils.calculateDistance(
-    squareVertices[1].latitude, squareVertices[1].longitude,
-    squareVertices[2].latitude, squareVertices[2].longitude
-  )
-  local squareRadius = (math.sqrt(2) * squareSize / 2) + margin
-
-  -- Calculate distances from endpoints to square center
-  local startDist = GameUtils.calculateDistance(centerLat, centerLon, startLat, startLon)
-  local endDist = GameUtils.calculateDistance(centerLat, centerLon, endLat, endLon)
-
-  -- Quick rejection: if both endpoints are far from square
-  if startDist > (squareRadius * 2) and endDist > (squareRadius * 2) then
-    return false
-  end
-
-  -- Calculate minimum distance from square center to the line segment
-  -- Using parametric line representation: P(t) = start + t * (end - start), t ∈ [0,1]
-
-  -- Vector from start to end
-  local dx = endLat - startLat
-  local dy = endLon - startLon
-
-  -- Vector from start to center
-  local fx = centerLat - startLat
-  local fy = centerLon - startLon
-
-  -- Project center onto line segment
-  local segmentLengthSq = dx * dx + dy * dy
-
-  if segmentLengthSq < 0.0000001 then
-    -- Start and end are essentially the same point
-    return startDist < squareRadius
-  end
-
-  local t = (fx * dx + fy * dy) / segmentLengthSq
-  t = math.max(0, math.min(1, t)) -- Clamp to [0,1]
-
-  -- Closest point on segment to center
-  local closestLat = startLat + t * dx
-  local closestLon = startLon + t * dy
-
-  -- Distance from center to closest point on segment
-  local minDist = GameUtils.calculateDistance(centerLat, centerLon, closestLat, closestLon)
-
-  -- Path intersects if minimum distance is less than square radius
-  return minDist < squareRadius
-end
-
----Generate avoidance waypoint to bypass a square obstacle
----@param startLat number Start point latitude
----@param startLon number Start point longitude
----@param endLat number End point latitude
----@param endLon number End point longitude
----@param squareVertices CMO__Location[] Four vertices of the obstacle square
----@param avoidanceDistance number Distance to detour around obstacle in nautical miles
----@return CMO__Location # Avoidance waypoint coordinates
-local function generateSquareAvoidanceWaypoint(startLat, startLon, endLat, endLon, squareVertices, avoidanceDistance)
-  local squareCenter = calculateSquareCenter(squareVertices)
-  local centerLat = squareCenter.latitude
-  local centerLon = squareCenter.longitude
-
-  -- Calculate path midpoint
-  local midLat = (startLat + endLat) / 2
-  local midLon = (startLon + endLon) / 2
-
-  -- Calculate bearing from path midpoint to obstacle center
-  local bearingToObstacle = GameApi.Tool_Bearing(
-    { latitude = midLat, longitude = midLon },
-    { latitude = centerLat, longitude = centerLon }
-  )
-
-  -- Calculate two candidate avoidance points (perpendicular to the obstacle direction)
-  local leftBearing = (bearingToObstacle + 90) % 360
-  local rightBearing = (bearingToObstacle - 90 + 360) % 360
-
-  local leftWaypoint = GameApi.World_GetPointFromBearing({
-    latitude = centerLat,
-    longitude = centerLon,
-    bearing = leftBearing,
-    distance = avoidanceDistance
-  })
-
-  local rightWaypoint = GameApi.World_GetPointFromBearing({
-    latitude = centerLat,
-    longitude = centerLon,
-    bearing = rightBearing,
-    distance = avoidanceDistance
-  })
-
-  -- Choose the waypoint that results in shorter total path length
-  local leftPathLength = GameUtils.calculateDistance(startLat, startLon, leftWaypoint.latitude, leftWaypoint.longitude) +
-      GameUtils.calculateDistance(leftWaypoint.latitude, leftWaypoint.longitude, endLat, endLon)
-
-  local rightPathLength = GameUtils.calculateDistance(startLat, startLon, rightWaypoint.latitude,
-        rightWaypoint.longitude) +
-      GameUtils.calculateDistance(rightWaypoint.latitude, rightWaypoint.longitude, endLat, endLon)
-
-  if leftPathLength < rightPathLength then
-    return leftWaypoint
-  else
-    return rightWaypoint
-  end
-end
-
 ---Check if a line segment intersects with U-shape wall area
 ---@param startLat number Start point latitude
 ---@param startLon number Start point longitude
@@ -271,53 +125,116 @@ local function checkPathIntersectsUShape(startLat, startLon, endLat, endLon, uSh
   return false
 end
 
----Generate avoidance waypoint to bypass U-shape
----@param startLat number Start point latitude
----@param startLon number Start point longitude
----@param endLat number End point latitude
----@param endLon number End point longitude
+---Calculate U-shape outline corner points with offset (both outer and inner corners)
 ---@param uShapeCenterLat number U-shape center latitude
 ---@param uShapeCenterLon number U-shape center longitude
+---@param width number U-shape width in nautical miles
+---@param height number U-shape height in nautical miles
+---@param thickness number U-shape wall thickness in nautical miles
 ---@param openingAngle number U-shape opening direction in degrees
----@param avoidanceDistance number Distance to detour around U-shape in nautical miles
----@return CMO__Location # Avoidance waypoint coordinates
-local function generateAvoidanceWaypoint(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
-                                         openingAngle, avoidanceDistance)
-  -- Calculate bearing from U-shape center to path midpoint
-  local midLat = (startLat + endLat) / 2
-  local midLon = (startLon + endLon) / 2
+---@param offset number Offset distance from U-shape edges in nautical miles
+---@return {topLeft:CMO__Location, topRight:CMO__Location, bottomRight:CMO__Location, bottomLeft:CMO__Location, innerTopLeft:CMO__Location, innerTopRight:CMO__Location} # Corner points
+local function calculateOutlineCorners(uShapeCenterLat, uShapeCenterLon, width, height, thickness, openingAngle, offset)
+  local corners = {}
 
-  local bearingToMid = GameApi.Tool_Bearing(
-    { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
-    { latitude = midLat, longitude = midLon }
-  )
+  -- Calculate outer rectangle corners
+  local halfWidth = width / 2
+  local halfHeight = height / 2
+  local outerDiagonalDist = math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight)
+  local outerBaseAngle = math.deg(Utils.atan2(halfWidth, halfHeight))
 
-  -- Determine if we should route through the opening or around the sides
-  -- Calculate angle difference between path and opening
-  local angleDiff = math.abs((bearingToMid - openingAngle + 180) % 360 - 180)
-
-  -- If path crosses through opening area (within 90 degrees of opening direction), use opening
-  -- Otherwise, route around the opposite side
-  local avoidanceBearing
-  if angleDiff < 90 then
-    -- Route through opening
-    avoidanceBearing = openingAngle
-  else
-    -- Route around the side opposite to the opening
-    avoidanceBearing = (openingAngle + 180) % 360
-  end
-
-  -- Generate waypoint at avoidance distance from U-shape center
-  return GameApi.World_GetPointFromBearing({
+  -- Outer corners without offset (base points)
+  local outerTopRight = GameApi.World_GetPointFromBearing({
     latitude = uShapeCenterLat,
     longitude = uShapeCenterLon,
-    bearing = avoidanceBearing,
-    distance = avoidanceDistance
+    bearing = (openingAngle + outerBaseAngle) % 360,
+    distance = outerDiagonalDist
   })
+
+  local outerTopLeft = GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = (openingAngle - outerBaseAngle + 360) % 360,
+    distance = outerDiagonalDist
+  })
+
+  -- Outer corners with offset
+  local outerHalfWidthOffset = halfWidth + offset
+  local outerHalfHeightOffset = halfHeight + offset
+  local outerDiagonalDistOffset = math.sqrt(outerHalfWidthOffset * outerHalfWidthOffset +
+    outerHalfHeightOffset * outerHalfHeightOffset)
+  local outerBaseAngleOffset = math.deg(Utils.atan2(outerHalfWidthOffset, outerHalfHeightOffset))
+
+  corners.topRight = GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = (openingAngle + outerBaseAngleOffset) % 360,
+    distance = outerDiagonalDistOffset
+  })
+
+  corners.topLeft = GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = (openingAngle - outerBaseAngleOffset + 360) % 360,
+    distance = outerDiagonalDistOffset
+  })
+
+  corners.bottomRight = GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = (openingAngle + 180 - outerBaseAngleOffset) % 360,
+    distance = outerDiagonalDistOffset
+  })
+
+  corners.bottomLeft = GameApi.World_GetPointFromBearing({
+    latitude = uShapeCenterLat,
+    longitude = uShapeCenterLon,
+    bearing = (openingAngle + 180 + outerBaseAngleOffset) % 360,
+    distance = outerDiagonalDistOffset
+  })
+
+  -- Calculate inner rectangle corners
+  -- Find base points of inner rectangle (without offset)
+  -- Inner top-right base: from outer top-right, move inward by thickness
+  local innerTopRightBase = GameApi.World_GetPointFromBearing({
+    latitude = outerTopRight.latitude,
+    longitude = outerTopRight.longitude,
+    bearing = (270 + openingAngle) % 360, -- Move left (toward center)
+    distance = thickness
+  })
+
+  -- Inner top-left base: from outer top-left, move inward by thickness
+  local innerTopLeftBase = GameApi.World_GetPointFromBearing({
+    latitude = outerTopLeft.latitude,
+    longitude = outerTopLeft.longitude,
+    bearing = (90 + openingAngle) % 360, -- Move right (toward center)
+    distance = thickness
+  })
+
+  -- Apply diagonal offset from base points (toward interior)
+  local offsetDiagonal = offset * math.sqrt(2)
+
+  -- Inner top-right: diagonal toward bottom-left (away from right wall and opening edge)
+  corners.innerTopRight = GameApi.World_GetPointFromBearing({
+    latitude = innerTopRightBase.latitude,
+    longitude = innerTopRightBase.longitude,
+    bearing = (openingAngle - 45 + 360) % 360, -- Bottom-left diagonal
+    distance = offsetDiagonal
+  })
+
+  -- Inner top-left: diagonal toward bottom-right (away from left wall and opening edge)
+  corners.innerTopLeft = GameApi.World_GetPointFromBearing({
+    latitude = innerTopLeftBase.latitude,
+    longitude = innerTopLeftBase.longitude,
+    bearing = (openingAngle + 45) % 360, -- Bottom-right diagonal
+    distance = offsetDiagonal
+  })
+
+  return corners
 end
 
----Generate path with optional U-shape avoidance waypoint
----Creates a waypoint array from start to end, inserting avoidance waypoint if needed
+---Generate path with U-shape avoidance by following rectangular perimeter
+---Creates a waypoint array from start to end, routing around U-shape rectangular outline
 ---@param startLat number Start point latitude
 ---@param startLon number Start point longitude
 ---@param endLat number End point latitude
@@ -329,10 +246,13 @@ end
 ---@param openingAngle number U-shape opening direction in degrees
 ---@param avoidanceMargin number Safety margin for intersection check
 ---@param avoidanceDistance number Distance for avoidance waypoint
+---@param width number U-shape width in nautical miles
+---@param height number U-shape height in nautical miles
+---@param thickness number U-shape wall thickness in nautical miles
 ---@return SBJ__PathWaypoint[] # Array of waypoints forming the path
 local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
                                          uShapeMaxDist, uShapeInnerDist, openingAngle, avoidanceMargin,
-                                         avoidanceDistance)
+                                         avoidanceDistance, width, height, thickness)
   local waypoints = {}
 
   -- Add start waypoint
@@ -349,15 +269,89 @@ local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uSh
   )
 
   if intersectsUShape then
-    local avoidanceWp = generateAvoidanceWaypoint(
-      startLat, startLon, endLat, endLon,
-      uShapeCenterLat, uShapeCenterLon,
-      openingAngle, avoidanceDistance
+    -- Calculate U-shape outline corners (both outer and inner)
+    local corners = calculateOutlineCorners(
+      uShapeCenterLat, uShapeCenterLon, width, height, thickness,
+      openingAngle, avoidanceMargin
     )
-    table.insert(waypoints, {
-      latitude = avoidanceWp.latitude,
-      longitude = avoidanceWp.longitude
-    })
+
+    -- Calculate bearing from U-shape center to destination
+    local bearingToEnd = GameApi.Tool_Bearing(
+      { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
+      { latitude = endLat, longitude = endLon }
+    )
+
+    -- Calculate angular difference from opening to destination
+    local normalizedOpening = openingAngle % 360
+    local normalizedEnd = bearingToEnd % 360
+    local angleDiff = (normalizedEnd - normalizedOpening + 180) % 360 - 180
+
+    -- Determine which inner corner to use for exit
+    local useRightPath = angleDiff > 0
+
+    -- Step 1: Exit through inner corner (inside the opening)
+    if useRightPath then
+      table.insert(waypoints, {
+        latitude = corners.innerTopRight.latitude,
+        longitude = corners.innerTopRight.longitude
+      })
+    else
+      table.insert(waypoints, {
+        latitude = corners.innerTopLeft.latitude,
+        longitude = corners.innerTopLeft.longitude
+      })
+    end
+
+    -- Step 2: Add outer corners based on destination direction
+    -- Only add corners if necessary to reach destination
+    if angleDiff > 90 and angleDiff <= 135 then
+      -- Right side: need outer topRight corner
+      table.insert(waypoints, {
+        latitude = corners.topRight.latitude,
+        longitude = corners.topRight.longitude
+      })
+    elseif angleDiff > 135 then
+      -- Back-right side: topRight → bottomRight
+      table.insert(waypoints, {
+        latitude = corners.topRight.latitude,
+        longitude = corners.topRight.longitude
+      })
+      table.insert(waypoints, {
+        latitude = corners.bottomRight.latitude,
+        longitude = corners.bottomRight.longitude
+      })
+      -- Only add bottomLeft if very close to opposite side
+      if angleDiff > 170 then
+        table.insert(waypoints, {
+          latitude = corners.bottomLeft.latitude,
+          longitude = corners.bottomLeft.longitude
+        })
+      end
+    elseif angleDiff < -135 then
+      -- Back-left side: topLeft → bottomLeft
+      table.insert(waypoints, {
+        latitude = corners.topLeft.latitude,
+        longitude = corners.topLeft.longitude
+      })
+      table.insert(waypoints, {
+        latitude = corners.bottomLeft.latitude,
+        longitude = corners.bottomLeft.longitude
+      })
+      -- Only add bottomRight if very close to opposite side
+      if angleDiff < -170 then
+        table.insert(waypoints, {
+          latitude = corners.bottomRight.latitude,
+          longitude = corners.bottomRight.longitude
+        })
+      end
+    elseif angleDiff < -90 and angleDiff >= -135 then
+      -- Left side: need outer topLeft corner
+      table.insert(waypoints, {
+        latitude = corners.topLeft.latitude,
+        longitude = corners.topLeft.longitude
+      })
+    end
+    -- If -90 <= angleDiff <= 90: destination roughly forward, inner corner to destination is sufficient
   end
 
   -- Add end waypoint
@@ -674,7 +668,7 @@ function TacticalAreaGenerator.generateFirePoints(centerLat, centerLon, radius, 
   -- Calculate angle range boundaries
   -- Opening angle points to the opening direction
   -- We want to avoid placing fire points directly in the opening
-  local startAngle = openingAngle - (angleRange / 2)
+  local startAngle = openingAngle + 180 - (angleRange / 2)
 
   -- Generate fire points
   for i = 1, count do
@@ -800,7 +794,8 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
     tonumber(hideCtr.latitude) or 0, tonumber(hideCtr.longitude) or 0,
     pathConfig.centerLat, pathConfig.centerLon,
     uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-    avoidanceMargin, avoidanceDistance
+    avoidanceMargin, avoidanceDistance,
+    pathConfig.width, pathConfig.height, pathConfig.thickness
   )
 
   -- Generate AHA path: Reload Area -> Ammo Holding Area
@@ -809,7 +804,8 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
     tonumber(ammoCtr.latitude) or 0, tonumber(ammoCtr.longitude) or 0,
     pathConfig.centerLat, pathConfig.centerLon,
     uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-    avoidanceMargin, avoidanceDistance
+    avoidanceMargin, avoidanceDistance,
+    pathConfig.width, pathConfig.height, pathConfig.thickness
   )
 
   -- Generate FP paths: Hide Area -> each Fire Point
@@ -822,7 +818,8 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
           tonumber(fpCtr.latitude) or 0, tonumber(fpCtr.longitude) or 0,
           pathConfig.centerLat, pathConfig.centerLon,
           uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-          avoidanceMargin, avoidanceDistance
+          avoidanceMargin, avoidanceDistance,
+          pathConfig.width, pathConfig.height, pathConfig.thickness
         )
       }
     end
@@ -838,7 +835,8 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
           tonumber(reloadCtr.latitude) or 0, tonumber(reloadCtr.longitude) or 0,
           pathConfig.centerLat, pathConfig.centerLon,
           uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-          avoidanceMargin, avoidanceDistance
+          avoidanceMargin, avoidanceDistance,
+          pathConfig.width, pathConfig.height, pathConfig.thickness
         )
       }
     end
@@ -854,32 +852,32 @@ end
 -- local u = ScenEdit_GetUnit({name='3MN-1 Bison B [Bomber]', guid='L13OAU-0HNI52ARQHQNF'})
 
 -- local result = TacticalAreaGenerator.generateUShapeVertices({
---   -- U 型基本配置（必填）
+--   -- U-shape basic configuration (required)
 --   centerLat = u.latitude,
 --   centerLon = u.longitude,
---   thickness = 0.5,       -- U型厚度 (海里)
---   width = 2.5,           -- U型寬度 (海里)
---   height = 2.5,          -- U型高度 (海里)
---   openingAngle = 30,     -- 開口方向角度 (0=北, 90=東, 180=南, 270=西)
+--   thickness = 0.5,       -- U-shape wall thickness (nautical miles)
+--   width = 2.5,           -- U-shape width (nautical miles)
+--   height = 2,          -- U-shape height (nautical miles)
+--   openingAngle = 30,     -- Opening direction angle (0=North, 90=East, 180=South, 270=West)
 
---   -- 內部三個功能區配置（可選）
+--   -- Internal three functional zones configuration (optional)
 --   internalSquares = {
---     size = 0.2,                    -- 正方形邊長 (海里)
---     marginToWall = 0.1,            -- 與U型內壁的間距 (海里)
---     marginBetweenSquares = 0.15    -- 正方形之間的間距 (海里)
+--     size = 0.2,                    -- Square side length (nautical miles)
+--     marginToWall = 0.1,            -- Distance to U-shape inner wall (nautical miles)
+--     marginBetweenSquares = 0.5    -- Distance between squares (nautical miles)
 --   },
 
---   -- 外圍火力點配置（可選）
+--   -- Outer fire points configuration (optional)
 --   firePoints = {
---     radius = 5,          -- 火力點圓周半徑 (海里)
---     squareSize = 0.3,    -- 火力點正方形邊長 (海里)
---     count = 3,           -- 火力點數量
---     angleRange = 270,    -- 角度範圍 (度)，360=整圈，180=半圈
---     margin = 0.2         -- 火力點之間的安全間距 (海里)
+--     radius = 4,          -- Fire point circle radius (nautical miles)
+--     squareSize = 0.3,    -- Fire point square side length (nautical miles)
+--     count = 2,           -- Number of fire points
+--     angleRange = 90,    -- Angular range (degrees), 360=full circle, 180=semicircle
+--     margin = 0.2         -- Safety margin between fire points (nautical miles)
 --   }
 -- })
 
--- -- 創建參考區域
+-- -- Create reference areas
 -- ScenEdit_AddReferencePoint({side="Taiwan", name="U-Shape Area", area = result.uShapeVertices})
 
 -- if result.ammoArea then
@@ -898,23 +896,23 @@ end
 --   end
 -- end
 
--- -- 計算移動路徑
+-- -- Calculate movement paths
 -- if result.ammoArea and result.hideArea and result.reloadArea then
 --   local paths = TacticalAreaGenerator.calculateMovementPaths({
 --     centerLat = u.latitude,
 --     centerLon = u.longitude,
 --     width = 2.5,
---     height = 2.5,
+--     height = 2,
 --     thickness = 0.5,
 --     openingAngle = 30,
 --     ammoArea = result.ammoArea,
 --     hideArea = result.hideArea,
 --     reloadArea = result.reloadArea,
 --     firePoints = result.firePoints,
---     avoidanceMargin = 0.3  -- 迴避U型的安全距離 (海里)
+--     avoidanceMargin = 0.3  -- Safety distance to avoid U-shape (nautical miles)
 --   })
 
---   -- 使用路徑範例: Hide Area -> Fire Point
+--   -- Path usage example: Hide Area -> Fire Point
 --   for i, path in ipairs(paths.FP) do
 --     print("Path from Hide Area to Fire Point " .. i .. ":")
 --     for j, waypoint in ipairs(path.waypoints) do
@@ -922,13 +920,13 @@ end
 --     end
 --   end
 
---   -- 使用路徑範例: Reload Area -> Hide Area
+--   -- Path usage example: Reload Area -> Hide Area
 --   print("Path from Reload Area to Hide Area:")
 --   for j, waypoint in ipairs(paths.HA.waypoints) do
 --     print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
 --   end
 
---   -- 使用路徑範例: Fire Point -> Reload Area
+--   -- Path usage example: Fire Point -> Reload Area
 --   for i, path in ipairs(paths.RL) do
 --     print("Path from Fire Point " .. i .. " to Reload Area:")
 --     for j, waypoint in ipairs(path.waypoints) do
@@ -936,16 +934,16 @@ end
 --     end
 --   end
 
---   -- 使用路徑範例: Reload Area -> Ammo Holding Area
+--   -- Path usage example: Reload Area -> Ammo Holding Area
 --   print("Path from Reload Area to Ammo Holding Area:")
 --   for j, waypoint in ipairs(paths.AHA.waypoints) do
 --     print(string.format("  Waypoint %d: lat=%.6f, lon=%.6f", j, waypoint.latitude, waypoint.longitude))
 --   end
-----u.course=paths.AHA.waypoints
-----u.course=paths.HA.waypoints
-----u.course=paths.FP[1].waypoints
-----u.course=paths.FP[2].waypoints
-----u.course=paths.AHA.waypoints
+-- --u.course=paths.AHA.waypoints
+-- --u.course=paths.HA.waypoints
+-- --u.course=paths.FP[1].waypoints
+-- --u.course=paths.FP[2].waypoints
+-- --u.course=paths.AHA.waypoints
 -- end
 
 return TacticalAreaGenerator
