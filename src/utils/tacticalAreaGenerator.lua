@@ -89,9 +89,17 @@ end
 ---@return boolean # True if point is inside square (including margin)
 local function checkPointInSquare(pointLat, pointLon, squareCenter, squareSize, margin)
   local distance = GameUtils.calculateDistance(squareCenter.latitude, squareCenter.longitude, pointLat, pointLon)
-  -- Use diagonal distance as bounding circle for quick rejection
+
+  -- First use diagonal distance as bounding circle for quick rejection
   local halfDiagonal = math.sqrt(2) * (squareSize / 2 + margin)
-  return distance < halfDiagonal
+  if distance >= halfDiagonal then
+    return false -- Definitely outside
+  end
+
+  -- For more accurate check, use square bounding box instead of circle
+  -- This prevents false positives from the circular approximation
+  local halfSize = squareSize / 2 + margin
+  return distance < halfSize
 end
 
 ---Check if a line segment intersects with a square area
@@ -661,7 +669,17 @@ local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uSh
               ) then
             -- Try multiple offset distances to find valid avoidance points
             local corner1, corner2 = nil, nil
-            local offsetMultipliers = { 0.5, 0.8, 1, 1.5 } -- Smaller multipliers to reduce collision chains
+            -- Use progressively larger multipliers to ensure sufficient clearance
+            local offsetMultipliers = { 2.0, 2.5, 3.0, 3.5, 4.0, 5.0 }
+
+            -- Create a filtered list excluding the current square being avoided
+            -- This allows the avoidance path to route around the square without being blocked by it
+            local otherSquares = {}
+            for idx, sq in ipairs(internalAreas) do
+              if idx ~= squareIdx then
+                table.insert(otherSquares, sq)
+              end
+            end
 
             for _, multiplier in ipairs(offsetMultipliers) do
               local offsetDist = avoidanceMargin * multiplier
@@ -671,8 +689,8 @@ local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uSh
                 segStart.latitude, segStart.longitude,
                 segEnd.latitude, segEnd.longitude,
                 offsetCorners,
-                internalAreas, -- Pass all squares to check for new collisions
-                avoidanceMargin
+                otherSquares,   -- Only check collision with OTHER squares
+                avoidanceMargin -- Use full margin for other squares
               )
 
               if corner1 and corner2 then
@@ -709,9 +727,36 @@ local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uSh
     end
 
     if iteration >= maxIterations then
+      -- Build complete path string for easy copying
+      local pathStr = "local path = {"
+      for i, wp in ipairs(waypoints) do
+        if i < #waypoints then
+          pathStr = pathStr .. string.format("{latitude=%.8f, longitude=%.8f}, ", wp.latitude, wp.longitude)
+        else
+          pathStr = pathStr .. string.format("{latitude=%.8f, longitude=%.8f}", wp.latitude, wp.longitude)
+        end
+      end
+      pathStr = pathStr .. "}"
+      Logger.warn(string.format("[Path Generation] === FAILED PATH (%d waypoints) ===", #waypoints))
+      Logger.warn(pathStr)
+      Logger.warn("[Path Generation] === END FAILED PATH ===")
       error("Failed to generate collision-free path after " .. maxIterations .. " iterations")
     end
   end
+
+  -- Build complete path string for easy copying
+  local pathStr = "local path = {"
+  for i, wp in ipairs(waypoints) do
+    if i < #waypoints then
+      pathStr = pathStr .. string.format("{latitude=%.8f, longitude=%.8f}, ", wp.latitude, wp.longitude)
+    else
+      pathStr = pathStr .. string.format("{latitude=%.8f, longitude=%.8f}", wp.latitude, wp.longitude)
+    end
+  end
+  pathStr = pathStr .. "}"
+  Logger.warn(string.format("[Path Generation] === SUCCESS PATH (%d waypoints) ===", #waypoints))
+  Logger.warn(pathStr)
+  Logger.warn("[Path Generation] === END SUCCESS PATH ===")
 
   return waypoints
 end
