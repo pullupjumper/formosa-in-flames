@@ -39,18 +39,18 @@ function GameUtils.getCachedSideConfig(sideName)
 end
 
 ---Calculate the great circle distance between two points using Haversine formula
----@param lat1 number First point latitude (degrees)
----@param lon1 number First point longitude (degrees)
----@param lat2 number Second point latitude (degrees)
----@param lon2 number Second point longitude (degrees)
+---@param lat1 number|string First point latitude (degrees)
+---@param lon1 number|string First point longitude (degrees)
+---@param lat2 number|string Second point latitude (degrees)
+---@param lon2 number|string Second point longitude (degrees)
 ---@return number # Distance in nautical miles
 function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
   -- Earth radius in nautical miles
   local R = 3440.065
 
   -- Convert degrees to radians
-  local lat1Rad = math.rad(lat1)
-  local lat2Rad = math.rad(lat2)
+  local lat1Rad = math.rad(tonumber(lat1) or 0)
+  local lat2Rad = math.rad(tonumber(lat2) or 0)
   local deltaLatRad = math.rad(lat2 - lat1)
   local deltaLonRad = math.rad(lon2 - lon1)
 
