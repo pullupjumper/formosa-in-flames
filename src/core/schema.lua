@@ -31,33 +31,21 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field TAKEOFFDATE string The takeoff date, YYYY/MM/DD
 ---@field TAKEOFFTIME string The takeoff time, HH:MM:SS
 
----Zone definition (No-Navigation or Exclusion Zone)
----@class CMO__Zone:table
----@field guid string The GUID of the zone (READ ONLY)
----@field type string The type of the zone: "NoNavZone" = 0, "ExclusionZone" = 1
----@field description string The description of the zone
----@field isactive boolean Zone is currently active
----@field area CMO__TableOfReferencePoints A set of reference points marking the zone (can be updated by a list of RPs or a table of new RP values)
----@field affects? table List of unit types (ship, submarine, aircraft, facility)
----@field locked? boolean Zone is locked or not
----@field markas? string Posture of violator of exclusion zone
----@field relativeto? string Unit name or unit GUID of unit to make this zone"s area relative to (undocumented - the side of the unit must match)
----@field rename? string Name to rename the description/name to (only applies for calls to ScenEdit_SetZone)
----@field enablers table Table of enablers for the zone (undocumented)
+
 
 ---Formation configuration for unit groupings
 ---@class CMO__FormationGroup:table
----@field name string The name of the formation
+---@field name? string The name of the formation
 ---@field spacing number The spacing of the formation
----@field spacing_unit string Multipler to the spacing if required (Opertional)
----@field bearing number The type of formationDesired bearing of formation lead (0-360)
+---@field spacing_unit? string Multipler to the spacing if required (Opertional)
+---@field bearing? number The type of formationDesired bearing of formation lead (0-360)
 ---@field transpose boolean Units jump to the new stations immediately
 
 ---Weapon load information on a mount
 ---@class CMO__Mount:table
 ---@field mount_dbid number The database ID of the mount
 ---@field mount_name string The name of the mount
----@field mount_GUID string The GUID of the mount
+---@field mount_guid string The GUID of the mount
 ---@field mount_status string The status of the mount (Active/Inactive/Destroyed)
 ---@field mount_statusR string Reason why inoperative [if not operational]
 ---@field mount_damage string Damage Severity [if not operational]
@@ -70,17 +58,229 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field cargo CMO__Cargo[] Table of cargo items on the unit
 
 
-
 -- ============================================================================
 -- Core Configuration & Data
 -- ============================================================================
 -- Core configuration and persistent data structures
 
+---Logging module configuration
+---@class SBJ__LoggingModuleConfig:table
+---@field verbose boolean Whether verbose logging is enabled
+
+---Logging configuration for all modules
+---@class SBJ__LoggingConfig:table
+---@field modules table<string, SBJ__LoggingModuleConfig> Module logging settings indexed by module name
+
+---Trigger timing configuration
+---@class SBJ__TriggerConfig:table
+---@field amphibiousOps { startTime: string } Amphibious operations start time
+---@field launchLACM { startTime: string } LACM launch start time
+---@field launchSLCM { startTime: string } SLCM launch start time
+
+---SIGINT operation configuration
+---@class SBJ__SIGINTConfig:table
+---@field maxCount integer Maximum detection count
+---@field maxRange number Maximum detection range (nautical miles)
+
+---Communications jamming configuration
+---@class SBJ__CommsJammingConfig:table
+---@field limit number Jammer unit limit
+---@field range number Jamming range (nautical miles)
+---@field initialComms number Initial communications level
+---@field baseJammingPower number Base jamming power
+---@field distanceExponent number Distance decay exponent
+---@field effectivenessFormula { base: number, range: number } Effectiveness formula parameters
+---@field distanceThresholds { close: number, medium: number, far: number, distant: number } Distance thresholds
+---@field aewSupport { close: number, medium: number, far: number, distant: number } AEW support values
+---@field recoveryTime { min: number, max: number } Recovery time range
+---@field jammingTime { min: number, max: number } Jamming time range
+---@field cooldownTime { min: number, max: number } Cooldown time range
+---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
+
+---GPS jammer weapon configuration
+---@class SBJ__GPSJammedWeapon:table
+---@field dbid number Weapon database ID
+---@field jammingResistance number Jamming resistance value
+
+---GPS jamming configuration
+---@class SBJ__GPSJammingConfig:table
+---@field randomRadius number Random deployment radius (nautical miles)
+---@field radius number Jamming effectiveness radius (nautical miles)
+---@field GPSGuidedWeapons SBJ__GPSJammedWeapon[] GPS-guided weapons to jam
+
+---Weapon system configuration
+---@class SBJ__WeaponSystemConfig:table
+---@field wpnDefault number Default weapon count
+---@field ammoThreshold number Ammunition threshold for resupply
+---@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name
+---@field contactAge? number Contact valid age in seconds (optional)
+---@field reloadTime number Reload time in seconds
+
+---Ground force configuration
+---@class SBJ__GroundForceConfig:table
+---@field mlrs SBJ__WeaponSystemConfig MLRS configuration
+---@field glcm SBJ__WeaponSystemConfig GLCM configuration
+---@field srbm SBJ__WeaponSystemConfig SRBM configuration
+---@field mrbm SBJ__WeaponSystemConfig MRBM configuration
+---@field ascm? SBJ__WeaponSystemConfig ASCM configuration (Taiwan only)
+---@field [string] SBJ__WeaponSystemConfig
+
+---Reconnaissance configuration
+---@class SBJ__ReconConfig:table
+---@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
+
+---Air operations configuration
+---@class SBJ__AirOperationsConfig:table
+---@field landBased { deployedACs: SBJ__AirbaseDeploymentDescriptor[], wpnNum?: number } Land-based aircraft deployment
+---@field shipBased table Ship-based aircraft configuration (reserved)
+
+---Surface operations configuration (LACM)
+---@class SBJ__SurfaceLACMConfig:table
+---@field weaponDBID number LACM weapon database ID
+---@field csg SBJ__CSGDescriptor Carrier Strike Group configuration
+---@field targetlist string[] Target GUID list
+
+---Surface operations configuration
+---@class SBJ__SurfaceOperationsConfig:table
+---@field lacm SBJ__SurfaceLACMConfig LACM configuration
+---@field sag? table<string, SBJ__SAGDescriptor> Surface Action Groups (Taiwan only)
+---@field deployedShips? SBJ__AirbaseDeploymentDescriptor[] Deployed ships (Taiwan only)
+
+---Submarine SLCM configuration
+---@class SBJ__SubSurfaceSLCMConfig:table
+---@field weaponDBID number SLCM weapon database ID
+---@field submarines table<string, SBJ__SubmarineDescriptor> Submarines indexed by submarine name
+---@field targetlist string[] Target GUID list
+---@field randomRadius number Random deployment radius (nautical miles)
+
+---Subsurface operations configuration
+---@class SBJ__SubsurfaceOperationsConfig:table
+---@field slcm SBJ__SubSurfaceSLCMConfig SLCM configuration
+
+---IADS configuration for faction
+---@class SBJ__IADSFactionConfig:table
+---@field ratio table<string, number> C2 facility ratio multipliers
+
+---China faction configuration
+---@class SBJ__ChinaConfig:table
+---@field triggers SBJ__TriggerConfig Trigger timing configuration
+---@field SIGINT SBJ__SIGINTConfig SIGINT configuration
+---@field IADS SBJ__IADSConfig IADS configuration
+---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
+---@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field ground SBJ__GroundForceConfig Ground force configuration
+---@field recon SBJ__ReconConfig Reconnaissance configuration
+---@field air SBJ__AirOperationsConfig Air operations configuration
+---@field PHIBOP SBJ__AmphibOpsConfig Amphibious operations configuration
+---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
+---@field subSurface SBJ__SubsurfaceOperationsConfig Subsurface operations configuration
+---@field FSTTemplate table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
+---@field packageTemplate table<string, SBJ__PackageTemplate[]> Air package templates
+
+---Taiwan faction configuration
+---@class SBJ__TaiwanConfig:table
+---@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field ground SBJ__GroundForceConfig Ground force configuration
+---@field IADS SBJ__IADSFactionConfig IADS configuration
+---@field air SBJ__AirOperationsConfig Air operations configuration
+---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
+
+---US faction configuration
+---@class SBJ__USConfig:table
+---@field SIGINT SBJ__SIGINTConfig SIGINT configuration
+
+---Scoring system configuration
+---@class SBJ__ScoringConfig:table
+---@field destroyingAircraftOnTheGround number Points for destroying aircraft on ground
+---@field destroyingAmmo number Points for destroying ammunition
+---@field destroyingAmmoTruck number Points for destroying ammunition truck
+---@field lhd number Points for LHD
+---@field lst number Points for LST
+---@field ddg number Points for DDG
+---@field cv number Points for CV
+---@field ifv number Points for IFV
+---@field infantry number Points for infantry
+---@field sub number Points for submarine
+---@field uav number Points for UAV
+---@field tel number Points for TEL
+---@field weaponDBID number Weapon database ID for scoring
+---@field attackBeforeTheHHour number Penalty for early attack
+---@field undergroundShelterIsDestroyed number Penalty for destroying shelter
+---@field destroyingCivilianFacility number Penalty for destroying civilian facility
+
 ---Global configuration data structure
 ---@class SBJ__Config:table
+---@field isDevMode boolean Development mode flag
+---@field isSaved boolean Save game flag
+---@field difficulty string Difficulty level
+---@field logging SBJ__LoggingConfig Logging configuration
+---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
+---@field radarDistance number Radar detection distance (nautical miles)
+---@field readytime number Ready time for missions (seconds)
+----@field batteryState table<string, integer> Battery state enumeration
+---@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
+---@field c SBJ__ChinaConfig China faction configuration
+---@field t SBJ__TaiwanConfig Taiwan faction configuration
+---@field u SBJ__USConfig US faction configuration
+---@field s SBJ__ScoringConfig Scoring system configuration
+---@field [string] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
+
+---GPS jamming context managing GPS denial operations state
+---@class SBJ__GPSJammingContext:table
+---@field isActivated boolean Whether GPS jamming system is activated
+---@field jammers table<string, SBJ__GPSJammerDescriptor> GPS jammer descriptors indexed by jammer name
+
+---Submarine-launched cruise missile context managing SLCM operations state
+---@class SBJ__SLCMContext:table
+---@field isActivated boolean Whether SLCM system is activated
+---@field startTime string SLCM operation start time
+
+---Surface operations context managing surface-launched weapons
+---@class SBJ__SurfaceOperationsContext:table
+---@field lacm SBJ__LACMContext Land-Attack Cruise Missile context
+
+---Subsurface operations context managing submarine-launched weapons
+---@class SBJ__SubsurfaceOperationsContext:table
+---@field slcm SBJ__SLCMContext Submarine-launched cruise missile context
+
+---China faction saved data structure
+---@class SBJ__ChinaSaveData:table
+---@field targetlist SBJ__TargetEntry[] Target list for strike planning
+---@field SIGINT SBJ__SIGINTContext Signals intelligence context
+---@field IADS SBJ__IADSContext Integrated Air Defense System context
+---@field commsJamming SBJ__CommsJammingContext Communications jamming context
+---@field GPSJamming SBJ__GPSJammingContext GPS jamming context
+---@field ground SBJ__GroundForceContext Ground force systems context
+---@field recon SBJ__ReconContext Reconnaissance operations context
+---@field air SBJ__AirOperationsContext Air operations context
+---@field PHIBOP SBJ__PHIBOPContext Amphibious operations context
+---@field surface SBJ__SurfaceOperationsContext Surface operations context
+---@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
+---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
+---@field dynamicOperations SBJ__DynamicOperationsContext Dynamic operations context
+
+---Taiwan faction saved data structure
+---@class SBJ__TaiwanSaveData:table
+---@field ground SBJ__GroundForceContext Ground force systems context
+---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
+---@field IADS SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
+---@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
+---@field GPSJamming { jammers: table<string, SBJ__GPSJammerDescriptor> } GPS jamming context
+
+---US faction saved data structure
+---@class SBJ__USSaveData:table
+---@field SIGINT SBJ__SIGINTContext Signals intelligence context
+
+---Scoring system saved data structure
+---@class SBJ__ScoringSaveData:table
 
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData:table
+---@field c SBJ__ChinaSaveData China faction data
+---@field t SBJ__TaiwanSaveData Taiwan faction data
+---@field u SBJ__USSaveData US faction data
+---@field s SBJ__ScoringSaveData Scoring system data
+---@field [string] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData|SBJ__ScoringSaveData
 
 
 -- ============================================================================
@@ -163,8 +363,9 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Loadout configuration for units
 ---@class SBJ__Loadout:table
 ---@field loadoutId number Ammunition configuration ID
----@field name string Loadout display name
+---@field name? string Loadout display name
 ---@field num number Unit count
+---@field missionName? string Mission name (optional)
 
 ---Cargo descriptor defining parameters for creating cargo units on ships
 ---@class SBJ__CargoDescriptor:table
@@ -203,11 +404,11 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
 ---Used for scenario initialization and deployment planning
 ---@class SBJ__AirbaseDeploymentDescriptor:table
----@field name string Airbase name
+---@field name? string Airbase name
 ---@field baseGUID? string Airbase unit GUID reference
 ---@field dbid? number  Database ID if the object is a ship
----@field embarkedUnits SBJ__EmbarkedUnit[] Aircraft units stationed at this base
----@field loadouts SBJ__Loadout[] Ammunition stockpile in base magazines
+---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft units stationed at this base
+---@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
 ---@field latitude? number Airbase latitude coordinate (optional)
 ---@field longitude? number Airbase longitude coordinate (optional)
 
@@ -223,7 +424,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Destination area definition with waypoints
 ---@class SBJ__DestinationArea:table
----@field area CMO__Location[] Destination area waypoints
+---@field area? CMO__Location[] Destination area waypoints
 
 ---Destination staging area with anchorage and vehicle staging zones
 ---Extends destination area with additional staging and anchorage areas
@@ -250,9 +451,9 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__SAGDescriptor:table
 ---@field groupName string Group name
 ---@field from SBJ__DeparturePoint Starting location
----@field to SBJ__DestinationStagingArea Destination staging area
+---@field to? SBJ__DestinationStagingArea Destination staging area
 ---@field unitList table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
----@field area string[] Operational area reference points
+---@field area? string[] Operational area reference points
 ---@field missionName? string Mission name (optional)
 
 ---Carrier Strike Group descriptor
@@ -388,7 +589,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Defines spacing and movement parameters for amphibious assault ship formations
 ---Used internally for calculating ship positions during landing operations
 ---@class SBJ__AmphibiousFormationSettings:table
----@field distanceBetweenLSTAndLPDArea string Distance between LST and LPD staging areas
+---@field distanceBetweenLSTAndLPDArea number Distance between LST and LPD staging areas
 ---@field horizontalDistance number Horizontal spacing between ships in formation
 ---@field verticalDistance number Vertical spacing between ships in formation
 ---@field transitDistance number Distance for transit phase
@@ -426,7 +627,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Amphibious operation departure/destination descriptor
 ---@class SBJ__AmphibiousLocationDescriptor:table
 ---@field areas SBJ__AmphibiousAreaDescriptor[] Array of area descriptors
----@field stagingArea? string Staging area reference (optional, only in departure)
+---@field stagingArea? string[] Staging area reference (optional, only in departure)
 ---@field num? SBJ__FleetComposition Ship quantity configuration (optional, only in departure)
 
 ---Amphibious operation descriptor
@@ -469,7 +670,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Maps directly to ScenEdit_AddMission parameters
 ---@class SBJ__MissionCreationParams:table
 ---@field name string The name of the mission
----@field side string The side of the mission
+---@field side? string The side of the mission
 ---@field type string The type of the mission
 ---@field opts CMO__Mission The options for the mission
 
@@ -482,7 +683,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field weaponDBID number The weapon DBID to use for the mission
 ---@field unitDBID number The unit DBID to use for the mission
 ---@field loadoutId? number The loadout ID to filter by, 0 for any loadout (optional)
----@field startTime string The start time of the mission
+---@field startTime? string The start time of the mission
 ---@field endTime? string The end time of the mission (optional)
 ---@field timeOnStation? string The time on station (optional)
 ---@field emcon string The EMCON settings for the mission
@@ -514,30 +715,30 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field area string[] Area reference points, e.g., {"rp-100","rp-101","rp-102","rp-103","rp-104"}
 
 ---Operational area definition with multiple tactical position types
----Defines firing positions, hide areas, and reload locations for TEL operations
+---Defines fire positions, hide areas, and reload locations for TEL operations
 ---@class SBJ__OperationalArea:table
----@field FP SBJ__Position[] Firing Position
----@field HA? SBJ__Position[] Hide Area (optional)
----@field AHA SBJ__Position[] Alternative Hide Area
----@field RL SBJ__Position[] Reload Location
+---@field FP SBJ__Position[] Fire Points
+---@field HA SBJ__Position[] Hide Areas
+---@field AHA SBJ__Position[] Ammo Holding Areas
+---@field RL SBJ__Position[] Reload Points
 
 ---Ammunition context data structure
 ---Tracks ammunition unit status and remaining ammunition counts
 ---@class SBJ__AmmunitionContext:table
 ---@field guid string Ammunition unit GUID
 ---@field name string Ammunition unit name
----@field wpnCurrent number Current available ammunition count
----@field wpnDefault number Default/maximum ammunition count
+---@field wpnCurrent? number Current available ammunition count
+---@field wpnDefault? number Default/maximum ammunition count
 
 ---Resupply unit context data structure
 ---Extends ammunition context with operational area and resupply management
 ---@class SBJ__ResupplyUnitContext:SBJ__AmmunitionContext
 ---@field name string Resupply unit name
----@field unitCount number Number of resupply vehicles in this unit
+---@field unitCount? number Number of resupply vehicles in this unit
 ---@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
 ---@field reloadStartTime? number Reload operation start timestamp, nil if not currently reloading
 ---@field state batteryState Current unit state (STATIC/HIDE, etc.)
----@field ammunition string Associated ammunition unit name for this resupply unit
+---@field ammunition? string Associated ammunition unit name for this resupply unit
 
 ---Firing unit context data structure
 ---Extends resupply unit context with weapon system configuration
@@ -569,6 +770,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field glcm SBJ__WeaponSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__WeaponSystemContext Anti-Ship Cruise Missile system
 ---@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
+---@field [string] SBJ__WeaponSystemContext
 
 ---Unit property setting parameters for ground units
 ---@class SBJ__SetUnitPropertiesParams
@@ -648,11 +850,11 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Target template for strike planning
 ---@class SBJ__TargetTemplate
 ---@field objs? SBJ__TargetQueryParam[] Target query parameters (for fixed targets, optional)
----@field areas string[] Operation areas
+---@field areas? string[][] Operation areas
 ---@field filterNames? string[] Filter function names (for dynamic targets, optional)
 ---@field contactAge number Contact valid time (seconds)
----@field minTargetCount number Minimum target count threshold
----@field ammoPerTarget number Ammunition count per target
+---@field minTargetCount? number Minimum target count threshold
+---@field ammoPerTarget? number Ammunition count per target
 
 ---Target definition extending template with contact list
 ---@class SBJ__Target:SBJ__TargetTemplate
@@ -664,8 +866,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Filter parameters for target selection and filtering
 ---@class SBJ__FilterParams:table
----@field config SBJ__Config Configuration data
----@field saveData SBJ__SaveData Saved data
+---@field config? SBJ__Config Configuration data
+---@field saveData? SBJ__SaveData Saved data
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
 ---@field shouldTrack? boolean Whether to track contacts (optional)
@@ -744,7 +946,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field course CMO__Waypoint[] Waypoints for reconnaissance route
 ---@field unitCount number Number of UAVs to deploy
 ---@field speed number Cruise speed in knots for tracking mode
----@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
+---@field takeoffTime? string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
 ---@field isTracking? boolean Whether to track this reconnaissance mission (optional)
 
 ---Satellite reconnaissance queue entry template
@@ -833,13 +1035,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field tanker? SBJ__MissionDeploymentDescriptor Tanker configuration (optional)
 ---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
 ---@field timeToReady? number Ready time in minutes (optional)
+---@field [string] SBJ__MissionDeploymentDescriptor
 
 ---Loadout status tracking for mission preparation
 ---@class SBJ__LoadoutStatus:table
 ---@field isLoadoutInitiated boolean Whether loadout process has started
----@field loadoutInitiatedTime number Loadout initiation timestamp
----@field expectedReadyTime number Expected ready timestamp
----@field loadoutStartTime number Loadout start timestamp
+---@field loadoutInitiatedTime number|nil Loadout initiation timestamp
+---@field expectedReadyTime number|nil Expected ready timestamp
+---@field loadoutStartTime number|nil Loadout start timestamp
 
 ---Package execution state extending template with launch and loadout status
 ---@class SBJ__Package:SBJ__PackageTemplate
@@ -863,12 +1066,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__GPSJammerDescriptor
 ---@field name string Jammer unit identifier
 ---@field zoneName string Associated jamming zone name for area creation
----@field point CMO__Location Deployment coordinates
+---@field point? CMO__Location Deployment coordinates
 ---@field randomRadius number Position randomization radius (nautical miles)
 ---@field radius number GPS jamming effectiveness radius (nautical miles)
 
 ---SIGINT detection configuration parameters
----@class SBJ__SIGINTConfig:table
+---@class SBJ__SIGINTDetectionConfig:table
 ---@field detectionThreshold number Minimum detection range
 ---@field maxRange table Maximum detection range as {min, max}
 ---@field decayRate number Signal decay rate
@@ -936,6 +1139,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field currOODA CMO__OODA Current OODA state
 ---@field isOutOfComms boolean Whether the radar is out of communications
 ---@field outofcomms number Radar out of communications threshold
+---@field EMCONSetting? string EMCON setting for radar
 
 ---Command and Control (C2) context data structure
 ---@class SBJ__C2Context:table
@@ -945,6 +1149,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field areas table<number, string[]> Associated operational areas
 ---@field SAM table<string, SBJ__RadarContext> Surface-to-Air Missile systems
 ---@field radar? table<string, SBJ__RadarContext> Radar systems (optional)
+---@field [string] table<string, SBJ__RadarContext>
 
 ---C2 node deployment descriptor
 ---Defines how to create and deploy a single Command and Control node
@@ -968,7 +1173,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field ROCC? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
 ---@field TAAOC? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
 ---@field isActivated boolean Whether IADS is activated
-
+---@field [string] table<string, SBJ__C2Context>
 
 -- ============================================================================
 -- Aircraft & Communications Tracking

@@ -5,7 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local Launcher = require("src.modules.launcher")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then

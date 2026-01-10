@@ -12,10 +12,15 @@ local UnitStatusUI = require("src.modules.unitStatusUI")
 local constants = require("src.core.constants")
 local contacts = GameApi.ScenEdit_GetContacts("China")
 local currentTime = GameApi.ScenEdit_CurrentTime()
----@type CMO__SideUnit[]
+---@type CMO__SideUnit[]|nil
 local filteredShips = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
+
+if not filteredShips then
+  Logger.error("filteredShips is nil")
+  return
+end
 
 if not contacts then
   Logger.error("contacts is nil")
@@ -61,8 +66,8 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
         entry.speed
       )
       local endTime = currentTime + flightTime
-      entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime)
-      entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime)
+      entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime) --[[@as string]]
+      entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
       entry.hasLaunched = false
       entry.isFinished = false
       entry.trackingTargetGUID = nil

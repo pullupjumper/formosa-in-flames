@@ -529,7 +529,7 @@ function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
 
     if base and base.embarkedUnits.Boats then
       for _, embarkedUnit in ipairs(base.embarkedUnits.Boats) do
-        GameApi.ScenEdit_DeleteUnit({ side = embarkedUnit.side, guid = embarkedUnit })
+        GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = embarkedUnit })
       end
     end
 
@@ -611,7 +611,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
     if base and base.embarkedUnits.Aircraft then
       for _, embarkedUnit in ipairs(base.embarkedUnits.Aircraft) do
-        GameApi.ScenEdit_DeleteUnit({ side = embarkedUnit.side, guid = embarkedUnit })
+        GameApi.ScenEdit_DeleteUnit({ side = base.side, guid = embarkedUnit })
       end
     end
 
@@ -644,10 +644,11 @@ function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
 
   if base then
     for _, magazine in ipairs(base.magazines) do
-      for _, wpn in ipairs(magazine["mag_weapons"]) do
+      for _, wpn in ipairs(magazine.mag_weapons) do
         GameApi.ScenEdit_AddWeaponToUnitMagazine({
+          side = base.side,
           guid = baseGUID,
-          wpn_dbid = wpn["wpn_dbid"],
+          wpn_dbid = wpn.wpn_dbid,
           number = 1000,
           remove = true
         })
@@ -671,8 +672,8 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints(areaDescriptor.startingPoints.type075)[1]
 
       -- Calculate starting positions for various ships
-      local positions = calculateShipPositions(
-        firstRp075, areaDescriptor.heading.vertical, layoutConfig.verticalDistance)
+      local positions = calculateShipPositions(firstRp075, areaDescriptor.heading.vertical, layoutConfig
+        .verticalDistance)
 
       -- Create various ship types
       createShipsByType(positions.type075, areaDescriptor, descriptor, layoutConfig, cargoList, "type075")
@@ -694,7 +695,6 @@ end
 ---Remove landing ships
 ---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips()
-  ---@type CMO__SideUnit[]
   local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
 
   if not filteredUnits then
@@ -736,7 +736,6 @@ end
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
 ---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(context)
-  ---@type CMO__SideUnit[]
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then

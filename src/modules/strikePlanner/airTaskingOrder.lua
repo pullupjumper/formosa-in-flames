@@ -10,7 +10,7 @@ local ADVANCE_SECONDS = 300
 
 ---Calculate the start time for weapon loading
 ---@param packageData SBJ__Package The strike package containing flight group data
----@return number|nil # Unix timestamp for when loadout should start, or nil if cannot be calculated
+---@return number # Unix timestamp for when loadout should start, or nil if cannot be calculated
 local function calculateLoadoutStartTime(packageData)
   local earliestStartTime = nil
   local roles = { "striker", "escort", "wildWeasel", "jammer" }
@@ -29,7 +29,7 @@ local function calculateLoadoutStartTime(packageData)
   end
 
   if not earliestStartTime then
-    return nil
+    return 0
   end
 
   -- Get the package-level timeToReady
@@ -59,8 +59,7 @@ local function isTimeToStartLoadout(packageData)
   end
 
   -- Convert timestamp back to string format for GameUtils.isAfterStartTime() use
-  ---@type string
-  local loadoutStartTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.loadoutStartTime)
+  local loadoutStartTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.loadoutStartTime) --[[@as string]]
   return GameUtils.isAfterStartTime(loadoutStartTimeStr, ADVANCE_SECONDS)
 end
 
@@ -77,8 +76,8 @@ local function initiateLoadoutForPackage(packageData)
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local missionRole = packageData[role]
 
-    if missionRole and missionRole.loadoutID then
-      local loadoutID = missionRole.loadoutID
+    if missionRole and missionRole.loadoutId then
+      local loadoutID = missionRole.loadoutId
       local unitCount = missionRole.unitCount
       local targetUnitDBID = missionRole.unitDBID
 
@@ -90,11 +89,11 @@ local function initiateLoadoutForPackage(packageData)
 
       -- Get the base
       local base = GameApi.ScenEdit_GetUnit(missionRole.baseGUID)
-      if base and #base.embarkedUnits["Aircraft"] > 0 then
+      if base and #base.embarkedUnits.Aircraft > 0 then
         local unitsProcessed = 0
 
         -- Only set loadout for aircraft matching unitDBID
-        for _, unitGUID in ipairs(base.embarkedUnits["Aircraft"]) do
+        for _, unitGUID in ipairs(base.embarkedUnits.Aircraft) do
           if unitsProcessed >= unitCount then
             break -- Processed sufficient number of units
           end
@@ -164,8 +163,7 @@ local function isLoadoutReady(packageData)
 
   -- If loadout is ready
   if loadoutStatus.isLoadoutInitiated and loadoutStatus.expectedReadyTime then
-    ---@type string
-    local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime)
+    local expectedReadyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", loadoutStatus.expectedReadyTime) --[[@as string]]
     return GameUtils.isAfterStartTime(expectedReadyTimeStr, 5)
   end
 
@@ -224,20 +222,20 @@ local function createMission(packageData, role)
     )
 
     if mission and missionRole.endTime then
-      mission["OnDeactivateDelete"] = true
-      mission["OnDeactivateRTB"] = true
+      mission.OnDeactivateDelete = true
+      mission.OnDeactivateRTB = true
 
       -- if role == 'striker' and missionRole.startTime then
       --   mission['TakeOffTime'] = missionRole.startTime
       -- end
       if missionRole.startTime then
-        mission["TakeOffTime"] = missionRole.startTime
+        mission.TakeOffTime = missionRole.startTime
       end
 
-      mission["endtime"] = missionRole.endTime
+      mission.endtime = missionRole.endTime
 
       if missionRole.timeOnStation then
-        mission["TimeOnTargetStation"] = missionRole.timeOnStation
+        mission.TimeOnTargetStation = missionRole.timeOnStation
       end
 
       if missionRole.missionCreationParams.type == "strike" then
@@ -334,18 +332,17 @@ local function processPackage(config, saveData, packageData)
       )
 
       -- Calculate takeoff and end times
-      local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
-          config.c.ground.srbm.reloadTime - flightTime
+      local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
+          flightTime
       local endTime = takeoffTime + flightTime
-      packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime)
-      packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime)
+      packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime) --[[@as string]]
+      packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
 
       Logger.log("air", string.format("Recon UAV takeoff time set to: %s",
         packageData.reconUAV.takeoffTime))
     end
 
-    ---@type SBJ__ReconQueueEntry
-    local copyReconUAV = Utils.deepCopy(packageData.reconUAV)
+    local copyReconUAV = Utils.deepCopy(packageData.reconUAV) --[[@as SBJ__ReconQueueEntry]]
     copyReconUAV.hasLaunched = false
     copyReconUAV.isFinished = false
     copyReconUAV.trackingTargetGUID = nil

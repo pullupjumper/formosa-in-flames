@@ -142,7 +142,7 @@ function GameUtils.generateLocations(params)
     if i > 1 then
       distanceTemp = params.distance
     elseif i == 1 and firstDistance then
-      distanceTemp = params.firstDistance
+      distanceTemp = params.firstDistance or 0
     end
 
     local newLocation = GameApi.World_GetPointFromBearing({

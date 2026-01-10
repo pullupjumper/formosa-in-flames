@@ -427,8 +427,8 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
   -- If not in queue, this UAV is not managed by reconnaissance system
   if not queueEntry then
     Logger.log("recon",
-      string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.",
-        UAV.name, UAV.guid))
+      string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.", UAV.name,
+        UAV.guid))
     return false
   end
 

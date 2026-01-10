@@ -2,7 +2,7 @@ local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local gKH = require("src.core.gKH_State_Standalone")
 local IADS = require("src.modules.IADS")
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if not saveData then

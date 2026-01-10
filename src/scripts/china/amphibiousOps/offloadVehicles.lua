@@ -5,7 +5,7 @@ local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local constants = require("src.core.constants")
 local ship = GameApi.ScenEdit_UnitX()
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then

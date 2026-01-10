@@ -6,7 +6,7 @@ local Launcher = require("src.modules.launcher")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
 local contacts = GameApi.ScenEdit_GetContacts("Taiwan")
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then

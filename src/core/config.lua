@@ -30,7 +30,6 @@ config.t = {}
 config.u = {}
 config.s = {}
 
----@type SBJ__TargetScanningConfig
 config.targetScanning = {
   distanceThreshold = 1, -- nautical miles
   taiwanAirBases = {
@@ -135,12 +134,10 @@ config.c.SIGINT.maxRange = 2.5
 -- IADS (China)
 -- ============================================================================
 
----@type SBJ__IADSConfig
 config.c.IADS = {}
 config.c.IADS.ratio = { C2 = 1.5, }
 config.c.IADS.C2FacilityDBIDs = { 319, 318, 115, 113 }
 config.c.IADS.randomRadius = 10
----@type SBJ__C2Descriptor[]
 config.c.IADS.C2Deployments = {
   {
     position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
@@ -244,7 +241,6 @@ config.c.ground = {}
 config.c.ground.mlrs = {}
 config.c.ground.mlrs.wpnDefault = 192
 config.c.ground.mlrs.ammoThreshold = 50
----@type table<string, SBJ__OperationalArea>
 config.c.ground.mlrs.operationalAreas = {
   Pingtan = constants.OPERATIONAL_AREAS.PINGTAN,
   Chinchew = constants.OPERATIONAL_AREAS.CHINCHEW,
@@ -260,7 +256,6 @@ config.c.ground.mlrs.reloadTime = 30 * 60
 config.c.ground.glcm = {}
 config.c.ground.glcm.wpnDefault = 120
 config.c.ground.glcm.ammoThreshold = 50
----@type table<string, SBJ__OperationalArea>
 config.c.ground.glcm.operationalAreas = {
   Brigade635 = constants.OPERATIONAL_AREAS.BRIGADE_635,
 }
@@ -275,7 +270,6 @@ config.c.ground.glcm.reloadTime = 45 * 60
 config.c.ground.srbm = {}
 config.c.ground.srbm.wpnDefault = 36
 config.c.ground.srbm.ammoThreshold = 35
----@type table<string, SBJ__OperationalArea>
 config.c.ground.srbm.operationalAreas = {
   Brigade615 = constants.OPERATIONAL_AREAS.BRIGADE_615,
   Brigade614 = constants.OPERATIONAL_AREAS.BRIGADE_614,
@@ -295,7 +289,6 @@ config.c.ground.srbm.reloadTime = 5 * 60
 config.c.ground.mrbm = {}
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 35
----@type table<string, SBJ__OperationalArea>
 config.c.ground.mrbm.operationalAreas = {
   Brigade624 = constants.OPERATIONAL_AREAS.BRIGADE_624,
 }
@@ -308,7 +301,6 @@ config.c.ground.mrbm.reloadTime = 5 * 60
 -- ============================================================================
 
 config.c.recon = {}
----@type table<string, SBJ__ReconQueueEntryTemplateUAV>
 config.c.recon.template = {
   BZK005_RECON_1 = {
     type = "UAV",
@@ -375,7 +367,6 @@ config.c.recon.template = {
 config.c.air = {}
 config.c.air.landBased = {}
 config.c.air.shipBased = {}
----@type SBJ__AirbaseDeploymentDescriptor[]
 config.c.air.landBased.deployedACs = {
   {
     name = "Huizhou Pingtan AB (PLAAF)",
@@ -786,7 +777,6 @@ config.c.air.landBased.deployedACs = {
 -- Amphibious Operations (China)
 -- ============================================================================
 
----@type SBJ__AmphibOpsConfig
 config.c.PHIBOP = {}
 config.c.PHIBOP.periodOfTime = 5 * 60
 config.c.PHIBOP.cargoList = {
@@ -1631,7 +1621,6 @@ config.c.PHIBOP.sag = {
 config.c.surface = {}
 config.c.surface.lacm = {}
 config.c.surface.lacm.weaponDBID = constants.WEAPONS.YJ21
----@type SBJ__CSGDescriptor
 config.c.surface.lacm.csg = {
   groupName = "CSG",
   unitList = {
@@ -1757,7 +1746,6 @@ config.c.surface.lacm.targetlist = {
 config.c.subSurface = {}
 config.c.subSurface.slcm = {}
 config.c.subSurface.slcm.weaponDBID = constants.WEAPONS.CJ10_SLCM
----@type table<string, SBJ__SubmarineDescriptor>
 config.c.subSurface.slcm.submarines = {
   ["407"] = {
     name = "407",
@@ -1828,7 +1816,6 @@ config.c.subSurface.slcm.randomRadius = 20
 -- Runway Repair Configuration
 -- ============================================================================
 
----@type SBJ__RunwayRepairConfig
 config.repairRunway = {
   percentagePerHour = 3,
   runwayDBIDs = { 55, 43, 757, 1422, 1424, 1423, 1421 },
@@ -1857,7 +1844,6 @@ config.repairRunway = {
 -- Fire Support Task Templates (China)
 -- ============================================================================
 
----@type table<string, SBJ__FireSupportTaskTemplate[]>
 config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
@@ -2135,7 +2121,6 @@ config.c.FSTTemplate = {
 -- Air Package Templates (China)
 -- ============================================================================
 
----@type table<string, SBJ__PackageTemplate[]>
 config.c.packageTemplate = {
   STRIKE_AB_W_1 = {
     {
@@ -2526,7 +2511,6 @@ config.c.packageTemplate = {
         contactAge = 60 * 60,
         minTargetCount = 1
       },
-      hasLaunched = false
     }
   },
   STRIKE_AB_W_AAR_1 = {
@@ -3052,16 +3036,9 @@ config.c.packageTemplate = {
         contactAge = 60 * 60,
         minTargetCount = 1
       },
-      hasLaunched = false
     },
     {
       timeToReady = config.readytime,
-      loadoutStatus = {
-        isLoadoutInitiated = false,
-        loadoutInitiatedTime = nil,
-        expectedReadyTime = nil,
-        loadoutStartTime = nil
-      },
       striker = {
         baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
@@ -3140,7 +3117,6 @@ config.c.packageTemplate = {
         contactAge = 60 * 60,
         minTargetCount = 1
       },
-      hasLaunched = false
     }
   },
   ASUW_N_1 = {
@@ -3188,7 +3164,6 @@ config.c.packageTemplate = {
         contactAge = 60 * 60,
         minTargetCount = 1
       },
-      hasLaunched = false
     }
   },
   CAS_N_1 = {
@@ -3217,7 +3192,6 @@ config.c.packageTemplate = {
         contactAge = 60 * 60,
         minTargetCount = 1
       },
-      hasLaunched = false
     }
   }
 }
@@ -3247,7 +3221,6 @@ config.t.ground = {}
 config.t.ground.mlrs = {}
 config.t.ground.mlrs.wpnDefault = 144
 config.t.ground.mlrs.ammoThreshold = 25
----@type table<string, SBJ__OperationalArea>
 config.t.ground.mlrs.operationalAreas = {
   Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
 }
@@ -3261,7 +3234,6 @@ config.t.ground.mlrs.reloadTime = 30 * 60
 config.t.ground.srbm = {}
 config.t.ground.srbm.wpnDefault = 27
 config.t.ground.srbm.ammoThreshold = 25
----@type table<string, SBJ__OperationalArea>
 config.t.ground.srbm.operationalAreas = {
   Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
   Dadu = constants.OPERATIONAL_AREAS.DADU,
@@ -3276,7 +3248,6 @@ config.t.ground.srbm.reloadTime = 10 * 60
 config.t.ground.glcm = {}
 config.t.ground.glcm.wpnDefault = 48
 config.t.ground.glcm.ammoThreshold = 25
----@type table<string, SBJ__OperationalArea>
 config.t.ground.glcm.operationalAreas = {
   Quanxi = constants.OPERATIONAL_AREAS.QUANXI,
   Neipu = constants.OPERATIONAL_AREAS.NEIPU,
@@ -3291,7 +3262,6 @@ config.t.ground.glcm.reloadTime = 45 * 60
 config.t.ground.ascm = {}
 config.t.ground.ascm.wpnDefault = 16
 config.t.ground.ascm.ammoThreshold = 25
----@type table<string, SBJ__OperationalArea>
 config.t.ground.ascm.operationalAreas = {
   Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
   Dadu = constants.OPERATIONAL_AREAS.DADU,
@@ -3318,7 +3288,6 @@ config.t.IADS.ratio = { ROCC = 1.5, TAAOC = 1.5 }
 config.t.air = {}
 config.t.air.landBased = {}
 config.t.air.landBased.wpnNum = 8
----@type SBJ__AirbaseDeploymentDescriptor[]
 config.t.air.landBased.deployedACs = {
   {
     name = "Ching Chuang Kang AB",
@@ -3608,7 +3577,6 @@ config.t.air.landBased.deployedACs = {
   },
 }
 config.t.surface = {}
----@type table<string, SBJ__SAGDescriptor>
 config.t.surface.sag = {
   ["264th Sqn"] = {
     groupName = "264th Sqn",
@@ -3651,7 +3619,6 @@ config.t.surface.sag = {
     },
   },
 }
----@type SBJ__AirbaseDeploymentDescriptor[]
 config.t.surface.deployedShips = {
   {
     name = "Port of Keelung",

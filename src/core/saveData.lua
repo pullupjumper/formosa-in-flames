@@ -14,7 +14,6 @@ saveData.s = {}
 -- SIGINT (China)
 -- ============================================================================
 
----@type SBJ__SIGINTContext
 saveData.c.SIGINT = {}
 saveData.c.SIGINT.isActivated = true
 saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
@@ -26,7 +25,6 @@ saveData.c.SIGINT.transmissions = {}
 -- IADS (China)
 -- ============================================================================
 
----@type SBJ__IADSContext
 saveData.c.IADS = {}
 saveData.c.IADS.isActivated = true
 saveData.c.IADS.C2 = {}
@@ -36,7 +34,6 @@ saveData.c.IADS.C2 = {}
 -- Communications Jamming (China)
 -- ============================================================================
 
----@type SBJ__CommsJammingContext
 saveData.c.commsJamming = {}
 saveData.c.commsJamming.isActivated = true
 saveData.c.commsJamming.jammers = {}
@@ -48,7 +45,6 @@ saveData.c.commsJamming.jammers = {}
 
 saveData.c.GPSJamming = {}
 saveData.c.GPSJamming.isActivated = true
----@type table<string, SBJ__GPSJammerDescriptor>
 saveData.c.GPSJamming.jammers = {
   ["1st Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/1",
@@ -71,7 +67,6 @@ saveData.c.GPSJamming.jammers = {
 -- MLRS (China)
 -- ============================================================================
 
----@type SBJ__GroundForceContext
 saveData.c.ground = {}
 saveData.c.ground.mlrs = {}
 saveData.c.ground.mlrs.isActivated = true
@@ -427,7 +422,6 @@ saveData.c.ground.mrbm.firingUnits = {
 -- Reconnaissance (China)
 -- ============================================================================
 
----@type SBJ__ReconContext
 saveData.c.recon = {}
 saveData.c.recon.isActivated = true
 saveData.c.recon.queue = {
@@ -509,7 +503,6 @@ saveData.c.ground.FSP = {}
 -- Air Tasking Order (China)
 -- ============================================================================
 
----@type SBJ__AirOperationsContext
 saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
@@ -522,7 +515,6 @@ saveData.c.air.ATO = {}
 -- Amphibious Operations (China)
 -- ============================================================================
 
----@type SBJ__PHIBOPContext
 saveData.c.PHIBOP = {}
 saveData.c.PHIBOP.startTime = config.c.triggers.amphibiousOps.startTime
 saveData.c.PHIBOP.isTesting = true
@@ -587,7 +579,6 @@ saveData.c.PHIBOP.barges = {}
 -- ============================================================================
 
 saveData.c.surface = {}
----@type SBJ__LACMContext
 saveData.c.surface.lacm = {}
 saveData.c.surface.lacm.isActivated = false
 saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
@@ -607,7 +598,6 @@ saveData.c.subSurface.slcm.startTime = config.c.triggers.launchSLCM.startTime
 -- Runway Repair (China)
 -- ============================================================================
 
----@type SBJ__RunwayRepairmentContext
 saveData.c.repairRunway = {}
 saveData.c.repairRunway.isActivated = false
 saveData.c.repairRunway.runways = {}
@@ -617,7 +607,6 @@ saveData.c.repairRunway.runways = {}
 -- Ground Forces (Taiwan)
 -- ============================================================================
 
----@type SBJ__GroundForceContext
 saveData.t.ground = {}
 saveData.t.ground.isActivated = true
 
@@ -922,7 +911,6 @@ saveData.t.ground.ascm.test = {
 -- Runway Repair (Taiwan)
 -- ============================================================================
 
----@type SBJ__RunwayRepairmentContext
 saveData.t.repairRunway = {}
 saveData.t.repairRunway.isActivated = false
 saveData.t.repairRunway.runways = {}
@@ -932,7 +920,6 @@ saveData.t.repairRunway.runways = {}
 -- IADS (Taiwan)
 -- ============================================================================
 
----@type SBJ__IADSContext
 saveData.t.IADS = {}
 saveData.t.IADS.isActivated = true
 saveData.t.IADS.ROCC = {
@@ -998,11 +985,8 @@ saveData.t.IADS.TAAOC = {
 -- ============================================================================
 
 saveData.t.air = {}
----@type SBJ__LandBasedPlatformContext
 saveData.t.air.landBased = {}
----@type table<string, SBJ__LandBasedPlatformContext>
 saveData.t.air.landBased.AEW = {}
----@type table<string, SBJ__LandBasedPlatformContext>
 saveData.t.air.landBased.AC = {}
 
 
@@ -1011,19 +995,18 @@ saveData.t.air.landBased.AC = {}
 -- ============================================================================
 
 saveData.t.GPSJamming = {}
----@type table<string, SBJ__GPSJammerDescriptor>
 saveData.t.GPSJamming.jammers = {
   ["Comms & Info Coy, 584th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/1",
     name = "Comms & Info Coy, 584th Mech Bde",
-    point = { latitude = nil, longitude = nil },
+    point = nil,
     randomRadius = config.t.GPSJamming.randomRadius,
     radius = config.t.GPSJamming.radius
   },
   ["Comms & Info Coy, 269th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/2",
     name = "Comms & Info Coy, 269th Mech Bde",
-    point = { latitude = nil, longitude = nil },
+    point = nil,
     randomRadius = config.t.GPSJamming.randomRadius,
     radius = config.t.GPSJamming.radius
   },
@@ -1034,7 +1017,6 @@ saveData.t.GPSJamming.jammers = {
 -- SIGINT (US)
 -- ============================================================================
 
----@type SBJ__SIGINTContext
 saveData.u.SIGINT = {}
 saveData.u.SIGINT.isActivated = true
 saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
@@ -1046,7 +1028,6 @@ saveData.u.SIGINT.transmissions = {}
 -- Dynamic Operations (China)
 -- ============================================================================
 
----@type SBJ__DynamicOperationsContext
 saveData.c.dynamicOperations = {}
 saveData.c.dynamicOperations.enabled = true
 saveData.c.dynamicOperations.lastEvaluationTime = nil

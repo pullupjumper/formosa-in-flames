@@ -13,7 +13,7 @@ local GameApi = require("src.utils.gameApi")
 if config.isSaved then
   gKH.State.SaveTableToKey(saveData, "SaveData")
 end
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function initEventActions()

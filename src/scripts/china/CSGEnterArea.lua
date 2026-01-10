@@ -1,7 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then

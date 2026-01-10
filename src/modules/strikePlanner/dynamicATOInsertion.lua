@@ -335,7 +335,6 @@ local function calculateRoleAdvanceTime(packageData, role)
   end
 
   -- Get patrol zone reference point (using escort's patrol zone as reference)
-  ---@type string[]|nil
   local patrolZone = packageData.escort and packageData.escort.missionCreationParams and
       packageData.escort.missionCreationParams.opts and
       packageData.escort.missionCreationParams.opts.patrolZone
@@ -407,7 +406,6 @@ local function calculateSupportAdvanceTime(packageData)
   -- Find the furthest base
   local maxDistance = 0
   local furthestBase = nil
-  ---@type string
   local rp = packageData.escort.missionCreationParams.opts.patrolZone[1]
   local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = rp })
 
@@ -506,7 +504,6 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
         advanceTime = calculateSupportAdvanceTime(packageData)
       end
 
-      ---@type string
       -- timing.strikerStart = os.date(
       --   "%Y-%m-%d %H:%M:%S",
       --   Utils.roundToNearestMinutes(
@@ -515,14 +512,15 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
       --     5
       --   )
       -- )
+
       timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S",
         GameApi.ScenEdit_CurrentTime() + (packageData.timeToReady or 5) + advanceTime -
         (advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
-      )
+      ) --[[@as string]]
     else
       if previousPackage and previousPackage.striker.startTime then
         local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
-        timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval)
+        timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval) --[[@as string]]
       end
     end
   else
@@ -533,7 +531,7 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   -- Calculate striker end time
   local strikerStartTime = Utils.parseDatetimeToTimestamp(timing.strikerStart)
   local missionDuration = packageData.tanker and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
-  timing.strikerEnd = os.date("%Y-%m-%d %H:%M:%S", strikerStartTime + missionDuration)
+  timing.strikerEnd = os.date("%Y-%m-%d %H:%M:%S", strikerStartTime + missionDuration) --[[@as string]]
   return timing
 end
 
@@ -554,18 +552,17 @@ local function calculateRoleTiming(role, packageData)
   -- local advanceTime = calculateSupportAdvanceTime(packageData)
   -- local flightTime = calculateStrikerFlightTime(packageData) * 2 / 3
 
-  ---@type string
   -- timing.startTime = os.date("%Y-%m-%d %H:%M:%S", strikerTimestamp - advanceTime + (packageData.timeToReady or 5))
   -- timing.startTime = os.date(
   --   "%Y-%m-%d %H:%M:%S",
   --   Utils.roundToNearestMinutes(strikerTimestamp - advanceTime - TIME_CONSTANTS.ELAPSED_TIME + flightTime, 5)
   -- )
+
   timing.startTime = os.date(
     "%Y-%m-%d %H:%M:%S",
     strikerTimestamp - advanceTime + 61 + (packageData.timeToReady or 5) +
     (maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
-  )
-
+  ) --[[@as string]]
   local startTimestamp = Utils.parseDatetimeToTimestamp(timing.startTime)
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
@@ -604,7 +601,6 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   -- Set support role timing
   local supportRoles = { "escort", "wildWeasel", "jammer", "tanker" }
   for _, role in ipairs(supportRoles) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local missionRole = packageData[role]
 
     if missionRole then
@@ -635,7 +631,7 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
       loadoutStartTime = nil
     },
     hasLaunched = false,
-    isFinished = false,
+    -- isFinished = false,
     striker = packageData.striker,
     escort = packageData.escort,
     wildWeasel = packageData.wildWeasel,
@@ -670,7 +666,7 @@ local function insertATOWave(saveData, packageTemplate, reconType)
     name = waveName,
     isActivated = true,
     isFirstWave = packageTemplate.isFirstWave or false,
-    isFinished = false,
+    -- isFinished = false,
     hasLaunched = false,
     strikeInterval = packageTemplate.strikeInterval or 0,
     packages = {}

@@ -258,14 +258,13 @@ end
 function TargetingProcess.findAirborne(opts)
   local contacts = opts.contacts
   local task = opts.task
-  local config = opts.config
   local targets = {}
 
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       if contact.emissions and contact.emissions[1] then
-        local emission = contact.emissions[1]["sensor_dbid"]
-        if (emission == constants.SENSORS.P3C_SEAVUE or emission == constants.SENSORS.E2K_APS145) and
+        local sensorDBID = contact.emissions[1].sensor_dbid
+        if (sensorDBID == constants.SENSORS.P3C_SEAVUE or sensorDBID == constants.SENSORS.E2K_APS145) and
             contact.typed == 0 and
             contact:inArea(area) then
           table.insert(targets, contact.guid)
@@ -284,17 +283,16 @@ end
 function TargetingProcess.analyzeEmissions(opts)
   local contacts = opts.contacts
   local task = opts.task
-  local config = opts.config
   local SAMTargets = {}
 
   for _, area in ipairs(task.target.areas) do
     for _, contact in ipairs(contacts) do
       local isSensor = contact.emissions and
-          (contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK3_LONG_MOUNTAIN or
-            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK3_LONG_WHITE_2 or
-            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TK2_CS_MPG25 or
-            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.PAC3_MPQ65 or
-            contact.emissions[1]["sensor_dbid"] == constants.SENSORS.TC2_CS_MPQ90)
+          (contact.emissions[1].sensor_dbid == constants.SENSORS.TK3_LONG_MOUNTAIN or
+            contact.emissions[1].sensor_dbid == constants.SENSORS.TK3_LONG_WHITE_2 or
+            contact.emissions[1].sensor_dbid == constants.SENSORS.TK2_CS_MPG25 or
+            contact.emissions[1].sensor_dbid == constants.SENSORS.PAC3_MPQ65 or
+            contact.emissions[1].sensor_dbid == constants.SENSORS.TC2_CS_MPQ90)
       local isAgeLessThan = contact.lastDetections and contact.lastDetections[1].age <= task.target.contactAge
       local isSAM = isSensor and isAgeLessThan
       if contact:inArea(area) and isSAM then table.insert(SAMTargets, contact.guid) end
@@ -384,6 +382,11 @@ function TargetingProcess.findRadioDirection(opts)
   local targets = {}
   local mobileTargets = TargetingProcess.findMobileTargets({ contacts = contacts, task = task })
   local c2Targets = TargetingProcess.findC2({ contacts = contacts, task = task })
+
+  if not config or not saveData then
+    return nil
+  end
+
   Utils.insertList(targets, mobileTargets)
   Utils.insertList(targets, c2Targets)
   local radioSource = filterTargetsWithinRangeOfRadioSource(config, saveData, targets)
@@ -399,9 +402,13 @@ function TargetingProcess.findNavalTargets(opts)
   local contacts = opts.contacts
   local saveData = opts.saveData
   local task = opts.task
-  local config = opts.config
   local navalTargets = {}
   local hasTracked = false
+
+  if not saveData then
+    return nil
+  end
+
   ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
@@ -466,10 +473,10 @@ function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
   local isHelipad = string.find(target.type_description, "Helipad") ~= nil
   local BDA = target.BDA
   local detections = target.lastDetections
-  local hasEvaluated = BDA and not (BDA["STRUCTURAL"] == "Heavy damage") and
+  local hasEvaluated = BDA and not (BDA.STRUCTURAL == "Heavy damage") and
       (detections and detections[1].age <= contactAge) and
       not isHelipad
-  local isHelipadEmbarkedWithHelicopter = isHelipad and #actualUnit.embarkedUnits["Aircraft"] > 0
+  local isHelipadEmbarkedWithHelicopter = isHelipad and #actualUnit.embarkedUnits.Aircraft > 0
   return hasEvaluated or isHelipadEmbarkedWithHelicopter or isFirstWave
 end
 
@@ -498,7 +505,7 @@ end
 
 ---Filter targets by type and base name
 ---Filters target list based on base name pattern and facility sub-types
----@param targetlist string[] Array of target objects with name, subType, and guid properties
+---@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
 ---@param queryParams SBJ__TargetQueryParam[] Array of query parameters with baseName (optional) and subTypes (array)
 ---@return string[] # Array of target GUIDs matching query criteria
 function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)

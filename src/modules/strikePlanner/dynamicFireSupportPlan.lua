@@ -126,7 +126,6 @@ local function validateFiringUnitStatus(config, saveData, firingUnitName, wpnSys
 
   -- Get battery data from weapon system
   local weaponSystemLower = string.lower(wpnSystem)
-  ---@type SBJ__FiringUnitContext|nil
   local firingUnitCtx = saveData.c.ground[weaponSystemLower] and
       saveData.c.ground[weaponSystemLower].firingUnits and
       saveData.c.ground[weaponSystemLower].firingUnits[firingUnitName]
@@ -226,7 +225,8 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
     isFinished = false,
     isFirstWave = FSEMTemplate.isFirstWave,
     allFiringUnitsInPosition = false,
-    FSTs = {}
+    FSTs = {},
+    strikeInterval = 0
   }
 
   local FSTIndex = 0
@@ -244,12 +244,13 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
       )
 
       if availableFiringUnits and #availableFiringUnits > 0 then
+        local startTime = os.date("!%Y-%m-%d %H:%M:%S", FSEMStartTime + (FSTIndex * FSEMTemplate.strikeInterval)) --[[@as string]]
         ---@type SBJ__FireSupportTask
         local FST = {
           name = FSTTemplate.name,
           wpnSystem = FSTTemplate.wpnSystem,
           firingUnits = availableFiringUnits,
-          startTime = os.date("!%Y-%m-%d %H:%M:%S", FSEMStartTime + (FSTIndex * FSEMTemplate.strikeInterval)),
+          startTime = startTime,
           isFinished = false,
           target = {
             list = targets,

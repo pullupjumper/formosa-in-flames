@@ -20,7 +20,7 @@ function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
 
   for _, element in ipairs(fromUnit.cargo[1].cargo) do
     if element.dbid == cargoItem.dbid then
-      table.insert(filteredCargos, element.guid)
+      table.insert(filteredCargos, element.GUID)
       count = count + 1
     end
 
@@ -57,7 +57,7 @@ function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
 
   for _, element in ipairs(fromUnit.cargo[1].cargo) do
     if element.dbid == cargoItem.dbid then
-      table.insert(filteredCargos, element.guid)
+      table.insert(filteredCargos, element.GUID)
       count = count + 1
     end
 

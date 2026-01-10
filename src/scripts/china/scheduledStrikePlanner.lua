@@ -10,7 +10,7 @@ local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
 local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
 local constants = require("src.core.constants")
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 local contacts = GameApi.ScenEdit_GetContacts("China")
 

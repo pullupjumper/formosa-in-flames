@@ -128,14 +128,17 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
 
   for _, guid in ipairs(battery.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    setUnitProperties({
-      unit = unit,
-      throttle = "Flank",
-      speed = BATTERY_CONSTANTS.REPOSITION_SPEED,
-      course = course,
-      holdPosition = false,
-      wcs = wcs
-    })
+
+    if unit then
+      setUnitProperties({
+        unit = unit,
+        throttle = "Flank",
+        speed = BATTERY_CONSTANTS.REPOSITION_SPEED,
+        course = course,
+        holdPosition = false,
+        wcs = wcs
+      })
+    end
   end
 
   return true
@@ -415,6 +418,7 @@ local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
 
     GameApi.ScenEdit_AddReloadsToUnit({
       guid = unit.guid,
+      side = unit.side,
       wpn_dbid = weaponDBID,
       number = ammoToLoad
     })

@@ -7,7 +7,7 @@ local IADS = require("src.modules.IADS")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if saveData == nil then

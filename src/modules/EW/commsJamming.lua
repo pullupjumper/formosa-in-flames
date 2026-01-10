@@ -359,7 +359,7 @@ end
 ---@param saveData SBJ__SaveData Save data where jammer contexts will be stored in c.commsJamming.jammers
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
 function CommsJamming.initCommsJammersContext(saveData, sideName)
-  ---@type CMO__SideUnit[]
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then

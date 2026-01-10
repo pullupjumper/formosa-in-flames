@@ -83,7 +83,7 @@ end
 ---@param guid string The GUID of the unit
 ---@return CMO__Loadout|nil # Loadout object with weapon details
 function realApi.ScenEdit_GetLoadout(guid)
-  local result = ScenEdit_GetLoadout({ Unitname = guid })
+  local result = ScenEdit_GetLoadout({ unitname = guid })
 
   if result == nil then
     error("Loadout not found with guid: " .. tostring(guid))

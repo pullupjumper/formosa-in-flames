@@ -2,7 +2,7 @@ local UnitGenerator = require("src.modules.unitGenerator")
 local config = require("src.core.config")
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
----@type SBJ__SaveData
+---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 if not saveData then

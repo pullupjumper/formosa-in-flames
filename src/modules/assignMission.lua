@@ -91,8 +91,8 @@ local function getWeaponCount(unitGuid, weaponDBID)
 
   if loadout.weapons and #loadout.weapons > 0 then
     for _, w in ipairs(loadout.weapons) do
-      if w["wpn_dbid"] == weaponDBID then
-        weaponCount = w["wpn_current"]
+      if w.wpn_dbid == weaponDBID then
+        weaponCount = w.wpn_current
         break
       end
     end
@@ -125,7 +125,7 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, we
     return
   end
 
-  if #airbase.embarkedUnits["Aircraft"] == 0 then
+  if #airbase.embarkedUnits.Aircraft == 0 then
     return
   end
 

@@ -9,7 +9,6 @@ local IADS = {}
 ---@param C2Context SBJ__C2Context The C2 context containing the units to disable
 ---@param type string Unit type to disable ('radar' or 'SAM')
 local function disableUnitsUnderC2Node(C2Context, type)
-  ---@type table<string, SBJ__RadarContext>|nil
   local ctxs = C2Context[type]
 
   if ctxs then
@@ -161,7 +160,6 @@ end
 ---@param IADSContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
 function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
-  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   IADSContext.C2 = {}
 
@@ -249,7 +247,6 @@ end
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 function IADS.initC2Contexts(IADSContext)
-  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
@@ -316,7 +313,6 @@ end
 ---@param IADSConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
 function IADS.removeC2Facilities(IADSConfig)
-  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 

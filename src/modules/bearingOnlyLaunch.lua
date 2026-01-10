@@ -81,8 +81,8 @@ function BearingOnlyLaunch.generateMissilePaths(params)
   local launcherLat = params.launcherLat
   local launcherLon = params.launcherLon
   local radarRange = params.radarRange
-  local radarDir = params.radarDir
-  local radarFov = params.radarFov or 360
+  -- local radarDir = params.radarDir
+  -- local radarFov = params.radarFov or 360
   local count = params.missileCount or 5
   local speed = params.missileSpeedKts or 600
   local maxRange = params.missileRangeNm or 100

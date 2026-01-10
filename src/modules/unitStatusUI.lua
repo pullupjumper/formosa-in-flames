@@ -199,7 +199,6 @@ local function createBatteryDataString(config, saveData, sideName, ...)
   local rows = {}
 
   for _, wpnSystem in pairs(wpnSystems) do
-    ---@type table<string, SBJ__ResupplyUnitContext>|nil
     local resupplyUnitCtxs = saveData[field].ground[wpnSystem] and
         saveData[field].ground[wpnSystem].resupplyUnits
 
@@ -211,9 +210,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
   end
 
   for _, wpnSystem in pairs(wpnSystems) do
-    ---@type SBJ__WeaponSystemContext|nil
     local wpnSystemCtx = saveData[field].ground[wpnSystem]
-    ---@type SBJ__FiringUnitContext[]|nil
     local firingUnitCtxs = wpnSystemCtx and wpnSystemCtx.firingUnits
 
     if wpnSystemCtx and firingUnitCtxs then
@@ -228,20 +225,18 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         local batteryReloadTime = nil
         local ammoSectionReloadTime = nil
 
-        if ctx.state == 0 then
+        if ctx.state == config.batteryState.STATIC then
           status = "STATIC"
-        elseif ctx.state == 1 then
+        elseif ctx.state == config.batteryState.REPOSITIONING then
           status = "REPOSITIONING"
-        elseif ctx.state == 2 then
+        elseif ctx.state == config.batteryState.RELOAD then
           status = "RELOAD"
         else
           status = "HIDE"
         end
 
         if ctx.reloadStartTime ~= nil then
-          batteryReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 +
-                0.5) /
-              100
+          batteryReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 + 0.5) / 100
 
           if batteryReloadTime < 0 then
             batteryReloadTime = 0
@@ -253,8 +248,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         end
 
         if ammoSec.reloadStartTime ~= nil then
-          ammoSectionReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) *
-            100 +
+          ammoSectionReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) * 100 +
             0.5) / 100
 
           if ammoSectionReloadTime < 0 then
@@ -304,7 +298,6 @@ local function createMagazineDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  ---@type SBJ__AirbaseDeploymentDescriptor[]
   local descriptors = config[field].air.landBased.deployedACs
 
   for _, descriptor in ipairs(descriptors) do
@@ -314,10 +307,10 @@ local function createMagazineDataString(config, sideName)
       local obj = { name = descriptor.name, wpns = {} }
 
       for _, magazine in ipairs(base.magazines) do
-        for _, wpn in ipairs(magazine["mag_weapons"]) do
+        for _, wpn in ipairs(magazine.mag_weapons) do
           table.insert(obj.wpns, {
-            name = wpn["wpn_name"],
-            currWpn = wpn["wpn_current"],
+            name = wpn.wpn_name,
+            currWpn = wpn.wpn_current,
           })
         end
       end
@@ -341,7 +334,6 @@ local function createC2NodeDataString(saveData, sideName, ...)
   local types = { ... }
 
   for _, type in pairs(types) do
-    ---@type table<string, SBJ__C2Context>|nil
     local C2Ctxs = saveData[field].IADS[type]
 
     if C2Ctxs then
@@ -400,13 +392,10 @@ local function createSignalDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  ---@type table<string, SBJ__RadioTransmissionContext>
   local transmissions = saveData[field].SIGINT.transmissions
 
   for _, transmission in pairs(transmissions) do
     local copy = Utils.deepCopy(transmission)
-    copy.firstDetected = os.date("!%Y-%m-%d %H:%M:%S", transmission.firstDetected)
-    copy.lastDetected = os.date("!%Y-%m-%d %H:%M:%S", transmission.lastDetected)
     table.insert(rows, copy)
   end
 
@@ -432,7 +421,6 @@ end
 local function createGPSJammingDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
-  ---@type table<string, SBJ__GPSJammerDescriptor>
   local descriptors = saveData[field].GPSJamming.jammers
   local rows = {}
 
@@ -452,7 +440,6 @@ local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  ---@type SBJ__AirbaseDeploymentDescriptor[]
   local descriptors = config[field].air.landBased.deployedACs
 
   for _, descriptor in pairs(descriptors) do
@@ -522,7 +509,7 @@ end
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name (currently only 'Taiwan' is supported)
 function UnitStatusUI.createSetupMenu(config, sideName)
-  ---@type SBJ__SaveData
+  ---@type SBJ__SaveData|nil
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
   if saveData == nil then
@@ -549,8 +536,8 @@ function UnitStatusUI.createSetupMenu(config, sideName)
       if form["summaryData"] then
         -- Parse JSON configuration from form
         local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
-        ---@type table
         local result = gKH.json.parse(jsonStr)
+        ---@cast result {ewUnits: SBJ__GPSJammerDescriptor[], bases: SBJ__AirbaseDeploymentDescriptor[]}
         local jammerDescriptors = result.ewUnits
         local abDeploymentDescriptors = result.bases
 

@@ -1,4 +1,4 @@
-﻿local GameApi = require("src.utils.gameApi")
+local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
@@ -34,7 +34,7 @@ local SIGINT_CONSTANTS = {
 ---Calculate SIGINT detection probability based on distance
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
 ---@param distance number Distance in nautical miles
----@param config SBJ__SIGINTConfig|nil Detection configuration
+---@param config SBJ__SIGINTDetectionConfig|nil Detection configuration
 ---@return number # Value between 0 and 1
 function SIGINT.calculateDetectionProbability(distance, config)
   config = config or {}
@@ -55,7 +55,7 @@ end
 ---Calculate signal deviation distance for SIGINT detection position randomization
 ---Uses complex formula to simulate signal triangulation error based on distance
 ---@param baseDistance number Base distance between detector and target (nautical miles)
----@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides)
+---@param config SBJ__SIGINTDetectionConfig|nil Detection configuration (optional overrides)
 ---@return number # Distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
   local consts = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
@@ -165,7 +165,7 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL.area) and unit.speed > 0
+  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area) and unit.speed > 0
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
 
@@ -178,7 +178,7 @@ end
 ---@param isEmitting boolean Whether target unit is currently emitting signals
 ---@param isShown boolean Whether to show visual notification on map
 ---@param data SBJ__SIGINTDisplayData|nil Display configuration (colors, lifetime, font size)
----@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
+---@param config SBJ__SIGINTDetectionConfig|nil Detection configuration (optional overrides for thresholds)
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
 local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
   -- Get enemy unit
@@ -366,7 +366,7 @@ end
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit contexts to monitor (firing units and C2 nodes)
 ---@param isShown boolean Whether to show detection notifications on map
----@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
+---@param sigintConfig SBJ__SIGINTDetectionConfig|nil SIGINT-specific configuration (optional overrides)
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -426,7 +426,7 @@ end
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized
 function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
-  ---@type CMO__SideUnit[]
+  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then

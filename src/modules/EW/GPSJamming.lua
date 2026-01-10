@@ -118,7 +118,7 @@ function GPSJamming.jamming(config, sideName)
 
           -- We change the course of the weapon assigning the new latitude and longitude info
           if count == 1 or count == 0 then -- If the unit only has the terminal point
-            weaponU.target = { latitude = lat, longitude = lon, GUID = "BOL" }
+            weaponU.target = { latitude = lat, longitude = lon, guid = "BOL" }
             weaponU.course = { { latitude = lat, longitude = lon, TypeOf = "TerminalPoint" } }
           else -- For weapons with a predefined course of waypoints, we maintain all the waypoints
             local newCourse = {}
@@ -130,7 +130,7 @@ function GPSJamming.jamming(config, sideName)
               end
             end
             weaponU.course = newCourse
-            weaponU.target = { latitude = lat, longitude = lon, GUID = "BOL" }
+            weaponU.target = { latitude = lat, longitude = lon, guid = "BOL" }
           end
         else
           Logger.error("[GPS Jamming] Weapon " .. weaponU.name .. " has no course data")
