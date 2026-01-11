@@ -700,17 +700,16 @@ function Launcher.handleSupplyAssetDestruction(unit, wsCtx)
 end
 
 ---Add launchers to the game
----@param groundForceCtx SBJ__GroundForceContext Ground force context
+---@param groundForceCfg SBJ__GroundForceConfig Ground force context
 ---@param wpnSystems string[] Weapon systems
 ---@param sideName string Side name
-function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
+function Launcher.addLaunchers(groundForceCfg, wpnSystems, sideName)
   for _, wpnSystem in pairs(wpnSystems) do
-    ---@type SBJ__WeaponSystemContext|nil
-    local wpnCtx = groundForceCtx[wpnSystem]
+    local wpnSystemCfg = groundForceCfg[wpnSystem]
 
-    if wpnCtx then
-      for _, firingUnitCtx in pairs(wpnCtx.firingUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
+    if wpnSystemCfg then
+      for _, descriptor in pairs(wpnSystemCfg.firingUnits) do
+        local unit = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
 
         if unit then
           if unit.group and unit.group.unitlist then
@@ -720,20 +719,20 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
           end
         end
 
-        local count = wpnCtx.resupplyUnits[firingUnitCtx.resupplyUnit].unitCount
-        local len = #firingUnitCtx.operationalArea.HA[1].course
-        local type = GameUtils.extractUnitType(firingUnitCtx.name)
+        local count = wpnSystemCfg.resupplyUnits[descriptor.resupplyUnit].unitCount
+        local len = #descriptor.operationalArea.HA[1].course
+        local type = GameUtils.extractUnitType(descriptor.name)
 
         for i = 1, count do
-          local name = GameUtils.formatOrdinalUnitName(i, type or "", ", " .. firingUnitCtx.name)
+          local name = GameUtils.formatOrdinalUnitName(i, type or "", ", " .. descriptor.name)
           local addedUnit = GameApi.ScenEdit_AddUnit({
             side = sideName,
             unitname = name,
-            dbid = firingUnitCtx.dbid,
+            dbid = descriptor.dbid,
             type = "Facility",
-            group = firingUnitCtx.name,
-            latitude = firingUnitCtx.operationalArea.HA[1].course[len].latitude,
-            longitude = firingUnitCtx.operationalArea.HA[1].course[len].longitude
+            group = descriptor.name,
+            latitude = descriptor.operationalArea.HA[1].course[len].latitude,
+            longitude = descriptor.operationalArea.HA[1].course[len].longitude
           })
 
           if addedUnit then
@@ -743,7 +742,7 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
 
             for _, mount in ipairs(addedUnit.mounts) do
               for _, wpn in ipairs(mount.mount_weapons) do
-                if wpn.wpn_current > 0 and wpn.wpn_dbid ~= firingUnitCtx.weaponDBID then
+                if wpn.wpn_current > 0 and wpn.wpn_dbid ~= descriptor.weaponDBID then
                   totalRemovedWpnCount = totalRemovedWpnCount + wpn.wpn_current
                   removedWpnDBID = wpn.wpn_dbid
                 end
@@ -762,7 +761,7 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
               GameApi.ScenEdit_AddReloadsToUnit({
                 side = sideName,
                 guid = addedUnit.guid,
-                wpn_dbid = firingUnitCtx.weaponDBID,
+                wpn_dbid = descriptor.weaponDBID,
                 number = totalRemovedWpnCount,
               })
             end
@@ -770,8 +769,8 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
         end
       end
 
-      for _, resupplyUnitCtx in pairs(wpnCtx.resupplyUnits) do
-        local ammoTrucks = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
+      for _, descriptor in pairs(wpnSystemCfg.resupplyUnits) do
+        local ammoTrucks = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
 
         if ammoTrucks then
           if ammoTrucks.group and ammoTrucks.group.unitlist then
@@ -781,10 +780,10 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
           end
         end
 
-        local count = resupplyUnitCtx.unitCount
-        local len = #resupplyUnitCtx.operationalArea.RL[1].course
-        local type = GameUtils.extractUnitType(resupplyUnitCtx.name)
-        local restStr = resupplyUnitCtx.name:match("Ammo Sec(.*)") or (", " .. resupplyUnitCtx.name)
+        local count = descriptor.unitCount
+        local len = #descriptor.operationalArea.RL[1].course
+        local type = GameUtils.extractUnitType(descriptor.name)
+        local restStr = descriptor.name:match("Ammo Sec(.*)") or (", " .. descriptor.name)
 
         for i = 1, count do
           local name = GameUtils.formatOrdinalUnitName(i, type or "", restStr)
@@ -793,12 +792,73 @@ function Launcher.addLaunchers(groundForceCtx, wpnSystems, sideName)
             unitname = "Ammo Sec, " .. name,
             dbid = constants.PLATFORMS.AMMO_TRUCK,
             type = "Facility",
-            group = resupplyUnitCtx.name,
-            latitude = resupplyUnitCtx.operationalArea.RL[1].course[len].latitude,
-            longitude = resupplyUnitCtx.operationalArea.RL[1].course[len].longitude
+            group = descriptor.name,
+            latitude = descriptor.operationalArea.RL[1].course[len].latitude,
+            longitude = descriptor.operationalArea.RL[1].course[len].longitude
           })
         end
       end
+
+      for _, descriptor in pairs(wpnSystemCfg.ammunitions) do
+        local ammo = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
+
+        if ammo then
+          GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = ammo.guid })
+        end
+
+        local restStr = descriptor.name:gsub("^Ammo Revetment, ", "")
+        local name = restStr
+        local resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
+
+        if not resupplyUnitdescriptor then
+          name = "Ammo Sec, " .. name
+        end
+
+        resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
+
+        if resupplyUnitdescriptor then
+          local len = #resupplyUnitdescriptor.operationalArea.AHA[1].course
+          GameApi.ScenEdit_AddUnit({
+            side = sideName,
+            unitname = descriptor.name,
+            dbid = constants.PLATFORMS.AMMO,
+            type = "Facility",
+            latitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].latitude,
+            longitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].longitude
+          })
+        end
+      end
+    end
+  end
+end
+
+---comment
+---@param groundForceCfg SBJ__GroundForceConfig
+---@param groundForceCtx SBJ__GroundForceContext
+---@param wpnSystems string[]
+function Launcher.initLauncherContexts(groundForceCfg, groundForceCtx, wpnSystems)
+  for _, wpnSystem in ipairs(wpnSystems) do
+    local firingUnits = Utils.deepCopy(groundForceCfg[wpnSystem].firingUnits)
+    for _, descriptor in pairs(firingUnits) do
+      ---@type SBJ__FiringUnitContext
+      local ctx = descriptor
+      ctx.reloadStartTime = nil
+      groundForceCtx[wpnSystem].firingUnits[ctx.name] = ctx
+    end
+
+    local resupplyUnits = Utils.deepCopy(groundForceCfg[wpnSystem].resupplyUnits)
+    for _, descriptor in pairs(resupplyUnits) do
+      ---@type SBJ__ResupplyUnitContext
+      local ctx = descriptor
+      ctx.reloadStartTime = nil
+      groundForceCtx[wpnSystem].resupplyUnits[ctx.name] = ctx
+    end
+
+    local ammunitions = Utils.deepCopy(groundForceCfg[wpnSystem].ammunitions)
+    for _, descriptor in pairs(ammunitions) do
+      ---@type SBJ__AmmunitionContext
+      local ctx = descriptor
+      groundForceCtx[wpnSystem].ammunitions[ctx.name] = ctx
     end
   end
 end

@@ -53,7 +53,7 @@ end
 ---@param attackerGUID string The GUID of the attacker unit (empty string for all)
 ---@param contactGUID string The GUID of the target contact (empty string for all)
 ---@param attackingSideGUID string The GUID or name of the attacking side (empty string for all)
----@return table<integer, { weapon:number, qtyFired:number, shooter:string, target:string, qtyAssigned:number, weaponName:string }>|nil # Weapon allocation table
+---@return table<integer, { weapon: integer, qtyFired: integer, shooter: string, target: string, qtyAssigned: integer, weaponName: string }>|nil # Weapon allocation table
 function realApi.ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
   local result = ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 

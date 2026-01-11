@@ -755,7 +755,7 @@ constants.OPERATIONAL_AREAS = {
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.55.15", longitude = "E 121.16.02", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.56.47", longitude = "E 121.13.04", desiredSpeed = 10, presetThrottle = "Flank" },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_PINGZHEN
     } },
@@ -783,7 +783,7 @@ constants.OPERATIONAL_AREAS = {
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.08.34", longitude = "E 120.35.46", desiredSpeed = 10, presetThrottle = "Flank" },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_DADU
     } },
@@ -856,7 +856,7 @@ constants.OPERATIONAL_AREAS = {
     }, },
     AHA = { {
       course = {
-        { longitude = "N 25.04.44", latitude = "E 121.16.42", presetThrottle = 'Flank', desiredSpeed = 10 }
+        { latitude = "N 25.04.42", longitude = "E 121.16.38", presetThrottle = 'Flank', desiredSpeed = 10 }
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_LUZHU
     } },

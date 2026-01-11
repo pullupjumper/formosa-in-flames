@@ -7,6 +7,7 @@ local UnitGenerator = require("src.modules.unitGenerator")
 local IADS = require("src.modules.IADS")
 local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
+local Launcher = require("src.modules.launcher")
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local GameApi = require("src.utils.gameApi")
 
@@ -98,6 +99,16 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   if saveData.u.SIGINT.isActivated then
     SIGINT.initReconAircraftContexts(saveData.u.SIGINT, "US")
     SIGINT.initReconAircraftContexts(saveData.c.SIGINT, "China")
+  end
+
+  if saveData.c.ground.isActivated then
+    local systems = { "srbm", "mrbm", "mlrs", "glcm" }
+    Launcher.initLauncherContexts(config.c.ground, saveData.c.ground, systems)
+  end
+
+  if saveData.t.ground.isActivated then
+    local systems = { "srbm", "ascm", "mlrs", "glcm" }
+    Launcher.initLauncherContexts(config.t.ground, saveData.t.ground, systems)
   end
 
   if config.isDevMode then

@@ -8,7 +8,7 @@
 ---@param attackerGUID string The GUID of the attacker unit
 ---@param contactGUID string The GUID of the target contact
 ---@param attackingSideGUID string The GUID of the attacking side
----@return table<integer, { weapon:number, qtyFired:number, shooter:string, target:string, qtyAssigned:number, weaponName:string }>|nil # Returns a weapon allocation table
+---@return table<integer, { weapon: integer, qtyFired: integer, shooter: string, target: string, qtyAssigned: integer, weaponName: string }>|nil # Returns a weapon allocation table
 function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID) end
 
 ---Create a new flight plan for a mission
@@ -115,6 +115,9 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name
 ---@field contactAge? number Contact valid age in seconds (optional)
 ---@field reloadTime number Reload time in seconds
+---@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
+---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
+---@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
 
 ---Ground force configuration
 ---@class SBJ__GroundForceConfig:table
@@ -722,32 +725,44 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field AHA SBJ__Position[] Ammo Holding Areas
 ---@field RL SBJ__Position[] Reload Points
 
----Ammunition context data structure
----Tracks ammunition unit status and remaining ammunition counts
----@class SBJ__AmmunitionContext:table
----@field guid string Ammunition unit GUID
----@field name string Ammunition unit name
----@field wpnCurrent? number Current available ammunition count
----@field wpnDefault? number Default/maximum ammunition count
+---@class SBJ__WeaponStatus:table
+---@field wpnCurrent number Current available ammunition count
+---@field wpnDefault number Default/maximum ammunition count
 
----Resupply unit context data structure
----Extends ammunition context with operational area and resupply management
----@class SBJ__ResupplyUnitContext:SBJ__AmmunitionContext
----@field name string Resupply unit name
----@field unitCount? number Number of resupply vehicles in this unit
----@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
----@field reloadStartTime? number Reload operation start timestamp, nil if not currently reloading
+---@class SBJ__UnitBase: table
+---@field guid string Unit GUID
+---@field name string Unit name
+
+---@class SBJ__UnitStatus: table
 ---@field state batteryState Current unit state (STATIC/HIDE, etc.)
----@field ammunition? string Associated ammunition unit name for this resupply unit
+---@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
 
----Firing unit context data structure
----Extends resupply unit context with weapon system configuration
----@class SBJ__FiringUnitContext:SBJ__ResupplyUnitContext
+---@class SBJ__AmmunitionUnitDescriptor: SBJ__UnitBase, SBJ__WeaponStatus
+
+---@class SBJ__ResupplyUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus, SBJ__WeaponStatus
+---@field unitCount number Number of resupply vehicles in this unit
+---@field ammunition string Associated ammunition unit name for this resupply unit
+
+---@class SBJ__FiringUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus
 ---@field weaponDBID number The weapon database ID to use for the firing unit
 ---@field ammoThreshold number The ammunition threshold for the firing unit, if not specified, the default value will be used
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
 ---@field dbid number The firing unit database ID
+
+---Ammunition context data structure
+---Tracks ammunition unit status and remaining ammunition counts
+---@class SBJ__AmmunitionContext: SBJ__AmmunitionUnitDescriptor
+
+---Resupply unit context data structure
+---Extends ammunition context with operational area and resupply management
+---@class SBJ__ResupplyUnitContext: SBJ__ResupplyUnitDescriptor
+---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
+
+---Firing unit context data structure
+---Extends resupply unit context with weapon system configuration
+---@class SBJ__FiringUnitContext: SBJ__FiringUnitDescriptor
+---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 
 ---Weapon system context data structure
 ---Consolidates all components of a complete weapon system (firing units, resupply units, ammunition)
