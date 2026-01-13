@@ -142,42 +142,42 @@ config.c.IADS.C2Deployments = {
   {
     position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_FUZHOU, },
-    areaName = "Fuzhou"
+    name = "Fuzhou"
   },
   {
     position = { latitude = "N 25.19.12", longitude = "E 119.06.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_PUTIAN, },
-    areaName = "Putian"
+    name = "Putian"
   },
   {
     position = { latitude = "N 24.57.01", longitude = "E 118.34.22" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_CHANGZHOU, },
-    areaName = "Changzhou"
+    name = "Changzhou"
   },
   {
     position = { latitude = "N 24.43.19", longitude = "E 118.12.29" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_XIAMEN, },
-    areaName = "Xiamen"
+    name = "Xiamen"
   },
   {
     position = { latitude = "N 24.10.12", longitude = "E 117.28.46" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_ZHANGZHOU, },
-    areaName = "Zhangzhou"
+    name = "Zhangzhou"
   },
   {
     position = { latitude = "N 23.39.17", longitude = "E 116.41.26" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANTOU, },
-    areaName = "Shantou"
+    name = "Shantou"
   },
   {
     position = { latitude = "N 23.08.19", longitude = "E 115.22.49" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANWEI, },
-    areaName = "Shanwei"
+    name = "Shanwei"
   },
   {
     position = { latitude = "N 24.06.12", longitude = "E 116.05.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_MEIZHOU, },
-    areaName = "Meizhou"
+    name = "Meizhou"
   },
 }
 
@@ -231,7 +231,22 @@ config.c.GPSJamming.GPSGuidedWeapons = {
   { dbid = constants.WEAPONS.JSOW,       jammingResistance = 50 },
   { dbid = constants.WEAPONS.SLAMER,     jammingResistance = 50 },
 }
-
+config.c.GPSJamming.jammers = {
+  ["1st Bn, 1st ECM Bde"] = {
+    zoneName = "JAMMING ZONE/1",
+    name = "1st Bn, 1st ECM Bde",
+    point = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
+    randomRadius = config.c.GPSJamming.randomRadius,
+    radius = config.c.GPSJamming.radius
+  },
+  ["2nd Bn, 1st ECM Bde"] = {
+    zoneName = "JAMMING ZONE/2",
+    name = "2nd Bn, 1st ECM Bde",
+    point = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
+    randomRadius = config.c.GPSJamming.randomRadius,
+    radius = config.c.GPSJamming.radius
+  },
+}
 
 -- ============================================================================
 -- MLRS (China)
@@ -648,7 +663,66 @@ config.c.recon.template = {
     isTracking = false
   }
 }
-
+config.c.recon.reconStrikeMatrix = {
+  UAV = {
+    BZK005 = {
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    GJ11 = {
+      { name = "CAS/N/1",     type = "air", },
+      { name = "STRIKE/C2/1", type = "ground", }
+    },
+    H6N = {
+      { name = "ANTISHIP/1",    type = "ground" },
+      { name = "ASUW/N/1",      type = "air" },
+      { name = "STRIKE/AB/E/1", type = "air" },
+      { name = "STRIKE/AB/W/1", type = "air" }
+    },
+  },
+  satellite = {
+    EOS = {
+      { name = "STRIKE/AB/W/1",           type = "air" },
+      { name = "STRIKE/AB/E/1",           type = "air" },
+      { name = "STRIKE/HELIPAD/1",        type = "ground" },
+      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+    }
+  }
+}
+config.c.recon.queue = {
+  {
+    type = "UAV",
+    baseGUID = constants.BASES.LIUAN_AB,
+    unitDBID = constants.PLATFORMS.H6N,
+    unitGUID = nil,
+    course = constants.COURSES.H6N,
+    unitCount = 1,
+    -- takeoffTime = "2027-06-09 01:20:00",
+    takeoffTime = "2027-06-09 01:00:00",
+    endTime = "2027-06-09 02:00:00",
+    isFinished = false,
+    trackingTargetGUID = nil,
+    speed = 450
+  },
+  {
+    type = "satellite",
+    endTime = "2027-06-09 01:00:00",
+    -- endTime = "2027-06-09 04:40:00",
+  },
+  {
+    type = "satellite",
+    -- endTime = "2027-06-09 01:00:00",
+    endTime = "2027-06-09 05:44:00",
+  },
+  {
+    type = "satellite",
+    -- endTime = "2027-06-09 01:30:00",
+    endTime = "2027-06-09 08:04:00",
+  },
+  {
+    type = "satellite",
+    endTime = "2027-06-09 11:25:00",
+  },
+}
 
 
 -- ============================================================================
@@ -3502,7 +3576,22 @@ config.t.GPSJamming.GPSGuidedWeapons = {
   { dbid = constants.WEAPONS.LS_6_500, jammingResistance = 50 },
   { dbid = constants.WEAPONS.CS_BBC_5, jammingResistance = 50 },
 }
-
+config.t.GPSJamming.jammers = {
+  ["Comms & Info Coy, 584th Mech Bde"] = {
+    zoneName = "(Taiwan) Jamming Zone/1",
+    name = "Comms & Info Coy, 584th Mech Bde",
+    point = nil,
+    randomRadius = config.t.GPSJamming.randomRadius,
+    radius = config.t.GPSJamming.radius
+  },
+  ["Comms & Info Coy, 269th Mech Bde"] = {
+    zoneName = "(Taiwan) Jamming Zone/2",
+    name = "Comms & Info Coy, 269th Mech Bde",
+    point = nil,
+    randomRadius = config.t.GPSJamming.randomRadius,
+    radius = config.t.GPSJamming.radius
+  },
+}
 
 -- ============================================================================
 -- MLRS (Taiwan)
@@ -3797,6 +3886,63 @@ config.t.ground.ascm.firingUnits = {
 
 config.t.IADS = {}
 config.t.IADS.ratio = { ROCC = 1.5, TAAOC = 1.5 }
+config.t.IADS.ROCC = {
+  ["IC8B0X-0HNC3OB4KJKIF"] = {
+    name = "ROCC/North",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HNC3OB4KJKIF",
+    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
+    SAM = {},
+    radar = {}
+  },
+  ["IC8B0X-0HNC3OB4KJKTC"] = {
+    name = "ROCC/East",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HNC3OB4KJKTC",
+    areas = { constants.AREAS.THEATER_OF_OPS_2ND, constants.AREAS.THEATER_OF_OPS_5TH, },
+    SAM = {},
+    radar = {}
+  },
+  ["IC8B0X-0HNC3OB4KJL2M"] = {
+    name = "ROCC/South",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HNC3OB4KJL2M",
+    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
+    SAM = {},
+    radar = {}
+  },
+}
+config.t.IADS.TAAOC = {
+  ["IC8B0X-0HN41D1QKTVU7"] = {
+    name = "TAAOC/3rd OPAREA",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HN41D1QKTVU7",
+    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
+    SAM = {},
+  },
+  ["IC8B0X-0HN41D1QKU1ED"] = {
+    name = "TAAOC/5th OPAREA",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HN41D1QKU1ED",
+    areas = { constants.AREAS.THEATER_OF_OPS_5TH, },
+    SAM = {},
+  },
+  ["IC8B0X-0HN41D1QKU0JP"] = {
+    name = "TAAOC/4th OPAREA",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HN41D1QKU0JP",
+    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
+    SAM = {},
+  },
+  ["IC8B0X-0HNC27TV5Q0AS"] = {
+    name = "TAAOC/2nd OPAREA",
+    msg = "Radio source, C2",
+    guid = "IC8B0X-0HNC27TV5Q0AS",
+    areas = { constants.AREAS.THEATER_OF_OPS_2ND, },
+    SAM = {},
+  },
+}
+
 
 
 -- ============================================================================

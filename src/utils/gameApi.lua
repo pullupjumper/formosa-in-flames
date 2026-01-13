@@ -620,6 +620,32 @@ function realApi.ScenEdit_SetSpecialAction(opts)
   return result
 end
 
+---Get special action settings
+---@param opts CMO__SpecialActionUpdate Special action get parameters
+---@return CMO__SpecialAction|CMO__SpecialAction[]|nil # Special action information
+function realApi.ScenEdit_GetSpecialAction(opts)
+  local result = ScenEdit_GetSpecialAction(opts)
+
+  if not result then
+    error("Failed to get special action with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
+---Add special action settings
+---@param opts CMO__SpecialActionUpdate Special action add parameters
+---@return CMO__SpecialAction|nil # Special action information
+function realApi.ScenEdit_AddSpecialAction(opts)
+  local result = ScenEdit_AddSpecialAction(opts)
+
+  if not result then
+    error("Failed to get special action with opts: " .. tostring(opts))
+  end
+
+  return result
+end
+
 ---Clear all unit magazines
 ---@param opts CMO__UnitSelector Unit selector
 ---@return boolean # True if successfully cleared

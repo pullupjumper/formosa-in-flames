@@ -9,9 +9,7 @@ local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
----@type CMO__SideUnit[]|nil
-local filteredUnits = GameApi.VP_GetSide({ side = "China" })
-    :unitsBy(constants.UNIT_TYPES.FACILITY, constants.FIXED_FACILITY_CATEGORIES.MOBILE_VEHICLE)
+local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
 if not filteredUnits then
   Logger.error("filteredUnits is nil")

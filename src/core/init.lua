@@ -9,6 +9,7 @@ local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
 local Launcher = require("src.modules.launcher")
 local RunwayRepairment = require("src.modules.runwayRepairment")
+local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 
 if config.isSaved then
@@ -70,22 +71,34 @@ local function initSpecialActions()
 
   for _, action in ipairs(actions) do
     local sideName = string.match(action.path, "scripts\\([^\\]+)\\")
-    GameApi.ScenEdit_SetSpecialAction({
-      mode = "update", ActionNameOrID = action.actionName, side = sideName, ScriptText = [[]]
-    })
+    local actionEntry = GameApi.ScenEdit_GetSpecialAction({ side = sideName, ActionNameOrID = action.actionName })
+
+    if not actionEntry then
+      GameApi.ScenEdit_AddSpecialAction({
+        IsRepeatable = true, ActionNameOrID = action.actionName, side = sideName, ScriptText = [[]]
+      })
+    else
+      GameApi.ScenEdit_SetSpecialAction({
+        mode = "update", ActionNameOrID = action.actionName, side = sideName, ScriptText = [[]]
+      })
+    end
   end
 end
 
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
-  ShipMovement.calculateDestination(config.c.PHIBOP, saveData)
+  ShipMovement.calculateDestination(config.c.PHIBOP, saveData.c.PHIBOP.calculationResult)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
+  if saveData.c.recon.isActivated then
+    Recon.initReconQueueEntries(config.c.recon, saveData.c.recon)
+  end
+
   if saveData.t.IADS.isActivated then
-    IADS.initC2Contexts(saveData.t.IADS)
+    IADS.initC2Contexts(config.t.IADS, saveData.t.IADS)
   end
 
   if saveData.c.IADS.isActivated then

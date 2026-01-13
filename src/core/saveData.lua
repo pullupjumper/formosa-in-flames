@@ -7,7 +7,6 @@ saveData.c = {}
 saveData.c.targetlist = {}
 saveData.t = {}
 saveData.u = {}
-saveData.s = {}
 
 
 -- ============================================================================
@@ -45,22 +44,7 @@ saveData.c.commsJamming.jammers = {}
 
 saveData.c.GPSJamming = {}
 saveData.c.GPSJamming.isActivated = true
-saveData.c.GPSJamming.jammers = {
-  ["1st Bn, 1st ECM Bde"] = {
-    zoneName = "JAMMING ZONE/1",
-    name = "1st Bn, 1st ECM Bde",
-    point = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
-    randomRadius = config.c.GPSJamming.randomRadius,
-    radius = config.c.GPSJamming.radius
-  },
-  ["2nd Bn, 1st ECM Bde"] = {
-    zoneName = "JAMMING ZONE/2",
-    name = "2nd Bn, 1st ECM Bde",
-    point = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
-    randomRadius = config.c.GPSJamming.randomRadius,
-    radius = config.c.GPSJamming.radius
-  },
-}
+saveData.c.GPSJamming.jammers = {}
 
 
 -- ============================================================================
@@ -122,72 +106,7 @@ saveData.c.ground.mrbm.firingUnits = {}
 
 saveData.c.recon = {}
 saveData.c.recon.isActivated = true
-saveData.c.recon.queue = {
-  {
-    type = "UAV",
-    baseGUID = constants.BASES.LIUAN_AB,
-    unitDBID = constants.PLATFORMS.H6N,
-    unitGUID = nil,
-    course = constants.COURSES.H6N,
-    unitCount = 1,
-    -- takeoffTime = "2027-06-09 01:20:00",
-    takeoffTime = "2027-06-09 01:00:00",
-    endTime = "2027-06-09 02:00:00",
-    hasLaunched = false,
-    isTracking = true,
-    isFinished = false,
-    trackingTargetGUID = nil,
-    speed = 450
-  },
-  {
-    type = "satellite",
-    endTime = "2027-06-09 01:00:00",
-    -- endTime = "2027-06-09 04:40:00",
-    isFinished = false,
-  },
-  {
-    type = "satellite",
-    -- endTime = "2027-06-09 01:00:00",
-    endTime = "2027-06-09 05:44:00",
-    isFinished = false,
-  },
-  {
-    type = "satellite",
-    -- endTime = "2027-06-09 01:30:00",
-    endTime = "2027-06-09 08:04:00",
-    isFinished = false,
-  },
-  {
-    type = "satellite",
-    endTime = "2027-06-09 11:25:00",
-    isFinished = false,
-  },
-}
-saveData.c.recon.reconStrikeMatrix = {
-  UAV = {
-    BZK005 = {
-      { name = "STRIKE/C2/1", type = "ground", }
-    },
-    GJ11 = {
-      { name = "CAS/N/1",     type = "air", },
-      { name = "STRIKE/C2/1", type = "ground", }
-    },
-    H6N = {
-      { name = "ANTISHIP/1",    type = "ground" },
-      { name = "ASUW/N/1",      type = "air" },
-      { name = "STRIKE/AB/E/1", type = "air" },
-      { name = "STRIKE/AB/W/1", type = "air" }
-    },
-  },
-  satellite = {
-    EOS = {
-      { name = "STRIKE/AB/W/1",           type = "air" },
-      { name = "STRIKE/AB/E/1",           type = "air" },
-      { name = "STRIKE/HELIPAD/1",        type = "ground" },
-      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
-    }
-  }
-}
+
 
 -- ============================================================================
 -- Fire Support Plan (China)
@@ -222,53 +141,7 @@ saveData.c.PHIBOP.amphibiousAssaultStartTime = nil
 saveData.c.PHIBOP.isWaitingForAmphibiousAssault = false
 saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
 saveData.c.PHIBOP.airlandingMissionStartTime = nil
-saveData.c.PHIBOP.calculationResult = {
-  ["Taoyuan"] = {
-    name = "Taoyuan",
-    result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
-    }
-  },
-  ["Penghu"] = {
-    name = "Penghu",
-    result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
-    }
-  },
-  ["Sishu"] = {
-    name = "Sishu",
-    result = {
-      type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
-      type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
-      type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
-      type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
-      type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
-      type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-      ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-      barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
-    }
-  },
-}
+saveData.c.PHIBOP.calculationResult = {}
 saveData.c.PHIBOP.barges = {}
 
 
@@ -386,63 +259,8 @@ saveData.t.repairRunway.runways = {}
 
 saveData.t.IADS = {}
 saveData.t.IADS.isActivated = true
-saveData.t.IADS.ROCC = {
-  ["IC8B0X-0HNC3OB4KJKIF"] = {
-    name = "ROCC/North",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJKIF",
-    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
-    SAM = {},
-    radar = {}
-  },
-  ["IC8B0X-0HNC3OB4KJKTC"] = {
-    name = "ROCC/East",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJKTC",
-    areas = { constants.AREAS.THEATER_OF_OPS_2ND, constants.AREAS.THEATER_OF_OPS_5TH, },
-    SAM = {},
-    radar = {}
-  },
-  ["IC8B0X-0HNC3OB4KJL2M"] = {
-    name = "ROCC/South",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJL2M",
-    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
-    SAM = {},
-    radar = {}
-  },
-}
-saveData.t.IADS.TAAOC = {
-  ["IC8B0X-0HN41D1QKTVU7"] = {
-    name = "TAAOC/3rd OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKTVU7",
-    areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
-    SAM = {},
-  },
-  ["IC8B0X-0HN41D1QKU1ED"] = {
-    name = "TAAOC/5th OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKU1ED",
-    areas = { constants.AREAS.THEATER_OF_OPS_5TH, },
-    SAM = {},
-  },
-  ["IC8B0X-0HN41D1QKU0JP"] = {
-    name = "TAAOC/4th OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKU0JP",
-    areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
-    SAM = {},
-  },
-  ["IC8B0X-0HNC27TV5Q0AS"] = {
-    name = "TAAOC/2nd OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC27TV5Q0AS",
-    areas = { constants.AREAS.THEATER_OF_OPS_2ND, },
-    SAM = {},
-  },
-}
-
+saveData.t.IADS.ROCC = {}
+saveData.t.IADS.TAAOC = {}
 
 -- ============================================================================
 -- Aircraft (Taiwan)
@@ -459,22 +277,8 @@ saveData.t.air.landBased.AC = {}
 -- ============================================================================
 
 saveData.t.GPSJamming = {}
-saveData.t.GPSJamming.jammers = {
-  ["Comms & Info Coy, 584th Mech Bde"] = {
-    zoneName = "(Taiwan) Jamming Zone/1",
-    name = "Comms & Info Coy, 584th Mech Bde",
-    point = nil,
-    randomRadius = config.t.GPSJamming.randomRadius,
-    radius = config.t.GPSJamming.radius
-  },
-  ["Comms & Info Coy, 269th Mech Bde"] = {
-    zoneName = "(Taiwan) Jamming Zone/2",
-    name = "Comms & Info Coy, 269th Mech Bde",
-    point = nil,
-    randomRadius = config.t.GPSJamming.randomRadius,
-    radius = config.t.GPSJamming.radius
-  },
-}
+saveData.t.GPSJamming.isActivated = true
+saveData.t.GPSJamming.jammers = {}
 
 
 -- ============================================================================
@@ -499,145 +303,6 @@ saveData.c.dynamicOperations.generatedOperations = {
   air = {},   -- Track generated air operations
   ground = {} -- Track generated ground operations
 }
-saveData.c.dynamicOperations.reconSchedule = {
-  -- {
-  --   -- time = "2027-06-09 02:14:00",
-  --   time = "2027-06-09 01:00:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {
-  --     {
-  --       type = "air",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/AB/W/1",
-  --         isFirstWave = true,
-  --         strikeInterval = 30 * 60,
-  --         packages = config.c.packageTemplate.STRIKE_AB_W_1
-  --       }
-  --     },
-  --     -- {
-  --     --   type = "air",
-  --     --   executed = false,
-  --     --   template = {
-  --     --     name = "STRIKE/AB/W/AAR/1",
-  --     --     isFirstWave = true,
-  --     --     strikeInterval = 30 * 60,
-  --     --     packages = config.c.packageTemplate.STRIKE_AB_W_AAR_1
-  --     --   }
-  --     -- },
-  --     {
-  --       type = "ground",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/INFRASTRUCTURE/1",
-  --         strikeInterval = 0,
-  --         isFirstWave = true,
-  --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_1
-  --       }
-  --     },
-  --     {
-  --       type = "ground",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/HELIPAD/1",
-  --         strikeInterval = 0,
-  --         isFirstWave = true,
-  --         FSTs = config.c.FSTTemplate.STRIKE_HELIPAD_1
-  --       }
-  --     }
-  --   }
-  -- },
-  -- {
-  --   -- time = "2027-06-09 03:00:00",
-  --   time = "2027-06-09 02:14:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {
-  --     {
-  --       type = "air",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/AB/W/2",
-  --         isFirstWave = false,
-  --         strikeInterval = 30 * 60,
-  --         packages = config.c.packageTemplate.STRIKE_AB_W_2
-  --       }
-  --     },
-  --     {
-  --       type = "ground",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/INFRASTRUCTURE/2",
-  --         strikeInterval = 0,
-  --         isFirstWave = false,
-  --         FSTs = config.c.FSTTemplate.STRIKE_INFRASTRUCTURE_2
-  --       }
-  --     },
-  --     {
-  --       type = "ground",
-  --       executed = false,
-  --       template = {
-  --         name = "ANTISHIP/1",
-  --         strikeInterval = 0,
-  --         isFirstWave = false,
-  --         FSTs = config.c.FSTTemplate.ANTISHIP
-  --       }
-  --     },
-  --     {
-  --       type = "ground",
-  --       executed = false,
-  --       template = {
-  --         name = "STRIKE/C2/1",
-  --         strikeInterval = 0,
-  --         isFirstWave = false,
-  --         FSTs = config.c.FSTTemplate.STRIKE_C2
-  --       }
-  --     }
-  --   }
-  -- },
-  -- {
-  --   -- time = "2027-06-09 04:40:00",
-  --   time = "2027-06-09 01:00:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {
-  --     {
-  --       type = "air",
-  --       executed = false,
-  --       template = {
-  --         name = "AIR INTERCEPT/E",
-  --         isFirstWave = true,
-  --         strikeInterval = 30 * 60,
-  --         packages = config.c.packageTemplate.AIR_INTERCEPT_E
-  --       }
-  --     }
-  --   }
-  -- },
-  -- {
-  --   time = "2027-06-09 05:44:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {}
-  -- },
-  -- {
-  --   time = "2027-06-09 08:04:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {}
-  -- },
-  -- {
-  --   time = "2027-06-09 11:25:00",
-  --   type = "satellite",
-  --   delay = 0,
-  --   executed = false,
-  --   operations = {}
-  -- }
-}
+saveData.c.dynamicOperations.reconSchedule = {}
 
 return saveData

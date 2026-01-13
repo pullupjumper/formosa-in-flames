@@ -228,8 +228,8 @@ end
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
----@param saveData SBJ__SaveData Save data where calculated positions will be stored
-function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
+---@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Calculation result where calculated positions will be stored
+function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
   local operations = amphibOpsConfig.operations
   local formationSettings = amphibOpsConfig.formationSettings
 
@@ -286,8 +286,26 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
         distance = formationSettings.verticalDistance
       })
 
+      if not calculationResult[operation.name] then
+        calculationResult[operation.name] = {
+          name = operation.name,
+          result = {
+            type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
+            type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+            type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
+            type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
+            type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
+            type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
+            type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
+            ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+            roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
+            barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
+          }
+        }
+      end
+
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type075.locations,
+        calculationResult[operation.name].result.type075.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp075,
           num = area.num.type075,
@@ -295,7 +313,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type071.locations,
+        calculationResult[operation.name].result.type071.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp071,
           num = area.num.type071,
@@ -303,7 +321,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type076.locations,
+        calculationResult[operation.name].result.type076.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp076,
           num = area.num.type076,
@@ -311,7 +329,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.barge.locations,
+        calculationResult[operation.name].result.barge.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpBarge,
           num = area.num.barge,
@@ -320,7 +338,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
         })
       )
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.roro.locations,
+        calculationResult[operation.name].result.roro.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpRORO,
           num = area.num.roro,
@@ -328,7 +346,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type072iii.locations,
+        calculationResult[operation.name].result.type072iii.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp072iii,
           num = area.num.type072iii,
@@ -336,7 +354,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type072a.locations,
+        calculationResult[operation.name].result.type072a.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp072a,
           num = area.num.type072a,
@@ -344,7 +362,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.ferry.locations,
+        calculationResult[operation.name].result.ferry.locations,
         GameUtils.generateLocations({
           initialLocation = firstRpFerry,
           num = area.num.ferry,
@@ -352,7 +370,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type073a.locations,
+        calculationResult[operation.name].result.type073a.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp073a,
           num = area.num.type073a,
@@ -360,7 +378,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, saveData)
           distance = formationSettings.horizontalDistance
         }))
       Utils.insertList(
-        saveData.c.PHIBOP.calculationResult[operation.name].result.type071InLSTArea.locations,
+        calculationResult[operation.name].result.type071InLSTArea.locations,
         GameUtils.generateLocations({
           initialLocation = firstRp071InLSTArea,
           num = area.num.type071InLSTArea,

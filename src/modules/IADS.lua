@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local constants = require("src.core.constants")
+local Utils = require("src.utils.utils")
 
 local IADS = {}
 
@@ -189,7 +190,7 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
       ---@type CMO__Unit
       local randomFacility = facilities[randomIdx]
       IADSContext.C2[randomFacility.guid] = {
-        name = randomFacility.name .. "/" .. setting.areaName,
+        name = randomFacility.name .. "/" .. setting.name,
         msg = "Radio source, " .. randomFacility.name,
         guid = randomFacility.guid,
         areas = setting.areas,
@@ -245,22 +246,39 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
 end
 
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
+---@param IADSConfig SBJ__IADSFactionConfig IADS configuration for faction
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
-function IADS.initC2Contexts(IADSContext)
+function IADS.initC2Contexts(IADSConfig, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
   end
 
+  IADSContext.ROCC = Utils.deepCopy(IADSConfig.ROCC)
+  IADSContext.TAAOC = Utils.deepCopy(IADSConfig.TAAOC)
+
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    for _, C2Ctx in pairs(IADSContext.ROCC) do
-      for _, area in ipairs(C2Ctx.areas) do
-        if actualUnit and actualUnit:inArea(area) then
+    for _, descriptor in pairs(IADSConfig.ROCC) do
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, "Taiwan")
+
+      for _, area in ipairs(descriptor.areas) do
+        if actualUnit and actualUnit:inArea(area) and c2 then
           if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or actualUnit.dbid == constants.PLATFORMS.PAC3 then
-            IADSContext.ROCC[C2Ctx.guid].SAM[actualUnit.guid] = {
+            if not IADSContext.ROCC[c2.guid] then
+              IADSContext.ROCC[c2.guid] = {
+                name = descriptor.name,
+                msg = "Radio source, C2",
+                guid = c2.guid,
+                areas = descriptor.areas,
+                SAM = {},
+                radar = {}
+              }
+            end
+
+            IADSContext.ROCC[c2.guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -275,7 +293,7 @@ function IADS.initC2Contexts(IADSContext)
               actualUnit.dbid == constants.PLATFORMS.TPS43F or
               actualUnit.dbid == constants.PLATFORMS.HR3000 or
               actualUnit.dbid == constants.PLATFORMS.GE592 then
-            IADSContext.ROCC[C2Ctx.guid].radar[actualUnit.guid] = {
+            IADSContext.ROCC[c2.guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -289,11 +307,23 @@ function IADS.initC2Contexts(IADSContext)
       end
     end
 
-    for _, C2Ctx in pairs(IADSContext.TAAOC) do
-      for _, area in ipairs(C2Ctx.areas) do
-        if actualUnit ~= nil and actualUnit:inArea(area) then
+    for _, descriptor in pairs(IADSConfig.TAAOC) do
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, "Taiwan")
+
+      for _, area in ipairs(descriptor.areas) do
+        if actualUnit and actualUnit:inArea(area) and c2 then
           if actualUnit.dbid == constants.PLATFORMS.TC2 or actualUnit.dbid == constants.PLATFORMS.SKY_GUARD then
-            IADSContext.TAAOC[C2Ctx.guid].SAM[actualUnit.guid] = {
+            if not IADSContext.TAAOC[c2.guid] then
+              IADSContext.TAAOC[c2.guid] = {
+                name = descriptor.name,
+                msg = "Radio source, C2",
+                guid = c2.guid,
+                areas = descriptor.areas,
+                SAM = {},
+              }
+            end
+
+            IADSContext.TAAOC[c2.guid].SAM[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,

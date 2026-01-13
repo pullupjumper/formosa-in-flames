@@ -415,13 +415,13 @@ local function getSetupMenuTemplate()
 end
 
 ---Create JSON string for GPS jamming unit data
----@param saveData SBJ__SaveData Saved game data containing GPS jamming state
+---@param config SBJ__Config Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted GPS jamming unit data
-local function createGPSJammingDataString(saveData, sideName)
+local function createGPSJammingDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
-  local descriptors = saveData[field].GPSJamming.jammers
+  local descriptors = config[field].GPSJamming.jammers
   local rows = {}
 
   for _, descriptor in pairs(descriptors) do
@@ -519,7 +519,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
   if sideName == "Taiwan" then
     -- Prepare data for HTML template
-    local jammingDataString = createGPSJammingDataString(saveData, sideName)
+    local jammingDataString = createGPSJammingDataString(config, sideName)
     local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
     local HTMLTemplate = getSetupMenuTemplate()
     local msg = string.format(
