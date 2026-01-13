@@ -93,33 +93,33 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
-  if saveData.c.recon.isActivated then
+  if saveData.c.recon.enabled then
     Recon.initReconQueueEntries(config.c.recon, saveData.c.recon)
   end
 
-  if saveData.t.IADS.isActivated then
+  if saveData.t.IADS.enabled then
     IADS.initC2Contexts(config.t.IADS, saveData.t.IADS)
   end
 
-  if saveData.c.IADS.isActivated then
+  if saveData.c.IADS.enabled then
     IADS.initC2FacilitiesContext(config.c.IADS, saveData.c.IADS)
   end
 
-  if saveData.c.commsJamming.isActivated then
-    CommsJamming.initCommsJammersContext(saveData, "China")
+  if saveData.c.commsJamming.enabled then
+    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, "China")
   end
 
-  if saveData.u.SIGINT.isActivated then
+  if saveData.u.SIGINT.enabled then
     SIGINT.initReconAircraftContexts(saveData.u.SIGINT, "US")
     SIGINT.initReconAircraftContexts(saveData.c.SIGINT, "China")
   end
 
-  if saveData.c.ground.isActivated then
+  if saveData.c.ground.enabled then
     local systems = { "srbm", "mrbm", "mlrs", "glcm" }
     Launcher.initLauncherContexts(config.c.ground, saveData.c.ground, systems)
   end
 
-  if saveData.t.ground.isActivated then
+  if saveData.t.ground.enabled then
     local systems = { "srbm", "ascm", "mlrs", "glcm" }
     Launcher.initLauncherContexts(config.t.ground, saveData.t.ground, systems)
   end

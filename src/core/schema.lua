@@ -131,6 +131,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
 ---@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
+---@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
+---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings indexed by platform type
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
@@ -230,12 +232,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---GPS jamming context managing GPS denial operations state
 ---@class SBJ__GPSJammingContext: table
----@field isActivated boolean Whether GPS jamming system is activated
+---@field enabled boolean Whether GPS jamming system is activated
 ---@field jammers table<string, SBJ__GPSJammerContext> GPS jammer contexts indexed by jammer name
 
 ---Submarine-launched cruise missile context managing SLCM operations state
 ---@class SBJ__SLCMContext: table
----@field isActivated boolean Whether SLCM system is activated
+---@field enabled boolean Whether SLCM system is activated
 ---@field startTime string SLCM operation start time
 
 ---Surface operations context managing surface-launched weapons
@@ -268,7 +270,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field IADS SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
----@field GPSJamming { jammers: table<string, SBJ__GPSJammerContext> } GPS jamming context
+---@field GPSJamming SBJ__GPSJammingContext GPS jamming context
 
 ---US faction saved data structure
 ---@class SBJ__USSaveData: table
@@ -661,7 +663,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table
----@field isActivated boolean Whether LACM is activated
+---@field enabled boolean Whether LACM is activated
 ---@field startTime string LACM start time
 
 -- ============================================================================
@@ -695,7 +697,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__AirOperationsContext: table
 ---@field landBased table Land-based aircraft context (reserved for future use)
 ---@field shipBased table Ship-based aircraft context (reserved for future use)
----@field isActivated boolean Whether air operations system is activated
+---@field enabled boolean Whether air operations system is activated
 ---@field ATO table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
 
@@ -773,7 +775,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Weapon system context data structure
 ---Consolidates all components of a complete weapon system (firing units, resupply units, ammunition)
 ---@class SBJ__WeaponSystemContext: table
----@field isActivated boolean Whether the weapon system is currently active
+---@field enabled boolean Whether the weapon system is currently active
 ---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
 ---@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name for this weapon system
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
@@ -784,7 +786,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Ground force context data structure
 ---Manages all ground-based weapon systems and fire support operations
 ---@class SBJ__GroundForceContext: table
----@field isActivated boolean Whether ground force systems are activated
+---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__WeaponSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__WeaponSystemContext Short-Range Ballistic Missile system
 ---@field mrbm SBJ__WeaponSystemContext Medium-Range Ballistic Missile system
@@ -994,9 +996,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Reconnaissance context managing reconnaissance operations state
 ---@class SBJ__ReconContext: table
----@field isActivated boolean Whether reconnaissance system is activated
+---@field enabled boolean Whether reconnaissance system is activated
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
----@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings indexed by platform type
 
 ---Reconnaissance-Strike mapping entry
 ---Defines strike mission to execute after reconnaissance platform detects target
@@ -1141,12 +1142,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__SIGINTContext: table
 ---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
 ---@field RA table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
----@field isActivated boolean Whether SIGINT is activated
+---@field enabled boolean Whether SIGINT is activated
 ---@field maxCount number Maximum detection level
 
 ---Communications jamming context managing electronic warfare jamming operations
 ---@class SBJ__CommsJammingContext: table
----@field isActivated boolean Whether communications jamming system is activated
+---@field enabled boolean Whether communications jamming system is activated
 ---@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
 
 
@@ -1196,7 +1197,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field C2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
 ---@field ROCC? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
 ---@field TAAOC? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
----@field isActivated boolean Whether IADS is activated
+---@field enabled boolean Whether IADS is activated
 ---@field [string] table<string, SBJ__C2Context>
 
 -- ============================================================================
@@ -1238,7 +1239,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Runway repair context managing runway damage repair operations
 ---@class SBJ__RunwayRepairmentContext: table
----@field isActivated boolean Whether runway repair system is activated
+---@field enabled boolean Whether runway repair system is activated
 ---@field runways SBJ__RunwayEntry[] Array of runways being tracked for repair
 
 

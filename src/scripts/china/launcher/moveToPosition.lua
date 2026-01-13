@@ -41,7 +41,7 @@ if positionType == "FP" then
     ---@type SBJ__WeaponSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.isActivated then
+    if wpnSystemCtx and wpnSystemCtx.enabled then
       for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
         if unit then
           if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
@@ -64,7 +64,7 @@ elseif positionType == "HA" then
     ---@type SBJ__WeaponSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.isActivated then
+    if wpnSystemCtx and wpnSystemCtx.enabled then
       for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
         if unit then
           if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
@@ -87,7 +87,7 @@ elseif positionType == "RL" then
     ---@type SBJ__WeaponSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.isActivated then
+    if wpnSystemCtx and wpnSystemCtx.enabled then
       local result = Launcher.isMetWithResupplyUnits(config, wpnSystemCtx, unit, true)
 
       if result.isMet then
@@ -107,7 +107,7 @@ elseif positionType == "AHA" then
   for _, wpnSystem in ipairs(wpnSystems) do
     ---@type SBJ__WeaponSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
-    if wpnSystemCtx and wpnSystemCtx.isActivated then
+    if wpnSystemCtx and wpnSystemCtx.enabled then
       local result = Launcher.isMetWithAmmoDepot(config, wpnSystemCtx, unit, true)
 
       if result.isMet then

@@ -14,7 +14,7 @@ saveData.u = {}
 -- ============================================================================
 
 saveData.c.SIGINT = {}
-saveData.c.SIGINT.isActivated = true
+saveData.c.SIGINT.enabled = true
 saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
 saveData.c.SIGINT.RA = {}
 saveData.c.SIGINT.transmissions = {}
@@ -25,7 +25,7 @@ saveData.c.SIGINT.transmissions = {}
 -- ============================================================================
 
 saveData.c.IADS = {}
-saveData.c.IADS.isActivated = true
+saveData.c.IADS.enabled = true
 saveData.c.IADS.C2 = {}
 
 
@@ -34,7 +34,7 @@ saveData.c.IADS.C2 = {}
 -- ============================================================================
 
 saveData.c.commsJamming = {}
-saveData.c.commsJamming.isActivated = true
+saveData.c.commsJamming.enabled = true
 saveData.c.commsJamming.jammers = {}
 
 
@@ -43,7 +43,7 @@ saveData.c.commsJamming.jammers = {}
 -- ============================================================================
 
 saveData.c.GPSJamming = {}
-saveData.c.GPSJamming.isActivated = true
+saveData.c.GPSJamming.enabled = true
 saveData.c.GPSJamming.jammers = {}
 
 
@@ -53,7 +53,7 @@ saveData.c.GPSJamming.jammers = {}
 
 saveData.c.ground = {}
 saveData.c.ground.mlrs = {}
-saveData.c.ground.mlrs.isActivated = true
+saveData.c.ground.mlrs.enabled = true
 saveData.c.ground.mlrs.reloadTime = config.c.ground.mlrs.reloadTime
 saveData.c.ground.mlrs.operationalAreas = config.c.ground.mlrs.operationalAreas
 saveData.c.ground.mlrs.ammunitions = {}
@@ -66,7 +66,7 @@ saveData.c.ground.mlrs.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.glcm = {}
-saveData.c.ground.glcm.isActivated = true
+saveData.c.ground.glcm.enabled = true
 saveData.c.ground.glcm.reloadTime = config.c.ground.glcm.reloadTime
 saveData.c.ground.glcm.operationalAreas = config.c.ground.glcm.operationalAreas
 saveData.c.ground.glcm.ammunitions = {}
@@ -79,7 +79,7 @@ saveData.c.ground.glcm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.srbm = {}
-saveData.c.ground.srbm.isActivated = true
+saveData.c.ground.srbm.enabled = true
 saveData.c.ground.srbm.reloadTime = config.c.ground.srbm.reloadTime
 saveData.c.ground.srbm.operationalAreas = config.c.ground.srbm.operationalAreas
 saveData.c.ground.srbm.ammunitions = {}
@@ -92,7 +92,7 @@ saveData.c.ground.srbm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.mrbm = {}
-saveData.c.ground.mrbm.isActivated = true
+saveData.c.ground.mrbm.enabled = true
 saveData.c.ground.mrbm.reloadTime = config.c.ground.mrbm.reloadTime
 saveData.c.ground.mrbm.operationalAreas = config.c.ground.mrbm.operationalAreas
 saveData.c.ground.mrbm.ammunitions = {}
@@ -105,14 +105,14 @@ saveData.c.ground.mrbm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.recon = {}
-saveData.c.recon.isActivated = true
+saveData.c.recon.enabled = true
 
 
 -- ============================================================================
 -- Fire Support Plan (China)
 -- ============================================================================
 
-saveData.c.ground.isActivated = true
+saveData.c.ground.enabled = true
 saveData.c.ground.FSP = {}
 
 
@@ -123,7 +123,7 @@ saveData.c.ground.FSP = {}
 saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
-saveData.c.air.isActivated = true
+saveData.c.air.enabled = true
 saveData.c.air.ATO = {}
 
 
@@ -151,7 +151,7 @@ saveData.c.PHIBOP.barges = {}
 
 saveData.c.surface = {}
 saveData.c.surface.lacm = {}
-saveData.c.surface.lacm.isActivated = false
+saveData.c.surface.lacm.enabled = false
 saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 
@@ -161,7 +161,7 @@ saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 saveData.c.subSurface = {}
 saveData.c.subSurface.slcm = {}
-saveData.c.subSurface.slcm.isActivated = true
+saveData.c.subSurface.slcm.enabled = true
 saveData.c.subSurface.slcm.startTime = config.c.triggers.launchSLCM.startTime
 
 
@@ -170,7 +170,7 @@ saveData.c.subSurface.slcm.startTime = config.c.triggers.launchSLCM.startTime
 -- ============================================================================
 
 saveData.c.repairRunway = {}
-saveData.c.repairRunway.isActivated = false
+saveData.c.repairRunway.enabled = false
 saveData.c.repairRunway.runways = {}
 
 
@@ -179,7 +179,7 @@ saveData.c.repairRunway.runways = {}
 -- ============================================================================
 
 saveData.t.ground = {}
-saveData.t.ground.isActivated = true
+saveData.t.ground.enabled = true
 
 
 -- ============================================================================
@@ -187,7 +187,7 @@ saveData.t.ground.isActivated = true
 -- ============================================================================
 
 saveData.t.ground.mlrs = {}
-saveData.t.ground.mlrs.isActivated = true
+saveData.t.ground.mlrs.enabled = true
 saveData.t.ground.mlrs.reloadTime = config.t.ground.mlrs.reloadTime
 saveData.t.ground.mlrs.operationalAreas = config.t.ground.mlrs.operationalAreas
 saveData.t.ground.mlrs.ammunitions = {}
@@ -200,7 +200,7 @@ saveData.t.ground.mlrs.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.srbm = {}
-saveData.t.ground.srbm.isActivated = true
+saveData.t.ground.srbm.enabled = true
 saveData.t.ground.srbm.reloadTime = config.t.ground.srbm.reloadTime
 saveData.t.ground.srbm.operationalAreas = config.t.ground.srbm.operationalAreas
 saveData.t.ground.srbm.ammunitions = {}
@@ -214,7 +214,7 @@ saveData.t.ground.srbm.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.glcm = {}
-saveData.t.ground.glcm.isActivated = true
+saveData.t.ground.glcm.enabled = true
 saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.operationalAreas = config.t.ground.glcm.operationalAreas
 saveData.t.ground.glcm.ammunitions = {}
@@ -229,7 +229,7 @@ saveData.t.ground.glcm.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.ascm = {}
-saveData.t.ground.ascm.isActivated = true
+saveData.t.ground.ascm.enabled = true
 saveData.t.ground.ascm.reloadTime = config.t.ground.ascm.reloadTime
 saveData.t.ground.ascm.operationalAreas = config.t.ground.ascm.operationalAreas
 saveData.t.ground.ascm.ammunitions = {}
@@ -249,7 +249,7 @@ saveData.t.ground.ascm.test = {
 -- ============================================================================
 
 saveData.t.repairRunway = {}
-saveData.t.repairRunway.isActivated = false
+saveData.t.repairRunway.enabled = false
 saveData.t.repairRunway.runways = {}
 
 
@@ -258,7 +258,7 @@ saveData.t.repairRunway.runways = {}
 -- ============================================================================
 
 saveData.t.IADS = {}
-saveData.t.IADS.isActivated = true
+saveData.t.IADS.enabled = true
 saveData.t.IADS.ROCC = {}
 saveData.t.IADS.TAAOC = {}
 
@@ -277,7 +277,7 @@ saveData.t.air.landBased.AC = {}
 -- ============================================================================
 
 saveData.t.GPSJamming = {}
-saveData.t.GPSJamming.isActivated = true
+saveData.t.GPSJamming.enabled = true
 saveData.t.GPSJamming.jammers = {}
 
 
@@ -286,7 +286,7 @@ saveData.t.GPSJamming.jammers = {}
 -- ============================================================================
 
 saveData.u.SIGINT = {}
-saveData.u.SIGINT.isActivated = true
+saveData.u.SIGINT.enabled = true
 saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
 saveData.u.SIGINT.RA = {}
 saveData.u.SIGINT.transmissions = {}

@@ -32,11 +32,11 @@ if saveData.c.dynamicOperations and saveData.c.dynamicOperations.enabled then
   DynamicATOInsertion.process(config, saveData, contacts)
 end
 
-if saveData.c.recon.isActivated then
+if saveData.c.recon.enabled then
   Recon.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule, saveData.c.surface.lacm)
 end
 
-if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
+if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
   for _, value in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
@@ -52,10 +52,10 @@ if saveData.c.surface.lacm.isActivated and GameUtils.isAfterStartTime(saveData.c
     firingUnits = ships,
     weaponDBID = config.c.surface.lacm.weaponDBID
   })
-  saveData.c.surface.lacm.isActivated = false
+  saveData.c.surface.lacm.enabled = false
 end
 
-if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
+if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
   for _, unit in pairs(config.c.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
 
@@ -76,14 +76,14 @@ if saveData.c.subSurface.slcm.isActivated and GameUtils.isAfterStartTime(saveDat
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   })
 
-  saveData.c.subSurface.slcm.isActivated = false
+  saveData.c.subSurface.slcm.enabled = false
 end
 
-if saveData.c.ground.isActivated then
+if saveData.c.ground.enabled then
   FireSupportPlan.strike(config, saveData)
 end
 
-if saveData.c.air.isActivated then
+if saveData.c.air.enabled then
   AirTaskingOrder.airStrike(config, saveData)
 end
 

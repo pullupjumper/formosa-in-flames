@@ -13,7 +13,7 @@ end
 local wpnSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
 for _, wpnSystem in ipairs(wpnSystems) do
-  if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].isActivated then
+  if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].enabled then
     Launcher.checkBatteryState(config, saveData.c.ground[wpnSystem], true, "China")
   end
 end

@@ -9,7 +9,7 @@ local Recon = {}
 
 ---Launch units from a base with specified parameters
 ---@param baseGUID string The base GUID to launch units from
----@param course CMO__TableOfWaypoints The course waypoints for launched units
+---@param course CMO__Waypoint[] The course waypoints for launched units
 ---@param unitCount number The number of units to launch
 ---@param unitDBID number The unit database ID to filter by
 ---@param unitType string The unit type to launch (e.g., 'Aircraft' or 'Boats')
@@ -52,7 +52,7 @@ end
 
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
----@param course CMO__TableOfWaypoints The reconnaissance course for WZ-8
+---@param course CMO__Waypoint[] The reconnaissance course for WZ-8
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 function Recon.launchWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
@@ -161,8 +161,6 @@ end
 ---@return SBJ__Operation[] # Array of special operations to add
 local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
   local operations = {}
-
-  ---@type table<string, SBJ__ReconStrikeMapping[]>|nil
   local strikeMatrix = config.c.recon.reconStrikeMatrix[entry.type]
 
   if not strikeMatrix then
@@ -180,7 +178,7 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
     if entry.unitDBID == dbid then
       for _, strikeMapping in ipairs(strikeMappings) do
         if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
-          if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.isActivated then
+          if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.enabled then
             Logger.log("recon", "LACM not activated, skipping STRIKE/AB/E/1 operation")
             goto continue
           end
@@ -434,7 +432,6 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
   queueEntry.isTracking = true
   queueEntry.trackingTargetGUID = target.guid
   queueEntry.isFinished = false -- Reactivate entry for tracking mission
-
   Logger.log("recon", string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
   return true
 end

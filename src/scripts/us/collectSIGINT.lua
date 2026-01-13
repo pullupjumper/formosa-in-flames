@@ -10,7 +10,7 @@ if saveData == nil then
   return
 end
 
-if saveData.u.SIGINT.isActivated then
+if saveData.u.SIGINT.enabled then
   SIGINT.handleSIGINT(config, saveData.u.SIGINT, "US", saveData.c.ground.mlrs.firingUnits, true)
   SIGINT.handleSIGINT(config, saveData.u.SIGINT, "US", saveData.c.ground.srbm.firingUnits, true)
   SIGINT.handleSIGINT(config, saveData.u.SIGINT, "US", saveData.c.ground.glcm.firingUnits, true)

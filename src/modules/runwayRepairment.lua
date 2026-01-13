@@ -27,10 +27,7 @@ function RunwayRepairment.initRunways(config, saveData)
 
   -- Initialize China runways from facility units
   local facilities = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
-
-  if not facilities then
-    return
-  end
+  if not facilities then return end
 
   for _, u in ipairs(facilities) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
@@ -54,8 +51,8 @@ end
 function RunwayRepairment.whenRunwayIsDamaged(saveData, sideName, unit)
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
 
-  if not saveData[sideCfg.field].repairRunway.isActivated then
-    saveData[sideCfg.field].repairRunway.isActivated = true
+  if not saveData[sideCfg.field].repairRunway.enabled then
+    saveData[sideCfg.field].repairRunway.enabled = true
   end
 
   for _, runway in ipairs(saveData[sideCfg.field].repairRunway.runways) do

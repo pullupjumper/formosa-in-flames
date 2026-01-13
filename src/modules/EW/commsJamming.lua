@@ -7,11 +7,11 @@ local CommsJamming = {}
 
 
 ---Get distance-based modifier category
----@param config SBJ__Config Configuration containing communication jamming parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication jamming parameters
 ---@param distance number Distance in nautical miles
 ---@return string|nil # Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
-local function getDistanceCategory(config, distance)
-  local thresholds = config.c.commsJamming.distanceThresholds
+local function getDistanceCategory(commsJammingConfig, distance)
+  local thresholds = commsJammingConfig.distanceThresholds
 
   if distance < thresholds.close then
     return "close"
@@ -28,20 +28,19 @@ end
 
 
 ---Calculate communication modifier for affected unit based on jammers and support systems
----@param config SBJ__Config Configuration containing communication jamming parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication jamming parameters
 ---@param saveData SBJ__SaveData Save data containing jammer, AEW, and C2 unit contexts
 ---@param affectedUnitGUID string GUID of the unit whose communication level is being calculated
 ---@return integer # The calculated communication modifier
-local function getCommsLevel(config, saveData, affectedUnitGUID)
-  local commModifier = config.c.commsJamming.initialComms
+local function getCommsLevel(commsJammingConfig, saveData, affectedUnitGUID)
+  local commModifier = commsJammingConfig.initialComms
 
   for _, jammerCtx in pairs(saveData.c.commsJamming.jammers) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammerCtx.guid)
 
     if actualJammer and actualJammer.condition == "Airborne" and actualJammer.jammer then
-      commModifier = config.c.commsJamming.baseJammingPower +
-          GameApi.Tool_Range(affectedUnitGUID, actualJammer.guid) ^ config.c.commsJamming.distanceExponent +
-          commModifier
+      commModifier = commsJammingConfig.baseJammingPower +
+          GameApi.Tool_Range(affectedUnitGUID, actualJammer.guid) ^ commsJammingConfig.distanceExponent + commModifier
     end
   end
 
@@ -50,12 +49,11 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 
     if actualAEW and actualAEW.condition == "Airborne" then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualAEW.guid)
-      local category = getDistanceCategory(config, distance)
+      local category = getDistanceCategory(commsJammingConfig, distance)
 
       if category then
-        commModifier = commModifier + config.c.commsJamming.aewSupport[category] + math.random(
-          config.c.commsJamming.randomVariance[category].min,
-          config.c.commsJamming.randomVariance[category].max
+        commModifier = commModifier + commsJammingConfig.aewSupport[category] + math.random(
+          commsJammingConfig.randomVariance[category].min, commsJammingConfig.randomVariance[category].max
         )
       end
     end
@@ -66,12 +64,11 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 
     if actualROCC then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualROCC.guid)
-      local category = getDistanceCategory(config, distance)
+      local category = getDistanceCategory(commsJammingConfig, distance)
 
       if category then
-        commModifier = commModifier + config.c.commsJamming.aewSupport[category] + math.random(
-          config.c.commsJamming.randomVariance[category].min,
-          config.c.commsJamming.randomVariance[category].max
+        commModifier = commModifier + commsJammingConfig.aewSupport[category] + math.random(
+          commsJammingConfig.randomVariance[category].min, commsJammingConfig.randomVariance[category].max
         )
       end
       break
@@ -91,11 +88,11 @@ local function getCommsLevel(config, saveData, affectedUnitGUID)
 end
 
 ---Recover communications for a jammed unit based on recovery time configuration
----@param config SBJ__Config Configuration containing recovery time parameters
+---@param commsJammingConfig  SBJ__CommsJammingConfig Configuration containing recovery time parameters
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context to recover communications for
-local function recoverComms(config, affectedUnitCtx)
+local function recoverComms(commsJammingConfig, affectedUnitCtx)
   if affectedUnitCtx.isOutOfComms then
-    if affectedUnitCtx.outofcomms <= math.random(config.c.commsJamming.recoveryTime.min, config.c.commsJamming.recoveryTime.max) then
+    if affectedUnitCtx.outofcomms <= math.random(commsJammingConfig.recoveryTime.min, commsJammingConfig.recoveryTime.max) then
       GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
       affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
     else
@@ -115,35 +112,31 @@ end
 
 
 ---Apply communication jamming effects to a unit with pre-calculated distance
----@param config SBJ__Config Configuration containing jamming parameters (range, effectiveness, timing)
+---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters (range, effectiveness, timing)
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
 ---@return boolean # Whether jamming was successfully applied
-local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jammer, distance)
+local function omnidirectionalJammingWithDistance(commsJammingConfig, affectedUnitCtx, jammer, distance)
   if affectedUnitCtx.isOutOfComms == false then
-    if affectedUnitCtx.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
-      local effectiveness = 1 * math.sqrt(
-        1 - (distance ^ config.c.commsJamming.effectivenessFormula.base /
-          config.c.commsJamming.range ^ config.c.commsJamming.effectivenessFormula.range)
+    if affectedUnitCtx.outofcomms < math.random(commsJammingConfig.jammingTime.min, commsJammingConfig.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
+      local effectiveness = 1 * math.sqrt(1 - (distance ^ commsJammingConfig.effectivenessFormula.base /
+        commsJammingConfig.range ^ commsJammingConfig.effectivenessFormula.range)
       )
 
       if effectiveness == effectiveness and effectiveness > (math.random() / 2) then
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
         affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
         affectedUnitCtx.isOutOfComms = true
-        Logger.log("commsJamming",
-          "Unit " .. affectedUnitCtx.guid .. " successfully jammed by " ..
-          jammer.guid .. " (distance: " .. math.floor(distance) ..
-          "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
+        Logger.log("commsJamming", "Unit " .. affectedUnitCtx.guid .. " successfully jammed by " .. jammer.guid ..
+          " (distance: " .. math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
         )
         return true
       else
         GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
         affectedUnitCtx.outofcomms = 0
         affectedUnitCtx.isOutOfComms = false
-        Logger.log("commsJamming",
-          "Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
+        Logger.log("commsJamming", "Unit " .. affectedUnitCtx.guid .. " jamming attempt failed (distance: " ..
           math.floor(distance) .. "nm, effectiveness: " .. string.format("%.2f", effectiveness) .. ")"
         )
         return true
@@ -155,9 +148,7 @@ local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jamme
     else
       GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
       affectedUnitCtx.isOutOfComms = false
-      affectedUnitCtx.outofcomms = math.random(
-        config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
-      )
+      affectedUnitCtx.outofcomms = math.random(commsJammingConfig.cooldownTime.min, commsJammingConfig.cooldownTime.max)
     end
   end
 
@@ -165,14 +156,14 @@ local function omnidirectionalJammingWithDistance(config, affectedUnitCtx, jamme
 end
 
 ---Apply directional communication jamming effects to a unit with pre-calculated distance
----@param config SBJ__Config Configuration containing jamming parameters (range, effectiveness, timing)
+---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters (range, effectiveness, timing)
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context being jammed
 ---@param jammer CMO__Unit The jamming aircraft unit
 ---@param distance number Pre-calculated distance between jammer and target unit in nautical miles
 ---@return boolean # Whether jamming was successfully applied
-local function directionalJammingWithDistance(config, affectedUnitCtx, jammer, distance)
+local function directionalJammingWithDistance(commsJammingConfig, affectedUnitCtx, jammer, distance)
   if affectedUnitCtx.isOutOfComms == false then
-    if affectedUnitCtx.outofcomms < math.random(config.c.commsJamming.jammingTime.min, config.c.commsJamming.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
+    if affectedUnitCtx.outofcomms < math.random(commsJammingConfig.jammingTime.min, commsJammingConfig.jammingTime.max) and affectedUnitCtx.outofcomms >= 0 then
       local bearing = GameApi.Tool_Bearing(jammer.guid, affectedUnitCtx.guid)
       local heading = jammer.heading
       local orientation = math.abs(bearing - heading)
@@ -203,9 +194,7 @@ local function directionalJammingWithDistance(config, affectedUnitCtx, jammer, d
     else
       GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
       affectedUnitCtx.isOutOfComms = false
-      affectedUnitCtx.outofcomms = math.random(
-        config.c.commsJamming.cooldownTime.min, config.c.commsJamming.cooldownTime.max
-      )
+      affectedUnitCtx.outofcomms = math.random(commsJammingConfig.cooldownTime.min, commsJammingConfig.cooldownTime.max)
     end
   end
 
@@ -263,21 +252,20 @@ end
 ---Handle communication jamming operations for all active jammers and affected units
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
 ---Updates unit communication states and triggers RTB for aircraft with degraded communications
----@param config SBJ__Config Configuration containing jamming parameters, thresholds, and effectiveness formulas
+---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters, thresholds, and effectiveness formulas
 ---@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
-function CommsJamming.handleCommsJamming(config, saveData)
+function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   local jammers = findJammers(saveData.c.commsJamming.jammers)
   local unitCtxs = findSAMAndRadar(saveData.t.IADS)
 
   for _, ctx in pairs(unitCtxs) do
-    recoverComms(config, ctx)
+    recoverComms(commsJammingConfig, ctx)
   end
 
   local totalJammedUnits = 0
   local totalAttempts = 0
 
-  Logger.log("commsJamming",
-    "CommsJamming: Processing " .. #jammers .. " jammers against " ..
+  Logger.log("commsJamming", "CommsJamming: Processing " .. #jammers .. " jammers against " ..
     Utils.getCount(unitCtxs) .. " potential targets"
   )
 
@@ -302,13 +290,13 @@ function CommsJamming.handleCommsJamming(config, saveData)
     local count = 0
     local jammerAttempts = 0
     for _, entry in ipairs(unitsWithDistance) do
-      if count >= config.c.commsJamming.limit then
+      if count >= commsJammingConfig.limit then
         break
       end
 
       jammerAttempts = jammerAttempts + 1
-      local result = omnidirectionalJammingWithDistance(config, entry.unitCtx, jammer, entry.distance)
-      -- local result = directionalJammingWithDistance(config, entry.unitCtx, jammer, entry.distance)
+      local result = omnidirectionalJammingWithDistance(commsJammingConfig, entry.unitCtx, jammer, entry.distance)
+      -- local result = directionalJammingWithDistance(config.c.commsJamming, entry.unitCtx, jammer, entry.distance)
       count = count + 1
 
       -- if result then
@@ -330,15 +318,14 @@ function CommsJamming.handleCommsJamming(config, saveData)
     local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftCtx.guid)
 
     if actualAircraft and actualAircraft.condition == "Airborne" then
-      aircraftProcessed = aircraftProcessed + 1
       local oldCommLevel = aircraftCtx.commsLevel or 0
-      aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(config, saveData, actualAircraft.guid)
+      aircraftProcessed = aircraftProcessed + 1
+      aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(commsJammingConfig, saveData, actualAircraft.guid)
 
       if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
         GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
         aircraftRTB = aircraftRTB + 1
-        Logger.log("commsJamming", "Aircraft " .. aircraftCtx.guid ..
-          " ordered RTB due to comm degradation (level: " ..
+        Logger.log("commsJamming", "Aircraft " .. aircraftCtx.guid .. " ordered RTB due to comm degradation (level: " ..
           aircraftCtx.commsLevel .. " < threshold: " .. aircraftCtx.commsThreshold .. ")")
       elseif math.abs(aircraftCtx.commsLevel - oldCommLevel) > 50 then
         Logger.log("commsJamming", "Aircraft " ..
@@ -347,8 +334,7 @@ function CommsJamming.handleCommsJamming(config, saveData)
     end
   end
 
-  Logger.log("commsJamming",
-    "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
+  Logger.log("commsJamming", "CommsJamming: Summary - " .. totalJammedUnits .. "/" .. totalAttempts ..
     " jamming attempts successful, " .. aircraftRTB .. "/" .. aircraftProcessed .. " aircraft ordered RTB"
   )
 end
@@ -356,10 +342,9 @@ end
 ---Initialize communications jammer contexts for the specified side
 ---Scans all aircraft on the side and creates contexts for Y-9, J-15D, and J-16D electronic warfare aircraft
 ---Contexts include OODA, communication levels, thresholds, and jamming state tracking
----@param saveData SBJ__SaveData Save data where jammer contexts will be stored in c.commsJamming.jammers
+---@param commsJammingCtx SBJ__CommsJammingContext Jamming context where jammer contexts will be stored in c.commsJamming.jammers
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
-function CommsJamming.initCommsJammersContext(saveData, sideName)
-  ---@type CMO__SideUnit[]|nil
+function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -372,7 +357,7 @@ function CommsJamming.initCommsJammersContext(saveData, sideName)
     if actualUnit and (actualUnit.dbid == constants.PLATFORMS.Y9 or
           actualUnit.dbid == constants.PLATFORMS.J15D or
           actualUnit.dbid == constants.PLATFORMS.J16D) then
-      saveData.c.commsJamming.jammers[actualUnit.guid] = {
+      commsJammingCtx.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
         commsLevel = 40,
