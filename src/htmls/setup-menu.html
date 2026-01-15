@@ -1530,7 +1530,15 @@
         }).addTo(launchersMap);
         layers.push(uShapePolygon);
 
-        // Draw Ammo Area (green)
+        // Calculate area centers for labels
+        const ammoCenterLat = result.ammoArea.reduce((sum, v) => sum + v.latitude, 0) / result.ammoArea.length;
+        const ammoCenterLon = result.ammoArea.reduce((sum, v) => sum + v.longitude, 0) / result.ammoArea.length;
+        const hideCenterLat = result.hideArea.reduce((sum, v) => sum + v.latitude, 0) / result.hideArea.length;
+        const hideCenterLon = result.hideArea.reduce((sum, v) => sum + v.longitude, 0) / result.hideArea.length;
+        const reloadCenterLat = result.reloadArea.reduce((sum, v) => sum + v.latitude, 0) / result.reloadArea.length;
+        const reloadCenterLon = result.reloadArea.reduce((sum, v) => sum + v.longitude, 0) / result.reloadArea.length;
+
+        // Draw Ammo Area (green) - Ammo Holding Area
         if (result.ammoArea) {
           const ammoCoords = result.ammoArea.map(v => [v.latitude, v.longitude]);
           const ammoPolygon = L.polygon(ammoCoords, {
@@ -1539,7 +1547,7 @@
             fillOpacity: 0.3,
             weight: 2
           }).addTo(launchersMap);
-          ammoPolygon.bindPopup(`<strong>Ammo Area</strong><br>${unit.name}`);
+          ammoPolygon.bindPopup(`<strong>Ammo Holding Area (AHA)</strong><br>${unit.name}`);
           layers.push(ammoPolygon);
         }
 
@@ -1552,12 +1560,8 @@
             fillOpacity: 0.3,
             weight: 2
           }).addTo(launchersMap);
-          hidePolygon.bindPopup(`<strong>Hide Area</strong><br>${unit.name}`);
+          hidePolygon.bindPopup(`<strong>Hide Area (HA)</strong><br>${unit.name}`);
           layers.push(hidePolygon);
-
-          // Calculate center of Hide Area
-          const hideCenterLat = result.hideArea.reduce((sum, v) => sum + v.latitude, 0) / result.hideArea.length;
-          const hideCenterLon = result.hideArea.reduce((sum, v) => sum + v.longitude, 0) / result.hideArea.length;
 
           // Add icon at Hide Area center
           const hideIcon = L.icon({
@@ -1583,7 +1587,7 @@
             fillOpacity: 0.3,
             weight: 2
           }).addTo(launchersMap);
-          reloadPolygon.bindPopup(`<strong>Reload Area</strong><br>${unit.name}`);
+          reloadPolygon.bindPopup(`<strong>Reload Area (RL)</strong><br>${unit.name}`);
           layers.push(reloadPolygon);
         }
 
@@ -1597,8 +1601,85 @@
               fillOpacity: 0.3,
               weight: 2
             }).addTo(launchersMap);
-            fpPolygon.bindPopup(`<strong>Fire Point ${index + 1}</strong><br>${unit.name}`);
+            fpPolygon.bindPopup(`<strong>Fire Point ${index + 1} (FP-${index + 1})</strong><br>${unit.name}`);
             layers.push(fpPolygon);
+          });
+        }
+
+        // Calculate movement paths
+        const pathConfig = {
+          centerLat: lat,
+          centerLon: lng,
+          width: 2.5,
+          height: 2.0,
+          thickness: 0.5,
+          openingAngle: openingAngle,
+          ammoArea: result.ammoArea,
+          hideArea: result.hideArea,
+          reloadArea: result.reloadArea,
+          firePoints: result.firePoints,
+          avoidanceMargin: 0.05
+        };
+
+        const paths = TacticalAreaGenerator.calculateMovementPaths(pathConfig);
+
+        // Draw HA path (Reload → Hide) - cyan
+        if (paths.HA && paths.HA.waypoints) {
+          const haCoords = paths.HA.waypoints.map(w => [w.latitude, w.longitude]);
+          const haPath = L.polyline(haCoords, {
+            color: '#17a2b8',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 5'
+          }).addTo(launchersMap);
+          haPath.bindPopup('<strong>HA Path</strong><br>Reload Area → Hide Area');
+          layers.push(haPath);
+        }
+
+        // Draw AHA path (Reload → Ammo) - lime green
+        if (paths.AHA && paths.AHA.waypoints) {
+          const ahaCoords = paths.AHA.waypoints.map(w => [w.latitude, w.longitude]);
+          const ahaPath = L.polyline(ahaCoords, {
+            color: '#28a745',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 5'
+          }).addTo(launchersMap);
+          ahaPath.bindPopup('<strong>AHA Path</strong><br>Reload Area → Ammo Holding Area');
+          layers.push(ahaPath);
+        }
+
+        // Draw FP paths (Hide → Fire Points) - orange
+        if (paths.FP && paths.FP.length > 0) {
+          paths.FP.forEach((fpPath, index) => {
+            if (fpPath && fpPath.waypoints) {
+              const fpCoords = fpPath.waypoints.map(w => [w.latitude, w.longitude]);
+              const fpPolyline = L.polyline(fpCoords, {
+                color: '#fd7e14',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '5, 5'
+              }).addTo(launchersMap);
+              fpPolyline.bindPopup(`<strong>FP-${index + 1} Path</strong><br>Hide Area → Fire Point ${index + 1}`);
+              layers.push(fpPolyline);
+            }
+          });
+        }
+
+        // Draw RL paths (Fire Points → Reload) - pink
+        if (paths.RL && paths.RL.length > 0) {
+          paths.RL.forEach((rlPath, index) => {
+            if (rlPath && rlPath.waypoints) {
+              const rlCoords = rlPath.waypoints.map(w => [w.latitude, w.longitude]);
+              const rlPolyline = L.polyline(rlCoords, {
+                color: '#e83e8c',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '8, 4'
+              }).addTo(launchersMap);
+              rlPolyline.bindPopup(`<strong>RL-${index + 1} Path</strong><br>Fire Point ${index + 1} → Reload Area`);
+              layers.push(rlPolyline);
+            }
           });
         }
 
