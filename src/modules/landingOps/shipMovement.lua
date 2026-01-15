@@ -109,11 +109,7 @@ end
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 local function handleSAG(descriptor, isTesting)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
-
-  if not unit then
-    return
-  end
-
+  if not unit then return end
   unit.course = descriptor.to.anchorageArea
 
   if isTesting then

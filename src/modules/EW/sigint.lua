@@ -6,42 +6,18 @@ local constants = require("src.core.constants")
 
 local SIGINT = {}
 
-local SIGINT_CONSTANTS = {
-  DETECTION_THRESHOLD = 60,
-  MAX_DETECTION_RANGE = { 300, 340 },
-  DETECTION_FORMULA_CONSTANTS = {
-    DECAY_RATE = -1 / 450,
-    POWER = 0.8,
-    BASE_COEFFICIENT = 0.00007937,
-    POWER_DIVISOR = 10 ^ 6.1,
-    RANDOM_FACTOR = 120,
-    RANDOM_DIVISOR = 1500000,
-    RANDOM_POWER_DIVISOR = 10 ^ 5,
-    DISTANCE_POWER = 2.25,
-    DISTANCE_DIVISOR = 10 ^ 2.4
-  },
-  DEFAULT_DISPLAY = {
-    R = 255,
-    G = 255,
-    B = 255,
-    LIFE_TIME = 4,
-    FONT_SIZE = 16
-  },
-  MIN_POLYGON_POINTS = 3,
-  DETECTION_SKIP_PROBABILITY = 0.3
-}
-
 ---Calculate SIGINT detection probability based on distance
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
 ---@param distance number Distance in nautical miles
----@param config SBJ__SIGINTDetectionConfig|nil Detection configuration
+---@param config SBJ__SIGINTConfig|nil Detection configuration
 ---@return number # Value between 0 and 1
 function SIGINT.calculateDetectionProbability(distance, config)
   config = config or {}
-  local threshold = config.detectionThreshold or SIGINT_CONSTANTS.DETECTION_THRESHOLD
-  local maxRange = config.maxRange or SIGINT_CONSTANTS.MAX_DETECTION_RANGE
-  local decayRate = config.decayRate or SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS.DECAY_RATE
-  local power = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS.POWER
+  local threshold = config.detectionThreshold or 60
+  local maxRange = config.maxDetectionRange or { 300, 340 }
+  local formulaConstants = config.formulaConstants or {}
+  local decayRate = formulaConstants.decayRate or (-1 / 450)
+  local power = formulaConstants.power or 0.8
 
   if distance <= threshold then
     return 1.0
@@ -55,15 +31,23 @@ end
 ---Calculate signal deviation distance for SIGINT detection position randomization
 ---Uses complex formula to simulate signal triangulation error based on distance
 ---@param baseDistance number Base distance between detector and target (nautical miles)
----@param config SBJ__SIGINTDetectionConfig|nil Detection configuration (optional overrides)
+---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides)
 ---@return number # Distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
-  local consts = SIGINT_CONSTANTS.DETECTION_FORMULA_CONSTANTS
-  local randomFactor = (config and config.randomFactor) or consts.RANDOM_FACTOR
+  config = config or {}
+  local consts = config.formulaConstants or {}
+  local randomFactor = consts.randomFactor or 120
 
-  local baseDeviation = (consts.BASE_COEFFICIENT * (baseDistance ^ 3.8518)) / consts.POWER_DIVISOR
-  local randomDeviation = ((math.random(-randomFactor * baseDistance, randomFactor * baseDistance) ^ 2) / consts.RANDOM_DIVISOR) /
-      consts.RANDOM_POWER_DIVISOR * ((baseDistance ^ consts.DISTANCE_POWER) / consts.DISTANCE_DIVISOR)
+  local baseCoeff = consts.baseCoefficient or 0.00007937
+  local powerDivisor = consts.powerDivisor or (10 ^ 6.1)
+  local randomDivisor = consts.randomDivisor or 1500000
+  local randomPowerDivisor = consts.randomPowerDivisor or (10 ^ 5)
+  local distancePower = consts.distancePower or 2.25
+  local distanceDivisor = consts.distanceDivisor or (10 ^ 2.4)
+
+  local baseDeviation = (baseCoeff * (baseDistance ^ 3.8518)) / powerDivisor
+  local randomDeviation = ((math.random(-randomFactor * baseDistance, randomFactor * baseDistance) ^ 2) / randomDivisor) /
+      randomPowerDivisor * ((baseDistance ^ distancePower) / distanceDivisor)
 
   return baseDeviation + randomDeviation
 end
@@ -71,9 +55,13 @@ end
 ---Check if point is within polygon using ray casting algorithm
 ---@param point CMO__Location Point to check
 ---@param polygon CMO__Location[] Polygon vertices
+---@param config SBJ__SIGINTConfig|nil Configuration (optional)
 ---@return boolean # Whether point is inside polygon
-function SIGINT.isPointInPolygon(point, polygon)
-  if not point or not polygon or #polygon < SIGINT_CONSTANTS.MIN_POLYGON_POINTS then
+function SIGINT.isPointInPolygon(point, polygon, config)
+  config = config or {}
+  local minPolygonPoints = config.minPolygonPoints or 3
+
+  if not point or not polygon or #polygon < minPolygonPoints then
     return false
   end
 
@@ -101,15 +89,19 @@ end
 ---@param side string Side name (used to retrieve reference points)
 ---@param point CMO__Location|nil Point to check
 ---@param area string[] Array of reference point names defining the polygon boundary
+---@param config SBJ__SIGINTConfig|nil Configuration (optional)
 ---@return boolean # True if point is inside the area, false otherwise
-local function isInArea(side, point, area)
+local function isInArea(side, point, area, config)
+  config = config or {}
+  local minPolygonPoints = config.minPolygonPoints or 3
+
   if not point or not area then
     return false
   end
 
   -- area is an array of reference point names that define the polygon
   local points = GameApi.ScenEdit_GetReferencePoints({ side = side, area = area })
-  if not points or #points < SIGINT_CONSTANTS.MIN_POLYGON_POINTS then
+  if not points or #points < minPolygonPoints then
     return false
   end
 
@@ -121,7 +113,7 @@ local function isInArea(side, point, area)
     })
   end
 
-  return SIGINT.isPointInPolygon(point, polygon)
+  return SIGINT.isPointInPolygon(point, polygon, config)
 end
 
 ---Check if unit is emitting signal with enhanced logic
@@ -129,9 +121,10 @@ end
 ---@param unit CMO__Unit Unit object
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit data (Battery units check movement, C2 units always emit)
 ---@param enemySide string Enemy side name
+---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT configuration (optional)
 ---@return boolean isEmitting Whether unit is emitting signal
 ---@return string reason Reason for emission status
-local function isUnitEmitting(config, unit, unitCtx, enemySide)
+local function isUnitEmitting(config, unit, unitCtx, enemySide, sigintConfig)
   -- Check for specific platform types that always emit
   if unit.dbid == constants.PLATFORMS.C2 then
     return true, "Platform type 46 (always emitting)"
@@ -165,7 +158,8 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area) and unit.speed > 0
+  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area, sigintConfig) and
+      unit.speed > 0
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
 
@@ -178,7 +172,7 @@ end
 ---@param isEmitting boolean Whether target unit is currently emitting signals
 ---@param isShown boolean Whether to show visual notification on map
 ---@param data SBJ__SIGINTDisplayData|nil Display configuration (colors, lifetime, font size)
----@param config SBJ__SIGINTDetectionConfig|nil Detection configuration (optional overrides for thresholds)
+---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
 local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
   -- Get enemy unit
@@ -199,13 +193,15 @@ local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isS
   end
 
   -- Setup display configuration
+  config = config or {}
+  local defaultDisplay = config.defaultDisplay or {}
   data = data or {}
   local displayConfig = {
-    R = data.R or SIGINT_CONSTANTS.DEFAULT_DISPLAY.R,
-    G = data.G or SIGINT_CONSTANTS.DEFAULT_DISPLAY.G,
-    B = data.B or SIGINT_CONSTANTS.DEFAULT_DISPLAY.B,
-    lifeTime = data.lifeTime or SIGINT_CONSTANTS.DEFAULT_DISPLAY.LIFE_TIME,
-    fontSize = data.fontSize or SIGINT_CONSTANTS.DEFAULT_DISPLAY.FONT_SIZE,
+    R = data.R or defaultDisplay.r or 255,
+    G = data.G or defaultDisplay.g or 255,
+    B = data.B or defaultDisplay.b or 255,
+    lifeTime = data.lifeTime or defaultDisplay.lifeTime or 4,
+    fontSize = data.fontSize or defaultDisplay.fontSize or 16,
     showConfidence = data.showConfidence or false
   }
 
@@ -366,7 +362,7 @@ end
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param unitContexts table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit contexts to monitor (firing units and C2 nodes)
 ---@param isShown boolean Whether to show detection notifications on map
----@param sigintConfig SBJ__SIGINTDetectionConfig|nil SIGINT-specific configuration (optional overrides)
+---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -374,6 +370,10 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
   local results = {}
   local processedCount = 0
   local detectedCount = 0
+
+  -- Get detection skip probability from config
+  sigintConfig = sigintConfig or {}
+  local detectionSkipProbability = sigintConfig.detectionSkipProbability or 0.3
 
   for _, unitCtx in pairs(unitContexts) do
     local actualUnit
@@ -390,14 +390,14 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
     end
 
     -- Skip some units randomly for performance
-    if math.random() <= SIGINT_CONSTANTS.DETECTION_SKIP_PROBABILITY then
+    if math.random() <= detectionSkipProbability then
       goto continue
     end
 
     processedCount = processedCount + 1
 
     -- Check if unit is emitting
-    local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
+    local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide, sigintConfig)
 
     -- Perform SIGINT detection
     local result = getSIGINT(sigintContext, actualUnit.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
@@ -426,7 +426,6 @@ end
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized
 function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
-  ---@type CMO__SideUnit[]|nil
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -452,9 +451,8 @@ function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
     end
   end
 
-  Logger.log("SIGINT", string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations",
-    initializedCount, sideName))
-
+  Logger.log("SIGINT",
+    string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations", initializedCount, sideName))
   return initializedCount
 end
 

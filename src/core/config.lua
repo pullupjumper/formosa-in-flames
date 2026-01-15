@@ -129,6 +129,36 @@ config.c.SIGINT.maxCount = 6
 -- config.c.SIGINT.maxCount = 1
 config.c.SIGINT.maxRange = 2.5
 
+-- Detection parameters
+config.c.SIGINT.detectionThreshold = 60
+config.c.SIGINT.maxDetectionRange = { 300, 340 }
+
+-- Detection formula constants
+config.c.SIGINT.formulaConstants = {
+  decayRate = -1 / 450,
+  power = 0.8,
+  baseCoefficient = 0.00007937,
+  powerDivisor = 10 ^ 6.1,
+  randomFactor = 120,
+  randomDivisor = 1500000,
+  randomPowerDivisor = 10 ^ 5,
+  distancePower = 2.25,
+  distanceDivisor = 10 ^ 2.4
+}
+
+-- Default display configuration for map notifications
+config.c.SIGINT.defaultDisplay = {
+  r = 255,
+  g = 255,
+  b = 255,
+  lifeTime = 4,
+  fontSize = 16
+}
+
+-- Area and performance parameters
+config.c.SIGINT.minPolygonPoints = 3
+config.c.SIGINT.detectionSkipProbability = 0.3
+
 
 -- ============================================================================
 -- IADS (China)
@@ -4310,6 +4340,21 @@ config.t.surface.deployedShips = {
 -- CONFIG.u.SIGINT.maxCount = 5
 config.u.SIGINT = {}
 config.u.SIGINT.maxCount = config.c.SIGINT.maxCount
+config.u.SIGINT.maxRange = config.c.SIGINT.maxRange
+
+-- Detection parameters (shared with China)
+config.u.SIGINT.detectionThreshold = config.c.SIGINT.detectionThreshold
+config.u.SIGINT.maxDetectionRange = config.c.SIGINT.maxDetectionRange
+
+-- Detection formula constants (shared with China)
+config.u.SIGINT.formulaConstants = config.c.SIGINT.formulaConstants
+
+-- Default display configuration (shared with China)
+config.u.SIGINT.defaultDisplay = config.c.SIGINT.defaultDisplay
+
+-- Area and performance parameters (shared with China)
+config.u.SIGINT.minPolygonPoints = config.c.SIGINT.minPolygonPoints
+config.u.SIGINT.detectionSkipProbability = config.c.SIGINT.detectionSkipProbability
 
 
 -- ============================================================================

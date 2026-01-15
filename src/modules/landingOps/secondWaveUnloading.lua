@@ -143,7 +143,7 @@ function SecondWaveUnloading.offloadVehicles(params)
   local resultCount = 0
 
   for _, item in ipairs(ship.cargo[1].cargo) do
-    table.insert(cargoItems, { guid = item.GUID, dbid = item.dbid, name = item.name, type = item.type })
+    table.insert(cargoItems, { guid = item.guid, dbid = item.dbid, name = item.name, type = item.type })
     count = count + 1
 
     if count == params.num then

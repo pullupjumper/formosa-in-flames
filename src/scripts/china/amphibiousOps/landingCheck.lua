@@ -60,10 +60,7 @@ if saveData.c.PHIBOP.isWaitingForShipArrival then
       saveData.c.PHIBOP.amphibiousAssaultStartTime = currentTime
       local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
       ---@cast entry SBJ__ReconQueueEntry
-      local distance, flightTime = GameUtils.calculatePathDistanceAndTime(
-        entry.course,
-        entry.speed
-      )
+      local distance, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
       local endTime = currentTime + flightTime
       entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime) --[[@as string]]
       entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]

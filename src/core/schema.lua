@@ -77,10 +77,36 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field launchLACM { startTime: string } LACM launch start time
 ---@field launchSLCM { startTime: string } SLCM launch start time
 
+---SIGINT detection formula constants
+---@class SBJ__SIGINTFormulaConstants: table
+---@field decayRate number Decay rate coefficient for probability calculation
+---@field power number Power factor for distance calculation
+---@field baseCoefficient number Base coefficient for signal deviation
+---@field powerDivisor number Power divisor for signal deviation
+---@field randomFactor number Random factor multiplier
+---@field randomDivisor number Random divisor for deviation calculation
+---@field randomPowerDivisor number Random power divisor
+---@field distancePower number Distance power factor
+---@field distanceDivisor number Distance divisor for deviation calculation
+
+---SIGINT display configuration
+---@class SBJ__SIGINTDisplayConfig: table
+---@field r integer Red color component (0-255)
+---@field g integer Green color component (0-255)
+---@field b integer Blue color component (0-255)
+---@field lifeTime integer Display lifetime in minutes
+---@field fontSize integer Font size for map notifications
+
 ---SIGINT operation configuration
 ---@class SBJ__SIGINTConfig: table
----@field maxCount integer Maximum detection count
+---@field maxCount integer Maximum detection count before unit becomes autodetectable
 ---@field maxRange number Maximum detection range (nautical miles)
+---@field detectionThreshold number Distance threshold for guaranteed detection (nautical miles)
+---@field maxDetectionRange number[] Range [min, max] for random maximum detection distance
+---@field formulaConstants SBJ__SIGINTFormulaConstants Detection formula constants
+---@field defaultDisplay SBJ__SIGINTDisplayConfig Default display configuration
+---@field minPolygonPoints integer Minimum polygon points for area validation
+---@field detectionSkipProbability number Probability to skip detection check for performance (0-1)
 
 ---Communications jamming configuration
 ---@class SBJ__CommsJammingConfig: table
@@ -126,7 +152,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field srbm SBJ__WeaponSystemConfig SRBM configuration
 ---@field mrbm SBJ__WeaponSystemConfig MRBM configuration
 ---@field ascm? SBJ__WeaponSystemConfig ASCM configuration (Taiwan only)
----@field [string] SBJ__WeaponSystemConfig
+---@field [SBJ__WeaponSystemConfig] SBJ__WeaponSystemConfig
 
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
@@ -228,7 +254,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
 ---@field u SBJ__USConfig US faction configuration
 ---@field s SBJ__ScoringConfig Scoring system configuration
----@field [string] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
+---@field [SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
 
 ---GPS jamming context managing GPS denial operations state
 ---@class SBJ__GPSJammingContext: table
@@ -276,16 +302,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__USSaveData: table
 ---@field SIGINT SBJ__SIGINTContext Signals intelligence context
 
----Scoring system saved data structure
----@class SBJ__ScoringSaveData: table
-
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData: table
 ---@field c SBJ__ChinaSaveData China faction data
 ---@field t SBJ__TaiwanSaveData Taiwan faction data
 ---@field u SBJ__USSaveData US faction data
----@field s SBJ__ScoringSaveData Scoring system data
----@field [string] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData|SBJ__ScoringSaveData
+---@field [SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData
 
 
 -- ============================================================================
@@ -793,7 +815,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field glcm SBJ__WeaponSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__WeaponSystemContext Anti-Ship Cruise Missile system
 ---@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
----@field [string] SBJ__WeaponSystemContext
+---@field [SBJ__WeaponSystemContext] SBJ__WeaponSystemContext
 
 ---Unit property setting parameters for ground units
 ---@class SBJ__SetUnitPropertiesParams: table
@@ -1057,7 +1079,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field tanker? SBJ__MissionDeploymentDescriptor Tanker configuration (optional)
 ---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
 ---@field timeToReady? number Ready time in minutes (optional)
----@field [string] SBJ__MissionDeploymentDescriptor
+---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
 
 ---Loadout status tracking for mission preparation
 ---@class SBJ__LoadoutStatus: table
@@ -1094,14 +1116,6 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---GPS jammer context extending descriptor with runtime state
 ---@class SBJ__GPSJammerContext: SBJ__GPSJammerDescriptor
-
----SIGINT detection configuration parameters
----@class SBJ__SIGINTDetectionConfig: table
----@field detectionThreshold number Minimum detection range
----@field maxRange table Maximum detection range as {min, max}
----@field decayRate number Signal decay rate
----@field randomFactor number Random deviation factor
----@field displayConfig SBJ__SIGINTDisplayData Default display settings
 
 ---Enhanced SIGINT detection result with confidence and metadata
 ---@class SBJ__SIGINTResult: table

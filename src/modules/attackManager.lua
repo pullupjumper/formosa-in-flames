@@ -135,7 +135,6 @@ local function processUnitGroup(firingUnit, contact, totalAmmoRequested, ammoAlr
     return true, 0 -- Move to next battery, no weapons allocated
   end
 
-  ---@type string
   local guid = firingUnit.group.unitlist[shooterIdx]
   local unit = GameApi.ScenEdit_GetUnit(guid)
 
