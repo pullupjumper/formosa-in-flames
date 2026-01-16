@@ -312,6 +312,116 @@ def inject_html_templates(content: str, src_dir: str) -> str:
 
     html_dir = os.path.join(project_root, "src", "htmls")
 
+    # Helper to inject local JS files into HTML
+    def inject_local_js_into_html(html_content: str, html_dir: str) -> str:
+        """
+        Find and inject local JS file contents into HTML.
+        Replaces <script src="localfile.js"></script> with <script>content</script>
+        Removes JS comments to avoid Lua parsing conflicts.
+        """
+        # Pattern to match <script src="..."></script> tags
+        script_pattern = r'<script\s+src="([^"]+)"\s*></script>'
+
+        def remove_js_comments(js_code: str) -> str:
+            """
+            Remove JavaScript comments to avoid Lua parsing conflicts.
+            Keeps code structure intact by preserving newlines.
+            """
+            result = []
+            i = 0
+            length = len(js_code)
+            in_string = False
+            string_char = None
+
+            while i < length:
+                # Handle escape sequences in strings
+                if in_string and js_code[i] == '\\' and i + 1 < length:
+                    result.append(js_code[i])  # backslash
+                    result.append(js_code[i + 1])  # escaped character
+                    i += 2
+                    continue
+
+                # Handle strings
+                if not in_string and js_code[i] in ('"', "'", '`'):
+                    in_string = True
+                    string_char = js_code[i]
+                    result.append(js_code[i])
+                    i += 1
+                    continue
+                elif in_string and js_code[i] == string_char:
+                    result.append(js_code[i])
+                    in_string = False
+                    string_char = None
+                    i += 1
+                    continue
+                elif in_string:
+                    result.append(js_code[i])
+                    i += 1
+                    continue
+
+                # Handle multi-line comments /* ... */
+                if i < length - 1 and js_code[i:i+2] == '/*':
+                    # Find the end of comment
+                    j = i + 2
+                    while j < length - 1:
+                        if js_code[j:j+2] == '*/':
+                            # Count newlines in comment to preserve line numbers
+                            comment_text = js_code[i:j+2]
+                            newline_count = comment_text.count('\n')
+                            result.append('\n' * newline_count)
+                            i = j + 2
+                            break
+                        j += 1
+                    else:
+                        # Unclosed comment, skip to end
+                        i = length
+                    continue
+
+                # Handle single-line comments //
+                if i < length - 1 and js_code[i:i+2] == '//':
+                    # Skip until end of line
+                    while i < length and js_code[i] != '\n':
+                        i += 1
+                    # Keep the newline
+                    if i < length:
+                        result.append('\n')
+                        i += 1
+                    continue
+
+                # Normal character
+                result.append(js_code[i])
+                i += 1
+
+            return ''.join(result)
+
+        def replace_script(match):
+            src = match.group(1)
+
+            # Skip external URLs (http://, https://, //)
+            if src.startswith(('http://', 'https://', '//')):
+                return match.group(0)  # Keep original tag
+
+            # Try to find the local JS file
+            js_path = os.path.join(html_dir, src)
+            if os.path.exists(js_path):
+                try:
+                    with open(js_path, "r", encoding="utf-8") as f:
+                        js_content = f.read()
+
+                    # Remove JS comments to avoid Lua parsing issues
+                    js_content = remove_js_comments(js_content)
+
+                    print(f"    ✓ Injected {src} into HTML (comments removed)")
+                    return f"<script>\n{js_content}\n  </script>"
+                except Exception as e:
+                    print(f"    ✗ Error reading {src}: {e}")
+                    return match.group(0)
+            else:
+                print(f"    ⚠️ Local JS file not found: {js_path}")
+                return match.group(0)
+
+        return re.sub(script_pattern, replace_script, html_content)
+
     # Helper to process and inject
     def process_and_inject(html_filename: str, function_name: str, lua_content: str):
         html_path = os.path.join(html_dir, html_filename)
@@ -319,6 +429,9 @@ def inject_html_templates(content: str, src_dir: str) -> str:
             try:
                 with open(html_path, "r", encoding="utf-8") as f:
                     html_content = f.read()
+
+                # Inject local JS files into HTML before processing
+                html_content = inject_local_js_into_html(html_content, html_dir)
 
                 # Escape % to %% but keep %s as %s
                 # 1. Replace all % with %%
@@ -383,23 +496,37 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                     flags=re.DOTALL,
                 )
 
-                # Regex to replace content inside [[ ... ]]
-                # We use a lambda to safely insert the content
+                # 8. firingUnitString
+                html_content = re.sub(
+                    r"const\s+firingUnitString\s*=\s*`.*?`;",
+                    "const firingUnitString = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
+
+                # Determine the required long string level to avoid conflicts
+                level = get_long_string_level(html_content)
+                equals = "=" * level
+                opening_bracket = f"[{equals}["
+                closing_bracket = f"]{equals}]"
+
+                # Regex to find and replace the function's return statement
+                # Match: local function functionName() return [=*[ ... ]=*]
                 pattern = (
                     r"(local function "
                     + re.escape(function_name)
-                    + r"\(\)\s*return \[\[).*?(\]\])"
+                    + r"\(\)\s*return )\[=*\[.*?\]=*\]"
                 )
 
                 new_content = re.sub(
                     pattern,
-                    lambda m: m.group(1) + "\n" + html_content + "\n" + m.group(2),
+                    lambda m: m.group(1) + opening_bracket + "\n" + html_content + "\n" + closing_bracket,
                     lua_content,
                     flags=re.DOTALL,
                 )
 
                 if new_content != lua_content:
-                    print(f"    ✓ Injected {html_filename} into {function_name}")
+                    print(f"    ✓ Injected {html_filename} into {function_name} (long string level: {level})")
                     return new_content
                 else:
                     print(

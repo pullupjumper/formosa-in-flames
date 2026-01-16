@@ -432,6 +432,23 @@ local function createGPSJammingDataString(config, sideName)
   return gKH.json.stringify(rows)
 end
 
+---Create JSON string for launcher data
+---@param config SBJ__Config Saved game data containing launcher state
+---@param sideName string Side name ('China' or 'Taiwan')
+---@return string # JSON formatted launcher data
+local function createWeaponSystemDataString(config, sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local field = sideConfig.field
+  local rows = {}
+  local systems = { "srbm", "mlrs", "glcm", "ascm" }
+
+  for _, system in ipairs(systems) do
+    rows[system] = config[field].ground[system]
+  end
+
+  return gKH.json.stringify(rows)
+end
+
 ---Create JSON string for deployed aircraft data with base coordinates
 ---@param config SBJ__Config Configuration table containing aircraft deployment data
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -521,11 +538,13 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     -- Prepare data for HTML template
     local jammingDataString = createGPSJammingDataString(config, sideName)
     local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
+    local weaponSystemDataString = createWeaponSystemDataString(config, sideName)
     local HTMLTemplate = getSetupMenuTemplate()
     local msg = string.format(
       HTMLTemplate,
       jammingDataString,
-      deployedAircraftDataString
+      deployedAircraftDataString,
+      weaponSystemDataString
     )
 
     -- Display interactive setup dialog
@@ -537,9 +556,10 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         -- Parse JSON configuration from form
         local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
         local result = gKH.json.parse(jsonStr)
-        ---@cast result {ewUnits: SBJ__GPSJammerDescriptor[], bases: SBJ__AirbaseDeploymentDescriptor[]}
+        ---@cast result {ewUnits: SBJ__GPSJammerDescriptor[], bases: SBJ__AirbaseDeploymentDescriptor[], weaponSystems: table}
         local jammerDescriptors = result.ewUnits
         local abDeploymentDescriptors = result.bases
+        local weaponSystemsData = result.weaponSystems
 
         -- Apply GPS jamming unit deployments
         if jammerDescriptors then
@@ -552,6 +572,19 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         if abDeploymentDescriptors then
           UnitGenerator.addAircraft(abDeploymentDescriptors)
           UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
+        end
+
+        -- Apply TEL launcher deployments
+        if weaponSystemsData then
+          local sideConfig = GameUtils.getCachedSideConfig(sideName)
+          local field = sideConfig.field
+
+          -- Update weapon system configurations in config
+          for category, categoryData in pairs(weaponSystemsData) do
+            if config[field].ground[category] then
+              config[field].ground[category] = categoryData
+            end
+          end
         end
       end
     end
