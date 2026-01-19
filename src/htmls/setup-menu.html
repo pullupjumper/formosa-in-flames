@@ -322,6 +322,12 @@
 				color: var(--accent-blue);
 			}
 
+			.ew-unit-btn.deployed {
+				background-color: rgba(15, 153, 96, 0.15);
+				border: 3px solid var(--success);
+				border-left: 5px solid var(--success);
+			}
+
 			.launcher-unit-btn {
 				display: block;
 				width: 100%;
@@ -1161,28 +1167,72 @@
 						const button = document.createElement("div");
 						button.className = "ew-unit-btn";
 						button.dataset.unitIndex = index;
-						button.innerHTML = `<div>${unit.name}</div><div style="font-size: 10px; color: var(--text-secondary);">${unit.zoneName}</div>`;
-						button.addEventListener("click", () => this.select(index));
+						button.innerHTML = `
+							<div style="font-weight: 600; margin-bottom: 4px;">${unit.name}</div>
+							<div style="color: var(--text-secondary); font-size: 11px;">
+								<div>ZONE: ${unit.zoneName}</div>
+								<div>RANGE: ${unit.radius} NM</div>
+							</div>
+							<div class="ew-controls" data-unit-index="${index}" style="display: none;"></div>
+						`;
+						button.addEventListener("click", (e) => {
+							if (e.target.tagName !== "INPUT" && e.target.tagName !== "BUTTON") {
+								this.selectUnit(index);
+							}
+						});
 						container.appendChild(button);
 					});
 				},
 
-				select(index) {
-					if (State.ew.deployedUnits.has(index)) {
-						this.undeploy(index);
-						return;
-					}
+				selectUnit(index) {
+					this.collapseControls();
 
-					document
-						.querySelectorAll(".ew-unit-btn")
-						.forEach((btn) => btn.classList.remove("selected"));
-					State.ew.selectedUnit = index;
-					document
-						.querySelector(`[data-unit-index="${index}"]`)
-						.classList.add("selected");
-					this.updateStatus(
-						`Selected: ${DATA.ewUnits[index].name}<br>Click map to deploy`,
-					);
+					const button = document.querySelector(`.ew-unit-btn[data-unit-index="${index}"]`);
+					const controlsDiv = button.querySelector(".ew-controls");
+					const unit = DATA.ewUnits[index];
+
+					if (State.ew.deployedUnits.has(index)) {
+						const deployment = State.ew.deployedUnits.get(index);
+						controlsDiv.innerHTML = `
+							<div style="margin-top: 8px; padding: 6px; background: rgba(15, 153, 96, 0.1); border-radius: 2px;">
+								<div style="font-size: 11px; color: var(--success); margin-bottom: 6px;">
+									✓ Deployed at ${unit.point.latitude.toFixed(4)}°, ${unit.point.longitude.toFixed(4)}°
+								</div>
+								<button class="launcher-cancel-btn" onclick="EWManager.undeploy(${index})">Cancel Deployment</button>
+							</div>
+						`;
+						controlsDiv.style.display = "block";
+					} else {
+						controlsDiv.innerHTML = `
+							<div style="margin-top: 8px; padding: 6px; background: rgba(19, 124, 189, 0.1); border-radius: 2px;">
+								<div style="font-size: 11px; color: var(--accent-blue); margin-bottom: 6px;">Click map to deploy</div>
+								<div style="font-size: 10px; color: var(--text-secondary);">Range: ${unit.radius} NM</div>
+							</div>
+						`;
+						controlsDiv.style.display = "block";
+
+						State.ew.selectedUnit = index;
+						this.updateStatus(
+							`<strong>${unit.name}</strong> selected<br>Click map to deploy`,
+						);
+					}
+				},
+
+				collapseControls() {
+					document.querySelectorAll(".ew-controls").forEach((controls) => {
+						const unitIndex = controls.dataset.unitIndex;
+						if (unitIndex !== undefined && State.ew.deployedUnits.has(parseInt(unitIndex))) {
+							const unit = DATA.ewUnits[parseInt(unitIndex)];
+							controls.innerHTML = `
+								<div style="margin-top: 8px; padding: 6px; background: rgba(15, 153, 96, 0.1); border-radius: 2px;">
+									<div style="font-size: 11px; color: var(--success);">✓ Deployed | Range: ${unit.radius} NM</div>
+								</div>`;
+							controls.style.display = "block";
+						} else {
+							controls.style.display = "none";
+							controls.innerHTML = "";
+						}
+					});
 				},
 
 				deploy(lat, lng) {
@@ -1229,12 +1279,13 @@
 					State.ew.deployedUnits.set(index, { marker, circle });
 					State.ew.markers.push(marker);
 
-					const button = document.querySelector(`[data-unit-index="${index}"]`);
+					const button = document.querySelector(`.ew-unit-btn[data-unit-index="${index}"]`);
 					button.classList.remove("selected");
 					button.classList.add("deployed");
 
+					this.selectUnit(index);
 					this.updateStatus(
-						`${unit.name} deployed at ${lat.toFixed(6)}°, ${lng.toFixed(6)}°`,
+						`✓ ${unit.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`,
 					);
 					State.ew.selectedUnit = null;
 				},
@@ -1247,9 +1298,10 @@
 					State.maps.jammers.removeLayer(deployment.circle);
 					State.ew.deployedUnits.delete(index);
 
-					document
-						.querySelector(`[data-unit-index="${index}"]`)
-						.classList.remove("deployed");
+					const button = document.querySelector(`.ew-unit-btn[data-unit-index="${index}"]`);
+					button.classList.remove("deployed");
+					button.querySelector(".ew-controls").style.display = "none";
+
 					this.updateStatus(`${DATA.ewUnits[index].name} deployment cancelled`);
 				},
 
@@ -1937,16 +1989,32 @@
 				MapManager.initLaunchersMap();
 				BudgetManager.updateDisplay();
 
-				// Global click handler for launchers
+				// Global click handler for launchers page
 				document.addEventListener("click", (e) => {
-					const launchersList = document.getElementById("launcherUnitsList");
-					const launchersMap = document.getElementById("launchersMap");
+					const launchersPage = document.getElementById("launchersPage");
+					const jammersPage = document.getElementById("jammersPage");
 
-					if (!launchersList.contains(e.target) && !launchersMap.contains(e.target)) {
-						LauncherManager.collapseControls();
-						if (State.launcher.selectedUnit !== null) {
-							State.launcher.selectedUnit = null;
-							LauncherManager.updateStatus("Selection cancelled");
+					// Launcher: collapse when clicking on map (not on units list or controls)
+					if (launchersPage.classList.contains("active")) {
+						const launchersList = document.getElementById("launcherUnitsList");
+						const launchersMap = document.getElementById("launchersMap");
+
+						if (launchersMap.contains(e.target) && !launchersList.contains(e.target)) {
+							if (State.launcher.selectedUnit === null) {
+								LauncherManager.collapseControls();
+							}
+						}
+					}
+
+					// EW Jammers: collapse when clicking on map (not on units list or controls)
+					if (jammersPage.classList.contains("active")) {
+						const ewUnitsList = document.getElementById("ewUnitsList");
+						const jammersMap = document.getElementById("jammersMap");
+
+						if (jammersMap.contains(e.target) && !ewUnitsList.contains(e.target)) {
+							if (State.ew.selectedUnit === null) {
+								EWManager.collapseControls();
+							}
 						}
 					}
 				});
@@ -1954,6 +2022,7 @@
 
 			// Make managers globally accessible for onclick handlers
 			window.AircraftManager = AircraftManager;
+			window.EWManager = EWManager;
 			window.LauncherManager = LauncherManager;
 			window.SummaryManager = SummaryManager;
 		</script>
