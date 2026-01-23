@@ -133,6 +133,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field randomRadius number Random deployment radius (nautical miles)
 ---@field radius number Jamming effectiveness radius (nautical miles)
 ---@field GPSGuidedWeapons SBJ__GPSJammedWeapon[] GPS-guided weapons to jam
+---@field jammers table<string, SBJ__GPSJammerDescriptor> GPS jammer descriptors indexed by jammer name
 
 ---Weapon system configuration
 ---@class SBJ__WeaponSystemConfig: table
@@ -150,7 +151,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field mlrs SBJ__WeaponSystemConfig MLRS configuration
 ---@field glcm SBJ__WeaponSystemConfig GLCM configuration
 ---@field srbm SBJ__WeaponSystemConfig SRBM configuration
----@field mrbm SBJ__WeaponSystemConfig MRBM configuration
+---@field mrbm? SBJ__WeaponSystemConfig MRBM configuration (China only)
 ---@field ascm? SBJ__WeaponSystemConfig ASCM configuration (Taiwan only)
 ---@field [SBJ__WeaponSystemConfig] SBJ__WeaponSystemConfig
 
@@ -248,7 +249,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
 ---@field radarDistance number Radar detection distance (nautical miles)
 ---@field readytime number Ready time for missions (seconds)
-----@field batteryState table<string, integer> Battery state enumeration
+---@field batteryState table<string, integer> Battery state enumeration
 ---@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
 ---@field c SBJ__ChinaConfig China faction configuration
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
@@ -748,6 +749,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field HA SBJ__Position[] Hide Areas
 ---@field AHA SBJ__Position[] Ammo Holding Areas
 ---@field RL SBJ__Position[] Reload Points
+---@field name? string Area name (optional)
+---@field uShapeVertices? CMO__Location[] U shape vertices (optional)
 
 ---Weapon status tracking for ammunition count
 ---@class SBJ__WeaponStatus: table
@@ -1195,7 +1198,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__C2Descriptor: table
 ---@field position CMO__Location C2 position coordinates
 ---@field areas string[][] Operation areas array
----@field areaName string Operation area name
+---@field name string Operation area name
 
 ---Integrated Air Defense System configuration
 ---Defines C2 facility parameters and deployment settings for IADS
@@ -1330,3 +1333,9 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
 ---@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
 ---@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
+
+---Setup menu configuration result containing user selections
+---@class SBJ__SetupResult: table
+---@field ewUnits SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
+---@field bases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
+---@field deployedLaunchers {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL launcher deployment configurations with tactical areas and paths

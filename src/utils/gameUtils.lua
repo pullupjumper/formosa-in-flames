@@ -518,4 +518,17 @@ function GameUtils.formatOrdinalUnitName(num, unitType, suffix)
   return ordinal .. " " .. unitType .. suffix
 end
 
+---Converts a zone to an array of reference points
+---@param zone CMO__Zone Zone table
+---@return string[] # Array of reference points
+function GameUtils.convertToRPArray(zone)
+  local rps = {}
+
+  for _, rp in pairs(zone.area) do
+    table.insert(rps, rp.name)
+  end
+
+  return rps
+end
+
 return GameUtils

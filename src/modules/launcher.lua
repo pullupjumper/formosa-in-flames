@@ -15,14 +15,12 @@ local BATTERY_CONSTANTS = {
 
 ---Find the area where the unit is located
 ---@param unit CMO__Unit Unit object
----@param operationalAreas table<string, SBJ__OperationalArea> Position information table
+---@param operationalArea SBJ__OperationalArea Position information table
 ---@return string[]|nil # Area name or nil
-local function findUnitArea(unit, operationalAreas)
-  for _, operationalArea in pairs(operationalAreas) do
-    for _, pos in ipairs(operationalArea.RL) do
-      if unit:inArea(pos.area) then
-        return pos.area
-      end
+local function findUnitArea(unit, operationalArea)
+  for _, pos in ipairs(operationalArea.RL) do
+    if unit:inArea(pos.area) then
+      return pos.area
     end
   end
 
@@ -66,7 +64,7 @@ local function isReadyToReloadResupplyUnit(resupplyUnitCtx, wsCtx, metResult)
 end
 
 ---Set unit movement and weapon control status using table parameters
----@param params SBJ__SetUnitPropertiesParams
+---@param params SBJ__SetUnitPropertiesParams Unit properties configuration table
 local function setUnitProperties(params)
   local unit = params.unit
   if not unit then return end
@@ -550,12 +548,11 @@ end
 ---@param targetName string Target unit name to match
 ---@param counterpartList SBJ__FiringUnitContext[]|SBJ__ResupplyUnitContext[] List of counterpart units to check
 ---@param unit CMO__Unit Original unit for area checking
----@param operationalAreas table<string, SBJ__OperationalArea> OPAREA configuration
 ---@param config SBJ__Config Configuration
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean isMet Whether units have met
 ---@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil context The matched context if met
-local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, operationalAreas, config, isAuto)
+local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, config, isAuto)
   local isStateValid = true
 
   if isAuto then
@@ -565,7 +562,8 @@ local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, 
   end
 
   if targetCtx.name == targetName and isStateValid then
-    local area = findUnitArea(unit, operationalAreas)
+    -- local area = findUnitArea(unit, operationalAreas)
+    local area = findUnitArea(unit, targetCtx.operationalArea)
     if not area then return false, nil end
 
     for _, counterpartCtx in pairs(counterpartList) do
@@ -597,7 +595,7 @@ function Launcher.isMetWithResupplyUnits(config, wsCtx, unit, isAuto)
     -- Case: Resupply unit looking for firing units
     for _, resupplyUnitCtx in pairs(wsCtx.resupplyUnits) do
       local isMet, ctx = checkMeetingInArea(
-        resupplyUnitCtx, unitGroup.name, wsCtx.firingUnits, unit, wsCtx.operationalAreas, config, isAuto
+        resupplyUnitCtx, unitGroup.name, wsCtx.firingUnits, unit, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -607,7 +605,7 @@ function Launcher.isMetWithResupplyUnits(config, wsCtx, unit, isAuto)
     -- Case: Firing unit looking for resupply units
     for _, firingUnitCtx in pairs(wsCtx.firingUnits) do
       local isMet, ctx = checkMeetingInArea(
-        firingUnitCtx, unitGroup.name, wsCtx.resupplyUnits, unit, wsCtx.operationalAreas, config, isAuto
+        firingUnitCtx, unitGroup.name, wsCtx.resupplyUnits, unit, config, isAuto
       )
       if isMet then
         return { isMet = true, firingUnit = ctx }
@@ -641,15 +639,9 @@ function Launcher.isMetWithAmmoDepot(config, wsCtx, unit, isAuto)
     if resupplyUnitCtx.name == resupplyUnit.name and isStateValid then
       local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
 
-      for _, operationalArea in pairs(wsCtx.operationalAreas) do
-        -- Check all AHA areas in the array
-        for _, pos in ipairs(operationalArea.AHA) do
-          local isInSameArea = unit:inArea(pos.area) and (ammoDepot and ammoDepot:inArea(pos.area))
-
-          if isInSameArea then
-            return { isMet = true, resupplyUnit = resupplyUnitCtx }
-          end
-        end
+      for _, pos in ipairs(resupplyUnitCtx.operationalArea.AHA) do
+        local isInSameArea = unit:inArea(pos.area) and (ammoDepot and ammoDepot:inArea(pos.area))
+        if isInSameArea then return { isMet = true, resupplyUnit = resupplyUnitCtx } end
       end
     end
   end
@@ -699,146 +691,363 @@ function Launcher.handleSupplyAssetDestruction(unit, wsCtx)
   end
 end
 
----Add launchers to the game
----@param groundForceCfg SBJ__GroundForceConfig Ground force context
----@param wpnSystems string[] Weapon systems
----@param sideName string Side name
-function Launcher.addLaunchers(groundForceCfg, wpnSystems, sideName)
-  for _, wpnSystem in pairs(wpnSystems) do
-    local wpnSystemCfg = groundForceCfg[wpnSystem]
+---Remove all reference points from a zone
+---@param zone CMO__Zone Zone object containing reference points
+---@param sideName string Side name for deletion context
+---@return boolean # Whether all reference points were successfully removed
+local function removeRPs(zone, sideName)
+  local rps = GameUtils.convertToRPArray(zone)
+  for _, rp in ipairs(rps) do
+    local result = GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp })
+    if not result then
+      return false
+    end
+  end
+  return true
+end
 
-    if wpnSystemCfg then
-      for _, descriptor in pairs(wpnSystemCfg.firingUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
+---Remove all zones matching specified position types
+---@param positionTypes string[] Array of position type identifiers (e.g., "RL", "HA", "FP")
+---@param sideObj CMO__Side Side object containing zones to remove
+---@param sideName string Side name for deletion context
+local function removeZones(positionTypes, sideObj, sideName)
+  local natureSideName = "Nature"
+  local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
 
-        if unit then
-          if unit.group and unit.group.unitlist then
-            for _, guid in ipairs(unit.group.unitlist) do
-              GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
-            end
-          end
-        end
-
-        local count = wpnSystemCfg.resupplyUnits[descriptor.resupplyUnit].unitCount
-        local len = #descriptor.operationalArea.HA[1].course
-        local type = GameUtils.extractUnitType(descriptor.name)
-
-        for i = 1, count do
-          local name = GameUtils.formatOrdinalUnitName(i, type or "", ", " .. descriptor.name)
-          local addedUnit = GameApi.ScenEdit_AddUnit({
-            side = sideName,
-            unitname = name,
-            dbid = descriptor.dbid,
-            type = "Facility",
-            group = descriptor.name,
-            latitude = descriptor.operationalArea.HA[1].course[len].latitude,
-            longitude = descriptor.operationalArea.HA[1].course[len].longitude
-          })
-
-          if addedUnit then
-            GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
-            local totalRemovedWpnCount = 0
-            local removedWpnDBID
-
-            for _, mount in ipairs(addedUnit.mounts) do
-              for _, wpn in ipairs(mount.mount_weapons) do
-                if wpn.wpn_current > 0 and wpn.wpn_dbid ~= descriptor.weaponDBID then
-                  totalRemovedWpnCount = totalRemovedWpnCount + wpn.wpn_current
-                  removedWpnDBID = wpn.wpn_dbid
-                end
-              end
-            end
-
-            if totalRemovedWpnCount > 0 and removedWpnDBID ~= nil then
-              GameApi.ScenEdit_AddReloadsToUnit({
-                side = sideName,
-                guid = addedUnit.guid,
-                wpn_dbid = removedWpnDBID,
-                number = totalRemovedWpnCount,
-                remove = true
-              })
-
-              GameApi.ScenEdit_AddReloadsToUnit({
-                side = sideName,
-                guid = addedUnit.guid,
-                wpn_dbid = descriptor.weaponDBID,
-                number = totalRemovedWpnCount,
-              })
-            end
-          end
-        end
+  for _, z in ipairs(natureSideObj.customenvironmentzones) do
+    for _, positionType in ipairs(positionTypes) do
+      if string.match(z.description, "(" .. positionType .. ")") then
+        local zone = natureSideObj:getcustomenvironmentzone(z.description)
+        removeRPs(zone, sideName)
+        GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
+          { description = z.description })
       end
+    end
 
-      for _, descriptor in pairs(wpnSystemCfg.resupplyUnits) do
-        local ammoTrucks = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
+    if string.match(z.description, "(" .. "MASK" .. ")") then
+      local zone = natureSideObj:getcustomenvironmentzone(z.description)
+      removeRPs(zone, sideName)
+      removeRPs(zone, natureSideName)
+      GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
+        { description = z.description })
+    end
+  end
 
-        if ammoTrucks then
-          if ammoTrucks.group and ammoTrucks.group.unitlist then
-            for _, guid in ipairs(ammoTrucks.group.unitlist) do
-              GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
-            end
-          end
-        end
-
-        local count = descriptor.unitCount
-        local len = #descriptor.operationalArea.RL[1].course
-        local type = GameUtils.extractUnitType(descriptor.name)
-        local restStr = descriptor.name:match("Ammo Sec(.*)") or (", " .. descriptor.name)
-
-        for i = 1, count do
-          local name = GameUtils.formatOrdinalUnitName(i, type or "", restStr)
-          GameApi.ScenEdit_AddUnit({
-            side = sideName,
-            unitname = "Ammo Sec, " .. name,
-            dbid = constants.PLATFORMS.AMMO_TRUCK,
-            type = "Facility",
-            group = descriptor.name,
-            latitude = descriptor.operationalArea.RL[1].course[len].latitude,
-            longitude = descriptor.operationalArea.RL[1].course[len].longitude
-          })
-        end
-      end
-
-      for _, descriptor in pairs(wpnSystemCfg.ammunitions) do
-        local ammo = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
-
-        if ammo then
-          GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = ammo.guid })
-        end
-
-        local restStr = descriptor.name:gsub("^Ammo Revetment, ", "")
-        local name = restStr
-        local resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
-
-        if not resupplyUnitdescriptor then
-          name = "Ammo Sec, " .. name
-        end
-
-        resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
-
-        if resupplyUnitdescriptor then
-          local len = #resupplyUnitdescriptor.operationalArea.AHA[1].course
-          GameApi.ScenEdit_AddUnit({
-            side = sideName,
-            unitname = descriptor.name,
-            dbid = constants.PLATFORMS.AMMO,
-            type = "Facility",
-            latitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].latitude,
-            longitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].longitude
-          })
-        end
+  for _, z in ipairs(sideObj.standardzones) do
+    for _, positionType in ipairs(positionTypes) do
+      if string.match(z.description, "(" .. positionType .. ")") then
+        local zone = sideObj:getstandardzone(z.description)
+        removeRPs(zone, sideName)
+        GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.STANDARD, { description = z.description })
       end
     end
   end
 end
 
----comment
----@param groundForceCfg SBJ__GroundForceConfig
----@param groundForceCtx SBJ__GroundForceContext
----@param wpnSystems string[]
-function Launcher.initLauncherContexts(groundForceCfg, groundForceCtx, wpnSystems)
-  for _, wpnSystem in ipairs(wpnSystems) do
-    local firingUnits = Utils.deepCopy(groundForceCfg[wpnSystem].firingUnits)
+---Remove event triggers matching specified position types
+---@param positionTypes string[] Array of position type identifiers
+---@param eventNamePrefix string Event name prefix for matching
+---@return boolean # Whether all triggers were successfully removed
+local function removeEventTriggers(positionTypes, eventNamePrefix)
+  for _, positionType in ipairs(positionTypes) do
+    local eventName = eventNamePrefix .. positionType
+    local event = GameApi.ScenEdit_GetEvent(eventName)
+
+    if event then
+      for _, trigger in ipairs(event.triggers) do
+        if trigger["UnitEntersArea"] and string.match(trigger["UnitEntersArea"].Description, "(" .. positionType .. ")") then
+          GameApi.ScenEdit_SetEventTrigger(eventName, {
+            mode = "remove", description = trigger["UnitEntersArea"].Description, name = eventName
+          })
+          GameApi.ScenEdit_SetTrigger({ Description = trigger["UnitEntersArea"].Description, Mode = "remove" })
+        end
+      end
+    end
+  end
+
+  return true
+end
+
+---Get area color code based on position type
+---@param positionType string Position type identifier (RL/HA/AHA/MASK/FP)
+---@return string # Hexadecimal color code
+local function getOperationalAreaColor(positionType)
+  local color = "4d8b5cf6"
+
+  if positionType == "RL" then
+    color = "4dd9822b"
+  end
+
+  if positionType == "HA" then
+    color = "4d137cbd"
+  end
+
+  if positionType == "AHA" then
+    color = "4d0f9960"
+  end
+
+  if positionType == "MASK" then
+    color = "4dff6b6b"
+  end
+
+  return color
+end
+
+---Add a unit-enters-area trigger to the specified event
+---@param positionType string Position type (RL/HA/FP)
+---@param position SBJ__Position Position configuration
+---@param index integer Position index within operational area
+---@param operationalArea SBJ__OperationalArea Operational area configuration
+---@param enemySide string Enemy side name for target filter
+---@param sideName string Owner side name
+---@return boolean # Whether trigger was successfully added
+local function addTriggerToEvent(positionType, position, index, operationalArea, enemySide, sideName)
+  local triggerName = string.format("(%s) Arrive in %s - %d - %s", sideName, positionType, index, operationalArea.name)
+  local zoneName = positionType .. "/" .. operationalArea.name
+  local zone = GameApi.ScenEdit_AddZone(
+    sideName,
+    constants.ZONE_TYPES.STANDARD,
+    { area = position.area, description = zoneName }
+  )
+
+  if zone then
+    local eventName = "(" .. sideName .. ") Arrive in " .. positionType
+    zone.areacolor = getOperationalAreaColor(positionType)
+    position.area = GameUtils.convertToRPArray(zone)
+    GameApi.ScenEdit_SetTrigger({
+      Description = triggerName,
+      Mode = "add",
+      type = "UnitEntersArea",
+      TargetFilter = { TargetSide = enemySide },
+      Area = position.area,
+      ExitArea = false
+    })
+    GameApi.ScenEdit_SetEventTrigger(eventName, { mode = "add", name = triggerName })
+    return true
+  end
+
+  return false
+end
+
+---Add custom environment zone for terrain masking
+---@param operationalArea SBJ__OperationalArea Operational area configuration
+---@param sideName string Side name for zone ownership
+---@return boolean # Whether zone was successfully created
+local function addCustomEnvironmentZone(operationalArea, sideName)
+  local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
+    description = "MASK/" .. operationalArea.name,
+    area = operationalArea.uShapeVertices,
+    sideName = sideName
+  })
+
+  if zone then
+    zone.areacolor = getOperationalAreaColor("MASK")
+    zone.landcoverheight = 1000
+    zone.landcovertype = 254
+    return true
+  end
+  return false
+end
+
+---Initialize event triggers and zones for launcher operational areas
+---@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
+---@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
+---@param sideName string Side name for zone/trigger ownership
+function Launcher.initEventTriggers(operationalAreas, positionTypes, sideName)
+  local side = GameApi.VP_GetSide({ side = sideName })
+  local sideCfg = GameUtils.getCachedSideConfig(sideName)
+  local eventNamePrefix = "(" .. sideName .. ") Arrive in "
+  removeZones(positionTypes, side, sideName)
+  removeEventTriggers(positionTypes, eventNamePrefix)
+
+  for _, operationalArea in ipairs(operationalAreas) do
+    for _, positionType in ipairs(positionTypes) do
+      for index, position in ipairs(operationalArea[positionType]) do
+        ---@cast position SBJ__Position
+        addTriggerToEvent(positionType, position, index, operationalArea, sideCfg.enemySide, sideName)
+      end
+    end
+
+    addCustomEnvironmentZone(operationalArea, sideName)
+  end
+end
+
+---Remove launchers from the game
+---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor with removal info
+---@param sideName string Side name for unit deletion
+---@return boolean # Whether unit was successfully removed
+local function removeBatteryUnit(descriptor, sideName)
+  local unit = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
+
+  if unit then
+    if unit.group and unit.group.unitlist then
+      for _, guid in ipairs(unit.group.unitlist) do
+        GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
+      end
+    else
+      GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = unit.guid })
+    end
+
+    return true
+  end
+
+  return false
+end
+
+---Create firing units according to configuration
+---@param wpnSystemCfg SBJ__WeaponSystemConfig Weapon system configuration
+---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
+---@param sideName string Side name for unit creation
+---@return boolean # Whether units were successfully created
+local function addFiringUnit(wpnSystemCfg, descriptor, sideName)
+  local count = wpnSystemCfg.resupplyUnits[descriptor.resupplyUnit].unitCount
+  local len = #descriptor.operationalArea.HA[1].course
+  local type = GameUtils.extractUnitType(descriptor.name)
+  local success = false
+
+  for i = 1, count do
+    local name = GameUtils.formatOrdinalUnitName(i, type or "", ", " .. descriptor.name)
+    local addedUnit = GameApi.ScenEdit_AddUnit({
+      side = sideName,
+      unitname = name,
+      dbid = descriptor.dbid,
+      type = "Facility",
+      group = descriptor.name,
+      latitude = descriptor.operationalArea.HA[1].course[len].latitude,
+      longitude = descriptor.operationalArea.HA[1].course[len].longitude
+    })
+
+    if addedUnit then
+      GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
+      local totalRemovedWpnCount = 0
+      local removedWpnDBID
+
+      for _, mount in ipairs(addedUnit.mounts) do
+        for _, wpn in ipairs(mount.mount_weapons) do
+          if wpn.wpn_current > 0 and wpn.wpn_dbid ~= descriptor.weaponDBID then
+            totalRemovedWpnCount = totalRemovedWpnCount + wpn.wpn_current
+            removedWpnDBID = wpn.wpn_dbid
+          end
+        end
+      end
+
+      if totalRemovedWpnCount > 0 and removedWpnDBID ~= nil then
+        GameApi.ScenEdit_AddReloadsToUnit({
+          side = sideName,
+          guid = addedUnit.guid,
+          wpn_dbid = removedWpnDBID,
+          number = totalRemovedWpnCount,
+          remove = true
+        })
+
+        GameApi.ScenEdit_AddReloadsToUnit({
+          side = sideName,
+          guid = addedUnit.guid,
+          wpn_dbid = descriptor.weaponDBID,
+          number = totalRemovedWpnCount,
+        })
+      end
+
+      success = true
+    end
+  end
+
+  return success
+end
+
+---Create resupply units according to configuration
+---@param descriptor SBJ__ResupplyUnitDescriptor Resupply unit descriptor
+---@param sideName string Side name for unit creation
+---@return boolean # Whether units were successfully created
+local function addResupplyUnit(descriptor, sideName)
+  local count = descriptor.unitCount
+  local len = #descriptor.operationalArea.RL[1].course
+  local type = GameUtils.extractUnitType(descriptor.name)
+  local restStr = descriptor.name:match("Ammo Sec(.*)") or (", " .. descriptor.name)
+  local success = true
+
+  for i = 1, count do
+    local name = GameUtils.formatOrdinalUnitName(i, type or "", restStr)
+    local result = GameApi.ScenEdit_AddUnit({
+      side = sideName,
+      unitname = "Ammo Sec, " .. name,
+      dbid = constants.PLATFORMS.AMMO_TRUCK,
+      type = "Facility",
+      group = descriptor.name,
+      latitude = descriptor.operationalArea.RL[1].course[len].latitude,
+      longitude = descriptor.operationalArea.RL[1].course[len].longitude
+    })
+
+    if not result then
+      success = false
+    end
+  end
+
+  return success
+end
+
+---Create ammunition depot unit according to configuration
+---@param wpnSystemCfg SBJ__WeaponSystemConfig Weapon system configuration
+---@param descriptor SBJ__AmmunitionUnitDescriptor Ammunition unit descriptor
+---@param sideName string Side name for unit creation
+---@return boolean # Whether unit was successfully created
+local function addAmmunition(wpnSystemCfg, descriptor, sideName)
+  local restStr = descriptor.name:gsub("^Ammo Revetment, ", "")
+  local name = restStr
+  local resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
+
+  if not resupplyUnitdescriptor then
+    name = "Ammo Sec, " .. name
+  end
+
+  resupplyUnitdescriptor = wpnSystemCfg.resupplyUnits[name]
+
+  if resupplyUnitdescriptor then
+    local len = #resupplyUnitdescriptor.operationalArea.AHA[1].course
+    GameApi.ScenEdit_AddUnit({
+      side = sideName,
+      unitname = descriptor.name,
+      dbid = constants.PLATFORMS.AMMO,
+      type = "Facility",
+      latitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].latitude,
+      longitude = resupplyUnitdescriptor.operationalArea.AHA[1].course[len].longitude
+    })
+    return true
+  end
+
+  return false
+end
+
+---Add launchers to the game
+---@param groundForceCfg SBJ__GroundForceConfig Ground force context
+---@param sideName string Side name
+function Launcher.addLaunchers(groundForceCfg, sideName)
+  for _, wpnSystemCfg in pairs(groundForceCfg) do
+    ---@cast wpnSystemCfg SBJ__WeaponSystemConfig
+    for _, descriptor in pairs(wpnSystemCfg.firingUnits) do
+      removeBatteryUnit(descriptor, sideName)
+      addFiringUnit(wpnSystemCfg, descriptor, sideName)
+    end
+
+    for _, descriptor in pairs(wpnSystemCfg.resupplyUnits) do
+      removeBatteryUnit(descriptor, sideName)
+      addResupplyUnit(descriptor, sideName)
+    end
+
+    for _, descriptor in pairs(wpnSystemCfg.ammunitions) do
+      removeBatteryUnit(descriptor, sideName)
+      addAmmunition(wpnSystemCfg, descriptor, sideName)
+    end
+  end
+end
+
+---Initialize launcher runtime contexts from configuration
+---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
+---@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
+function Launcher.initLauncherContexts(groundForceCfg, groundForceCtx)
+  for wpnSystem, wpnSystemCfg in pairs(groundForceCfg) do
+    ---@cast wpnSystemCfg SBJ__WeaponSystemConfig
+    local firingUnits = Utils.deepCopy(wpnSystemCfg.firingUnits)
     for _, descriptor in pairs(firingUnits) do
       ---@type SBJ__FiringUnitContext
       local ctx = descriptor
@@ -846,7 +1055,7 @@ function Launcher.initLauncherContexts(groundForceCfg, groundForceCtx, wpnSystem
       groundForceCtx[wpnSystem].firingUnits[ctx.name] = ctx
     end
 
-    local resupplyUnits = Utils.deepCopy(groundForceCfg[wpnSystem].resupplyUnits)
+    local resupplyUnits = Utils.deepCopy(wpnSystemCfg.resupplyUnits)
     for _, descriptor in pairs(resupplyUnits) do
       ---@type SBJ__ResupplyUnitContext
       local ctx = descriptor
@@ -854,7 +1063,7 @@ function Launcher.initLauncherContexts(groundForceCfg, groundForceCtx, wpnSystem
       groundForceCtx[wpnSystem].resupplyUnits[ctx.name] = ctx
     end
 
-    local ammunitions = Utils.deepCopy(groundForceCfg[wpnSystem].ammunitions)
+    local ammunitions = Utils.deepCopy(wpnSystemCfg.ammunitions)
     for _, descriptor in pairs(ammunitions) do
       ---@type SBJ__AmmunitionContext
       local ctx = descriptor

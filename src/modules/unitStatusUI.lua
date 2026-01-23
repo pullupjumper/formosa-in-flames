@@ -4,10 +4,86 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
+local Launcher = require("src.modules.launcher")
 local gKH = require("src.core.gKH_State_Standalone")
 local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
+
+---Transform deployed launcher configuration into operational area data structure
+---@param deployedLauncher {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed launcher configuration with tactical areas and movement paths
+---@return SBJ__OperationalArea # Operational area configuration with FP/RL/HA/AHA positions
+local function transformData(deployedLauncher)
+  ---@type SBJ__OperationalArea
+  local operationalArea = {
+    FP = {},
+    AHA = {},
+    RL = {},
+    HA = {},
+    uShapeVertices = deployedLauncher.tacticalAreas.uShapeVertices,
+    name = "#" .. Utils.randomTxt(2)
+  }
+
+  for index, firePoint in ipairs(deployedLauncher.paths.FP) do
+    local course = {}
+    for _, waypoint in ipairs(firePoint.waypoints) do
+      table.insert(course, {
+        latitude = waypoint.latitude,
+        longitude = waypoint.longitude,
+        desiredSpeed = 30,
+        presetThrottle = "Flank"
+      })
+    end
+    table.insert(operationalArea.FP, {
+      course = course,
+      area = deployedLauncher.tacticalAreas.firePoints[index]
+    })
+  end
+
+  local reloadPoint = deployedLauncher.paths.RL[1]
+  local course = {}
+  for _, waypoint in ipairs(reloadPoint.waypoints) do
+    table.insert(course, {
+      latitude = waypoint.latitude,
+      longitude = waypoint.longitude,
+      desiredSpeed = 30,
+      presetThrottle = "Flank"
+    })
+  end
+  table.remove(course, 1)
+  table.insert(operationalArea.RL, {
+    course = course,
+    area = deployedLauncher.tacticalAreas.reloadArea
+  })
+
+  local ahaCourse = {}
+  for _, waypoint in ipairs(deployedLauncher.paths.AHA.waypoints) do
+    table.insert(ahaCourse, {
+      latitude = waypoint.latitude,
+      longitude = waypoint.longitude,
+      desiredSpeed = 30,
+      presetThrottle = "Flank"
+    })
+  end
+
+  table.insert(operationalArea.AHA, {
+    course = ahaCourse,
+    area = deployedLauncher.tacticalAreas.ammoArea
+  })
+
+  local haCourse = {}
+  for _, waypoint in ipairs(deployedLauncher.paths.HA.waypoints) do
+    table.insert(haCourse, {
+      latitude = waypoint.latitude,
+      longitude = waypoint.longitude,
+      desiredSpeed = 30,
+      presetThrottle = "Flank"
+    })
+  end
+
+  table.insert(operationalArea.HA, { course = haCourse, area = deployedLauncher.tacticalAreas.hideArea })
+  return operationalArea
+end
 
 ---Count military units by type within operational zones
 ---@param config SBJ__Config Configuration table
@@ -477,6 +553,7 @@ end
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
+  ---@type SBJ__SaveData|nil
   local saveData = gKH.State.LoadTableFromKey("SaveData")
 
   if saveData == nil then
@@ -534,59 +611,79 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     return
   end
 
-  if sideName == "Taiwan" then
-    -- Prepare data for HTML template
-    local jammingDataString = createGPSJammingDataString(config, sideName)
-    local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
-    local weaponSystemDataString = createWeaponSystemDataString(config, sideName)
-    local HTMLTemplate = getSetupMenuTemplate()
-    local msg = string.format(
-      HTMLTemplate,
-      jammingDataString,
-      deployedAircraftDataString,
-      weaponSystemDataString
-    )
+  if sideName ~= "Taiwan" then
+    Logger.error("Unsupported side name")
+    return
+  end
 
-    -- Display interactive setup dialog
-    local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+  -- Prepare data for HTML template
+  local jammingDataString = createGPSJammingDataString(config, sideName)
+  local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
+  local weaponSystemDataString = createWeaponSystemDataString(config, sideName)
+  local HTMLTemplate = getSetupMenuTemplate()
+  local msg = string.format(HTMLTemplate, jammingDataString, deployedAircraftDataString, weaponSystemDataString)
 
-    -- Process submitted configuration
-    if form["pressed"] and form["pressed"] == "Done" then
-      if form["summaryData"] then
-        -- Parse JSON configuration from form
-        local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
-        local result = gKH.json.parse(jsonStr)
-        ---@cast result {ewUnits: SBJ__GPSJammerDescriptor[], bases: SBJ__AirbaseDeploymentDescriptor[], weaponSystems: table}
-        local jammerDescriptors = result.ewUnits
-        local abDeploymentDescriptors = result.bases
-        local weaponSystemsData = result.weaponSystems
+  -- Display interactive setup dialog
+  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
 
-        -- Apply GPS jamming unit deployments
-        if jammerDescriptors then
-          for _, descriptor in ipairs(jammerDescriptors) do
-            GPSJamming.addGPSJammer(descriptor, sideName)
-          end
-        end
+  -- Process submitted configuration
+  if form["pressed"] and form["pressed"] == "Done" and form["summaryData"] then
+    -- Parse JSON configuration from form
+    local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
+    local result = gKH.json.parse(jsonStr)
+    ---@cast result SBJ__SetupResult
+    local jammerDescriptors = result.ewUnits
+    local abDeploymentDescriptors = result.bases
+    local deployedLaunchers = result.deployedLaunchers
 
-        -- Apply aircraft and loadout configurations
-        if abDeploymentDescriptors then
-          UnitGenerator.addAircraft(abDeploymentDescriptors)
-          UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
-        end
+    -- Apply GPS jamming unit deployments
+    if jammerDescriptors then
+      for _, descriptor in ipairs(jammerDescriptors) do
+        GPSJamming.addGPSJammer(descriptor, sideName)
+      end
+    end
 
-        -- Apply TEL launcher deployments
-        if weaponSystemsData then
-          local sideConfig = GameUtils.getCachedSideConfig(sideName)
-          local field = sideConfig.field
+    -- Apply aircraft and loadout configurations
+    if abDeploymentDescriptors then
+      UnitGenerator.addAircraft(abDeploymentDescriptors)
+      UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
+    end
 
-          -- Update weapon system configurations in config
-          for category, categoryData in pairs(weaponSystemsData) do
-            if config[field].ground[category] then
-              config[field].ground[category] = categoryData
-            end
-          end
+    -- Apply TEL launcher deployments
+    if deployedLaunchers then
+      local sideConfig = GameUtils.getCachedSideConfig(sideName)
+      local field = sideConfig.field
+      local operationalAreas = {}
+      ---@cast operationalAreas SBJ__OperationalArea[]
+      local groundCig = {
+        srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
+        ascm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
+        glcm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
+        mlrs = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      }
+      ---@cast groundCig SBJ__GroundForceConfig
+      -- Update weapon system configurations in config
+      for _, deployedLauncher in ipairs(deployedLaunchers) do
+        ---@type SBJ__WeaponSystemConfig
+        local wpnSystemConfig = config[field].ground[deployedLauncher.category]
+
+        if wpnSystemConfig and wpnSystemConfig.firingUnits[deployedLauncher.unitName] then
+          local firingUnitdescriptor = Utils.deepCopy(wpnSystemConfig.firingUnits[deployedLauncher.unitName])
+          local resupplyUnitDescriptor = Utils.deepCopy(wpnSystemConfig.resupplyUnits[firingUnitdescriptor.resupplyUnit])
+          local ammoDescriptor = Utils.deepCopy(wpnSystemConfig.ammunitions[resupplyUnitDescriptor.ammunition])
+          local operationalArea = transformData(deployedLauncher)
+          firingUnitdescriptor.operationalArea = operationalArea
+          resupplyUnitDescriptor.operationalArea = operationalArea
+          table.insert(operationalAreas, operationalArea)
+          groundCig[deployedLauncher.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
+          groundCig[deployedLauncher.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+          groundCig[deployedLauncher.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
         end
       end
+
+      Launcher.initEventTriggers(operationalAreas, { "RL", "FP", "HA", "AHA" }, sideName)
+      Launcher.addLaunchers(groundCig, sideName)
+      Launcher.initLauncherContexts(groundCig, saveData.t.ground)
     end
   end
 

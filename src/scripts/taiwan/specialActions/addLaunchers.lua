@@ -10,6 +10,5 @@ if not saveData then
   return
 end
 
-local systems = { "srbm", "ascm", "mlrs", "glcm" }
-Launcher.addLaunchers(config.t.ground, systems, "Taiwan")
-Launcher.initLauncherContexts(config.t.ground, saveData.t.ground, systems)
+Launcher.addLaunchers(config.t.ground, "Taiwan")
+Launcher.initLauncherContexts(config.t.ground, saveData.t.ground)

@@ -938,4 +938,11 @@ constants.WCS = {
   HOLD = 2,
 }
 
+constants.ZONE_TYPES = {
+  NON_NAVIGATION = 0,
+  EXCLUSION = 1,
+  CUSTOM_ENVIRONMENT = 2,
+  STANDARD = -925,
+}
+
 return constants
