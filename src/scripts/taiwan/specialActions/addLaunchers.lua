@@ -10,5 +10,5 @@ if not saveData then
   return
 end
 
-Launcher.addLaunchers(config.t.ground, "Taiwan")
-Launcher.initLauncherContexts(config.t.ground, saveData.t.ground)
+Launcher.addMissileSystems(config.t.ground, "Taiwan")
+Launcher.initMissileSystemContexts(config.t.ground, saveData.t.ground)

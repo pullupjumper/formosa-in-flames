@@ -136,7 +136,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field jammers table<string, SBJ__GPSJammerDescriptor> GPS jammer descriptors indexed by jammer name
 
 ---Weapon system configuration
----@class SBJ__WeaponSystemConfig: table
+---@class SBJ__MissileSystemConfig: table
 ---@field wpnDefault number Default weapon count
 ---@field ammoThreshold number Ammunition threshold for resupply
 ---@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name
@@ -148,12 +148,12 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Ground force configuration
 ---@class SBJ__GroundForceConfig: table
----@field mlrs SBJ__WeaponSystemConfig MLRS configuration
----@field glcm SBJ__WeaponSystemConfig GLCM configuration
----@field srbm SBJ__WeaponSystemConfig SRBM configuration
----@field mrbm? SBJ__WeaponSystemConfig MRBM configuration (China only)
----@field ascm? SBJ__WeaponSystemConfig ASCM configuration (Taiwan only)
----@field [SBJ__WeaponSystemConfig] SBJ__WeaponSystemConfig
+---@field mlrs SBJ__MissileSystemConfig MLRS configuration
+---@field glcm SBJ__MissileSystemConfig GLCM configuration
+---@field srbm SBJ__MissileSystemConfig SRBM configuration
+---@field mrbm? SBJ__MissileSystemConfig MRBM configuration (China only)
+---@field ascm? SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
+---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
 
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
@@ -799,7 +799,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Weapon system context data structure
 ---Consolidates all components of a complete weapon system (firing units, resupply units, ammunition)
----@class SBJ__WeaponSystemContext: table
+---@class SBJ__MissileSystemContext: table
 ---@field enabled boolean Whether the weapon system is currently active
 ---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
 ---@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name for this weapon system
@@ -812,13 +812,13 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Manages all ground-based weapon systems and fire support operations
 ---@class SBJ__GroundForceContext: table
 ---@field enabled boolean Whether ground force systems are activated
----@field mlrs SBJ__WeaponSystemContext Multiple Launch Rocket System
----@field srbm SBJ__WeaponSystemContext Short-Range Ballistic Missile system
----@field mrbm SBJ__WeaponSystemContext Medium-Range Ballistic Missile system
----@field glcm SBJ__WeaponSystemContext Ground-Launched Cruise Missile system
----@field ascm SBJ__WeaponSystemContext Anti-Ship Cruise Missile system
+---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
+---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
+---@field mrbm SBJ__MissileSystemContext Medium-Range Ballistic Missile system
+---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
+---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
 ---@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
----@field [SBJ__WeaponSystemContext] SBJ__WeaponSystemContext
+---@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
 
 ---Unit property setting parameters for ground units
 ---@class SBJ__SetUnitPropertiesParams: table
@@ -1336,6 +1336,6 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Setup menu configuration result containing user selections
 ---@class SBJ__SetupResult: table
----@field ewUnits SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
----@field bases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
----@field deployedLaunchers {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL launcher deployment configurations with tactical areas and paths
+---@field jammers SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
+---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
+---@field missileSystems {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths

@@ -480,26 +480,26 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                     flags=re.DOTALL,
                 )
 
-                # 6. ewUnitString
+                # 6. jammerString
                 html_content = re.sub(
-                    r"const\s+ewUnitString\s*=\s*`.*?`;",
-                    "const ewUnitString = `%s`;",
+                    r"const\s+jammerString\s*=\s*`.*?`;",
+                    "const jammerString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
 
-                # 7. baseString
+                # 7. airbaseString
                 html_content = re.sub(
-                    r"const\s+baseString\s*=\s*`.*?`;",
-                    "const baseString = `%s`;",
+                    r"const\s+airbaseString\s*=\s*`.*?`;",
+                    "const airbaseString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
 
-                # 8. firingUnitString
+                # 8. missileSystemString
                 html_content = re.sub(
-                    r"const\s+firingUnitString\s*=\s*`.*?`;",
-                    "const firingUnitString = `%s`;",
+                    r"const\s+missileSystemString\s*=\s*`.*?`;",
+                    "const missileSystemString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
@@ -1036,7 +1036,7 @@ def analyze_file_dependencies(
     return dependencies
 
 
-def normalize_require_path(require_path: str, slim_dir: str) -> str:
+def normalize_require_path(require_path: str, slim_dir: str) -> str | None:
     """
     Convert a require path to a normalized file path within slim directory.
     e.g., "src.utils.gameApi" -> "utils/gameApi.lua"

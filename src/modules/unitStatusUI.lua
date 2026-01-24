@@ -10,21 +10,20 @@ local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
----Transform deployed launcher configuration into operational area data structure
----@param deployedLauncher {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed launcher configuration with tactical areas and movement paths
----@return SBJ__OperationalArea # Operational area configuration with FP/RL/HA/AHA positions
-local function transformData(deployedLauncher)
-  ---@type SBJ__OperationalArea
+---Transform deployed missile system configuration into operational area data structure
+---@param missileSystem {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
+---@return SBJ__OperationalArea # Operational area data structure
+local function transformData(missileSystem)
   local operationalArea = {
+    RL = {},
     FP = {},
     AHA = {},
-    RL = {},
     HA = {},
-    uShapeVertices = deployedLauncher.tacticalAreas.uShapeVertices,
+    uShapeVertices = missileSystem.tacticalAreas.uShapeVertices,
     name = "#" .. Utils.randomTxt(2)
   }
 
-  for index, firePoint in ipairs(deployedLauncher.paths.FP) do
+  for index, firePoint in ipairs(missileSystem.paths.FP) do
     local course = {}
     for _, waypoint in ipairs(firePoint.waypoints) do
       table.insert(course, {
@@ -36,11 +35,11 @@ local function transformData(deployedLauncher)
     end
     table.insert(operationalArea.FP, {
       course = course,
-      area = deployedLauncher.tacticalAreas.firePoints[index]
+      area = missileSystem.tacticalAreas.firePoints[index]
     })
   end
 
-  local reloadPoint = deployedLauncher.paths.RL[1]
+  local reloadPoint = missileSystem.paths.RL[1]
   local course = {}
   for _, waypoint in ipairs(reloadPoint.waypoints) do
     table.insert(course, {
@@ -53,11 +52,11 @@ local function transformData(deployedLauncher)
   table.remove(course, 1)
   table.insert(operationalArea.RL, {
     course = course,
-    area = deployedLauncher.tacticalAreas.reloadArea
+    area = missileSystem.tacticalAreas.reloadArea
   })
 
   local ahaCourse = {}
-  for _, waypoint in ipairs(deployedLauncher.paths.AHA.waypoints) do
+  for _, waypoint in ipairs(missileSystem.paths.AHA.waypoints) do
     table.insert(ahaCourse, {
       latitude = waypoint.latitude,
       longitude = waypoint.longitude,
@@ -65,14 +64,13 @@ local function transformData(deployedLauncher)
       presetThrottle = "Flank"
     })
   end
-
   table.insert(operationalArea.AHA, {
     course = ahaCourse,
-    area = deployedLauncher.tacticalAreas.ammoArea
+    area = missileSystem.tacticalAreas.ammoArea
   })
 
   local haCourse = {}
-  for _, waypoint in ipairs(deployedLauncher.paths.HA.waypoints) do
+  for _, waypoint in ipairs(missileSystem.paths.HA.waypoints) do
     table.insert(haCourse, {
       latitude = waypoint.latitude,
       longitude = waypoint.longitude,
@@ -80,8 +78,7 @@ local function transformData(deployedLauncher)
       presetThrottle = "Flank"
     })
   end
-
-  table.insert(operationalArea.HA, { course = haCourse, area = deployedLauncher.tacticalAreas.hideArea })
+  table.insert(operationalArea.HA, { course = haCourse, area = missileSystem.tacticalAreas.hideArea })
   return operationalArea
 end
 
@@ -494,7 +491,7 @@ end
 ---@param config SBJ__Config Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted GPS jamming unit data
-local function createGPSJammingDataString(config, sideName)
+local function createGPSJammerDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local descriptors = config[field].GPSJamming.jammers
@@ -512,7 +509,7 @@ end
 ---@param config SBJ__Config Saved game data containing launcher state
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted launcher data
-local function createWeaponSystemDataString(config, sideName)
+local function createMissileSystemDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
@@ -617,11 +614,11 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   end
 
   -- Prepare data for HTML template
-  local jammingDataString = createGPSJammingDataString(config, sideName)
+  local gpsJammerDataString = createGPSJammerDataString(config, sideName)
   local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
-  local weaponSystemDataString = createWeaponSystemDataString(config, sideName)
+  local missileSystemDataString = createMissileSystemDataString(config, sideName)
   local HTMLTemplate = getSetupMenuTemplate()
-  local msg = string.format(HTMLTemplate, jammingDataString, deployedAircraftDataString, weaponSystemDataString)
+  local msg = string.format(HTMLTemplate, gpsJammerDataString, deployedAircraftDataString, missileSystemDataString)
 
   -- Display interactive setup dialog
   local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
@@ -632,25 +629,26 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
     local result = gKH.json.parse(jsonStr)
     ---@cast result SBJ__SetupResult
-    local jammerDescriptors = result.ewUnits
-    local abDeploymentDescriptors = result.bases
-    local deployedLaunchers = result.deployedLaunchers
+    local jammerDescriptors = result.jammers
+    local airbaseDeploymentDescriptors = result.airbases
+    local missileSystems = result.missileSystems
 
     -- Apply GPS jamming unit deployments
-    if jammerDescriptors then
+    if jammerDescriptors and #jammerDescriptors > 0 then
+      GPSJamming.removeJammers(jammerDescriptors, sideName)
       for _, descriptor in ipairs(jammerDescriptors) do
         GPSJamming.addGPSJammer(descriptor, sideName)
       end
     end
 
     -- Apply aircraft and loadout configurations
-    if abDeploymentDescriptors then
-      UnitGenerator.addAircraft(abDeploymentDescriptors)
+    if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
+      UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
       UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
     end
 
     -- Apply TEL launcher deployments
-    if deployedLaunchers then
+    if missileSystems and #missileSystems > 0 then
       local sideConfig = GameUtils.getCachedSideConfig(sideName)
       local field = sideConfig.field
       local operationalAreas = {}
@@ -662,28 +660,28 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         mlrs = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
       }
       ---@cast groundCig SBJ__GroundForceConfig
-      -- Update weapon system configurations in config
-      for _, deployedLauncher in ipairs(deployedLaunchers) do
-        ---@type SBJ__WeaponSystemConfig
-        local wpnSystemConfig = config[field].ground[deployedLauncher.category]
+      -- Update missile system configurations in config
+      for _, missileSystem in ipairs(missileSystems) do
+        ---@type SBJ__MissileSystemConfig
+        local systemCfg = config[field].ground[missileSystem.category]
 
-        if wpnSystemConfig and wpnSystemConfig.firingUnits[deployedLauncher.unitName] then
-          local firingUnitdescriptor = Utils.deepCopy(wpnSystemConfig.firingUnits[deployedLauncher.unitName])
-          local resupplyUnitDescriptor = Utils.deepCopy(wpnSystemConfig.resupplyUnits[firingUnitdescriptor.resupplyUnit])
-          local ammoDescriptor = Utils.deepCopy(wpnSystemConfig.ammunitions[resupplyUnitDescriptor.ammunition])
-          local operationalArea = transformData(deployedLauncher)
+        if systemCfg and systemCfg.firingUnits[missileSystem.unitName] then
+          local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitName])
+          local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
+          local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
+          local operationalArea = transformData(missileSystem)
           firingUnitdescriptor.operationalArea = operationalArea
           resupplyUnitDescriptor.operationalArea = operationalArea
           table.insert(operationalAreas, operationalArea)
-          groundCig[deployedLauncher.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
-          groundCig[deployedLauncher.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-          groundCig[deployedLauncher.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
+          groundCig[missileSystem.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
+          groundCig[missileSystem.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+          groundCig[missileSystem.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
         end
       end
 
       Launcher.initEventTriggers(operationalAreas, { "RL", "FP", "HA", "AHA" }, sideName)
-      Launcher.addLaunchers(groundCig, sideName)
-      Launcher.initLauncherContexts(groundCig, saveData.t.ground)
+      Launcher.addMissileSystems(groundCig, sideName)
+      Launcher.initMissileSystemContexts(groundCig, saveData.t.ground)
     end
   end
 

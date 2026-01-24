@@ -48,7 +48,7 @@ elseif positionType == "HA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    ---@type SBJ__WeaponSystemContext|nil
+    ---@type SBJ__MissileSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
     if wpnSystemCtx and wpnSystemCtx.enabled then
@@ -71,7 +71,7 @@ elseif positionType == "RL" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    ---@type SBJ__WeaponSystemContext|nil
+    ---@type SBJ__MissileSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
     if wpnSystemCtx and wpnSystemCtx.enabled then
@@ -92,7 +92,7 @@ elseif positionType == "AHA" then
   end
 
   for _, wpnSystem in ipairs(wpnSystems) do
-    ---@type SBJ__WeaponSystemContext|nil
+    ---@type SBJ__MissileSystemContext|nil
     local wpnSystemCtx = saveData.c.ground[wpnSystem]
 
     if wpnSystemCtx and wpnSystemCtx.enabled then

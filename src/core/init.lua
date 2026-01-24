@@ -115,13 +115,11 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.ground.enabled then
-    local systems = { "srbm", "mrbm", "mlrs", "glcm" }
-    Launcher.initLauncherContexts(config.c.ground, saveData.c.ground, systems)
+    Launcher.initMissileSystemContexts(config.c.ground, saveData.c.ground)
   end
 
   if saveData.t.ground.enabled then
-    local systems = { "srbm", "ascm", "mlrs", "glcm" }
-    Launcher.initLauncherContexts(config.t.ground, saveData.t.ground, systems)
+    Launcher.initMissileSystemContexts(config.t.ground, saveData.t.ground)
   end
 
   if config.isDevMode then
