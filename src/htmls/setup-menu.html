@@ -1549,7 +1549,7 @@
 						const category = unitKey.split("_")[0];
 
 						State.missileSystem.deployedUnits.set(unitKey, {
-							unitName: unit.name,
+							unitname: unit.name,
 							category: category,
 							center: { lat, lng },
 							openingAngle,
@@ -2016,7 +2016,7 @@
 						State.missileSystem.deployedUnits.entries(),
 					).map(([key, d]) => ({
 						key,
-						unitName: d.unitName,
+						unitname: d.unitname,
 						category: d.category,
 						center: d.center,
 						openingAngle: d.openingAngle,

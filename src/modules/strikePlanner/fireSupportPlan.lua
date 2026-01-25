@@ -2,7 +2,7 @@ local AttackManager = require("src.modules.strikePlanner.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 
 local FireSupportPlan = {}
 
@@ -14,7 +14,7 @@ local FireSupportPlan = {}
 ---@return boolean # Returns true if unit is in HIDE state and not low on ammo
 local function isFiringUnitReady(config, firingUnitCtx, group)
   return firingUnitCtx.state == config.batteryState.HIDE and
-      not Launcher.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
+      not MissileSystem.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 end
 
 ---Check if firing unit is not yet at firing point
@@ -44,7 +44,7 @@ local function shouldDeployToFiringPoint(config, saveData, FST)
       local firingUnitCtx = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[firingUnit.name]
 
       if isFiringUnitReady(config, firingUnitCtx, actualFiringUnit) then
-        Launcher.moveToFiringPoint(config, firingUnitCtx, actualFiringUnit)
+        MissileSystem.moveToFiringPoint(config, firingUnitCtx, actualFiringUnit)
       end
 
       if isNotFiringUnitAtFiringPoint(config, firingUnitCtx) then

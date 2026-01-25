@@ -4,7 +4,7 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 
-local Launcher = {}
+local MissileSystem = {}
 
 
 -- Module constants
@@ -43,7 +43,7 @@ local function isReadyToReloadFiringUnit(firingUnitCtx, systemCtx, metResult, fi
 
   return elapsedTime >= systemCtx.reloadTime and
       metResult.isMet and
-      Launcher.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, weaponDBID)
+      MissileSystem.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, weaponDBID)
 end
 
 ---Check if resupply unit reload conditions are met
@@ -105,7 +105,7 @@ end
 local function moveUnitToPosition(unitName, battery, positions, positionType, wcs, useLastCourse)
   local posCount = Utils.getCount(positions)
   if posCount == 0 then
-    Logger.error(string.format("launcher: No %s positions available for %s", positionType, unitName))
+    Logger.error(string.format("missileSystem: No %s positions available for %s", positionType, unitName))
     return false
   end
 
@@ -113,7 +113,7 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, wc
   local position = positions[posIdx]
 
   if not position or not position.course then
-    Logger.error(string.format("launcher: Invalid %s position data at index %d for %s",
+    Logger.error(string.format("missileSystem: Invalid %s position data at index %d for %s",
       positionType, posIdx, unitName))
     return false
   end
@@ -164,7 +164,8 @@ end
 local function moveToHideArea(config, firingUnitCtx, firingUnit)
   -- Check if HA exists (some OPAREAs may not have HA)
   if not firingUnitCtx.operationalArea.HA then
-    Logger.log("launcher", "launcher: No HA defined for firing unit " .. firingUnitCtx.name .. ", skipping hide movement")
+    Logger.log("missileSystem",
+      "missileSystem: No HA defined for firing unit " .. firingUnitCtx.name .. ", skipping hide movement")
     return
   end
 
@@ -222,7 +223,7 @@ end
 ---@param sideName string Side name
 local function handleAutomaticFiringUnitRepositioning(config, systemCtx, firingUnitCtx, firingUnit, isAuto, sideName)
   if firingUnitCtx.state == config.batteryState.STATIC then
-    if Launcher.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
+    if MissileSystem.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
       moveToReloadPoint(config, firingUnitCtx, firingUnit)
     end
   end
@@ -232,13 +233,13 @@ local function handleAutomaticFiringUnitRepositioning(config, systemCtx, firingU
       firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() - systemCtx.reloadTime
     end
 
-    local result = Launcher.isMetWithResupplyUnits(config, systemCtx, firingUnit, isAuto)
+    local result = MissileSystem.isMetWithResupplyUnits(config, systemCtx, firingUnit, isAuto)
     local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemCtx, result, firingUnit,
       firingUnitCtx.weaponDBID)
     local resupplyUnitCtx = systemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
 
     if isReadyToReload then
-      Launcher.reload(firingUnitCtx, resupplyUnitCtx, firingUnitCtx.weaponDBID, sideName)
+      MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, firingUnitCtx.weaponDBID, sideName)
       moveToHideArea(config, firingUnitCtx, firingUnit)
     end
   end
@@ -258,13 +259,13 @@ local function handleManualFiringUnitReload(config, systemCtx, firingUnitCtx, fi
         systemCtx.reloadTime * BATTERY_CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local result = Launcher.isMetWithResupplyUnits(config, systemCtx, firingUnit, isAuto)
+  local result = MissileSystem.isMetWithResupplyUnits(config, systemCtx, firingUnit, isAuto)
   local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemCtx, result, firingUnit,
     firingUnitCtx.weaponDBID)
   local resupplyUnitCtx = systemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
 
   if isReadyToReload then
-    Launcher.reload(firingUnitCtx, resupplyUnitCtx, firingUnitCtx.weaponDBID, sideName)
+    MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, firingUnitCtx.weaponDBID, sideName)
 
     if config.isDevMode then
       GameApi.ScenEdit_MsgBox("Missile reload is finished/" .. firingUnitCtx.name, 1)
@@ -295,7 +296,7 @@ local function handleAutomaticResupplyUnitRepositioning(config, systemCtx, resup
   end
 
   if resupplyUnitCtx.state == config.batteryState.RELOAD then
-    local result = Launcher.isMetWithAmmoDepot(config, systemCtx, resupplyUnit, isAuto)
+    local result = MissileSystem.isMetWithAmmoDepot(config, systemCtx, resupplyUnit, isAuto)
     local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitCtx, systemCtx, result)
     local ammoDepotCtx = systemCtx.ammunitions[resupplyUnitCtx.ammunition]
 
@@ -323,7 +324,7 @@ local function handleManualResupplyUnitReload(config, systemCtx, resupplyUnitCtx
         systemCtx.reloadTime * BATTERY_CONSTANTS.MANUAL_RELOAD_DELAY_MULTIPLIER
   end
 
-  local result = Launcher.isMetWithAmmoDepot(config, systemCtx, resupplyUnit, isAuto)
+  local result = MissileSystem.isMetWithAmmoDepot(config, systemCtx, resupplyUnit, isAuto)
   local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitCtx, systemCtx, result)
   local ammoDepotCtx = systemCtx.ammunitions[resupplyUnitCtx.ammunition]
 
@@ -436,7 +437,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param weaponDBID number Weapon database ID
 ---@param sideName string Side name
-function Launcher.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
+function MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
   local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
   if not firingUnit then return end
 
@@ -453,7 +454,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
-function Launcher.setReloadStartTime(config, firingUnitCtx, firingUnit, isAuto)
+function MissileSystem.setReloadStartTime(config, firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = config.batteryState.RELOAD
   firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
 
@@ -474,7 +475,7 @@ end
 ---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-function Launcher.setWCSToFree(config, firingUnitCtx, firingUnit)
+function MissileSystem.setWCSToFree(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.STATIC
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
@@ -495,7 +496,7 @@ end
 ---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-function Launcher.setStateToHIDE(config, firingUnitCtx, firingUnit)
+function MissileSystem.setStateToHIDE(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.HIDE
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
@@ -517,7 +518,7 @@ end
 ---@param percentage number Percentage threshold
 ---@param weaponDBID number Weapon database ID
 ---@return boolean # Whether it is low ammunition
-function Launcher.isLowAmmo(firingUnit, percentage, weaponDBID)
+function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
   local totalCurrent = 0
   local totalMax = 0
 
@@ -540,7 +541,7 @@ end
 ---@param config SBJ__Config Configuration object
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-function Launcher.moveToFiringPoint(config, firingUnitCtx, firingUnit)
+function MissileSystem.moveToFiringPoint(config, firingUnitCtx, firingUnit)
   firingUnitCtx.state = config.batteryState.REPOSITIONING
   moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.FP, "FP")
 end
@@ -585,7 +586,7 @@ end
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
 ---@return {isMet: boolean, firingUnit: SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil} # Meeting status with resupply unit context
-function Launcher.isMetWithResupplyUnits(config, systemCtx, unit, isAuto)
+function MissileSystem.isMetWithResupplyUnits(config, systemCtx, unit, isAuto)
   if not unit.group then return { isMet = false, firingUnit = nil } end
   local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
   if not unitGroup then return { isMet = false, firingUnit = nil } end
@@ -624,7 +625,7 @@ end
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
 ---@return {isMet: boolean, resupplyUnit: SBJ__ResupplyUnitContext|nil} # Meeting status with ammo depot context
-function Launcher.isMetWithAmmoDepot(config, systemCtx, unit, isAuto)
+function MissileSystem.isMetWithAmmoDepot(config, systemCtx, unit, isAuto)
   if not unit.group then return { isMet = false, resupplyUnit = nil } end
   local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)
   if not resupplyUnit then return { isMet = false, resupplyUnit = nil } end
@@ -656,7 +657,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
-function Launcher.checkBatteryState(config, systemCtx, isAuto, sideName)
+function MissileSystem.checkBatteryState(config, systemCtx, isAuto, sideName)
   processFiringUnits(config, systemCtx, isAuto, sideName)
   processResupplyUnits(config, systemCtx, isAuto, sideName)
 end
@@ -664,7 +665,7 @@ end
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit Destroyed unit
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
-function Launcher.handleSupplyAssetDestruction(unit, systemCtx)
+function MissileSystem.handleSupplyAssetDestruction(unit, systemCtx)
   -- Determine unit type by checking if it has a group (type-safe approach)
   -- Ammunition depots are single units (no group), resupply units are groups
   local isAmmunitionDepot = (unit.group == nil)
@@ -710,28 +711,34 @@ end
 
 ---Remove all zones matching specified position types
 ---@param positionTypes string[] Array of position type identifiers (e.g., "RL", "HA", "FP")
----@param sideObj CMO__Side Side object containing zones to remove
 ---@param sideName string Side name for deletion context
-local function removeZones(positionTypes, sideObj, sideName)
+local function removeZones(positionTypes, sideName)
   local natureSideName = "Nature"
+  local sideObj = GameApi.VP_GetSide({ side = sideName })
   local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
 
   for _, z in ipairs(natureSideObj.customenvironmentzones) do
     for _, positionType in ipairs(positionTypes) do
       if string.find(z.description, "^" .. positionType .. "/") then
         local zone = natureSideObj:getcustomenvironmentzone(z.description)
-        removeRPs(zone, sideName)
-        GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
-          { description = z.description })
+
+        if zone then
+          removeRPs(zone, sideName)
+          GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
+            { description = z.description })
+        end
       end
     end
 
     if string.find(z.description, "^" .. "MASK" .. "/") then
       local zone = natureSideObj:getcustomenvironmentzone(z.description)
-      removeRPs(zone, sideName)
-      removeRPs(zone, natureSideName)
-      GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
-        { description = z.description })
+
+      if zone then
+        removeRPs(zone, sideName)
+        removeRPs(zone, natureSideName)
+        GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
+          { description = z.description })
+      end
     end
   end
 
@@ -854,15 +861,14 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
   return false
 end
 
----Initialize event triggers and zones for launcher operational areas
+---Initialize event triggers and zones for missile system operational areas
 ---@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
 ---@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
 ---@param sideName string Side name for zone/trigger ownership
-function Launcher.initEventTriggers(operationalAreas, positionTypes, sideName)
-  local side = GameApi.VP_GetSide({ side = sideName })
+function MissileSystem.initEventTriggers(operationalAreas, positionTypes, sideName)
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
   local eventNamePrefix = "(" .. sideName .. ") Arrive in "
-  removeZones(positionTypes, side, sideName)
+  removeZones(positionTypes, sideName)
   removeEventTriggers(positionTypes, eventNamePrefix)
 
   for _, operationalArea in ipairs(operationalAreas) do
@@ -877,7 +883,7 @@ function Launcher.initEventTriggers(operationalAreas, positionTypes, sideName)
   end
 end
 
----Remove launchers from the game
+---Remove missile systems from the game
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor with removal info
 ---@param sideName string Side name for unit deletion
 ---@return boolean # Whether unit was successfully removed
@@ -1023,10 +1029,10 @@ local function addAmmunition(systemCfg, descriptor, sideName)
   return false
 end
 
----Add launchers to the game
+---Add missile system to the game
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force context
 ---@param sideName string Side name
-function Launcher.addMissileSystems(groundForceCfg, sideName)
+function MissileSystem.addMissileSystems(groundForceCfg, sideName)
   for _, systemCfg in pairs(groundForceCfg) do
     ---@cast systemCfg SBJ__MissileSystemConfig
     for _, descriptor in pairs(systemCfg.firingUnits) do
@@ -1046,10 +1052,10 @@ function Launcher.addMissileSystems(groundForceCfg, sideName)
   end
 end
 
----Initialize launcher runtime contexts from configuration
+---Initialize missile system runtime contexts from configuration
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
-function Launcher.initMissileSystemContexts(groundForceCfg, groundForceCtx)
+function MissileSystem.initMissileSystemContexts(groundForceCfg, groundForceCtx)
   for system, systemCfg in pairs(groundForceCfg) do
     ---@cast systemCfg SBJ__MissileSystemConfig
     local firingUnits = Utils.deepCopy(systemCfg.firingUnits)
@@ -1077,4 +1083,4 @@ function Launcher.initMissileSystemContexts(groundForceCfg, groundForceCtx)
   end
 end
 
-return Launcher
+return MissileSystem

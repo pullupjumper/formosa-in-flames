@@ -20,7 +20,7 @@ config.logging = {
     IADS = { verbose = false },
     attackManager = { verbose = false },
     unitGenerator = { verbose = false },
-    launcher = { verbose = false },
+    missileSystem = { verbose = false },
     score = { verbose = true },
     init = { verbose = true },
   }

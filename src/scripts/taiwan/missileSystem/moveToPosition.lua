@@ -2,7 +2,7 @@ local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
 local contacts = GameApi.ScenEdit_GetContacts("Taiwan")
@@ -25,7 +25,7 @@ if not unit then
 end
 
 local positionType = ""
-local wpnSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
+local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
 for _, trigger in ipairs(event.triggers) do
   if trigger["UnitEntersArea"] then
@@ -47,15 +47,15 @@ elseif positionType == "HA" then
     end
   end
 
-  for _, wpnSystem in ipairs(wpnSystems) do
+  for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+    local missileSystemCtx = saveData.c.ground[missileSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.enabled then
-      for _, firingUnitCtx in pairs(wpnSystemCtx.firingUnits) do
+    if missileSystemCtx and missileSystemCtx.enabled then
+      for _, firingUnitCtx in pairs(missileSystemCtx.firingUnits) do
         if unit then
           if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
-            Launcher.setStateToHIDE(config, firingUnitCtx, unit)
+            MissileSystem.setStateToHIDE(config, firingUnitCtx, unit)
           end
         end
       end
@@ -70,15 +70,15 @@ elseif positionType == "RL" then
     end
   end
 
-  for _, wpnSystem in ipairs(wpnSystems) do
+  for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+    local missileSystemCtx = saveData.c.ground[missileSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.enabled then
-      local result = Launcher.isMetWithResupplyUnits(config, wpnSystemCtx, unit, false)
+    if missileSystemCtx and missileSystemCtx.enabled then
+      local result = MissileSystem.isMetWithResupplyUnits(config, missileSystemCtx, unit, false)
 
       if result.isMet then
-        Launcher.setReloadStartTime(config, result.firingUnit, unit, false)
+        MissileSystem.setReloadStartTime(config, result.firingUnit, unit, false)
       end
     end
   end
@@ -91,15 +91,15 @@ elseif positionType == "AHA" then
     end
   end
 
-  for _, wpnSystem in ipairs(wpnSystems) do
+  for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local wpnSystemCtx = saveData.c.ground[wpnSystem]
+    local missileSystemCtx = saveData.c.ground[missileSystem]
 
-    if wpnSystemCtx and wpnSystemCtx.enabled then
-      local result = Launcher.isMetWithAmmoDepot(config, wpnSystemCtx, unit, false)
+    if missileSystemCtx and missileSystemCtx.enabled then
+      local result = MissileSystem.isMetWithAmmoDepot(config, missileSystemCtx, unit, false)
 
       if result.isMet then
-        Launcher.setReloadStartTime(config, result.resupplyUnit, unit, false)
+        MissileSystem.setReloadStartTime(config, result.resupplyUnit, unit, false)
       end
     end
   end

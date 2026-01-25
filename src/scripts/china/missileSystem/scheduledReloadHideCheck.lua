@@ -1,6 +1,6 @@
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local config = require("src.core.config")
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
@@ -14,7 +14,7 @@ local wpnSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
 for _, wpnSystem in ipairs(wpnSystems) do
   if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].enabled then
-    Launcher.checkBatteryState(config, saveData.c.ground[wpnSystem], true, "China")
+    MissileSystem.checkBatteryState(config, saveData.c.ground[wpnSystem], true, "China")
   end
 end
 

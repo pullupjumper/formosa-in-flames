@@ -7,7 +7,7 @@ local UnitGenerator = require("src.modules.unitGenerator")
 local IADS = require("src.modules.IADS")
 local CommsJamming = require("src.modules.EW.commsJamming")
 local SIGINT = require("src.modules.EW.sigint")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
@@ -26,8 +26,8 @@ local function initEventActions()
     "scripts\\china\\amphibiousOps\\offloadVehicles.lua",
     "scripts\\china\\EW\\collectSIGINT.lua",
     "scripts\\china\\EW\\commsJamming.lua",
-    "scripts\\china\\launcher\\moveToPosition.lua",
-    "scripts\\china\\launcher\\scheduledReloadHideCheck.lua",
+    "scripts\\china\\missileSystem\\moveToPosition.lua",
+    "scripts\\china\\missileSystem\\scheduledReloadHideCheck.lua",
     "scripts\\china\\aircraftLanding.lua",
     "scripts\\china\\CSGEnterArea.lua",
     "scripts\\china\\H6NLaunchWZ8.lua",
@@ -35,8 +35,8 @@ local function initEventActions()
     "scripts\\score\\destroyUnits.lua",
     "scripts\\score\\successfulLanding.lua",
     "scripts\\score\\taiwaneseAssetIsDestroy.lua",
-    "scripts\\taiwan\\launcher\\moveToPosition.lua",
-    "scripts\\taiwan\\launcher\\scheduledReloadHideCheck.lua",
+    "scripts\\taiwan\\missileSystem\\moveToPosition.lua",
+    "scripts\\taiwan\\missileSystem\\scheduledReloadHideCheck.lua",
     "scripts\\taiwan\\activiateANTISHIPMission.lua",
     "scripts\\taiwan\\aircraftLanding.lua",
     "scripts\\us\\collectSIGINT.lua",
@@ -59,14 +59,14 @@ local function initSpecialActions()
     { path = "src\\scripts\\china\\specialActions\\addSAGs.lua",                 actionName = "Add SAGs" },
     { path = "src\\scripts\\china\\specialActions\\addSubmarines.lua",           actionName = "Add submarines" },
     { path = "src\\scripts\\china\\specialActions\\unitStatusMenu.lua",          actionName = "Unit status menu" },
-    { path = "src\\scripts\\china\\specialActions\\addLaunchers.lua",            actionName = "Add launchers" },
+    { path = "src\\scripts\\china\\specialActions\\addMissileSystems.lua",       actionName = "Add missile systems" },
     { path = "src\\scripts\\taiwan\\specialActions\\addACs.lua",                 actionName = "Add aircraft" },
     { path = "src\\scripts\\taiwan\\specialActions\\addDeployedShipsAtPort.lua", actionName = "Add deployed ships at port" },
     { path = "src\\scripts\\taiwan\\specialActions\\addSAGs.lua",                actionName = "Add SAGs" },
     { path = "src\\scripts\\taiwan\\specialActions\\WCSSettingMenu.lua",         actionName = "WCS setting menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",         actionName = "Unit status menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",              actionName = "Setup menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addLaunchers.lua",           actionName = "Add launchers" },
+    { path = "src\\scripts\\taiwan\\specialActions\\addMissileSystems.lua",      actionName = "Add missile systems" },
   }
 
   for _, action in ipairs(actions) do
@@ -115,11 +115,11 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.ground.enabled then
-    Launcher.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+    MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
   end
 
   if saveData.t.ground.enabled then
-    Launcher.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+    MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
   end
 
   if config.isDevMode then

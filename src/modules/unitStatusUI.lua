@@ -4,14 +4,14 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local gKH = require("src.core.gKH_State_Standalone")
 local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
 ---Transform deployed missile system configuration into operational area data structure
----@param missileSystem {key: string, unitName: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
+---@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
 ---@return SBJ__OperationalArea # Operational area data structure
 local function transformData(missileSystem)
   local operationalArea = {
@@ -505,10 +505,10 @@ local function createGPSJammerDataString(config, sideName)
   return gKH.json.stringify(rows)
 end
 
----Create JSON string for launcher data
----@param config SBJ__Config Saved game data containing launcher state
+---Create JSON string for missile system data
+---@param config SBJ__Config Saved game data containing missile system state
 ---@param sideName string Side name ('China' or 'Taiwan')
----@return string # JSON formatted launcher data
+---@return string # JSON formatted missile system data
 local function createMissileSystemDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
@@ -665,8 +665,8 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         ---@type SBJ__MissileSystemConfig
         local systemCfg = config[field].ground[missileSystem.category]
 
-        if systemCfg and systemCfg.firingUnits[missileSystem.unitName] then
-          local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitName])
+        if systemCfg and systemCfg.firingUnits[missileSystem.unitname] then
+          local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitname])
           local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
           local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
           local operationalArea = transformData(missileSystem)
@@ -679,9 +679,9 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         end
       end
 
-      Launcher.initEventTriggers(operationalAreas, { "RL", "FP", "HA", "AHA" }, sideName)
-      Launcher.addMissileSystems(groundCig, sideName)
-      Launcher.initMissileSystemContexts(groundCig, saveData.t.ground)
+      MissileSystem.initEventTriggers(operationalAreas, { "RL", "FP", "HA", "AHA" }, sideName)
+      MissileSystem.addMissileSystems(groundCig, sideName)
+      MissileSystem.initMissileSystemContexts(groundCig, saveData.t.ground)
     end
   end
 

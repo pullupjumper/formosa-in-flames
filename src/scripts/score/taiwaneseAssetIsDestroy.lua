@@ -2,7 +2,7 @@ local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local IADS = require("src.modules.IADS")
 local GPSJamming = require("src.modules.EW.GPSJamming")
 local constants = require("src.core.constants")
@@ -27,9 +27,9 @@ if unit then
       )
     elseif unit.dbid == constants.PLATFORMS.AMMO_TRUCK or unit.dbid == constants.PLATFORMS.AMMO then
       local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
-      Launcher.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
+      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
+      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
+      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       Logger.log("score", "An " .. text .. " has been destoryed.")
     elseif unit.dbid == constants.PLATFORMS.FPS117 or
         unit.dbid == constants.PLATFORMS.TPS43F or

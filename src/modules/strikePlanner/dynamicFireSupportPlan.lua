@@ -2,7 +2,7 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
-local Launcher = require("src.modules.launcher")
+local MissileSystem = require("src.modules.missileSystem")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
 local DynamicFireSupportPlan = {}
@@ -136,7 +136,7 @@ local function validateFiringUnitStatus(config, saveData, firingUnitName, wpnSys
 
   -- Check operational status
   local isInGoodState = firingUnitCtx.state == config.batteryState.HIDE
-  local hasAmmo = not Launcher.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
+  local hasAmmo = not MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 
   if not isInGoodState or not hasAmmo then
     return false, "Firing Unit in poor condition or low ammunition"

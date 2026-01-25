@@ -158,7 +158,7 @@ The scoring configuration defines point values awarded or deducted when units ar
 - `runwayRepairment.lua` - Runway damage assessment and repair scheduling
 - `IADS.lua` - Integrated Air Defense System coordination
 - `unitStatusUI.lua` - Unit status monitoring and UI generation
-- `launcher.lua` - TEL (Transporter Erector Launcher) management for mobile missile systems
+- `missileSystem.lua` - TEL (Transporter Erector Launcher) management for mobile missile systems
 
 **Specialized Subsystems**:
 
@@ -220,8 +220,8 @@ Event handlers in `src/scripts/` are organized by faction and event type, coordi
 - `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` - Air landing zone neutralization operations
 - `src/scripts/china/H6NLaunchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
 - `src/scripts/china/CSGEnterArea.lua` - China Carrier Strike Group area entry handling
-- `src/scripts/china/launcher/moveToPosition.lua` - China TEL move to each positions
-- `src/scripts/taiwan/launcher/moveToPosition.lua` - Taiwan TEL move to each positions
+- `src/scripts/china/missileSystem/moveToPosition.lua` - China TEL move to each positions
+- `src/scripts/taiwan/missileSystem/moveToPosition.lua` - Taiwan TEL move to each positions
 - `src/scripts/score/successfulLanding.lua` - Score tracking for successful amphibious landings
 
 **1-Minute Regular Time Event Scripts**:
@@ -231,8 +231,8 @@ Event handlers in `src/scripts/` are organized by faction and event type, coordi
 - `src/scripts/china/amphibiousOps/landingCheck.lua` - Monitors amphibious landing progress
 - `src/scripts/china/EW/collectSIGINT.lua` - China SIGINT collection operations
 - `src/scripts/china/scheduledStrikePlanner.lua` - China strike planning coordination
-- `src/scripts/china/launcher/scheduledReloadHideCheck.lua` - China TEL reload/hide status monitoring
-- `src/scripts/taiwan/launcher/scheduledReloadHideCheck.lua` - Taiwan TEL reload/hide status monitoring
+- `src/scripts/china/missileSystem/scheduledReloadHideCheck.lua` - China TEL reload/hide status monitoring
+- `src/scripts/taiwan/missileSystem/scheduledReloadHideCheck.lua` - Taiwan TEL reload/hide status monitoring
 - `src/scripts/us/collectSIGINT.lua` - US SIGINT collection operations
 - `src/scripts/scheduledRunwayRepairment.lua` - Automated runway damage repair scheduling
 
