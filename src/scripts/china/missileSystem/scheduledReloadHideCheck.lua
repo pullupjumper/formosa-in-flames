@@ -10,11 +10,11 @@ if saveData == nil then
   return
 end
 
-local wpnSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
+local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
-for _, wpnSystem in ipairs(wpnSystems) do
-  if saveData.c.ground[wpnSystem] and saveData.c.ground[wpnSystem].enabled then
-    MissileSystem.checkBatteryState(config, saveData.c.ground[wpnSystem], true, "China")
+for _, missileSystem in ipairs(missileSystems) do
+  if saveData.c.ground[missileSystem] and saveData.c.ground[missileSystem].enabled then
+    MissileSystem.checkMissileSystemState(config, saveData.c.ground[missileSystem], true, "China")
   end
 end
 

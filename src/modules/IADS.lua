@@ -245,18 +245,34 @@ function IADS.initC2FacilitiesContext(IADSConfig, IADSContext)
   return true
 end
 
+---Initialize C2 context for a specific C2 facility unit
+---@param c2Context table<string, SBJ__C2Context> C2 context mapping to be populated with C2 node data
+---@param c2Descriptor SBJ__C2Descriptor C2 descriptor containing name and deployment areas
+---@param c2GUID string GUID of the C2 facility unit being initialized
+---@param c2Type string C2 type ('C2', 'ROCC', or 'TAAOC') determining which sub-tables to initialize
+local function initC2Context(c2Context, c2Descriptor, c2GUID, c2Type)
+  c2Context[c2GUID] = {
+    name = c2Descriptor.name,
+    msg = "Radio source, C2",
+    guid = c2GUID,
+    areas = c2Descriptor.areas,
+    SAM = {},
+  }
+
+  if c2Type == "C2" or c2Type == "ROCC" then
+    c2Context[c2GUID].radar = {}
+  end
+end
+
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
 ---@param IADSConfig SBJ__IADSFactionConfig IADS configuration for faction
 ---@param IADSContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
-function IADS.initC2Contexts(IADSConfig, IADSContext)
+function IADS.initIADSContexts(IADSConfig, IADSContext)
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
   end
-
-  IADSContext.ROCC = Utils.deepCopy(IADSConfig.ROCC)
-  IADSContext.TAAOC = Utils.deepCopy(IADSConfig.TAAOC)
 
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
@@ -268,14 +284,7 @@ function IADS.initC2Contexts(IADSConfig, IADSContext)
         if actualUnit and actualUnit:inArea(area) and c2 then
           if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or actualUnit.dbid == constants.PLATFORMS.PAC3 then
             if not IADSContext.ROCC[c2.guid] then
-              IADSContext.ROCC[c2.guid] = {
-                name = descriptor.name,
-                msg = "Radio source, C2",
-                guid = c2.guid,
-                areas = descriptor.areas,
-                SAM = {},
-                radar = {}
-              }
+              initC2Context(IADSContext.ROCC, descriptor, c2.guid, "ROCC")
             end
 
             IADSContext.ROCC[c2.guid].SAM[actualUnit.guid] = {
@@ -293,6 +302,10 @@ function IADS.initC2Contexts(IADSConfig, IADSContext)
               actualUnit.dbid == constants.PLATFORMS.TPS43F or
               actualUnit.dbid == constants.PLATFORMS.HR3000 or
               actualUnit.dbid == constants.PLATFORMS.GE592 then
+            if not IADSContext.ROCC[c2.guid] then
+              initC2Context(IADSContext.ROCC, descriptor, c2.guid, "ROCC")
+            end
+
             IADSContext.ROCC[c2.guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -314,13 +327,7 @@ function IADS.initC2Contexts(IADSConfig, IADSContext)
         if actualUnit and actualUnit:inArea(area) and c2 then
           if actualUnit.dbid == constants.PLATFORMS.TC2 or actualUnit.dbid == constants.PLATFORMS.SKY_GUARD then
             if not IADSContext.TAAOC[c2.guid] then
-              IADSContext.TAAOC[c2.guid] = {
-                name = descriptor.name,
-                msg = "Radio source, C2",
-                guid = c2.guid,
-                areas = descriptor.areas,
-                SAM = {},
-              }
+              initC2Context(IADSContext.TAAOC, descriptor, c2.guid, "TAAOC")
             end
 
             IADSContext.TAAOC[c2.guid].SAM[actualUnit.guid] = {

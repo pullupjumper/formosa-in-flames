@@ -268,12 +268,12 @@ end
 local function createBatteryDataString(config, saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
-  local wpnSystems = { ... }
+  local missileSystems = { ... }
   local rows = {}
 
-  for _, wpnSystem in pairs(wpnSystems) do
-    local resupplyUnitCtxs = saveData[field].ground[wpnSystem] and
-        saveData[field].ground[wpnSystem].resupplyUnits
+  for _, missileSystem in pairs(missileSystems) do
+    local resupplyUnitCtxs = saveData[field].ground[missileSystem] and
+        saveData[field].ground[missileSystem].resupplyUnits
 
     if resupplyUnitCtxs then
       for key, ctx in pairs(resupplyUnitCtxs) do
@@ -282,27 +282,27 @@ local function createBatteryDataString(config, saveData, sideName, ...)
     end
   end
 
-  for _, wpnSystem in pairs(wpnSystems) do
-    local wpnSystemCtx = saveData[field].ground[wpnSystem]
-    local firingUnitCtxs = wpnSystemCtx and wpnSystemCtx.firingUnits
+  for _, missileSystem in pairs(missileSystems) do
+    local missileSystemCtx = saveData[field].ground[missileSystem]
+    local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 
-    if wpnSystemCtx and firingUnitCtxs then
+    if missileSystemCtx and firingUnitCtxs then
       for _, ctx in pairs(firingUnitCtxs) do
         local name = ctx.name
         local status = ""
-        local missilesInAmmoVehicles = wpnSystemCtx.resupplyUnits[ctx.resupplyUnit].wpnCurrent
-        local ammoSec = wpnSystemCtx.resupplyUnits[ctx.resupplyUnit]
-        local reloadTime = config[field].ground[wpnSystem].reloadTime / 60
-        local missilesInAHA = wpnSystemCtx.ammunitions[wpnSystemCtx.resupplyUnits[ctx.resupplyUnit].ammunition]
+        local missilesInAmmoVehicles = missileSystemCtx.resupplyUnits[ctx.resupplyUnit].wpnCurrent
+        local ammoSec = missileSystemCtx.resupplyUnits[ctx.resupplyUnit]
+        local reloadTime = config[field].ground[missileSystem].reloadTime / 60
+        local missilesInAHA = missileSystemCtx.ammunitions[missileSystemCtx.resupplyUnits[ctx.resupplyUnit].ammunition]
             .wpnCurrent
         local batteryReloadTime = nil
         local ammoSectionReloadTime = nil
 
-        if ctx.state == config.batteryState.STATIC then
+        if ctx.state == config.missileSystemState.STATIC then
           status = "STATIC"
-        elseif ctx.state == config.batteryState.REPOSITIONING then
+        elseif ctx.state == config.missileSystemState.REPOSITIONING then
           status = "REPOSITIONING"
-        elseif ctx.state == config.batteryState.RELOAD then
+        elseif ctx.state == config.missileSystemState.RELOAD then
           status = "RELOAD"
         else
           status = "HIDE"
@@ -336,7 +336,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         if sideName == "China" then
           table.insert(rows[ctx.resupplyUnit], {
             name = name,
-            type = wpnSystem,
+            type = missileSystem,
             status = status,
             missilesInAmmoVehicles = missilesInAmmoVehicles,
             missilesInAHA = missilesInAHA,
@@ -347,7 +347,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         else
           table.insert(rows[ctx.resupplyUnit], {
             name = name,
-            type = wpnSystem,
+            type = missileSystem,
             status = status,
             missilesInAmmoVehicles = missilesInAmmoVehicles,
             missilesInAHA = missilesInAHA,

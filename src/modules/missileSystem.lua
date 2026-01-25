@@ -147,7 +147,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 local function moveToReloadPoint(config, firingUnitCtx, firingUnit)
-  firingUnitCtx.state = config.batteryState.REPOSITIONING
+  firingUnitCtx.state = config.missileSystemState.REPOSITIONING
   moveUnitToPosition(
     firingUnitCtx.name,
     firingUnit,
@@ -169,7 +169,7 @@ local function moveToHideArea(config, firingUnitCtx, firingUnit)
     return
   end
 
-  firingUnitCtx.state = config.batteryState.REPOSITIONING
+  firingUnitCtx.state = config.missileSystemState.REPOSITIONING
   moveUnitToPosition(
     firingUnitCtx.name,
     firingUnit,
@@ -184,7 +184,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveToAmmoHoldingArea(config, resupplyUnitCtx, resupplyUnit)
-  resupplyUnitCtx.state = config.batteryState.REPOSITIONING
+  resupplyUnitCtx.state = config.missileSystemState.REPOSITIONING
   moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.AHA, "AHA")
 end
 
@@ -210,7 +210,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 local function moveResupplyUnitToReloadPoint(config, resupplyUnitCtx, resupplyUnit)
-  resupplyUnitCtx.state = config.batteryState.REPOSITIONING
+  resupplyUnitCtx.state = config.missileSystemState.REPOSITIONING
   moveUnitToPosition(resupplyUnitCtx.name, resupplyUnit, resupplyUnitCtx.operationalArea.RL, "RL", nil, true)
 end
 
@@ -222,13 +222,13 @@ end
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
 local function handleAutomaticFiringUnitRepositioning(config, systemCtx, firingUnitCtx, firingUnit, isAuto, sideName)
-  if firingUnitCtx.state == config.batteryState.STATIC then
+  if firingUnitCtx.state == config.missileSystemState.STATIC then
     if MissileSystem.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
       moveToReloadPoint(config, firingUnitCtx, firingUnit)
     end
   end
 
-  if firingUnitCtx.state == config.batteryState.RELOAD then
+  if firingUnitCtx.state == config.missileSystemState.RELOAD then
     if firingUnitCtx.reloadStartTime == nil then
       firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime() - systemCtx.reloadTime
     end
@@ -280,7 +280,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@param isAuto boolean Whether in automatic mode
 local function handleAutomaticResupplyUnitRepositioning(config, systemCtx, resupplyUnitCtx, resupplyUnit, isAuto)
-  if resupplyUnitCtx.state == config.batteryState.STATIC then
+  if resupplyUnitCtx.state == config.missileSystemState.STATIC then
     -- Check if unit is in any RL area
     local isInRLArea = false
     for _, pos in ipairs(resupplyUnitCtx.operationalArea.RL) do
@@ -295,7 +295,7 @@ local function handleAutomaticResupplyUnitRepositioning(config, systemCtx, resup
     end
   end
 
-  if resupplyUnitCtx.state == config.batteryState.RELOAD then
+  if resupplyUnitCtx.state == config.missileSystemState.RELOAD then
     local result = MissileSystem.isMetWithAmmoDepot(config, systemCtx, resupplyUnit, isAuto)
     local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitCtx, systemCtx, result)
     local ammoDepotCtx = systemCtx.ammunitions[resupplyUnitCtx.ammunition]
@@ -455,7 +455,7 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
 function MissileSystem.setReloadStartTime(config, firingUnitCtx, firingUnit, isAuto)
-  firingUnitCtx.state = config.batteryState.RELOAD
+  firingUnitCtx.state = config.missileSystemState.RELOAD
   firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
@@ -476,7 +476,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function MissileSystem.setWCSToFree(config, firingUnitCtx, firingUnit)
-  firingUnitCtx.state = config.batteryState.STATIC
+  firingUnitCtx.state = config.missileSystemState.STATIC
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
     local u = GameApi.ScenEdit_GetUnit(guid)
@@ -497,7 +497,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function MissileSystem.setStateToHIDE(config, firingUnitCtx, firingUnit)
-  firingUnitCtx.state = config.batteryState.HIDE
+  firingUnitCtx.state = config.missileSystemState.HIDE
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
     local u = GameApi.ScenEdit_GetUnit(guid)
@@ -542,7 +542,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 function MissileSystem.moveToFiringPoint(config, firingUnitCtx, firingUnit)
-  firingUnitCtx.state = config.batteryState.REPOSITIONING
+  firingUnitCtx.state = config.missileSystemState.REPOSITIONING
   moveUnitToPosition(firingUnitCtx.name, firingUnit, firingUnitCtx.operationalArea.FP, "FP")
 end
 
@@ -559,8 +559,8 @@ local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, 
   local isStateValid = true
 
   if isAuto then
-    local repoState = config.batteryState.REPOSITIONING
-    local reloadState = config.batteryState.RELOAD
+    local repoState = config.missileSystemState.REPOSITIONING
+    local reloadState = config.missileSystemState.RELOAD
     isStateValid = (targetCtx.state == repoState or targetCtx.state == reloadState)
   end
 
@@ -634,8 +634,8 @@ function MissileSystem.isMetWithAmmoDepot(config, systemCtx, unit, isAuto)
     local isStateValid = true
 
     if isAuto then
-      local repoState = config.batteryState.REPOSITIONING
-      local reloadState = config.batteryState.RELOAD
+      local repoState = config.missileSystemState.REPOSITIONING
+      local reloadState = config.missileSystemState.RELOAD
       isStateValid = (resupplyUnitCtx.state == repoState or resupplyUnitCtx.state == reloadState)
     end
 
@@ -654,10 +654,10 @@ end
 
 ---Check status of all firing units and resupply units, and trigger corresponding actions
 ---@param config SBJ__Config Configuration object
----@param systemCtx SBJ__MissileSystemContext Weapon system context
+---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
-function MissileSystem.checkBatteryState(config, systemCtx, isAuto, sideName)
+function MissileSystem.checkMissileSystemState(config, systemCtx, isAuto, sideName)
   processFiringUnits(config, systemCtx, isAuto, sideName)
   processResupplyUnits(config, systemCtx, isAuto, sideName)
 end

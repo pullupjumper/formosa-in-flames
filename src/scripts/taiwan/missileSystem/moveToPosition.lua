@@ -54,7 +54,7 @@ elseif positionType == "HA" then
     if missileSystemCtx and missileSystemCtx.enabled then
       for _, firingUnitCtx in pairs(missileSystemCtx.firingUnits) do
         if unit then
-          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.batteryState.REPOSITIONING then
+          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.missileSystemState.REPOSITIONING then
             MissileSystem.setStateToHIDE(config, firingUnitCtx, unit)
           end
         end

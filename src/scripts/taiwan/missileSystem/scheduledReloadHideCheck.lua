@@ -14,7 +14,7 @@ local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
 for _, missileSystem in ipairs(missileSystems) do
   if saveData.t.ground[missileSystem] and saveData.t.ground[missileSystem].enabled then
-    MissileSystem.checkBatteryState(config, saveData.t.ground[missileSystem], false, "Taiwan")
+    MissileSystem.checkMissileSystemState(config, saveData.t.ground[missileSystem], false, "Taiwan")
   end
 end
 

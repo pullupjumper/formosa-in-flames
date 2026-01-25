@@ -139,7 +139,6 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__MissileSystemConfig: table
 ---@field wpnDefault number Default weapon count
 ---@field ammoThreshold number Ammunition threshold for resupply
----@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name
 ---@field contactAge? number Contact valid age in seconds (optional)
 ---@field reloadTime number Reload time in seconds
 ---@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
@@ -192,6 +191,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---IADS configuration for faction
 ---@class SBJ__IADSFactionConfig: table
 ---@field ratio table<string, number> C2 facility ratio multipliers
+---@field TAAOC? SBJ__C2Descriptor[] TAAOC descriptors
+---@field ROCC? SBJ__C2Descriptor[] ROCC descriptors
 
 ---China faction configuration
 ---@class SBJ__ChinaConfig: table
@@ -249,7 +250,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
 ---@field radarDistance number Radar detection distance (nautical miles)
 ---@field readytime number Ready time for missions (seconds)
----@field batteryState table<string, integer> Battery state enumeration
+---@field missileSystemState table<string, integer> Battery state enumeration
 ---@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
 ---@field c SBJ__ChinaConfig China faction configuration
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
@@ -764,7 +765,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Unit operational status information
 ---@class SBJ__UnitStatus: table
----@field state batteryState Current unit state (STATIC/HIDE, etc.)
+---@field state missileSystemState Current unit state (STATIC/HIDE, etc.)
 ---@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
 
 ---Ammunition unit descriptor combining base unit info and weapon status
@@ -929,7 +930,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Fire Support Task template extending task with firing units
 ---@class SBJ__FireSupportTaskTemplate: SBJ__Task
 ---@field name string FST name
----@field wpnSystem string Weapon system type
+---@field missileSystem string Missile system type
 ---@field firingUnits SBJ__FiringUnit[] Firing unit array
 
 ---Fire Support Task execution state
@@ -1196,7 +1197,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---C2 node deployment descriptor
 ---Defines how to create and deploy a single Command and Control node
 ---@class SBJ__C2Descriptor: table
----@field position CMO__Location C2 position coordinates
+---@field position? CMO__Location C2 position coordinates
 ---@field areas string[][] Operation areas array
 ---@field name string Operation area name
 

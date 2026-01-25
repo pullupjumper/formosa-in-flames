@@ -13,7 +13,7 @@ local FireSupportPlan = {}
 ---@param group CMO__Unit The actual unit group
 ---@return boolean # Returns true if unit is in HIDE state and not low on ammo
 local function isFiringUnitReady(config, firingUnitCtx, group)
-  return firingUnitCtx.state == config.batteryState.HIDE and
+  return firingUnitCtx.state == config.missileSystemState.HIDE and
       not MissileSystem.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 end
 
@@ -23,7 +23,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state info
 ---@return boolean # Returns true if unit is not at STATIC (firing point) state
 local function isNotFiringUnitAtFiringPoint(config, firingUnitCtx)
-  return firingUnitCtx.state ~= config.batteryState.STATIC
+  return firingUnitCtx.state ~= config.missileSystemState.STATIC
 end
 
 ---Deploy firing units to firing point and check if all are in position
@@ -41,7 +41,7 @@ local function shouldDeployToFiringPoint(config, saveData, FST)
     if not actualFiringUnit then
       allFiringUnitsInPosition = false
     else
-      local firingUnitCtx = saveData.c.ground[string.lower(FST.wpnSystem)].firingUnits[firingUnit.name]
+      local firingUnitCtx = saveData.c.ground[string.lower(FST.missileSystem)].firingUnits[firingUnit.name]
 
       if isFiringUnitReady(config, firingUnitCtx, actualFiringUnit) then
         MissileSystem.moveToFiringPoint(config, firingUnitCtx, actualFiringUnit)

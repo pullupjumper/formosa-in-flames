@@ -114,10 +114,10 @@ end
 ---@param config SBJ__Config Global configuration table with firing unit state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param firingUnitName string The name of the battery/firing unit to validate
----@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") used to locate battery data
+---@param missileSystem string Missile system name (e.g., "SRBM", "LACM") used to locate battery data
 ---@return boolean success true if firing unit is ready for use (exists, in HIDE state, has ammo)
 ---@return string|nil errorReason Error reason if firing unit is not valid, nil on success
-local function validateFiringUnitStatus(config, saveData, firingUnitName, wpnSystem)
+local function validateFiringUnitStatus(config, saveData, firingUnitName, missileSystem)
   -- Check if unit exists in game
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
   if not actualUnit then
@@ -125,17 +125,17 @@ local function validateFiringUnitStatus(config, saveData, firingUnitName, wpnSys
   end
 
   -- Get battery data from weapon system
-  local weaponSystemLower = string.lower(wpnSystem)
-  local firingUnitCtx = saveData.c.ground[weaponSystemLower] and
-      saveData.c.ground[weaponSystemLower].firingUnits and
-      saveData.c.ground[weaponSystemLower].firingUnits[firingUnitName]
+  local missileSystemLower = string.lower(missileSystem)
+  local firingUnitCtx = saveData.c.ground[missileSystemLower] and
+      saveData.c.ground[missileSystemLower].firingUnits and
+      saveData.c.ground[missileSystemLower].firingUnits[firingUnitName]
 
   if not firingUnitCtx then
     return false, "Cannot find battery data: " .. firingUnitName
   end
 
   -- Check operational status
-  local isInGoodState = firingUnitCtx.state == config.batteryState.HIDE
+  local isInGoodState = firingUnitCtx.state == config.missileSystemState.HIDE
   local hasAmmo = not MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 
   if not isInGoodState or not hasAmmo then
@@ -150,9 +150,9 @@ end
 ---@param config SBJ__Config Global configuration table with battery state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
 ---@param firingUnits SBJ__FiringUnit[] Array of firing unit contexts specified in FST template
----@param wpnSystem string Weapon system name (e.g., "SRBM", "LACM") for validation
+---@param missileSystem string Missile system name (e.g., "SRBM", "LACM") for validation
 ---@return SBJ__FiringUnitContext[] # Array of available batteries ready for assignment
-local function checkFiringUnitAvailability(config, saveData, firingUnits, wpnSystem)
+local function checkFiringUnitAvailability(config, saveData, firingUnits, missileSystem)
   local availableFiringUnitCtxs = {}
   local assignedFiringUnitCtxs = collectAssignedFiringUnits(saveData)
 
@@ -163,7 +163,7 @@ local function checkFiringUnitAvailability(config, saveData, firingUnits, wpnSys
       Logger.log("dynamicOperations", firingUnit.name .. " already assigned to other FST")
     else
       -- Validate battery status and readiness
-      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnit.name, wpnSystem)
+      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnit.name, missileSystem)
 
       if isValid then
         table.insert(availableFiringUnitCtxs, firingUnit)
@@ -240,7 +240,7 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
 
       -- Check if firing units specified in template are available
       local availableFiringUnits = checkFiringUnitAvailability(
-        config, saveData, FSTTemplate.firingUnits, FSTTemplate.wpnSystem
+        config, saveData, FSTTemplate.firingUnits, FSTTemplate.missileSystem
       )
 
       if availableFiringUnits and #availableFiringUnits > 0 then
@@ -248,7 +248,7 @@ local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedT
         ---@type SBJ__FireSupportTask
         local FST = {
           name = FSTTemplate.name,
-          wpnSystem = FSTTemplate.wpnSystem,
+          missileSystem = FSTTemplate.missileSystem,
           firingUnits = availableFiringUnits,
           startTime = startTime,
           isFinished = false,

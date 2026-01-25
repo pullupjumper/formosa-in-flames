@@ -98,7 +98,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.t.IADS.enabled then
-    IADS.initC2Contexts(config.t.IADS, saveData.t.IADS)
+    IADS.initIADSContexts(config.t.IADS, saveData.t.IADS)
   end
 
   if saveData.c.IADS.enabled then

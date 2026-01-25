@@ -97,9 +97,9 @@ config.radarDistance = 70
 config.readytime = 5 * 60
 
 
---- Battery states for the ground units
----@enum batteryState
-config.batteryState = {
+--- Missile system states for the ground units
+---@enum missileSystemState
+config.missileSystemState = {
   STATIC = 0,
   REPOSITIONING = 1,
   RELOAD = 2,
@@ -286,10 +286,6 @@ config.c.ground = {}
 config.c.ground.mlrs = {}
 config.c.ground.mlrs.wpnDefault = 192
 config.c.ground.mlrs.ammoThreshold = 50
-config.c.ground.mlrs.operationalAreas = {
-  Pingtan = constants.OPERATIONAL_AREAS.PINGTAN,
-  Chinchew = constants.OPERATIONAL_AREAS.CHINCHEW,
-}
 config.c.ground.mlrs.contactAge = 30 * 60
 config.c.ground.mlrs.reloadTime = 30 * 60
 config.c.ground.mlrs.ammunitions = {
@@ -313,8 +309,8 @@ config.c.ground.mlrs.resupplyUnits = {
     wpnCurrent = config.c.ground.mlrs.wpnDefault,
     wpnDefault = config.c.ground.mlrs.wpnDefault,
     unitCount = 3,
-    operationalArea = config.c.ground.mlrs.operationalAreas.Pingtan,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
   },
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
@@ -323,8 +319,8 @@ config.c.ground.mlrs.resupplyUnits = {
     wpnCurrent = config.c.ground.mlrs.wpnDefault,
     wpnDefault = config.c.ground.mlrs.wpnDefault,
     unitCount = 3,
-    operationalArea = config.c.ground.mlrs.operationalAreas.Chinchew,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.CHINCHEW,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
   },
 }
@@ -333,8 +329,8 @@ config.c.ground.mlrs.firingUnits = {
     name = "1st Bn, 1st Rockets Arty Bde",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HND05GGU36EN",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.mlrs.operationalAreas.Pingtan,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
@@ -344,8 +340,8 @@ config.c.ground.mlrs.firingUnits = {
     name = "6th Bn, 73rd Arty Bde",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HNBRRE2PRQAL",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.mlrs.operationalAreas.Chinchew,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.CHINCHEW,
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.c.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Bn, 73rd Arty Bde",
@@ -361,9 +357,6 @@ config.c.ground.mlrs.firingUnits = {
 config.c.ground.glcm = {}
 config.c.ground.glcm.wpnDefault = 120
 config.c.ground.glcm.ammoThreshold = 50
-config.c.ground.glcm.operationalAreas = {
-  Brigade635 = constants.OPERATIONAL_AREAS.BRIGADE_635,
-}
 config.c.ground.glcm.contactAge = 30 * 60
 config.c.ground.glcm.reloadTime = 45 * 60
 config.c.ground.glcm.ammunitions = {
@@ -381,8 +374,8 @@ config.c.ground.glcm.resupplyUnits = {
     wpnCurrent = config.c.ground.glcm.wpnDefault / 2,
     wpnDefault = config.c.ground.glcm.wpnDefault / 2,
     unitCount = 5,
-    operationalArea = config.c.ground.glcm.operationalAreas.Brigade635,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_635,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 635th Bde, PLARF",
   },
 }
@@ -391,8 +384,8 @@ config.c.ground.glcm.firingUnits = {
     guid = "6Z8LM5-0HMN97ERAUODK",
     name = "635th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.glcm.operationalAreas.Brigade635,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_635,
     weaponDBID = constants.WEAPONS.CJ10A,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
@@ -407,14 +400,6 @@ config.c.ground.glcm.firingUnits = {
 config.c.ground.srbm = {}
 config.c.ground.srbm.wpnDefault = 36
 config.c.ground.srbm.ammoThreshold = 35
-config.c.ground.srbm.operationalAreas = {
-  Brigade615 = constants.OPERATIONAL_AREAS.BRIGADE_615,
-  Brigade614 = constants.OPERATIONAL_AREAS.BRIGADE_614,
-  Brigade636 = constants.OPERATIONAL_AREAS.BRIGADE_636,
-  Brigade616 = constants.OPERATIONAL_AREAS.BRIGADE_616,
-  Brigade613 = constants.OPERATIONAL_AREAS.BRIGADE_613,
-  Brigade617 = constants.OPERATIONAL_AREAS.BRIGADE_617,
-}
 config.c.ground.srbm.contactAge = 30 * 60
 config.c.ground.srbm.reloadTime = 5 * 60
 config.c.ground.srbm.ammunitions = {
@@ -462,8 +447,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 6,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade615,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_615,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 615th Bde, PLARF",
   },
   ["Ammo Sec, 614th Bde, PLARF"] = {
@@ -472,8 +457,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 6,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade614,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_614,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 614th Bde, PLARF",
   },
   ["Ammo Sec, 636th Bde, PLARF"] = {
@@ -482,8 +467,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade636,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_636,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 636th Bde, PLARF",
   },
   ["Ammo Sec, 616th Bde, PLARF"] = {
@@ -492,8 +477,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 6,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade616,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_616,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 616th Bde, PLARF",
   },
   ["Ammo Sec, 613rd Bde, PLARF"] = {
@@ -502,8 +487,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 6,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade613,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_613,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 613rd Bde, PLARF",
   },
   ["Ammo Sec, 617th Bde, PLARF"] = {
@@ -512,8 +497,8 @@ config.c.ground.srbm.resupplyUnits = {
     wpnCurrent = config.c.ground.srbm.wpnDefault,
     wpnDefault = config.c.ground.srbm.wpnDefault,
     unitCount = 9,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade617,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_617,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 617th Bde, PLARF",
   },
 }
@@ -522,8 +507,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "X58F5H-0HN1G2IFLNKG9",
     name = "615th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade615,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_615,
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
@@ -533,8 +518,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "X58F5H-0HN1LQGRV8HNQ",
     name = "614th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade614,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_614,
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
@@ -544,8 +529,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "IC8B0X-0HN822OHANPB3",
     name = "636th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade636,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_636,
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
@@ -555,8 +540,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "X58F5H-0HN1G2IFLF6QE",
     name = "616th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade616,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_616,
     weaponDBID = constants.WEAPONS.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
@@ -566,8 +551,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "X58F5H-0HN1G2DEBC7O8",
     name = "613rd Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade613,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_613,
     weaponDBID = constants.WEAPONS.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
@@ -577,8 +562,8 @@ config.c.ground.srbm.firingUnits = {
     guid = "IC8B0X-0HN822OHANRHI",
     name = "617th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.srbm.operationalAreas.Brigade617,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_617,
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
@@ -593,9 +578,6 @@ config.c.ground.srbm.firingUnits = {
 config.c.ground.mrbm = {}
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 35
-config.c.ground.mrbm.operationalAreas = {
-  Brigade624 = constants.OPERATIONAL_AREAS.BRIGADE_624,
-}
 config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
 config.c.ground.mrbm.ammunitions = {
@@ -613,8 +595,8 @@ config.c.ground.mrbm.resupplyUnits = {
     wpnCurrent = config.c.ground.mrbm.wpnDefault,
     wpnDefault = config.c.ground.mrbm.wpnDefault,
     unitCount = 6,
-    operationalArea = config.c.ground.mrbm.operationalAreas.Brigade624,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_624,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 624th Bde, PLARF",
   },
 }
@@ -623,8 +605,8 @@ config.c.ground.mrbm.firingUnits = {
     guid = "IC8B0X-0HNCOR6HG2JE1",
     name = "624th Bde, PLARF",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.c.ground.mrbm.operationalAreas.Brigade624,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_624,
     weaponDBID = constants.WEAPONS.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
@@ -2243,7 +2225,7 @@ config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
       name = "RADAR",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
         { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
@@ -2262,7 +2244,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "RUNWAY",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
         { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
@@ -2289,7 +2271,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "PORT",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
@@ -2311,7 +2293,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "SHELTER",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
@@ -2334,7 +2316,7 @@ config.c.FSTTemplate = {
   STRIKE_INFRASTRUCTURE_2 = {
     {
       name = "RADAR",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
         { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
@@ -2353,7 +2335,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "RUNWAY",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
         { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
@@ -2385,7 +2367,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "PORT",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
       },
@@ -2409,7 +2391,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "SHELTER",
-      wpnSystem = "SRBM",
+      missileSystem = "SRBM",
       firingUnits = {
         { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
       },
@@ -2436,7 +2418,7 @@ config.c.FSTTemplate = {
   ANTISHIP_1 = {
     {
       name = "ANTISHIP",
-      wpnSystem = "MRBM",
+      missileSystem = "MRBM",
       firingUnits = {
         { name = "624th Bde, PLARF", guid = "IC8B0X-0HNCOR6HG2JE1", weaponDBID = constants.WEAPONS.DF21D }
       },
@@ -2454,7 +2436,7 @@ config.c.FSTTemplate = {
   STRIKE_C2_1 = {
     {
       name = "PINGTAN",
-      wpnSystem = "MLRS",
+      missileSystem = "MLRS",
       firingUnits = {
         { name = "1st Bn, 1st Rockets Arty Bde", guid = "IC8B0X-0HND05GGU36EN", weaponDBID = constants.WEAPONS.FD280 }
       },
@@ -2470,7 +2452,7 @@ config.c.FSTTemplate = {
     },
     {
       name = "CHINCHEW",
-      wpnSystem = "MLRS",
+      missileSystem = "MLRS",
       firingUnits = {
         { name = "6th Bn, 73rd Arty Bde", guid = "IC8B0X-0HNBRRE2PRQAL", weaponDBID = constants.WEAPONS.FD280 }
       },
@@ -2488,7 +2470,7 @@ config.c.FSTTemplate = {
   STRIKE_HELIPAD_1 = {
     {
       name = "HELIPAD",
-      wpnSystem = "GLCM",
+      missileSystem = "GLCM",
       firingUnits = {
         { name = "635th Bde, PLARF", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10A }
       },
@@ -3631,9 +3613,6 @@ config.t.ground = {}
 config.t.ground.mlrs = {}
 config.t.ground.mlrs.wpnDefault = 144
 config.t.ground.mlrs.ammoThreshold = 25
-config.t.ground.mlrs.operationalAreas = {
-  Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
-}
 config.t.ground.mlrs.reloadTime = 30 * 60
 config.t.ground.mlrs.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 21st Arty Command"] = {
@@ -3650,8 +3629,8 @@ config.t.ground.mlrs.resupplyUnits = {
     wpnCurrent = config.t.ground.mlrs.wpnDefault,
     wpnDefault = config.t.ground.mlrs.wpnDefault,
     unitCount = 2,
-    operationalArea = config.t.ground.mlrs.operationalAreas.Pingzhen,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGZHEN,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
   }
 }
@@ -3660,8 +3639,8 @@ config.t.ground.mlrs.firingUnits = {
     name = "Rocket Arty Coy, 21st Arty Command",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HN7RU9I3KV9T",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.mlrs.operationalAreas.Pingzhen,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGZHEN,
     weaponDBID = constants.WEAPONS.MK45_AMLRS,
     ammoThreshold = config.t.ground.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
@@ -3677,10 +3656,6 @@ config.t.ground.mlrs.firingUnits = {
 config.t.ground.srbm = {}
 config.t.ground.srbm.wpnDefault = 27
 config.t.ground.srbm.ammoThreshold = 25
-config.t.ground.srbm.operationalAreas = {
-  Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
-  Dadu = constants.OPERATIONAL_AREAS.DADU,
-}
 config.t.ground.srbm.reloadTime = 10 * 60
 config.t.ground.srbm.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 58th Arty Command"] = {
@@ -3697,8 +3672,8 @@ config.t.ground.srbm.resupplyUnits = {
     wpnCurrent = config.t.ground.srbm.wpnDefault,
     wpnDefault = config.t.ground.srbm.wpnDefault,
     unitCount = 2,
-    operationalArea = config.t.ground.srbm.operationalAreas.Dadu,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.DADU,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
   }
 }
@@ -3707,8 +3682,8 @@ config.t.ground.srbm.firingUnits = {
     name = "Rocket Arty Coy, 58th Arty Command",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HN7SOIUF4D47",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.srbm.operationalAreas.Dadu,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.DADU,
     weaponDBID = constants.WEAPONS.ATACMS,
     ammoThreshold = config.t.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
@@ -3723,10 +3698,6 @@ config.t.ground.srbm.firingUnits = {
 config.t.ground.glcm = {}
 config.t.ground.glcm.wpnDefault = 48
 config.t.ground.glcm.ammoThreshold = 25
-config.t.ground.glcm.operationalAreas = {
-  Quanxi = constants.OPERATIONAL_AREAS.QUANXI,
-  Neipu = constants.OPERATIONAL_AREAS.NEIPU,
-}
 config.t.ground.glcm.reloadTime = 45 * 60
 config.t.ground.glcm.ammunitions = {
   ["Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde"] = {
@@ -3749,8 +3720,8 @@ config.t.ground.glcm.resupplyUnits = {
     wpnCurrent = config.t.ground.glcm.wpnDefault,
     wpnDefault = config.t.ground.glcm.wpnDefault,
     unitCount = 3,
-    operationalArea = config.t.ground.glcm.operationalAreas.Quanxi,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
   },
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
@@ -3759,8 +3730,8 @@ config.t.ground.glcm.resupplyUnits = {
     wpnCurrent = config.t.ground.glcm.wpnDefault,
     wpnDefault = config.t.ground.glcm.wpnDefault,
     unitCount = 3,
-    operationalArea = config.t.ground.glcm.operationalAreas.Neipu,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.NEIPU,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
   },
 }
@@ -3769,8 +3740,8 @@ config.t.ground.glcm.firingUnits = {
     guid = "X58F5H-0HN1ESDRTUULO",
     name = "641st Bn, 791st AFAD & Arty Bde",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.glcm.operationalAreas.Quanxi,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
@@ -3780,8 +3751,8 @@ config.t.ground.glcm.firingUnits = {
     guid = "X58F5H-0HN1ESDRTLGU7",
     name = "642nd Bn, 791st AFAD & Arty Bde",
     msg = "Radio source, Bty",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.glcm.operationalAreas.Neipu,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.NEIPU,
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
@@ -3796,13 +3767,6 @@ config.t.ground.glcm.firingUnits = {
 config.t.ground.ascm = {}
 config.t.ground.ascm.wpnDefault = 16
 config.t.ground.ascm.ammoThreshold = 25
-config.t.ground.ascm.operationalAreas = {
-  Pingzhen = constants.OPERATIONAL_AREAS.PINGZHEN,
-  Dadu = constants.OPERATIONAL_AREAS.DADU,
-  Neipu = constants.OPERATIONAL_AREAS.NEIPU,
-  Luzhu = constants.OPERATIONAL_AREAS.LUZHU,
-  Dong = constants.OPERATIONAL_AREAS.DONG,
-}
 config.t.ground.ascm.reloadTime = 45 * 60
 -- config.t.ground.ascm.reloadTime = 5 * 60
 config.t.ground.ascm.ammunitions = {
@@ -3826,8 +3790,8 @@ config.t.ground.ascm.resupplyUnits = {
     wpnCurrent = config.t.ground.ascm.wpnDefault,
     wpnDefault = config.t.ground.ascm.wpnDefault,
     unitCount = 2,
-    operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.LUZHU,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
   },
   ["Hai Feng Shore-based ASM SUPP Sqn, Dong"] = {
@@ -3836,8 +3800,8 @@ config.t.ground.ascm.resupplyUnits = {
     wpnCurrent = config.t.ground.ascm.wpnDefault,
     wpnDefault = config.t.ground.ascm.wpnDefault,
     unitCount = 2,
-    operationalArea = config.t.ground.ascm.operationalAreas.Dong,
-    state = config.batteryState.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.DONG,
+    state = config.missileSystemState.STATIC,
     ammunition = "Ammo Revetment, Hai Feng Shore-based ASM SUPP Sqn, Dong",
   },
 }
@@ -3846,8 +3810,8 @@ config.t.ground.ascm.firingUnits = {
     name = "2nd Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HN87MOIE9C4U",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.LUZHU,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
@@ -3857,8 +3821,8 @@ config.t.ground.ascm.firingUnits = {
     name = "4th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "X58F5H-0HMVEU1FUVOLC",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.LUZHU,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
@@ -3868,8 +3832,8 @@ config.t.ground.ascm.firingUnits = {
     name = "1st Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "X58F5H-0HMVEU1FUVO8I",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Dong,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.DONG,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
@@ -3879,8 +3843,8 @@ config.t.ground.ascm.firingUnits = {
     name = "3rd Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "X58F5H-0HMVEU1FUVO6J",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Dong,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.DONG,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
@@ -3890,8 +3854,8 @@ config.t.ground.ascm.firingUnits = {
     name = "5th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HN8CEO4EUE8B",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Luzhu,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.LUZHU,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
@@ -3901,8 +3865,8 @@ config.t.ground.ascm.firingUnits = {
     name = "6th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     guid = "IC8B0X-0HNHAETCJHDEA",
-    state = config.batteryState.HIDE,
-    operationalArea = config.t.ground.ascm.operationalAreas.Dong,
+    state = config.missileSystemState.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.DONG,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.t.ground.ascm.ammoThreshold,
     resupplyUnit = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
@@ -3917,59 +3881,35 @@ config.t.ground.ascm.firingUnits = {
 config.t.IADS = {}
 config.t.IADS.ratio = { ROCC = 1.5, TAAOC = 1.5 }
 config.t.IADS.ROCC = {
-  ["IC8B0X-0HNC3OB4KJKIF"] = {
+  {
     name = "ROCC/North",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJKIF",
     areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
-    SAM = {},
-    radar = {}
   },
-  ["IC8B0X-0HNC3OB4KJKTC"] = {
+  {
     name = "ROCC/East",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJKTC",
     areas = { constants.AREAS.THEATER_OF_OPS_2ND, constants.AREAS.THEATER_OF_OPS_5TH, },
-    SAM = {},
-    radar = {}
   },
-  ["IC8B0X-0HNC3OB4KJL2M"] = {
+  {
     name = "ROCC/South",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC3OB4KJL2M",
     areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
-    SAM = {},
-    radar = {}
   },
 }
 config.t.IADS.TAAOC = {
-  ["IC8B0X-0HN41D1QKTVU7"] = {
+  {
     name = "TAAOC/3rd OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKTVU7",
     areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
-    SAM = {},
   },
-  ["IC8B0X-0HN41D1QKU1ED"] = {
+  {
     name = "TAAOC/5th OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKU1ED",
     areas = { constants.AREAS.THEATER_OF_OPS_5TH, },
-    SAM = {},
   },
-  ["IC8B0X-0HN41D1QKU0JP"] = {
+  {
     name = "TAAOC/4th OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HN41D1QKU0JP",
     areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
-    SAM = {},
   },
-  ["IC8B0X-0HNC27TV5Q0AS"] = {
+  {
     name = "TAAOC/2nd OPAREA",
-    msg = "Radio source, C2",
-    guid = "IC8B0X-0HNC27TV5Q0AS",
     areas = { constants.AREAS.THEATER_OF_OPS_2ND, },
-    SAM = {},
   },
 }
 
