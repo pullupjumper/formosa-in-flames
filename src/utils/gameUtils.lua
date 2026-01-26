@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
+local constants = require("src.core.constants")
 
 local GameUtils = {}
 
@@ -8,6 +9,19 @@ local UNIT_CREATION = {
   MAX_ATTEMPTS = 50,
   RANDOM_TEXT_LENGTH = 2
 }
+
+---Check if zone description matches any pattern in the list
+---@param description string Zone description to match
+---@param patterns string[] Array of patterns to check
+---@return boolean # True if description matches any pattern
+local function matchesPattern(description, patterns)
+  for _, pattern in ipairs(patterns) do
+    if string.find(description, pattern) then
+      return true
+    end
+  end
+  return false
+end
 
 ---Get or create cached side configuration
 ---Returns side configuration with field identifier, enemy side mapping, and display name
@@ -529,6 +543,171 @@ function GameUtils.convertToRPArray(zone)
   end
 
   return rps
+end
+
+---Remove all reference points from a zone
+---@param zone CMO__Zone Zone object containing reference points
+---@param sideName string Side name for deletion context
+---@return boolean # Whether all reference points were successfully removed
+function GameUtils.removeRPs(zone, sideName)
+  local rps = GameUtils.convertToRPArray(zone)
+  for _, rp in ipairs(rps) do
+    local result = GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp })
+    if not result then
+      return false
+    end
+  end
+  return true
+end
+
+---Remove all zones matching the given patterns
+---Removes zone reference points and deletes matching zones for specified side
+---@param patterns string[] Array of patterns to match against zone descriptions
+---@param zoneType integer Zone type to remove (STANDARD or CUSTOM_ENVIRONMENT)
+---@param sideName string Side name for deletion context
+---@return integer # Number of zones successfully removed
+---@return boolean # True if all removals succeeded, false if any removal failed
+function GameUtils.removeZones(patterns, zoneType, sideName)
+  local removedCount = 0
+  local allSuccessful = true
+
+  if zoneType == constants.ZONE_TYPES.STANDARD then
+    local sideObj = GameApi.VP_GetSide({ side = sideName })
+
+    if not sideObj then
+      return 0, false
+    end
+
+    -- Collect zones to remove first to avoid iterator issues during modification
+    local zonesToRemove = {}
+    for _, z in ipairs(sideObj.standardzones or {}) do
+      if matchesPattern(z.description, patterns) then
+        table.insert(zonesToRemove, z.description)
+      end
+    end
+
+    -- Now remove collected zones
+    for _, zoneDescription in ipairs(zonesToRemove) do
+      local zone = sideObj:getstandardzone(zoneDescription)
+
+      if zone then
+        local rpsRemoved = GameUtils.removeRPs(zone, sideName)
+        local zoneRemoved = GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, {
+          description = zoneDescription
+        })
+
+        if rpsRemoved and zoneRemoved then
+          removedCount = removedCount + 1
+        else
+          allSuccessful = false
+        end
+      end
+    end
+  elseif zoneType == constants.ZONE_TYPES.CUSTOM_ENVIRONMENT then
+    local natureSideName = "Nature"
+    local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
+
+    if not natureSideObj then
+      return 0, false
+    end
+
+    -- Collect zones to remove first to avoid iterator issues during modification
+    local zonesToRemove = {}
+    for _, z in ipairs(natureSideObj.customenvironmentzones or {}) do
+      if matchesPattern(z.description, patterns) then
+        table.insert(zonesToRemove, z.description)
+      end
+    end
+
+    -- Now remove collected zones
+    for _, zoneDescription in ipairs(zonesToRemove) do
+      local zone = natureSideObj:getcustomenvironmentzone(zoneDescription)
+
+      if zone then
+        local rpsRemoved = GameUtils.removeRPs(zone, sideName)
+        local zoneRemoved = GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
+          description = zoneDescription
+        })
+
+        if rpsRemoved and zoneRemoved then
+          removedCount = removedCount + 1
+        else
+          allSuccessful = false
+        end
+      end
+    end
+  end
+
+  return removedCount, allSuccessful
+end
+
+---Check if trigger matches specified type and description patterns
+---@param trigger table Trigger object containing trigger type data
+---@param triggerType string Trigger type to filter by (e.g., "UnitEntersArea")
+---@param patterns string[] Array of patterns to match against trigger description
+---@return boolean # True if trigger matches type and any pattern, false otherwise
+local function matchesTriggerTypeAndPatterns(trigger, triggerType, patterns)
+  if trigger[triggerType] then
+    for _, pattern in ipairs(patterns) do
+      if string.match(trigger[triggerType].Description, pattern) then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+---Remove event triggers matching specified patterns and type
+---Identifies and removes triggers from events that match the given trigger type and description patterns
+---@param eventNames string[] Array of event names to search for triggers
+---@param patterns string[] Array of patterns to match against trigger descriptions
+---@param triggerType string Trigger type to filter by (e.g., "UnitEntersArea")
+---@return integer # Total number of triggers successfully removed
+---@return boolean # True if all removals succeeded, false if any removal failed
+function GameUtils.removeEventTriggers(eventNames, patterns, triggerType)
+  local removedCount = 0
+  local allSuccessful = true
+
+  for _, eventName in ipairs(eventNames) do
+    local event = GameApi.ScenEdit_GetEvent(eventName)
+
+    if not event then
+      allSuccessful = false
+    else
+      -- Collect triggers to remove first to avoid iterator issues during modification
+      local triggersToRemove = {}
+
+      for _, trigger in ipairs(event.triggers or {}) do
+        if matchesTriggerTypeAndPatterns(trigger, triggerType, patterns) then
+          table.insert(triggersToRemove, trigger)
+        end
+      end
+
+      -- Now remove collected triggers
+      for _, trigger in ipairs(triggersToRemove) do
+        local triggerDesc = trigger[triggerType].Description
+
+        local eventTriggerResult = GameApi.ScenEdit_SetEventTrigger(eventName, {
+          mode = "remove",
+          description = triggerDesc,
+          name = eventName
+        })
+
+        local triggerResult = GameApi.ScenEdit_SetTrigger({
+          Description = triggerDesc,
+          Mode = "remove"
+        })
+
+        if eventTriggerResult and triggerResult then
+          removedCount = removedCount + 1
+        else
+          allSuccessful = false
+        end
+      end
+    end
+  end
+
+  return removedCount, allSuccessful
 end
 
 return GameUtils

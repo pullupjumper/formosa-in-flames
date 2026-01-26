@@ -13,6 +13,15 @@ local BATTERY_CONSTANTS = {
   MANUAL_RELOAD_DELAY_MULTIPLIER = 100, -- Time multiplier for manual reload mode
 }
 
+-- Zone name patterns for cleanup (regex patterns)
+local ZONE_PATTERNS = {
+  "^" .. constants.POSITION_TYPES.FIRING_POINT,
+  "^" .. constants.POSITION_TYPES.HIDE_AREA,
+  "^" .. constants.POSITION_TYPES.AMMO_HOLDING_AREA,
+  "^" .. constants.POSITION_TYPES.RELOAD_POINT,
+  "^" .. constants.POSITION_TYPES.MASK
+}
+
 ---Find the area where the unit is located
 ---@param unit CMO__Unit Unit object
 ---@param operationalArea SBJ__OperationalArea Position information table
@@ -694,111 +703,25 @@ function MissileSystem.handleSupplyAssetDestruction(unit, systemCtx)
   end
 end
 
----Remove all reference points from a zone
----@param zone CMO__Zone Zone object containing reference points
----@param sideName string Side name for deletion context
----@return boolean # Whether all reference points were successfully removed
-local function removeRPs(zone, sideName)
-  local rps = GameUtils.convertToRPArray(zone)
-  for _, rp in ipairs(rps) do
-    local result = GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp })
-    if not result then
-      return false
-    end
-  end
-  return true
-end
-
----Remove all zones matching specified position types
----@param positionTypes string[] Array of position type identifiers (e.g., "RL", "HA", "FP")
----@param sideName string Side name for deletion context
-local function removeZones(positionTypes, sideName)
-  local natureSideName = "Nature"
-  local sideObj = GameApi.VP_GetSide({ side = sideName })
-  local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
-
-  for _, z in ipairs(natureSideObj.customenvironmentzones) do
-    for _, positionType in ipairs(positionTypes) do
-      if string.find(z.description, "^" .. positionType .. "/") then
-        local zone = natureSideObj:getcustomenvironmentzone(z.description)
-
-        if zone then
-          removeRPs(zone, sideName)
-          GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
-            { description = z.description })
-        end
-      end
-    end
-
-    if string.find(z.description, "^" .. "MASK" .. "/") then
-      local zone = natureSideObj:getcustomenvironmentzone(z.description)
-
-      if zone then
-        removeRPs(zone, sideName)
-        removeRPs(zone, natureSideName)
-        GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT,
-          { description = z.description })
-      end
-    end
-  end
-
-  for _, z in ipairs(sideObj.standardzones) do
-    for _, positionType in ipairs(positionTypes) do
-      if string.find(z.description, "^" .. positionType .. "/") then
-        local zone = sideObj:getstandardzone(z.description)
-
-        if zone then
-          removeRPs(zone, sideName)
-          GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, { description = z.description })
-        end
-      end
-    end
-  end
-end
-
----Remove event triggers matching specified position types
----@param positionTypes string[] Array of position type identifiers
----@param eventNamePrefix string Event name prefix for matching
----@return boolean # Whether all triggers were successfully removed
-local function removeEventTriggers(positionTypes, eventNamePrefix)
-  for _, positionType in ipairs(positionTypes) do
-    local eventName = eventNamePrefix .. positionType
-    local event = GameApi.ScenEdit_GetEvent(eventName)
-
-    if event then
-      for _, trigger in ipairs(event.triggers) do
-        if trigger["UnitEntersArea"] and string.match(trigger["UnitEntersArea"].Description, "(" .. positionType .. ")") then
-          GameApi.ScenEdit_SetEventTrigger(eventName, {
-            mode = "remove", description = trigger["UnitEntersArea"].Description, name = eventName
-          })
-          GameApi.ScenEdit_SetTrigger({ Description = trigger["UnitEntersArea"].Description, Mode = "remove" })
-        end
-      end
-    end
-  end
-
-  return true
-end
-
 ---Get area color code based on position type
 ---@param positionType string Position type identifier (RL/HA/AHA/MASK/FP)
 ---@return string # Hexadecimal color code
 local function getOperationalAreaColor(positionType)
   local color = "4d8b5cf6"
 
-  if positionType == "RL" then
+  if positionType == constants.POSITION_TYPES.RELOAD_POINT then
     color = "4dd9822b"
   end
 
-  if positionType == "HA" then
+  if positionType == constants.POSITION_TYPES.HIDE_AREA then
     color = "4d137cbd"
   end
 
-  if positionType == "AHA" then
+  if positionType == constants.POSITION_TYPES.AMMO_HOLDING_AREA then
     color = "4d0f9960"
   end
 
-  if positionType == "MASK" then
+  if positionType == constants.POSITION_TYPES.MASK then
     color = "4dff6b6b"
   end
 
@@ -816,11 +739,10 @@ end
 local function addTriggerToEvent(positionType, position, index, operationalArea, enemySide, sideName)
   local triggerName = string.format("(%s) Arrive in %s - %d - %s", sideName, positionType, index, operationalArea.name)
   local zoneName = positionType .. "/" .. tostring(index) .. "/" .. operationalArea.name
-  local zone = GameApi.ScenEdit_AddZone(
-    sideName,
-    constants.ZONE_TYPES.STANDARD,
-    { area = position.area, description = zoneName }
-  )
+  local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.STANDARD, {
+    area = position.area,
+    description = zoneName
+  })
 
   if zone then
     local eventName = "(" .. sideName .. ") Arrive in " .. positionType
@@ -847,18 +769,72 @@ end
 ---@return boolean # Whether zone was successfully created
 local function addCustomEnvironmentZone(operationalArea, sideName)
   local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
-    description = "MASK/" .. operationalArea.name,
+    description = constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name,
     area = operationalArea.uShapeVertices,
     sideName = sideName
   })
 
   if zone then
-    zone.areacolor = getOperationalAreaColor("MASK")
+    zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
     zone.landcoverheight = 1000
     zone.landcovertype = 254
     return true
   end
   return false
+end
+
+---Clean up existing zones and event triggers for missile system
+---@param posTypes string[] Position types to clean up
+---@param sideName string Side name for cleanup operations
+local function cleanupExistingTriggersAndZones(posTypes, sideName)
+  -- Remove standard zones
+  GameUtils.removeZones(ZONE_PATTERNS, constants.ZONE_TYPES.STANDARD, sideName)
+
+  -- Remove custom environment zones
+  GameUtils.removeZones(ZONE_PATTERNS, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, sideName)
+
+  -- Build event names and trigger prefixes dynamically
+  local eventNames = {}
+  local triggerPrefixes = {}
+
+  for _, posType in ipairs(posTypes) do
+    table.insert(eventNames, "(" .. sideName .. ") Arrive in " .. posType)
+    table.insert(triggerPrefixes, "(" .. posType .. ")")
+  end
+
+  -- Remove event triggers
+  GameUtils.removeEventTriggers(eventNames, triggerPrefixes, "UnitEntersArea")
+
+  Logger.log("missileSystem",
+    string.format("Cleaned up existing triggers and zones for side: %s", sideName))
+end
+
+---Create position triggers for an operational area
+---@param operationalArea SBJ__OperationalArea Operational area configuration
+---@param positionTypes string[] Position types to create
+---@param enemySide string Enemy side name
+---@param sideName string Owner side name
+---@return integer created Number of triggers created
+---@return integer failed Number of triggers failed
+local function createPositionTriggers(operationalArea, positionTypes, enemySide, sideName)
+  local created, failed = 0, 0
+
+  for _, positionType in ipairs(positionTypes) do
+    for index, position in ipairs(operationalArea[positionType]) do
+      ---@cast position SBJ__Position
+      if addTriggerToEvent(positionType, position, index, operationalArea, enemySide, sideName) then
+        created = created + 1
+      else
+        failed = failed + 1
+        Logger.warn(string.format(
+          "missileSystem: Failed to create trigger for %s-%d in %s",
+          positionType, index, operationalArea.name
+        ))
+      end
+    end
+  end
+
+  return created, failed
 end
 
 ---Initialize event triggers and zones for missile system operational areas
@@ -867,20 +843,34 @@ end
 ---@param sideName string Side name for zone/trigger ownership
 function MissileSystem.initEventTriggers(operationalAreas, positionTypes, sideName)
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
-  local eventNamePrefix = "(" .. sideName .. ") Arrive in "
-  removeZones(positionTypes, sideName)
-  removeEventTriggers(positionTypes, eventNamePrefix)
+
+  -- Step 1: Cleanup existing triggers and zones
+  cleanupExistingTriggersAndZones(positionTypes, sideName)
+
+  -- Step 2: Create new triggers and zones with statistics
+  local totalCreated, totalFailed, maskCreated, maskFailed = 0, 0, 0, 0
 
   for _, operationalArea in ipairs(operationalAreas) do
-    for _, positionType in ipairs(positionTypes) do
-      for index, position in ipairs(operationalArea[positionType]) do
-        ---@cast position SBJ__Position
-        addTriggerToEvent(positionType, position, index, operationalArea, sideCfg.enemySide, sideName)
-      end
-    end
+    -- Create position triggers
+    local created, failed = createPositionTriggers(operationalArea, positionTypes, sideCfg.enemySide, sideName)
+    totalCreated = totalCreated + created
+    totalFailed = totalFailed + failed
 
-    addCustomEnvironmentZone(operationalArea, sideName)
+    -- Create custom environment zone for terrain masking
+    if addCustomEnvironmentZone(operationalArea, sideName) then
+      maskCreated = maskCreated + 1
+    else
+      maskFailed = maskFailed + 1
+      Logger.warn(string.format("missileSystem: Failed to create MASK zone for %s", operationalArea.name))
+    end
   end
+
+  -- Log summary
+  Logger.log("missileSystem", string.format(
+    "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created",
+    sideName, totalCreated, totalCreated + totalFailed,
+    maskCreated, maskCreated + maskFailed
+  ))
 end
 
 ---Remove missile systems from the game

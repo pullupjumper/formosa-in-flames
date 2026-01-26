@@ -679,7 +679,12 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         end
       end
 
-      MissileSystem.initEventTriggers(operationalAreas, { "RL", "FP", "HA", "AHA" }, sideName)
+      MissileSystem.initEventTriggers(operationalAreas, {
+        constants.POSITION_TYPES.RELOAD_POINT,
+        constants.POSITION_TYPES.FIRING_POINT,
+        constants.POSITION_TYPES.HIDE_AREA,
+        constants.POSITION_TYPES.AMMO_HOLDING_AREA
+      }, sideName)
       MissileSystem.addMissileSystems(groundCig, sideName)
       MissileSystem.initMissileSystemContexts(groundCig, saveData.t.ground)
     end

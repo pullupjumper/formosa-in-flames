@@ -803,7 +803,6 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__MissileSystemContext: table
 ---@field enabled boolean Whether the weapon system is currently active
 ---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
----@field operationalAreas table<string, SBJ__OperationalArea> Operational areas indexed by area name for this weapon system
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions

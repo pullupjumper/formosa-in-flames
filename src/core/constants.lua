@@ -945,4 +945,12 @@ constants.ZONE_TYPES = {
   STANDARD = -925,
 }
 
+constants.POSITION_TYPES = {
+  FIRING_POINT = "FP",
+  HIDE_AREA = "HA",
+  AMMO_HOLDING_AREA = "AHA",
+  RELOAD_POINT = "RL",
+  MASK = "MASK"
+}
+
 return constants

@@ -16,6 +16,16 @@
         "write": false,
         "edit": false
       }
+    },
+    "code-reviewer": {
+      "description": "code reviewer",
+      "mode": "subagent",
+      "model": "google/antigravity-claude-sonnet-4-5",
+      "prompt": "{file:./.claude/agents/code-reviewer.md}",
+      "tools": {
+        "write": false,
+        "edit": false
+      }
     }
   },
   "plugin": ["opencode-antigravity-auth@latest"],
