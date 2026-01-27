@@ -952,5 +952,12 @@ constants.POSITION_TYPES = {
   RELOAD_POINT = "RL",
   MASK = "MASK"
 }
+---@enum missileSystemState
+constants.MISSILE_SYSTEM_STATE = {
+  STATIC = 0,
+  REPOSITIONING = 1,
+  RELOAD = 2,
+  HIDE = 3,
+}
 
 return constants

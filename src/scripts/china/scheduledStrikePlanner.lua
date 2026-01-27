@@ -80,7 +80,7 @@ if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.
 end
 
 if saveData.c.ground.enabled then
-  FireSupportPlan.strike(config, saveData)
+  FireSupportPlan.strike(saveData)
 end
 
 if saveData.c.air.enabled then

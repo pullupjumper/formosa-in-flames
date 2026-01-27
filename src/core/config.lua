@@ -97,16 +97,6 @@ config.radarDistance = 70
 config.readytime = 5 * 60
 
 
---- Missile system states for the ground units
----@enum missileSystemState
-config.missileSystemState = {
-  STATIC = 0,
-  REPOSITIONING = 1,
-  RELOAD = 2,
-  HIDE = 3,
-}
-
-
 -- ============================================================================
 -- Setup Start Time
 -- ============================================================================

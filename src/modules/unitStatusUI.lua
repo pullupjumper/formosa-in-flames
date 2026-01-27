@@ -298,11 +298,11 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         local batteryReloadTime = nil
         local ammoSectionReloadTime = nil
 
-        if ctx.state == config.missileSystemState.STATIC then
+        if ctx.state == constants.MISSILE_SYSTEM_STATE.STATIC then
           status = "STATIC"
-        elseif ctx.state == config.missileSystemState.REPOSITIONING then
+        elseif ctx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING then
           status = "REPOSITIONING"
-        elseif ctx.state == config.missileSystemState.RELOAD then
+        elseif ctx.state == constants.MISSILE_SYSTEM_STATE.RELOAD then
           status = "RELOAD"
         else
           status = "HIDE"

@@ -55,11 +55,15 @@ end
 local function removeEvent(descriptor, zone, sideObj, sideName, isDeleted)
   local myz = sideObj:getstandardzone(zone.guid)
 
-  for _, area in ipairs(myz.area) do
-    GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = area.name })
+  if not myz then
+    return false
   end
 
-  GameApi.ScenEdit_RemoveZone(sideName, -925, { Description = myz.description })
+  for _, rp in ipairs(myz.area) do
+    GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp.name })
+  end
+
+  GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, { Description = myz.description })
 
   if isDeleted then
     GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = descriptor.name })

@@ -1,6 +1,6 @@
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
-local config = require("src.core.config")
+local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
 local unit = GameApi.ScenEdit_UnitX()
@@ -49,13 +49,13 @@ elseif positionType == "HA" then
 
   for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local missileSystemCtx = saveData.c.ground[missileSystem]
+    local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
       for _, firingUnitCtx in pairs(missileSystemCtx.firingUnits) do
         if unit then
-          if firingUnitCtx.name == unit.name and firingUnitCtx.state == config.missileSystemState.REPOSITIONING then
-            MissileSystem.setStateToHIDE(config, firingUnitCtx, unit)
+          if firingUnitCtx.name == unit.name and firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING then
+            MissileSystem.setStateToHIDE(firingUnitCtx, unit)
           end
         end
       end
@@ -72,13 +72,13 @@ elseif positionType == "RL" then
 
   for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local missileSystemCtx = saveData.c.ground[missileSystem]
+    local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
-      local result = MissileSystem.isMetWithResupplyUnits(config, missileSystemCtx, unit, false)
+      local isMet, context = MissileSystem.isMetWithResupplyUnits(missileSystemCtx, unit, false)
 
-      if result.isMet then
-        MissileSystem.setReloadStartTime(config, result.firingUnit, unit, false)
+      if isMet and context then
+        MissileSystem.setReloadStartTime(context, unit, false)
       end
     end
   end
@@ -93,13 +93,13 @@ elseif positionType == "AHA" then
 
   for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
-    local missileSystemCtx = saveData.c.ground[missileSystem]
+    local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
-      local result = MissileSystem.isMetWithAmmoDepot(config, missileSystemCtx, unit, false)
+      local isMet, resupplyUnit = MissileSystem.isMetWithAmmoDepot(missileSystemCtx, unit, false)
 
-      if result.isMet then
-        MissileSystem.setReloadStartTime(config, result.resupplyUnit, unit, false)
+      if isMet and resupplyUnit then
+        MissileSystem.setReloadStartTime(resupplyUnit, unit, false)
       end
     end
   end

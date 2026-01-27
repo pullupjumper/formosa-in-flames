@@ -3,36 +3,34 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
+local constants = require("src.core.constants")
 
 local FireSupportPlan = {}
 
 ---Check if firing unit is ready to move to firing point
 ---A firing unit is ready when it's in HIDE state and has sufficient ammunition
----@param config SBJ__Config Global configuration
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state and ammo info
 ---@param group CMO__Unit The actual unit group
 ---@return boolean # Returns true if unit is in HIDE state and not low on ammo
-local function isFiringUnitReady(config, firingUnitCtx, group)
-  return firingUnitCtx.state == config.missileSystemState.HIDE and
+local function isFiringUnitReady(firingUnitCtx, group)
+  return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
       not MissileSystem.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 end
 
 ---Check if firing unit is not yet at firing point
 ---Returns true when unit state is not STATIC (firing position)
----@param config SBJ__Config Global configuration
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state info
 ---@return boolean # Returns true if unit is not at STATIC (firing point) state
-local function isNotFiringUnitAtFiringPoint(config, firingUnitCtx)
-  return firingUnitCtx.state ~= config.missileSystemState.STATIC
+local function isNotFiringUnitAtFiringPoint(firingUnitCtx)
+  return firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.STATIC
 end
 
 ---Deploy firing units to firing point and check if all are in position
 ---Moves ready units to firing points and verifies if all units have reached their positions
----@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state
 ---@param FST SBJ__FireSupportTask Fire Support Task containing firing units
 ---@return boolean # Returns true if all firing units are at firing point, false otherwise
-local function shouldDeployToFiringPoint(config, saveData, FST)
+local function shouldDeployToFiringPoint(saveData, FST)
   local allFiringUnitsInPosition = true
 
   for _, firingUnit in ipairs(FST.firingUnits) do
@@ -43,11 +41,11 @@ local function shouldDeployToFiringPoint(config, saveData, FST)
     else
       local firingUnitCtx = saveData.c.ground[string.lower(FST.missileSystem)].firingUnits[firingUnit.name]
 
-      if isFiringUnitReady(config, firingUnitCtx, actualFiringUnit) then
-        MissileSystem.moveToFiringPoint(config, firingUnitCtx, actualFiringUnit)
+      if isFiringUnitReady(firingUnitCtx, actualFiringUnit) then
+        MissileSystem.moveToFiringPoint(firingUnitCtx, actualFiringUnit)
       end
 
-      if isNotFiringUnitAtFiringPoint(config, firingUnitCtx) then
+      if isNotFiringUnitAtFiringPoint(firingUnitCtx) then
         allFiringUnitsInPosition = false
       end
     end
@@ -59,15 +57,14 @@ end
 ---Process a Fire Support Task and check if all firing units are in position
 ---Checks if the task start time has been reached and deploys firing units to their firing points
 ---@param FST SBJ__FireSupportTask Fire Support Task to process
----@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state
 ---@return boolean # Returns true if all firing units are in position, false otherwise
-local function processFST(FST, config, saveData)
+local function processFST(FST, saveData)
   if FST.isFinished or not GameUtils.isAfterStartTime(FST.startTime) then
     return false
   end
 
-  if not shouldDeployToFiringPoint(config, saveData, FST) then
+  if not shouldDeployToFiringPoint(saveData, FST) then
     Logger.log("ground", "Batteries not at firing position for " .. FST.name)
     return false
   end
@@ -111,15 +108,14 @@ end
 
 ---Execute Fire Support Plan strikes for all active FSEMs
 ---Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
----@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
-function FireSupportPlan.strike(config, saveData)
+function FireSupportPlan.strike(saveData)
   for _, FSEM in pairs(saveData.c.ground.FSP) do
     local allFiringUnitsInPosition = true
 
     if not FSEM.isFinished and FSEM.isActivated then
       for _, FST in ipairs(FSEM.FSTs) do
-        local isInFiringPosition = processFST(FST, config, saveData)
+        local isInFiringPosition = processFST(FST, saveData)
 
         if not isInFiringPosition then
           allFiringUnitsInPosition = false

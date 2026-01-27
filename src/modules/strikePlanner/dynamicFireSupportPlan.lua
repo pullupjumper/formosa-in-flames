@@ -4,6 +4,7 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local MissileSystem = require("src.modules.missileSystem")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local constants = require("src.core.constants")
 
 local DynamicFireSupportPlan = {}
 
@@ -135,7 +136,7 @@ local function validateFiringUnitStatus(config, saveData, firingUnitName, missil
   end
 
   -- Check operational status
-  local isInGoodState = firingUnitCtx.state == config.missileSystemState.HIDE
+  local isInGoodState = firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE
   local hasAmmo = not MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 
   if not isInGoodState or not hasAmmo then
