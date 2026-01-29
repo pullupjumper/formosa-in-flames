@@ -257,4 +257,34 @@ function Utils.parseMissionName(missionName)
   return code, number, hasAAR
 end
 
+---Check if point is within polygon using ray casting algorithm
+---@param point CMO__Location Point to check
+---@param polygon CMO__Location[] Polygon vertices
+---@return boolean # Whether point is inside polygon
+function Utils.isPointInPolygon(point, polygon)
+  local minPolygonPoints = 3
+
+  if not point or not polygon or #polygon < minPolygonPoints then
+    return false
+  end
+
+  local crossings = 0
+  local n = #polygon
+
+  for i = 1, n do
+    local p1 = polygon[i]
+    local p2 = polygon[i % n + 1]
+
+    if (p1.latitude > point.latitude) ~= (p2.latitude > point.latitude) then
+      local intersectLon = (p2.longitude - p1.longitude) * (point.latitude - p1.latitude) /
+          (p2.latitude - p1.latitude) + p1.longitude
+      if point.longitude < intersectLon then
+        crossings = crossings + 1
+      end
+    end
+  end
+
+  return (crossings % 2 == 1)
+end
+
 return Utils

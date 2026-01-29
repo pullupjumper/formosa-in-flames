@@ -1,6 +1,5 @@
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
-local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
 local unit = GameApi.ScenEdit_UnitX()
@@ -41,7 +40,7 @@ if positionType == "FP" then
 elseif positionType == "HA" then
   if contacts then
     for _, contact in ipairs(contacts) do
-      if unit and unit.guid == contact.actualunitid then
+      if unit.guid == contact.actualunitid then
         contact:DropContact()
       end
     end
@@ -52,19 +51,15 @@ elseif positionType == "HA" then
     local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
-      for _, firingUnitCtx in pairs(missileSystemCtx.firingUnits) do
-        if unit then
-          if firingUnitCtx.name == unit.name and firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING then
-            MissileSystem.setStateToHIDE(firingUnitCtx, unit)
-          end
-        end
+      if MissileSystem.isRepositioning(missileSystemCtx.firingUnits[unit.name], false) then
+        MissileSystem.setStateToHIDE(missileSystemCtx.firingUnits[unit.name], unit)
       end
     end
   end
 elseif positionType == "RL" then
   if contacts then
     for _, contact in ipairs(contacts) do
-      if unit and unit.guid == contact.actualunitid then
+      if unit.guid == contact.actualunitid then
         contact:DropContact()
       end
     end
@@ -85,7 +80,7 @@ elseif positionType == "RL" then
 elseif positionType == "AHA" then
   if contacts then
     for _, contact in ipairs(contacts) do
-      if unit and unit.guid == contact.actualunitid then
+      if unit.guid == contact.actualunitid then
         contact:DropContact()
       end
     end

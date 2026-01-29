@@ -449,7 +449,7 @@ function MissileSystem.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit and isAuto then
-      setUnitProperties({ unit = unit, holdPosition = true, formation = { spacing = 0, transpose = true } })
+      setUnitProperties({ unit = unit, holdPosition = false, formation = { spacing = 0, transpose = true } })
     end
   end
 end
@@ -466,7 +466,7 @@ function MissileSystem.setWCSToFree(firingUnitCtx, firingUnit)
     if unit then
       setUnitProperties({
         unit = unit,
-        holdPosition = true,
+        holdPosition = false,
         wcs = constants.WCS.FREE, -- Free fire
         formation = { spacing = 0, transpose = true }
       })
@@ -486,12 +486,28 @@ function MissileSystem.setStateToHIDE(firingUnitCtx, firingUnit)
     if unit then
       setUnitProperties({
         unit = unit,
-        holdPosition = true,
+        holdPosition = false,
         wcs = constants.WCS.HOLD, -- Hold fire while hiding
         formation = { spacing = 0, transpose = true }
       })
     end
   end
+end
+
+---comment
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param isAuto boolean Whether the action is automatic
+---@return boolean
+function MissileSystem.isRepositioning(firingUnitCtx, isAuto)
+  if not firingUnitCtx then
+    return false
+  end
+
+  if isAuto then
+    return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+  end
+
+  return true
 end
 
 ---Check if unit/group ammunition is below specified percentage
@@ -522,9 +538,10 @@ end
 ---Command firing unit to move to firing point (FP)
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
+---@return boolean success Whether the move was successful
 function MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  moveUnitToPosition(
+  return moveUnitToPosition(
     firingUnitCtx.name,
     firingUnit,
     firingUnitCtx.operationalArea.FP,

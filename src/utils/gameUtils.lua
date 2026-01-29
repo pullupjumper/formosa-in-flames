@@ -533,13 +533,14 @@ function GameUtils.formatOrdinalUnitName(num, unitType, suffix)
 end
 
 ---Converts a zone to an array of reference points
----@param zone CMO__Zone Zone table
+---@param zone CMO__Zone|CMO__TriggerResult Zone table
 ---@return string[] # Array of reference points
 function GameUtils.convertToRPArray(zone)
   local rps = {}
+  local area = zone.area or (zone.Area or {})
 
-  for _, rp in pairs(zone.area) do
-    table.insert(rps, rp.name)
+  for _, rp in pairs(area) do
+    table.insert(rps, rp.name or rp.Name)
   end
 
   return rps
@@ -708,6 +709,36 @@ function GameUtils.removeEventTriggers(eventNames, patterns, triggerType)
   end
 
   return removedCount, allSuccessful
+end
+
+---Check if point is within defined area using reference points
+---Converts reference point names to polygon coordinates and performs point-in-polygon test
+---@param side string Side name (used to retrieve reference points)
+---@param point CMO__Location|nil Point to check
+---@param area string[] Array of reference point names defining the polygon boundary
+---@return boolean # True if point is inside the area, false otherwise
+function GameUtils.isInArea(side, point, area)
+  local minPolygonPoints = 3
+
+  if not point or not area then
+    return false
+  end
+
+  -- area is an array of reference point names that define the polygon
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = side, area = area })
+  if not points or #points < minPolygonPoints then
+    return false
+  end
+
+  local polygon = {}
+  for _, p in ipairs(points) do
+    table.insert(polygon, {
+      latitude = tonumber(p.latitude),
+      longitude = tonumber(p.longitude)
+    })
+  end
+
+  return Utils.isPointInPolygon(point, polygon)
 end
 
 return GameUtils

@@ -31,7 +31,28 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field TAKEOFFDATE string The takeoff date, YYYY/MM/DD
 ---@field TAKEOFFTIME string The takeoff time, HH:MM:SS
 
-
+---@class CMO__TriggerResult: table
+---@field Type? string @ Type of Trigger string code [required only for 'add' option]
+---@field SideID? string @ guid of side involved.
+---@field PointValue? number @ point value [Points]
+---@field ReachDirection? any @ ?? [Points]
+---@field EarliestTime? number @ .netticktime [RandomTime]
+---@field LatestTime? number @ .netticktime [RandomTime]
+---@field Interval? number @ enumcode 0-11 if I recall right [RegularTime] see CMO__Constants.EventTimeInterval.
+---@field Time? string|osdate @ .netticktime [Time]
+---@field DamagePercent? number @ [UnitDamaged]
+---@field TargetFilter? CMO__TargetFilter-UnitsInArea @ table of targetfilter options [UnitDamaged, UnitDestroyed, UnitDetected, UnitEmissions, UnitEntersArea, UnitRemainsInArea, UnitBaseStatus]
+---@field Area? {Name:string}[] @ [UnitDetected, UnitEmissions, UnitEntersArea, UnitRemainsInArea]
+---@field DetectorSideID? string @ guid of detecting side.[UnitDetected, UnitEmissions]
+---@field MCL? any @ detection classification level [UnitDetected, UnitEmissions]
+---@field NOT? boolean @ invoke opposite of the set parameters. [UnitEntersArea]
+---@field ETOA? number @ .netticktime? entertime limits related [UnitEntersArea]
+---@field LTOA? number @ .netticktime? leavetime limits related [UnitEntersArea]
+---@field ExitArea? boolean @ treat trigger as unit Exits area instead of entering. [UnitEntersArea]
+---@field TD? any @ Target Duration in the area?  [UnitRemainsInArea]
+---@field TargetCondition? any @ Condition of the base. [UnitBaseStatus]
+---@field BaseUnit? string @ the guid of the base unit? [UnitCargoMoved]
+---@field CargoFilter? table @ cargo filter table [UnitCargoMoved]
 
 ---Formation configuration for unit groupings
 ---@class CMO__FormationGroup: table

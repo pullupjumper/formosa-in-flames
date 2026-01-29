@@ -52,70 +52,6 @@ local function calculateSignalDeviation(baseDistance, config)
   return baseDeviation + randomDeviation
 end
 
----Check if point is within polygon using ray casting algorithm
----@param point CMO__Location Point to check
----@param polygon CMO__Location[] Polygon vertices
----@param config SBJ__SIGINTConfig|nil Configuration (optional)
----@return boolean # Whether point is inside polygon
-function SIGINT.isPointInPolygon(point, polygon, config)
-  config = config or {}
-  local minPolygonPoints = config.minPolygonPoints or 3
-
-  if not point or not polygon or #polygon < minPolygonPoints then
-    return false
-  end
-
-  local crossings = 0
-  local n = #polygon
-
-  for i = 1, n do
-    local p1 = polygon[i]
-    local p2 = polygon[i % n + 1]
-
-    if (p1.latitude > point.latitude) ~= (p2.latitude > point.latitude) then
-      local intersectLon = (p2.longitude - p1.longitude) * (point.latitude - p1.latitude) /
-          (p2.latitude - p1.latitude) + p1.longitude
-      if point.longitude < intersectLon then
-        crossings = crossings + 1
-      end
-    end
-  end
-
-  return (crossings % 2 == 1)
-end
-
----Check if point is within defined area using reference points
----Converts reference point names to polygon coordinates and performs point-in-polygon test
----@param side string Side name (used to retrieve reference points)
----@param point CMO__Location|nil Point to check
----@param area string[] Array of reference point names defining the polygon boundary
----@param config SBJ__SIGINTConfig|nil Configuration (optional)
----@return boolean # True if point is inside the area, false otherwise
-local function isInArea(side, point, area, config)
-  config = config or {}
-  local minPolygonPoints = config.minPolygonPoints or 3
-
-  if not point or not area then
-    return false
-  end
-
-  -- area is an array of reference point names that define the polygon
-  local points = GameApi.ScenEdit_GetReferencePoints({ side = side, area = area })
-  if not points or #points < minPolygonPoints then
-    return false
-  end
-
-  local polygon = {}
-  for _, p in ipairs(points) do
-    table.insert(polygon, {
-      latitude = tonumber(p.latitude),
-      longitude = tonumber(p.longitude)
-    })
-  end
-
-  return SIGINT.isPointInPolygon(point, polygon, config)
-end
-
 ---Check if unit is emitting signal with enhanced logic
 ---@param config SBJ__Config Configuration object
 ---@param unit CMO__Unit Unit object
@@ -158,7 +94,7 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide, sigintConfig)
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area, sigintConfig) and
+  local isLeavingRL = not GameUtils.isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area) and
       unit.speed > 0
   return isLeavingRL, isLeavingRL and "Leaving restricted area" or "Within restricted area"
 end
