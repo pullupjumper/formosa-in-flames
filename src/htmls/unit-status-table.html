@@ -1,703 +1,785 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="dark" lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <title>Unit Status Dashboard</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root {
-      --bg-dark: #10161A;
-      --bg-panel: #202B33;
-      --bg-hover: #293742;
-      --border-color: #30404D;
-      --text-primary: #E1E8ED;
-      --text-secondary: #A7B6C2;
-      --accent-blue: #137CBD;
-      --accent-blue-hover: #2B95D6;
-      --success: #0F9960;
-      --danger: #DB3737;
-      --warning: #D9822B;
-      --font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: var(--font-family);
-      background-color: var(--bg-dark);
-      color: var(--text-primary);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    .top-bar {
-      height: 50px;
-      background-color: var(--bg-panel);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      justify-content: space-between;
-    }
-
-    .breadcrumb {
-      font-size: 14px;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    .breadcrumb span {
-      color: var(--text-primary);
-    }
-
-    .tab-container {
-      display: flex;
-      background-color: var(--bg-dark);
-      border-bottom: 1px solid var(--border-color);
-      padding: 0 20px;
-    }
-
-    .tab-btn {
-      background-color: transparent;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      padding: 12px 16px;
-      transition: 0.3s;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 3px solid transparent;
-    }
-
-    .tab-btn:hover {
-      color: var(--text-primary);
-    }
-
-    .tab-btn.active {
-      color: var(--accent-blue);
-      border-bottom: 3px solid var(--accent-blue);
-    }
-
-    .content-wrapper {
-      flex: 1;
-      position: relative;
-      overflow: auto;
-      padding: 20px;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Table Styles */
-    .table-wrapper {
-      overflow-x: auto;
-      background-color: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 2px;
-    }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 13px;
-    }
-
-    .table th {
-      padding: 12px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--border-color);
-      background-color: rgba(0, 0, 0, 0.2);
-      white-space: nowrap;
-    }
-
-    .table td {
-      padding: 12px 16px;
-      color: var(--text-primary);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .table tbody tr:hover {
-      background-color: rgba(255, 255, 255, 0.02);
-    }
-
-    .text-right {
-      text-align: right;
-    }
-
-    /* Status Badges */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .status-ready {
-      background-color: rgba(15, 153, 96, 0.2);
-      color: var(--success);
-      border: 1px solid rgba(15, 153, 96, 0.3);
-    }
-
-    .status-offline {
-      background-color: rgba(219, 55, 55, 0.2);
-      color: var(--danger);
-      border: 1px solid rgba(219, 55, 55, 0.3);
-    }
-
-    /* Progress Bars */
-    .progress-container {
-      width: 100%;
-      min-width: 100px;
-    }
-
-    .progress-bar-container {
-      background-color: rgba(0, 0, 0, 0.3);
-      height: 6px;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      background-color: var(--accent-blue);
-      height: 100%;
-      transition: width 0.3s ease;
-    }
-
-    .progress-text {
-      font-size: 10px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-      text-align: right;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="main-content">
-    <div class="top-bar">
-      <div class="breadcrumb">
-        <span>Unit Status Dashboard</span>
-      </div>
-    </div>
-
-    <div class="tab-container">
-      <button class="tab-btn active" data-tab="signal-data">Signal Data</button>
-      <button class="tab-btn" data-tab="mobile-launchers">Mobile Launchers</button>
-      <button class="tab-btn" data-tab="c2-nodes">C2 Nodes</button>
-      <button class="tab-btn" data-tab="base-weapons">Base Weapons</button>
-      <button class="tab-btn" data-tab="landing-units">Landing Units</button>
-    </div>
-
-    <div class="content-wrapper">
-
-      <div id="signal-data" class="tab-content active">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>NAME</th>
-                <th>TYPE</th>
-                <th>AUTODETECTABLE</th>
-                <th class="hidden-column">Latitude</th>
-                <th class="hidden-column">Longitude</th>
-                <th>FIRST DETECTED</th>
-                <th>LAST DETECTED</th>
-                <th class="text-right">DETECTION COUNT</th>
-                <th class="text-right">CONFIDENCE</th>
-                <th class="text-right">DETECTION LEVEL</th>
-              </tr>
-            </thead>
-            <tbody id="signal-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="mobile-launchers" class="tab-content">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>NAME</th>
-                <th>TYPE</th>
-                <th>STATUS</th>
-                <th style="width: 200px;">BATTERY RELOAD</th>
-                <th style="width: 200px;">AMMO SECTION RELOAD</th>
-                <th class="text-right">MISSILES (AMMO)</th>
-                <th class="text-right">MISSILES (AHA)</th>
-              </tr>
-            </thead>
-            <tbody id="launcher-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="c2-nodes" class="tab-content">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>C2 NODE</th>
-                <th>NAME</th>
-                <th>OODA DETECTION</th>
-                <th>OODA TARGETING</th>
-                <th>OUT OF COMMS</th>
-                <th>EMCON SETTING</th>
-                <th>DESTROYED</th>
-              </tr>
-            </thead>
-            <tbody id="c2-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="base-weapons" class="tab-content">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>BASE NAME</th>
-                <th>WEAPON NAME</th>
-                <th class="text-right">CURRENT WEAPONS</th>
-              </tr>
-            </thead>
-            <tbody id="base-weapons-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="landing-units" class="tab-content">
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>AREA</th>
-                <th>UNIT TYPE</th>
-                <th class="text-right">COUNT</th>
-              </tr>
-            </thead>
-            <tbody id="landing-units-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <script>
-    // Application data
-    const appData = {
-      activeTab: 'signal-data'
-    };
-
-    // Data
-    const units = {
-      "Area A": [
-        { "name": "Launcher 1", "type": "Type 1", "status": "Active", "batteryReloadTime": 10, "defaultReloadTime": 100, "ammoSectionReloadTime": 20, "missilesInAmmoVehicles": 5, "missilesInAHA": 10 },
-        { "name": "Launcher 2", "type": "Type 1", "status": "Active", "batteryReloadTime": 10, "defaultReloadTime": 100, "ammoSectionReloadTime": 20, "missilesInAmmoVehicles": 5, "missilesInAHA": 10 }
-      ]
-    };
-
-    const signals = [
-      { "name": "Signal 1", "type": "Type A", "autodetectable": true, "firstDetected": "10:00", "lastDetected": "10:05", "detectionCount": 5, "confidence": 0.9, "temp": "High" },
-      { "name": "Signal 2", "type": "Type B", "autodetectable": false, "firstDetected": "11:00", "lastDetected": "11:10", "detectionCount": 3, "confidence": 0.7, "temp": "Medium" }
-    ];
-
-    const dataString = `{"C2": {"IC8B0X-0HNE084PJAHI0":{"radar":{}, "name":"Suspected C2 Facility#HJ/Shanwei", "SAM":{"X58F5H-0HMT5ODVUHVLM":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-12)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}}}, "IC8B0X-0HNE084PJAHI1":{"radar":{}, "name":"Suspected C2 Facility#HJ/Shanwei", "SAM":{"X58F5H-0HMT5ODVUIBTM":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-12)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}, "X58F5H-0HMT5ODVUIBFJ":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-22)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}}}}}`;
-    const c2Data = JSON.parse(dataString);
-
-    // Base weapons data (from original file)
-    const baseWeaponsString = `[{"name": "Base1", "wpns": [{ "name": "wpn1", "currWpn": 6 }, { "name": "wpn2", "currWpn": 6 }]}, {"name": "Base2", "wpns": [{ "name": "wpn1", "currWpn": 6 }, { "name": "wpn2", "currWpn": 6 }]}]`;
-    const baseWeaponsData = JSON.parse(baseWeaponsString);
-
-    // Landing units data (from original file)
-    const landingUnitsString = `{"Area A": {"ZBD-05": 0, "ZTD-05": 0, "PLL-05": 0, "PLZ-96": 0, "PGZ-09": 0, "PGZ-95": 0, "SA-15": 0}, "Area B": {"ZBD-05": 0, "ZTD-05": 0, "PLL-05": 0, "PLZ-96": 0, "PGZ-09": 0, "PGZ-95": 0, "SA-15": 0}}`;
-    const landingUnitsData = JSON.parse(landingUnitsString);
-
-    // Render models table
-    function renderModelsTable() {
-      // Models section removed
-    }
-
-    // Tab switching
-    function initTabs() {
-      const tabButtons = document.querySelectorAll('.tab-btn');
-      const tabContents = document.querySelectorAll('.tab-content');
-
-      // Hide tabs if corresponding data is empty
-      tabButtons.forEach(button => {
-        const targetTab = button.getAttribute('data-tab');
-        let shouldHide = false;
-
-        switch (targetTab) {
-          case 'signal-data':
-            shouldHide = !signals || !Array.isArray(signals) || signals.length === 0;
-            break;
-          case 'mobile-launchers':
-            shouldHide = !units || typeof units !== 'object' || Object.keys(units).length === 0;
-            break;
-          case 'c2-nodes':
-            shouldHide = !c2Data || typeof c2Data !== 'object' || Object.keys(c2Data).length === 0;
-            break;
-          case 'base-weapons':
-            shouldHide = !baseWeaponsData || !Array.isArray(baseWeaponsData) || baseWeaponsData.length === 0;
-            break;
-          case 'landing-units':
-            shouldHide = !landingUnitsData || typeof landingUnitsData !== 'object' || Object.keys(landingUnitsData).length === 0;
-            break;
-        }
-
-        if (shouldHide) {
-          button.style.display = 'none';
-          // Also hide the corresponding content
-          const content = document.getElementById(targetTab);
-          if (content) {
-            content.style.display = 'none';
-          }
-        }
-      });
-
-      // Find first visible tab and make it active
-      const visibleButtons = Array.from(tabButtons).filter(btn => btn.style.display !== 'none');
-      if (visibleButtons.length > 0) {
-        // Remove active from all tabs first
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
-
-        // Set first visible tab as active
-        const firstVisibleTab = visibleButtons[0].getAttribute('data-tab');
-        visibleButtons[0].classList.add('active');
-        const firstVisibleContent = document.getElementById(firstVisibleTab);
-        if (firstVisibleContent) {
-          firstVisibleContent.classList.add('active');
-        }
-        appData.activeTab = firstVisibleTab;
-      }
-
-      tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const targetTab = button.getAttribute('data-tab');
-
-          // Update active tab
-          appData.activeTab = targetTab;
-
-          // Update button states
-          tabButtons.forEach(btn => btn.classList.remove('active'));
-          button.classList.add('active');
-
-          // Update content visibility
-          tabContents.forEach(content => {
-            content.classList.remove('active');
-            if (content.id === targetTab) {
-              content.classList.add('active');
-            }
-          });
-        });
-      });
-
-      // tabButtons.forEach(button => {
-      //   button.addEventListener('click', () => {
-      //     const targetTab = button.getAttribute('data-tab');
-
-      //     tabButtons.forEach(btn => btn.classList.remove('active'));
-      //     button.classList.add('active');
-
-      //     tabContents.forEach(content => {
-      //       content.style.display = 'none';
-      //       if (content.id === targetTab) {
-      //         content.style.display = 'block';
-      //       }
-      //     });
-      //   });
-      // });
-    }
-
-    // Render launcher table
-    function renderLauncherTable() {
-      const tbody = document.getElementById('launcher-tbody');
-      tbody.innerHTML = '';
-
-      Object.keys(units).forEach(area => {
-        const areaUnits = units[area];
-        areaUnits.forEach((unit, index) => {
-          const row = document.createElement('tr');
-          const batteryProgress = Math.round((unit.batteryReloadTime / unit.defaultReloadTime) * 100);
-          const ammoProgress = Math.round((unit.ammoSectionReloadTime / unit.defaultReloadTime) * 100);
-
-          row.innerHTML = `
-            <td>${unit.name}</td>
-            <td>${unit.type.toUpperCase()}</td>
-            <td>${unit.status}</td>
-            <td>
-              ${unit.batteryReloadTime >= 0 ? `
-                <div class="progress-container">
-                  <div class="progress-bar-container">    
-                    <div class="progress-bar-fill" style="width: ${batteryProgress}%"></div>
-                  </div>
-                  <div class="progress-text">${batteryProgress}%</div>
-                </div>
-              ` : ''}
-            </td>
-            <td>
-              ${unit.ammoSectionReloadTime >= 0 ? `       
-                <div class="progress-container">
-                  <div class="progress-bar-container">    
-                    <div class="progress-bar-fill" style="width: ${ammoProgress}%"></div>
-                  </div>
-                  <div class="progress-text">${ammoProgress}%</div>
-                </div>
-              ` : ''}
-            </td>
-            ${index === 0 ? `
-              <td class="text-right" rowspan="${areaUnits.length}">${unit.missilesInAmmoVehicles}</td>
-              <td class="text-right" rowspan="${areaUnits.length}">${unit.missilesInAHA}</td>
-            ` : ''}
-          `;
-
-          tbody.appendChild(row);
-        });
-      });
-    }
-
-    // Format timestamp to YYYY-MM-DD HH:MM:SS (UTC)
-    function formatTimestamp(timestamp) {
-      if (!timestamp) return 'N/A';
-
-      const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-
-    // Render signal data table
-    function renderSignalTable() {
-      const tbody = document.getElementById('signal-tbody');
-      if (!tbody) {
-        console.error('signal-tbody element not found');
-        return;
-      }
-      tbody.innerHTML = '';
-
-      if (!signals || !Array.isArray(signals) || signals.length === 0) {
-        return;
-      }
-
-      signals.forEach(signal => {
-        const row = document.createElement('tr');
-
-        // Format coordinates with null checks
-        const latitude = signal.latitude || 0;
-        const longitude = signal.longitude || 0;
-        const latDir = latitude >= 0 ? 'N' : 'S';
-        const lonDir = longitude >= 0 ? 'E' : 'W';
-        const formattedLat = `${Math.abs(latitude).toFixed(4)}° ${latDir}`;
-        const formattedLon = `${Math.abs(longitude).toFixed(4)}° ${lonDir}`;
-
-        row.innerHTML = `
-          <td>${signal.name || 'N/A'}</td>
-          <td>${signal.type ? signal.type.toUpperCase() : 'N/A'}</td>
-          <td>${signal.autodetectable ? 'TRUE' : 'FALSE'}</td>
-          <td class="hidden-column">${formattedLat}</td>
-          <td class="hidden-column">${formattedLon}</td>
-          <td>${formatTimestamp(signal.firstDetected)}</td>
-          <td>${formatTimestamp(signal.lastDetected)}</td>
-          <td class="text-right">${signal.detectionCount || 0}</td>
-          <td class="text-right">${Math.floor(signal.confidence * 100 || 0)}%</td>
-          <td class="text-right">${signal.currentDetectionLevel || 0}</td>
-        `;
-
-        tbody.appendChild(row);
-      });
-    }
-
-    // Render C2 nodes table
-    function renderC2Table() {
-      const tbody = document.getElementById('c2-tbody');
-      if (!tbody) {
-        console.error('c2-tbody element not found');
-        return;
-      }
-      tbody.innerHTML = '';
-
-      // Check if c2Data is empty object
-      if (!c2Data || typeof c2Data !== 'object' || Object.keys(c2Data).length === 0) {
-        return;
-      }
-
-      Object.keys(c2Data).forEach(c2NodeType => {
-        const nodeGroup = c2Data[c2NodeType];
-        if (!nodeGroup || typeof nodeGroup !== 'object') {
-          console.error(`Node group ${c2NodeType} is not an object:`, nodeGroup);
-          return;
-        }
-
-        Object.keys(nodeGroup).forEach(nodeName => {
-          const node = nodeGroup[nodeName];
-          if (!node || typeof node !== 'object') {
-            console.error(`Node ${nodeName} is not an object:`, node);
-            return;
-          }
-
-          // Count total units for this node (SAM + radar)
-          let totalUnits = 0;
-          if (node.SAM) totalUnits += Object.keys(node.SAM).length;
-          if (node.radar) totalUnits += Object.keys(node.radar).length;
-
-          let isFirstRow = true;
-
-          // Process SAM units
-          if (node.SAM) {
-            Object.keys(node.SAM).forEach(unitName => {
-              const unit = node.SAM[unitName];
-              const row = document.createElement('tr');
-
-              row.innerHTML = `
-                ${isFirstRow ? `<td rowspan="${totalUnits}">${node.name}</td>` : ''}
-                <td>${unit.name} (SAM)</td>
-                <td>${unit.OODADetection}</td>
-                <td>${unit.OODATargeting}</td>
-                <td class="${unit.isOutOfComms ? 'status-offline' : 'status-ready'}">${unit.isOutOfComms ? 'YES' : 'NO'}</td>
-                <td class="${unit.EMCONSetting === 'ON' ? 'status-ready' : 'status-standby'}">${unit.EMCONSetting}</td>
-                <td class="${unit.isDestroyed ? 'status-offline' : 'status-ready'}">${unit.isDestroyed ? 'YES' : 'NO'}</td>
-              `;
-
-              tbody.appendChild(row);
-              isFirstRow = false;
-            });
-          }
-
-          // Process radar units
-          if (node.radar) {
-            Object.keys(node.radar).forEach(unitName => {
-              const unit = node.radar[unitName];
-              const row = document.createElement('tr');
-
-              row.innerHTML = `
-                ${isFirstRow ? `<td rowspan="${totalUnits}">${nodeName}</td>` : ''}
-                <td>${unit.name} (Radar)</td>
-                <td>${unit.OODADetection}</td>
-                <td>${unit.OODATargeting}</td>
-                <td class="${unit.isOutOfComms ? 'status-offline' : 'status-ready'}">${unit.isOutOfComms ? 'YES' : 'NO'}</td>
-                <td class="${unit.EMCONSetting === 'ON' ? 'status-ready' : 'status-standby'}">${unit.EMCONSetting}</td>
-                <td class="${unit.isDestroyed ? 'status-offline' : 'status-ready'}">${unit.isDestroyed ? 'YES' : 'NO'}</td>
-              `;
-
-              tbody.appendChild(row);
-              isFirstRow = false;
-            });
-          }
-        });
-      });
-    }
-
-    function renderBaseWeaponsTable() {
-      const tbody = document.getElementById('base-weapons-tbody');
-      if (!tbody) {
-        console.error('base-weapons-tbody element not found');
-        return;
-      }
-      tbody.innerHTML = '';
-
-      // Check if baseWeaponsData is empty array
-      if (!baseWeaponsData || !Array.isArray(baseWeaponsData) || baseWeaponsData.length === 0) {
-        return;
-      }
-
-      baseWeaponsData.forEach(base => {
-        const weaponCount = base.wpns.length;
-        let isFirstRow = true;
-
-        base.wpns.forEach(weapon => {
-          const row = document.createElement('tr');
-
-          row.innerHTML = `
-            ${isFirstRow ? `<td rowspan="${weaponCount}">${base.name}</td>` : ''}
-            <td>${weapon.name}</td>
-            <td class="text-right">${weapon.currWpn}</td> 
-          `;
-
-          tbody.appendChild(row);
-          isFirstRow = false;
-        });
-      });
-    }
-
-    // Render landing units table
-    function renderLandingUnitsTable() {
-      const tbody = document.getElementById('landing-units-tbody');
-      tbody.innerHTML = '';
-
-      Object.keys(landingUnitsData).forEach(area => {
-        const units = landingUnitsData[area];
-        const unitTypes = Object.keys(units);
-        const unitCount = unitTypes.length;
-        let isFirstRow = true;
-
-        unitTypes.forEach(unitType => {
-          const count = units[unitType];
-          const row = document.createElement('tr');
-
-          row.innerHTML = `
-            ${isFirstRow ? `<td rowspan="${unitCount}">${area}</td>` : ''}
-            <td>${unitType}</td>
-            <td class="text-right">${count}</td>
-          `;
-
-          tbody.appendChild(row);
-          isFirstRow = false;
-        });
-      });
-    }
-
-    // Initialize application
-    function init() {
-      initTabs();
-      renderLauncherTable();
-      renderSignalTable();
-      renderC2Table();
-      renderBaseWeaponsTable();
-      renderLandingUnitsTable();
-    }
-
-    // Start application
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-  </script>
-</body>
-
+	<head>
+		<meta charset="utf-8" />
+		<title>Unit Status Dashboard</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+		<style>
+			/* Reset game engine's font wrapper */
+			html,
+			body {
+				width: 100% !important;
+				height: 100% !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			font {
+				display: contents !important;
+				width: 100% !important;
+				height: 100% !important;
+			}
+			:root {
+				--bg-dark: #10161a;
+				--bg-panel: #202b33;
+				--bg-hover: #293742;
+				--border-color: #30404d;
+				--text-primary: #e1e8ed;
+				--text-secondary: #a7b6c2;
+				--accent-blue: #137cbd;
+				--accent-blue-hover: #2b95d6;
+				--success: #0f9960;
+				--danger: #db3737;
+				--warning: #d9822b;
+				--font-family:
+					-apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue",
+					Arial, sans-serif;
+			}
+
+			body {
+				margin: 0;
+				padding: 0;
+				font-family: var(--font-family);
+				background-color: var(--bg-dark);
+				color: var(--text-primary);
+				height: 100vh;
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.main-content {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				overflow: hidden;
+			}
+
+			.top-bar {
+				height: 50px;
+				background-color: var(--bg-panel);
+				border-bottom: 1px solid var(--border-color);
+				display: flex;
+				align-items: center;
+				padding: 0 20px;
+				justify-content: space-between;
+			}
+
+			.breadcrumb {
+				font-size: 14px;
+				color: var(--text-secondary);
+				font-weight: 500;
+			}
+
+			.breadcrumb span {
+				color: var(--text-primary);
+			}
+
+			.tab-container {
+				display: flex;
+				background-color: var(--bg-dark);
+				border-bottom: 1px solid var(--border-color);
+				padding: 0 20px;
+			}
+
+			.tab-btn {
+				background-color: transparent;
+				border: none;
+				outline: none;
+				cursor: pointer;
+				padding: 12px 16px;
+				transition: 0.3s;
+				font-size: 13px;
+				font-weight: 600;
+				color: var(--text-secondary);
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				border-bottom: 3px solid transparent;
+			}
+
+			.tab-btn:hover {
+				color: var(--text-primary);
+			}
+
+			.tab-btn.active {
+				color: var(--accent-blue);
+				border-bottom: 3px solid var(--accent-blue);
+			}
+
+			.content-wrapper {
+				flex: 1;
+				position: relative;
+				overflow: auto;
+				padding: 20px;
+			}
+
+			.tab-content {
+				display: none;
+			}
+
+			.tab-content.active {
+				display: block;
+			}
+
+			/* Table Styles */
+			.table-wrapper {
+				overflow-x: auto;
+				background-color: var(--bg-panel);
+				border: 1px solid var(--border-color);
+				border-radius: 2px;
+			}
+
+			.table {
+				width: 100%;
+				border-collapse: collapse;
+				text-align: left;
+				font-size: 13px;
+			}
+
+			.table th {
+				padding: 12px 16px;
+				font-size: 12px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				color: var(--text-secondary);
+				border-bottom: 1px solid var(--border-color);
+				background-color: rgba(0, 0, 0, 0.2);
+				white-space: nowrap;
+			}
+
+			.table td {
+				padding: 12px 16px;
+				color: var(--text-primary);
+				border-bottom: 1px solid var(--border-color);
+			}
+
+			.table tbody tr:hover {
+				background-color: rgba(255, 255, 255, 0.02);
+			}
+
+			.text-right {
+				text-align: right;
+			}
+
+			/* Status Badges */
+			.status-badge {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				padding: 4px 8px;
+				border-radius: 4px;
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+			}
+
+			.status-ready {
+				background-color: rgba(15, 153, 96, 0.2);
+				color: var(--success);
+				border: 1px solid rgba(15, 153, 96, 0.3);
+			}
+
+			.status-offline {
+				background-color: rgba(219, 55, 55, 0.2);
+				color: var(--danger);
+				border: 1px solid rgba(219, 55, 55, 0.3);
+			}
+
+			/* Progress Bars */
+			.progress-container {
+				width: 100%;
+				min-width: 100px;
+			}
+
+			.progress-bar-container {
+				background-color: rgba(0, 0, 0, 0.3);
+				height: 6px;
+				border-radius: 3px;
+				overflow: hidden;
+			}
+
+			.progress-bar-fill {
+				background-color: var(--accent-blue);
+				height: 100%;
+				transition: width 0.3s ease;
+			}
+
+			.progress-text {
+				font-size: 10px;
+				color: var(--text-secondary);
+				margin-top: 4px;
+				text-align: right;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="main-content">
+			<div class="top-bar">
+				<div class="breadcrumb">
+					<span>Unit Status Dashboard</span>
+				</div>
+			</div>
+
+			<div class="tab-container">
+				<button class="tab-btn active" data-tab="signal-data">Signal Data</button>
+				<button class="tab-btn" data-tab="mobile-launchers">Missile Systems</button>
+				<button class="tab-btn" data-tab="c2-nodes">C2 Nodes</button>
+				<button class="tab-btn" data-tab="base-weapons">Base Weapons</button>
+				<button class="tab-btn" data-tab="landing-units">Landing Units</button>
+			</div>
+
+			<div class="content-wrapper">
+				<div id="signal-data" class="tab-content active">
+					<div class="table-wrapper">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>NAME</th>
+									<th>TYPE</th>
+									<th>AUTODETECTABLE</th>
+									<th class="hidden-column">Latitude</th>
+									<th class="hidden-column">Longitude</th>
+									<th>FIRST DETECTED</th>
+									<th>LAST DETECTED</th>
+									<th class="text-right">DETECTION COUNT</th>
+									<th class="text-right">CONFIDENCE</th>
+									<th class="text-right">DETECTION LEVEL</th>
+								</tr>
+							</thead>
+							<tbody id="signal-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+
+				<div id="mobile-launchers" class="tab-content">
+					<div class="table-wrapper">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>NAME</th>
+									<th>MISSILE SYSTEM</th>
+									<th>FIRING UNIT STATE</th>
+									<th style="width: 200px">FIRING UNIT RELOAD</th>
+									<th>RESUPPLY UNIT STATE</th>
+									<th style="width: 200px">RESUPPLY UNIT RELOAD</th>
+									<th class="text-right">MISSILES (AMMO)</th>
+									<th class="text-right">MISSILES (AHA)</th>
+								</tr>
+							</thead>
+							<tbody id="launcher-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+
+				<div id="c2-nodes" class="tab-content">
+					<div class="table-wrapper">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>C2 NODE</th>
+									<th>NAME</th>
+									<th>OODA DETECTION</th>
+									<th>OODA TARGETING</th>
+									<th>OUT OF COMMS</th>
+									<th>EMCON SETTING</th>
+									<th>DESTROYED</th>
+								</tr>
+							</thead>
+							<tbody id="c2-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+
+				<div id="base-weapons" class="tab-content">
+					<div class="table-wrapper">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>BASE NAME</th>
+									<th>WEAPON NAME</th>
+									<th class="text-right">CURRENT WEAPONS</th>
+								</tr>
+							</thead>
+							<tbody id="base-weapons-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+
+				<div id="landing-units" class="tab-content">
+					<div class="table-wrapper">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>AREA</th>
+									<th>UNIT TYPE</th>
+									<th class="text-right">COUNT</th>
+								</tr>
+							</thead>
+							<tbody id="landing-units-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// Application data
+			const appData = {
+				activeTab: "signal-data",
+			};
+
+			// Data
+			const units = {
+				"Area A": [
+					{
+						name: "Launcher 1",
+						missileSystem: "Type 1",
+						firingUnitState: "STATIC",
+						resupplyUnitState: "STATIC",
+						firingUnitReloadTime: 10,
+						defaultReloadTime: 100,
+						resupplyUnitReloadTime: 20,
+						missilesInAmmoVehicles: 5,
+						missilesInAHA: 10,
+					},
+					{
+						name: "Launcher 2",
+						missileSystem: "Type 1",
+						firingUnitState: "STATIC",
+						resupplyUnitState: "STATIC",
+						firingUnitReloadTime: 10,
+						defaultReloadTime: 100,
+						resupplyUnitReloadTime: 20,
+						missilesInAmmoVehicles: 5,
+						missilesInAHA: 10,
+					},
+				],
+			};
+
+			const signals = [
+				{
+					name: "Signal 1",
+					type: "Type A",
+					autodetectable: true,
+					firstDetected: "10:00",
+					lastDetected: "10:05",
+					detectionCount: 5,
+					confidence: 0.9,
+					temp: "High",
+				},
+				{
+					name: "Signal 2",
+					type: "Type B",
+					autodetectable: false,
+					firstDetected: "11:00",
+					lastDetected: "11:10",
+					detectionCount: 3,
+					confidence: 0.7,
+					temp: "Medium",
+				},
+			];
+
+			const dataString = `{"C2": {"IC8B0X-0HNE084PJAHI0":{"radar":{}, "name":"Suspected C2 Facility#HJ/Shanwei", "SAM":{"X58F5H-0HMT5ODVUHVLM":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-12)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}}}, "IC8B0X-0HNE084PJAHI1":{"radar":{}, "name":"Suspected C2 Facility#HJ/Shanwei", "SAM":{"X58F5H-0HMT5ODVUIBTM":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-12)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}, "X58F5H-0HMT5ODVUIBFJ":{"EMCONSetting":"Radar=Passive", "OODADetection":"15/15", "name":"SAM Bn (HQ-22)", "isOutOfComms":false, "OODATargeting":"5/5", "isDestroyed":false}}}}}`;
+			const c2Data = JSON.parse(dataString);
+
+			// Base weapons data (from original file)
+			const baseWeaponsString = `[{"name": "Base1", "wpns": [{ "name": "wpn1", "currWpn": 6 }, { "name": "wpn2", "currWpn": 6 }]}, {"name": "Base2", "wpns": [{ "name": "wpn1", "currWpn": 6 }, { "name": "wpn2", "currWpn": 6 }]}]`;
+			const baseWeaponsData = JSON.parse(baseWeaponsString);
+
+			// Landing units data (from original file)
+			const landingUnitsString = `{"Area A": {"ZBD-05": 0, "ZTD-05": 0, "PLL-05": 0, "PLZ-96": 0, "PGZ-09": 0, "PGZ-95": 0, "SA-15": 0}, "Area B": {"ZBD-05": 0, "ZTD-05": 0, "PLL-05": 0, "PLZ-96": 0, "PGZ-09": 0, "PGZ-95": 0, "SA-15": 0}}`;
+			const landingUnitsData = JSON.parse(landingUnitsString);
+
+			// Render models table
+			function renderModelsTable() {
+				// Models section removed
+			}
+
+			// Tab switching
+			function initTabs() {
+				const tabButtons = document.querySelectorAll(".tab-btn");
+				const tabContents = document.querySelectorAll(".tab-content");
+
+				// Hide tabs if corresponding data is empty
+				tabButtons.forEach((button) => {
+					const targetTab = button.getAttribute("data-tab");
+					let shouldHide = false;
+
+					switch (targetTab) {
+						case "signal-data":
+							shouldHide = !signals || !Array.isArray(signals) || signals.length === 0;
+							break;
+						case "mobile-launchers":
+							shouldHide =
+								!units || typeof units !== "object" || Object.keys(units).length === 0;
+							break;
+						case "c2-nodes":
+							shouldHide =
+								!c2Data || typeof c2Data !== "object" || Object.keys(c2Data).length === 0;
+							break;
+						case "base-weapons":
+							shouldHide =
+								!baseWeaponsData ||
+								!Array.isArray(baseWeaponsData) ||
+								baseWeaponsData.length === 0;
+							break;
+						case "landing-units":
+							shouldHide =
+								!landingUnitsData ||
+								typeof landingUnitsData !== "object" ||
+								Object.keys(landingUnitsData).length === 0;
+							break;
+					}
+
+					if (shouldHide) {
+						button.style.display = "none";
+						// Also hide the corresponding content
+						const content = document.getElementById(targetTab);
+						if (content) {
+							content.style.display = "none";
+						}
+					}
+				});
+
+				// Find first visible tab and make it active
+				const visibleButtons = Array.from(tabButtons).filter(
+					(btn) => btn.style.display !== "none",
+				);
+				if (visibleButtons.length > 0) {
+					// Remove active from all tabs first
+					tabButtons.forEach((btn) => btn.classList.remove("active"));
+					tabContents.forEach((content) => content.classList.remove("active"));
+
+					// Set first visible tab as active
+					const firstVisibleTab = visibleButtons[0].getAttribute("data-tab");
+					visibleButtons[0].classList.add("active");
+					const firstVisibleContent = document.getElementById(firstVisibleTab);
+					if (firstVisibleContent) {
+						firstVisibleContent.classList.add("active");
+					}
+					appData.activeTab = firstVisibleTab;
+				}
+
+				tabButtons.forEach((button) => {
+					button.addEventListener("click", () => {
+						const targetTab = button.getAttribute("data-tab");
+
+						// Update active tab
+						appData.activeTab = targetTab;
+
+						// Update button states
+						tabButtons.forEach((btn) => btn.classList.remove("active"));
+						button.classList.add("active");
+
+						// Update content visibility
+						tabContents.forEach((content) => {
+							content.classList.remove("active");
+							if (content.id === targetTab) {
+								content.classList.add("active");
+							}
+						});
+					});
+				});
+
+				// tabButtons.forEach(button => {
+				//   button.addEventListener('click', () => {
+				//     const targetTab = button.getAttribute('data-tab');
+
+				//     tabButtons.forEach(btn => btn.classList.remove('active'));
+				//     button.classList.add('active');
+
+				//     tabContents.forEach(content => {
+				//       content.style.display = 'none';
+				//       if (content.id === targetTab) {
+				//         content.style.display = 'block';
+				//       }
+				//     });
+				//   });
+				// });
+			}
+
+			// Render launcher table
+			function renderLauncherTable() {
+				const tbody = document.getElementById("launcher-tbody");
+				tbody.innerHTML = "";
+
+				Object.keys(units).forEach((area) => {
+					const areaUnits = units[area];
+					areaUnits.forEach((unit, index) => {
+						const row = document.createElement("tr");
+						const batteryProgress = Math.round(
+							(unit.firingUnitReloadTime / unit.defaultReloadTime) * 100,
+						);
+						const ammoProgress = Math.round(
+							(unit.resupplyUnitReloadTime / unit.defaultReloadTime) * 100,
+						);
+
+						row.innerHTML = `
+			         <td>${unit.name}</td>
+			         <td>${unit.missileSystem.toUpperCase()}</td>
+			         <td>${unit.firingUnitState}</td>
+			         <td>
+			           ${
+										unit.firingUnitReloadTime >= 0
+											? `
+			             <div class="progress-container">
+			               <div class="progress-bar-container">
+			                 <div class="progress-bar-fill" style="width: ${batteryProgress}%"></div>
+			               </div>
+			               <div class="progress-text">${batteryProgress}%</div>
+			             </div>
+			           `
+											: ""
+									}
+			         </td>
+			         <td>${unit.resupplyUnitState}</td>
+			         <td>
+			           ${
+										unit.resupplyUnitReloadTime >= 0
+											? `
+			             <div class="progress-container">
+			               <div class="progress-bar-container">
+			                 <div class="progress-bar-fill" style="width: ${ammoProgress}%"></div>
+			               </div>
+			               <div class="progress-text">${ammoProgress}%</div>
+			             </div>
+			           `
+											: ""
+									}
+			         </td>
+			         ${
+									index === 0
+										? `
+			           <td class="text-right" rowspan="${areaUnits.length}">${unit.missilesInAmmoVehicles}</td>
+			           <td class="text-right" rowspan="${areaUnits.length}">${unit.missilesInAHA}</td>
+			         `
+										: ""
+								}
+			       `;
+
+						tbody.appendChild(row);
+					});
+				});
+			}
+
+			// Format timestamp to YYYY-MM-DD HH:MM:SS (UTC)
+			function formatTimestamp(timestamp) {
+				if (!timestamp) return "N/A";
+
+				const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+				const year = date.getUTCFullYear();
+				const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+				const day = String(date.getUTCDate()).padStart(2, "0");
+				const hours = String(date.getUTCHours()).padStart(2, "0");
+				const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+				const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+				return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+			}
+
+			// Render signal data table
+			function renderSignalTable() {
+				const tbody = document.getElementById("signal-tbody");
+				if (!tbody) {
+					console.error("signal-tbody element not found");
+					return;
+				}
+				tbody.innerHTML = "";
+
+				if (!signals || !Array.isArray(signals) || signals.length === 0) {
+					return;
+				}
+
+				signals.forEach((signal) => {
+					const row = document.createElement("tr");
+
+					// Format coordinates with null checks
+					const latitude = signal.latitude || 0;
+					const longitude = signal.longitude || 0;
+					const latDir = latitude >= 0 ? "N" : "S";
+					const lonDir = longitude >= 0 ? "E" : "W";
+					const formattedLat = `${Math.abs(latitude).toFixed(4)}° ${latDir}`;
+					const formattedLon = `${Math.abs(longitude).toFixed(4)}° ${lonDir}`;
+
+					row.innerHTML = `
+			       <td>${signal.name || "N/A"}</td>
+			       <td>${signal.type ? signal.type.toUpperCase() : "N/A"}</td>
+			       <td>${signal.autodetectable ? "TRUE" : "FALSE"}</td>
+			       <td class="hidden-column">${formattedLat}</td>
+			       <td class="hidden-column">${formattedLon}</td>
+			       <td>${formatTimestamp(signal.firstDetected)}</td>
+			       <td>${formatTimestamp(signal.lastDetected)}</td>
+			       <td class="text-right">${signal.detectionCount || 0}</td>
+			       <td class="text-right">${Math.floor(signal.confidence * 100 || 0)}%</td>
+			       <td class="text-right">${signal.currentDetectionLevel || 0}</td>
+			     `;
+
+					tbody.appendChild(row);
+				});
+			}
+
+			// Render C2 nodes table
+			function renderC2Table() {
+				const tbody = document.getElementById("c2-tbody");
+				if (!tbody) {
+					console.error("c2-tbody element not found");
+					return;
+				}
+				tbody.innerHTML = "";
+
+				// Check if c2Data is empty object
+				if (!c2Data || typeof c2Data !== "object" || Object.keys(c2Data).length === 0) {
+					return;
+				}
+
+				Object.keys(c2Data).forEach((c2NodeType) => {
+					const nodeGroup = c2Data[c2NodeType];
+					if (!nodeGroup || typeof nodeGroup !== "object") {
+						console.error(`Node group ${c2NodeType} is not an object:`, nodeGroup);
+						return;
+					}
+
+					Object.keys(nodeGroup).forEach((nodeName) => {
+						const node = nodeGroup[nodeName];
+						if (!node || typeof node !== "object") {
+							console.error(`Node ${nodeName} is not an object:`, node);
+							return;
+						}
+
+						// Count total units for this node (SAM + radar)
+						let totalUnits = 0;
+						if (node.SAM) totalUnits += Object.keys(node.SAM).length;
+						if (node.radar) totalUnits += Object.keys(node.radar).length;
+
+						let isFirstRow = true;
+
+						// Process SAM units
+						if (node.SAM) {
+							Object.keys(node.SAM).forEach((unitName) => {
+								const unit = node.SAM[unitName];
+								const row = document.createElement("tr");
+
+								row.innerHTML = `
+			             ${isFirstRow ? `<td rowspan="${totalUnits}">${node.name}</td>` : ""}
+			             <td>${unit.name} (SAM)</td>
+			             <td>${unit.OODADetection}</td>
+			             <td>${unit.OODATargeting}</td>
+			             <td class="${unit.isOutOfComms ? "status-offline" : "status-ready"}">${unit.isOutOfComms ? "YES" : "NO"}</td>
+			             <td class="${unit.EMCONSetting === "ON" ? "status-ready" : "status-standby"}">${unit.EMCONSetting}</td>
+			             <td class="${unit.isDestroyed ? "status-offline" : "status-ready"}">${unit.isDestroyed ? "YES" : "NO"}</td>
+			           `;
+
+								tbody.appendChild(row);
+								isFirstRow = false;
+							});
+						}
+
+						// Process radar units
+						if (node.radar) {
+							Object.keys(node.radar).forEach((unitName) => {
+								const unit = node.radar[unitName];
+								const row = document.createElement("tr");
+
+								row.innerHTML = `
+			             ${isFirstRow ? `<td rowspan="${totalUnits}">${nodeName}</td>` : ""}
+			             <td>${unit.name} (Radar)</td>
+			             <td>${unit.OODADetection}</td>
+			             <td>${unit.OODATargeting}</td>
+			             <td class="${unit.isOutOfComms ? "status-offline" : "status-ready"}">${unit.isOutOfComms ? "YES" : "NO"}</td>
+			             <td class="${unit.EMCONSetting === "ON" ? "status-ready" : "status-standby"}">${unit.EMCONSetting}</td>
+			             <td class="${unit.isDestroyed ? "status-offline" : "status-ready"}">${unit.isDestroyed ? "YES" : "NO"}</td>
+			           `;
+
+								tbody.appendChild(row);
+								isFirstRow = false;
+							});
+						}
+					});
+				});
+			}
+
+			function renderBaseWeaponsTable() {
+				const tbody = document.getElementById("base-weapons-tbody");
+				if (!tbody) {
+					console.error("base-weapons-tbody element not found");
+					return;
+				}
+				tbody.innerHTML = "";
+
+				// Check if baseWeaponsData is empty array
+				if (
+					!baseWeaponsData ||
+					!Array.isArray(baseWeaponsData) ||
+					baseWeaponsData.length === 0
+				) {
+					return;
+				}
+
+				baseWeaponsData.forEach((base) => {
+					const weaponCount = base.wpns.length;
+					let isFirstRow = true;
+
+					base.wpns.forEach((weapon) => {
+						const row = document.createElement("tr");
+
+						row.innerHTML = `
+			         ${isFirstRow ? `<td rowspan="${weaponCount}">${base.name}</td>` : ""}
+			         <td>${weapon.name}</td>
+			         <td class="text-right">${weapon.currWpn}</td>
+			       `;
+
+						tbody.appendChild(row);
+						isFirstRow = false;
+					});
+				});
+			}
+
+			// Render landing units table
+			function renderLandingUnitsTable() {
+				const tbody = document.getElementById("landing-units-tbody");
+				tbody.innerHTML = "";
+
+				Object.keys(landingUnitsData).forEach((area) => {
+					const units = landingUnitsData[area];
+					const unitTypes = Object.keys(units);
+					const unitCount = unitTypes.length;
+					let isFirstRow = true;
+
+					unitTypes.forEach((unitType) => {
+						const count = units[unitType];
+						const row = document.createElement("tr");
+
+						row.innerHTML = `
+			         ${isFirstRow ? `<td rowspan="${unitCount}">${area}</td>` : ""}
+			         <td>${unitType}</td>
+			         <td class="text-right">${count}</td>
+			       `;
+
+						tbody.appendChild(row);
+						isFirstRow = false;
+					});
+				});
+			}
+
+			// Initialize application
+			function init() {
+				initTabs();
+				renderLauncherTable();
+				renderSignalTable();
+				renderC2Table();
+				renderBaseWeaponsTable();
+				renderLandingUnitsTable();
+			}
+
+			// Start application
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", init);
+			} else {
+				init();
+			}
+		</script>
+	</body>
 </html>

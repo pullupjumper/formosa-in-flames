@@ -10,6 +10,26 @@ local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
+---comment
+---@param ctx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@return number
+local function calculateReloadTime(ctx)
+  return math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 + 0.5) / 100
+end
+
+---comment
+---@param state missileSystemState
+---@return string
+local function getState(state)
+  local stateMap = {
+    [constants.MISSILE_SYSTEM_STATE.STATIC] = "STATIC",
+    [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = "REPOSITIONING",
+    [constants.MISSILE_SYSTEM_STATE.HIDE] = "HIDE",
+    [constants.MISSILE_SYSTEM_STATE.RELOAD] = "RELOAD",
+  }
+  return stateMap[state] or "UNKNOWN"
+end
+
 ---Transform deployed missile system configuration into operational area data structure
 ---@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
 ---@return SBJ__OperationalArea # Operational area data structure
@@ -283,79 +303,57 @@ local function createBatteryDataString(config, saveData, sideName, ...)
   end
 
   for _, missileSystem in pairs(missileSystems) do
+    ---@type SBJ__MissileSystemContext
     local missileSystemCtx = saveData[field].ground[missileSystem]
     local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 
     if missileSystemCtx and firingUnitCtxs then
-      for _, ctx in pairs(firingUnitCtxs) do
-        local name = ctx.name
-        local status = ""
-        local missilesInAmmoVehicles = missileSystemCtx.resupplyUnits[ctx.resupplyUnit].wpnCurrent
-        local ammoSec = missileSystemCtx.resupplyUnits[ctx.resupplyUnit]
+      for _, firingUnitCtx in pairs(firingUnitCtxs) do
+        local name = firingUnitCtx.name
+        local status = getState(firingUnitCtx.state)
+        local resupplyUnitCtx = missileSystemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
+        local missilesInAmmoVehicles = resupplyUnitCtx.wpnCurrent
+        local resupplyUnitStatus = getState(resupplyUnitCtx.state)
         local reloadTime = config[field].ground[missileSystem].reloadTime / 60
-        local missilesInAHA = missileSystemCtx.ammunitions[missileSystemCtx.resupplyUnits[ctx.resupplyUnit].ammunition]
-            .wpnCurrent
-        local batteryReloadTime = nil
-        local ammoSectionReloadTime = nil
+        local missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent
+        local firingUnitReloadTime = nil
+        local resupplyUnitReloadTime = nil
 
-        if ctx.state == constants.MISSILE_SYSTEM_STATE.STATIC then
-          status = "STATIC"
-        elseif ctx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING then
-          status = "REPOSITIONING"
-        elseif ctx.state == constants.MISSILE_SYSTEM_STATE.RELOAD then
-          status = "RELOAD"
-        else
-          status = "HIDE"
-        end
+        if firingUnitCtx.reloadStartTime ~= nil then
+          firingUnitReloadTime = calculateReloadTime(firingUnitCtx)
 
-        if ctx.reloadStartTime ~= nil then
-          batteryReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 + 0.5) / 100
-
-          if batteryReloadTime < 0 then
-            batteryReloadTime = 0
+          if firingUnitReloadTime < 0 then
+            firingUnitReloadTime = 0
           end
         end
 
-        if ctx.reloadStartTime == nil then
-          batteryReloadTime = 0
+        if firingUnitCtx.reloadStartTime == nil then
+          firingUnitReloadTime = 0
         end
 
-        if ammoSec.reloadStartTime ~= nil then
-          ammoSectionReloadTime = math.floor(((GameApi.ScenEdit_CurrentTime() - ammoSec.reloadStartTime) / 60) * 100 +
-            0.5) / 100
+        if resupplyUnitCtx.reloadStartTime ~= nil then
+          resupplyUnitReloadTime = calculateReloadTime(resupplyUnitCtx)
 
-          if ammoSectionReloadTime < 0 then
-            ammoSectionReloadTime = 0
+          if resupplyUnitReloadTime < 0 then
+            resupplyUnitReloadTime = 0
           end
         end
 
-        if ammoSec.reloadStartTime == nil then
-          ammoSectionReloadTime = 0
+        if resupplyUnitCtx.reloadStartTime == nil then
+          resupplyUnitReloadTime = 0
         end
 
-        if sideName == "China" then
-          table.insert(rows[ctx.resupplyUnit], {
-            name = name,
-            type = missileSystem,
-            status = status,
-            missilesInAmmoVehicles = missilesInAmmoVehicles,
-            missilesInAHA = missilesInAHA,
-            batteryReloadTime = batteryReloadTime,
-            ammoSectionReloadTime = ammoSectionReloadTime,
-            defaultReloadTime = reloadTime
-          })
-        else
-          table.insert(rows[ctx.resupplyUnit], {
-            name = name,
-            type = missileSystem,
-            status = status,
-            missilesInAmmoVehicles = missilesInAmmoVehicles,
-            missilesInAHA = missilesInAHA,
-            batteryReloadTime = batteryReloadTime,
-            ammoSectionReloadTime = ammoSectionReloadTime,
-            defaultReloadTime = reloadTime
-          })
-        end
+        table.insert(rows[firingUnitCtx.resupplyUnit], {
+          name = name,
+          missileSystem = missileSystem,
+          firingUnitState = status,
+          resupplyUnitState = resupplyUnitStatus,
+          missilesInAmmoVehicles = missilesInAmmoVehicles,
+          missilesInAHA = missilesInAHA,
+          firingUnitReloadTime = firingUnitReloadTime,
+          resupplyUnitReloadTime = resupplyUnitReloadTime,
+          defaultReloadTime = reloadTime
+        })
       end
     end
   end
@@ -381,10 +379,7 @@ local function createMagazineDataString(config, sideName)
 
       for _, magazine in ipairs(base.magazines) do
         for _, wpn in ipairs(magazine.mag_weapons) do
-          table.insert(obj.wpns, {
-            name = wpn.wpn_name,
-            currWpn = wpn.wpn_current,
-          })
+          table.insert(obj.wpns, { name = wpn.wpn_name, currWpn = wpn.wpn_current })
         end
       end
 
