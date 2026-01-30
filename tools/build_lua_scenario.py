@@ -442,24 +442,24 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                 # Replace data assignments with placeholders
                 # 1. units object -> unitsString
                 html_content = re.sub(
-                    r"const\s+units\s*=\s*\{.*?\};",
-                    "const unitsString = `%s`;\n    const units = JSON.parse(unitsString);",
+                    r"const\s+missileSystemString\s*=\s*`[^`]*`;",
+                    "const missileSystemString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
 
                 # 2. signals array -> signalsString
                 html_content = re.sub(
-                    r"const\s+signals\s*=\s*\[.*?\];",
-                    "const signalsString = `%s`;\n    const signals = JSON.parse(signalsString);",
+                    r"const\s+signalsString\s*=\s*`[^`]*`;",
+                    "const signalsString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
 
                 # 3. dataString (C2 nodes) - use greedy matching to handle multi-line JSON
                 html_content = re.sub(
-                    r"const\s+dataString\s*=\s*`[^`]*`;",
-                    "const dataString = `%s`;",
+                    r"const\s+c2DataString\s*=\s*`[^`]*`;",
+                    "const c2DataString = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )

@@ -46,8 +46,7 @@ end
 local function isReadyToReloadFiringUnit(firingUnitCtx, systemCtx, isMet, firingUnit, weaponDBID)
   if firingUnitCtx.reloadStartTime == nil then return false end
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - firingUnitCtx.reloadStartTime
-  return elapsedTime >= systemCtx.reloadTime and
-      isMet and
+  return elapsedTime >= systemCtx.reloadTime and isMet and
       MissileSystem.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, weaponDBID)
 end
 
@@ -59,9 +58,7 @@ end
 local function isReadyToReloadResupplyUnit(resupplyUnitCtx, systemCtx, isMet)
   if resupplyUnitCtx.reloadStartTime == nil then return false end
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - resupplyUnitCtx.reloadStartTime
-  return elapsedTime >= systemCtx.reloadTime and
-      resupplyUnitCtx.wpnCurrent == 0 and
-      isMet
+  return elapsedTime >= systemCtx.reloadTime and resupplyUnitCtx.wpnCurrent == 0 and isMet
 end
 
 ---Set unit movement and weapon control status using table parameters
@@ -216,6 +213,7 @@ local function transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
     ammoDepotCtx.wpnCurrent = ammoDepotCtx.wpnCurrent - ammoToTransfer
   end
 
+  resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
   resupplyUnitCtx.reloadStartTime = nil
 end
 
@@ -394,6 +392,7 @@ function MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideNa
     totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   end
 
+  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
   firingUnitCtx.reloadStartTime = nil
   return totalLoaded
 end
@@ -418,13 +417,14 @@ end
 ---Set firing unit weapon control status to free fire
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-function MissileSystem.setWCSToFree(firingUnitCtx, firingUnit)
+---@param isAuto boolean Whether in automatic mode
+function MissileSystem.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if unit then
+    if unit and isAuto then
       setUnitProperties({
         unit = unit,
         holdPosition = false,
@@ -438,13 +438,14 @@ end
 ---Set firing unit status to hide
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-function MissileSystem.setStateToHIDE(firingUnitCtx, firingUnit)
+---@param isAuto boolean Whether the action is automatic
+function MissileSystem.setStateToHIDE(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.HIDE
 
   for _, guid in ipairs(firingUnit.group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if unit then
+    if unit and isAuto then
       setUnitProperties({
         unit = unit,
         holdPosition = false,
@@ -471,12 +472,42 @@ function MissileSystem.isRepositioning(firingUnitCtx, isAuto)
   return true
 end
 
+---comment
+---@param systemCtx SBJ__MissileSystemContext
+---@param firingUnit CMO__Unit
+---@param isAuto boolean Whether the action is automatic
+function MissileSystem.setStateToStatic(systemCtx, firingUnit, isAuto)
+  local unitCtx = systemCtx.firingUnits[firingUnit.name] or systemCtx.resupplyUnits[firingUnit.name]
+
+  if unitCtx then
+    unitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
+    unitCtx.reloadStartTime = nil
+
+    for _, guid in ipairs(firingUnit.group.unitlist) do
+      local unit = GameApi.ScenEdit_GetUnit(guid)
+
+      if unit and isAuto then
+        setUnitProperties({
+          unit = unit,
+          holdPosition = false,
+          wcs = constants.WCS.HOLD, -- Hold fire while hiding
+          formation = { spacing = 0, transpose = true }
+        })
+      end
+    end
+  end
+end
+
 ---Check if unit/group ammunition is below specified percentage
 ---@param firingUnit CMO__Unit Unit or group object
 ---@param percentage number Percentage threshold
 ---@param weaponDBID number Weapon database ID
 ---@return boolean # Whether it is low ammunition
 function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
+  if not percentage or not weaponDBID then
+    return false
+  end
+
   local totalCurrent = 0
   local totalMax = 0
 
@@ -534,7 +565,20 @@ local function checkMeetingInArea(targetCtx, targetName, counterpartList, unit, 
 
     for _, counterpartCtx in pairs(counterpartList) do
       local counterpart = GameApi.ScenEdit_GetUnit(counterpartCtx.name, unit.side)
-      if counterpart and counterpart:inArea(area) then return true, targetCtx end
+      if not counterpart then goto nextCounterpart end
+      local isRequiredToReload = false
+      local isFiringUnitCtx = targetCtx.weaponDBID ~= nil
+
+      if isFiringUnitCtx then
+        isRequiredToReload = MissileSystem.isLowAmmo(unit, targetCtx.ammoThreshold, targetCtx.weaponDBID) and
+            counterpartCtx.wpnCurrent > 0
+      else
+        isRequiredToReload = MissileSystem.isLowAmmo(counterpart, counterpartCtx.ammoThreshold,
+          counterpartCtx.weaponDBID) and targetCtx.wpnCurrent > 0
+      end
+
+      if counterpart and counterpart:inArea(area) and isRequiredToReload then return true, targetCtx end
+      ::nextCounterpart::
     end
   end
 
@@ -597,6 +641,7 @@ function MissileSystem.isMetWithAmmoDepot(systemCtx, unit, isAuto)
 
       for _, pos in ipairs(resupplyUnitCtx.operationalArea.AHA) do
         local isInSameArea = unit:inArea(pos.area) and (ammoDepot and ammoDepot:inArea(pos.area))
+            and resupplyUnitCtx.wpnCurrent == 0
         if isInSameArea then return true, resupplyUnitCtx end
       end
     end

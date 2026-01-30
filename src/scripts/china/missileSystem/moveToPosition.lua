@@ -42,7 +42,7 @@ if positionType == "FP" then
 
     if missileSystemCtx and missileSystemCtx.enabled then
       if MissileSystem.isRepositioning(missileSystemCtx.firingUnits[unit.name], true) then
-        MissileSystem.setWCSToFree(missileSystemCtx.firingUnits[unit.name], unit)
+        MissileSystem.setWCSToFree(missileSystemCtx.firingUnits[unit.name], unit, true)
       end
     end
   end
@@ -61,7 +61,7 @@ elseif positionType == "HA" then
 
     if missileSystemCtx and missileSystemCtx.enabled then
       if MissileSystem.isRepositioning(missileSystemCtx.firingUnits[unit.name], true) then
-        MissileSystem.setStateToHIDE(missileSystemCtx.firingUnits[unit.name], unit)
+        MissileSystem.setStateToHIDE(missileSystemCtx.firingUnits[unit.name], unit, true)
       end
     end
   end
@@ -83,6 +83,8 @@ elseif positionType == "RL" then
 
       if isMet and context then
         MissileSystem.setReloadStartTime(context, unit, true)
+      else
+        MissileSystem.setStateToStatic(missileSystemCtx, unit, true)
       end
     end
   end
@@ -103,6 +105,8 @@ elseif positionType == "AHA" then
 
       if isMet and resupplyUnit then
         MissileSystem.setReloadStartTime(resupplyUnit, unit, true)
+      else
+        MissileSystem.setStateToStatic(missileSystemCtx, unit, true)
       end
     end
   end
