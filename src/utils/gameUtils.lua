@@ -741,4 +741,54 @@ function GameUtils.isInArea(side, point, area)
   return Utils.isPointInPolygon(point, polygon)
 end
 
+---Get weapon information for a unit
+---@param unit CMO__Unit The unit to check
+---@param weaponDBID number|nil Specific weapon DBID to look for
+---@return {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} # Weapon information
+function GameUtils.getWeaponInfo(unit, weaponDBID)
+  local availableWeapons = 0
+  local maxWeaponCapacity = 0
+  local mountDBID = unit.mounts[1].mount_dbid
+  local mountIndex = 1
+  local wpnIndex = 1
+
+  -- Find the specified weapon or use the first available weapon with ammo
+  for mountIdx, mount in ipairs(unit.mounts) do
+    for wpnIdx, wpn in ipairs(mount.mount_weapons) do
+      if (weaponDBID == nil and wpn.wpn_default > 0) or wpn.wpn_dbid == weaponDBID then
+        wpnIndex = wpnIdx
+        mountIndex = mountIdx
+        mountDBID = mount.mount_dbid
+        availableWeapons = availableWeapons + wpn.wpn_current
+        maxWeaponCapacity = maxWeaponCapacity + wpn.wpn_maxcap
+      end
+    end
+  end
+
+  -- If no weaponDBID was provided, use the one we found
+  if weaponDBID == nil then
+    weaponDBID = unit.mounts[mountIndex].mount_weapons[wpnIndex].wpn_dbid
+  end
+
+  -- Get currently assigned weapons
+  local alreadyAllocatedWeapons = 0
+  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation(unit.guid, "", "")
+
+  if not weaponAllocations then
+    weaponAllocations = {}
+  end
+
+  for _, item in ipairs(weaponAllocations) do
+    alreadyAllocatedWeapons = alreadyAllocatedWeapons + item.qtyAssigned
+  end
+
+  return {
+    weaponDBID = weaponDBID,
+    mountDBID = mountDBID,
+    availableWeapons = availableWeapons,
+    maxWeapons = maxWeaponCapacity,
+    assignedWeapons = alreadyAllocatedWeapons
+  }
+end
+
 return GameUtils

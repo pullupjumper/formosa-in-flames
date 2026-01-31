@@ -10,16 +10,16 @@ local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
----comment
----@param ctx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
----@return number
+---Calculate elapsed reload time in minutes since reload started
+---@param ctx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with reload start time
+---@return number # Elapsed time in minutes (rounded to 2 decimal places)
 local function calculateReloadTime(ctx)
   return math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 + 0.5) / 100
 end
 
----comment
----@param state missileSystemState
----@return string
+---Convert missile system state enum to display string
+---@param state missileSystemState Missile system state enum value
+---@return string # Human-readable state string (STATIC/REPOSITIONING/HIDE/RELOAD/UNKNOWN)
 local function getState(state)
   local stateMap = {
     [constants.MISSILE_SYSTEM_STATE.STATIC] = "STATIC",

@@ -1,57 +1,8 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local GameUtils = require("src.utils.gameUtils")
 
 local AttackManager = {}
-
----Get weapon information for a unit
----@param unit CMO__Unit The unit to check
----@param weaponDBID number|nil Specific weapon DBID to look for
----@return {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} # Weapon information
-local function getWeaponInfo(unit, weaponDBID)
-  local availableWeapons = 0
-  local maxWeaponCapacity = 0
-  local mountDBID = unit.mounts[1].mount_dbid
-  local mountIndex = 1
-  local wpnIndex = 1
-
-  -- Find the specified weapon or use the first available weapon with ammo
-  for mountIdx, mount in ipairs(unit.mounts) do
-    for wpnIdx, wpn in ipairs(mount.mount_weapons) do
-      if (weaponDBID == nil and wpn.wpn_default > 0) or wpn.wpn_dbid == weaponDBID then
-        wpnIndex = wpnIdx
-        mountIndex = mountIdx
-        mountDBID = mount.mount_dbid
-        availableWeapons = availableWeapons + wpn.wpn_current
-        maxWeaponCapacity = maxWeaponCapacity + wpn.wpn_maxcap
-      end
-    end
-  end
-
-  -- If no weaponDBID was provided, use the one we found
-  if weaponDBID == nil then
-    weaponDBID = unit.mounts[mountIndex].mount_weapons[wpnIndex].wpn_dbid
-  end
-
-  -- Get currently assigned weapons
-  local alreadyAllocatedWeapons = 0
-  local weaponAllocations = GameApi.ScenEdit_WeaponAllocation(unit.guid, "", "")
-
-  if not weaponAllocations then
-    weaponAllocations = {}
-  end
-
-  for _, item in ipairs(weaponAllocations) do
-    alreadyAllocatedWeapons = alreadyAllocatedWeapons + item.qtyAssigned
-  end
-
-  return {
-    weaponDBID = weaponDBID,
-    mountDBID = mountDBID,
-    availableWeapons = availableWeapons,
-    maxWeapons = maxWeaponCapacity,
-    assignedWeapons = alreadyAllocatedWeapons
-  }
-end
 
 ---Get total ammunition already allocated for attacking a specific target
 ---@param contactGUID string The target contact's unique identifier
@@ -143,7 +94,7 @@ local function processUnitGroup(firingUnit, contact, totalAmmoRequested, ammoAlr
   end
 
   -- Find weapon info and check availability
-  local weaponInfo = getWeaponInfo(unit, weaponDBID)
+  local weaponInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
@@ -180,7 +131,7 @@ end
 ---@return {ammoAllocated: integer} # Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   -- Find weapon info and check availability
-  local weaponInfo = getWeaponInfo(unit, weaponDBID)
+  local weaponInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
   -- Check if unit can fire
