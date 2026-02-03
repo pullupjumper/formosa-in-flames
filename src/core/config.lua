@@ -604,6 +604,46 @@ config.c.ground.mrbm.firingUnits = {
   },
 }
 
+
+config.c.ground.ascm = {}
+config.c.ground.ascm.wpnDefault = 12
+config.c.ground.ascm.ammoThreshold = 35
+config.c.ground.ascm.contactAge = 15 * 60
+config.c.ground.ascm.reloadTime = 5 * 60
+config.c.ground.ascm.ammunitions = {
+  ["Ammo Revetment, 1st Pili Reg"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Pili Reg",
+    wpnCurrent = config.c.ground.ascm.wpnDefault * 2,
+    wpnDefault = config.c.ground.ascm.wpnDefault * 2,
+  },
+}
+config.c.ground.ascm.resupplyUnits = {
+  ["Ammo Sec, 1st Pili Reg"] = {
+    guid = "",
+    name = "Ammo Sec, 1st Pili Reg",
+    wpnCurrent = config.c.ground.ascm.wpnDefault,
+    wpnDefault = config.c.ground.ascm.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 1st Pili Reg",
+  },
+}
+config.c.ground.ascm.firingUnits = {
+  ["1st Pili Reg"] = {
+    guid = "",
+    name = "1st Pili Reg",
+    msg = "Radio source, Bty",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
+    weaponDBID = constants.WEAPONS.YJ12,
+    ammoThreshold = config.c.ground.ascm.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Pili Reg",
+    dbid = constants.PLATFORMS.YJ12B
+  },
+}
+
 -- ============================================================================
 -- Reconnaissance (China)
 -- ============================================================================
@@ -675,10 +715,11 @@ config.c.recon.reconStrikeMatrix = {
       { name = "STRIKE/C2/1", type = "ground", }
     },
     H6N = {
-      { name = "ANTISHIP/1",    type = "ground" },
-      { name = "ASUW/N/1",      type = "air" },
-      { name = "STRIKE/AB/E/1", type = "air" },
-      { name = "STRIKE/AB/W/1", type = "air" }
+      { name = "ANTISHIP/1",       type = "ground" },
+      { name = "ANTISHIP/NORTH/1", type = "ground" },
+      { name = "ASUW/N/1",         type = "air" },
+      { name = "STRIKE/AB/E/1",    type = "air" },
+      { name = "STRIKE/AB/W/1",    type = "air" }
     },
   },
   satellite = {
@@ -2420,6 +2461,24 @@ config.c.FSTTemplate = {
         contactAge = config.c.ground.mrbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 6
+      },
+    }
+  },
+  ANTISHIP_NORTH_1 = {
+    {
+      name = "ANTISHIP",
+      missileSystem = "ASCM",
+      firingUnits = {
+        { name = "1st Pili Reg", guid = "NONE", weaponDBID = constants.WEAPONS.YJ12 }
+      },
+      target = {
+        list = {},
+        objs = {},
+        areas = { constants.AREAS.AREA_OF_OPS_D },
+        filterNames = { "findNavalTargets" },
+        contactAge = config.c.ground.ascm.contactAge,
+        minTargetCount = 1,
+        ammoPerTarget = 2
       },
     }
   },

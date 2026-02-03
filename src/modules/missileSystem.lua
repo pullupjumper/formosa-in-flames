@@ -7,12 +7,6 @@ local GameUtils = require("src.utils.gameUtils")
 local MissileSystem = {}
 
 
--- Module constants
-local BATTERY_CONSTANTS = {
-  REPOSITION_SPEED = 30,                -- Speed (knots) when moving between positions
-  MANUAL_RELOAD_DELAY_MULTIPLIER = 100, -- Artificially delay reload to require manual trigger (prevents auto-completion)
-}
-
 -- Zone name patterns for cleanup (regex patterns)
 local ZONE_PATTERNS = {
   "^" .. constants.POSITION_TYPES.FIRING_POINT,
@@ -82,30 +76,21 @@ local function moveUnitToPosition(unitName, battery, positions, positionType, ar
     course = { course[#course] }
   end
 
-  if battery.group and battery.group.guid then
-    for _, guid in ipairs(battery.group.unitlist) do
-      local unit = GameApi.ScenEdit_GetUnit(guid)
+  local units = battery.group and battery.group.unitlist or { battery.guid }
 
-      if unit then
-        setUnitProperties({
-          unit = unit,
-          throttle = "Flank",
-          speed = BATTERY_CONSTANTS.REPOSITION_SPEED,
-          course = course,
-          holdPosition = false,
-          wcs = wcs
-        })
-      end
+  for _, guid in ipairs(units) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+
+    if unit then
+      setUnitProperties({
+        unit = unit,
+        throttle = constants.THROTTLES.FULL,
+        speed = constants.SPEEDS.NORMAL,
+        course = course,
+        holdPosition = false,
+        wcs = wcs
+      })
     end
-  else
-    setUnitProperties({
-      unit = battery,
-      throttle = "Flank",
-      speed = BATTERY_CONSTANTS.REPOSITION_SPEED,
-      course = course,
-      holdPosition = false,
-      wcs = wcs
-    })
   end
 
   return true
@@ -238,9 +223,10 @@ end
 function MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
   local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
   if not firingUnit then return 0 end
+  local units = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
 
   local totalLoaded = 0
-  for _, guid in ipairs(firingUnit.group.unitlist) do
+  for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   end
@@ -257,12 +243,13 @@ end
 function MissileSystem.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.RELOAD
   firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
+  local units = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
 
-  for _, guid in ipairs(firingUnit.group.unitlist) do
+  for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit and isAuto then
-      setUnitProperties({ unit = unit, holdPosition = false, formation = { spacing = 0, transpose = true } })
+      setUnitProperties({ unit = unit, holdPosition = true, formation = { spacing = 0, transpose = true } })
     end
   end
 end
@@ -273,14 +260,15 @@ end
 ---@param isAuto boolean Whether in automatic mode
 function MissileSystem.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  local units = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
 
-  for _, guid in ipairs(firingUnit.group.unitlist) do
+  for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit and isAuto then
       setUnitProperties({
         unit = unit,
-        holdPosition = false,
+        holdPosition = true,
         wcs = constants.WCS.FREE, -- Free fire
         formation = { spacing = 0, transpose = true }
       })
@@ -294,14 +282,15 @@ end
 ---@param isAuto boolean Whether the action is automatic
 function MissileSystem.setStateToHIDE(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.HIDE
+  local units = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
 
-  for _, guid in ipairs(firingUnit.group.unitlist) do
+  for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit and isAuto then
       setUnitProperties({
         unit = unit,
-        holdPosition = false,
+        holdPosition = true,
         wcs = constants.WCS.HOLD, -- Hold fire while hiding
         formation = { spacing = 0, transpose = true }
       })
@@ -319,14 +308,15 @@ function MissileSystem.setStateToStatic(systemCtx, firingUnit, isAuto)
   if unitCtx then
     unitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
     unitCtx.reloadStartTime = nil
+    local units = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
 
-    for _, guid in ipairs(firingUnit.group.unitlist) do
+    for _, guid in ipairs(units) do
       local unit = GameApi.ScenEdit_GetUnit(guid)
 
       if unit and isAuto then
         setUnitProperties({
           unit = unit,
-          holdPosition = false,
+          holdPosition = true,
           wcs = constants.WCS.HOLD, -- Hold fire while hiding
           formation = { spacing = 0, transpose = true }
         })
@@ -445,23 +435,39 @@ end
 ---@return boolean isMet Whether units have met
 ---@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil context The matched context if met
 function MissileSystem.isMetWithResupplyUnits(systemCtx, unit, isAuto)
-  if not unit.group then return false, nil end
-  local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  if not unitGroup then return false, nil end
+  -- if not unit.group then return false, nil end
+  -- local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
+  -- if not unitGroup then return false, nil end
+  local isResupplyUnit, isFiringUnit = false, false
+
+  if systemCtx.resupplyUnits[unit.name] then
+    isResupplyUnit = true
+  end
+
+  if systemCtx.firingUnits[unit.name] then
+    isFiringUnit = true
+  end
+
+  if not isFiringUnit and not isResupplyUnit then
+    return false, nil
+  end
 
   -- Determine unit type by checking which collection contains this GUID
-  local isResupplyUnit = systemCtx.resupplyUnits[unitGroup.name] ~= nil
+  -- local isResupplyUnit = systemCtx.resupplyUnits[unitGroup.name] ~= nil
 
   if isResupplyUnit then
     -- Case: Resupply unit looking for firing units
     for _, resupplyUnitCtx in pairs(systemCtx.resupplyUnits) do
-      local isMet, ctx = checkMeetingInArea(resupplyUnitCtx, unitGroup.name, systemCtx.firingUnits, unit, isAuto)
+      -- local isMet, ctx = checkMeetingInArea(resupplyUnitCtx, unitGroup.name, systemCtx.firingUnits, unit, isAuto)
+      local isMet, ctx = checkMeetingInArea(resupplyUnitCtx, unit.name, systemCtx.firingUnits, unit, isAuto)
+
       if isMet then return true, ctx end
     end
   else
     -- Case: Firing unit looking for resupply units
     for _, firingUnitCtx in pairs(systemCtx.firingUnits) do
-      local isMet, ctx = checkMeetingInArea(firingUnitCtx, unitGroup.name, systemCtx.resupplyUnits, unit, isAuto)
+      -- local isMet, ctx = checkMeetingInArea(firingUnitCtx, unitGroup.name, systemCtx.resupplyUnits, unit, isAuto)
+      local isMet, ctx = checkMeetingInArea(firingUnitCtx, unit.name, systemCtx.resupplyUnits, unit, isAuto)
       if isMet then return true, ctx end
     end
   end
@@ -476,9 +482,12 @@ end
 ---@return boolean isMet Whether units have met
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnit The matched resupply unit context if met
 function MissileSystem.isMetWithAmmoDepot(systemCtx, unit, isAuto)
-  if not unit.group then return false, nil end
-  local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  if not resupplyUnit then return false, nil end
+  -- if not unit.group then return false, nil end
+  -- local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)
+  -- if not resupplyUnit then return false, nil end
+  if not systemCtx.resupplyUnits[unit.name] then
+    return false, nil
+  end
 
   for _, resupplyUnitCtx in pairs(systemCtx.resupplyUnits) do
     local isStateValid = true
@@ -489,7 +498,8 @@ function MissileSystem.isMetWithAmmoDepot(systemCtx, unit, isAuto)
       isStateValid = (resupplyUnitCtx.state == repoState or resupplyUnitCtx.state == reloadState)
     end
 
-    if resupplyUnitCtx.name == resupplyUnit.name and isStateValid then
+    -- if resupplyUnitCtx.name == resupplyUnit.name and isStateValid then
+    if resupplyUnitCtx.name == unit.name and isStateValid then
       local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
 
       for _, pos in ipairs(resupplyUnitCtx.operationalArea.AHA) do
@@ -878,7 +888,13 @@ local function addFiringUnit(systemCfg, descriptor, sideName)
   local created = 0
 
   for i = 1, expected do
-    local name = GameUtils.formatOrdinalUnitName(i, unitType or "", ", " .. descriptor.name)
+    local name
+    if expected == 1 then
+      name = descriptor.name
+    else
+      name = GameUtils.formatOrdinalUnitName(i, unitType or "", ", " .. descriptor.name)
+    end
+
     local addedUnit = GameApi.ScenEdit_AddUnit({
       side = sideName,
       unitname = name,
@@ -946,7 +962,14 @@ local function addResupplyUnit(descriptor, sideName)
   local created = 0
 
   for i = 1, expected do
-    local name = GameUtils.formatOrdinalUnitName(i, unitType or "", restStr)
+    local name
+
+    if expected == 1 then
+      name = descriptor.name
+    else
+      name = GameUtils.formatOrdinalUnitName(i, unitType or "", restStr)
+    end
+
     local result = GameApi.ScenEdit_AddUnit({
       side = sideName,
       unitname = "Ammo Sec, " .. name,

@@ -353,9 +353,7 @@ local function calculateRoleAdvanceTime(packageData, role)
   end
 
   -- Calculate distance from role's base to patrol zone
-  local distance = GameApi.Tool_Range(
-    missionRole.baseGUID, { latitude = point.latitude, longitude = point.longitude }
-  )
+  local distance = GameApi.Tool_Range(missionRole.baseGUID, { latitude = point.latitude, longitude = point.longitude })
 
   if not distance or distance <= 0 then
     Logger.log("dynamicOperations", "Invalid distance calculated for role " .. role)
@@ -406,8 +404,24 @@ local function calculateSupportAdvanceTime(packageData)
   -- Find the furthest base
   local maxDistance = 0
   local furthestBase = nil
-  local rp = packageData.escort.missionCreationParams.opts.patrolZone[1]
+
+  -- Get patrol zone reference point (using escort's patrol zone as reference)
+  local patrolZone = packageData.escort and packageData.escort.missionCreationParams and
+      packageData.escort.missionCreationParams.opts and
+      packageData.escort.missionCreationParams.opts.patrolZone
+
+  if not patrolZone or #patrolZone == 0 then
+    Logger.log("dynamicOperations", "No patrol zone found for advance time calculation")
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
+
+  local rp = patrolZone[1]
   local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = rp })
+
+  if not point then
+    Logger.log("dynamicOperations", "Reference point not found: " .. tostring(rp))
+    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+  end
 
   for _, base in ipairs(supportBases) do
     -- local distance = GameApi.Tool_Range(base.baseGUID, targetGUIDs[1])

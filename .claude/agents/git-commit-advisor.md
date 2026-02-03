@@ -1,7 +1,7 @@
 ---
 name: git-commit-advisor
-description: Use this agent when the user requests git commit message suggestions or branch name recommendations based on code changes. This agent should be invoked after code modifications are complete and the user is ready to commit their changes.\n\nExamples:\n\n<example>\nContext: User has made changes to multiple files and wants commit message suggestions.\nuser: "I've finished implementing the dynamic fire support planning module. Can you help me write a commit message?"\nassistant: "Let me use the git-commit-advisor agent to analyze your changes and suggest an appropriate commit message and branch name."\n<uses Agent tool to launch git-commit-advisor>\n</example>\n\n<example>\nContext: User asks for commit message after finishing a feature.\nuser: "根據git diff給我git commit message以及branch名稱的建議"\nassistant: "我會使用 git-commit-advisor 代理來分析您的程式碼變更，並提供 commit message 和分支名稱的建議。"\n<uses Agent tool to launch git-commit-advisor>\n</example>\n\n<example>\nContext: User completes bug fix and needs guidance on commit practices.\nuser: "Fixed the runway repair scheduling issue. What should I put in my commit message?"\nassistant: "I'll use the git-commit-advisor agent to review your changes and provide a properly formatted commit message along with branch naming suggestions."\n<uses Agent tool to launch git-commit-advisor>\n</example>
-model: sonnet
+description: "Use this agent when the user requests git commit message suggestions or branch name recommendations based on code changes. This agent should be invoked after code modifications are complete and the user is ready to commit their changes."
+model: inherit
 color: blue
 ---
 
@@ -19,7 +19,7 @@ color: blue
 
 2. **產生 Commit Message**：
    - 遵循 Conventional Commits 規範
-   - 使用正體中文撰寫，避免簡體中文和中國特定術語
+   - 使用英文撰寫
    - 格式：`<類型>(<範圍>): <簡短描述>`
    - 類型包括：feat（新功能）、fix（錯誤修復）、docs（文件）、style（格式）、refactor（重構）、test（測試）、chore（維護）
    - 簡短描述使用祈使句，清楚說明變更內容

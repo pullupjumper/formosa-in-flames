@@ -11,7 +11,7 @@
       "description": "commit message advisor",
       "mode": "subagent",
       "model": "google/antigravity-claude-sonnet-4-5",
-      "prompt": "{file:./.claude/agents/git-commit-advisor.md}",
+      "prompt": "{file:../.claude/agents/git-commit-advisor.md}",
       "tools": {
         "write": false,
         "edit": false
@@ -21,7 +21,7 @@
       "description": "code reviewer",
       "mode": "subagent",
       "model": "google/antigravity-claude-sonnet-4-5",
-      "prompt": "{file:./.claude/agents/code-reviewer.md}",
+      "prompt": "{file:../.claude/agents/code-reviewer.md}",
       "tools": {
         "write": false,
         "edit": false

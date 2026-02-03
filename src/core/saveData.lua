@@ -97,12 +97,24 @@ saveData.c.ground.mrbm.firingUnits = {}
 
 
 -- ============================================================================
+-- ASCM (China)
+-- ============================================================================
+
+saveData.c.ground.ascm = {}
+saveData.c.ground.ascm.enabled = true
+saveData.c.ground.ascm.reloadTime = config.c.ground.ascm.reloadTime
+saveData.c.ground.ascm.ammunitions = {}
+saveData.c.ground.ascm.resupplyUnits = {}
+saveData.c.ground.ascm.firingUnits = {}
+
+
+-- ============================================================================
 -- Reconnaissance (China)
 -- ============================================================================
 
 saveData.c.recon = {}
 saveData.c.recon.enabled = true
-
+saveData.c.recon.queue = {}
 
 -- ============================================================================
 -- Fire Support Plan (China)
