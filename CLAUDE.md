@@ -239,6 +239,46 @@ Event handlers in `src/scripts/` are organized by faction and event type, coordi
 **Scen Loaded Event**:
 All core systems (`src/core/`), modules (`src/modules/`), and utilities (`src/utils/`) are initialized when the scenario loads. The main entry point `src/core/init.lua` orchestrates the initialization of all game systems, configuration loading, and module setup at scenario start.
 
+## htmls-app (React UI)
+
+The `htmls-app/` directory contains React-based UI components that are built into single HTML files for CMO's embedded browser.
+
+### Tech Stack
+React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Uses `vite-plugin-singlefile` to bundle into single HTML files. ESLint 9 + Prettier for code quality.
+
+### Project Structure
+```
+htmls-app/src/
+├── components/     # Shared components
+├── pages/          # Each page has its own main.tsx entry point
+├── types/          # TypeScript type definitions
+├── utils/          # Utility functions
+├── data/           # Static mock data for development
+└── index.css       # Global styles + Tailwind @theme custom colors
+```
+
+### Code Style
+- Function components + React Hooks only (no class components)
+- Props defined with `interface`, named `{ComponentName}Props`
+- Use `import type { ... }` for type imports
+- Path aliases: `@/`, `@components/`, `@pages/`, `@utils/`, `@types/`
+- Section separators: `// ============================================================================`
+- State management: React built-in Hooks only (no external state libraries)
+- Styling: Tailwind utility classes only; custom colors defined in `index.css` `@theme`
+- Utility functions: Pure functions with named exports and JSDoc comments
+
+### Data Flow
+CMO game engine injects JSON data via `window.__INJECT_*__` globals. Components parse with `parseJSON()` and fall back to mock data from `src/data/` during development.
+
+### Build Commands
+```bash
+cd htmls-app
+npm run dev          # Development server
+npm run build        # Build all pages to ../src/htmls/
+npm run lint         # Run ESLint
+npm run format       # Format with Prettier
+```
+
 ## Critical Development Guidelines
 
 ### API Usage Patterns

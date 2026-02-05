@@ -435,9 +435,6 @@ end
 ---@return boolean isMet Whether units have met
 ---@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil context The matched context if met
 function MissileSystem.isMetWithResupplyUnits(systemCtx, unit, isAuto)
-  -- if not unit.group then return false, nil end
-  -- local unitGroup = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  -- if not unitGroup then return false, nil end
   local isResupplyUnit, isFiringUnit = false, false
 
   if systemCtx.resupplyUnits[unit.name] then
@@ -453,20 +450,15 @@ function MissileSystem.isMetWithResupplyUnits(systemCtx, unit, isAuto)
   end
 
   -- Determine unit type by checking which collection contains this GUID
-  -- local isResupplyUnit = systemCtx.resupplyUnits[unitGroup.name] ~= nil
-
   if isResupplyUnit then
     -- Case: Resupply unit looking for firing units
     for _, resupplyUnitCtx in pairs(systemCtx.resupplyUnits) do
-      -- local isMet, ctx = checkMeetingInArea(resupplyUnitCtx, unitGroup.name, systemCtx.firingUnits, unit, isAuto)
       local isMet, ctx = checkMeetingInArea(resupplyUnitCtx, unit.name, systemCtx.firingUnits, unit, isAuto)
-
       if isMet then return true, ctx end
     end
   else
     -- Case: Firing unit looking for resupply units
     for _, firingUnitCtx in pairs(systemCtx.firingUnits) do
-      -- local isMet, ctx = checkMeetingInArea(firingUnitCtx, unitGroup.name, systemCtx.resupplyUnits, unit, isAuto)
       local isMet, ctx = checkMeetingInArea(firingUnitCtx, unit.name, systemCtx.resupplyUnits, unit, isAuto)
       if isMet then return true, ctx end
     end
@@ -482,9 +474,6 @@ end
 ---@return boolean isMet Whether units have met
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnit The matched resupply unit context if met
 function MissileSystem.isMetWithAmmoDepot(systemCtx, unit, isAuto)
-  -- if not unit.group then return false, nil end
-  -- local resupplyUnit = GameApi.ScenEdit_GetUnit(unit.group.guid)
-  -- if not resupplyUnit then return false, nil end
   if not systemCtx.resupplyUnits[unit.name] then
     return false, nil
   end
@@ -498,7 +487,6 @@ function MissileSystem.isMetWithAmmoDepot(systemCtx, unit, isAuto)
       isStateValid = (resupplyUnitCtx.state == repoState or resupplyUnitCtx.state == reloadState)
     end
 
-    -- if resupplyUnitCtx.name == resupplyUnit.name and isStateValid then
     if resupplyUnitCtx.name == unit.name and isStateValid then
       local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
 

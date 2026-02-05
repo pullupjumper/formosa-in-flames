@@ -1360,3 +1360,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field jammers SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
 ---@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
+
+---EMCON configuration result containing user selections
+---@class SBJ__EmconResult: table
+---@field doctrine {id: string, weaponsFree: boolean}[] SAM system deployment configurations

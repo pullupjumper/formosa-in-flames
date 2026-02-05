@@ -440,66 +440,56 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                 html_content = html_content.replace("%%s", "%s")
 
                 # Replace data assignments with placeholders
-                # 1. units object -> unitsString
+                # New format: window.__INJECT_*__ = `...`;
+
+                # unit-status.html injections
                 html_content = re.sub(
-                    r"const\s+missileSystemString\s*=\s*`[^`]*`;",
-                    "const missileSystemString = `%s`;",
+                    r"window\.__INJECT_SIGNALS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_SIGNALS__ = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
+                html_content = re.sub(
+                    r"window\.__INJECT_LAUNCHERS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_LAUNCHERS__ = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
+                html_content = re.sub(
+                    r"window\.__INJECT_C2__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_C2__ = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
+                html_content = re.sub(
+                    r"window\.__INJECT_BASE_WEAPONS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_BASE_WEAPONS__ = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
+                html_content = re.sub(
+                    r"window\.__INJECT_LANDING_UNITS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_LANDING_UNITS__ = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
 
-                # 2. signals array -> signalsString
+                # setup-menu.html injections
                 html_content = re.sub(
-                    r"const\s+signalsString\s*=\s*`[^`]*`;",
-                    "const signalsString = `%s`;",
+                    r"window\.__INJECT_JAMMERS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_JAMMERS__ = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
-
-                # 3. dataString (C2 nodes) - use greedy matching to handle multi-line JSON
                 html_content = re.sub(
-                    r"const\s+c2DataString\s*=\s*`[^`]*`;",
-                    "const c2DataString = `%s`;",
+                    r"window\.__INJECT_AIRBASES__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_AIRBASES__ = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
-
-                # 4. baseWeaponsString - use greedy matching to handle multi-line JSON
                 html_content = re.sub(
-                    r"const\s+baseWeaponsString\s*=\s*`[^`]*`;",
-                    "const baseWeaponsString = `%s`;",
-                    html_content,
-                    flags=re.DOTALL,
-                )
-
-                # 5. landingUnitsString - use greedy matching to handle multi-line JSON
-                html_content = re.sub(
-                    r"const\s+landingUnitsString\s*=\s*`[^`]*`;",
-                    "const landingUnitsString = `%s`;",
-                    html_content,
-                    flags=re.DOTALL,
-                )
-
-                # 6. jammerString
-                html_content = re.sub(
-                    r"const\s+jammerString\s*=\s*`.*?`;",
-                    "const jammerString = `%s`;",
-                    html_content,
-                    flags=re.DOTALL,
-                )
-
-                # 7. airbaseString
-                html_content = re.sub(
-                    r"const\s+airbaseString\s*=\s*`.*?`;",
-                    "const airbaseString = `%s`;",
-                    html_content,
-                    flags=re.DOTALL,
-                )
-
-                # 8. missileSystemString
-                html_content = re.sub(
-                    r"const\s+missileSystemString\s*=\s*`.*?`;",
-                    "const missileSystemString = `%s`;",
+                    r"window\.__INJECT_MISSILE_SYSTEMS__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_MISSILE_SYSTEMS__ = `%s`;",
                     html_content,
                     flags=re.DOTALL,
                 )
@@ -520,12 +510,14 @@ def inject_html_templates(content: str, src_dir: str) -> str:
 
                 new_content = re.sub(
                     pattern,
-                    lambda m: m.group(1)
-                    + opening_bracket
-                    + "\n"
-                    + html_content
-                    + "\n"
-                    + closing_bracket,
+                    lambda m: (
+                        m.group(1)
+                        + opening_bracket
+                        + "\n"
+                        + html_content
+                        + "\n"
+                        + closing_bracket
+                    ),
                     lua_content,
                     flags=re.DOTALL,
                 )
@@ -548,15 +540,13 @@ def inject_html_templates(content: str, src_dir: str) -> str:
             print(f"    ⚠️ HTML file not found: {html_path}")
             return lua_content
 
-    # 1. Inject unit-status-table.html into getHTMLTemplate
-    content = process_and_inject("unit-status-table.html", "getHTMLTemplate", content)
+    # 1. Inject unit-status.html into getHTMLTemplate
+    content = process_and_inject("unit-status.html", "getHTMLTemplate", content)
 
     # 2. Inject setup-menu.html into getSetupMenuTemplate
     content = process_and_inject("setup-menu.html", "getSetupMenuTemplate", content)
 
-    content = process_and_inject(
-        "EMCON-setting-menu.html", "getWCSSettingTemplate", content
-    )
+    content = process_and_inject("emcon-setting.html", "getWCSSettingTemplate", content)
 
     return content
 

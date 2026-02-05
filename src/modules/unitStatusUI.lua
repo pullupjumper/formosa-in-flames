@@ -30,6 +30,18 @@ local function getState(state)
   return stateMap[state] or "UNKNOWN"
 end
 
+---comment
+---@param name string
+---@return integer
+local function getSAMDBID(name)
+  local map = {
+    ["pac23"] = constants.PLATFORMS.PAC3,
+    ["skybow3"] = constants.PLATFORMS.CUSTOMED_TK3,
+    ["tc2"] = constants.PLATFORMS.TC2
+  }
+  return map[name] or 0
+end
+
 ---Transform deployed missile system configuration into operational area data structure
 ---@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
 ---@return SBJ__OperationalArea # Operational area data structure
@@ -193,86 +205,36 @@ function UnitStatusUI.wcsSettingTable()
   local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
 
   if form["pressed"] and form["pressed"] == "Done" then
-    if form["pac23"] and string.gsub(form["pac23"], "%'", "") == "on" then
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
+    local jsonStr = form["emconData"]:gsub("^'", ""):gsub("'$", "")
+    local result = gKH.json.parse(jsonStr)
+    ---@cast result SBJ__EmconResult
 
-        if unit and unit.dbid == constants.PLATFORMS.PAC3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-          )
-        end
-      end
-    else
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
+    if result.doctrine and #result.doctrine > 0 then
+      for _, item in ipairs(result.doctrine) do
+        local dbid = getSAMDBID(item.id)
 
-        if unit and unit.dbid == constants.PLATFORMS.PAC3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-          )
-        end
-      end
-    end
+        if item.weaponsFree then
+          for _, u in ipairs(filteredUnits) do
+            local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if form["skybow3"] and string.gsub(form["skybow3"], "%'", "") == "on" then
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
+            if unit and unit.dbid == dbid then
+              GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
+              GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
+                { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
+              )
+            end
+          end
+        elseif not item.weaponsFree then
+          for _, u in ipairs(filteredUnits) do
+            local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-        if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-          )
-        end
-      end
-    else
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-        if unit and unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-          )
-        end
-      end
-    end
-
-    if form["tc2"] and string.gsub(form["tc2"], "%'", "") == "on" then
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-        if unit and unit.dbid == constants.PLATFORMS.TC2 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-          )
-        end
-      end
-    else
-      for index, u in ipairs(filteredUnits) do
-        local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-        if unit and unit.dbid == constants.PLATFORMS.TC2 then
-          GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
-          GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(
-            unit.guid,
-            "Green",
-            { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-          )
+            if unit and unit.dbid == dbid then
+              GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
+              GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
+                { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
+              )
+            end
+          end
         end
       end
     end
@@ -565,8 +527,8 @@ function UnitStatusUI.createUI(config, sideName)
     local HTMLTemplate = getHTMLTemplate()
     local msg = string.format(
       HTMLTemplate,
-      batteryDataString,
       signalDataString,
+      batteryDataString,
       c2NodeDataString,
       magazineDataString,
       landingUnitsString
@@ -581,8 +543,8 @@ function UnitStatusUI.createUI(config, sideName)
     local HTMLTemplate = getHTMLTemplate()
     local msg = string.format(
       HTMLTemplate,
-      batteryDataString,
       signalDataString,
+      batteryDataString,
       c2NodeDataString,
       magazineDataString,
       "{}"
