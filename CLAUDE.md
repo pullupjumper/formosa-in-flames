@@ -10,11 +10,21 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 
 ### Testing
 ```bash
-# Run all tests (from test directory)
-busted
+# Run all tests (from project root)
+busted test
 
 # Run specific test file
-busted modules/assignMission_spec.lua
+busted test/modules/missileSystem_spec.lua
+```
+
+**Claude Code Testing Note**:
+Claude Code runs commands via Git Bash (MSYS2), where `.bat` files cannot be executed directly. Use `cmd.exe //c` to run busted:
+```bash
+# Run tests from Claude Code
+cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test"
+
+# Run specific test file
+cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test\\modules\\missileSystem_spec.lua"
 ```
 
 ### Build and Deployment
@@ -112,7 +122,6 @@ The project uses a two-tier configuration system for better organization and mai
   - `config.t.*` (Taiwan) - Taiwanese faction configuration
   - `config.u.*` (US) - US faction configuration
   - `config.s.*` (Scoring) - Scoring system configuration
-  - `config.batteryState.*` - TEL battery state enumeration
   - `config.repairRunway.*` - Runway repair configuration
   - `config.targetScanning.*` - Target scanning configuration
 
@@ -291,4 +300,5 @@ npm run format       # Format with Prettier
 - Unit tests located in `test/modules/` using Busted framework
 - Mock game APIs comprehensively for isolated testing
 - Test critical modules like `assignMission.lua` and `unitGenerator.lua`
-- Run tests before deployment: `busted` from test directory
+- Run tests before deployment: `busted test` from project root
+- Claude Code must use `cmd.exe //c "busted test"` due to Git Bash environment
