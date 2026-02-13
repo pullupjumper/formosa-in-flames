@@ -470,10 +470,10 @@ local function createMissileSystemDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  local systems = { "srbm", "mlrs", "glcm", "ascm" }
+  -- local systems = { "srbm", "mlrs", "glcm", "ascm", "sam" }
 
-  for _, system in ipairs(systems) do
-    rows[system] = config[field].ground[system]
+  for key, system in pairs(config[field].ground) do
+    rows[key] = system
   end
 
   return gKH.json.stringify(rows)
@@ -614,7 +614,8 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
         ascm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
         glcm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        mlrs = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        mlrs = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
+        sam = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
       }
       ---@cast groundCig SBJ__GroundForceConfig
       -- Update missile system configurations in config

@@ -1,6 +1,6 @@
 local config = require("src.core.config")
 local constants = require("src.core.constants")
-
+---@diagnostic disable: missing-fields
 ---@class SBJ__SaveData
 local saveData = {}
 saveData.c = {}
@@ -214,7 +214,6 @@ saveData.t.ground.srbm.resupplyUnits = {}
 saveData.t.ground.srbm.firingUnits = {}
 
 
-
 -- ============================================================================
 -- GLCM (Taiwan)
 -- ============================================================================
@@ -225,8 +224,6 @@ saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.ammunitions = {}
 saveData.t.ground.glcm.resupplyUnits = {}
 saveData.t.ground.glcm.firingUnits = {}
-
-
 
 
 -- ============================================================================
@@ -248,6 +245,14 @@ saveData.t.ground.ascm.test = {
 }
 
 
+saveData.t.ground.sam = {}
+saveData.t.ground.sam.enabled = true
+saveData.t.ground.sam.reloadTime = config.t.ground.sam.reloadTime
+saveData.t.ground.sam.ammunitions = {}
+saveData.t.ground.sam.resupplyUnits = {}
+saveData.t.ground.sam.firingUnits = {}
+
+
 -- ============================================================================
 -- Runway Repair (Taiwan)
 -- ============================================================================
@@ -265,6 +270,7 @@ saveData.t.IADS = {}
 saveData.t.IADS.enabled = true
 saveData.t.IADS.ROCC = {}
 saveData.t.IADS.TAAOC = {}
+
 
 -- ============================================================================
 -- Aircraft (Taiwan)

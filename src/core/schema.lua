@@ -18,6 +18,13 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@return table<number, any>|nil # Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
 function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
+---comment
+---@param sideName string
+---@param zoneName string
+---@param zoneType number
+---@return CMO__Zone|nil
+function ScenEdit_GetZone(sideName, zoneName, zoneType) end
+
 ---Unit OODA (Observe, Orient, Decide, Act) loop characteristics
 ---@class CMO__OODA: table
 ---@field evasion number The evasion of the unit
@@ -835,10 +842,10 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
----@field mrbm SBJ__MissileSystemContext Medium-Range Ballistic Missile system
+---@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
----@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
+---@field FSP? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
 ---@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
 
 ---Unit property setting parameters for ground units

@@ -1,5 +1,5 @@
 local constants = require("src.core.constants")
-
+---@diagnostic disable: missing-fields
 ---@class SBJ__Config
 local config = {}
 config.isDevMode = true
@@ -268,6 +268,7 @@ config.c.GPSJamming.jammers = {
   },
 }
 
+
 -- ============================================================================
 -- MLRS (China)
 -- ============================================================================
@@ -382,6 +383,7 @@ config.c.ground.glcm.firingUnits = {
     dbid = constants.PLATFORMS.CH_SSC_9
   },
 }
+
 
 -- ============================================================================
 -- SRBM (China)
@@ -561,6 +563,7 @@ config.c.ground.srbm.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- MRBM (China)
 -- ============================================================================
@@ -605,6 +608,10 @@ config.c.ground.mrbm.firingUnits = {
 }
 
 
+-- ============================================================================
+-- ASCM (China)
+-- ============================================================================
+
 config.c.ground.ascm = {}
 config.c.ground.ascm.wpnDefault = 12
 config.c.ground.ascm.ammoThreshold = 35
@@ -643,6 +650,7 @@ config.c.ground.ascm.firingUnits = {
     dbid = constants.PLATFORMS.YJ12B
   },
 }
+
 
 -- ============================================================================
 -- Reconnaissance (China)
@@ -3654,6 +3662,7 @@ config.t.GPSJamming.jammers = {
   },
 }
 
+
 -- ============================================================================
 -- MLRS (Taiwan)
 -- ============================================================================
@@ -3740,6 +3749,7 @@ config.t.ground.srbm.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- GLCM (Taiwan)
 -- ============================================================================
@@ -3808,6 +3818,7 @@ config.t.ground.glcm.firingUnits = {
     dbid = constants.PLATFORMS.HF2E
   }
 }
+
 
 -- ============================================================================
 -- ASCM (Taiwan)
@@ -3923,6 +3934,46 @@ config.t.ground.ascm.firingUnits = {
   },
 }
 
+
+
+config.t.ground.sam = {}
+config.t.ground.sam.wpnDefault = 54
+config.t.ground.sam.ammoThreshold = 0
+config.t.ground.sam.reloadTime = 45 * 60
+config.t.ground.sam.ammunitions = {
+  ["Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+}
+config.t.ground.sam.resupplyUnits = {
+  ["Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+  },
+}
+config.t.ground.sam.firingUnits = {
+  ["3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.MIM104F_PAC3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+}
+
+
 -- ============================================================================
 -- IADS (Taiwan)
 -- ============================================================================
@@ -3961,7 +4012,6 @@ config.t.IADS.TAAOC = {
     areas = { constants.AREAS.THEATER_OF_OPS_2ND, },
   },
 }
-
 
 
 -- ============================================================================
@@ -4259,6 +4309,7 @@ config.t.air.landBased.deployedACs = {
     }
   },
 }
+
 config.t.surface = {}
 config.t.surface.sag = {
   ["264th Sqn"] = {
@@ -4326,7 +4377,6 @@ config.t.surface.deployedShips = {
 -- SIGINT (US)
 -- ============================================================================
 
--- CONFIG.u.SIGINT.maxCount = 5
 config.u.SIGINT = {}
 config.u.SIGINT.maxCount = config.c.SIGINT.maxCount
 config.u.SIGINT.maxRange = config.c.SIGINT.maxRange
