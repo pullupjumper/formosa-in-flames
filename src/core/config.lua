@@ -11,7 +11,7 @@ config.logging = {
   modules = {
     ground = { verbose = true },
     air = { verbose = true },
-    PHIBOP = { verbose = false },
+    amphibOps = { verbose = false },
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
     sigint = { verbose = false },
@@ -1193,9 +1193,9 @@ config.c.air.landBased.deployedACs = {
 -- Amphibious Operations (China)
 -- ============================================================================
 
-config.c.PHIBOP = {}
-config.c.PHIBOP.periodOfTime = 5 * 60
-config.c.PHIBOP.cargoList = {
+config.c.amphibOps = {}
+config.c.amphibOps.periodOfTime = 5 * 60
+config.c.amphibOps.cargoList = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
@@ -1241,7 +1241,7 @@ config.c.PHIBOP.cargoList = {
     { type = 2, num = 4,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
 }
-config.c.PHIBOP.cargoListForTransfer = {
+config.c.amphibOps.cargoListForTransfer = {
   boat = {
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZBD05 }, -- ZBD-05
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZTD05 }, -- ZTD-05
@@ -1274,13 +1274,13 @@ config.c.PHIBOP.cargoListForTransfer = {
     { type = 2, num = 3, dbid = constants.PLATFORMS.ZBD03 }, -- II-76 ZBD-03
   },
 }
-config.c.PHIBOP.missionStartime = {
+config.c.amphibOps.missionStartime = {
   transportHelicopter = { 42 * 60, 72 * 60, 92 * 60, 112 * 60 },
   attackHelicopter = { 40 * 60, },
   boat = { 41 * 60, 61 * 60, },
   reconUAV = { 0 }
 }
-config.c.PHIBOP.formationSettings = {
+config.c.amphibOps.formationSettings = {
   distanceBetweenLSTAndLPDArea = 13,
   horizontalDistance = 0.4,
   verticalDistance = 0.4,
@@ -1327,11 +1327,11 @@ config.c.PHIBOP.formationSettings = {
       }
     },
   },
-  ACVSpeed = 8,
-  ACVTransitDistance = 5,
-  ACVHorizontalDistance = 0.05,
+  acvSpeed = 8,
+  acvTransitDistance = 5,
+  acvHorizontalDistance = 0.05,
 }
-config.c.PHIBOP.operations = {
+config.c.amphibOps.operations = {
   {
     name = "Taoyuan",
     names = {
@@ -1342,7 +1342,7 @@ config.c.PHIBOP.operations = {
     from = {
       areas = { {
         startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_TAOYUAN } },
-        heading = config.c.PHIBOP.formationSettings.heading.north
+        heading = config.c.amphibOps.formationSettings.heading.north
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_D,
       num = {
@@ -1364,7 +1364,7 @@ config.c.PHIBOP.operations = {
             type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_TAOYUAN },
             type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_TAOYUAN },
           },
-          heading = config.c.PHIBOP.formationSettings.heading.west,
+          heading = config.c.amphibOps.formationSettings.heading.west,
           num = {
             type075 = 2,
             type071 = 4,
@@ -1393,7 +1393,7 @@ config.c.PHIBOP.operations = {
     from = {
       areas = { {
         startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_SISHU } },
-        heading = config.c.PHIBOP.formationSettings.heading.sishu
+        heading = config.c.amphibOps.formationSettings.heading.sishu
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_F,
       num = {
@@ -1416,7 +1416,7 @@ config.c.PHIBOP.operations = {
             type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_SISHU },
             type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_SISHU },
           },
-          heading = config.c.PHIBOP.formationSettings.heading.sishu,
+          heading = config.c.amphibOps.formationSettings.heading.sishu,
           num = {
             type075 = 1,
             type071 = 3,
@@ -1445,7 +1445,7 @@ config.c.PHIBOP.operations = {
     from = {
       areas = { {
         startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_PENGHU } },
-        heading = config.c.PHIBOP.formationSettings.heading.penghu
+        heading = config.c.amphibOps.formationSettings.heading.penghu
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_E,
       num = {
@@ -1468,7 +1468,7 @@ config.c.PHIBOP.operations = {
             type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_PENGHU },
             type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_PENGHU },
           },
-          heading = config.c.PHIBOP.formationSettings.heading.penghu,
+          heading = config.c.amphibOps.formationSettings.heading.penghu,
           num = {
             type075 = 1,
             type071 = 1,
@@ -1488,12 +1488,12 @@ config.c.PHIBOP.operations = {
     numOfContactsInAirLandingZone = 3
   },
 }
-config.c.PHIBOP.operationalZones = {
+config.c.amphibOps.operationalZones = {
   {
     name = "Taoyuan",
     baseGUID = constants.BASES.PINGTAN_PORT,
     anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
-    LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
+    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
     area = constants.AREAS.CAS_E,
     offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
     boat = {
@@ -1503,13 +1503,13 @@ config.c.PHIBOP.operationalZones = {
           name = "LANDING/TAO/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.PHIBOP.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartime.boat[1],
         },
         {
           name = "LANDING/TAO/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_TAOYUAN,
@@ -1524,9 +1524,9 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
             }
           },
         },
@@ -1534,10 +1534,10 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup3,
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3,
             }
           },
         }
@@ -1550,25 +1550,25 @@ config.c.PHIBOP.operationalZones = {
           name = "AIRLANDING/TAO/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/TAO/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/TAO/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/TAO/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -1584,17 +1584,17 @@ config.c.PHIBOP.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
         }
       },
@@ -1606,22 +1606,22 @@ config.c.PHIBOP.operationalZones = {
           name = "CAS/E",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
         },
       }
     },
-    LSTSettings = {
-      speed = config.c.PHIBOP.formationSettings.shipSpeed,
+    lstSettings = {
+      speed = config.c.amphibOps.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.formationSettings.heading.west.vertical,
-        distance = config.c.PHIBOP.formationSettings.transitDistance
+        bearing = config.c.amphibOps.formationSettings.heading.west.vertical,
+        distance = config.c.amphibOps.formationSettings.transitDistance
       }
     },
-    ACV = {
-      bearing = config.c.PHIBOP.formationSettings.heading.west.horizontal,
-      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
-      destination = config.c.PHIBOP.formationSettings.heading.west.destination,
+    acv = {
+      bearing = config.c.amphibOps.formationSettings.heading.west.horizontal,
+      distance = config.c.amphibOps.formationSettings.acvHorizontalDistance,
+      speed = config.c.amphibOps.formationSettings.acvSpeed,
+      destination = config.c.amphibOps.formationSettings.heading.west.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
     },
   },
@@ -1629,7 +1629,7 @@ config.c.PHIBOP.operationalZones = {
     name = "Sishu",
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
-    LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
+    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
     area = constants.AREAS.CAS_S,
     offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
     boat = {
@@ -1639,13 +1639,13 @@ config.c.PHIBOP.operationalZones = {
           name = "LANDING/SISHU/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.PHIBOP.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartime.boat[1],
         },
         {
           name = "LANDING/SISHU/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_SISHU,
@@ -1660,9 +1660,9 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
             }
           },
         },
@@ -1670,10 +1670,10 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup3
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3
             }
           },
         }
@@ -1686,25 +1686,25 @@ config.c.PHIBOP.operationalZones = {
           name = "AIRLANDING/CHANGLONG/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/CHANGLONG/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_CHANGLONG,
@@ -1720,17 +1720,17 @@ config.c.PHIBOP.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
         }
       },
@@ -1742,22 +1742,22 @@ config.c.PHIBOP.operationalZones = {
           name = "CAS/S",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
         },
       }
     },
-    LSTSettings = {
-      speed = config.c.PHIBOP.formationSettings.shipSpeed,
+    lstSettings = {
+      speed = config.c.amphibOps.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
-        distance = config.c.PHIBOP.formationSettings.transitDistance
+        bearing = config.c.amphibOps.formationSettings.heading.sishu.vertical,
+        distance = config.c.amphibOps.formationSettings.transitDistance
       }
     },
-    ACV = {
-      bearing = config.c.PHIBOP.formationSettings.heading.sishu.horizontal,
-      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
-      destination = config.c.PHIBOP.formationSettings.heading.sishu.destination,
+    acv = {
+      bearing = config.c.amphibOps.formationSettings.heading.sishu.horizontal,
+      distance = config.c.amphibOps.formationSettings.acvHorizontalDistance,
+      speed = config.c.amphibOps.formationSettings.acvSpeed,
+      destination = config.c.amphibOps.formationSettings.heading.sishu.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
     }
   },
@@ -1765,7 +1765,7 @@ config.c.PHIBOP.operationalZones = {
     name = "Penghu",
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
-    LSTAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
+    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
     area = constants.AREAS.CAS_PENGHU,
     offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
     boat = {
@@ -1775,13 +1775,13 @@ config.c.PHIBOP.operationalZones = {
           name = "LANDING/PENGHU/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.PHIBOP.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartime.boat[1],
         },
         {
           name = "LANDING/PENGHU/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_PENGHU,
@@ -1796,9 +1796,9 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
             }
           },
         },
@@ -1806,10 +1806,10 @@ config.c.PHIBOP.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.PHIBOP.cargoListForTransfer.assultLandingGroup,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup1,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup2,
-              config.c.PHIBOP.cargoListForTransfer.deepAssaultGroup3
+              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3
             }
           },
         }
@@ -1822,25 +1822,25 @@ config.c.PHIBOP.operationalZones = {
           name = "AIRLANDING/PENGHU/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/PENGHU/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/PENGHU/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/PENGHU/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.PHIBOP.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_PENGHU,
@@ -1856,17 +1856,17 @@ config.c.PHIBOP.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
           },
         }
       },
@@ -1878,27 +1878,27 @@ config.c.PHIBOP.operationalZones = {
           name = "CAS/PENGHU",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.PHIBOP.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
         },
       }
     },
-    LSTSettings = {
-      speed = config.c.PHIBOP.formationSettings.shipSpeed,
+    lstSettings = {
+      speed = config.c.amphibOps.formationSettings.shipSpeed,
       course = {
-        bearing = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
-        distance = config.c.PHIBOP.formationSettings.transitDistance
+        bearing = config.c.amphibOps.formationSettings.heading.penghu.vertical,
+        distance = config.c.amphibOps.formationSettings.transitDistance
       }
     },
-    ACV = {
-      bearing = config.c.PHIBOP.formationSettings.heading.penghu.horizontal,
-      distance = config.c.PHIBOP.formationSettings.ACVHorizontalDistance,
-      speed = config.c.PHIBOP.formationSettings.ACVSpeed,
-      destination = config.c.PHIBOP.formationSettings.heading.penghu.destination,
+    acv = {
+      bearing = config.c.amphibOps.formationSettings.heading.penghu.horizontal,
+      distance = config.c.amphibOps.formationSettings.acvHorizontalDistance,
+      speed = config.c.amphibOps.formationSettings.acvSpeed,
+      destination = config.c.amphibOps.formationSettings.heading.penghu.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
     }
   },
 }
-config.c.PHIBOP.transportAircraft = {
+config.c.amphibOps.transportAircraft = {
   {
     name = "Zhangpu AAB",
     guid = constants.BASES.ZHANGPU_AAB,
@@ -1914,12 +1914,12 @@ config.c.PHIBOP.transportAircraft = {
     cargoItemsForTransfer = {
       {
         loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
-        cargoItems = { config.c.PHIBOP.cargoListForTransfer.airAssaultGroup3 }
+        cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup3 }
       },
     }
   },
 }
-config.c.PHIBOP.sag = {
+config.c.amphibOps.sag = {
   ["SAG 173"] = {
     groupName = "SAG 173",
     unitList = {
@@ -1938,7 +1938,7 @@ config.c.PHIBOP.sag = {
       amphibiousVehicleStagingArea = {
         { latitude = "N 25.06.19", longitude = "E 121.04.15", desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.west.vertical,
     },
     area = constants.AREAS.AIRLANDING_TAOYUAN
   },
@@ -1960,7 +1960,7 @@ config.c.PHIBOP.sag = {
       amphibiousVehicleStagingArea = {
         { latitude = "N 25.08.29", longitude = "E 121.10.20", desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.formationSettings.heading.west.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.west.vertical,
     },
     area = constants.AREAS.AIRLANDING_TAOYUAN
   },
@@ -1972,7 +1972,7 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
-      heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.penghu.vertical,
     },
     to = {
       anchorageArea = {
@@ -1981,7 +1981,7 @@ config.c.PHIBOP.sag = {
       amphibiousVehicleStagingArea = {
         { latitude = "N 23.32.34", longitude = "E 119.29.14", desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.formationSettings.heading.penghu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.penghu.vertical,
     },
     area = constants.AREAS.AIRLANDING_PENGHU,
   },
@@ -1993,7 +1993,7 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
-      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
@@ -2002,7 +2002,7 @@ config.c.PHIBOP.sag = {
       amphibiousVehicleStagingArea = {
         { latitude = "N 22.53.16", longitude = "E 120.07.39", desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     area = constants.AREAS.AIRLANDING_CHANGLONG,
   },
@@ -2014,7 +2014,7 @@ config.c.PHIBOP.sag = {
     },
     from = {
       startingPoint = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
-      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     to = {
       anchorageArea = {
@@ -2023,7 +2023,7 @@ config.c.PHIBOP.sag = {
       amphibiousVehicleStagingArea = {
         { latitude = "N 22.58.52", longitude = "E 120.05.48", desiredSpeed = 14, },
       },
-      heading = config.c.PHIBOP.formationSettings.heading.sishu.vertical,
+      heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     area = constants.AREAS.AIRLANDING_CHANGLONG,
   },
@@ -2260,7 +2260,7 @@ config.repairRunway = {
 -- Fire Support Task Templates (China)
 -- ============================================================================
 
-config.c.FSTTemplate = {
+config.c.fireSupportTaskTemplates = {
   STRIKE_INFRASTRUCTURE_1 = {
     {
       name = "RADAR",
@@ -2555,7 +2555,7 @@ config.c.FSTTemplate = {
 -- Air Package Templates (China)
 -- ============================================================================
 
-config.c.packageTemplate = {
+config.c.packageTemplates = {
   STRIKE_AB_W_1 = {
     {
       timeToReady = config.readytime,

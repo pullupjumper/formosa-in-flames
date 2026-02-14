@@ -32,13 +32,13 @@ local function createCourseForBarge(zone, unit)
       return nil
     end
 
-    local b2 = math.abs(zone.LSTSettings.course.bearing - b1)
+    local b2 = math.abs(zone.lstSettings.course.bearing - b1)
     local d2 = d1 * math.cos(b2 * 2 * math.pi / 360)
     local destination = GameApi.World_GetPointFromBearing({
       latitude = unit.latitude,
       longitude = unit.longitude,
       distance = d2,
-      bearing = zone.LSTSettings.course.bearing
+      bearing = zone.lstSettings.course.bearing
     })
 
     if not destination then
@@ -61,8 +61,8 @@ local function createCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
-    distance = zone.LSTSettings.course.distance,
-    bearing = zone.LSTSettings.course.bearing
+    distance = zone.lstSettings.course.distance,
+    bearing = zone.lstSettings.course.bearing
   })
 
   if not destination then
@@ -90,17 +90,17 @@ function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData,
 
     if unit then
       for _, zone in ipairs(operationalZones) do
-        if unit.name == "Barge" and unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.name == "Barge" and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
           local destination = createCourseForBarge(zone, unit)
           if destination then
             unit.course = { destination }
-            unit.manualSpeed = zone.LSTSettings.speed
+            unit.manualSpeed = zone.lstSettings.speed
             table.insert(barges, { unit = unit, zone = zone, dest = destination })
-            saveData.c.PHIBOP.barges[unit.guid] = { guid = unit.guid, roros = {} }
+            saveData.c.amphibOps.barges[unit.guid] = { guid = unit.guid, roros = {} }
           end
         end
 
-        if unit.name == "RORO" and unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.name == "RORO" and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
           table.insert(roros, { unit = unit, zone = zone })
         end
       end
@@ -109,12 +109,12 @@ function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData,
 
   for _, roro in ipairs(roros) do
     for _, barge in ipairs(barges) do
-      if barge.unit:inArea(roro.zone.LSTAnchorageArea) then
-        table.insert(saveData.c.PHIBOP.barges[barge.unit.guid].roros, roro.unit.guid)
+      if barge.unit:inArea(roro.zone.lstAnchorageArea) then
+        table.insert(saveData.c.amphibOps.barges[barge.unit.guid].roros, roro.unit.guid)
         local course = createCourseForRORO(roro.zone, roro.unit, barge.dest)
         if course then
           roro.unit.course = course
-          roro.unit.manualSpeed = roro.zone.LSTSettings.speed
+          roro.unit.manualSpeed = roro.zone.lstSettings.speed
         end
       end
     end
@@ -184,11 +184,11 @@ end
 ---@param ship CMO__Unit Barge ship to check
 ---@return boolean # True if bridge was created but is now destroyed
 function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
-  if saveData.c.PHIBOP.barges[ship.guid] and saveData.c.PHIBOP.barges[ship.guid].bridgeGUID then
-    local bridge = GameApi.ScenEdit_GetUnit(saveData.c.PHIBOP.barges[ship.guid].bridgeGUID)
+  if saveData.c.amphibOps.barges[ship.guid] and saveData.c.amphibOps.barges[ship.guid].bridgeGUID then
+    local bridge = GameApi.ScenEdit_GetUnit(saveData.c.amphibOps.barges[ship.guid].bridgeGUID)
 
     if not bridge then
-      Logger.log("PHIBOP", "Bridge is destroyed")
+      Logger.log("amphibOps", "Bridge is destroyed")
       return true
     end
 
@@ -204,7 +204,7 @@ end
 ---@param ship CMO__Unit Barge ship to check
 ---@return boolean # True if barge has an active bridge GUID
 function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
-  return saveData.c.PHIBOP.barges[ship.guid].bridgeGUID ~= nil
+  return saveData.c.amphibOps.barges[ship.guid].bridgeGUID ~= nil
 end
 
 ---Get the operational zone for a barge-RORO pair
@@ -217,7 +217,7 @@ function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
-    if distance and roro:inArea(zone.ACV.area) and barge:inArea(zone.ACV.area) and distance < 1 then
+    if distance and roro:inArea(zone.acv.area) and barge:inArea(zone.acv.area) and distance < 1 then
       return zone
     end
   end

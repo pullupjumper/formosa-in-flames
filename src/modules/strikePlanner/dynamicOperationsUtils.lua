@@ -96,7 +96,7 @@ function DynamicOperationsUtils.generateUniqueAirOperationName(operationType, re
     operationName = baseName .. "/" .. sequence
     sequence = sequence + 1
   until not saveData.c.dynamicOperations.generatedOperations.air[operationName] and
-    not (saveData.c.air.ATO and saveData.c.air.ATO[operationName])
+    not (saveData.c.air.airTaskingOrder and saveData.c.air.airTaskingOrder[operationName])
 
   return operationName
 end
@@ -120,7 +120,7 @@ function DynamicOperationsUtils.generateUniqueGroundOperationName(operationType,
     operationName = baseName .. "/" .. sequence
     sequence = sequence + 1
   until not saveData.c.dynamicOperations.generatedOperations.ground[operationName] and
-    not (saveData.c.ground.FSP and saveData.c.ground.FSP[operationName])
+    not (saveData.c.ground.fireSupportPlan and saveData.c.ground.fireSupportPlan[operationName])
 
   return operationName
 end
@@ -336,9 +336,9 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
   -- Find new template based on operation.type
   local newTemplate = nil
   if operation.type == "air" then
-    newTemplate = config.c.packageTemplate[configKey]
+    newTemplate = config.c.packageTemplates[configKey]
   elseif operation.type == "ground" then
-    newTemplate = config.c.FSTTemplate[configKey]
+    newTemplate = config.c.fireSupportTaskTemplates[configKey]
   else
     Logger.error("Unknown operation type: " .. tostring(operation.type))
     return Utils.deepCopy(operation)
@@ -352,7 +352,7 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
     if operation.type == "air" then
       newTemplate = operation.template.packages
     elseif operation.type == "ground" then
-      newTemplate = operation.template.FSTs
+      newTemplate = operation.template.fireSupportTasks
     end
     finalName = templateName -- Keep original name when reusing
   else
@@ -365,7 +365,7 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
     executed = false,
     template = {}
   }
-
+  ---@cast newOperation SBJ__Operation
   -- Set template properties
   newOperation.template.name = finalName
 
@@ -376,7 +376,7 @@ function DynamicOperationsUtils.generateNextOperation(operation, config)
   elseif operation.type == "ground" then
     newOperation.template.strikeInterval = operation.template.strikeInterval or 0
     newOperation.template.isFirstWave = false
-    newOperation.template.FSTs = newTemplate
+    newOperation.template.fireSupportTasks = newTemplate
   end
 
   return newOperation

@@ -88,7 +88,7 @@ end
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
-  ShipMovement.calculateDestination(config.c.PHIBOP, saveData.c.PHIBOP.calculationResult)
+  ShipMovement.calculateDestination(config.c.amphibOps, saveData.c.amphibOps.calculationResult)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)

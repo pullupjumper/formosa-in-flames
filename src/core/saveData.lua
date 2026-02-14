@@ -121,7 +121,7 @@ saveData.c.recon.queue = {}
 -- ============================================================================
 
 saveData.c.ground.enabled = true
-saveData.c.ground.FSP = {}
+saveData.c.ground.fireSupportPlan = {}
 
 
 -- ============================================================================
@@ -132,7 +132,7 @@ saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
 saveData.c.air.enabled = true
-saveData.c.air.ATO = {}
+saveData.c.air.airTaskingOrder = {}
 
 
 
@@ -140,17 +140,17 @@ saveData.c.air.ATO = {}
 -- Amphibious Operations (China)
 -- ============================================================================
 
-saveData.c.PHIBOP = {}
-saveData.c.PHIBOP.startTime = config.c.triggers.amphibiousOps.startTime
-saveData.c.PHIBOP.isTesting = true
-saveData.c.PHIBOP.isShipsStartedMoving = true
-saveData.c.PHIBOP.isWaitingForShipArrival = false
-saveData.c.PHIBOP.amphibiousAssaultStartTime = nil
-saveData.c.PHIBOP.isWaitingForAmphibiousAssault = false
-saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
-saveData.c.PHIBOP.airlandingMissionStartTime = nil
-saveData.c.PHIBOP.calculationResult = {}
-saveData.c.PHIBOP.barges = {}
+saveData.c.amphibOps = {}
+saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
+saveData.c.amphibOps.isTesting = true
+saveData.c.amphibOps.isShipsStartedMoving = true
+saveData.c.amphibOps.isWaitingForShipArrival = false
+saveData.c.amphibOps.amphibiousAssaultStartTime = nil
+saveData.c.amphibOps.isWaitingForAmphibiousAssault = false
+saveData.c.amphibOps.isWaitingForSecondWaveUnloading = false
+saveData.c.amphibOps.airlandingMissionStartTime = nil
+saveData.c.amphibOps.calculationResult = {}
+saveData.c.amphibOps.barges = {}
 
 
 -- ============================================================================

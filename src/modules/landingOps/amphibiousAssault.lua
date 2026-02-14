@@ -38,7 +38,7 @@ function AmphibiousAssault.setLandingMissionStartTime(amphibOpsConfig, saveData)
     return false
   end
 
-  saveData.c.PHIBOP.airlandingMissionStartTime = currentTime
+  saveData.c.amphibOps.airlandingMissionStartTime = currentTime
   local operationalZones = amphibOpsConfig.operationalZones
 
   for _, zone in ipairs(operationalZones) do
@@ -88,12 +88,12 @@ function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
 
     if unit then
       for _, zone in ipairs(operationalZones) do
-        if unit.type == "Ship" and unit:inArea(zone.LSTAnchorageArea) then
+        if unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
           local destination = GameApi.World_GetPointFromBearing({
             latitude = unit.latitude,
             longitude = unit.longitude,
-            bearing = zone.LSTSettings.course.bearing,
-            distance = zone.LSTSettings.course.distance
+            bearing = zone.lstSettings.course.bearing,
+            distance = zone.lstSettings.course.distance
           })
 
           if not destination then
@@ -102,7 +102,7 @@ function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
 
           if isLST(unit) then
             unit.course = { destination }
-            unit.manualSpeed = zone.LSTSettings.speed
+            unit.manualSpeed = zone.lstSettings.speed
           end
         end
       end
@@ -237,7 +237,7 @@ end
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
 function AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
-    if ship:inArea(zone.ACV.area) then
+    if ship:inArea(zone.acv.area) then
       return zone
     end
   end

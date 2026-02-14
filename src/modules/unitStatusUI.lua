@@ -121,7 +121,7 @@ function UnitStatusUI.countUnitsInEachArea(config)
   local unitsFromChina = GameApi.VP_GetSide({ side = "China" }).units
   local result = {}
 
-  for _, zone in ipairs(config.c.PHIBOP.operationalZones) do
+  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local item = {
       ["ZBD-05"] = 0,
       ["ZTD-05"] = 0,

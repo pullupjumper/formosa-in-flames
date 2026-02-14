@@ -30,11 +30,11 @@ local TIME_CONSTANTS = {
 local function collectAssignedAircraft(saveData)
   local assignedAircraft = {}
 
-  if not saveData.c.air.ATO then
+  if not saveData.c.air.airTaskingOrder then
     return assignedAircraft
   end
 
-  for _, wave in pairs(saveData.c.air.ATO) do
+  for _, wave in pairs(saveData.c.air.airTaskingOrder) do
     if wave.isActivated and not wave.hasLaunched and wave.packages then
       for _, package in ipairs(wave.packages) do
         if not package.hasLaunched then
@@ -663,7 +663,7 @@ end
 ---@param reconType string Reconnaissance type identifier used for wave naming
 ---@return boolean # True if wave was successfully inserted, false on failure
 local function insertATOWave(saveData, packageTemplate, reconType)
-  if not saveData.c.air.ATO then
+  if not saveData.c.air.airTaskingOrder then
     Logger.error("ATO structure not initialized")
     return false
   end
@@ -680,7 +680,6 @@ local function insertATOWave(saveData, packageTemplate, reconType)
     name = waveName,
     isActivated = true,
     isFirstWave = packageTemplate.isFirstWave or false,
-    -- isFinished = false,
     hasLaunched = false,
     strikeInterval = packageTemplate.strikeInterval or 0,
     packages = {}
@@ -701,7 +700,7 @@ local function insertATOWave(saveData, packageTemplate, reconType)
   end
 
   -- Insert into ATO and track
-  saveData.c.air.ATO[waveName] = newWave
+  saveData.c.air.airTaskingOrder[waveName] = newWave
   DynamicOperationsUtils.registerGeneratedOperation("air", waveName, saveData)
   return true
 end

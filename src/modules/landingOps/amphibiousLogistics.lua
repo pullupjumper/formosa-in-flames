@@ -159,7 +159,7 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, filteredUn
       end
 
       for _, zone in ipairs(operationalZones) do
-        if unit:inArea(zone.anchorageArea) or unit:inArea(zone.LSTAnchorageArea) then
+        if unit:inArea(zone.anchorageArea) or unit:inArea(zone.lstAnchorageArea) then
           table.insert(unitsInAnchorageArea, unit)
         end
       end

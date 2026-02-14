@@ -18,7 +18,7 @@ if ship and ship.group and ship.dbid == constants.PLATFORMS.TYPE_052D then
   local filteredContacts = {}
 
   for _, contact in ipairs(contacts) do
-    if contact:inArea(config.c.PHIBOP.sag[ship.group.name].area) and (contact.typed == 8) then
+    if contact:inArea(config.c.amphibOps.sag[ship.group.name].area) and (contact.typed == 8) then
       table.insert(filteredContacts, contact.guid)
     end
   end

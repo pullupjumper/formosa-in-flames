@@ -400,12 +400,12 @@ end
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
 function AirTaskingOrder.airStrike(config, saveData)
-  if not saveData or not saveData.c or not saveData.c.air or not saveData.c.air.ATO then
+  if not saveData or not saveData.c or not saveData.c.air or not saveData.c.air.airTaskingOrder then
     -- Guard against missing data
     return
   end
 
-  for _, waveData in pairs(saveData.c.air.ATO) do
+  for _, waveData in pairs(saveData.c.air.airTaskingOrder) do
     if waveData.isActivated and not waveData.hasLaunched then
       for _, packageData in ipairs(waveData.packages) do
         if not packageData.hasLaunched then

@@ -233,11 +233,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ground SBJ__GroundForceConfig Ground force configuration
 ---@field recon SBJ__ReconConfig Reconnaissance configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
----@field PHIBOP SBJ__AmphibOpsConfig Amphibious operations configuration
+---@field amphibOps SBJ__AmphibOpsConfig Amphibious operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 ---@field subSurface SBJ__SubsurfaceOperationsConfig Subsurface operations configuration
----@field FSTTemplate table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
----@field packageTemplate table<string, SBJ__PackageTemplate[]> Air package templates
+---@field fireSupportTaskTemplates table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
+---@field packageTemplates table<string, SBJ__PackageTemplate[]> Air package templates
 
 ---Taiwan faction configuration
 ---@class SBJ__TaiwanConfig: table
@@ -315,7 +315,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ground SBJ__GroundForceContext Ground force systems context
 ---@field recon SBJ__ReconContext Reconnaissance operations context
 ---@field air SBJ__AirOperationsContext Air operations context
----@field PHIBOP SBJ__PHIBOPContext Amphibious operations context
+---@field amphibOps SBJ__AmphibOpsContext Amphibious operations context
 ---@field surface SBJ__SurfaceOperationsContext Surface operations context
 ---@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
@@ -546,7 +546,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
 
 ---Amphibious operations context managing all amphibious operation state
----@class SBJ__PHIBOPContext: table
+---@class SBJ__AmphibOpsContext: table
 ---@field startTime string Operation start time
 ---@field isTesting boolean Whether in testing mode
 ---@field isShipsStartedMoving boolean Whether ships have started moving
@@ -634,14 +634,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string Operational zone name
 ---@field baseGUID string Home base GUID for embarked units
 ---@field anchorageArea string[] LHD/LPD anchorage area reference points
----@field LSTAnchorageArea string[] LST anchorage area reference points
+---@field lstAnchorageArea string[] LST anchorage area reference points
 ---@field area string[] General operational area reference points
 ---@field offloadArea string[] Vehicle offload area reference points
 ---@field boat SBJ__BoatMissionDescriptor Landing craft configuration
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
 ---@field attackHelicopter SBJ__AttackHelicopterDescriptor Attack helicopter configuration
----@field LSTSettings SBJ__LSTMovementDescriptor LST movement configuration
----@field ACV SBJ__ACVDescriptor Amphibious combat vehicle configuration
+---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
+---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
 
 ---Formation settings for amphibious operation layouts
 ---Defines spacing and movement parameters for amphibious assault ship formations
@@ -653,9 +653,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field transitDistance number Distance for transit phase
 ---@field shipSpeed number Ship movement speed
 ---@field heading table<string, SBJ__FormationHeading> Formation heading configuration
----@field ACVSpeed number Amphibious combat vehicle speed
----@field ACVTransitDistance number ACV transit distance
----@field ACVHorizontalDistance number ACV horizontal spacing
+---@field acvSpeed number Amphibious combat vehicle speed
+---@field acvTransitDistance number Amphibious combat vehicle transit distance
+---@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
 
 ---Ship type starting point configuration
 ---@class SBJ__ShipTypeStartPoint: table
@@ -751,7 +751,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field landBased table Land-based aircraft context (reserved for future use)
 ---@field shipBased table Ship-based aircraft context (reserved for future use)
 ---@field enabled boolean Whether air operations system is activated
----@field ATO table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
+---@field airTaskingOrder table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
 
 -- ============================================================================
@@ -847,7 +847,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
 ---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system (Optional)
----@field FSP? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
+---@field fireSupportPlan? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
 ---@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
 
 ---Unit property setting parameters for ground units
@@ -972,14 +972,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string FSEM name
 ---@field isFirstWave boolean Whether it's the first wave attack
 ---@field strikeInterval number Strike interval time (seconds)
----@field FSTs SBJ__FireSupportTaskTemplate[] FST template array
+---@field fireSupportTasks SBJ__FireSupportTaskTemplate[] FST template array
 
 ---Fire Support Execution Matrix with execution state
 ---@class SBJ__FireSupportExecutionMatrix: SBJ__FireSupportExecutionMatrixTemplate
 ---@field isActivated boolean Whether FSEM is activated
 ---@field allFiringUnitsInPosition boolean Whether all firing units are in position
 ---@field isFinished boolean Whether FSEM is finished
----@field FSTs SBJ__FireSupportTask[] Fire support tasks array
+---@field fireSupportTasks SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes
 ---@class SBJ__AttackParams: table

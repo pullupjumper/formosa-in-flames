@@ -193,10 +193,11 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
           }
 
           if strikeMapping.type == "air" then
-            newOperation.template.packages = config.c.packageTemplate[string.gsub(strikeMapping.name, "/", "_")]
+            newOperation.template.packages = config.c.packageTemplates[string.gsub(strikeMapping.name, "/", "_")]
             newOperation.template.strikeInterval = 30 * 60
           elseif strikeMapping.type == "ground" then
-            newOperation.template.FSTs = config.c.FSTTemplate[string.gsub(strikeMapping.name, "/", "_")]
+            newOperation.template.fireSupportTasks = config.c.fireSupportTaskTemplates
+                [string.gsub(strikeMapping.name, "/", "_")]
             newOperation.template.strikeInterval = 0
           end
 

@@ -13,26 +13,26 @@ local DynamicFireSupportPlan = {}
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing target list
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param FSTTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
+---@param taskTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
 ---@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
 ---@return string[] # Array of target GUIDs that passed filtering and assessment
-local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
+local function processFireSupportTask(config, saveData, contacts, taskTemplate, isFirstWave)
   -- Choose different assessment methods based on target type
   local strikeTargets = {}
 
-  if FSTTemplate.target.filterNames then
+  if taskTemplate.target.filterNames then
     -- For targets requiring dynamic filtering (e.g., radar, air defense systems), use passed contacts
     Logger.log("dynamicOperations",
-      "Using dynamic target filtering, filters: " .. table.concat(FSTTemplate.target.filterNames, ", "))
-    local shouldTrack = FSTTemplate.target.filterNames[1] == "findNavalTargets" or
-        FSTTemplate.target.filterNames[1] == "findRadioDirection"
+      "Using dynamic target filtering, filters: " .. table.concat(taskTemplate.target.filterNames, ", "))
+    local shouldTrack = taskTemplate.target.filterNames[1] == "findNavalTargets" or
+        taskTemplate.target.filterNames[1] == "findRadioDirection"
 
     local filterOpts = {
       contacts = contacts,
       task = {
         target = {
-          areas = FSTTemplate.target.areas,
-          contactAge = FSTTemplate.target.contactAge
+          areas = taskTemplate.target.areas,
+          contactAge = taskTemplate.target.contactAge
         }
       },
       config = config,
@@ -41,7 +41,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
     }
 
     -- Call corresponding function in TargetingProcess
-    for _, filterName in ipairs(FSTTemplate.target.filterNames) do
+    for _, filterName in ipairs(taskTemplate.target.filterNames) do
       ---@type fun(opts: SBJ__FilterParams): string[]|nil
       local targetingFunction = TargetingProcess[filterName]
 
@@ -63,10 +63,10 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
     -- First filter targets that meet criteria
     local filteredTargets = {}
 
-    if FSTTemplate.target.objs then
+    if taskTemplate.target.objs then
       filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
         saveData.c.targetlist,
-        FSTTemplate.target.objs
+        taskTemplate.target.objs
       )
     end
 
@@ -75,7 +75,7 @@ local function processFST(config, saveData, contacts, FSTTemplate, isFirstWave)
 
       -- Perform BDA assessment
       ---@type SBJ__Task
-      local task = { target = { list = filteredTargets, contactAge = FSTTemplate.target.contactAge } }
+      local task = { target = { list = filteredTargets, contactAge = taskTemplate.target.contactAge } }
       strikeTargets = TargetingProcess.assessTargetsDamage(task, isFirstWave)
     end
   end
@@ -90,15 +90,15 @@ end
 local function collectAssignedFiringUnits(saveData)
   local assignedFiringUnits = {}
 
-  if not saveData.c.ground.FSP then
+  if not saveData.c.ground.fireSupportPlan then
     return assignedFiringUnits
   end
 
-  for _, FSEM in pairs(saveData.c.ground.FSP) do
-    if not FSEM.isFinished and FSEM.isActivated and FSEM.FSTs then
-      for _, FST in ipairs(FSEM.FSTs) do
-        if not FST.isFinished and FST.firingUnits then
-          for _, firingUnit in ipairs(FST.firingUnits) do
+  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+    if not matrix.isFinished and matrix.isActivated and matrix.fireSupportTasks then
+      for _, task in ipairs(matrix.fireSupportTasks) do
+        if not task.isFinished and task.firingUnits then
+          for _, firingUnit in ipairs(task.firingUnits) do
             local firingUnitGUID = type(firingUnit) == "table" and firingUnit.guid or firingUnit
             assignedFiringUnits[firingUnitGUID] = true
           end
@@ -112,13 +112,12 @@ end
 
 ---Validate individual firing unit status and readiness
 ---Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
----@param config SBJ__Config Global configuration table with firing unit state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param firingUnitName string The name of the battery/firing unit to validate
 ---@param missileSystem string Missile system name (e.g., "SRBM", "LACM") used to locate battery data
 ---@return boolean success true if firing unit is ready for use (exists, in HIDE state, has ammo)
 ---@return string|nil errorReason Error reason if firing unit is not valid, nil on success
-local function validateFiringUnitStatus(config, saveData, firingUnitName, missileSystem)
+local function validateFiringUnitStatus(saveData, firingUnitName, missileSystem)
   -- Check if unit exists in game
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
   if not actualUnit then
@@ -148,12 +147,11 @@ end
 
 ---Check if firing units specified in template are available
 ---Filters battery list to only include unassigned batteries with valid status and ammunition
----@param config SBJ__Config Global configuration table with battery state definitions
 ---@param saveData SBJ__SaveData Persistent save data containing FSP and firing unit information
 ---@param firingUnits SBJ__FiringUnit[] Array of firing unit contexts specified in FST template
 ---@param missileSystem string Missile system name (e.g., "SRBM", "LACM") for validation
 ---@return SBJ__FiringUnitContext[] # Array of available batteries ready for assignment
-local function checkFiringUnitAvailability(config, saveData, firingUnits, missileSystem)
+local function checkFiringUnitAvailability(saveData, firingUnits, missileSystem)
   local availableFiringUnitCtxs = {}
   local assignedFiringUnitCtxs = collectAssignedFiringUnits(saveData)
 
@@ -164,7 +162,7 @@ local function checkFiringUnitAvailability(config, saveData, firingUnits, missil
       Logger.log("dynamicOperations", firingUnit.name .. " already assigned to other FST")
     else
       -- Validate battery status and readiness
-      local isValid, reason = validateFiringUnitStatus(config, saveData, firingUnit.name, missileSystem)
+      local isValid, reason = validateFiringUnitStatus(saveData, firingUnit.name, missileSystem)
 
       if isValid then
         table.insert(availableFiringUnitCtxs, firingUnit)
@@ -186,96 +184,95 @@ end
 ---Insert new FSEM into existing FSP sequence
 ---Adds FSEM to the Fire Support Plan and registers it as a generated operation
 ---@param saveData SBJ__SaveData Persistent save data with FSP structure
----@param newFSEM SBJ__FireSupportExecutionMatrix Complete FSEM with FSTs ready for execution
+---@param newMatrix SBJ__FireSupportExecutionMatrix Complete FSEM with FSTs ready for execution
 ---@return boolean # true if FSEM was successfully inserted and registered
-local function insertFSEM(saveData, newFSEM)
+local function insertMatrix(saveData, newMatrix)
   -- Add new FSEM to the end of FSP sequence
-  saveData.c.ground.FSP[newFSEM.name] = newFSEM
+  saveData.c.ground.fireSupportPlan[newMatrix.name] = newMatrix
 
   -- Register the generated operation name
-  DynamicOperationsUtils.registerGeneratedOperation("ground", newFSEM.name, saveData)
+  DynamicOperationsUtils.registerGeneratedOperation("ground", newMatrix.name, saveData)
 
   Logger.log("dynamicOperations",
-    "Successfully inserted dynamic FSEM: " .. newFSEM.name .. ", FST count: " .. #newFSEM.FSTs)
+    "Successfully inserted dynamic FSEM: " .. newMatrix.name .. ", FST count: " .. #newMatrix.fireSupportTasks)
   return true
 end
 
 ---Create actual FSEM from template and evaluation results
 ---Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
----@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
----@param FSEMTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
+---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param evaluatedTargets table<string, CMO__Contact[]> Map of FST name to evaluated target arrays
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
 ---@return boolean # true if FSEM was successfully created and inserted, false if no valid FSTs
-local function createFSEMFromTemplate(config, saveData, FSEMTemplate, evaluatedTargets, reconType)
+local function createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets, reconType)
   -- Calculate FSEM execution time
   local currentTime = GameApi.ScenEdit_CurrentTime()
-  local FSEMStartTime = currentTime
+  local matrixStartTime = currentTime
 
   -- Generate unique FSEM name based on template name
-  local FSEMName = DynamicOperationsUtils.generateUniqueGroundOperationName(
-    FSEMTemplate.name:match("([^/]+)") or FSEMTemplate.name, reconType, saveData
+  local matrixName = DynamicOperationsUtils.generateUniqueGroundOperationName(
+    matrixTemplate.name:match("([^/]+)") or matrixTemplate.name, reconType, saveData
   )
 
   -- Create new FSEM structure
   ---@type SBJ__FireSupportExecutionMatrix
-  local newFSEM = {
-    name = FSEMName,
+  local newMatrix = {
+    name = matrixName,
     isActivated = true,
     isFinished = false,
-    isFirstWave = FSEMTemplate.isFirstWave,
+    isFirstWave = matrixTemplate.isFirstWave,
     allFiringUnitsInPosition = false,
-    FSTs = {},
+    fireSupportTasks = {},
     strikeInterval = 0
   }
 
-  local FSTIndex = 0
+  local taskIndex = 0
 
   -- Create actual FST for each valid target FST
-  for _, FSTTemplate in ipairs(FSEMTemplate.FSTs) do
-    local targets = evaluatedTargets[FSTTemplate.name]
+  for _, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
+    local targets = evaluatedTargets[taskTemplate.name]
 
-    if targets and #targets >= FSTTemplate.target.minTargetCount then
-      FSTIndex = FSTIndex + 1
+    if targets and #targets >= taskTemplate.target.minTargetCount then
+      taskIndex = taskIndex + 1
 
       -- Check if firing units specified in template are available
       local availableFiringUnits = checkFiringUnitAvailability(
-        config, saveData, FSTTemplate.firingUnits, FSTTemplate.missileSystem
+        saveData, taskTemplate.firingUnits, taskTemplate.missileSystem
       )
 
       if availableFiringUnits and #availableFiringUnits > 0 then
-        local startTime = os.date("!%Y-%m-%d %H:%M:%S", FSEMStartTime + (FSTIndex * FSEMTemplate.strikeInterval)) --[[@as string]]
+        local startTime = os.date("!%Y-%m-%d %H:%M:%S", matrixStartTime + (taskIndex * matrixTemplate.strikeInterval)) --[[@as string]]
         ---@type SBJ__FireSupportTask
-        local FST = {
-          name = FSTTemplate.name,
-          missileSystem = FSTTemplate.missileSystem,
+        local task = {
+          name = taskTemplate.name,
+          missileSystem = taskTemplate.missileSystem,
           firingUnits = availableFiringUnits,
           startTime = startTime,
           isFinished = false,
           target = {
             list = targets,
-            objs = FSTTemplate.target.objs or {},
-            areas = FSTTemplate.target.areas or {},
-            filterNames = FSTTemplate.target.filterNames,
-            contactAge = FSTTemplate.target.contactAge,
-            minTargetCount = FSTTemplate.target.minTargetCount,
-            ammoPerTarget = FSTTemplate.target.ammoPerTarget
+            objs = taskTemplate.target.objs or {},
+            areas = taskTemplate.target.areas or {},
+            filterNames = taskTemplate.target.filterNames,
+            contactAge = taskTemplate.target.contactAge,
+            minTargetCount = taskTemplate.target.minTargetCount,
+            ammoPerTarget = taskTemplate.target.ammoPerTarget
           }
         }
 
-        table.insert(newFSEM.FSTs, FST)
-        Logger.log("dynamicOperations", "Created FST: " .. FSTTemplate.name .. ", target count: " ..
+        table.insert(newMatrix.fireSupportTasks, task)
+        Logger.log("dynamicOperations", "Created FST: " .. taskTemplate.name .. ", target count: " ..
           #targets .. ", fire unit count: " .. #availableFiringUnits)
       else
-        Logger.error("Specified fire units for FST " .. FSTTemplate.name .. " are unavailable or already assigned")
+        Logger.error("Specified fire units for FST " .. taskTemplate.name .. " are unavailable or already assigned")
       end
     end
   end
 
   -- If FSTs were successfully created, insert into FSP
-  if #newFSEM.FSTs > 0 then
-    return insertFSEM(saveData, newFSEM)
+  if #newMatrix.fireSupportTasks > 0 then
+    return insertMatrix(saveData, newMatrix)
   else
     Logger.error("Unable to create valid FSEM")
     return false
@@ -291,31 +288,30 @@ end
 ---@param operation SBJ__Operation Ground operation containing FSEM template
 ---@return boolean # true if FSEM was successfully created from reconnaissance results
 local function processReconSchedule(config, saveData, contacts, reconEntry, operation)
-  if not operation.template or not operation.template.FSTs then
+  if not operation.template or not operation.template.fireSupportTasks then
     Logger.error("Ground operation missing FSEM template")
     return false
   end
 
-
   -- Create deep copy to avoid modifying original template
-  local copyFSTs = Utils.deepCopy(operation.template.FSTs)
+  local copyTasks = Utils.deepCopy(operation.template.fireSupportTasks)
 
   -- Create actual FSEM from template
   local evaluatedTargets = {}
   local hasValidTargets = false
 
   -- Process FST templates one by one
-  for _, FSTTemplate in ipairs(copyFSTs) do
-    local FSTTargets = processFST(config, saveData, contacts, FSTTemplate, operation.template.isFirstWave)
+  for _, taskTemplate in ipairs(copyTasks) do
+    local taskTargets = processFireSupportTask(config, saveData, contacts, taskTemplate, operation.template.isFirstWave)
 
-    if FSTTargets and #FSTTargets >= FSTTemplate.target.minTargetCount then
-      evaluatedTargets[FSTTemplate.name] = FSTTargets
+    if taskTargets and #taskTargets >= taskTemplate.target.minTargetCount then
+      evaluatedTargets[taskTemplate.name] = taskTargets
       hasValidTargets = true
-      Logger.log("dynamicOperations", "FST " .. FSTTemplate.name .. " found " .. #FSTTargets .. " targets")
+      Logger.log("dynamicOperations", "FST " .. taskTemplate.name .. " found " .. #taskTargets .. " targets")
     else
-      Logger.log("dynamicOperations", "FST " .. FSTTemplate.name .. " insufficient targets (required: " ..
-        FSTTemplate.target.minTargetCount .. ", found: " ..
-        (FSTTargets and #FSTTargets or 0) .. ")")
+      Logger.log("dynamicOperations", "FST " .. taskTemplate.name .. " insufficient targets (required: " ..
+        taskTemplate.target.minTargetCount .. ", found: " ..
+        (taskTargets and #taskTargets or 0) .. ")")
     end
   end
 
@@ -323,10 +319,10 @@ local function processReconSchedule(config, saveData, contacts, reconEntry, oper
   if hasValidTargets then
     -- Create a copy of fsemTemplate with the copied FSTs
     local modifiedTemplate = Utils.deepCopy(operation.template)
-    modifiedTemplate.FSTs = copyFSTs
+    modifiedTemplate.fireSupportTasks = copyTasks
 
     return createFSEMFromTemplate(
-      config, saveData, modifiedTemplate, evaluatedTargets, reconEntry.type
+      saveData, modifiedTemplate, evaluatedTargets, reconEntry.type
     )
   else
     Logger.log("dynamicOperations", "Insufficient targets for follow-up strikes, skipping FSEM creation")

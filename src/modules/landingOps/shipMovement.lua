@@ -168,8 +168,8 @@ end
 function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits)
   local formationSettings = amphibOpsConfig.formationSettings
   local operations = amphibOpsConfig.operations
-  local calculationResult = saveData.c.PHIBOP.calculationResult
-  local isTesting = saveData.c.PHIBOP.isTesting
+  local calculationResult = saveData.c.amphibOps.calculationResult
+  local isTesting = saveData.c.amphibOps.isTesting
   local allUnitsMoved = false
 
   for _, u in ipairs(filteredUnits) do
