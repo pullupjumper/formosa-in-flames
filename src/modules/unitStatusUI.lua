@@ -2,7 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
-local GPSJamming = require("src.modules.EW.GPSJamming")
+local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local MissileSystem = require("src.modules.missileSystem")
 local gKH = require("src.core.gKH_State_Standalone")
@@ -364,7 +364,7 @@ local function createC2NodeDataString(saveData, sideName, ...)
   local types = { ... }
 
   for _, type in pairs(types) do
-    local C2Ctxs = saveData[field].IADS[type]
+    local C2Ctxs = saveData[field].iads[type]
 
     if C2Ctxs then
       for _, C2Ctx in pairs(C2Ctxs) do
@@ -374,10 +374,10 @@ local function createC2NodeDataString(saveData, sideName, ...)
 
         rows[type][C2Ctx.guid] = { name = C2Ctx.name }
 
-        if C2Ctx.SAM then
+        if C2Ctx.sam then
           rows[type][C2Ctx.guid]["SAM"] = {}
 
-          for _, SAMCtx in pairs(C2Ctx.SAM) do
+          for _, SAMCtx in pairs(C2Ctx.sam) do
             local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
             local isDestroyed = unit == nil
             rows[type][C2Ctx.guid]["SAM"][SAMCtx.guid] = {
@@ -422,7 +422,7 @@ local function createSignalDataString(saveData, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  local transmissions = saveData[field].SIGINT.transmissions
+  local transmissions = saveData[field].sigint.transmissions
 
   for _, transmission in pairs(transmissions) do
     local copy = Utils.deepCopy(transmission)
@@ -448,10 +448,10 @@ end
 ---@param config SBJ__Config Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@return string # JSON formatted GPS jamming unit data
-local function createGPSJammerDataString(config, sideName)
+local function createGnssJammerDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
-  local descriptors = config[field].GPSJamming.jammers
+  local descriptors = config[field].gnssJamming.jammers
   local rows = {}
 
   for _, descriptor in pairs(descriptors) do
@@ -470,7 +470,6 @@ local function createMissileSystemDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  -- local systems = { "srbm", "mlrs", "glcm", "ascm", "sam" }
 
   for key, system in pairs(config[field].ground) do
     rows[key] = system
@@ -519,7 +518,7 @@ function UnitStatusUI.createUI(config, sideName)
     local signalDataString = createSignalDataString(saveData, sideName)
     local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm", "mrbm")
     local magazineDataString = createMagazineDataString(config, sideName)
-    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "C2")
+    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
     local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
     local landingUnitsString = gKH.json.stringify(landingUnitsData)
 
@@ -538,7 +537,7 @@ function UnitStatusUI.createUI(config, sideName)
     local signalDataString = createSignalDataString(saveData, "US")
     local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm")
     local magazineDataString = createMagazineDataString(config, sideName)
-    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "ROCC", "TAAOC")
+    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 
     local HTMLTemplate = getHTMLTemplate()
     local msg = string.format(
@@ -571,7 +570,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   end
 
   -- Prepare data for HTML template
-  local gpsJammerDataString = createGPSJammerDataString(config, sideName)
+  local gpsJammerDataString = createGnssJammerDataString(config, sideName)
   local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
   local missileSystemDataString = createMissileSystemDataString(config, sideName)
   local HTMLTemplate = getSetupMenuTemplate()
@@ -592,9 +591,9 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
     -- Apply GPS jamming unit deployments
     if jammerDescriptors and #jammerDescriptors > 0 then
-      GPSJamming.removeJammers(jammerDescriptors, sideName)
+      GnssJamming.removeJammers(jammerDescriptors, sideName)
       for _, descriptor in ipairs(jammerDescriptors) do
-        GPSJamming.addGPSJammer(descriptor, sideName)
+        GnssJamming.addGnssJammer(descriptor, sideName)
       end
     end
 

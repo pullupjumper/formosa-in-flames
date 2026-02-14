@@ -1,7 +1,11 @@
-import { useState } from 'react';
-import { Table, Th, Td, Tr, EmptyRow, ProgressBar } from '@/components/Table';
-import { formatTimestamp, calculateProgress, isDataEmpty } from '@/utils/format';
-import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
+import { useState } from "react";
+import { Table, Th, Td, Tr, EmptyRow, ProgressBar } from "@/components/Table";
+import {
+  formatTimestamp,
+  calculateProgress,
+  isDataEmpty,
+} from "@/utils/format";
+import { UNIT_STATUS_DATA } from "@/data/unitStatusData";
 import type {
   SignalData,
   MissileSystemData,
@@ -11,7 +15,7 @@ import type {
   Base,
   LandingUnitsData,
   UnitStatusData,
-} from '@/types/unitStatus';
+} from "@/types/unitStatus";
 
 // ============================================================================
 // GLOBAL TYPE DECLARATION
@@ -30,7 +34,11 @@ declare global {
 // DATA LOADER
 // ============================================================================
 function loadInjectedData(): UnitStatusData {
-  const parseJSON = <T,>(str: string | undefined, fallback: T, name: string): T => {
+  const parseJSON = <T,>(
+    str: string | undefined,
+    fallback: T,
+    name: string,
+  ): T => {
     // Debug log - remove in production
     console.log(`[${name}] raw value:`, str);
 
@@ -40,7 +48,7 @@ function loadInjectedData(): UnitStatusData {
     }
 
     const trimmed = str.trim();
-    if (trimmed === '[]' || trimmed === '{}' || trimmed === '') {
+    if (trimmed === "[]" || trimmed === "{}" || trimmed === "") {
       console.log(`[${name}] empty array/object, using fallback`);
       return fallback;
     }
@@ -59,23 +67,23 @@ function loadInjectedData(): UnitStatusData {
     signals: parseJSON<SignalData[]>(
       window.__INJECT_SIGNALS__,
       UNIT_STATUS_DATA.signals,
-      'SIGNALS'
+      "SIGNALS",
     ),
     launchers: parseJSON<MissileSystemData>(
       window.__INJECT_LAUNCHERS__,
       UNIT_STATUS_DATA.launchers,
-      'LAUNCHERS'
+      "LAUNCHERS",
     ),
-    c2: parseJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, 'C2'),
+    c2: parseJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, "C2"),
     baseWeapons: parseJSON<Base[]>(
       window.__INJECT_BASE_WEAPONS__,
       UNIT_STATUS_DATA.baseWeapons,
-      'BASE_WEAPONS'
+      "BASE_WEAPONS",
     ),
     landingUnits: parseJSON<LandingUnitsData>(
       window.__INJECT_LANDING_UNITS__,
       UNIT_STATUS_DATA.landingUnits,
-      'LANDING_UNITS'
+      "LANDING_UNITS",
     ),
   };
 }
@@ -84,34 +92,34 @@ function loadInjectedData(): UnitStatusData {
 // CONSTANTS
 // ============================================================================
 const TABS = [
-  { id: 'signal-data', label: 'Signal Data' },
-  { id: 'mobile-launchers', label: 'Missile Systems' },
-  { id: 'c2-nodes', label: 'C2 Nodes' },
-  { id: 'base-weapons', label: 'Base Weapons' },
-  { id: 'landing-units', label: 'Landing Units' },
+  { id: "signal-data", label: "Signal Data" },
+  { id: "mobile-launchers", label: "Missile Systems" },
+  { id: "c2-nodes", label: "C2 Nodes" },
+  { id: "base-weapons", label: "Base Weapons" },
+  { id: "landing-units", label: "Landing Units" },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type TabId = (typeof TABS)[number]["id"];
 
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 function UnitStatusPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('signal-data');
+  const [activeTab, setActiveTab] = useState<TabId>("signal-data");
   const [data] = useState(loadInjectedData);
 
   // Filter visible tabs based on data availability
   const visibleTabs = TABS.filter((tab) => {
     switch (tab.id) {
-      case 'signal-data':
+      case "signal-data":
         return !isDataEmpty(data?.signals);
-      case 'mobile-launchers':
+      case "mobile-launchers":
         return !isDataEmpty(data?.launchers);
-      case 'c2-nodes':
+      case "c2-nodes":
         return !isDataEmpty(data?.c2);
-      case 'base-weapons':
+      case "base-weapons":
         return !isDataEmpty(data?.baseWeapons);
-      case 'landing-units':
+      case "landing-units":
         return !isDataEmpty(data?.landingUnits);
       default:
         return true;
@@ -137,8 +145,8 @@ function UnitStatusPage() {
             key={tab.id}
             className={`border-b-[3px] px-4 py-3 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
               activeTab === tab.id
-                ? 'border-accent-blue text-accent-blue'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
+                ? "border-accent-blue text-accent-blue"
+                : "border-transparent text-text-secondary hover:text-text-primary"
             }`}
             onClick={() => setActiveTab(tab.id)}
           >
@@ -150,11 +158,19 @@ function UnitStatusPage() {
       {/* Content */}
       <div className="flex-1 overflow-auto p-5">
         <div className="overflow-x-auto rounded-sm border border-dark-border bg-dark-panel">
-          {activeTab === 'signal-data' && <SignalDataTable data={data.signals} />}
-          {activeTab === 'mobile-launchers' && <MobileLaunchersTable data={data.launchers} />}
-          {activeTab === 'c2-nodes' && <C2NodesTable data={data.c2} />}
-          {activeTab === 'base-weapons' && <BaseWeaponsTable data={data.baseWeapons} />}
-          {activeTab === 'landing-units' && <LandingUnitsTable data={data.landingUnits} />}
+          {activeTab === "signal-data" && (
+            <SignalDataTable data={data.signals} />
+          )}
+          {activeTab === "mobile-launchers" && (
+            <MobileLaunchersTable data={data.launchers} />
+          )}
+          {activeTab === "c2-nodes" && <C2NodesTable data={data.c2} />}
+          {activeTab === "base-weapons" && (
+            <BaseWeaponsTable data={data.baseWeapons} />
+          )}
+          {activeTab === "landing-units" && (
+            <LandingUnitsTable data={data.landingUnits} />
+          )}
         </div>
       </div>
     </div>
@@ -191,14 +207,18 @@ function SignalDataTable({ data }: SignalDataTableProps) {
         ) : (
           safeData.map((signal, index) => (
             <Tr key={index}>
-              <Td>{signal.name || 'N/A'}</Td>
-              <Td>{signal.type ? signal.type.toUpperCase() : 'N/A'}</Td>
-              <Td>{signal.autodetectable ? 'TRUE' : 'FALSE'}</Td>
+              <Td>{signal.name || "N/A"}</Td>
+              <Td>{signal.type ? signal.type.toUpperCase() : "N/A"}</Td>
+              <Td>{signal.autodetectable ? "TRUE" : "FALSE"}</Td>
               <Td>{formatTimestamp(signal.firstDetected)}</Td>
               <Td>{formatTimestamp(signal.lastDetected)}</Td>
               <Td className="text-right">{signal.detectionCount || 0}</Td>
-              <Td className="text-right">{Math.floor((signal.confidence || 0) * 100)}%</Td>
-              <Td className="text-right">{signal.currentDetectionLevel || 0}</Td>
+              <Td className="text-right">
+                {Math.floor((signal.confidence || 0) * 100)}%
+              </Td>
+              <Td className="text-right">
+                {signal.currentDetectionLevel || 0}
+              </Td>
             </Tr>
           ))
         )}
@@ -237,11 +257,11 @@ function MobileLaunchersTable({ data }: MobileLaunchersTableProps) {
             return units.map((unit, index) => {
               const firingProgress = calculateProgress(
                 unit.firingUnitReloadTime,
-                unit.defaultReloadTime
+                unit.defaultReloadTime,
               );
               const resupplyProgress = calculateProgress(
                 unit.resupplyUnitReloadTime,
-                unit.defaultReloadTime
+                unit.defaultReloadTime,
               );
 
               return (
@@ -250,7 +270,9 @@ function MobileLaunchersTable({ data }: MobileLaunchersTableProps) {
                   <Td>{unit.missileSystem.toUpperCase()}</Td>
                   <Td>{unit.firingUnitState}</Td>
                   <Td>
-                    {unit.firingUnitReloadTime >= 0 && <ProgressBar percentage={firingProgress} />}
+                    {unit.firingUnitReloadTime >= 0 && (
+                      <ProgressBar percentage={firingProgress} />
+                    )}
                   </Td>
                   {index === 0 && (
                     <>
@@ -287,12 +309,14 @@ function C2NodesTable({ data }: C2NodesTableProps) {
   // and wrapped format { C2: { guid1: {...}, guid2: {...} } }
   const flatNodes: Record<string, C2Node> = {};
   for (const [key, value] of Object.entries(data || {})) {
-    if (value && typeof value === 'object' && 'name' in value) {
+    if (value && typeof value === "object" && "name" in value) {
       // Direct node (e.g. ROCC, TAAOC)
       flatNodes[key] = value as C2Node;
-    } else if (value && typeof value === 'object') {
+    } else if (value && typeof value === "object") {
       // Wrapped group (e.g. C2: { guid1: {...} })
-      for (const [subKey, subValue] of Object.entries(value as Record<string, C2Node>)) {
+      for (const [subKey, subValue] of Object.entries(
+        value as Record<string, C2Node>,
+      )) {
         flatNodes[subKey] = subValue;
       }
     }
@@ -321,10 +345,14 @@ function C2NodesTable({ data }: C2NodesTableProps) {
             const units: { unit: C2Unit; type: string }[] = [];
 
             if (node.SAM) {
-              Object.values(node.SAM).forEach((unit) => units.push({ unit, type: 'SAM' }));
+              Object.values(node.SAM).forEach((unit) =>
+                units.push({ unit, type: "SAM" }),
+              );
             }
             if (node.radar) {
-              Object.values(node.radar).forEach((unit) => units.push({ unit, type: 'Radar' }));
+              Object.values(node.radar).forEach((unit) =>
+                units.push({ unit, type: "Radar" }),
+              );
             }
 
             if (units.length === 0) {
@@ -347,15 +375,23 @@ function C2NodesTable({ data }: C2NodesTableProps) {
                 <Td>{item.unit.OODADetection}</Td>
                 <Td>{item.unit.OODATargeting}</Td>
                 <Td
-                  className={item.unit.isOutOfComms ? 'text-status-danger' : 'text-status-success'}
+                  className={
+                    item.unit.isOutOfComms
+                      ? "text-status-danger"
+                      : "text-status-success"
+                  }
                 >
-                  {item.unit.isOutOfComms ? 'YES' : 'NO'}
+                  {item.unit.isOutOfComms ? "YES" : "NO"}
                 </Td>
                 <Td>{item.unit.EMCONSetting}</Td>
                 <Td
-                  className={item.unit.isDestroyed ? 'text-status-danger' : 'text-status-success'}
+                  className={
+                    item.unit.isDestroyed
+                      ? "text-status-danger"
+                      : "text-status-success"
+                  }
                 >
-                  {item.unit.isDestroyed ? 'YES' : 'NO'}
+                  {item.unit.isDestroyed ? "YES" : "NO"}
                 </Td>
               </Tr>
             ));

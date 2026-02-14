@@ -1,5 +1,5 @@
 local gKH = require("src.core.gKH_State_Standalone")
-local SIGINT = require("src.modules.EW.sigint")
+local Sigint = require("src.modules.ew.sigint")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 ---@type SBJ__SaveData|nil
@@ -10,13 +10,13 @@ if saveData == nil then
   return
 end
 
-if saveData.u.SIGINT.enabled then
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.ground.srbm.firingUnits, true, config.c.SIGINT)
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.ground.glcm.firingUnits, true, config.c.SIGINT)
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.ground.mlrs.firingUnits, true, config.c.SIGINT)
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.ground.ascm.firingUnits, true, config.c.SIGINT)
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.IADS.ROCC, true, config.c.SIGINT)
-  SIGINT.handleSIGINT(config, saveData.c.SIGINT, "China", saveData.t.IADS.TAAOC, true, config.c.SIGINT)
+if saveData.u.sigint.enabled then
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.ground.srbm.firingUnits, true, config.c.sigint)
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.ground.glcm.firingUnits, true, config.c.sigint)
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.ground.mlrs.firingUnits, true, config.c.sigint)
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.ground.ascm.firingUnits, true, config.c.sigint)
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.iads.rocc, true, config.c.sigint)
+  Sigint.handleSigint(config, saveData.c.sigint, "China", saveData.t.iads.taaoc, true, config.c.sigint)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

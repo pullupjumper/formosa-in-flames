@@ -309,7 +309,7 @@ end
 ---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
-  return distance <= config.c.SIGINT.maxRange and transmission.currentDetectionLevel > config.c.SIGINT.maxCount
+  return distance <= config.c.sigint.maxRange and transmission.currentDetectionLevel > config.c.sigint.maxCount
 end
 
 ---Find mobile ground targets (vehicles) within specified areas
@@ -353,7 +353,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
     local contact = GameApi.ScenEdit_GetContact("China", guid)
 
     if contact then
-      for _, tm in pairs(saveData.c.SIGINT.transmissions) do
+      for _, tm in pairs(saveData.c.sigint.transmissions) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
         if distance and isWithinRange(config, distance, tm) then

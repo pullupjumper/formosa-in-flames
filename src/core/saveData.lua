@@ -13,20 +13,20 @@ saveData.u = {}
 -- SIGINT (China)
 -- ============================================================================
 
-saveData.c.SIGINT = {}
-saveData.c.SIGINT.enabled = true
-saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
-saveData.c.SIGINT.RA = {}
-saveData.c.SIGINT.transmissions = {}
+saveData.c.sigint = {}
+saveData.c.sigint.enabled = true
+saveData.c.sigint.maxCount = config.c.sigint.maxCount
+saveData.c.sigint.reconAircraft = {}
+saveData.c.sigint.transmissions = {}
 
 
 -- ============================================================================
 -- IADS (China)
 -- ============================================================================
 
-saveData.c.IADS = {}
-saveData.c.IADS.enabled = true
-saveData.c.IADS.C2 = {}
+saveData.c.iads = {}
+saveData.c.iads.enabled = true
+saveData.c.iads.c2 = {}
 
 
 -- ============================================================================
@@ -42,9 +42,9 @@ saveData.c.commsJamming.jammers = {}
 -- GPS Jamming (China)
 -- ============================================================================
 
-saveData.c.GPSJamming = {}
-saveData.c.GPSJamming.enabled = true
-saveData.c.GPSJamming.jammers = {}
+saveData.c.gnssJamming = {}
+saveData.c.gnssJamming.enabled = true
+saveData.c.gnssJamming.jammers = {}
 
 
 -- ============================================================================
@@ -266,10 +266,10 @@ saveData.t.repairRunway.runways = {}
 -- IADS (Taiwan)
 -- ============================================================================
 
-saveData.t.IADS = {}
-saveData.t.IADS.enabled = true
-saveData.t.IADS.ROCC = {}
-saveData.t.IADS.TAAOC = {}
+saveData.t.iads = {}
+saveData.t.iads.enabled = true
+saveData.t.iads.rocc = {}
+saveData.t.iads.taaoc = {}
 
 
 -- ============================================================================
@@ -286,20 +286,20 @@ saveData.t.air.landBased.AC = {}
 -- GPS Jamming (Taiwan)
 -- ============================================================================
 
-saveData.t.GPSJamming = {}
-saveData.t.GPSJamming.enabled = true
-saveData.t.GPSJamming.jammers = {}
+saveData.t.gnssJamming = {}
+saveData.t.gnssJamming.enabled = true
+saveData.t.gnssJamming.jammers = {}
 
 
 -- ============================================================================
 -- SIGINT (US)
 -- ============================================================================
 
-saveData.u.SIGINT = {}
-saveData.u.SIGINT.enabled = true
-saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
-saveData.u.SIGINT.RA = {}
-saveData.u.SIGINT.transmissions = {}
+saveData.u.sigint = {}
+saveData.u.sigint.enabled = true
+saveData.u.sigint.maxCount = config.u.sigint.maxCount
+saveData.u.sigint.reconAircraft = {}
+saveData.u.sigint.transmissions = {}
 
 
 -- ============================================================================

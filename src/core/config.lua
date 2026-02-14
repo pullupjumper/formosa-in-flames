@@ -14,10 +14,10 @@ config.logging = {
     PHIBOP = { verbose = false },
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
-    SIGINT = { verbose = false },
+    sigint = { verbose = false },
     commsJamming = { verbose = false },
-    GPSJamming = { verbose = false },
-    IADS = { verbose = false },
+    gnssJamming = { verbose = false },
+    integratedAirDefenseSystem = { verbose = false },
     attackManager = { verbose = false },
     unitGenerator = { verbose = false },
     missileSystem = { verbose = false },
@@ -114,17 +114,17 @@ config.c.triggers = {
 -- SIGINT (China)
 -- ============================================================================
 
-config.c.SIGINT = {}
-config.c.SIGINT.maxCount = 6
--- config.c.SIGINT.maxCount = 1
-config.c.SIGINT.maxRange = 2.5
+config.c.sigint = {}
+config.c.sigint.maxCount = 6
+-- config.c.sigint.maxCount = 1
+config.c.sigint.maxRange = 2.5
 
 -- Detection parameters
-config.c.SIGINT.detectionThreshold = 60
-config.c.SIGINT.maxDetectionRange = { 300, 340 }
+config.c.sigint.detectionThreshold = 60
+config.c.sigint.maxDetectionRange = { 300, 340 }
 
 -- Detection formula constants
-config.c.SIGINT.formulaConstants = {
+config.c.sigint.formulaConstants = {
   decayRate = -1 / 450,
   power = 0.8,
   baseCoefficient = 0.00007937,
@@ -137,7 +137,7 @@ config.c.SIGINT.formulaConstants = {
 }
 
 -- Default display configuration for map notifications
-config.c.SIGINT.defaultDisplay = {
+config.c.sigint.defaultDisplay = {
   r = 255,
   g = 255,
   b = 255,
@@ -146,19 +146,19 @@ config.c.SIGINT.defaultDisplay = {
 }
 
 -- Area and performance parameters
-config.c.SIGINT.minPolygonPoints = 3
-config.c.SIGINT.detectionSkipProbability = 0.3
+config.c.sigint.minPolygonPoints = 3
+config.c.sigint.detectionSkipProbability = 0.3
 
 
 -- ============================================================================
 -- IADS (China)
 -- ============================================================================
 
-config.c.IADS = {}
-config.c.IADS.ratio = { C2 = 1.5, }
-config.c.IADS.C2FacilityDBIDs = { 319, 318, 115, 113 }
-config.c.IADS.randomRadius = 10
-config.c.IADS.C2Deployments = {
+config.c.iads = {}
+config.c.iads.ratio = { C2 = 1.5, }
+config.c.iads.c2FacilityDBIDs = { 319, 318, 115, 113 }
+config.c.iads.randomRadius = 10
+config.c.iads.c2Deployments = {
   {
     position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_FUZHOU, },
@@ -241,30 +241,30 @@ config.c.commsJamming.randomVariance = {
 -- GPS Jamming (China)
 -- ============================================================================
 
-config.c.GPSJamming = {}
-config.c.GPSJamming.randomRadius = 20 -- random radius
-config.c.GPSJamming.radius = 14
-config.c.GPSJamming.GPSGuidedWeapons = {
+config.c.gnssJamming = {}
+config.c.gnssJamming.randomRadius = 20 -- random radius
+config.c.gnssJamming.radius = 14
+config.c.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.JDAM,       jammingResistance = 50 },
   { dbid = constants.WEAPONS.WAN_CHIEN,  jammingResistance = 50 },
   { dbid = constants.WEAPONS.HARPOON_II, jammingResistance = 50 },
   { dbid = constants.WEAPONS.JSOW,       jammingResistance = 50 },
   { dbid = constants.WEAPONS.SLAMER,     jammingResistance = 50 },
 }
-config.c.GPSJamming.jammers = {
+config.c.gnssJamming.jammers = {
   ["1st Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/1",
     name = "1st Bn, 1st ECM Bde",
     point = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
-    randomRadius = config.c.GPSJamming.randomRadius,
-    radius = config.c.GPSJamming.radius
+    randomRadius = config.c.gnssJamming.randomRadius,
+    radius = config.c.gnssJamming.radius
   },
   ["2nd Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/2",
     name = "2nd Bn, 1st ECM Bde",
     point = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
-    randomRadius = config.c.GPSJamming.randomRadius,
-    radius = config.c.GPSJamming.radius
+    randomRadius = config.c.gnssJamming.randomRadius,
+    radius = config.c.gnssJamming.radius
   },
 }
 
@@ -3635,30 +3635,30 @@ config.c.packageTemplate = {
 -- GPS Jamming (Taiwan)
 -- ============================================================================
 
-config.t.GPSJamming = {}
-config.t.GPSJamming.randomRadius = 20 -- random radius
-config.t.GPSJamming.radius = 11
-config.t.GPSJamming.GPSGuidedWeapons = {
+config.t.gnssJamming = {}
+config.t.gnssJamming.randomRadius = 20 -- random radius
+config.t.gnssJamming.radius = 11
+config.t.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.FD280,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.CJ10A,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.AKD88,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.LS_6_500, jammingResistance = 50 },
   { dbid = constants.WEAPONS.CS_BBC_5, jammingResistance = 50 },
 }
-config.t.GPSJamming.jammers = {
+config.t.gnssJamming.jammers = {
   ["Comms & Info Coy, 584th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/1",
     name = "Comms & Info Coy, 584th Mech Bde",
     point = nil,
-    randomRadius = config.t.GPSJamming.randomRadius,
-    radius = config.t.GPSJamming.radius
+    randomRadius = config.t.gnssJamming.randomRadius,
+    radius = config.t.gnssJamming.radius
   },
   ["Comms & Info Coy, 269th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/2",
     name = "Comms & Info Coy, 269th Mech Bde",
     point = nil,
-    randomRadius = config.t.GPSJamming.randomRadius,
-    radius = config.t.GPSJamming.radius
+    randomRadius = config.t.gnssJamming.randomRadius,
+    radius = config.t.gnssJamming.radius
   },
 }
 
@@ -3978,9 +3978,9 @@ config.t.ground.sam.firingUnits = {
 -- IADS (Taiwan)
 -- ============================================================================
 
-config.t.IADS = {}
-config.t.IADS.ratio = { ROCC = 1.5, TAAOC = 1.5 }
-config.t.IADS.ROCC = {
+config.t.iads = {}
+config.t.iads.ratio = { ROCC = 1.5, TAAOC = 1.5 }
+config.t.iads.rocc = {
   {
     name = "ROCC/North",
     areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
@@ -3994,7 +3994,7 @@ config.t.IADS.ROCC = {
     areas = { constants.AREAS.THEATER_OF_OPS_4TH, },
   },
 }
-config.t.IADS.TAAOC = {
+config.t.iads.taaoc = {
   {
     name = "TAAOC/3rd OPAREA",
     areas = { constants.AREAS.THEATER_OF_OPS_3RD, },
@@ -4377,23 +4377,23 @@ config.t.surface.deployedShips = {
 -- SIGINT (US)
 -- ============================================================================
 
-config.u.SIGINT = {}
-config.u.SIGINT.maxCount = config.c.SIGINT.maxCount
-config.u.SIGINT.maxRange = config.c.SIGINT.maxRange
+config.u.sigint = {}
+config.u.sigint.maxCount = config.c.sigint.maxCount
+config.u.sigint.maxRange = config.c.sigint.maxRange
 
 -- Detection parameters (shared with China)
-config.u.SIGINT.detectionThreshold = config.c.SIGINT.detectionThreshold
-config.u.SIGINT.maxDetectionRange = config.c.SIGINT.maxDetectionRange
+config.u.sigint.detectionThreshold = config.c.sigint.detectionThreshold
+config.u.sigint.maxDetectionRange = config.c.sigint.maxDetectionRange
 
 -- Detection formula constants (shared with China)
-config.u.SIGINT.formulaConstants = config.c.SIGINT.formulaConstants
+config.u.sigint.formulaConstants = config.c.sigint.formulaConstants
 
 -- Default display configuration (shared with China)
-config.u.SIGINT.defaultDisplay = config.c.SIGINT.defaultDisplay
+config.u.sigint.defaultDisplay = config.c.sigint.defaultDisplay
 
 -- Area and performance parameters (shared with China)
-config.u.SIGINT.minPolygonPoints = config.c.SIGINT.minPolygonPoints
-config.u.SIGINT.detectionSkipProbability = config.c.SIGINT.detectionSkipProbability
+config.u.sigint.minPolygonPoints = config.c.sigint.minPolygonPoints
+config.u.sigint.detectionSkipProbability = config.c.sigint.detectionSkipProbability
 
 
 -- ============================================================================

@@ -1,4 +1,4 @@
-local GPSJamming = require("src.modules.EW.GPSJamming")
+local GnssJamming = require("src.modules.ew.gnssJamming")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local gKH = require("src.core.gKH_State_Standalone")
@@ -10,5 +10,5 @@ if not saveData then
   return
 end
 
-GPSJamming.removeJammers(config.c.GPSJamming.jammers, "China")
-GPSJamming.addGPSJammers(config.c.GPSJamming.jammers, "China")
+GnssJamming.removeJammers(config.c.gnssJamming.jammers, "China")
+GnssJamming.addGnssJammers(config.c.gnssJamming.jammers, "China")

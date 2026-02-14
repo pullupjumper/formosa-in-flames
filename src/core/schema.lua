@@ -151,17 +151,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field cooldownTime { min: number, max: number } Cooldown time range
 ---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
 
----GPS jammer weapon configuration
----@class SBJ__GPSJammedWeapon: table
+---GNSS jammer weapon configuration
+---@class SBJ__GNSSJammedWeapon: table
 ---@field dbid number Weapon database ID
 ---@field jammingResistance number Jamming resistance value
 
----GPS jamming configuration
----@class SBJ__GPSJammingConfig: table
+---GNSS jamming configuration
+---@class SBJ__GNSSJammingConfig: table
 ---@field randomRadius number Random deployment radius (nautical miles)
 ---@field radius number Jamming effectiveness radius (nautical miles)
----@field GPSGuidedWeapons SBJ__GPSJammedWeapon[] GPS-guided weapons to jam
----@field jammers table<string, SBJ__GPSJammerDescriptor> GPS jammer descriptors indexed by jammer name
+---@field gnssGuidedWeapons SBJ__GNSSJammedWeapon[] GNSS-guided weapons to jam
+---@field jammers table<string, SBJ__GNSSJammerDescriptor> GNSS jammer descriptors indexed by jammer name
 
 ---Weapon system configuration
 ---@class SBJ__MissileSystemConfig: table
@@ -179,7 +179,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field glcm SBJ__MissileSystemConfig GLCM configuration
 ---@field srbm SBJ__MissileSystemConfig SRBM configuration
 ---@field mrbm? SBJ__MissileSystemConfig MRBM configuration (China only)
----@field ascm? SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
+---@field ascm SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
+---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
 ---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
 
 ---Reconnaissance configuration
@@ -219,16 +220,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---IADS configuration for faction
 ---@class SBJ__IADSFactionConfig: table
 ---@field ratio table<string, number> C2 facility ratio multipliers
----@field TAAOC? SBJ__C2Descriptor[] TAAOC descriptors
----@field ROCC? SBJ__C2Descriptor[] ROCC descriptors
+---@field taaoc? SBJ__C2Descriptor[] TAAOC descriptors
+---@field rocc? SBJ__C2Descriptor[] ROCC descriptors
 
 ---China faction configuration
 ---@class SBJ__ChinaConfig: table
 ---@field triggers SBJ__TriggerConfig Trigger timing configuration
----@field SIGINT SBJ__SIGINTConfig SIGINT configuration
----@field IADS SBJ__IADSConfig IADS configuration
+---@field sigint SBJ__SIGINTConfig SIGINT configuration
+---@field iads SBJ__IADSConfig IADS configuration
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
----@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
 ---@field recon SBJ__ReconConfig Reconnaissance configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
@@ -240,15 +241,15 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Taiwan faction configuration
 ---@class SBJ__TaiwanConfig: table
----@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
----@field IADS SBJ__IADSFactionConfig IADS configuration
+---@field iads SBJ__IADSFactionConfig IADS configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 
 ---US faction configuration
 ---@class SBJ__USConfig: table
----@field SIGINT SBJ__SIGINTConfig SIGINT configuration
+---@field sigint SBJ__SIGINTConfig SIGINT configuration
 
 ---Scoring system configuration
 ---@class SBJ__ScoringConfig: table
@@ -286,10 +287,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field s SBJ__ScoringConfig Scoring system configuration
 ---@field [SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
 
----GPS jamming context managing GPS denial operations state
----@class SBJ__GPSJammingContext: table
----@field enabled boolean Whether GPS jamming system is activated
----@field jammers table<string, SBJ__GPSJammerContext> GPS jammer contexts indexed by jammer name
+---GNSS jamming context managing GNSS denial operations state
+---@class SBJ__GNSSJammingContext: table
+---@field enabled boolean Whether GNSS jamming system is activated
+---@field jammers table<string, SBJ__GNSSJammerContext> GNSS jammer contexts indexed by jammer name
 
 ---Submarine-launched cruise missile context managing SLCM operations state
 ---@class SBJ__SLCMContext: table
@@ -307,10 +308,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---China faction saved data structure
 ---@class SBJ__ChinaSaveData: table
 ---@field targetlist SBJ__TargetEntry[] Target list for strike planning
----@field SIGINT SBJ__SIGINTContext Signals intelligence context
----@field IADS SBJ__IADSContext Integrated Air Defense System context
+---@field sigint SBJ__SIGINTContext Signals intelligence context
+---@field iads SBJ__IADSContext Integrated Air Defense System context
 ---@field commsJamming SBJ__CommsJammingContext Communications jamming context
----@field GPSJamming SBJ__GPSJammingContext GPS jamming context
+---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 ---@field ground SBJ__GroundForceContext Ground force systems context
 ---@field recon SBJ__ReconContext Reconnaissance operations context
 ---@field air SBJ__AirOperationsContext Air operations context
@@ -324,13 +325,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__TaiwanSaveData: table
 ---@field ground SBJ__GroundForceContext Ground force systems context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
----@field IADS SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
+---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
----@field GPSJamming SBJ__GPSJammingContext GPS jamming context
+---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 
 ---US faction saved data structure
 ---@class SBJ__USSaveData: table
----@field SIGINT SBJ__SIGINTContext Signals intelligence context
+---@field sigint SBJ__SIGINTContext Signals intelligence context
 
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData: table
@@ -842,9 +843,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
----@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system
+---@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system (Optional)
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
+---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system (Optional)
 ---@field FSP? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
 ---@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
 
@@ -1134,19 +1136,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- ============================================================================
 -- Electronic Warfare
 -- ============================================================================
--- Electronic warfare types for EW modules (SIGINT, GPS Jamming, Comms Jamming)
+-- Electronic warfare types for EW modules (SIGINT, GNSS Jamming, Comms Jamming)
 
----GPS jammer deployment descriptor
+---GNSS jammer deployment descriptor
 ---Serves as a blueprint for creating jammer units, related events, and jamming zones
----@class SBJ__GPSJammerDescriptor: table
+---@class SBJ__GNSSJammerDescriptor: table
 ---@field name string Jammer unit identifier
 ---@field zoneName string Associated jamming zone name for area creation
 ---@field point? CMO__Location Deployment coordinates
 ---@field randomRadius number Position randomization radius (nautical miles)
----@field radius number GPS jamming effectiveness radius (nautical miles)
+---@field radius number GNSS jamming effectiveness radius (nautical miles)
 
----GPS jammer context extending descriptor with runtime state
----@class SBJ__GPSJammerContext: SBJ__GPSJammerDescriptor
+---GNSS jammer context extending descriptor with runtime state
+---@class SBJ__GNSSJammerContext: SBJ__GNSSJammerDescriptor
 
 ---Enhanced SIGINT detection result with confidence and metadata
 ---@class SBJ__SIGINTResult: table
@@ -1186,7 +1188,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---SIGINT context managing all transmission tracking
 ---@class SBJ__SIGINTContext: table
 ---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
----@field RA table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
+---@field reconAircraft table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
 ---@field enabled boolean Whether SIGINT is activated
 ---@field maxCount number Maximum detection level
 
@@ -1217,7 +1219,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field msg string Status message
 ---@field guid string C2 node GUID
 ---@field areas table<number, string[]> Associated operational areas
----@field SAM table<string, SBJ__RadarContext> Surface-to-Air Missile systems
+---@field sam table<string, SBJ__RadarContext> Surface-to-Air Missile systems
 ---@field radar? table<string, SBJ__RadarContext> Radar systems (optional)
 ---@field [string] table<string, SBJ__RadarContext>
 
@@ -1232,16 +1234,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Defines C2 facility parameters and deployment settings for IADS
 ---@class SBJ__IADSConfig: table
 ---@field ratio {C2:number} C2 facility ratio multiplier
----@field C2FacilityDBIDs number[] Database IDs for C2 facility types
+---@field c2FacilityDBIDs number[] Database IDs for C2 facility types
 ---@field randomRadius number Random deployment radius (nautical miles)
----@field C2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
+---@field c2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
 ---IADS context managing air defense system state
 ---Tracks all Command and Control nodes and system activation status
 ---@class SBJ__IADSContext: table
----@field C2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
----@field ROCC? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
----@field TAAOC? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
+---@field c2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
+---@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
+---@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
 ---@field enabled boolean Whether IADS is activated
 ---@field [string] table<string, SBJ__C2Context>
 
@@ -1364,7 +1366,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Setup menu configuration result containing user selections
 ---@class SBJ__SetupResult: table
----@field jammers SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
+---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
 ---@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
 
