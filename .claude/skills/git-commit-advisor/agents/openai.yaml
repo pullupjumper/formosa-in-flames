@@ -1,0 +1,3 @@
+display_name: Git Commit Advisor
+short_description: 依程式碼變更提供 commit 與 branch 命名建議
+default_prompt: Analyze my git diff and suggest Conventional Commit messages plus branch name options.

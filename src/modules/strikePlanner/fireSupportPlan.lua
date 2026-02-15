@@ -1,4 +1,4 @@
-local AttackManager = require("src.modules.strikePlanner.attackManager")
+local AttackManager = require("src.modules.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")

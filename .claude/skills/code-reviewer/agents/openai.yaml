@@ -1,0 +1,3 @@
+display_name: Code Reviewer
+short_description: 進行嚴謹且重視安全性的程式碼審查
+default_prompt: Review my current changes and produce a severity-tagged report with file:line findings and concrete fixes.

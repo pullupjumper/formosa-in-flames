@@ -931,7 +931,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field areas? string[][] Operation areas
 ---@field filterNames? string[] Filter function names (for dynamic targets, optional)
 ---@field contactAge number Contact valid time (seconds)
----@field minTargetCount? number Minimum target count threshold
+---@field minTargetCount number Minimum target count threshold
 ---@field ammoPerTarget? number Ammunition count per target
 
 ---Target definition extending template with contact list
