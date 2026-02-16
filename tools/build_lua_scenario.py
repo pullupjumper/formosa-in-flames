@@ -1244,7 +1244,13 @@ def merge_lua_files(
             content = read_file_content(file_path)
             if content:
                 merged_content.append(get_file_section_comment(file_path, slim_dir))
+                # Wrap each module in do...end to scope local variables,
+                # avoiding the Lua 200 local variable limit per chunk.
+                # Global module tables (e.g., GameApi = {}) remain accessible
+                # across modules since they are assigned to global scope.
+                merged_content.append("do")
                 merged_content.append(content)
+                merged_content.append("end")
                 merged_content.append("")  # Add blank line
                 processed_files.append(file_rel_path)
                 print(f"  ✓ {file_rel_path}")

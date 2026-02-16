@@ -542,4 +542,127 @@ function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
   return selectedTargetlist
 end
 
+-- ============================================================================
+-- Dynamic Target Processing
+-- ============================================================================
+
+local TRACKING_FILTERS = {
+  findNavalTargets = true,
+  findRadioDirection = true
+}
+
+---Build filter options for dynamic target filtering
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
+---@return SBJ__FilterParams # Filter options for TargetingProcess functions
+local function buildFilterOptions(config, saveData, contacts, targetConfig)
+  local shouldTrack = false
+  local filterNames = targetConfig.filterNames or {}
+  for _, filterName in ipairs(filterNames) do
+    if TRACKING_FILTERS[filterName] then
+      shouldTrack = true
+      break
+    end
+  end
+
+  ---@type SBJ__FilterParams
+  local opts = {
+    contacts = contacts,
+    task = {
+      target = {
+        list = {},
+        areas = targetConfig.areas,
+        contactAge = targetConfig.contactAge,
+        minTargetCount = targetConfig.minTargetCount or 1
+      }
+    },
+    config = config,
+    saveData = saveData,
+    shouldTrack = shouldTrack
+  }
+
+  return opts
+end
+
+---Process dynamic targets using filter functions
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames
+---@return string[] # Array of target GUIDs matching the filter criteria
+function TargetingProcess.processDynamicTargets(config, saveData, contacts, targetConfig)
+  local filterNames = targetConfig.filterNames
+  if not filterNames or #filterNames == 0 then
+    return {}
+  end
+
+  local strikeTargets = {}
+  local filterOpts = buildFilterOptions(config, saveData, contacts, targetConfig)
+
+  for _, filterName in ipairs(filterNames) do
+    ---@type fun(opts: SBJ__FilterParams): string[]|nil
+    local targetingFunction = TargetingProcess[filterName]
+    if targetingFunction then
+      local targets = targetingFunction(filterOpts)
+      if targets and #targets > 0 then
+        Utils.insertList(strikeTargets, targets)
+      end
+    else
+      Logger.warn(string.format("Unknown target filtering function: %s", filterName))
+    end
+  end
+
+  return strikeTargets
+end
+
+---Process fixed targets using BDA assessment
+---@param saveData SBJ__SaveData Persistent save data containing target list
+---@param targetConfig SBJ__TargetTemplate Target configuration with objs, contactAge, minTargetCount
+---@param isFirstWave boolean Whether this is the first wave
+---@return string[] # Array of target GUIDs that passed BDA assessment
+function TargetingProcess.processFixedTargets(saveData, targetConfig, isFirstWave)
+  if not targetConfig.objs then
+    return {}
+  end
+
+  local filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
+    saveData.c.targetlist,
+    targetConfig.objs
+  )
+  if not filteredTargets or #filteredTargets == 0 then
+    return {}
+  end
+
+  ---@type SBJ__Task
+  local task = {
+    target = {
+      list = filteredTargets,
+      contactAge = targetConfig.contactAge,
+      minTargetCount = targetConfig.minTargetCount
+    }
+  }
+  return TargetingProcess.assessTargetsDamage(task, isFirstWave) or {}
+end
+
+---Process targets by routing to dynamic or fixed target processing
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
+---@param isFirstWave boolean Whether this is the first wave
+---@return string[] # Array of target GUIDs
+function TargetingProcess.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
+  if not targetConfig then
+    return {}
+  end
+
+  if type(targetConfig.filterNames) == "table" and #targetConfig.filterNames > 0 then
+    return TargetingProcess.processDynamicTargets(config, saveData, contacts, targetConfig)
+  end
+
+  return TargetingProcess.processFixedTargets(saveData, targetConfig, isFirstWave)
+end
+
 return TargetingProcess

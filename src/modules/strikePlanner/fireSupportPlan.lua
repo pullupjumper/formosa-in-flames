@@ -6,7 +6,7 @@ local MissileSystem = require("src.modules.missileSystem")
 local constants = require("src.core.constants")
 
 local FireSupportPlan = {}
-local LOG_TAG = "ground"
+local GROUND_LOG_TAG = "ground"
 
 -- ============================================================================
 -- Firing Unit Readiness
@@ -202,15 +202,15 @@ function FireSupportPlan.strike(saveData)
 
       -- Centralized logging
       if #strikeResults > 0 then
-        Logger.log(LOG_TAG, string.format("Matrix %s strikes executed: %s",
+        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s strikes executed: %s",
           matrix.name, formatStrikeResults(strikeResults)))
       elseif #pendingTasks > 0 then
-        Logger.log(LOG_TAG, string.format("Matrix %s batteries not at firing position: %s",
+        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s batteries not at firing position: %s",
           matrix.name, formatPendingTasks(pendingTasks)))
       end
 
       if matrix.isFinished then
-        Logger.log(LOG_TAG, string.format("Matrix %s all tasks completed", matrix.name))
+        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s all tasks completed", matrix.name))
       end
     end
   end

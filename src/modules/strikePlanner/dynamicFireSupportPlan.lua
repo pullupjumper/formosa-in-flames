@@ -8,10 +8,6 @@ local constants = require("src.core.constants")
 
 local DynamicFireSupportPlan = {}
 local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
-local TRACKING_FILTERS = {
-  findNavalTargets = true,
-  findRadioDirection = true
-}
 local FIRING_UNIT_STATUS = {
   AVAILABLE = "available",
   MISSING_NAME = "missing_name",
@@ -23,119 +19,8 @@ local FIRING_UNIT_STATUS = {
 }
 
 -- ============================================================================
--- Target Processing
+-- Firing Unit Status
 -- ============================================================================
-
----Build filter options for dynamic target filtering
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data containing target list
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param taskTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
----@return SBJ__FilterParams # Filter options for TargetingProcess functions
-local function buildFilterOptions(config, saveData, contacts, taskTemplate)
-  local shouldTrack = false
-  local filterNames = taskTemplate.target.filterNames or {}
-  for _, filterName in ipairs(filterNames) do
-    if TRACKING_FILTERS[filterName] then
-      shouldTrack = true
-      break
-    end
-  end
-
-  ---@type SBJ__FilterParams
-  local opts = {
-    contacts = contacts,
-    task = {
-      target = {
-        list = {},
-        areas = taskTemplate.target.areas,
-        contactAge = taskTemplate.target.contactAge,
-        minTargetCount = taskTemplate.target.minTargetCount or 1
-      }
-    },
-    config = config,
-    saveData = saveData,
-    shouldTrack = shouldTrack
-  }
-
-  return opts
-end
-
----Process dynamic target filtering for a fire support task
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data containing target list
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param taskTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
----@return string[] # Target GUID list after dynamic filtering
-local function processDynamicTargets(config, saveData, contacts, taskTemplate)
-  local filterNames = taskTemplate.target.filterNames
-  if not filterNames or #filterNames == 0 then
-    return {}
-  end
-
-  local strikeTargets = {}
-  local filterOpts = buildFilterOptions(config, saveData, contacts, taskTemplate)
-
-  for _, filterName in ipairs(filterNames) do
-    ---@type fun(opts: SBJ__FilterParams): string[]|nil
-    local targetingFunction = TargetingProcess[filterName]
-    if targetingFunction then
-      local targets = targetingFunction(filterOpts)
-      if targets and #targets > 0 then
-        Utils.insertList(strikeTargets, targets)
-      end
-    else
-      Logger.warn(string.format("Unknown target filtering function: %s", filterName))
-    end
-  end
-
-  return strikeTargets
-end
-
----Process fixed target list and perform BDA assessment
----@param saveData SBJ__SaveData Persistent save data containing target list
----@param taskTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
----@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
----@return string[] # Target GUID list after fixed filtering and BDA assessment
-local function processFixedTargets(saveData, taskTemplate, isFirstWave)
-  if not taskTemplate.target.objs then
-    return {}
-  end
-
-  local filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
-    saveData.c.targetlist,
-    taskTemplate.target.objs
-  )
-  if not filteredTargets or #filteredTargets == 0 then
-    return {}
-  end
-
-  ---@type SBJ__Task
-  local task = {
-    target = {
-      list = filteredTargets,
-      contactAge = taskTemplate.target.contactAge,
-      minTargetCount = taskTemplate.target.minTargetCount
-    }
-  }
-  return TargetingProcess.assessTargetsDamage(task, isFirstWave) or {}
-end
-
----Process individual FST template, perform target filtering and BDA assessment
----Routes to dynamic or fixed target processing, applies filters and damage assessment
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data containing target list
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param taskTemplate SBJ__FireSupportTaskTemplate Fire Support Task template with target criteria
----@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
----@return string[] # Array of target GUIDs that passed filtering and assessment
-local function processFireSupportTask(config, saveData, contacts, taskTemplate, isFirstWave)
-  if taskTemplate.target.filterNames then
-    return processDynamicTargets(config, saveData, contacts, taskTemplate)
-  end
-
-  return processFixedTargets(saveData, taskTemplate, isFirstWave)
-end
 
 ---Create a new status counter table initialized with zero counts for each firing unit status
 ---@return table<string, number> # Status counter table for firing unit filtering
@@ -399,7 +284,8 @@ local function evaluateTargetsFromTemplate(config, saveData, contacts, matrixTem
   local validTaskCount = 0
 
   for _, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
-    local taskTargets = processFireSupportTask(config, saveData, contacts, taskTemplate, matrixTemplate.isFirstWave)
+    local taskTargets = TargetingProcess.processTargets(config, saveData, contacts, taskTemplate.target,
+      matrixTemplate.isFirstWave)
     local targetCount = taskTargets and #taskTargets or 0
     -- minTargetCount is required by schema/config, so no runtime fallback is intentionally applied.
     local requiredCount = taskTemplate.target.minTargetCount
@@ -538,7 +424,7 @@ end
 ---@return boolean success true if FSEM was successfully created from reconnaissance results
 ---@return string|nil reason Failure reason when success is false
 ---@return string|nil statusSummary Firing unit status summary if available
-local function processReconSchedule(config, saveData, contacts, reconEntry, operation)
+local function processGroundOperation(config, saveData, contacts, reconEntry, operation)
   if not operation.template or not operation.template.fireSupportTasks then
     return false, "MISSING_TEMPLATE", nil
   end
@@ -587,7 +473,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
       Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
         "Starting ground reconnaissance schedule processing: %s (type: %s)", reconEntry.time, reconEntry.type))
 
-      local success, reason, statusSummary = processReconSchedule(config, saveData, contacts, reconEntry, operation)
+      local success, reason, statusSummary = processGroundOperation(config, saveData, contacts, reconEntry, operation)
       -- Ground dynamic FSP is considered "executed" once recon result is consumed, regardless of insertion success.
       DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
 
