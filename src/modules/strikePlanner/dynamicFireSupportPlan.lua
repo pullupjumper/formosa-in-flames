@@ -84,6 +84,8 @@ local function processDynamicTargets(config, saveData, contacts, taskTemplate)
       if targets and #targets > 0 then
         Utils.insertList(strikeTargets, targets)
       end
+    else
+      Logger.warn(string.format("Unknown target filtering function: %s", filterName))
     end
   end
 
@@ -135,6 +137,7 @@ local function processFireSupportTask(config, saveData, contacts, taskTemplate, 
   return processFixedTargets(saveData, taskTemplate, isFirstWave)
 end
 
+---Create a new status counter table initialized with zero counts for each firing unit status
 ---@return table<string, number> # Status counter table for firing unit filtering
 local function createStatusCounter()
   return {
@@ -148,6 +151,7 @@ local function createStatusCounter()
   }
 end
 
+---Increment the count for a specific firing unit status
 ---@param statusCounter table<string, number> Status counter table
 ---@param status string Firing unit status
 local function countStatus(statusCounter, status)
@@ -156,6 +160,7 @@ local function countStatus(statusCounter, status)
   end
 end
 
+---Format status counter into a human-readable summary string
 ---@param statusCounter table<string, number> Status counter table
 ---@return string # Printable status summary string
 local function formatStatusCounter(statusCounter)
@@ -382,6 +387,7 @@ local function insertMatrix(saveData, newMatrix)
   return true
 end
 
+---Evaluate targets for all FSTs in a matrix template and count valid tasks
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -407,6 +413,7 @@ local function evaluateTargetsFromTemplate(config, saveData, contacts, matrixTem
   return evaluatedTargets, validTaskCount
 end
 
+---Build executable FSTs from evaluated targets with firing unit validation
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param evaluatedTargets table<string, string[]> Map of FST name to evaluated target GUID arrays
@@ -577,8 +584,8 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
     local operation = item.operation
 
     if isReconTriggered(currentTime, reconEntry) then
-      Logger.log(DYNAMIC_OPS_LOG_TAG, "Starting ground reconnaissance schedule processing: " ..
-        reconEntry.time .. " (type: " .. reconEntry.type .. ")")
+      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+        "Starting ground reconnaissance schedule processing: %s (type: %s)", reconEntry.time, reconEntry.type))
 
       local success, reason, statusSummary = processReconSchedule(config, saveData, contacts, reconEntry, operation)
       -- Ground dynamic FSP is considered "executed" once recon result is consumed, regardless of insertion success.
@@ -586,18 +593,20 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
 
       if success then
         hasExecutedAny = true
-        Logger.log(DYNAMIC_OPS_LOG_TAG, "Successfully executed dynamic FSP, reconnaissance time: " .. reconEntry.time ..
-          ", firing unit summary: " .. (statusSummary or "none"))
+        Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+          "Successfully executed dynamic FSP, reconnaissance time: %s, firing unit summary: %s",
+          reconEntry.time, statusSummary or "none"))
       else
         if reason == "INSUFFICIENT_TARGETS" then
-          Logger.log(DYNAMIC_OPS_LOG_TAG,
-            "Skipped dynamic FSP due to insufficient targets, reconnaissance time: " .. reconEntry.time)
+          Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+            "Skipped dynamic FSP due to insufficient targets, reconnaissance time: %s", reconEntry.time))
         elseif reason == "MISSING_TEMPLATE" then
-          Logger.error("Ground operation missing FSEM template, reconnaissance time: " .. reconEntry.time)
+          Logger.error(string.format(
+            "Ground operation missing FSEM template, reconnaissance time: %s", reconEntry.time))
         else
-          Logger.error("Failed to execute dynamic FSP, reason: " .. (reason or "UNKNOWN") ..
-            ", reconnaissance time: " .. reconEntry.time ..
-            ", firing unit summary: " .. (statusSummary or "none"))
+          Logger.error(string.format(
+            "Failed to execute dynamic FSP, reason: %s, reconnaissance time: %s, firing unit summary: %s",
+            reason or "UNKNOWN", reconEntry.time, statusSummary or "none"))
         end
       end
     end
