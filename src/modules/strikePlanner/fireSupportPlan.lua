@@ -187,6 +187,8 @@ end
 ---Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function FireSupportPlan.strike(saveData)
+  local infoLines = {}
+
   for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
       local allInPosition, pendingTasks = processActiveMatrix(saveData, matrix)
@@ -200,19 +202,23 @@ function FireSupportPlan.strike(saveData)
         matrix.isFinished = true
       end
 
-      -- Centralized logging
       if #strikeResults > 0 then
-        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s strikes executed: %s",
+        table.insert(infoLines, string.format("  [STRIKE] %s | %s",
           matrix.name, formatStrikeResults(strikeResults)))
       elseif #pendingTasks > 0 then
-        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s batteries not at firing position: %s",
+        table.insert(infoLines, string.format("  [PENDING] %s | not at firing position: %s",
           matrix.name, formatPendingTasks(pendingTasks)))
       end
 
       if matrix.isFinished then
-        Logger.log(GROUND_LOG_TAG, string.format("Matrix %s all tasks completed", matrix.name))
+        table.insert(infoLines, string.format("  [DONE] %s | all tasks completed", matrix.name))
       end
     end
+  end
+
+  if #infoLines > 0 then
+    Logger.log(GROUND_LOG_TAG, string.format(
+      "Fire support plan: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
   end
 end
 

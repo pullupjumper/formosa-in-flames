@@ -338,7 +338,7 @@ end
 ---@param packageData SBJ__Package The strike package data to process
 ---@return boolean launched Whether package was successfully launched
 ---@return string|nil status Log message (nil = nothing to log)
----@return boolean|nil isError Whether the status represents an error condition
+---@return string|nil tag Status tag for log formatting (e.g. "LAUNCH", "LOADOUT", "ERROR")
 local function processPackage(config, saveData, packageData)
   ensureLoadoutStartTime(packageData)
 
@@ -349,7 +349,7 @@ local function processPackage(config, saveData, packageData)
   if not packageData.loadoutStatus.isLoadoutInitiated then
     initiateLoadoutForPackage(packageData)
     local readyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", packageData.loadoutStatus.expectedReadyTime)
-    return false, "loadout initiated, ready at " .. readyTimeStr
+    return false, "loadout initiated, ready at " .. readyTimeStr, "LOADOUT"
   end
 
   if not isLoadoutReady(packageData) then
@@ -362,7 +362,7 @@ local function processPackage(config, saveData, packageData)
   end
 
   if not createAllMissions(packageData) then
-    return false, "striker mission creation failed", true
+    return false, "striker mission creation failed", "ERROR"
   end
 
   scheduleReconUAV(config, saveData, packageData)
@@ -371,13 +371,14 @@ local function processPackage(config, saveData, packageData)
     local targetList = packageData.target.list
     if #targetList < packageData.target.minTargetCount then
       return false,
-          string.format("insufficient targets (%d/%d required)", #targetList, packageData.target.minTargetCount)
+          string.format("insufficient targets (%d/%d required)", #targetList, packageData.target.minTargetCount),
+          "PENDING"
     end
     return false, nil
   end
 
   if not assignUnits(packageData) then
-    return false, "failed to assign striker units", true
+    return false, "failed to assign striker units", "ERROR"
   end
 
   -- Build launch summary
@@ -385,7 +386,7 @@ local function processPackage(config, saveData, packageData)
   if packageData.reconUAV then
     table.insert(details, "recon UAV at " .. packageData.reconUAV.takeoffTime)
   end
-  return true, "LAUNCHED (" .. table.concat(details, ", ") .. ")"
+  return true, "launched (" .. table.concat(details, ", ") .. ")", "LAUNCH"
 end
 
 -- ============================================================================
@@ -409,21 +410,21 @@ end
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data
 ---@param waveData SBJ__Wave The wave containing strike packages
----@return {msg: string, isError: boolean|nil}[] # Log entries from processed packages
+---@return {msg: string, tag: string}[] # Log entries from processed packages
 local function processWave(config, saveData, waveData)
   local logEntries = {}
 
   for _, packageData in ipairs(waveData.packages) do
     if not packageData.hasLaunched then
-      local launched, status, isError = processPackage(config, saveData, packageData)
+      local launched, status, tag = processPackage(config, saveData, packageData)
 
       if launched then
         packageData.hasLaunched = true
       end
 
       if status then
-        local msg = string.format("Package %s: %s", packageData.striker.missionCreationParams.name, status)
-        table.insert(logEntries, { msg = msg, isError = isError })
+        local msg = string.format("%s | %s", packageData.striker.missionCreationParams.name, status)
+        table.insert(logEntries, { msg = msg, tag = tag })
       end
 
       if launched then
@@ -444,16 +445,19 @@ end
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
 function AirTaskingOrder.airStrike(config, saveData)
+  local infoLines = {}
+  local errorLines = {}
+
   for _, waveData in pairs(saveData.c.air.airTaskingOrder) do
     if waveData.isActivated and not waveData.hasLaunched then
       local logEntries = processWave(config, saveData, waveData)
 
-      -- Centralized logging
       for _, entry in ipairs(logEntries) do
-        if entry.isError then
-          Logger.error(entry.msg)
+        local line = string.format("  [%s] %s", entry.tag, entry.msg)
+        if entry.tag == "ERROR" then
+          table.insert(errorLines, line)
         else
-          Logger.log(AIR_LOG_TAG, entry.msg)
+          table.insert(infoLines, line)
         end
       end
 
@@ -461,6 +465,16 @@ function AirTaskingOrder.airStrike(config, saveData)
         waveData.hasLaunched = true
       end
     end
+  end
+
+  if #infoLines > 0 then
+    Logger.log(AIR_LOG_TAG, string.format(
+      "Air tasking order: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+  end
+
+  if #errorLines > 0 then
+    Logger.error(string.format(
+      "Air tasking order errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
   end
 end
 

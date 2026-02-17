@@ -576,34 +576,63 @@ function DynamicATOInsertion.process(config, saveData, contacts)
   end
 
   local hasExecutedAny = false
+  local processedResults = {}
 
   for _, item in ipairs(airOperations) do
     local reconEntry = item.reconEntry
     local operation = item.operation
 
     if isReconTriggered(reconEntry) then
+      local operationName = (operation.template and operation.template.name) or "unknown"
       local success, reason, statusSummary = processAirOperation(config, saveData, contacts, reconEntry, operation)
 
-      if reason == "MISSING_TEMPLATE" then
-        Logger.error(string.format("Air operation missing template, reconnaissance time: %s", reconEntry.time))
-      else
+      if reason ~= "MISSING_TEMPLATE" then
         DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
-
-        if success then
-          hasExecutedAny = true
-          Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
-            "Successfully inserted dynamic ATO wave: %s, reconnaissance time: %s, %s",
-            operation.template.name, reconEntry.time, statusSummary or "none"))
-        elseif reason == "NO_VALID_PACKAGES" then
-          Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
-            "Skipped dynamic ATO due to no valid packages, reconnaissance time: %s, %s",
-            reconEntry.time, statusSummary or "none"))
-        elseif reason == "INSERTION_FAILED" then
-          Logger.error(string.format(
-            "Failed to insert dynamic ATO wave: %s, reason: %s, reconnaissance time: %s, %s",
-            operation.template.name, reason, reconEntry.time, statusSummary or "none"))
-        end
       end
+
+      if success then
+        hasExecutedAny = true
+      end
+
+      table.insert(processedResults, {
+        operationName = operationName,
+        reconTime = reconEntry.time,
+        reconType = reconEntry.type,
+        success = success,
+        reason = reason,
+        statusSummary = statusSummary
+      })
+    end
+  end
+
+  if #processedResults > 0 then
+    local infoLines = {}
+    local errorLines = {}
+
+    for _, r in ipairs(processedResults) do
+      if r.success then
+        table.insert(infoLines, string.format("  [OK] %s (%s, %s) | %s",
+          r.operationName, r.reconTime, r.reconType, r.statusSummary or "none"))
+      elseif r.reason == "NO_VALID_PACKAGES" then
+        table.insert(infoLines, string.format("  [SKIP] %s (%s, %s) | no valid packages, %s",
+          r.operationName, r.reconTime, r.reconType, r.statusSummary or "none"))
+      elseif r.reason == "MISSING_TEMPLATE" then
+        table.insert(errorLines, string.format("  [ERROR] %s (%s, %s) | missing wave template",
+          r.operationName, r.reconTime, r.reconType))
+      else
+        table.insert(errorLines, string.format("  [FAIL] %s (%s, %s) | %s | %s",
+          r.operationName, r.reconTime, r.reconType, r.reason or "UNKNOWN", r.statusSummary or "none"))
+      end
+    end
+
+    if #infoLines > 0 then
+      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+        "Air operations processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+    end
+
+    if #errorLines > 0 then
+      Logger.error(string.format(
+        "Air operations errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
     end
   end
 
