@@ -152,34 +152,39 @@ local function handleReconTracking(entry, actualUnit)
   return true
 end
 
+local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
+
 ---Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
 ---Each UAV platform triggers different specialized operations based on successful reconnaissance
 ---@param config SBJ__Config Configuration data
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
----@return SBJ__Operation[] # Array of special operations to add
+---@return SBJ__Operation[] operations Array of special operations to add
+---@return string[] logEntries Array of log entry strings for batched output
 local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
   local operations = {}
+  local logEntries = {}
   local strikeMatrix = config.c.recon.reconStrikeMatrix[entry.type]
 
   if not strikeMatrix then
-    Logger.error(string.format("No strike mappings found for platform type: %s", tostring(entry.type)))
-    return operations
+    table.insert(logEntries, string.format("  [ERROR] No strike mappings found for platform type: %s",
+      tostring(entry.type)))
+    return operations, logEntries
   end
 
   for platformName, strikeMappings in pairs(strikeMatrix) do
     local dbid = constants.PLATFORMS[platformName]
 
     if not dbid then
-      Logger.log("recon", string.format("Platform not found in constants: %s", platformName))
+      table.insert(logEntries, string.format("  [WARN] Platform not found in constants: %s", platformName))
     end
 
     if entry.unitDBID == dbid then
       for _, strikeMapping in ipairs(strikeMappings) do
         if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
           if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.enabled then
-            Logger.log("recon", "LACM not activated, skipping STRIKE/AB/E/1 operation")
+            table.insert(logEntries, string.format("  [SKIP] %s | LACM not activated", strikeMapping.name))
             goto continue
           end
 
@@ -202,20 +207,23 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
           end
 
           table.insert(operations, newOperation)
+          table.insert(logEntries, string.format("  [NEW] %s (%s)", strikeMapping.name, strikeMapping.type))
         end
 
         local baseName, currentNumber = strikeMapping.name:match("^(.+/)(%d+)$")
         local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, baseName, strikeMapping.type)
         if existing and operation then
-          local nextOperation = DynamicOperationsUtils.generateNextOperation(operation, config)
+          local nextOperation, status = DynamicOperationsUtils.generateNextOperation(operation, config)
           table.insert(operations, nextOperation)
+          table.insert(logEntries, string.format("  [NEXT] %s -> %s (%s)",
+            operation.template.name, nextOperation.template.name, status))
         end
         ::continue::
       end
     end
   end
 
-  return operations
+  return operations, logEntries
 end
 
 ---Schedule dynamic operations for next wave based on completed reconnaissance and platform-specific operations
@@ -225,27 +233,13 @@ end
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
-  local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
-
-  -- Check if there are operations to schedule and next recon time exists
-  -- if not result.nextReconTime or (#result.air == 0 and #result.ground == 0) then
-  --   return
-  -- end
-
-  -- local nextReconTime = Utils.parseDatetimeToTimestamp(result.nextReconTime)
-  -- local endTime = Utils.parseDatetimeToTimestamp(entry.endTime)
-
-  -- Only schedule if current recon completed before next scheduled recon
-  -- This ensures next wave operations are inserted in the correct time slot
-  -- if endTime >= nextReconTime then
-  --   return
-  -- end
+  local reconResult = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
 
   -- Generate next wave operations
   local operations = {}
 
   -- Add platform-specific operations
-  local specialOps = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+  local specialOps, logEntries = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
   for _, op in ipairs(specialOps) do
     table.insert(operations, op)
   end
@@ -259,9 +253,30 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
       executed = false,
       operations = operations
     })
-
-    Logger.log("recon", string.format("Scheduled %d dynamic operations for recon at %s", #operations, entry.endTime))
   end
+
+  -- Batched log output
+  local infoLines = {}
+
+  table.insert(infoLines, string.format("  recon context: most recent=%s, next=%s, air=%d, ground=%d",
+    reconResult.mostRecentTime or "none",
+    reconResult.nextReconTime or "none",
+    #reconResult.air,
+    #reconResult.ground))
+
+  for _, logEntry in ipairs(logEntries) do
+    table.insert(infoLines, logEntry)
+  end
+
+  if #operations > 0 then
+    table.insert(infoLines, string.format("  [RESULT] Scheduled %d operations for recon at %s",
+      #operations, entry.endTime))
+  else
+    table.insert(infoLines, "  [RESULT] No operations to schedule")
+  end
+
+  Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+    "Dynamic recon scheduling for %s (%s)\n%s", entry.type, entry.endTime, table.concat(infoLines, "\n")))
 end
 
 ---Finish reconnaissance mission and conditionally schedule next operations
