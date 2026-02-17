@@ -465,36 +465,61 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
     return false
   end
 
+  local processedResults = {}
+
   for _, item in ipairs(groundOperations) do
     local reconEntry = item.reconEntry
     local operation = item.operation
 
     if isReconTriggered(currentTime, reconEntry) then
-      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
-        "Starting ground reconnaissance schedule processing: %s (type: %s)", reconEntry.time, reconEntry.type))
-
+      local operationName = (operation.template and operation.template.name) or "unknown"
       local success, reason, statusSummary = processGroundOperation(config, saveData, contacts, reconEntry, operation)
       -- Ground dynamic FSP is considered "executed" once recon result is consumed, regardless of insertion success.
       DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
 
       if success then
         hasExecutedAny = true
-        Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
-          "Successfully executed dynamic FSP, reconnaissance time: %s, firing unit summary: %s",
-          reconEntry.time, statusSummary or "none"))
-      else
-        if reason == "INSUFFICIENT_TARGETS" then
-          Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
-            "Skipped dynamic FSP due to insufficient targets, reconnaissance time: %s", reconEntry.time))
-        elseif reason == "MISSING_TEMPLATE" then
-          Logger.error(string.format(
-            "Ground operation missing FSEM template, reconnaissance time: %s", reconEntry.time))
-        else
-          Logger.error(string.format(
-            "Failed to execute dynamic FSP, reason: %s, reconnaissance time: %s, firing unit summary: %s",
-            reason or "UNKNOWN", reconEntry.time, statusSummary or "none"))
-        end
       end
+
+      table.insert(processedResults, {
+        operationName = operationName,
+        reconTime = reconEntry.time,
+        reconType = reconEntry.type,
+        success = success,
+        reason = reason,
+        statusSummary = statusSummary
+      })
+    end
+  end
+
+  if #processedResults > 0 then
+    local infoLines = {}
+    local errorLines = {}
+
+    for _, r in ipairs(processedResults) do
+      if r.success then
+        table.insert(infoLines, string.format("  [OK] %s (%s, %s) | firing units: %s",
+          r.operationName, r.reconTime, r.reconType, r.statusSummary or "none"))
+      elseif r.reason == "INSUFFICIENT_TARGETS" then
+        table.insert(infoLines, string.format("  [SKIP] %s (%s, %s) | insufficient targets",
+          r.operationName, r.reconTime, r.reconType))
+      elseif r.reason == "MISSING_TEMPLATE" then
+        table.insert(errorLines, string.format("  [ERROR] %s (%s, %s) | missing FSEM template",
+          r.operationName, r.reconTime, r.reconType))
+      else
+        table.insert(errorLines, string.format("  [FAIL] %s (%s, %s) | %s | firing units: %s",
+          r.operationName, r.reconTime, r.reconType, r.reason or "UNKNOWN", r.statusSummary or "none"))
+      end
+    end
+
+    if #infoLines > 0 then
+      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+        "Ground operations processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+    end
+
+    if #errorLines > 0 then
+      Logger.error(string.format(
+        "Ground operations errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
     end
   end
 
