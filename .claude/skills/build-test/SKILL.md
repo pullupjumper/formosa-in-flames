@@ -11,12 +11,17 @@ disable-model-invocation: true
   檔案命名
   
   - 檔案名稱應與模組名稱一致，後面加spec，使用小寫字母和底線分隔，統一放在test資料夾下（如：test/modules/module_spec.lua）
-  - 若檔案已存在，那就檢視該測試檔有無符合標準規範
+  - 若檔案已存在，檢視並修正不符合以下規範的部分
 
   結構組織
 
-  - 最外層 describe 對應模組名稱，內層 describe 對應各 public function
-  - 區塊間使用 -- ==== 分隔線標註段落主題（如 Input validation、UAV Phase 1: Launch）
+  - 最外層 describe 對應模組名稱，內層 describe 對應各 public function 或邏輯階段
+  - 區塊間使用完整分隔線標註段落主題：
+    ```
+    -- ============================================================================
+    -- Section Name
+    -- ============================================================================
+    ```
   - 測試排列順序：正向 → 逆向 → 邊界
 
   Stub 管理
@@ -35,7 +40,7 @@ disable-model-invocation: true
 
   Stub invokes 撰寫
 
-  - ScenEdit_GetUnit 等多回傳值的 stub 使用 .invokes(function(guid) ... end) 依參數分派
+  - 同一個 stub 需依參數回傳不同值時，使用 .invokes(function(...) end) 依參數分派
   - 使用語義化參數區分呼叫（如座標 pos.latitude == 28.0），不依賴呼叫順序或計數器
   - 單一回傳值用 .returns(value)，條件回傳用 .invokes()
 
@@ -56,3 +61,11 @@ disable-model-invocation: true
   - 同一 describe 內多個測試共用的 stub 設定抽到該層 before_each
   - 只在同一區塊內重複 3 次以上才抽取；跨區塊的相同 stub 若語義清晰則保留重複以維持各測試的獨立可讀性
   - 不修改全域常數表（constants.*）來配合測試，改用 config 覆寫達成相同效果
+
+  Require 順序
+
+  - 依序排列：被測模組 → utils（Utils、GameApi、GameUtils、Logger）→ 外部依賴模組
+
+  測試隔離
+
+  - 每個 it 必須獨立，不依賴其他測試的執行順序或副作用

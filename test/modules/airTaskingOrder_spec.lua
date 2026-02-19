@@ -4,6 +4,7 @@ local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
+local Logger = require("src.utils.logger")
 local AssignMission = require("src.modules.assignMission")
 
 describe("AirTaskingOrder", function()
@@ -16,6 +17,8 @@ describe("AirTaskingOrder", function()
 
   before_each(function()
     activeStubs = {}
+    trackStub(stub(Logger, "log"))
+    trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -26,13 +29,13 @@ describe("AirTaskingOrder", function()
   end)
 
   -- ============================================================================
-  -- Shared builders
+  -- Shared mock data builders
   -- ============================================================================
 
-  ---Build a MissionDeploymentDescriptor with sensible defaults
+  ---Create a MissionDeploymentDescriptor with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function buildRole(overrides)
+  local function makeRole(overrides)
     overrides = overrides or {}
     return {
       baseGUID = overrides.baseGUID or "BASE-1",
@@ -52,10 +55,10 @@ describe("AirTaskingOrder", function()
     }
   end
 
-  ---Build a package; defaults to loadout-already-done state for lifecycle tests
+  ---Create a package; defaults to loadout-already-done state for lifecycle tests
   ---@param overrides? table
   ---@return table
-  local function buildPackage(overrides)
+  local function makePackage(overrides)
     overrides = overrides or {}
     return {
       hasLaunched = overrides.hasLaunched or false,
@@ -66,7 +69,7 @@ describe("AirTaskingOrder", function()
         expectedReadyTime = 1500,
         loadoutStartTime = 800
       },
-      striker = overrides.striker or buildRole({ missionName = "STRIKE-PKG-1" }),
+      striker = overrides.striker or makeRole({ missionName = "STRIKE-PKG-1" }),
       escort = overrides.escort,
       wildWeasel = overrides.wildWeasel,
       jammer = overrides.jammer,
@@ -79,12 +82,12 @@ describe("AirTaskingOrder", function()
     }
   end
 
-  ---Build full saveData with one ATO wave
+  ---Create full saveData with one ATO wave
   ---@param overrides? table
   ---@return table
-  local function buildSaveData(overrides)
+  local function makeSaveData(overrides)
     overrides = overrides or {}
-    local packages = overrides.packages or { buildPackage(overrides.packageOverrides) }
+    local packages = overrides.packages or { makePackage(overrides.packageOverrides) }
 
     local wave = {
       isActivated = overrides.isActivated == nil and true or overrides.isActivated,
@@ -119,16 +122,13 @@ describe("AirTaskingOrder", function()
   end
 
   -- ============================================================================
-  -- saveData guard (negative)
-  -- ============================================================================
-
-  -- ============================================================================
-  -- Wave filtering (negative)
+  -- Wave filtering
   -- ============================================================================
 
   describe("wave filtering", function()
+    -- Negative: wave not activated
     it("should skip non-activated waves", function()
-      local saveData = buildSaveData({ isActivated = false })
+      local saveData = makeSaveData({ isActivated = false })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
       AirTaskingOrder.airStrike({}, saveData)
@@ -136,8 +136,9 @@ describe("AirTaskingOrder", function()
       assert.stub(stubIsAfter).was_not.called()
     end)
 
+    -- Negative: wave already launched
     it("should skip already-launched waves", function()
-      local saveData = buildSaveData({ waveHasLaunched = true })
+      local saveData = makeSaveData({ waveHasLaunched = true })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
       AirTaskingOrder.airStrike({}, saveData)
@@ -145,9 +146,10 @@ describe("AirTaskingOrder", function()
       assert.stub(stubIsAfter).was_not.called()
     end)
 
+    -- Negative: package already launched
     it("should skip already-launched packages within active wave", function()
-      local pkg = buildPackage({ hasLaunched = true })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ hasLaunched = true })
+      local saveData = makeSaveData({ packages = { pkg } })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
       AirTaskingOrder.airStrike({}, saveData)
@@ -155,6 +157,7 @@ describe("AirTaskingOrder", function()
       assert.stub(stubIsAfter).was_not.called()
     end)
 
+    -- Boundary: empty ATO
     it("should handle empty airTaskingOrder without error", function()
       local saveData = { c = { air = { airTaskingOrder = {} } } }
 
@@ -167,11 +170,12 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("loadout timing", function()
+    -- Negative: time not reached
     it("should not proceed when loadout start time not reached", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
@@ -183,22 +187,24 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Negative: nil loadoutStatus
     it("should not proceed when loadoutStatus is nil", function()
-      local pkg = buildPackage()
+      local pkg = makePackage()
       pkg.loadoutStatus = nil
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       AirTaskingOrder.airStrike({}, saveData)
 
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Positive: calculate loadoutStartTime
     it("should calculate loadoutStartTime as earliest startTime minus timeToReady", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         timeToReady = 600,
         loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
@@ -208,11 +214,12 @@ describe("AirTaskingOrder", function()
       assert.are.equal(5000 - 600, pkg.loadoutStatus.loadoutStartTime)
     end)
 
+    -- Positive: default timeToReady
     it("should default timeToReady to 9*60 when not specified", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
@@ -222,17 +229,18 @@ describe("AirTaskingOrder", function()
       assert.are.equal(5000 - 540, pkg.loadoutStatus.loadoutStartTime)
     end)
 
+    -- Positive: earliest across multiple roles
     it("should pick earliest startTime across all roles", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         startTime = "2026-02-14 05:30:00"
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         escort = escort,
         timeToReady = 600,
         loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(dateStr)
         if dateStr == "2026-02-14 05:30:00" then return 4000 end
@@ -246,14 +254,15 @@ describe("AirTaskingOrder", function()
       assert.are.equal(3400, pkg.loadoutStatus.loadoutStartTime)
     end)
 
+    -- Boundary: no role has startTime
     it("should return nil when no role has startTime", function()
-      local striker = buildRole({ missionName = "STRIKE-PKG-1" })
+      local striker = makeRole({ missionName = "STRIKE-PKG-1" })
       striker.startTime = nil
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
@@ -268,19 +277,20 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("loadout initiation", function()
+    -- Positive: set loadout and update status
     it("should set loadout for matching aircraft and update status", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100,
         unitCount = 2
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         timeToReady = 600,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -306,14 +316,15 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Negative: no loadoutId
     it("should skip roles without loadoutId", function()
-      local striker = buildRole({ missionName = "STRIKE-PKG-1" })
+      local striker = makeRole({ missionName = "STRIKE-PKG-1" })
       -- loadoutId is nil by default
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -325,14 +336,15 @@ describe("AirTaskingOrder", function()
       assert.stub(stubSetLoadout).was_not.called()
     end)
 
+    -- Negative: no unitDBID
     it("should skip roles without unitDBID", function()
-      local striker = buildRole({ missionName = "STRIKE-PKG-1", loadoutId = 5001 })
+      local striker = makeRole({ missionName = "STRIKE-PKG-1", loadoutId = 5001 })
       striker.unitDBID = nil
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -345,18 +357,19 @@ describe("AirTaskingOrder", function()
       assert.stub(stubGetUnit).was_not.called()
     end)
 
+    -- Positive: filter by unitDBID
     it("should only set loadout for aircraft matching target unitDBID", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100,
         unitCount = 2
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -382,18 +395,19 @@ describe("AirTaskingOrder", function()
       assert.are.equal("J-16-2", stubSetLoadout.calls[2].vals[1].unitname)
     end)
 
+    -- Boundary: unitCount limit
     it("should not exceed unitCount when setting loadouts", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100,
         unitCount = 1
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -415,15 +429,16 @@ describe("AirTaskingOrder", function()
       assert.stub(stubSetLoadout).was.called(1)
     end)
 
+    -- Positive: multiple roles
     it("should set loadouts for multiple roles in same package", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100,
         unitCount = 1,
         baseGUID = "BASE-1"
       })
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
         loadoutId = 6001,
@@ -431,12 +446,12 @@ describe("AirTaskingOrder", function()
         unitCount = 1,
         baseGUID = "BASE-2"
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         escort = escort,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -461,17 +476,18 @@ describe("AirTaskingOrder", function()
       assert.are.equal(6001, stubSetLoadout.calls[2].vals[1].LoadoutID)
     end)
 
+    -- Negative: base not found
     it("should handle base not found gracefully", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -486,17 +502,18 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.loadoutStatus.isLoadoutInitiated)
     end)
 
+    -- Boundary: empty aircraft list
     it("should handle base with empty aircraft list", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -512,18 +529,19 @@ describe("AirTaskingOrder", function()
       assert.stub(stubSetLoadout).was_not.called()
     end)
 
+    -- Negative: partial SetLoadout failure
     it("should continue processing when SetLoadout fails for individual aircraft", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         loadoutId = 5001,
         unitDBID = 100,
         unitCount = 2
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -537,18 +555,16 @@ describe("AirTaskingOrder", function()
         end
         return { guid = guid, name = "Aircraft-" .. guid, dbid = 100 }
       end))
-      -- First call fails, second succeeds, third succeeds
-      local setLoadoutCount = 0
-      trackStub(stub(GameApi, "ScenEdit_SetLoadout").invokes(function()
-        setLoadoutCount = setLoadoutCount + 1
-        if setLoadoutCount == 1 then return nil end
+      -- First aircraft (AC-1) fails, remaining succeed
+      local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout").invokes(function(params)
+        if params.unitname == "Aircraft-AC-1" then return nil end
         return true
       end))
 
       AirTaskingOrder.airStrike({}, saveData)
 
       -- All 3 aircraft attempted (first fails, second/third succeed → 2 processed = unitCount)
-      assert.are.equal(3, setLoadoutCount)
+      assert.stub(stubSetLoadout).was.called(3)
       assert.is_true(pkg.loadoutStatus.isLoadoutInitiated)
     end)
   end)
@@ -558,14 +574,15 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("loadout readiness", function()
+    -- Positive: loadout ready
     it("should proceed when loadout initiated and ready time passed", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         loadoutStatus = {
           isLoadoutInitiated = true,
           expectedReadyTime = 1500
         }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -576,14 +593,15 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.hasLaunched)
     end)
 
+    -- Negative: nil expectedReadyTime
     it("should not proceed when loadout initiated but expectedReadyTime is nil", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         loadoutStatus = {
           isLoadoutInitiated = true,
           expectedReadyTime = nil
         }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -599,22 +617,20 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("departure time check", function()
+    -- Negative: departure time not reached
     it("should not launch when departure time not reached", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         loadoutStatus = {
           isLoadoutInitiated = true,
           expectedReadyTime = 1500
         }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
-      local callCount = 0
-      trackStub(stub(GameUtils, "isAfterStartTime").invokes(function()
-        callCount = callCount + 1
-        -- 1st: loadout timing → true
-        -- 2nd: loadout readiness → true
-        -- 3rd: departure time → false
-        return callCount < 3
+      -- departure check receives string startTime; loadout checks receive numeric timestamps
+      trackStub(stub(GameUtils, "isAfterStartTime").invokes(function(timeVal)
+        if type(timeVal) == "string" then return false end
+        return true
       end))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
 
@@ -623,17 +639,18 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Negative: no startTime on any role
     it("should not launch when no role has startTime", function()
-      local striker = buildRole({ missionName = "STRIKE-PKG-1" })
+      local striker = makeRole({ missionName = "STRIKE-PKG-1" })
       striker.startTime = nil
-      local pkg = buildPackage({
+      local pkg = makePackage({
         striker = striker,
         loadoutStatus = {
           isLoadoutInitiated = true,
           expectedReadyTime = 1500
         }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -644,37 +661,34 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Positive: earliest role selection
     it("should use earliest startTime among all roles for departure check", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         startTime = "2026-02-14 05:30:00"
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         escort = escort,
         loadoutStatus = {
           isLoadoutInitiated = true,
           expectedReadyTime = 1500
         }
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(dateStr)
         if dateStr == "2026-02-14 05:30:00" then return 4000 end
         return 5000
       end))
 
-      local isAfterArgs = {}
-      trackStub(stub(GameUtils, "isAfterStartTime").invokes(function(timeStr, advanceSec)
-        table.insert(isAfterArgs, { timeStr = timeStr, advanceSec = advanceSec })
-        return true
-      end))
+      local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       stubMissionAndAssignment()
 
       AirTaskingOrder.airStrike({}, saveData)
 
       -- 3rd call = departure check, should use escort's startTime (earlier)
-      assert.are.equal("2026-02-14 05:30:00", isAfterArgs[3].timeStr)
-      assert.are.equal(300, isAfterArgs[3].advanceSec)
+      assert.are.equal("2026-02-14 05:30:00", stubIsAfter.calls[3].vals[1])
+      assert.are.equal(300, stubIsAfter.calls[3].vals[2])
     end)
   end)
 
@@ -683,9 +697,10 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("mission creation", function()
+    -- Positive: create new mission
     it("should create mission when it does not exist", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -703,9 +718,10 @@ describe("AirTaskingOrder", function()
       assert.are.equal("STRIKE-PKG-1", stubCreate.calls[1].vals[2])
     end)
 
+    -- Negative: mission already exists
     it("should not create mission when it already exists", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -720,15 +736,16 @@ describe("AirTaskingOrder", function()
       assert.stub(stubCreate).was_not.called()
     end)
 
+    -- Positive: mission properties assignment
     it("should set mission properties on newly created strike mission", function()
-      local striker = buildRole({
+      local striker = makeRole({
         missionName = "STRIKE-PKG-1",
         startTime = "2026-02-14 06:00:00",
         endTime = "2026-02-14 08:00:00",
         timeOnStation = "00:30"
       })
-      local pkg = buildPackage({ striker = striker })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ striker = striker })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -750,9 +767,10 @@ describe("AirTaskingOrder", function()
       assert.stub(stubDoctrine).was.called(1)
     end)
 
+    -- Negative: striker creation fails
     it("should abort package when striker mission creation fails", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -766,25 +784,22 @@ describe("AirTaskingOrder", function()
       assert.stub(stubAssignTarget).was_not.called()
     end)
 
+    -- Negative: non-striker creation fails (non-critical)
     it("should continue when non-striker mission creation fails", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
         startTime = "2026-02-14 05:50:00"
       })
-      local pkg = buildPackage({ escort = escort })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ escort = escort })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       -- Striker found but escort not found and creation fails
       trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
-      local createCount = 0
       trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
-        createCount = createCount + 1
-        -- Striker succeeds (created first as "tanker" is checked first, then "striker")
         if name == "STRIKE-PKG-1" then return { name = name } end
-        -- Escort fails
         return nil
       end))
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
@@ -798,14 +813,15 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.hasLaunched)
     end)
 
+    -- Negative: non-strike type skips doctrine
     it("should not set doctrine for non-strike mission types", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
         startTime = "2026-02-14 05:50:00"
       })
-      local pkg = buildPackage({ escort = escort })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ escort = escort })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -828,9 +844,10 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("target assignment", function()
+    -- Negative: insufficient targets
     it("should not launch when target count below minTargetCount", function()
-      local pkg = buildPackage({ targetList = {}, minTargetCount = 3 })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ targetList = {}, minTargetCount = 3 })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -845,12 +862,13 @@ describe("AirTaskingOrder", function()
       assert.stub(stubAssignTarget).was_not.called()
     end)
 
+    -- Boundary: exactly minTargetCount
     it("should proceed when target count equals minTargetCount", function()
-      local pkg = buildPackage({
+      local pkg = makePackage({
         targetList = { "TGT-1", "TGT-2", "TGT-3" },
         minTargetCount = 3
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -861,10 +879,11 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.hasLaunched)
     end)
 
+    -- Positive: target list forwarding
     it("should pass target list to ScenEdit_AssignUnitAsTarget", function()
       local targets = { "TGT-A", "TGT-B" }
-      local pkg = buildPackage({ targetList = targets })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ targetList = targets })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -881,9 +900,10 @@ describe("AirTaskingOrder", function()
       assert.are.equal("STRIKE-PKG-1", stubAssignTarget.calls[1].vals[2])
     end)
 
+    -- Negative: target assignment API returns nil
     it("should not launch when ScenEdit_AssignUnitAsTarget returns nil", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -905,9 +925,10 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("unit assignment", function()
+    -- Positive: successful assignment
     it("should launch when striker units assigned successfully", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -918,9 +939,10 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.hasLaunched)
     end)
 
+    -- Negative: empty assignment result
     it("should not launch when striker assignment returns empty result", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -936,9 +958,10 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Negative: nil assignment result
     it("should not launch when striker assignment returns nil", function()
-      local pkg = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -954,19 +977,20 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
+    -- Positive: flight plan for non-striker/non-tanker roles
     it("should call CreateMissionFlightPlan for support roles only", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
         startTime = "2026-02-14 05:50:00"
       })
-      local tanker = buildRole({
+      local tanker = makeRole({
         missionName = "TANKER-1",
         missionType = "support",
         startTime = "2026-02-14 05:40:00"
       })
-      local pkg = buildPackage({ escort = escort, tanker = tanker })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ escort = escort, tanker = tanker })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -976,16 +1000,13 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
 
-      local flightPlanCalls = {}
-      trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan").invokes(function(side, name, plan)
-        table.insert(flightPlanCalls, name)
-      end))
+      local stubFlightPlan = trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
       AirTaskingOrder.airStrike({}, saveData)
 
       -- FlightPlan called for escort (non-tanker, non-striker) but NOT for tanker or striker
-      assert.are.equal(1, #flightPlanCalls)
-      assert.are.equal("ESCORT-1", flightPlanCalls[1])
+      assert.stub(stubFlightPlan).was.called(1)
+      assert.are.equal("ESCORT-1", stubFlightPlan.calls[1].vals[2])
     end)
   end)
 
@@ -994,14 +1015,15 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("recon UAV handling", function()
+    -- Positive: schedule recon UAV with calculated takeoff time
     it("should add reconUAV to recon queue and calculate takeoff time", function()
       local reconUAV = {
         course = { { lat = 25.0, lon = 121.0 }, { lat = 24.0, lon = 120.0 } },
         speed = 400,
         takeoffTime = nil
       }
-      local pkg = buildPackage({ reconUAV = reconUAV })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ reconUAV = reconUAV })
+      local saveData = makeSaveData({ packages = { pkg } })
       local config = { c = { ground = { srbm = { reloadTime = 1800 } } } }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1028,6 +1050,7 @@ describe("AirTaskingOrder", function()
       assert.is_string(reconUAV.endTime)
     end)
 
+    -- Negative: takeoffTime already calculated
     it("should not recalculate takeoffTime if already set", function()
       local reconUAV = {
         course = { { lat = 25.0, lon = 121.0 }, { lat = 24.0, lon = 120.0 } },
@@ -1035,8 +1058,8 @@ describe("AirTaskingOrder", function()
         takeoffTime = "2026-02-14 07:00:00",
         endTime = "2026-02-14 08:00:00"
       }
-      local pkg = buildPackage({ reconUAV = reconUAV })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local pkg = makePackage({ reconUAV = reconUAV })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1060,10 +1083,11 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("wave completion", function()
+    -- Positive: all packages launched
     it("should mark wave as launched when all packages launched", function()
-      local pkg1 = buildPackage({ hasLaunched = true })
-      local pkg2 = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg1, pkg2 } })
+      local pkg1 = makePackage({ hasLaunched = true })
+      local pkg2 = makePackage()
+      local saveData = makeSaveData({ packages = { pkg1, pkg2 } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1076,10 +1100,11 @@ describe("AirTaskingOrder", function()
       assert.is_true(wave.hasLaunched)
     end)
 
+    -- Negative: remaining packages
     it("should not mark wave as launched when some packages remain", function()
-      local pkg1 = buildPackage()
-      local pkg2 = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg1, pkg2 } })
+      local pkg1 = makePackage()
+      local pkg2 = makePackage()
+      local saveData = makeSaveData({ packages = { pkg1, pkg2 } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1094,10 +1119,11 @@ describe("AirTaskingOrder", function()
       assert.is_false(wave.hasLaunched)
     end)
 
+    -- Positive: one-per-tick throttling
     it("should process only one package per tick then break", function()
-      local pkg1 = buildPackage()
-      local pkg2 = buildPackage()
-      local saveData = buildSaveData({ packages = { pkg1, pkg2 } })
+      local pkg1 = makePackage()
+      local pkg2 = makePackage()
+      local saveData = makeSaveData({ packages = { pkg1, pkg2 } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1116,16 +1142,17 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg2.hasLaunched)
     end)
 
+    -- Positive: fallthrough to next package
     it("should try next package if first one fails", function()
       -- pkg1: 0 targets, minTargetCount = 2 → fails
-      local pkg1 = buildPackage({ targetList = {}, minTargetCount = 2 })
+      local pkg1 = makePackage({ targetList = {}, minTargetCount = 2 })
       -- pkg2: enough targets → succeeds
-      local pkg2 = buildPackage({
-        striker = buildRole({ missionName = "STRIKE-PKG-2" }),
+      local pkg2 = makePackage({
+        striker = makeRole({ missionName = "STRIKE-PKG-2" }),
         targetList = { "TGT-1", "TGT-2" },
         minTargetCount = 1
       })
-      local saveData = buildSaveData({ packages = { pkg1, pkg2 } })
+      local saveData = makeSaveData({ packages = { pkg1, pkg2 } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1144,10 +1171,11 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("multiple waves", function()
+    -- Positive: selective wave processing
     it("should process activated waves and skip non-activated ones", function()
-      local pkg1 = buildPackage()
-      local pkg2 = buildPackage()
-      local saveData = buildSaveData({
+      local pkg1 = makePackage()
+      local pkg2 = makePackage()
+      local saveData = makeSaveData({
         packages = { pkg1 },
         extraWaves = {
           ["WAVE-2"] = {
@@ -1174,8 +1202,9 @@ describe("AirTaskingOrder", function()
   -- ============================================================================
 
   describe("full lifecycle", function()
+    -- Positive: complete sequence with escort
     it("should launch package with escort through complete sequence", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
         baseGUID = "BASE-2",
@@ -1183,12 +1212,12 @@ describe("AirTaskingOrder", function()
         startTime = "2026-02-14 05:50:00",
         endTime = "2026-02-14 08:00:00"
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         escort = escort,
         targetList = { "TGT-1", "TGT-2", "TGT-3" },
         minTargetCount = 2
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
@@ -1215,30 +1244,31 @@ describe("AirTaskingOrder", function()
       assert.is_true(wave.hasLaunched)
     end)
 
+    -- Positive: all support roles
     it("should launch package with all four support roles", function()
-      local escort = buildRole({
+      local escort = makeRole({
         missionName = "ESCORT-1", missionType = "patrol",
         startTime = "2026-02-14 05:50:00"
       })
-      local wildWeasel = buildRole({
+      local wildWeasel = makeRole({
         missionName = "SEAD-1", missionType = "strike",
         startTime = "2026-02-14 05:45:00"
       })
-      local jammer = buildRole({
+      local jammer = makeRole({
         missionName = "JAMMER-1", missionType = "patrol",
         startTime = "2026-02-14 05:55:00"
       })
-      local tanker = buildRole({
+      local tanker = makeRole({
         missionName = "TANKER-1", missionType = "support",
         startTime = "2026-02-14 05:30:00"
       })
-      local pkg = buildPackage({
+      local pkg = makePackage({
         escort = escort,
         wildWeasel = wildWeasel,
         jammer = jammer,
         tanker = tanker
       })
-      local saveData = buildSaveData({ packages = { pkg } })
+      local saveData = makeSaveData({ packages = { pkg } })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))

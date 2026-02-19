@@ -1,9 +1,10 @@
 -- DynamicATOInsertion Unit Tests
 ---@diagnostic disable: undefined-field
 local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
-local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
+local Logger = require("src.utils.logger")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 
@@ -14,6 +15,10 @@ describe("DynamicATOInsertion", function()
     table.insert(activeStubs, s)
     return s
   end
+
+  -- ============================================================================
+  -- Shared Test Utilities
+  -- ============================================================================
 
   ---Shallow deep-copy mock that copies top-level fields and packages array
   local function shallowDeepCopy(t)
@@ -31,12 +36,16 @@ describe("DynamicATOInsertion", function()
       copy.packages = {}
       for i, p in ipairs(t.packages) do
         local pc = {}
-        for k, v in pairs(p) do pc[k] = v end
+        for k2, v2 in pairs(p) do pc[k2] = v2 end
         copy.packages[i] = pc
       end
     end
     return copy
   end
+
+  -- ============================================================================
+  -- Shared Mock Data Builders
+  -- ============================================================================
 
   ---Create reconEntry with defaults: time="2026-02-14 00:00:00", delay=0, type="satellite"
   local function makeReconEntry(overrides)
@@ -66,6 +75,9 @@ describe("DynamicATOInsertion", function()
   before_each(function()
     activeStubs = {}
     trackStub(stub(Utils, "deepCopy").invokes(shallowDeepCopy))
+    trackStub(stub(Logger, "log"))
+    trackStub(stub(Logger, "error"))
+    trackStub(stub(Logger, "warn"))
   end)
 
   after_each(function()
@@ -76,229 +88,28 @@ describe("DynamicATOInsertion", function()
   end)
 
   -- ============================================================================
-  -- Negative: config / saveData guard
+  -- Positive: Configuration and Basic Flow
   -- ============================================================================
 
-  it("should return false when dynamicOperations is not configured", function()
-    local saveData = { c = {} }
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-  end)
-
-  it("should return false when dynamicOperations is disabled", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = false }
-      }
-    }
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-  end)
-
-  -- ============================================================================
-  -- Negative: recon schedule missing or empty
-  -- ============================================================================
-
-  it("should return false when reconSchedule is nil", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = true, reconSchedule = nil }
-      }
-    }
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-  end)
-
-  it("should return false when reconSchedule is empty", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = true, reconSchedule = {} }
-      }
-    }
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-  end)
-
-  -- ============================================================================
-  -- Negative: no air operations
-  -- ============================================================================
-
-  it("should return false when no air operations are pending", function()
+  -- Positive: lastEvaluationTime updated
+  it("should update lastEvaluationTime in saveData", function()
     local saveData = {
       c = {
         dynamicOperations = {
           enabled = true,
-          reconSchedule = { { time = "2026-02-14 00:00:00", operations = {} } }
-        }
-      }
-    }
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    local stubFilterOps = trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({}))
-
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-    assert.stub(stubFilterOps).was.called(1)
-    assert.are.equal("air", stubFilterOps.calls[1].vals[2])
-  end)
-
-  -- ============================================================================
-  -- Negative: trigger time not reached
-  -- ============================================================================
-
-  it("should return false when trigger time has not been reached", function()
-    local reconEntry = makeReconEntry({ time = "2026-02-14 12:00:00", delay = 600 })
-    local operation = { type = "air", executed = false, template = { name = "STRIKE/1" } }
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconSchedule = { reconEntry }
+          reconSchedule = {}
         }
       }
     }
 
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
-    -- parseDatetimeToTimestamp returns 50, plus delay 600 = 650 > 100 (current time from isAfterStartTime)
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
 
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
-    assert.stub(stubMarkExecuted).was_not.called()
-  end)
-
-  -- ============================================================================
-  -- Negative: trigger reached but no template
-  -- ============================================================================
-
-  it("should not insert ATO wave when operation has no template", function()
-    local reconEntry = makeReconEntry()
-    local operation = { type = "air", executed = false }
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconSchedule = { reconEntry }
-        }
-      }
-    }
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
-
-    -- Should not crash, and should not try to insert a wave
     DynamicATOInsertion.process({}, saveData, {})
-    assert.stub(stubGenName).was_not.called()
+
+    assert.are.equal(5000, saveData.c.dynamicOperations.lastEvaluationTime)
   end)
 
-  -- ============================================================================
-  -- Negative: insufficient targets
-  -- ============================================================================
-
-  it("should skip package with insufficient targets", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/AB/1",
-        isFirstWave = true,
-        strikeInterval = 120,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 5
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    -- Fixed target path: returns only 1 target but minTargetCount = 5
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    -- No valid packages => no ATO wave inserted
-    assert.is_false(result)
-    assert.stub(stubGenName).was_not.called()
-  end)
-
-  -- ============================================================================
-  -- Negative: insufficient aircraft
-  -- ============================================================================
-
-  it("should skip package when base has insufficient aircraft", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/AB/1",
-        isFirstWave = false,
-        strikeInterval = 120,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    -- Base has only 2 aircraft but package requires 4
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
-      guid = "BASE-1",
-      name = "Air Base Alpha",
-      embarkedUnits = {
-        Aircraft = { "AC-1", "AC-2" }
-      }
-    }).on_call_with("AC-1").returns({ dbid = 100, mission = nil })
-      .on_call_with("AC-2").returns({ dbid = 100, mission = nil }))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
   -- Positive: successful ATO wave insertion with fixed targets
-  -- ============================================================================
-
   it("should create and insert ATO wave for fixed target package", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -371,10 +182,80 @@ describe("DynamicATOInsertion", function()
     assert.are.equal(1, #wave.packages)
   end)
 
+  -- Positive: wave structure has correct fields
+  it("should create wave with correct structural fields", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 180,
+        packages = {
+          {
+            timeToReady = 8,
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return {
+          guid = "BASE-1", name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
+        }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    DynamicATOInsertion.process({}, saveData, {})
+
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
+
+    -- Verify wave structure
+    assert.are.equal("DYNAMIC/SATELLITE/STRIKE/1/1", wave.name)
+    assert.is_true(wave.isActivated)
+    assert.is_true(wave.isFirstWave)
+    assert.is_false(wave.hasLaunched)
+    assert.are.equal(180, wave.strikeInterval)
+
+    -- Verify package structure
+    local pkg = wave.packages[1]
+    assert.are.equal(8, pkg.timeToReady)
+    assert.is_false(pkg.hasLaunched)
+    assert.is_table(pkg.loadoutStatus)
+    assert.is_false(pkg.loadoutStatus.isLoadoutInitiated)
+    assert.is_nil(pkg.loadoutStatus.loadoutInitiatedTime)
+    assert.is_nil(pkg.loadoutStatus.expectedReadyTime)
+    assert.is_nil(pkg.loadoutStatus.loadoutStartTime)
+  end)
+
   -- ============================================================================
-  -- Positive: dynamic target filtering
+  -- Positive: Dynamic Target Filtering
   -- ============================================================================
 
+  -- Positive: dynamic target filtering
   it("should create ATO wave with dynamic target filtering", function()
     local reconEntry = makeReconEntry({ type = "aircraft" })
     local operation = {
@@ -439,10 +320,125 @@ describe("DynamicATOInsertion", function()
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/AIRCRAFT/ANTISHIP/1/1"])
   end)
 
+  -- Positive: shouldTrack true for findRadioDirection
+  it("should set shouldTrack true for findRadioDirection filter", function()
+    local reconEntry = makeReconEntry({ type = "aircraft" })
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "SEAD/1",
+        isFirstWave = false,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              areas = { { "RP-1", "RP-2", "RP-3", "RP-4" } },
+              filterNames = { "findRadioDirection" },
+              contactAge = 600,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    local stubFindRadio = trackStub(stub(TargetingProcess, "findRadioDirection").returns({ "RADAR-1" }))
+    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
+      for _, v in ipairs(src) do table.insert(dest, v) end
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return {
+          guid = "BASE-1", name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
+        }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/SEAD/1/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_true(result)
+    assert.stub(stubFindRadio).was.called(1)
+    assert.is_true(stubFindRadio.calls[1].vals[1].shouldTrack)
+  end)
+
+  -- Positive: shouldTrack false for non-tracking filters
+  it("should set shouldTrack false for non-tracking filters", function()
+    local reconEntry = makeReconEntry({ type = "aircraft" })
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = false,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              areas = { { "RP-1", "RP-2" } },
+              filterNames = { "findInfantry" },
+              contactAge = 600,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    local stubFindInfantry = trackStub(stub(TargetingProcess, "findInfantry").returns({ "INF-1" }))
+    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
+      for _, v in ipairs(src) do table.insert(dest, v) end
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return {
+          guid = "BASE-1", name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
+        }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/1/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_true(result)
+    assert.stub(stubFindInfantry).was.called(1)
+    assert.is_false(stubFindInfantry.calls[1].vals[1].shouldTrack)
+  end)
+
   -- ============================================================================
-  -- Positive: multiple packages, partial validation
+  -- Positive: Partial Validation and Multiple Operations
   -- ============================================================================
 
+  -- Positive: partial validation passes valid packages only
   it("should insert wave with only validated packages when some fail", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -479,17 +475,17 @@ describe("DynamicATOInsertion", function()
 
     local saveData = makeSaveData({ reconEntry })
 
-    local callCount = 0
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    -- Package 1 gets 3 targets, Package 2 gets 1 target (needs 10)
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").invokes(function()
-      callCount = callCount + 1
-      if callCount == 1 then return { "TGT-1", "TGT-2", "TGT-3" } end
+    -- Package 1 (TAOYUAN) gets 3 targets, Package 2 (HSINCHU) gets 1 target (needs 10)
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").invokes(function(_, queryParams)
+      if queryParams[1] and queryParams[1].baseName == "TAOYUAN" then
+        return { "TGT-1", "TGT-2", "TGT-3" }
+      end
       return { "TGT-4" }
     end))
     trackStub(stub(TargetingProcess, "assessTargetsDamage").invokes(function(task)
@@ -518,10 +514,70 @@ describe("DynamicATOInsertion", function()
     assert.are.equal(1, #wave.packages)
   end)
 
+  -- Positive: at least one operation succeeds among multiple
+  it("should return true when at least one air operation is processed successfully", function()
+    local reconEntry1 = makeReconEntry()
+    local reconEntry2 = makeReconEntry({ time = "2026-02-14 01:00:00", type = "aircraft" })
+    local operation1 = {
+      type = "air", executed = false
+      -- No template => skipped
+    }
+    local operation2 = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/2",
+        isFirstWave = false,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry1, reconEntry2 })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry1, operation = operation1 },
+      { reconEntry = reconEntry2, operation = operation2 }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return {
+          guid = "BASE-1", name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
+        }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_true(result)
+    -- markOperationExecuted called for operation2 (the one with template)
+    assert.stub(stubMarkExecuted).was.called(1)
+  end)
+
   -- ============================================================================
-  -- Positive: package with escort and support roles gets timing
+  -- Positive: Timing and Duration
   -- ============================================================================
 
+  -- Positive: timing calculated for support roles
   it("should calculate timing for package with support roles", function()
     local baseTimestamp = 1770000000 -- Realistic future timestamp
     local reconEntry = makeReconEntry()
@@ -603,10 +659,84 @@ describe("DynamicATOInsertion", function()
     assert.is_false(pkg.loadoutStatus.isLoadoutInitiated)
   end)
 
-  -- ============================================================================
-  -- Positive: recon entry with delay
-  -- ============================================================================
+  -- Positive: tanker duration applied
+  it("should use tanker duration when package includes tanker", function()
+    local baseTimestamp = 1770000000 -- Realistic future timestamp
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            timeToReady = 5,
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            tanker = { baseGUID = "BASE-2", unitCount = 1, unitDBID = 102 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
 
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
+      return baseTimestamp
+    end))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" or guid == "BASE-2" then
+        return {
+          guid = guid, name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
+        }
+      end
+      if guid == "AC-1" then return { dbid = 100, mission = nil } end
+      return { dbid = 102, mission = nil }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({
+      ranges = { land = { max = 50 } }
+    }))
+
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
+    local pkg = wave.packages[1]
+
+    -- Verify that striker endTime reflects tanker duration (120 min = 7200 sec)
+    -- Revert stubs to use real parseDatetimeToTimestamp for assertion
+    for _, s in ipairs(activeStubs) do s:revert() end
+    activeStubs = {}
+
+    local startTs = Utils.parseDatetimeToTimestamp(pkg.striker.startTime)
+    local endTs = Utils.parseDatetimeToTimestamp(pkg.striker.endTime)
+    local duration = endTs - startTs
+    -- With tanker: duration ~7200 (TANKER_DURATION), not ~2400 (MISSION_DURATION)
+    assert.is_true(duration > 5000, "Duration should reflect TANKER_DURATION (~7200), got " .. duration)
+    assert.is_true(duration <= 7200, "Duration should not exceed TANKER_DURATION, got " .. duration)
+  end)
+
+  -- Positive: recon entry delay handled
   it("should handle recon entry delay correctly", function()
     local reconEntry = makeReconEntry({ delay = 500 })
     local operation = {
@@ -662,26 +792,147 @@ describe("DynamicATOInsertion", function()
   end)
 
   -- ============================================================================
-  -- Positive: shouldTrack is set correctly for findRadioDirection filter
+  -- Negative: Configuration Guards
   -- ============================================================================
 
-  it("should set shouldTrack true for findRadioDirection filter", function()
-    local reconEntry = makeReconEntry({ type = "aircraft" })
+  -- Negative: dynamicOperations not configured
+  it("should return false when dynamicOperations is not configured", function()
+    local saveData = { c = {} }
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+  end)
+
+  -- Negative: dynamicOperations disabled
+  it("should return false when dynamicOperations is disabled", function()
+    local saveData = {
+      c = {
+        dynamicOperations = { enabled = false }
+      }
+    }
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+  end)
+
+  -- Negative: reconSchedule nil
+  it("should return false when reconSchedule is nil", function()
+    local saveData = {
+      c = {
+        dynamicOperations = { enabled = true, reconSchedule = nil }
+      }
+    }
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+  end)
+
+  -- Negative: reconSchedule empty
+  it("should return false when reconSchedule is empty", function()
+    local saveData = {
+      c = {
+        dynamicOperations = { enabled = true, reconSchedule = {} }
+      }
+    }
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+  end)
+
+  -- Negative: no air operations pending
+  it("should return false when no air operations are pending", function()
+    local saveData = {
+      c = {
+        dynamicOperations = {
+          enabled = true,
+          reconSchedule = { { time = "2026-02-14 00:00:00", operations = {} } }
+        }
+      }
+    }
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    local stubFilterOps = trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({}))
+
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.stub(stubFilterOps).was.called(1)
+    assert.are.equal("air", stubFilterOps.calls[1].vals[2])
+  end)
+
+  -- ============================================================================
+  -- Negative: Trigger and Template
+  -- ============================================================================
+
+  -- Negative: trigger time not reached
+  it("should return false when trigger time has not been reached", function()
+    local reconEntry = makeReconEntry({ time = "2026-02-14 12:00:00", delay = 600 })
+    local operation = { type = "air", executed = false, template = { name = "STRIKE/1" } }
+    local saveData = {
+      c = {
+        dynamicOperations = {
+          enabled = true,
+          reconSchedule = { reconEntry }
+        }
+      }
+    }
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+    -- parseDatetimeToTimestamp returns 50, plus delay 600 = 650 > 100 (current time from isAfterStartTime)
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
+    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.stub(stubMarkExecuted).was_not.called()
+  end)
+
+  -- Negative: operation has no template
+  it("should not insert ATO wave when operation has no template", function()
+    local reconEntry = makeReconEntry()
+    local operation = { type = "air", executed = false }
+    local saveData = {
+      c = {
+        dynamicOperations = {
+          enabled = true,
+          reconSchedule = { reconEntry }
+        }
+      }
+    }
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
+    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    DynamicATOInsertion.process({}, saveData, {})
+
+    assert.stub(stubGenName).was_not.called()
+    -- MISSING_TEMPLATE reason skips markOperationExecuted
+    assert.stub(stubMarkExecuted).was_not.called()
+  end)
+
+  -- ============================================================================
+  -- Negative: Target and Aircraft Validation
+  -- ============================================================================
+
+  -- Negative: insufficient targets
+  it("should skip package with insufficient targets", function()
+    local reconEntry = makeReconEntry()
     local operation = {
       type = "air",
       executed = false,
       template = {
-        name = "SEAD/1",
-        isFirstWave = false,
-        strikeInterval = 0,
+        name = "STRIKE/AB/1",
+        isFirstWave = true,
+        strikeInterval = 120,
         packages = {
           {
             striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
             target = {
-              areas = { { "RP-1", "RP-2", "RP-3", "RP-4" } },
-              filterNames = { "findRadioDirection" },
-              contactAge = 600,
-              minTargetCount = 1
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 5
             }
           }
         }
@@ -690,57 +941,40 @@ describe("DynamicATOInsertion", function()
 
     local saveData = makeSaveData({ reconEntry })
 
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubFindRadio = trackStub(stub(TargetingProcess, "findRadioDirection").returns({ "RADAR-1" }))
-    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
-      for _, v in ipairs(src) do table.insert(dest, v) end
-    end))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/SEAD/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    -- Returns only 1 target but minTargetCount = 5
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
 
     local result = DynamicATOInsertion.process({}, saveData, {})
 
-    assert.is_true(result)
-    assert.stub(stubFindRadio).was.called(1)
-    assert.is_true(stubFindRadio.calls[1].vals[1].shouldTrack)
+    -- No valid packages => no ATO wave inserted
+    assert.is_false(result)
+    assert.stub(stubGenName).was_not.called()
   end)
 
-  -- ============================================================================
-  -- Positive: shouldTrack is false for non-tracking filters
-  -- ============================================================================
-
-  it("should set shouldTrack false for non-tracking filters", function()
-    local reconEntry = makeReconEntry({ type = "aircraft" })
+  -- Negative: insufficient aircraft at base
+  it("should skip package when base has insufficient aircraft", function()
+    local reconEntry = makeReconEntry()
     local operation = {
       type = "air",
       executed = false,
       template = {
-        name = "STRIKE/1",
+        name = "STRIKE/AB/1",
         isFirstWave = false,
-        strikeInterval = 0,
+        strikeInterval = 120,
         packages = {
           {
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
             target = {
-              areas = { { "RP-1", "RP-2" } },
-              filterNames = { "findInfantry" },
-              contactAge = 600,
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
               minTargetCount = 1
             }
           }
@@ -750,41 +984,35 @@ describe("DynamicATOInsertion", function()
 
     local saveData = makeSaveData({ reconEntry })
 
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubFindInfantry = trackStub(stub(TargetingProcess, "findInfantry").returns({ "INF-1" }))
-    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
-      for _, v in ipairs(src) do table.insert(dest, v) end
-    end))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    -- Base has only 2 aircraft but package requires 4
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1", name = "Air Base Alpha",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
     local result = DynamicATOInsertion.process({}, saveData, {})
 
-    assert.is_true(result)
-    assert.stub(stubFindInfantry).was.called(1)
-    assert.is_false(stubFindInfantry.calls[1].vals[1].shouldTrack)
+    assert.is_false(result)
   end)
 
   -- ============================================================================
-  -- Boundary: exactly minTargetCount targets
+  -- Boundary: Target Count
   -- ============================================================================
 
+  -- Boundary: exactly minTargetCount targets
   it("should accept package when target count exactly equals minTargetCount", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -838,10 +1066,7 @@ describe("DynamicATOInsertion", function()
     assert.are.equal(1, #saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"].packages)
   end)
 
-  -- ============================================================================
   -- Boundary: target count one below minTargetCount
-  -- ============================================================================
-
   it("should reject package when target count is one below minTargetCount", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -881,10 +1106,7 @@ describe("DynamicATOInsertion", function()
     assert.is_false(result)
   end)
 
-  -- ============================================================================
-  -- Boundary: default minTargetCount (1) when not specified
-  -- ============================================================================
-
+  -- Boundary: default minTargetCount used when not specified
   it("should use default minTargetCount of 1 when not specified", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -938,9 +1160,10 @@ describe("DynamicATOInsertion", function()
   end)
 
   -- ============================================================================
-  -- Boundary: aircraft assigned already counted from existing ATO waves
+  -- Boundary: Aircraft Assignment
   -- ============================================================================
 
+  -- Boundary: assigned aircraft counted from existing ATO waves
   it("should account for already assigned aircraft in existing ATO waves", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -1004,266 +1227,7 @@ describe("DynamicATOInsertion", function()
     assert.is_false(result)
   end)
 
-  -- ============================================================================
-  -- Boundary: base with no embarked aircraft
-  -- ============================================================================
-
-  it("should return false when base has no embarked aircraft", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    -- Base exists but has no embarked aircraft
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
-      guid = "BASE-1", name = "Empty Air Base",
-      embarkedUnits = nil
-    }))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Boundary: base unit not found
-  -- ============================================================================
-
-  it("should fail aircraft validation when base unit not found", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "INVALID-BASE", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    -- Base not found
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Boundary: ATO structure not initialized
-  -- ============================================================================
-
-  it("should return false when ATO structure is not initialized", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-    saveData.c.air.airTaskingOrder = nil -- Not initialized
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    -- insertATOWave returns false when airTaskingOrder is nil
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Boundary: empty packages array in template
-  -- ============================================================================
-
-  it("should return false when template has empty packages", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 0,
-        packages = {}
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    -- No valid packages (empty) => no wave inserted
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Boundary: aircraft on mission are not counted as available
-  -- ============================================================================
-
-  it("should not count aircraft already on missions as available", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    -- Base has 3 aircraft: AC-1 free, AC-2 on mission, AC-3 wrong DBID
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
-        }
-      end
-      if guid == "AC-1" then return { dbid = 100, mission = nil } end
-      if guid == "AC-2" then return { dbid = 100, mission = "CAP Mission" } end
-      if guid == "AC-3" then return { dbid = 999, mission = nil } end
-      return nil
-    end))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    -- Only 1 available (AC-1), needs 2 => fail
-    assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Positive: lastEvaluationTime is updated
-  -- ============================================================================
-
-  it("should update lastEvaluationTime in saveData", function()
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconSchedule = {}
-        }
-      }
-    }
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
-
-    DynamicATOInsertion.process({}, saveData, {})
-
-    assert.are.equal(5000, saveData.c.dynamicOperations.lastEvaluationTime)
-  end)
-
-  -- ============================================================================
-  -- Boundary: existing wave hasLaunched packages not counted in assigned aircraft
-  -- ============================================================================
-
+  -- Boundary: launched wave packages not counted
   it("should not count launched wave packages in assigned aircraft", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -1335,12 +1299,8 @@ describe("DynamicATOInsertion", function()
     assert.is_true(result)
   end)
 
-  -- ============================================================================
-  -- Positive: package with tanker gets TANKER_DURATION
-  -- ============================================================================
-
-  it("should use tanker duration when package includes tanker", function()
-    local baseTimestamp = 1770000000 -- Realistic future timestamp
+  -- Boundary: aircraft on missions not counted as available
+  it("should not count aircraft already on missions as available", function()
     local reconEntry = makeReconEntry()
     local operation = {
       type = "air",
@@ -1351,9 +1311,7 @@ describe("DynamicATOInsertion", function()
         strikeInterval = 0,
         packages = {
           {
-            timeToReady = 5,
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
-            tanker = { baseGUID = "BASE-2", unitCount = 1, unitDBID = 102 },
+            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
               contactAge = 300,
@@ -1366,11 +1324,151 @@ describe("DynamicATOInsertion", function()
 
     local saveData = makeSaveData({ reconEntry })
 
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
-    -- Need careful handling: parseDatetimeToTimestamp called multiple times
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
-      return baseTimestamp
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    -- Base has 3 aircraft: AC-1 free, AC-2 on mission, AC-3 wrong DBID
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return {
+          guid = "BASE-1", name = "Air Base",
+          embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
+        }
+      end
+      if guid == "AC-1" then return { dbid = 100, mission = nil } end
+      if guid == "AC-2" then return { dbid = 100, mission = "CAP Mission" } end
+      if guid == "AC-3" then return { dbid = 999, mission = nil } end
+      return nil
     end))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    -- Only 1 available (AC-1), needs 2 => fail
+    assert.is_false(result)
+  end)
+
+  -- ============================================================================
+  -- Boundary: Base and Structure
+  -- ============================================================================
+
+  -- Boundary: base with no embarked aircraft
+  it("should return false when base has no embarked aircraft", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    -- Base exists but has no embarked aircraft
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
+      guid = "BASE-1", name = "Empty Air Base",
+      embarkedUnits = nil
+    }))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_false(result)
+  end)
+
+  -- Boundary: base unit not found
+  it("should fail aircraft validation when base unit not found", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "INVALID-BASE", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    -- Base not found
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    assert.is_false(result)
+  end)
+
+  -- Boundary: ATO structure not initialized
+  it("should return false when ATO structure is not initialized", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+    saveData.c.air.airTaskingOrder = nil -- Not initialized
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
       { reconEntry = reconEntry, operation = operation }
     }))
@@ -1378,49 +1476,58 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
     trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" or guid == "BASE-2" then
+      if guid == "BASE-1" then
         return {
-          guid = guid, name = "Air Base",
+          guid = "BASE-1", name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
-      if guid == "AC-1" then return { dbid = 100, mission = nil } end
-      return { dbid = 102, mission = nil }
+      return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
-    trackStub(stub(GameApi, "Tool_Range").returns(200))
-    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({
-      ranges = { land = { max = 50 } }
-    }))
-
     trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
     local result = DynamicATOInsertion.process({}, saveData, {})
 
-    assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
-    local pkg = wave.packages[1]
+    -- insertATOWave returns false when airTaskingOrder is nil
+    assert.is_false(result)
+  end)
 
-    -- Verify that striker endTime reflects tanker duration (120 min = 7200 sec)
-    -- Revert stubs to use real parseDatetimeToTimestamp for assertion
-    for _, s in ipairs(activeStubs) do s:revert() end
-    activeStubs = {}
+  -- Boundary: empty packages array
+  it("should return false when template has empty packages", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {}
+      }
+    }
 
-    local startTs = Utils.parseDatetimeToTimestamp(pkg.striker.startTime)
-    local endTs = Utils.parseDatetimeToTimestamp(pkg.striker.endTime)
-    local duration = endTs - startTs
-    -- With tanker: duration ~7200 (TANKER_DURATION), not ~2400 (MISSION_DURATION)
-    -- Exact value differs by timeToReady offset due to stubbed parseDatetimeToTimestamp during execution
-    assert.is_true(duration > 5000, "Duration should reflect TANKER_DURATION (~7200), got " .. duration)
-    assert.is_true(duration <= 7200, "Duration should not exceed TANKER_DURATION, got " .. duration)
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+
+    local result = DynamicATOInsertion.process({}, saveData, {})
+
+    -- No valid packages (empty) => no wave inserted
+    assert.is_false(result)
   end)
 
   -- ============================================================================
-  -- Boundary: package with missing target configuration
+  -- Boundary: Edge Cases
   -- ============================================================================
 
+  -- Boundary: target configuration nil
   it("should skip package when target configuration is nil", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -1450,14 +1557,11 @@ describe("DynamicATOInsertion", function()
 
     local result = DynamicATOInsertion.process({}, saveData, {})
 
-    -- No valid packages (target is nil, processPackageTargets returns empty) => rejected
+    -- No valid packages (target is nil, processTargets returns empty) => rejected
     assert.is_false(result)
   end)
 
-  -- ============================================================================
-  -- Boundary: fixed targets with no objs returns empty
-  -- ============================================================================
-
+  -- Boundary: fixed targets with no objs
   it("should return no targets when fixed target objs is nil", function()
     local reconEntry = makeReconEntry()
     local operation = {
@@ -1495,72 +1599,7 @@ describe("DynamicATOInsertion", function()
     assert.is_false(result)
   end)
 
-  -- ============================================================================
-  -- Positive: multiple air operations processed, at least one succeeds
-  -- ============================================================================
-
-  it("should return true when at least one air operation is processed successfully", function()
-    local reconEntry1 = makeReconEntry()
-    local reconEntry2 = makeReconEntry({ time = "2026-02-14 01:00:00", type = "aircraft" })
-    local operation1 = {
-      type = "air", executed = false
-      -- No template => skipped
-    }
-    local operation2 = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/2",
-        isFirstWave = false,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry1, reconEntry2 })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry1, operation = operation1 },
-      { reconEntry = reconEntry2, operation = operation2 }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_true(result)
-    -- markOperationExecuted called for operation2 (the one with template)
-    assert.stub(stubMarkExecuted).was.called(1)
-  end)
-
-  -- ============================================================================
-  -- Boundary: dynamic filter returns nil (unknown filter function)
-  -- ============================================================================
-
+  -- Boundary: unknown dynamic filter function
   it("should handle unknown dynamic filter function gracefully", function()
     local reconEntry = makeReconEntry({ type = "aircraft" })
     local operation = {
@@ -1597,77 +1636,6 @@ describe("DynamicATOInsertion", function()
 
     -- Unknown filter => no targets found => package invalid => false
     assert.is_false(result)
-  end)
-
-  -- ============================================================================
-  -- Positive: wave structure has correct fields
-  -- ============================================================================
-
-  it("should create wave with correct structural fields", function()
-    local reconEntry = makeReconEntry()
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = true,
-        strikeInterval = 180,
-        packages = {
-          {
-            timeToReady = 8,
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
-              contactAge = 300,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
-    DynamicATOInsertion.process({}, saveData, {})
-
-    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
-
-    -- Verify wave structure
-    assert.are.equal("DYNAMIC/SATELLITE/STRIKE/1/1", wave.name)
-    assert.is_true(wave.isActivated)
-    assert.is_true(wave.isFirstWave)
-    assert.is_false(wave.hasLaunched)
-    assert.are.equal(180, wave.strikeInterval)
-
-    -- Verify package structure
-    local pkg = wave.packages[1]
-    assert.are.equal(8, pkg.timeToReady)
-    assert.is_false(pkg.hasLaunched)
-    assert.is_table(pkg.loadoutStatus)
-    assert.is_false(pkg.loadoutStatus.isLoadoutInitiated)
-    assert.is_nil(pkg.loadoutStatus.loadoutInitiatedTime)
-    assert.is_nil(pkg.loadoutStatus.expectedReadyTime)
-    assert.is_nil(pkg.loadoutStatus.loadoutStartTime)
+    assert.stub(Logger.warn).was.called(1)
   end)
 end)

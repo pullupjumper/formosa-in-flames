@@ -82,6 +82,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("checkReconEntryCompleted", function()
+    -- Positive: all operations executed
     it("should return true and set executed when all operations are executed", function()
       local entry = makeReconEntry({
         operations = {
@@ -96,15 +97,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(entry.executed)
     end)
 
-    it("should return true when operations is nil", function()
-      local entry = makeReconEntry()
-      entry.operations = nil
-
-      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
-
-      assert.is_true(result)
-    end)
-
+    -- Negative: some operations not executed
     it("should return false when some operations are not executed", function()
       local entry = makeReconEntry({
         operations = {
@@ -119,6 +112,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(entry.executed)
     end)
 
+    -- Negative: single operation not executed
     it("should return false when single operation is not executed", function()
       local entry = makeReconEntry({
         operations = { makeOperation({ executed = false }) }
@@ -127,6 +121,17 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(DynamicOperationsUtils.checkReconEntryCompleted(entry))
     end)
 
+    -- Boundary: nil operations
+    it("should return true when operations is nil", function()
+      local entry = makeReconEntry()
+      entry.operations = nil
+
+      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
+
+      assert.is_true(result)
+    end)
+
+    -- Boundary: empty operations
     it("should return true when operations is empty table", function()
       local entry = makeReconEntry({ operations = {} })
 
@@ -142,6 +147,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("updateReconScheduleStatus", function()
+    -- Positive: marks completed entries
     it("should mark completed entries via checkReconEntryCompleted", function()
       local entry = makeReconEntry({
         operations = { makeOperation({ executed = true }) }
@@ -153,6 +159,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(entry.executed)
     end)
 
+    -- Positive: skips already executed
     it("should skip already executed entries", function()
       local entry = makeReconEntry({
         executed = true,
@@ -166,22 +173,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(entry.executed)
     end)
 
-    it("should not error when dynamicOperations is nil", function()
-      local saveData = { c = {} }
-
-      assert.has_no.errors(function()
-        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
-      end)
-    end)
-
-    it("should not error when reconSchedule is nil", function()
-      local saveData = { c = { dynamicOperations = {} } }
-
-      assert.has_no.errors(function()
-        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
-      end)
-    end)
-
+    -- Positive: processes multiple entries independently
     it("should process multiple entries independently", function()
       local entry1 = makeReconEntry({
         operations = { makeOperation({ executed = true }) }
@@ -196,6 +188,24 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(entry1.executed)
       assert.is_false(entry2.executed)
     end)
+
+    -- Boundary: nil dynamicOperations
+    it("should not error when dynamicOperations is nil", function()
+      local saveData = { c = {} }
+
+      assert.has_no.errors(function()
+        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+      end)
+    end)
+
+    -- Boundary: nil reconSchedule
+    it("should not error when reconSchedule is nil", function()
+      local saveData = { c = { dynamicOperations = {} } }
+
+      assert.has_no.errors(function()
+        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+      end)
+    end)
   end)
 
   -- ============================================================================
@@ -203,6 +213,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("filterOperationsByType", function()
+    -- Positive: returns air operations
     it("should return air operations from non-executed entries", function()
       local airOp = makeOperation({ type = "air" })
       local groundOp = makeOperation({ type = "ground" })
@@ -216,6 +227,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(airOp, result[1].operation)
     end)
 
+    -- Positive: returns ground operations
     it("should return ground operations from non-executed entries", function()
       local airOp = makeOperation({ type = "air" })
       local groundOp = makeOperation({ type = "ground" })
@@ -229,6 +241,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(groundOp, result[1].operation)
     end)
 
+    -- Positive: includes parent reconEntry
     it("should include parent reconEntry in results", function()
       local entry = makeReconEntry()
       local schedule = { entry }
@@ -239,56 +252,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(entry, result[1].reconEntry)
     end)
 
-    it("should skip executed reconEntries", function()
-      local schedule = {
-        makeReconEntry({ executed = true })
-      }
-
-      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
-
-      assert.are.equal(0, #result)
-    end)
-
-    it("should skip executed operations", function()
-      local schedule = {
-        makeReconEntry({
-          operations = { makeOperation({ executed = true }) }
-        })
-      }
-
-      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
-
-      assert.are.equal(0, #result)
-    end)
-
-    it("should skip entries with nil operations", function()
-      local entry = makeReconEntry()
-      entry.operations = nil
-      local schedule = { entry }
-
-      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
-
-      assert.are.equal(0, #result)
-    end)
-
-    it("should return empty for empty schedule", function()
-      local result = DynamicOperationsUtils.filterOperationsByType({}, "air")
-
-      assert.are.equal(0, #result)
-    end)
-
-    it("should return empty when no operations match the type", function()
-      local schedule = {
-        makeReconEntry({
-          operations = { makeOperation({ type = "ground" }) }
-        })
-      }
-
-      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
-
-      assert.are.equal(0, #result)
-    end)
-
+    -- Positive: collects across multiple entries
     it("should collect operations across multiple entries", function()
       local schedule = {
         makeReconEntry({ operations = { makeOperation({ type = "air" }) } }),
@@ -302,6 +266,61 @@ describe("DynamicOperationsUtils", function()
 
       assert.are.equal(3, #result)
     end)
+
+    -- Negative: skips executed reconEntries
+    it("should skip executed reconEntries", function()
+      local schedule = {
+        makeReconEntry({ executed = true })
+      }
+
+      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: skips executed operations
+    it("should skip executed operations", function()
+      local schedule = {
+        makeReconEntry({
+          operations = { makeOperation({ executed = true }) }
+        })
+      }
+
+      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: skips entries with nil operations
+    it("should skip entries with nil operations", function()
+      local entry = makeReconEntry()
+      entry.operations = nil
+      local schedule = { entry }
+
+      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: no type match
+    it("should return empty when no operations match the type", function()
+      local schedule = {
+        makeReconEntry({
+          operations = { makeOperation({ type = "ground" }) }
+        })
+      }
+
+      local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Boundary: empty schedule
+    it("should return empty for empty schedule", function()
+      local result = DynamicOperationsUtils.filterOperationsByType({}, "air")
+
+      assert.are.equal(0, #result)
+    end)
   end)
 
   -- ============================================================================
@@ -309,6 +328,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("markOperationExecuted", function()
+    -- Positive: marks with success
     it("should mark operation as executed with success", function()
       local op = makeOperation()
       local entry = makeReconEntry({ operations = { op } })
@@ -319,6 +339,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(op.executionResult)
     end)
 
+    -- Positive: marks with failure
     it("should mark operation as executed with failure", function()
       local op = makeOperation()
       local entry = makeReconEntry({ operations = { op } })
@@ -329,6 +350,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(op.executionResult)
     end)
 
+    -- Positive: completes entry when all done
     it("should mark reconEntry as completed when all operations are now executed", function()
       local op1 = makeOperation({ executed = true })
       local op2 = makeOperation()
@@ -339,6 +361,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(entry.executed)
     end)
 
+    -- Negative: does not complete entry when others remain
     it("should not mark reconEntry as completed when other operations remain", function()
       local op1 = makeOperation()
       local op2 = makeOperation()
@@ -355,6 +378,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("generateUniqueAirOperationName", function()
+    -- Positive: first sequence
     it("should generate first sequence name when nothing exists", function()
       local saveData = makeSaveData()
 
@@ -363,6 +387,16 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/SATELLITE/STRIKE/AB/W/1", name)
     end)
 
+    -- Positive: uppercases reconType
+    it("should uppercase reconType in name", function()
+      local saveData = makeSaveData()
+
+      local name = DynamicOperationsUtils.generateUniqueAirOperationName("ANTISHIP", "aircraft", saveData)
+
+      assert.are.equal("DYNAMIC/AIRCRAFT/ANTISHIP/1", name)
+    end)
+
+    -- Negative: skips names in generatedOperations.air
     it("should skip names already in generatedOperations.air", function()
       local saveData = makeSaveData({
         generatedOperations = {
@@ -376,6 +410,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/SATELLITE/STRIKE/AB/W/2", name)
     end)
 
+    -- Negative: skips names in airTaskingOrder
     it("should skip names already in airTaskingOrder", function()
       local saveData = makeSaveData({
         airTaskingOrder = { ["DYNAMIC/AIRCRAFT/SEAD/1"] = { name = "existing" } }
@@ -386,6 +421,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/AIRCRAFT/SEAD/2", name)
     end)
 
+    -- Negative: skips names in both registries
     it("should skip names in both generatedOperations and airTaskingOrder", function()
       local saveData = makeSaveData({
         generatedOperations = {
@@ -400,6 +436,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/SATELLITE/STRIKE/3", name)
     end)
 
+    -- Boundary: nil generatedOperations
     it("should initialize generatedOperations when nil", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
@@ -412,6 +449,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_table(saveData.c.dynamicOperations.generatedOperations.ground)
     end)
 
+    -- Boundary: nil airTaskingOrder
     it("should handle nil airTaskingOrder gracefully", function()
       local saveData = makeSaveData()
       saveData.c.air.airTaskingOrder = nil
@@ -420,14 +458,6 @@ describe("DynamicOperationsUtils", function()
 
       assert.are.equal("DYNAMIC/SATELLITE/STRIKE/1", name)
     end)
-
-    it("should uppercase reconType in name", function()
-      local saveData = makeSaveData()
-
-      local name = DynamicOperationsUtils.generateUniqueAirOperationName("ANTISHIP", "aircraft", saveData)
-
-      assert.are.equal("DYNAMIC/AIRCRAFT/ANTISHIP/1", name)
-    end)
   end)
 
   -- ============================================================================
@@ -435,6 +465,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("generateUniqueGroundOperationName", function()
+    -- Positive: first sequence
     it("should generate first sequence name when nothing exists", function()
       local saveData = makeSaveData()
 
@@ -443,6 +474,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/1", name)
     end)
 
+    -- Negative: skips names in generatedOperations.ground
     it("should skip names already in generatedOperations.ground", function()
       local saveData = makeSaveData({
         generatedOperations = {
@@ -456,6 +488,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/2", name)
     end)
 
+    -- Negative: skips names in fireSupportPlan
     it("should skip names already in fireSupportPlan", function()
       local saveData = makeSaveData({
         fireSupportPlan = { ["DYNAMIC/AIRCRAFT/ANTISHIP/1"] = { name = "existing" } }
@@ -466,6 +499,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("DYNAMIC/AIRCRAFT/ANTISHIP/2", name)
     end)
 
+    -- Boundary: nil generatedOperations
     it("should initialize generatedOperations when nil", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
@@ -476,6 +510,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
     end)
 
+    -- Boundary: nil fireSupportPlan
     it("should handle nil fireSupportPlan gracefully", function()
       local saveData = makeSaveData()
       saveData.c.ground.fireSupportPlan = nil
@@ -491,6 +526,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("registerGeneratedOperation", function()
+    -- Positive: registers air operation
     it("should register air operation name", function()
       local saveData = makeSaveData()
 
@@ -499,6 +535,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["DYNAMIC/SAT/STRIKE/1"])
     end)
 
+    -- Positive: registers ground operation
     it("should register ground operation name", function()
       local saveData = makeSaveData()
 
@@ -507,16 +544,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.ground["DYNAMIC/SAT/INFRA/1"])
     end)
 
-    it("should initialize generatedOperations when nil", function()
-      local saveData = makeSaveData()
-      saveData.c.dynamicOperations.generatedOperations = nil
-
-      DynamicOperationsUtils.registerGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
-
-      assert.is_table(saveData.c.dynamicOperations.generatedOperations)
-      assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["DYNAMIC/SAT/STRIKE/1"])
-    end)
-
+    -- Positive: preserves existing registrations
     it("should not overwrite existing registrations", function()
       local saveData = makeSaveData({
         generatedOperations = {
@@ -530,6 +558,17 @@ describe("DynamicOperationsUtils", function()
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["EXISTING/1"])
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["NEW/1"])
     end)
+
+    -- Boundary: nil generatedOperations
+    it("should initialize generatedOperations when nil", function()
+      local saveData = makeSaveData()
+      saveData.c.dynamicOperations.generatedOperations = nil
+
+      DynamicOperationsUtils.registerGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
+
+      assert.is_table(saveData.c.dynamicOperations.generatedOperations)
+      assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["DYNAMIC/SAT/STRIKE/1"])
+    end)
   end)
 
   -- ============================================================================
@@ -537,6 +576,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("getLastExecutedOperationsAndNextTime", function()
+    -- Positive: finds most recent past entry and classifies operations
     it("should find most recent past entry and classify operations", function()
       local airOp = makeOperation({ type = "air" })
       local groundOp = makeOperation({ type = "ground" })
@@ -564,6 +604,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 08:00:00", result.mostRecentTime)
     end)
 
+    -- Positive: finds next recon time
     it("should find next recon time from future entries", function()
       local schedule = {
         makeReconEntry({ time = "2026-02-14 06:00:00" }),
@@ -581,72 +622,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 06:00:00", result.mostRecentTime)
     end)
 
-    it("should return empty result for nil schedule", function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
-      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(nil)
-
-      assert.are.equal(0, #result.air)
-      assert.are.equal(0, #result.ground)
-      assert.is_nil(result.nextReconTime)
-      assert.is_nil(result.mostRecentTime)
-    end)
-
-    it("should return empty result for empty schedule", function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
-      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime({})
-
-      assert.are.equal(0, #result.air)
-      assert.are.equal(0, #result.ground)
-      assert.is_nil(result.nextReconTime)
-      assert.is_nil(result.mostRecentTime)
-    end)
-
-    it("should return empty result when GameApi returns nil", function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(nil))
-
-      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime({
-        makeReconEntry()
-      })
-
-      assert.are.equal(0, #result.air)
-      assert.are.equal(0, #result.ground)
-      assert.is_nil(result.mostRecentTime)
-    end)
-
-    it("should return no operations but has nextReconTime when all entries are in future", function()
-      local schedule = {
-        makeReconEntry({ time = "2026-02-14 12:00:00" }),
-        makeReconEntry({ time = "2026-02-14 18:00:00" }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(
-        Utils.parseDatetimeToTimestamp("2026-02-14 06:00:00")))
-
-      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
-
-      assert.are.equal(0, #result.air)
-      assert.are.equal(0, #result.ground)
-      assert.are.equal("2026-02-14 12:00:00", result.nextReconTime)
-      assert.is_nil(result.mostRecentTime)
-    end)
-
-    it("should return no nextReconTime when all entries are in past", function()
-      local schedule = {
-        makeReconEntry({ time = "2026-02-14 06:00:00" }),
-        makeReconEntry({ time = "2026-02-14 08:00:00" }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(
-        Utils.parseDatetimeToTimestamp("2026-02-14 20:00:00")))
-
-      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
-
-      assert.is_nil(result.nextReconTime)
-      assert.are.equal("2026-02-14 08:00:00", result.mostRecentTime)
-    end)
-
+    -- Positive: picks latest past entry from unordered schedule
     it("should pick latest past entry when schedule is not in time order", function()
       local laterOp = makeOperation({ type = "air" })
       local schedule = {
@@ -665,6 +641,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 10:00:00", result.mostRecentTime)
     end)
 
+    -- Positive: picks earliest future entry as nextReconTime
     it("should pick earliest future entry as nextReconTime when schedule is unordered", function()
       local schedule = {
         makeReconEntry({ time = "2026-02-14 18:00:00" }),
@@ -681,6 +658,78 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 06:00:00", result.mostRecentTime)
     end)
 
+    -- Negative: nil schedule
+    it("should return empty result for nil schedule", function()
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+
+      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(nil)
+
+      assert.are.equal(0, #result.air)
+      assert.are.equal(0, #result.ground)
+      assert.is_nil(result.nextReconTime)
+      assert.is_nil(result.mostRecentTime)
+    end)
+
+    -- Negative: empty schedule
+    it("should return empty result for empty schedule", function()
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+
+      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime({})
+
+      assert.are.equal(0, #result.air)
+      assert.are.equal(0, #result.ground)
+      assert.is_nil(result.nextReconTime)
+      assert.is_nil(result.mostRecentTime)
+    end)
+
+    -- Negative: GameApi returns nil
+    it("should return empty result when GameApi returns nil", function()
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(nil))
+
+      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime({
+        makeReconEntry()
+      })
+
+      assert.are.equal(0, #result.air)
+      assert.are.equal(0, #result.ground)
+      assert.is_nil(result.mostRecentTime)
+    end)
+
+    -- Boundary: all entries in future
+    it("should return no operations but has nextReconTime when all entries are in future", function()
+      local schedule = {
+        makeReconEntry({ time = "2026-02-14 12:00:00" }),
+        makeReconEntry({ time = "2026-02-14 18:00:00" }),
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(
+        Utils.parseDatetimeToTimestamp("2026-02-14 06:00:00")))
+
+      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
+
+      assert.are.equal(0, #result.air)
+      assert.are.equal(0, #result.ground)
+      assert.are.equal("2026-02-14 12:00:00", result.nextReconTime)
+      assert.is_nil(result.mostRecentTime)
+    end)
+
+    -- Boundary: all entries in past
+    it("should return no nextReconTime when all entries are in past", function()
+      local schedule = {
+        makeReconEntry({ time = "2026-02-14 06:00:00" }),
+        makeReconEntry({ time = "2026-02-14 08:00:00" }),
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(
+        Utils.parseDatetimeToTimestamp("2026-02-14 20:00:00")))
+
+      local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
+
+      assert.is_nil(result.nextReconTime)
+      assert.are.equal("2026-02-14 08:00:00", result.mostRecentTime)
+    end)
+
+    -- Boundary: entry with nil operations
     it("should handle entry with nil operations", function()
       local entry = makeReconEntry({ time = "2026-02-14 08:00:00" })
       entry.operations = nil
@@ -696,6 +745,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 08:00:00", result.mostRecentTime)
     end)
 
+    -- Boundary: entry at exactly current time
     it("should handle entry at exactly current time as past", function()
       local op = makeOperation({ type = "ground" })
       local exactTime = "2026-02-14 08:00:00"
@@ -718,6 +768,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("hasOperation", function()
+    -- Positive: exact match
     it("should find exact match by template name and type", function()
       local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
       local entry = makeReconEntry({ operations = { op } })
@@ -730,47 +781,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(entry, foundEntry)
     end)
 
-    it("should not match when type differs", function()
-      local op = makeOperation({ type = "ground", template = { name = "STRIKE/AB/W/1" } })
-      local schedule = { makeReconEntry({ operations = { op } }) }
-
-      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/1", "air")
-
-      assert.is_false(exists)
-    end)
-
-    it("should not match when name differs", function()
-      local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
-      local schedule = { makeReconEntry({ operations = { op } }) }
-
-      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/2", "air")
-
-      assert.is_false(exists)
-    end)
-
-    it("should return false for nil inputs", function()
-      assert.is_false(DynamicOperationsUtils.hasOperation(nil, "STRIKE/1", "air"))
-      assert.is_false(DynamicOperationsUtils.hasOperation({}, nil, "air"))
-      assert.is_false(DynamicOperationsUtils.hasOperation({}, "STRIKE/1", nil))
-    end)
-
-    it("should skip operations with nil template", function()
-      local op = makeOperation({ template = nil })
-      local schedule = { makeReconEntry({ operations = { op } }) }
-
-      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/1", "air")
-
-      assert.is_false(exists)
-    end)
-
-    it("should skip entries with nil operations", function()
-      local schedule = { makeReconEntry({ operations = nil }) }
-
-      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/1", "air")
-
-      assert.is_false(exists)
-    end)
-
+    -- Positive: searches across multiple entries
     it("should search across multiple entries and operations", function()
       local targetOp = makeOperation({ type = "ground", template = { name = "INFRA/2" } })
       local schedule = {
@@ -792,8 +803,53 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(targetOp, foundOp)
     end)
 
-    -- Prefix search tests
+    -- Negative: type mismatch
+    it("should not match when type differs", function()
+      local op = makeOperation({ type = "ground", template = { name = "STRIKE/AB/W/1" } })
+      local schedule = { makeReconEntry({ operations = { op } }) }
 
+      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/1", "air")
+
+      assert.is_false(exists)
+    end)
+
+    -- Negative: name mismatch
+    it("should not match when name differs", function()
+      local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
+      local schedule = { makeReconEntry({ operations = { op } }) }
+
+      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/2", "air")
+
+      assert.is_false(exists)
+    end)
+
+    -- Negative: nil inputs
+    it("should return false for nil inputs", function()
+      assert.is_false(DynamicOperationsUtils.hasOperation(nil, "STRIKE/1", "air"))
+      assert.is_false(DynamicOperationsUtils.hasOperation({}, nil, "air"))
+      assert.is_false(DynamicOperationsUtils.hasOperation({}, "STRIKE/1", nil))
+    end)
+
+    -- Negative: nil template
+    it("should skip operations with nil template", function()
+      local op = makeOperation({ template = nil })
+      local schedule = { makeReconEntry({ operations = { op } }) }
+
+      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/1", "air")
+
+      assert.is_false(exists)
+    end)
+
+    -- Negative: nil operations
+    it("should skip entries with nil operations", function()
+      local schedule = { makeReconEntry({ operations = nil }) }
+
+      local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/1", "air")
+
+      assert.is_false(exists)
+    end)
+
+    -- Positive: prefix search finds highest number
     it("should find highest number with prefix search", function()
       local op1 = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
       local op3 = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/3" } })
@@ -809,6 +865,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal(op3, foundOp)
     end)
 
+    -- Positive: prefix search picks latest time on same number
     it("should pick latest time when prefix search finds same max number", function()
       local olderOp = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/2" } })
       local newerOp = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/2" } })
@@ -826,6 +883,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 12:00:00", foundEntry.time)
     end)
 
+    -- Negative: prefix search no matches
     it("should return false for prefix search with no matches", function()
       local op = makeOperation({ type = "air", template = { name = "SEAD/1" } })
       local schedule = { makeReconEntry({ operations = { op } }) }
@@ -835,6 +893,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(exists)
     end)
 
+    -- Negative: prefix search ignores non-numeric suffix
     it("should ignore non-numeric suffix in prefix search", function()
       local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/abc" } })
       local schedule = { makeReconEntry({ operations = { op } }) }
@@ -844,6 +903,7 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(exists)
     end)
 
+    -- Negative: prefix search filters by type
     it("should filter by type in prefix search", function()
       local groundOp = makeOperation({ type = "ground", template = { name = "STRIKE/AB/W/5" } })
       local schedule = { makeReconEntry({ operations = { groundOp } }) }
@@ -859,6 +919,7 @@ describe("DynamicOperationsUtils", function()
   -- ============================================================================
 
   describe("generateNextOperation", function()
+    -- Positive: finds next air template
     it("should find next air template and increment number", function()
       local operation = makeOperation({
         type = "air",
@@ -888,6 +949,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("FOUND_NEXT", status)
     end)
 
+    -- Positive: finds next ground template
     it("should find next ground template and increment number", function()
       local operation = makeOperation({
         type = "ground",
@@ -915,6 +977,49 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("FOUND_NEXT", status)
     end)
 
+    -- Positive: sets isFirstWave to false
+    it("should set isFirstWave to false in generated operation", function()
+      local operation = makeOperation({
+        type = "air",
+        template = {
+          name = "STRIKE/1",
+          isFirstWave = true,
+          strikeInterval = 100,
+          packages = {}
+        }
+      })
+      local config = {
+        c = { packageTemplates = { STRIKE_2 = { { striker = {} } } } }
+      }
+
+      local result, status = DynamicOperationsUtils.generateNextOperation(operation, config)
+
+      assert.is_false(result.template.isFirstWave)
+      assert.are.equal("FOUND_NEXT", status)
+    end)
+
+    -- Positive: handles multi-digit numbers
+    it("should handle multi-digit number increments", function()
+      local operation = makeOperation({
+        type = "air",
+        template = {
+          name = "STRIKE/AB/99",
+          isFirstWave = false,
+          strikeInterval = 0,
+          packages = {}
+        }
+      })
+      local config = {
+        c = { packageTemplates = { STRIKE_AB_100 = { { striker = {} } } } }
+      }
+
+      local result, status = DynamicOperationsUtils.generateNextOperation(operation, config)
+
+      assert.are.equal("STRIKE/AB/100", result.template.name)
+      assert.are.equal("FOUND_NEXT", status)
+    end)
+
+    -- Negative: reuses current air template when next not found
     it("should reuse current template when next is not found for air", function()
       local originalPackages = { { striker = { baseGUID = "BASE-1" } } }
       local operation = makeOperation({
@@ -936,6 +1041,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("REUSED_CURRENT", status)
     end)
 
+    -- Negative: reuses current ground template when next not found
     it("should reuse current template when next is not found for ground", function()
       local originalTasks = { { name = "FST-ORIGINAL" } }
       local operation = makeOperation({
@@ -955,6 +1061,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("REUSED_CURRENT", status)
     end)
 
+    -- Negative: unparseable template name
     it("should return deep copy when template name is unparseable", function()
       local operation = makeOperation({
         type = "air",
@@ -970,6 +1077,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("PARSE_ERROR", status)
     end)
 
+    -- Negative: unknown operation type
     it("should return deep copy for unknown operation type", function()
       local operation = makeOperation({
         type = "naval",
@@ -983,46 +1091,7 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("UNKNOWN_TYPE", status)
     end)
 
-    it("should set isFirstWave to false in generated operation", function()
-      local operation = makeOperation({
-        type = "air",
-        template = {
-          name = "STRIKE/1",
-          isFirstWave = true,
-          strikeInterval = 100,
-          packages = {}
-        }
-      })
-      local config = {
-        c = { packageTemplates = { STRIKE_2 = { { striker = {} } } } }
-      }
-
-      local result, status = DynamicOperationsUtils.generateNextOperation(operation, config)
-
-      assert.is_false(result.template.isFirstWave)
-      assert.are.equal("FOUND_NEXT", status)
-    end)
-
-    it("should handle multi-digit number increments", function()
-      local operation = makeOperation({
-        type = "air",
-        template = {
-          name = "STRIKE/AB/99",
-          isFirstWave = false,
-          strikeInterval = 0,
-          packages = {}
-        }
-      })
-      local config = {
-        c = { packageTemplates = { STRIKE_AB_100 = { { striker = {} } } } }
-      }
-
-      local result, status = DynamicOperationsUtils.generateNextOperation(operation, config)
-
-      assert.are.equal("STRIKE/AB/100", result.template.name)
-      assert.are.equal("FOUND_NEXT", status)
-    end)
-
+    -- Boundary: nil strikeInterval defaults to 0 for ground
     it("should default ground strikeInterval to 0 when nil in original", function()
       local operation = makeOperation({
         type = "ground",
