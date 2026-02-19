@@ -1,4 +1,4 @@
-local AttackManager = require("src.modules.strikePlanner.attackManager")
+local AttackManager = require("src.modules.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
@@ -6,6 +6,11 @@ local MissileSystem = require("src.modules.missileSystem")
 local constants = require("src.core.constants")
 
 local FireSupportPlan = {}
+local GROUND_LOG_TAG = "ground"
+
+-- ============================================================================
+-- Firing Unit Readiness
+-- ============================================================================
 
 ---Check if firing unit is ready to move to firing point
 ---A firing unit is ready when it's in HIDE state and has sufficient ammunition
@@ -17,68 +22,108 @@ local function isFiringUnitReady(firingUnitCtx, group)
       not MissileSystem.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 end
 
----Check if firing unit is not yet at firing point
----Returns true when unit state is not STATIC (firing position)
+---Check if firing unit is at firing point
+---Returns true when unit state is STATIC (firing position)
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state info
----@return boolean # Returns true if unit is not at STATIC (firing point) state
-local function isNotFiringUnitAtFiringPoint(firingUnitCtx)
-  return firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.STATIC
+---@return boolean # Returns true if unit is at STATIC (firing point) state
+local function isFiringUnitAtFiringPoint(firingUnitCtx)
+  return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC
 end
 
----Deploy firing units to firing point and check if all are in position
----Moves ready units to firing points and verifies if all units have reached their positions
+-- ============================================================================
+-- Firing Unit Deployment
+-- ============================================================================
+
+---Get firing unit context from save data by missile system type and unit name
 ---@param saveData SBJ__SaveData Saved game state
----@param FST SBJ__FireSupportTask Fire Support Task containing firing units
----@return boolean # Returns true if all firing units are at firing point, false otherwise
-local function shouldDeployToFiringPoint(saveData, FST)
-  local allFiringUnitsInPosition = true
+---@param missileSystem string Missile system name (e.g., "SRBM", "LACM")
+---@param firingUnitName string The name of the firing unit
+---@return SBJ__FiringUnitContext # Firing unit context
+local function getFiringUnitContext(saveData, missileSystem, firingUnitName)
+  local key = string.lower(missileSystem)
+  return saveData.c.ground[key].firingUnits[firingUnitName]
+end
 
-  for _, firingUnit in ipairs(FST.firingUnits) do
-    local actualFiringUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
+---Deploy single firing unit to firing point and check if it is in position
+---@param saveData SBJ__SaveData Saved game state
+---@param task SBJ__FireSupportTask Fire Support Task containing missile system info
+---@param firingUnit SBJ__FiringUnit Firing unit to deploy
+---@return boolean # Returns true if unit is at firing point
+local function deploySingleFiringUnit(saveData, task, firingUnit)
+  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
+  if not actualUnit then
+    return false
+  end
 
-    if not actualFiringUnit then
-      allFiringUnitsInPosition = false
-    else
-      local firingUnitCtx = saveData.c.ground[string.lower(FST.missileSystem)].firingUnits[firingUnit.name]
+  local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
 
-      if isFiringUnitReady(firingUnitCtx, actualFiringUnit) then
-        MissileSystem.moveToFiringPoint(firingUnitCtx, actualFiringUnit)
-      end
+  if isFiringUnitReady(firingUnitCtx, actualUnit) then
+    MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)
+  end
 
-      if isNotFiringUnitAtFiringPoint(firingUnitCtx) then
-        allFiringUnitsInPosition = false
+  return isFiringUnitAtFiringPoint(firingUnitCtx)
+end
+
+---Deploy all firing units in a task and check if all are in position
+---@param saveData SBJ__SaveData Saved game state
+---@param task SBJ__FireSupportTask Fire Support Task containing firing units
+---@return boolean allInPosition Whether all firing units are at firing point
+---@return string[] notReadyNames Unit names not yet at firing point
+local function deployTaskFiringUnits(saveData, task)
+  local allInPosition = true
+  local notReadyNames = {}
+
+  for _, firingUnit in ipairs(task.firingUnits) do
+    if not deploySingleFiringUnit(saveData, task, firingUnit) then
+      allInPosition = false
+      table.insert(notReadyNames, firingUnit.name or "unknown")
+    end
+  end
+
+  return allInPosition, notReadyNames
+end
+
+-- ============================================================================
+-- Strike Execution
+-- ============================================================================
+
+---Execute all Fire Support Tasks within a FSEM
+---Launches attacks when start time reached and minimum target count met, marks tasks as finished
+---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
+---@return string[] # Strike result descriptions per task
+local function executeFireSupportTasks(matrix)
+  local strikeResults = {}
+
+  for _, task in ipairs(matrix.fireSupportTasks) do
+    if not task.isFinished and GameUtils.isAfterStartTime(task.startTime)
+        and #task.target.list >= task.target.minTargetCount then
+      local result = AttackManager.attackContacts({
+        contacts = task.target.list,
+        qty = task.target.ammoPerTarget,
+        firingUnits = task.firingUnits,
+      })
+
+      if result > 0 then
+        task.isFinished = true
+        table.insert(strikeResults, string.format("%s: fired %d", task.name, result))
       end
     end
   end
 
-  return allFiringUnitsInPosition
+  return strikeResults
 end
 
----Process a Fire Support Task and check if all firing units are in position
----Checks if the task start time has been reached and deploys firing units to their firing points
----@param FST SBJ__FireSupportTask Fire Support Task to process
----@param saveData SBJ__SaveData Saved game state
----@return boolean # Returns true if all firing units are in position, false otherwise
-local function processFST(FST, saveData)
-  if FST.isFinished or not GameUtils.isAfterStartTime(FST.startTime) then
-    return false
-  end
-
-  if not shouldDeployToFiringPoint(saveData, FST) then
-    Logger.log("ground", "Batteries not at firing position for " .. FST.name)
-    return false
-  end
-
-  return true
-end
+-- ============================================================================
+-- Matrix Lifecycle
+-- ============================================================================
 
 ---Check if all Fire Support Tasks in a FSEM are finished
 ---Returns true only when all FSTs have completed their strikes
----@param FSEM SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to check
+---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to check
 ---@return boolean # Returns true if all FSTs are finished, false otherwise
-local function isFSEMFinished(FSEM)
-  for _, FST in ipairs(FSEM.FSTs) do
-    if not FST.isFinished then
+local function isMatrixFinished(matrix)
+  for _, task in ipairs(matrix.fireSupportTasks) do
+    if not task.isFinished then
       return false
     end
   end
@@ -86,54 +131,94 @@ local function isFSEMFinished(FSEM)
   return true
 end
 
----Execute all Fire Support Tasks within a FSEM
----Launches attacks when start time reached and minimum target count met, marks tasks as finished
----@param FSEM SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
-local function executeFireSupportTasks(FSEM)
-  for _, FST in ipairs(FSEM.FSTs) do
-    if not FST.isFinished and GameUtils.isAfterStartTime(FST.startTime) and #FST.target.list >= FST.target.minTargetCount then
-      local result = AttackManager.attackContacts({
-        contacts = FST.target.list,
-        qty = FST.target.ammoPerTarget,
-        firingUnits = FST.firingUnits,
-      })
+---Process active matrix deployment phase
+---Deploys firing units to firing points and tracks position status
+---@param saveData SBJ__SaveData Saved game state
+---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to process
+---@return boolean allInPosition Whether all firing units across all tasks are in position
+---@return string[] pendingTasks Task descriptions with not-ready unit names
+local function processActiveMatrix(saveData, matrix)
+  local allInPosition = true
+  local pendingTasks = {}
 
-      if result > 0 then
-        FST.isFinished = true
-        Logger.log("ground", "Fired " .. result .. " missiles for " .. FST.name)
+  for _, task in ipairs(matrix.fireSupportTasks) do
+    if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
+      local taskReady, notReadyNames = deployTaskFiringUnits(saveData, task)
+      if not taskReady then
+        allInPosition = false
+        table.insert(pendingTasks, string.format("%s (%s)", task.name, table.concat(notReadyNames, ", ")))
       end
     end
   end
+
+  matrix.allFiringUnitsInPosition = allInPosition
+  return allInPosition, pendingTasks
 end
+
+-- ============================================================================
+-- Log Formatting
+-- ============================================================================
+
+---Format pending task names into summary string
+---@param pendingTasks string[] Task descriptions with not-ready unit names
+---@return string # Formatted summary or "none"
+local function formatPendingTasks(pendingTasks)
+  if #pendingTasks == 0 then
+    return "none"
+  end
+  return table.concat(pendingTasks, "; ")
+end
+
+---Format strike results into summary string
+---@param strikeResults string[] Strike result descriptions per task
+---@return string # Formatted summary or "none"
+local function formatStrikeResults(strikeResults)
+  if #strikeResults == 0 then
+    return "none"
+  end
+  return table.concat(strikeResults, "; ")
+end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
 
 ---Execute Fire Support Plan strikes for all active FSEMs
 ---Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function FireSupportPlan.strike(saveData)
-  for _, FSEM in pairs(saveData.c.ground.FSP) do
-    local allFiringUnitsInPosition = true
+  local infoLines = {}
 
-    if not FSEM.isFinished and FSEM.isActivated then
-      for _, FST in ipairs(FSEM.FSTs) do
-        local isInFiringPosition = processFST(FST, saveData)
+  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+    if not matrix.isFinished and matrix.isActivated then
+      local allInPosition, pendingTasks = processActiveMatrix(saveData, matrix)
 
-        if not isInFiringPosition then
-          allFiringUnitsInPosition = false
-        end
+      local strikeResults = {}
+      if allInPosition then
+        strikeResults = executeFireSupportTasks(matrix)
+      end
+
+      if isMatrixFinished(matrix) then
+        matrix.isFinished = true
+      end
+
+      if #strikeResults > 0 then
+        table.insert(infoLines, string.format("  [STRIKE] %s | %s",
+          matrix.name, formatStrikeResults(strikeResults)))
+      elseif #pendingTasks > 0 then
+        table.insert(infoLines, string.format("  [PENDING] %s | not at firing position: %s",
+          matrix.name, formatPendingTasks(pendingTasks)))
+      end
+
+      if matrix.isFinished then
+        table.insert(infoLines, string.format("  [DONE] %s | all tasks completed", matrix.name))
       end
     end
-
-    FSEM.allFiringUnitsInPosition = allFiringUnitsInPosition
   end
 
-  for _, FSEM in pairs(saveData.c.ground.FSP) do
-    if not FSEM.isFinished and FSEM.isActivated and FSEM.allFiringUnitsInPosition then
-      executeFireSupportTasks(FSEM)
-    end
-
-    if isFSEMFinished(FSEM) then
-      FSEM.isFinished = true
-    end
+  if #infoLines > 0 then
+    Logger.log(GROUND_LOG_TAG, string.format(
+      "Fire support plan: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
   end
 end
 

@@ -1,7 +1,7 @@
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local gKH = require("src.core.gKH_State_Standalone")
-local IADS = require("src.modules.IADS")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -10,8 +10,8 @@ if not saveData then
   return
 end
 
-IADS.removeC2Facilities(config.c.IADS)
-IADS.addC2Facilities(config.c.IADS)
-IADS.initC2FacilitiesContext(config.c.IADS, saveData.c.IADS)
+IntegratedAirDefenseSystem.removeC2Facilities(config.c.iads)
+IntegratedAirDefenseSystem.addC2Facilities(config.c.iads)
+IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, saveData.c.iads)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

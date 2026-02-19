@@ -4,14 +4,14 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
-local SIGINT = {}
+local Sigint = {}
 
 ---Calculate SIGINT detection probability based on distance
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
 ---@param distance number Distance in nautical miles
 ---@param config SBJ__SIGINTConfig|nil Detection configuration
 ---@return number # Value between 0 and 1
-function SIGINT.calculateDetectionProbability(distance, config)
+function Sigint.calculateDetectionProbability(distance, config)
   config = config or {}
   local threshold = config.detectionThreshold or 60
   local maxRange = config.maxDetectionRange or { 300, 340 }
@@ -71,8 +71,8 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide, sigintConfig)
   end
 
   -- Check for C2 facilities (always emit, no movement check needed as they are fixed buildings)
-  for _, DBID in ipairs(config.c.IADS.C2FacilityDBIDs) do
-    if unit.dbid == DBID then
+  for _, dbid in ipairs(config.c.iads.c2FacilityDBIDs) do
+    if unit.dbid == dbid then
       return true, "C2 facility (always emitting)"
     end
   end
@@ -110,7 +110,7 @@ end
 ---@param data SBJ__SIGINTDisplayData|nil Display configuration (colors, lifetime, font size)
 ---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
-local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
+local function getSigint(sigintContext, enemyUnit, notification, isEmitting, isShown, data, config)
   -- Get enemy unit
   local enemy
   if type(enemyUnit) == "string" then
@@ -142,14 +142,14 @@ local function getSIGINT(sigintContext, enemyUnit, notification, isEmitting, isS
   }
 
   -- Detection logic
-  for _, ctx in pairs(sigintContext.RA) do
+  for _, ctx in pairs(sigintContext.reconAircraft) do
     local actualReconAC = GameApi.ScenEdit_GetUnit(ctx.guid)
     if not actualReconAC or actualReconAC.condition ~= "Airborne" then
       goto continue
     end
 
     local distance = GameApi.Tool_Range(enemy.guid, ctx.guid)
-    local detectionProbability = SIGINT.calculateDetectionProbability(distance, config)
+    local detectionProbability = Sigint.calculateDetectionProbability(distance, config)
 
     if math.random() < detectionProbability and isEmitting then
       local deviation = calculateSignalDeviation(distance, config)
@@ -257,7 +257,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   if transmission.autodetectable then
     updateAutodetectableState(unit, false)
     transmission.autodetectable = false
-    Logger.log("SIGINT", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to false")
+    Logger.log("sigint", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to false")
   end
 
   -- Check if should become autodetectable
@@ -265,7 +265,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   if transmission.currentDetectionLevel > maxCount and not transmission.autodetectable then
     updateAutodetectableState(unit, true)
     transmission.autodetectable = true
-    Logger.log("SIGINT", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to true")
+    Logger.log("sigint", "updateTransmissionData: Updated autodetectable state for unit " .. unit.name .. " to true")
   end
 end
 
@@ -288,7 +288,7 @@ local function handleUndetected(sigintContext, unit)
   if transmission.autodetectable then
     updateAutodetectableState(unit, false)
     transmission.autodetectable = false
-    Logger.log("SIGINT", "handleUndetected: Updated autodetectable state for unit " .. unit.name .. " to false")
+    Logger.log("sigint", "handleUndetected: Updated autodetectable state for unit " .. unit.name .. " to false")
   end
 end
 
@@ -300,7 +300,7 @@ end
 ---@param isShown boolean Whether to show detection notifications on map
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
-function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
+function Sigint.handleSigint(config, sigintContext, sideName, unitContexts, isShown, sigintConfig)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
   local results = {}
@@ -336,7 +336,7 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
     local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide, sigintConfig)
 
     -- Perform SIGINT detection
-    local result = getSIGINT(sigintContext, actualUnit.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
+    local result = getSigint(sigintContext, actualUnit.guid, unitCtx.msg, isEmitting, isShown, nil, sigintConfig)
     results[actualUnit.guid] = result
 
     -- Update transmission data based on result
@@ -350,7 +350,7 @@ function SIGINT.handleSIGINT(config, sigintContext, sideName, unitContexts, isSh
     ::continue::
   end
 
-  Logger.log("SIGINT", string.format("SIGINT processing: %d/%d units processed, %d detections",
+  Logger.log("sigint", string.format("SIGINT processing: %d/%d units processed, %d detections",
     processedCount, Utils.getCount(unitContexts), detectedCount))
 
   return results
@@ -358,10 +358,10 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param SIGINTContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
+---@param sigintContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@return number # Number of reconnaissance aircraft initialized
-function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
+function Sigint.initReconAircraftContexts(sigintContext, sideName)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -375,7 +375,7 @@ function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
 
     if unit and unit.type == "Aircraft" and
         (unit.dbid == constants.PLATFORMS.RC135V or unit.dbid == constants.PLATFORMS.Y9DZ) then
-      SIGINTContext.RA[unit.guid] = {
+      sigintContext.reconAircraft[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
         commsLevel = 40,
@@ -387,9 +387,9 @@ function SIGINT.initReconAircraftContexts(SIGINTContext, sideName)
     end
   end
 
-  Logger.log("SIGINT",
+  Logger.log("sigint",
     string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations", initializedCount, sideName))
   return initializedCount
 end
 
-return SIGINT
+return Sigint

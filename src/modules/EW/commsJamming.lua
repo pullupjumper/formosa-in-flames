@@ -59,7 +59,7 @@ local function getCommsLevel(commsJammingConfig, saveData, affectedUnitGUID)
     end
   end
 
-  for _, C2Ctx in pairs(saveData.t.IADS.ROCC) do
+  for _, C2Ctx in pairs(saveData.t.iads.rocc) do
     local actualROCC = GameApi.ScenEdit_GetUnit(C2Ctx.guid)
 
     if actualROCC then
@@ -226,8 +226,8 @@ local function findSAMAndRadar(IADSContext)
   local unitTemp = {}
   local unitCount = 0
 
-  for _, C2Ctx in pairs(IADSContext.ROCC) do
-    for _, ctx in pairs(C2Ctx.SAM) do
+  for _, C2Ctx in pairs(IADSContext.rocc) do
+    for _, ctx in pairs(C2Ctx.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
     end
@@ -237,8 +237,8 @@ local function findSAMAndRadar(IADSContext)
     end
   end
 
-  for _, C2Ctx in pairs(IADSContext.TAAOC) do
-    for _, ctx in pairs(C2Ctx.SAM) do
+  for _, C2Ctx in pairs(IADSContext.taaoc) do
+    for _, ctx in pairs(C2Ctx.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
     end
@@ -256,7 +256,7 @@ end
 ---@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
 function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   local jammers = findJammers(saveData.c.commsJamming.jammers)
-  local unitCtxs = findSAMAndRadar(saveData.t.IADS)
+  local unitCtxs = findSAMAndRadar(saveData.t.iads)
 
   for _, ctx in pairs(unitCtxs) do
     recoverComms(commsJammingConfig, ctx)

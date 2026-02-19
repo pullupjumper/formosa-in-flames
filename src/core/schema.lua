@@ -18,6 +18,13 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@return table<number, any>|nil # Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
 function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
+---comment
+---@param sideName string
+---@param zoneName string
+---@param zoneType number
+---@return CMO__Zone|nil
+function ScenEdit_GetZone(sideName, zoneName, zoneType) end
+
 ---Unit OODA (Observe, Orient, Decide, Act) loop characteristics
 ---@class CMO__OODA: table
 ---@field evasion number The evasion of the unit
@@ -144,17 +151,17 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field cooldownTime { min: number, max: number } Cooldown time range
 ---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
 
----GPS jammer weapon configuration
----@class SBJ__GPSJammedWeapon: table
+---GNSS jammer weapon configuration
+---@class SBJ__GNSSJammedWeapon: table
 ---@field dbid number Weapon database ID
 ---@field jammingResistance number Jamming resistance value
 
----GPS jamming configuration
----@class SBJ__GPSJammingConfig: table
+---GNSS jamming configuration
+---@class SBJ__GNSSJammingConfig: table
 ---@field randomRadius number Random deployment radius (nautical miles)
 ---@field radius number Jamming effectiveness radius (nautical miles)
----@field GPSGuidedWeapons SBJ__GPSJammedWeapon[] GPS-guided weapons to jam
----@field jammers table<string, SBJ__GPSJammerDescriptor> GPS jammer descriptors indexed by jammer name
+---@field gnssGuidedWeapons SBJ__GNSSJammedWeapon[] GNSS-guided weapons to jam
+---@field jammers table<string, SBJ__GNSSJammerDescriptor> GNSS jammer descriptors indexed by jammer name
 
 ---Weapon system configuration
 ---@class SBJ__MissileSystemConfig: table
@@ -172,7 +179,8 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field glcm SBJ__MissileSystemConfig GLCM configuration
 ---@field srbm SBJ__MissileSystemConfig SRBM configuration
 ---@field mrbm? SBJ__MissileSystemConfig MRBM configuration (China only)
----@field ascm? SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
+---@field ascm SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
+---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
 ---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
 
 ---Reconnaissance configuration
@@ -212,36 +220,36 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---IADS configuration for faction
 ---@class SBJ__IADSFactionConfig: table
 ---@field ratio table<string, number> C2 facility ratio multipliers
----@field TAAOC? SBJ__C2Descriptor[] TAAOC descriptors
----@field ROCC? SBJ__C2Descriptor[] ROCC descriptors
+---@field taaoc? SBJ__C2Descriptor[] TAAOC descriptors
+---@field rocc? SBJ__C2Descriptor[] ROCC descriptors
 
 ---China faction configuration
 ---@class SBJ__ChinaConfig: table
 ---@field triggers SBJ__TriggerConfig Trigger timing configuration
----@field SIGINT SBJ__SIGINTConfig SIGINT configuration
----@field IADS SBJ__IADSConfig IADS configuration
+---@field sigint SBJ__SIGINTConfig SIGINT configuration
+---@field iads SBJ__IADSConfig IADS configuration
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
----@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
 ---@field recon SBJ__ReconConfig Reconnaissance configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
----@field PHIBOP SBJ__AmphibOpsConfig Amphibious operations configuration
+---@field amphibOps SBJ__AmphibOpsConfig Amphibious operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 ---@field subSurface SBJ__SubsurfaceOperationsConfig Subsurface operations configuration
----@field FSTTemplate table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
----@field packageTemplate table<string, SBJ__PackageTemplate[]> Air package templates
+---@field fireSupportTaskTemplates table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
+---@field packageTemplates table<string, SBJ__PackageTemplate[]> Air package templates
 
 ---Taiwan faction configuration
 ---@class SBJ__TaiwanConfig: table
----@field GPSJamming SBJ__GPSJammingConfig GPS jamming configuration
+---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
----@field IADS SBJ__IADSFactionConfig IADS configuration
+---@field iads SBJ__IADSFactionConfig IADS configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 
 ---US faction configuration
 ---@class SBJ__USConfig: table
----@field SIGINT SBJ__SIGINTConfig SIGINT configuration
+---@field sigint SBJ__SIGINTConfig SIGINT configuration
 
 ---Scoring system configuration
 ---@class SBJ__ScoringConfig: table
@@ -279,10 +287,10 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field s SBJ__ScoringConfig Scoring system configuration
 ---@field [SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
 
----GPS jamming context managing GPS denial operations state
----@class SBJ__GPSJammingContext: table
----@field enabled boolean Whether GPS jamming system is activated
----@field jammers table<string, SBJ__GPSJammerContext> GPS jammer contexts indexed by jammer name
+---GNSS jamming context managing GNSS denial operations state
+---@class SBJ__GNSSJammingContext: table
+---@field enabled boolean Whether GNSS jamming system is activated
+---@field jammers table<string, SBJ__GNSSJammerContext> GNSS jammer contexts indexed by jammer name
 
 ---Submarine-launched cruise missile context managing SLCM operations state
 ---@class SBJ__SLCMContext: table
@@ -300,14 +308,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---China faction saved data structure
 ---@class SBJ__ChinaSaveData: table
 ---@field targetlist SBJ__TargetEntry[] Target list for strike planning
----@field SIGINT SBJ__SIGINTContext Signals intelligence context
----@field IADS SBJ__IADSContext Integrated Air Defense System context
+---@field sigint SBJ__SIGINTContext Signals intelligence context
+---@field iads SBJ__IADSContext Integrated Air Defense System context
 ---@field commsJamming SBJ__CommsJammingContext Communications jamming context
----@field GPSJamming SBJ__GPSJammingContext GPS jamming context
+---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 ---@field ground SBJ__GroundForceContext Ground force systems context
 ---@field recon SBJ__ReconContext Reconnaissance operations context
 ---@field air SBJ__AirOperationsContext Air operations context
----@field PHIBOP SBJ__PHIBOPContext Amphibious operations context
+---@field amphibOps SBJ__AmphibOpsContext Amphibious operations context
 ---@field surface SBJ__SurfaceOperationsContext Surface operations context
 ---@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
@@ -317,13 +325,13 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@class SBJ__TaiwanSaveData: table
 ---@field ground SBJ__GroundForceContext Ground force systems context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
----@field IADS SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
+---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
----@field GPSJamming SBJ__GPSJammingContext GPS jamming context
+---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 
 ---US faction saved data structure
 ---@class SBJ__USSaveData: table
----@field SIGINT SBJ__SIGINTContext Signals intelligence context
+---@field sigint SBJ__SIGINTContext Signals intelligence context
 
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData: table
@@ -538,7 +546,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
 
 ---Amphibious operations context managing all amphibious operation state
----@class SBJ__PHIBOPContext: table
+---@class SBJ__AmphibOpsContext: table
 ---@field startTime string Operation start time
 ---@field isTesting boolean Whether in testing mode
 ---@field isShipsStartedMoving boolean Whether ships have started moving
@@ -626,14 +634,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field name string Operational zone name
 ---@field baseGUID string Home base GUID for embarked units
 ---@field anchorageArea string[] LHD/LPD anchorage area reference points
----@field LSTAnchorageArea string[] LST anchorage area reference points
+---@field lstAnchorageArea string[] LST anchorage area reference points
 ---@field area string[] General operational area reference points
 ---@field offloadArea string[] Vehicle offload area reference points
 ---@field boat SBJ__BoatMissionDescriptor Landing craft configuration
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
 ---@field attackHelicopter SBJ__AttackHelicopterDescriptor Attack helicopter configuration
----@field LSTSettings SBJ__LSTMovementDescriptor LST movement configuration
----@field ACV SBJ__ACVDescriptor Amphibious combat vehicle configuration
+---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
+---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
 
 ---Formation settings for amphibious operation layouts
 ---Defines spacing and movement parameters for amphibious assault ship formations
@@ -645,9 +653,9 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field transitDistance number Distance for transit phase
 ---@field shipSpeed number Ship movement speed
 ---@field heading table<string, SBJ__FormationHeading> Formation heading configuration
----@field ACVSpeed number Amphibious combat vehicle speed
----@field ACVTransitDistance number ACV transit distance
----@field ACVHorizontalDistance number ACV horizontal spacing
+---@field acvSpeed number Amphibious combat vehicle speed
+---@field acvTransitDistance number Amphibious combat vehicle transit distance
+---@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
 
 ---Ship type starting point configuration
 ---@class SBJ__ShipTypeStartPoint: table
@@ -743,7 +751,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field landBased table Land-based aircraft context (reserved for future use)
 ---@field shipBased table Ship-based aircraft context (reserved for future use)
 ---@field enabled boolean Whether air operations system is activated
----@field ATO table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
+---@field airTaskingOrder table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
 
 -- ============================================================================
@@ -835,10 +843,11 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
----@field mrbm SBJ__MissileSystemContext Medium-Range Ballistic Missile system
+---@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system (Optional)
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
----@field FSP table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
+---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system (Optional)
+---@field fireSupportPlan? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
 ---@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
 
 ---Unit property setting parameters for ground units
@@ -922,7 +931,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field areas? string[][] Operation areas
 ---@field filterNames? string[] Filter function names (for dynamic targets, optional)
 ---@field contactAge number Contact valid time (seconds)
----@field minTargetCount? number Minimum target count threshold
+---@field minTargetCount number Minimum target count threshold
 ---@field ammoPerTarget? number Ammunition count per target
 
 ---Target definition extending template with contact list
@@ -939,7 +948,6 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field saveData? SBJ__SaveData Saved data
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
----@field shouldTrack? boolean Whether to track contacts (optional)
 
 ---Firing unit definition for fire support operations
 ---@class SBJ__FiringUnit: table
@@ -963,14 +971,14 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field name string FSEM name
 ---@field isFirstWave boolean Whether it's the first wave attack
 ---@field strikeInterval number Strike interval time (seconds)
----@field FSTs SBJ__FireSupportTaskTemplate[] FST template array
+---@field fireSupportTasks SBJ__FireSupportTaskTemplate[] FST template array
 
 ---Fire Support Execution Matrix with execution state
 ---@class SBJ__FireSupportExecutionMatrix: SBJ__FireSupportExecutionMatrixTemplate
 ---@field isActivated boolean Whether FSEM is activated
 ---@field allFiringUnitsInPosition boolean Whether all firing units are in position
 ---@field isFinished boolean Whether FSEM is finished
----@field FSTs SBJ__FireSupportTask[] Fire support tasks array
+---@field fireSupportTasks SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes
 ---@class SBJ__AttackParams: table
@@ -1127,19 +1135,19 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 -- ============================================================================
 -- Electronic Warfare
 -- ============================================================================
--- Electronic warfare types for EW modules (SIGINT, GPS Jamming, Comms Jamming)
+-- Electronic warfare types for EW modules (SIGINT, GNSS Jamming, Comms Jamming)
 
----GPS jammer deployment descriptor
+---GNSS jammer deployment descriptor
 ---Serves as a blueprint for creating jammer units, related events, and jamming zones
----@class SBJ__GPSJammerDescriptor: table
+---@class SBJ__GNSSJammerDescriptor: table
 ---@field name string Jammer unit identifier
 ---@field zoneName string Associated jamming zone name for area creation
 ---@field point? CMO__Location Deployment coordinates
 ---@field randomRadius number Position randomization radius (nautical miles)
----@field radius number GPS jamming effectiveness radius (nautical miles)
+---@field radius number GNSS jamming effectiveness radius (nautical miles)
 
----GPS jammer context extending descriptor with runtime state
----@class SBJ__GPSJammerContext: SBJ__GPSJammerDescriptor
+---GNSS jammer context extending descriptor with runtime state
+---@class SBJ__GNSSJammerContext: SBJ__GNSSJammerDescriptor
 
 ---Enhanced SIGINT detection result with confidence and metadata
 ---@class SBJ__SIGINTResult: table
@@ -1179,7 +1187,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---SIGINT context managing all transmission tracking
 ---@class SBJ__SIGINTContext: table
 ---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
----@field RA table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
+---@field reconAircraft table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
 ---@field enabled boolean Whether SIGINT is activated
 ---@field maxCount number Maximum detection level
 
@@ -1210,7 +1218,7 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@field msg string Status message
 ---@field guid string C2 node GUID
 ---@field areas table<number, string[]> Associated operational areas
----@field SAM table<string, SBJ__RadarContext> Surface-to-Air Missile systems
+---@field sam table<string, SBJ__RadarContext> Surface-to-Air Missile systems
 ---@field radar? table<string, SBJ__RadarContext> Radar systems (optional)
 ---@field [string] table<string, SBJ__RadarContext>
 
@@ -1225,16 +1233,16 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---Defines C2 facility parameters and deployment settings for IADS
 ---@class SBJ__IADSConfig: table
 ---@field ratio {C2:number} C2 facility ratio multiplier
----@field C2FacilityDBIDs number[] Database IDs for C2 facility types
+---@field c2FacilityDBIDs number[] Database IDs for C2 facility types
 ---@field randomRadius number Random deployment radius (nautical miles)
----@field C2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
+---@field c2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
 ---IADS context managing air defense system state
 ---Tracks all Command and Control nodes and system activation status
 ---@class SBJ__IADSContext: table
----@field C2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
----@field ROCC? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
----@field TAAOC? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
+---@field c2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
+---@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
+---@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
 ---@field enabled boolean Whether IADS is activated
 ---@field [string] table<string, SBJ__C2Context>
 
@@ -1357,6 +1365,10 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Setup menu configuration result containing user selections
 ---@class SBJ__SetupResult: table
----@field jammers SBJ__GPSJammerDescriptor[] GPS jammer deployment configurations
+---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
 ---@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
+
+---EMCON configuration result containing user selections
+---@class SBJ__EmconResult: table
+---@field doctrine {id: string, weaponsFree: boolean}[] SAM system deployment configurations

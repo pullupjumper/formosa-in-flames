@@ -6,6 +6,87 @@ local constants = require("src.core.constants")
 
 local TargetingProcess = {}
 
+-- ============================================================================
+-- Enumerations & Lookup Tables
+-- ============================================================================
+
+---CMO contact typed values
+local CONTACT_TYPE = {
+  AIRCRAFT = 0,
+  NAVAL = 2,
+  GROUND = 8,
+}
+
+---Target category labels for targetlist entries
+local TARGET_CATEGORY = {
+  AIRFIELD = "Airfield",
+  PORT = "Port",
+  ISR = "ISR",
+  SAM = "SAM",
+  ASM = "ASM",
+  C2 = "C2",
+}
+
+---SAM radar sensor DBID lookup (TK-3, TK-2, PAC-3, TC-2)
+local SAM_SENSOR_DBIDS = {
+  [constants.SENSORS.TK3_LONG_MOUNTAIN] = true,
+  [constants.SENSORS.TK3_LONG_WHITE_2] = true,
+  [constants.SENSORS.TK2_CS_MPG25] = true,
+  [constants.SENSORS.PAC3_MPQ65] = true,
+  [constants.SENSORS.TC2_CS_MPQ90] = true,
+}
+
+---Airborne early warning sensor DBID lookup (P-3C SEAVUE, E-2K APS-145)
+local AEW_SENSOR_DBIDS = {
+  [constants.SENSORS.P3C_SEAVUE] = true,
+  [constants.SENSORS.E2K_APS145] = true,
+}
+
+---C2 facility name patterns
+local C2_PATTERNS = { "ROCC", "TAAOC" }
+
+---Battle Damage Assessment structural status
+local BDA_STATUS = {
+  HEAVY_DAMAGE = "Heavy damage",
+}
+
+---Side name for CMO API calls (contacts, units)
+local SIDE_NAME = "China"
+
+---Standalone target matching rules: { patternKey, subKey, category }
+local STANDALONE_TARGET_RULES = {
+  { patternKey = "radar", subKey = "radarPattern", category = TARGET_CATEGORY.ISR },
+  { patternKey = "sam", subKey = "skyBowPattern", category = TARGET_CATEGORY.SAM },
+  { patternKey = "asm", subKey = "asmPattern", category = TARGET_CATEGORY.ASM },
+  { patternKey = "c2", subKey = "hengshanPattern", category = TARGET_CATEGORY.C2 },
+}
+
+---Reconnaissance tracking configuration per filter
+---Maps filter names to their reconnaissance platform and target resolution logic
+local RECON_TRACKING_CONFIG = {
+  findNavalTargets = {
+    platformDBID = constants.PLATFORMS.WZ8,
+    getTarget = function(opts, targetGUIDs)
+      for _, contact in ipairs(opts.contacts) do
+        if contact.guid == targetGUIDs[1] then
+          return contact
+        end
+      end
+      return nil
+    end,
+  },
+  findRadioDirection = {
+    platformDBID = constants.PLATFORMS.BZK005,
+    getTarget = function(opts, targetGUIDs)
+      return GameApi.ScenEdit_GetContact(SIDE_NAME, targetGUIDs[1])
+    end,
+  },
+}
+
+-- ============================================================================
+-- Contact Type Matching
+-- ============================================================================
+
 ---Check if location is within threshold distance from contact
 ---@param location CMO__Location|nil Base location coordinates
 ---@param guid string Contact GUID
@@ -55,50 +136,28 @@ end
 ---@param patterns SBJ__AirfieldPatterns Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function matchAirfieldTarget(description, baseLocations, guid, threshold, patterns)
-  -- Check runway and taxiway patterns
-  if string.match(description, patterns.runwayPattern) or
-      string.find(description, patterns.taxiwayPattern) then
-    for baseName, location in pairs(baseLocations) do
-      if isNearby(location, guid, threshold) then
-        return {
-          name = baseName .. "/" .. description,
-          guid = guid,
-          category = "Airfield",
-          subType = description,
-        }
-      end
-    end
-  end
-
-  -- Check shelter, hangar, tarmac, and helipad patterns
-  if string.find(description, patterns.shelterPattern) or
+  local isAirfieldFacility =
+      string.find(description, patterns.runwayPattern) or
+      string.find(description, patterns.taxiwayPattern) or
+      string.find(description, patterns.shelterPattern) or
       string.find(description, patterns.hangarPattern) or
       string.find(description, patterns.tarmacPattern) or
-      string.find(description, patterns.helipadPattern) then
-    for baseName, location in pairs(baseLocations) do
-      if isNearby(location, guid, threshold) then
-        return {
-          name = baseName .. "/" .. description,
-          guid = guid,
-          category = "Airfield",
-          subType = description,
-        }
-      end
-    end
+      string.find(description, patterns.helipadPattern) or
+      string.find(description, patterns.ammoBunkerPattern) or
+      string.find(description, patterns.ammoRevetmentPattern)
+
+  if not isAirfieldFacility then
+    return nil
   end
 
-  -- Check ammo bunker and revetment patterns
-  if string.find(description, patterns.ammoBunkerPattern) or
-      string.find(description, patterns.ammoRevetmentPattern) then
-    for baseName, location in pairs(baseLocations) do
-      if isNearby(location, guid, threshold) then
-        return {
-          name = baseName .. "/" .. description,
-          guid = guid,
-          category = "Airfield",
-          subType = description,
-        }
-      end
+  for baseName, location in pairs(baseLocations) do
+    if isNearby(location, guid, threshold) then
+      return {
+        name = baseName .. "/" .. description,
+        guid = guid,
+        category = TARGET_CATEGORY.AIRFIELD,
+        subType = description,
+      }
     end
   end
 
@@ -119,7 +178,7 @@ local function matchPortTarget(description, portLocations, guid, threshold, patt
         return {
           name = portName .. "/" .. description,
           guid = guid,
-          category = "Port",
+          category = TARGET_CATEGORY.PORT,
           subType = description,
         }
       end
@@ -135,47 +194,24 @@ end
 ---@param patterns SBJ__TargetCategoryPatterns Target category patterns configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function matchStandaloneTarget(description, guid, patterns)
-  if string.find(description, patterns.radar.radarPattern) then
-    return {
-      name = description,
-      guid = guid,
-      category = "ISR",
-      subType = description,
-    }
+  for _, rule in ipairs(STANDALONE_TARGET_RULES) do
+    if string.find(description, patterns[rule.patternKey][rule.subKey]) then
+      return {
+        name = description,
+        guid = guid,
+        category = rule.category,
+        subType = description,
+      }
+    end
   end
-
-  if string.find(description, patterns.sam.skyBowPattern) then
-    return {
-      name = description,
-      guid = guid,
-      category = "SAM",
-      subType = description,
-    }
-  end
-
-  if string.find(description, patterns.asm.asmPattern) then
-    return {
-      name = description,
-      guid = guid,
-      category = "ASM",
-      subType = description,
-    }
-  end
-
-  if string.find(description, patterns.c2.hengshanPattern) then
-    return {
-      name = description,
-      guid = guid,
-      category = "C2",
-      subType = description,
-    }
-  end
-
   return nil
 end
 
+-- ============================================================================
+-- Target Scanning
+-- ============================================================================
+
 ---Scan and categorize contacts into a target list
----Performs single-pass scanning of contacts to identify and categorize targets
 ---Results are directly assigned to saveData.c.targetlist
 ---@param sideName string Side name to get contacts from (e.g., 'China')
 ---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, taiwanAirBases, taiwanPorts, and targetCategories
@@ -230,138 +266,128 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   Logger.log("targetingProcess", string.format("Scanned %d targets for %s", #targetlist, sideName))
 end
 
----Find infantry units within specified areas
----Filters contacts to identify ground infantry units (typed == 8) in target areas
----@param opts SBJ__FilterParams Filter parameters containing contacts and task information
----@return string[] # Array of infantry unit GUIDs found in target areas
-function TargetingProcess.findInfantry(opts)
-  local contacts = opts.contacts
-  local task = opts.task
-  local targets = {}
+-- ============================================================================
+-- Contact Filtering
+-- ============================================================================
 
-  for _, area in ipairs(task.target.areas) do
+---Filter contacts matching predicate within target areas
+---@param contacts CMO__Contact[] Contacts to filter
+---@param areas string[][] Target area definitions
+---@param predicate fun(contact: CMO__Contact): boolean Matching predicate (may have side effects)
+---@return string[] # GUIDs of matching contacts
+local function filterContactsInAreas(contacts, areas, predicate)
+  local results = {}
+  for _, area in ipairs(areas) do
     for _, contact in ipairs(contacts) do
-      if contact.typed == 8 and contact:inArea(area) then
-        contact.posture = "H"
-        table.insert(targets, contact.guid)
+      if predicate(contact) and contact:inArea(area) then
+        table.insert(results, contact.guid)
       end
     end
   end
+  return results
+end
 
-  return targets
+---Find ground targets (infantry or mobile vehicles) within specified areas
+---Marks matched contacts with hostile posture
+---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
+---@return string[] # Array of ground unit GUIDs found in target areas
+local function findGroundTargets(opts)
+  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+    if contact.typed ~= CONTACT_TYPE.GROUND then
+      return false
+    end
+    contact.posture = "H"
+    return true
+  end)
 end
 
 ---Find airborne early warning aircraft (P-3C, E-2K) within specified areas
----Identifies aircraft contacts with specific radar emissions (SEAVUE or APS-145)
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, and config
 ---@return string[] # Array of airborne early warning aircraft GUIDs
-function TargetingProcess.findAirborne(opts)
-  local contacts = opts.contacts
-  local task = opts.task
-  local targets = {}
-
-  for _, area in ipairs(task.target.areas) do
-    for _, contact in ipairs(contacts) do
-      if contact.emissions and contact.emissions[1] then
-        local sensorDBID = contact.emissions[1].sensor_dbid
-        if (sensorDBID == constants.SENSORS.P3C_SEAVUE or sensorDBID == constants.SENSORS.E2K_APS145) and
-            contact.typed == 0 and
-            contact:inArea(area) then
-          table.insert(targets, contact.guid)
-        end
-      end
+local function findAirborne(opts)
+  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+    if not contact.emissions or not contact.emissions[1] then
+      return false
     end
-  end
-
-  return targets
+    return AEW_SENSOR_DBIDS[contact.emissions[1].sensor_dbid] ~= nil
+        and contact.typed == CONTACT_TYPE.AIRCRAFT
+  end)
 end
 
 ---Analyze radar emissions to identify SAM systems
 ---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, and sensor configuration
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
-function TargetingProcess.analyzeEmissions(opts)
+local function analyzeEmissions(opts)
+  local contactAge = opts.task.target.contactAge
+  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+    if not contact.emissions or not contact.emissions[1] then
+      return false
+    end
+    return SAM_SENSOR_DBIDS[contact.emissions[1].sensor_dbid] ~= nil
+        and contact.lastDetections ~= nil
+        and contact.lastDetections[1].age <= contactAge
+  end)
+end
+
+---Find Command and Control (C2) facilities
+---Identifies ROCC and TAAOC command centers within target areas
+---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
+---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
+local function findC2(opts)
+  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+    for _, pattern in ipairs(C2_PATTERNS) do
+      if string.find(contact.type_description, pattern) then
+        return true
+      end
+    end
+    return false
+  end)
+end
+
+---Find naval targets (ships) within specified areas
+---Identifies naval contacts within contact age limit
+---@param opts SBJ__FilterParams Filter parameters with contacts and task
+---@return string[] # Array of naval target GUIDs
+local function findNavalTargets(opts)
   local contacts = opts.contacts
   local task = opts.task
-  local SAMTargets = {}
+  local contactAge = task.target.contactAge
 
-  for _, area in ipairs(task.target.areas) do
-    for _, contact in ipairs(contacts) do
-      local isSensor = contact.emissions and
-          (contact.emissions[1].sensor_dbid == constants.SENSORS.TK3_LONG_MOUNTAIN or
-            contact.emissions[1].sensor_dbid == constants.SENSORS.TK3_LONG_WHITE_2 or
-            contact.emissions[1].sensor_dbid == constants.SENSORS.TK2_CS_MPG25 or
-            contact.emissions[1].sensor_dbid == constants.SENSORS.PAC3_MPQ65 or
-            contact.emissions[1].sensor_dbid == constants.SENSORS.TC2_CS_MPQ90)
-      local isAgeLessThan = contact.lastDetections and contact.lastDetections[1].age <= task.target.contactAge
-      local isSAM = isSensor and isAgeLessThan
-      if contact:inArea(area) and isSAM then table.insert(SAMTargets, contact.guid) end
-    end
-  end
-
-  return SAMTargets
+  return filterContactsInAreas(contacts, task.target.areas, function(contact)
+    return contact.typed == CONTACT_TYPE.NAVAL
+        and contact.lastDetections ~= nil
+        and contact.lastDetections[1].age <= contactAge
+  end)
 end
 
 ---Check if target is within range of a radio transmission source
----Validates distance to radio source and transmission strength
 ---@param config SBJ__Config Global configuration with SIGINT range and count thresholds
 ---@param distance number Distance in nautical miles to radio source
 ---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
-  return distance <= config.c.SIGINT.maxRange and transmission.currentDetectionLevel > config.c.SIGINT.maxCount
-end
-
----Find mobile ground targets (vehicles) within specified areas
----Identifies ground mobile units (typed == 8) in target areas
----@param opts SBJ__FilterParams Filter parameters containing contacts and task information
----@return string[] # Array of mobile ground unit GUIDs
-function TargetingProcess.findMobileTargets(opts)
-  local contacts = opts.contacts
-  local task = opts.task
-  local targets = {}
-
-  for _, area in ipairs(task.target.areas) do
-    for _, contact in ipairs(contacts) do
-      if (contact.typed == 8) and contact:inArea(area) then
-        contact.posture = "H"
-        table.insert(targets, contact.guid)
-      end
-    end
-  end
-
-  return targets
+  return distance <= config.c.sigint.maxRange and transmission.currentDetectionLevel > config.c.sigint.maxCount
 end
 
 ---Filter targets that are within range of SIGINT-detected radio sources
----Cross-references contacts with SIGINT transmissions, triggers reconnaissance for mobile sources
----@param config SBJ__Config Global configuration with SIGINT parameters and platform definitions
+---Cross-references contacts with SIGINT transmissions
+---@param config SBJ__Config Global configuration with SIGINT parameters
 ---@param saveData SBJ__SaveData Persistent save data containing SIGINT transmission records
 ---@param contacts string[] Array of contact GUIDs to evaluate
----@return string[]|nil # Array of contact GUIDs near radio sources, or nil if no aircraft available
+---@return string[] # Array of contact GUIDs near radio sources
 local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
-  local isTracking = false
-  ---@type CMO__SideUnit[]|nil
-  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
-
-  if not filteredUnits then
-    return
-  end
 
   for _, guid in ipairs(contacts) do
-    local contact = GameApi.ScenEdit_GetContact("China", guid)
+    local contact = GameApi.ScenEdit_GetContact(SIDE_NAME, guid)
 
     if contact then
-      for _, tm in pairs(saveData.c.SIGINT.transmissions) do
+      for _, tm in pairs(saveData.c.sigint.transmissions) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
         if distance and isWithinRange(config, distance, tm) then
           table.insert(targets, guid)
-
-          if not isTracking and tm.type == "mobile" then
-            isTracking = Recon.trackTarget(saveData.c.recon, filteredUnits, constants.PLATFORMS.BZK005, contact)
-          end
         end
       end
     end
@@ -373,18 +399,18 @@ end
 ---Find targets by radio direction (SIGINT-based targeting)
 ---Combines mobile targets and C2 units, filters by proximity to radio transmissions
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, config, and saveData
----@return string[]|nil # Array of target GUIDs near radio sources, or nil if unavailable
-function TargetingProcess.findRadioDirection(opts)
+---@return string[] # Array of target GUIDs near radio sources
+local function findRadioDirection(opts)
   local contacts = opts.contacts
   local saveData = opts.saveData
   local task = opts.task
   local config = opts.config
   local targets = {}
-  local mobileTargets = TargetingProcess.findMobileTargets({ contacts = contacts, task = task })
-  local c2Targets = TargetingProcess.findC2({ contacts = contacts, task = task })
+  local mobileTargets = findGroundTargets({ contacts = contacts, task = task })
+  local c2Targets = findC2({ contacts = contacts, task = task })
 
   if not config or not saveData then
-    return nil
+    return {}
   end
 
   Utils.insertList(targets, mobileTargets)
@@ -393,91 +419,42 @@ function TargetingProcess.findRadioDirection(opts)
   return radioSource
 end
 
----Find naval targets (ships) within specified areas
----Identifies naval contacts within contact age limit, triggers WZ-8 reconnaissance tracking
----@param opts SBJ__FilterParams Filter parameters with contacts, task, config, saveData, and optional shouldTrack flag
----@return string[]|nil # Array of naval target GUIDs, or nil if no reconnaissance aircraft available
-function TargetingProcess.findNavalTargets(opts)
-  local shouldTrack = opts.shouldTrack or false
-  local contacts = opts.contacts
-  local saveData = opts.saveData
-  local task = opts.task
-  local navalTargets = {}
-  local hasTracked = false
-
-  if not saveData then
-    return nil
-  end
-
-  ---@type CMO__SideUnit[]|nil
-  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
-
-  if not filteredUnits then
-    return
-  end
-
-  for _, area in ipairs(task.target.areas) do
-    for _, contact in ipairs(contacts) do
-      if contact.typed == 2 and
-          contact:inArea(area) and
-          contact.lastDetections and
-          contact.lastDetections[1].age <= task.target.contactAge then
-        table.insert(navalTargets, contact.guid)
-
-        if not hasTracked then
-          hasTracked = Recon.trackTarget(saveData.c.recon, filteredUnits, constants.PLATFORMS.WZ8, contact)
-          Logger.log("recon", "hasTracked: " .. tostring(hasTracked))
-        end
-      end
-    end
-  end
-
-  return navalTargets
-end
-
----Find Command and Control (C2) facilities
----Identifies ROCC and TAAOC command centers within target areas
----@param opts SBJ__FilterParams Filter parameters containing contacts and task information
----@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
-function TargetingProcess.findC2(opts)
-  local contacts = opts.contacts
-  local task = opts.task
-  local targets = {}
-
-  for _, area in ipairs(task.target.areas) do
-    for _, contact in ipairs(contacts) do
-      if (string.find(contact.type_description, "ROCC") ~= nil or
-            string.find(contact.type_description, "TAAOC") ~= nil) and
-          contact:inArea(area) then
-        table.insert(targets, contact.guid)
-      end
-    end
-  end
-
-  return targets
-end
+-- ============================================================================
+-- Battle Damage Assessment
+-- ============================================================================
 
 ---Evaluate if a target is valid for strike based on damage and detection status
 ---Checks BDA (Battle Damage Assessment), contact age, and special helipad conditions
 ---@param target CMO__Contact Contact object to evaluate
 ---@param contactAge number Maximum acceptable contact age in seconds
 ---@param isFirstWave boolean If true, accepts all targets; if false, applies BDA filtering
----@return boolean # True if target is valid for strike (not heavily damaged, recent detection, or first wave)
-function TargetingProcess.evaluateTarget(target, contactAge, isFirstWave)
+---@return boolean # True if target is valid for strike
+local function evaluateTarget(target, contactAge, isFirstWave)
   local actualUnit = GameApi.ScenEdit_GetUnit(target.actualunitid)
-
   if not actualUnit then
     return false
   end
 
+  if isFirstWave then
+    return true
+  end
+
   local isHelipad = string.find(target.type_description, "Helipad") ~= nil
+  if isHelipad then
+    return #actualUnit.embarkedUnits.Aircraft > 0
+  end
+
   local BDA = target.BDA
+  if not BDA or BDA.STRUCTURAL == BDA_STATUS.HEAVY_DAMAGE then
+    return false
+  end
+
   local detections = target.lastDetections
-  local hasEvaluated = BDA and not (BDA.STRUCTURAL == "Heavy damage") and
-      (detections and detections[1].age <= contactAge) and
-      not isHelipad
-  local isHelipadEmbarkedWithHelicopter = isHelipad and #actualUnit.embarkedUnits.Aircraft > 0
-  return hasEvaluated or isHelipadEmbarkedWithHelicopter or isFirstWave
+  if not detections or detections[1].age > contactAge then
+    return false
+  end
+
+  return true
 end
 
 ---Assess target damage status (Battle Damage Assessment)
@@ -485,7 +462,7 @@ end
 ---@param task SBJ__Task Task containing target list and contact age parameters
 ---@param isFirstWave boolean If true, includes all targets; if false, filters by damage status
 ---@return string[] # Array of target GUIDs that passed BDA evaluation
-function TargetingProcess.assessTargetsDamage(task, isFirstWave)
+local function assessTargetsDamage(task, isFirstWave)
   local evaluatedTargetlist = {}
 
   if type(task.target.list) ~= "table" or #task.target.list == 0 then
@@ -493,9 +470,9 @@ function TargetingProcess.assessTargetsDamage(task, isFirstWave)
   end
 
   for _, guid in ipairs(task.target.list) do
-    local actualTarget = GameApi.ScenEdit_GetContact("China", guid)
+    local actualTarget = GameApi.ScenEdit_GetContact(SIDE_NAME, guid)
 
-    if actualTarget and TargetingProcess.evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
+    if actualTarget and evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)
     end
   end
@@ -503,8 +480,11 @@ function TargetingProcess.assessTargetsDamage(task, isFirstWave)
   return evaluatedTargetlist
 end
 
+-- ============================================================================
+-- Target Query
+-- ============================================================================
+
 ---Filter targets by type and base name
----Filters target list based on base name pattern and facility sub-types
 ---@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
 ---@param queryParams SBJ__TargetQueryParam[] Array of query parameters with baseName (optional) and subTypes (array)
 ---@return string[] # Array of target GUIDs matching query criteria
@@ -513,18 +493,8 @@ function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
 
   for _, item in ipairs(targetlist) do
     for _, param in ipairs(queryParams) do
-      local isNameMatched = false
+      local isNameMatched = not param.baseName or string.find(item.name, param.baseName) ~= nil
       local isSubTypeMatched = false
-
-      if not param.baseName then
-        isNameMatched = true
-      end
-
-      if param.baseName then
-        if string.find(item.name, param.baseName) ~= nil then
-          isNameMatched = true
-        end
-      end
 
       for _, subType in ipairs(param.subTypes) do
         if string.find(item.subType, subType) ~= nil then
@@ -540,6 +510,156 @@ function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
   end
 
   return selectedTargetlist
+end
+
+-- ============================================================================
+-- Dynamic Target Processing
+-- ============================================================================
+
+---Trigger reconnaissance tracking for a filter's results
+---@param opts SBJ__FilterParams Filter options with contacts and saveData
+---@param filterName string Name of the filter that produced targets
+---@param targetGUIDs string[] Array of target GUIDs from the filter
+local function triggerReconTracking(opts, filterName, targetGUIDs)
+  local trackingConfig = RECON_TRACKING_CONFIG[filterName]
+  if not trackingConfig or not opts.saveData then
+    return
+  end
+
+  local side = GameApi.VP_GetSide({ side = SIDE_NAME })
+  if not side then return end
+
+  local filteredUnits = side:unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  if not filteredUnits then return end
+
+  local target = trackingConfig.getTarget(opts, targetGUIDs)
+  if not target then return end
+
+  Recon.trackTarget(opts.saveData.c.recon, filteredUnits, trackingConfig.platformDBID, target)
+end
+
+---@package
+---Internal functions exposed for unit testing and stubbable dispatch
+TargetingProcess._internal = {
+  findInfantry = findGroundTargets,
+  findAirborne = findAirborne,
+  analyzeEmissions = analyzeEmissions,
+  findMobileTargets = findGroundTargets,
+  findNavalTargets = findNavalTargets,
+  findC2 = findC2,
+  findRadioDirection = findRadioDirection,
+  evaluateTarget = evaluateTarget,
+  assessTargetsDamage = assessTargetsDamage,
+  triggerReconTracking = triggerReconTracking,
+}
+
+---Build filter options for dynamic target filtering
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
+---@return SBJ__FilterParams # Filter options for filter functions
+local function buildFilterOptions(config, saveData, contacts, targetConfig)
+  ---@type SBJ__FilterParams
+  local opts = {
+    contacts = contacts,
+    task = {
+      target = {
+        list = {},
+        areas = targetConfig.areas,
+        contactAge = targetConfig.contactAge,
+        minTargetCount = targetConfig.minTargetCount or 1
+      }
+    },
+    config = config,
+    saveData = saveData,
+  }
+
+  return opts
+end
+
+---Process dynamic targets using filter functions
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames
+---@return string[] # Array of target GUIDs matching the filter criteria
+local function processDynamicTargets(config, saveData, contacts, targetConfig)
+  local filterNames = targetConfig.filterNames
+  if not filterNames or #filterNames == 0 then
+    return {}
+  end
+
+  local strikeTargets = {}
+  local filterOpts = buildFilterOptions(config, saveData, contacts, targetConfig)
+
+  for _, filterName in ipairs(filterNames) do
+    ---@type fun(opts: SBJ__FilterParams): string[]|nil
+    local targetingFunction = TargetingProcess._internal[filterName]
+    if targetingFunction then
+      local targets = targetingFunction(filterOpts)
+      if targets and #targets > 0 then
+        triggerReconTracking(filterOpts, filterName, targets)
+        Utils.insertList(strikeTargets, targets)
+      end
+    else
+      Logger.warn(string.format("Unknown target filtering function: %s", filterName))
+    end
+  end
+
+  return strikeTargets
+end
+
+---Process fixed targets using BDA assessment
+---@param saveData SBJ__SaveData Persistent save data containing target list
+---@param targetConfig SBJ__TargetTemplate Target configuration with objs, contactAge, minTargetCount
+---@param isFirstWave boolean Whether this is the first wave
+---@return string[] # Array of target GUIDs that passed BDA assessment
+local function processFixedTargets(saveData, targetConfig, isFirstWave)
+  if not targetConfig.objs then
+    return {}
+  end
+
+  local filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
+    saveData.c.targetlist,
+    targetConfig.objs
+  )
+  if not filteredTargets or #filteredTargets == 0 then
+    return {}
+  end
+
+  ---@type SBJ__Task
+  local task = {
+    target = {
+      list = filteredTargets,
+      contactAge = targetConfig.contactAge,
+      minTargetCount = targetConfig.minTargetCount
+    }
+  }
+  return assessTargetsDamage(task, isFirstWave) or {}
+end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
+
+---Process targets by routing to dynamic or fixed target processing
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param contacts CMO__Contact[] Available sensor contacts
+---@param targetConfig SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
+---@param isFirstWave boolean Whether this is the first wave
+---@return string[] # Array of target GUIDs
+function TargetingProcess.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
+  if not targetConfig then
+    return {}
+  end
+
+  if type(targetConfig.filterNames) == "table" and #targetConfig.filterNames > 0 then
+    return processDynamicTargets(config, saveData, contacts, targetConfig)
+  end
+
+  return processFixedTargets(saveData, targetConfig, isFirstWave)
 end
 
 return TargetingProcess

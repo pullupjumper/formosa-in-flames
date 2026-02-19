@@ -1,6 +1,6 @@
 local config = require("src.core.config")
 local constants = require("src.core.constants")
-
+---@diagnostic disable: missing-fields
 ---@class SBJ__SaveData
 local saveData = {}
 saveData.c = {}
@@ -13,20 +13,20 @@ saveData.u = {}
 -- SIGINT (China)
 -- ============================================================================
 
-saveData.c.SIGINT = {}
-saveData.c.SIGINT.enabled = true
-saveData.c.SIGINT.maxCount = config.c.SIGINT.maxCount
-saveData.c.SIGINT.RA = {}
-saveData.c.SIGINT.transmissions = {}
+saveData.c.sigint = {}
+saveData.c.sigint.enabled = true
+saveData.c.sigint.maxCount = config.c.sigint.maxCount
+saveData.c.sigint.reconAircraft = {}
+saveData.c.sigint.transmissions = {}
 
 
 -- ============================================================================
 -- IADS (China)
 -- ============================================================================
 
-saveData.c.IADS = {}
-saveData.c.IADS.enabled = true
-saveData.c.IADS.C2 = {}
+saveData.c.iads = {}
+saveData.c.iads.enabled = true
+saveData.c.iads.c2 = {}
 
 
 -- ============================================================================
@@ -42,9 +42,9 @@ saveData.c.commsJamming.jammers = {}
 -- GPS Jamming (China)
 -- ============================================================================
 
-saveData.c.GPSJamming = {}
-saveData.c.GPSJamming.enabled = true
-saveData.c.GPSJamming.jammers = {}
+saveData.c.gnssJamming = {}
+saveData.c.gnssJamming.enabled = true
+saveData.c.gnssJamming.jammers = {}
 
 
 -- ============================================================================
@@ -97,19 +97,31 @@ saveData.c.ground.mrbm.firingUnits = {}
 
 
 -- ============================================================================
+-- ASCM (China)
+-- ============================================================================
+
+saveData.c.ground.ascm = {}
+saveData.c.ground.ascm.enabled = true
+saveData.c.ground.ascm.reloadTime = config.c.ground.ascm.reloadTime
+saveData.c.ground.ascm.ammunitions = {}
+saveData.c.ground.ascm.resupplyUnits = {}
+saveData.c.ground.ascm.firingUnits = {}
+
+
+-- ============================================================================
 -- Reconnaissance (China)
 -- ============================================================================
 
 saveData.c.recon = {}
 saveData.c.recon.enabled = true
-
+saveData.c.recon.queue = {}
 
 -- ============================================================================
 -- Fire Support Plan (China)
 -- ============================================================================
 
 saveData.c.ground.enabled = true
-saveData.c.ground.FSP = {}
+saveData.c.ground.fireSupportPlan = {}
 
 
 -- ============================================================================
@@ -120,7 +132,7 @@ saveData.c.air = {}
 saveData.c.air.landBased = {}
 saveData.c.air.shipBased = {}
 saveData.c.air.enabled = true
-saveData.c.air.ATO = {}
+saveData.c.air.airTaskingOrder = {}
 
 
 
@@ -128,17 +140,17 @@ saveData.c.air.ATO = {}
 -- Amphibious Operations (China)
 -- ============================================================================
 
-saveData.c.PHIBOP = {}
-saveData.c.PHIBOP.startTime = config.c.triggers.amphibiousOps.startTime
-saveData.c.PHIBOP.isTesting = true
-saveData.c.PHIBOP.isShipsStartedMoving = true
-saveData.c.PHIBOP.isWaitingForShipArrival = false
-saveData.c.PHIBOP.amphibiousAssaultStartTime = nil
-saveData.c.PHIBOP.isWaitingForAmphibiousAssault = false
-saveData.c.PHIBOP.isWaitingForSecondWaveUnloading = false
-saveData.c.PHIBOP.airlandingMissionStartTime = nil
-saveData.c.PHIBOP.calculationResult = {}
-saveData.c.PHIBOP.barges = {}
+saveData.c.amphibOps = {}
+saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
+saveData.c.amphibOps.isTesting = true
+saveData.c.amphibOps.isShipsStartedMoving = true
+saveData.c.amphibOps.isWaitingForShipArrival = false
+saveData.c.amphibOps.amphibiousAssaultStartTime = nil
+saveData.c.amphibOps.isWaitingForAmphibiousAssault = false
+saveData.c.amphibOps.isWaitingForSecondWaveUnloading = false
+saveData.c.amphibOps.airlandingMissionStartTime = nil
+saveData.c.amphibOps.calculationResult = {}
+saveData.c.amphibOps.barges = {}
 
 
 -- ============================================================================
@@ -202,7 +214,6 @@ saveData.t.ground.srbm.resupplyUnits = {}
 saveData.t.ground.srbm.firingUnits = {}
 
 
-
 -- ============================================================================
 -- GLCM (Taiwan)
 -- ============================================================================
@@ -213,8 +224,6 @@ saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.ammunitions = {}
 saveData.t.ground.glcm.resupplyUnits = {}
 saveData.t.ground.glcm.firingUnits = {}
-
-
 
 
 -- ============================================================================
@@ -236,6 +245,14 @@ saveData.t.ground.ascm.test = {
 }
 
 
+saveData.t.ground.sam = {}
+saveData.t.ground.sam.enabled = true
+saveData.t.ground.sam.reloadTime = config.t.ground.sam.reloadTime
+saveData.t.ground.sam.ammunitions = {}
+saveData.t.ground.sam.resupplyUnits = {}
+saveData.t.ground.sam.firingUnits = {}
+
+
 -- ============================================================================
 -- Runway Repair (Taiwan)
 -- ============================================================================
@@ -249,10 +266,11 @@ saveData.t.repairRunway.runways = {}
 -- IADS (Taiwan)
 -- ============================================================================
 
-saveData.t.IADS = {}
-saveData.t.IADS.enabled = true
-saveData.t.IADS.ROCC = {}
-saveData.t.IADS.TAAOC = {}
+saveData.t.iads = {}
+saveData.t.iads.enabled = true
+saveData.t.iads.rocc = {}
+saveData.t.iads.taaoc = {}
+
 
 -- ============================================================================
 -- Aircraft (Taiwan)
@@ -268,20 +286,20 @@ saveData.t.air.landBased.AC = {}
 -- GPS Jamming (Taiwan)
 -- ============================================================================
 
-saveData.t.GPSJamming = {}
-saveData.t.GPSJamming.enabled = true
-saveData.t.GPSJamming.jammers = {}
+saveData.t.gnssJamming = {}
+saveData.t.gnssJamming.enabled = true
+saveData.t.gnssJamming.jammers = {}
 
 
 -- ============================================================================
 -- SIGINT (US)
 -- ============================================================================
 
-saveData.u.SIGINT = {}
-saveData.u.SIGINT.enabled = true
-saveData.u.SIGINT.maxCount = config.u.SIGINT.maxCount
-saveData.u.SIGINT.RA = {}
-saveData.u.SIGINT.transmissions = {}
+saveData.u.sigint = {}
+saveData.u.sigint.enabled = true
+saveData.u.sigint.maxCount = config.u.sigint.maxCount
+saveData.u.sigint.reconAircraft = {}
+saveData.u.sigint.transmissions = {}
 
 
 -- ============================================================================

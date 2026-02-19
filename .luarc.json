@@ -2,5 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.4",
   "format.enable": true,
-  "workspace.library": ["D:\\codes\\lua\\CMOScripts\\CMO_1147\\library"]
+  "workspace.library": [
+    "D:\\codes\\lua\\CMOScripts\\CMO_1147\\library",
+    "types"
+  ],
+  "diagnostics.globals": [
+    "describe",
+    "it",
+    "before_each",
+    "after_each",
+    "stub",
+    "spy",
+    "mock"
+  ]
 }

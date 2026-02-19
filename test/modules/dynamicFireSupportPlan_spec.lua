@@ -1,0 +1,632 @@
+-- DynamicFireSupportPlan Unit Tests
+---@diagnostic disable: undefined-field
+local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
+local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
+local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local MissileSystem = require("src.modules.missileSystem")
+local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local constants = require("src.core.constants")
+local Logger = require("src.utils.logger")
+
+describe("DynamicFireSupportPlan", function()
+  local activeStubs
+
+  local function trackStub(s)
+    table.insert(activeStubs, s)
+    return s
+  end
+
+  -- ============================================================================
+  -- Shared mock data builders
+  -- ============================================================================
+
+  local function makeBatteryContext(overrides)
+    overrides = overrides or {}
+    return {
+      state = overrides.state or constants.MISSILE_SYSTEM_STATE.HIDE,
+      ammoThreshold = overrides.ammoThreshold or 40,
+      weaponDBID = overrides.weaponDBID or 3104
+    }
+  end
+
+  local function makeReconEntry(overrides)
+    overrides = overrides or {}
+    return {
+      time = overrides.time or "2026-02-14 00:00:00",
+      delay = overrides.delay or 0,
+      type = overrides.type or "satellite"
+    }
+  end
+
+  local function makeOperation(overrides)
+    overrides = overrides or {}
+    return {
+      type = "ground",
+      executed = false,
+      template = {
+        name = overrides.templateName or "TEST-OP/1",
+        isFirstWave = overrides.isFirstWave ~= nil and overrides.isFirstWave or true,
+        strikeInterval = overrides.strikeInterval or 60,
+        fireSupportTasks = overrides.fireSupportTasks or {
+          {
+            name = "FST-TEST",
+            missileSystem = "SRBM",
+            firingUnits = overrides.firingUnits or { { name = "Battery-1" } },
+            target = { minTargetCount = overrides.minTargetCount or 1, ammoPerTarget = 2 }
+          }
+        }
+      }
+    }
+  end
+
+  local function makeSaveData(overrides)
+    overrides = overrides or {}
+    return {
+      c = {
+        ground = overrides.ground or {
+          fireSupportPlan = overrides.fireSupportPlan or {},
+          srbm = {
+            firingUnits = overrides.srbmFiringUnits or {
+              ["Battery-1"] = makeBatteryContext()
+            }
+          }
+        },
+        dynamicOperations = {
+          enabled = true,
+          reconSchedule = overrides.reconSchedule or {},
+          generatedOperations = { ground = {}, air = {} }
+        }
+      }
+    }
+  end
+
+  -- ============================================================================
+  -- Setup / Teardown
+  -- ============================================================================
+
+  before_each(function()
+    activeStubs = {}
+    trackStub(stub(Logger, "log"))
+    trackStub(stub(Logger, "error"))
+  end)
+
+  after_each(function()
+    for i = #activeStubs, 1, -1 do
+      activeStubs[i]:revert()
+    end
+    activeStubs = {}
+  end)
+
+  describe("execute", function()
+    -- ============================================================================
+    -- Early Exit
+    -- ============================================================================
+
+    -- Negative: dynamicOperations disabled
+    it("should return false when dynamic operations are disabled", function()
+      local saveData = {
+        c = {
+          dynamicOperations = {
+            enabled = false
+          }
+        }
+      }
+
+      assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+    end)
+
+    -- Negative: dynamicOperations is nil
+    it("should return false when dynamicOperations is nil", function()
+      local saveData = { c = {} }
+
+      assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+    end)
+
+    -- Negative: no ground operations available
+    it("should return false when no ground operations are available", function()
+      local saveData = {
+        c = {
+          dynamicOperations = {
+            enabled = true,
+            reconSchedule = {}
+          }
+        }
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+      local stubFilterOps = trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({}))
+
+      assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+      assert.stub(stubFilterOps).was.called(1)
+      assert.are.equal("ground", stubFilterOps.calls[1].vals[2])
+    end)
+
+    -- Negative: trigger time not reached
+    it("should skip operation when trigger time has not been reached", function()
+      local reconEntry = { time = "2026-02-14 00:00:00", delay = 100, type = "satellite" }
+      local operation = { type = "ground", executed = false }
+      local saveData = {
+        c = {
+          dynamicOperations = {
+            enabled = true,
+            reconSchedule = { reconEntry }
+          }
+        }
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
+      trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+        { reconEntry = reconEntry, operation = operation }
+      }))
+      trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+      assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+      assert.stub(DynamicOperationsUtils.markOperationExecuted).was_not.called()
+    end)
+
+    -- Negative: template is missing
+    it("should mark operation executed and return false when template is missing", function()
+      local reconEntry = { time = "2026-02-14 00:00:00", delay = 0, type = "satellite" }
+      local operation = { type = "ground", executed = false }
+      local saveData = {
+        c = {
+          dynamicOperations = {
+            enabled = true,
+            reconSchedule = { reconEntry }
+          }
+        }
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(100))
+      trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+        { reconEntry = reconEntry, operation = operation }
+      }))
+      trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+      assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+      assert.stub(DynamicOperationsUtils.markOperationExecuted).was.called(1)
+      assert.is_true(DynamicOperationsUtils.markOperationExecuted.calls[1].vals[3])
+    end)
+
+    -- ============================================================================
+    -- Operation Processing (recon triggered, template present)
+    -- ============================================================================
+
+    describe("with triggered ground operations", function()
+      before_each(function()
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+        trackStub(stub(DynamicOperationsUtils, "generateUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
+        trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+        trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+      end)
+
+      -- ============================================================================
+      -- Successful FSEM Creation
+      -- ============================================================================
+
+      -- Positive: standard successful creation
+      it("should create and insert FSEM when targets and firing units are available", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        local result = DynamicFireSupportPlan.execute({}, saveData, {})
+
+        assert.is_true(result)
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was.called(1)
+        assert.stub(DynamicOperationsUtils.markOperationExecuted).was.called(1)
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.is_table(fsem)
+        assert.are.equal(1, #fsem.fireSupportTasks)
+      end)
+
+      -- Positive: FSEM structure fields
+      it("should set FSEM fields correctly with isActivated true and strikeInterval 0", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        DynamicFireSupportPlan.execute({}, saveData, {})
+
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.is_true(fsem.isActivated)
+        assert.is_false(fsem.isFinished)
+        assert.are.equal(0, fsem.strikeInterval)
+      end)
+
+      -- ============================================================================
+      -- Target Evaluation
+      -- ============================================================================
+
+      -- Negative: insufficient targets
+      it("should return false when targets are insufficient for all tasks", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({ minTargetCount = 5 })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.markOperationExecuted).was.called(1)
+      end)
+
+      -- ============================================================================
+      -- Firing Unit Validation
+      -- ============================================================================
+
+      -- Negative: firing unit name is missing
+      it("should not create FSEM when firing unit name is missing", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({ firingUnits = { {} } })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Negative: firing unit already assigned to active FSEM
+      it("should not create FSEM when firing unit is already assigned to active FSEM", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({
+          fireSupportPlan = {
+            ["EXISTING-FSEM"] = {
+              isFinished = false,
+              isActivated = true,
+              fireSupportTasks = {
+                { isFinished = false, firingUnits = { { name = "Battery-1" } } }
+              }
+            }
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Negative: unit not found in game
+      it("should not create FSEM when firing unit is not found in game", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Negative: battery context not found in saveData
+      it("should not create FSEM when firing unit context is not found in saveData", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({
+          srbmFiringUnits = {},
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Negative: battery not in HIDE state
+      it("should not create FSEM when firing unit is not in HIDE state", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Negative: low ammunition
+      it("should not create FSEM when firing unit has low ammunition", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(true))
+
+        assert.is_false(DynamicFireSupportPlan.execute({}, saveData, {}))
+        assert.stub(DynamicOperationsUtils.registerGeneratedOperation).was_not.called()
+      end)
+
+      -- Boundary: finished/inactive FSEM should not block assignment
+      it("should treat firing units in finished or inactive FSEMs as available", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({
+          fireSupportPlan = {
+            ["FINISHED-FSEM"] = {
+              isFinished = true,
+              isActivated = true,
+              fireSupportTasks = {
+                { isFinished = true, firingUnits = { { name = "Battery-1" } } }
+              }
+            },
+            ["INACTIVE-FSEM"] = {
+              isFinished = false,
+              isActivated = false,
+              fireSupportTasks = {
+                { isFinished = false, firingUnits = { { name = "Battery-1" } } }
+              }
+            }
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        local result = DynamicFireSupportPlan.execute({}, saveData, {})
+        assert.is_true(result)
+        assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
+      end)
+
+      -- ============================================================================
+      -- FSEM Construction Edge Cases
+      -- ============================================================================
+
+      -- Positive: partial firing unit availability
+      it("should create FSEM with only available firing units when some are unavailable", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({
+          firingUnits = {
+            { name = "Battery-1" },
+            { name = "Battery-2" },
+            { name = "Battery-3" }
+          }
+        })
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext(),
+            ["Battery-2"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }),
+            ["Battery-3"] = makeBatteryContext()
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+          return { guid = "U-" .. name, name = name }
+        end))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        local result = DynamicFireSupportPlan.execute({}, saveData, {})
+        assert.is_true(result)
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.is_table(fsem)
+        local firingUnits = fsem.fireSupportTasks[1].firingUnits
+        assert.are.equal(2, #firingUnits)
+        assert.are.equal("Battery-1", firingUnits[1].name)
+        assert.are.equal("Battery-3", firingUnits[2].name)
+      end)
+
+      -- Boundary: same firing unit referenced by multiple FSTs
+      it("should prevent same firing unit from being assigned to multiple FSTs in same build cycle", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({
+          fireSupportTasks = {
+            {
+              name = "FST-1",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-1" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            },
+            {
+              name = "FST-2",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-1" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            }
+          }
+        })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        local result = DynamicFireSupportPlan.execute({}, saveData, {})
+        assert.is_true(result)
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.is_table(fsem)
+        assert.are.equal(1, #fsem.fireSupportTasks)
+        assert.are.equal("FST-1", fsem.fireSupportTasks[1].name)
+      end)
+
+      -- Positive: strikeInterval applied to sequential FSTs
+      it("should apply strikeInterval to sequential FST start times", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({
+          strikeInterval = 120,
+          fireSupportTasks = {
+            {
+              name = "FST-1",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-1" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            },
+            {
+              name = "FST-2",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-2" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            }
+          }
+        })
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext(),
+            ["Battery-2"] = makeBatteryContext()
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+          return { guid = "U-" .. name, name = name }
+        end))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        DynamicFireSupportPlan.execute({}, saveData, {})
+
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.are.equal(2, #fsem.fireSupportTasks)
+        -- taskIndex=1: 1000 + (1*120) = 1120, taskIndex=2: 1000 + (2*120) = 1240
+        local expectedTime1 = os.date("!%Y-%m-%d %H:%M:%S", 1120)
+        local expectedTime2 = os.date("!%Y-%m-%d %H:%M:%S", 1240)
+        assert.are.equal(expectedTime1, fsem.fireSupportTasks[1].startTime)
+        assert.are.equal(expectedTime2, fsem.fireSupportTasks[2].startTime)
+      end)
+
+      -- ============================================================================
+      -- Multiple Operations
+      -- ============================================================================
+
+      -- Positive: mixed success/failure across operations
+      it("should handle mixed results across multiple ground operations", function()
+        local reconEntry1 = makeReconEntry()
+        local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
+        local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
+        local operation2 = makeOperation({ templateName = "BAD-OP/1", minTargetCount = 10 })
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext(),
+            ["Battery-2"] = makeBatteryContext()
+          },
+          reconSchedule = { reconEntry1, reconEntry2 }
+        })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry1, operation = operation1 },
+          { reconEntry = reconEntry2, operation = operation2 }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+          return { guid = "U-" .. name, name = name }
+        end))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        local result = DynamicFireSupportPlan.execute({}, saveData, {})
+        assert.is_true(result)
+        assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
+        assert.stub(DynamicOperationsUtils.markOperationExecuted).was.called(2)
+      end)
+
+      -- ============================================================================
+      -- Consolidated Log Output
+      -- ============================================================================
+
+      -- Positive: info log for successful and skipped operations
+      it("should output single info log for successful and skipped operations without error log", function()
+        local reconEntry1 = makeReconEntry()
+        local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
+        local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
+        local operation2 = makeOperation({ templateName = "SKIP-OP/1", minTargetCount = 10 })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry1, reconEntry2 } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry1, operation = operation1 },
+          { reconEntry = reconEntry2, operation = operation2 }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        DynamicFireSupportPlan.execute({}, saveData, {})
+
+        assert.stub(Logger.log).was.called(1)
+        assert.stub(Logger.error).was_not.called()
+        local logMessage = Logger.log.calls[1].vals[2]
+        assert.truthy(logMessage:find("%[OK%]"))
+        assert.truthy(logMessage:find("%[SKIP%]"))
+        assert.truthy(logMessage:find("2 items"))
+      end)
+
+      -- Positive: both info and error logs for mixed results
+      it("should output both info and error logs when results are mixed", function()
+        local reconEntry1 = makeReconEntry()
+        local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
+        local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
+        local operation2 = { type = "ground", executed = false }
+        local saveData = makeSaveData({ reconSchedule = { reconEntry1, reconEntry2 } })
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry1, operation = operation1 },
+          { reconEntry = reconEntry2, operation = operation2 }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        DynamicFireSupportPlan.execute({}, saveData, {})
+
+        assert.stub(Logger.log).was.called(1)
+        assert.stub(Logger.error).was.called(1)
+        local logMessage = Logger.log.calls[1].vals[2]
+        assert.truthy(logMessage:find("%[OK%]"))
+        assert.truthy(logMessage:find("1 items"))
+        local errorMessage = Logger.error.calls[1].vals[1]
+        assert.truthy(errorMessage:find("%[ERROR%]"))
+        assert.truthy(errorMessage:find("1 items"))
+      end)
+    end)
+  end)
+end)

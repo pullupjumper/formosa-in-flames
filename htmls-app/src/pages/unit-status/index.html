@@ -1,0 +1,20 @@
+<!doctype html>
+<html class="dark" lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unit Status Dashboard</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Data injection point - Python script will replace the placeholders -->
+    <script id="inject-data">
+      window.__INJECT_SIGNALS__ = `[]`;
+      window.__INJECT_LAUNCHERS__ = `{}`;
+      window.__INJECT_C2__ = `{}`;
+      window.__INJECT_BASE_WEAPONS__ = `[]`;
+      window.__INJECT_LANDING_UNITS__ = `{}`;
+    </script>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

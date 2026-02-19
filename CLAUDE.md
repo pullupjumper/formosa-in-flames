@@ -10,11 +10,21 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 
 ### Testing
 ```bash
-# Run all tests (from test directory)
-busted
+# Run all tests (from project root)
+busted test
 
 # Run specific test file
-busted modules/assignMission_spec.lua
+busted test/modules/missileSystem_spec.lua
+```
+
+**Claude Code Testing Note**:
+Claude Code runs commands via Git Bash (MSYS2), where `.bat` files cannot be executed directly. Use `cmd.exe //c` to run busted:
+```bash
+# Run tests from Claude Code
+cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test"
+
+# Run specific test file
+cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test\\modules\\missileSystem_spec.lua"
 ```
 
 ### Build and Deployment
@@ -112,7 +122,6 @@ The project uses a two-tier configuration system for better organization and mai
   - `config.t.*` (Taiwan) - Taiwanese faction configuration
   - `config.u.*` (US) - US faction configuration
   - `config.s.*` (Scoring) - Scoring system configuration
-  - `config.batteryState.*` - TEL battery state enumeration
   - `config.repairRunway.*` - Runway repair configuration
   - `config.targetScanning.*` - Target scanning configuration
 
@@ -156,7 +165,7 @@ The scoring configuration defines point values awarded or deducted when units ar
 - `assignMission.lua` - Mission assignment and management
 - `attackManager.lua` - Combat coordination
 - `runwayRepairment.lua` - Runway damage assessment and repair scheduling
-- `IADS.lua` - Integrated Air Defense System coordination
+- `integratedAirDefenseSystem.lua` - Integrated Air Defense System coordination
 - `unitStatusUI.lua` - Unit status monitoring and UI generation
 - `missileSystem.lua` - TEL (Transporter Erector Launcher) management for mobile missile systems
 
@@ -171,8 +180,8 @@ The scoring configuration defines point values awarded or deducted when units ar
 - `dynamicATOInsertion.lua` - Dynamic ATO insertion based on intelligence
 - `dynamicOperationsUtils.lua` - Utilities for dynamic operations coordination
 
-**Electronic Warfare** (`src/modules/EW/`):
-- `GPSJamming.lua` - GPS denial operations
+**Electronic Warfare** (`src/modules/ew/`):
+- `gnssJamming.lua` - GNSS denial operations
 - `commsJamming.lua` - Communications jamming coordination
 - `sigint.lua` - Signals intelligence collection and processing
 
@@ -218,26 +227,66 @@ Event handlers in `src/scripts/` are organized by faction and event type, coordi
 
 **Unit Enters Area Event Scripts**:
 - `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` - Air landing zone neutralization operations
-- `src/scripts/china/H6NLaunchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
-- `src/scripts/china/CSGEnterArea.lua` - China Carrier Strike Group area entry handling
+- `src/scripts/china/launchWZ8.lua` - H-6N launch WZ-8 reconnaissance drone operations
+- `src/scripts/china/csgEnterArea.lua` - China Carrier Strike Group area entry handling
 - `src/scripts/china/missileSystem/moveToPosition.lua` - China TEL move to each positions
 - `src/scripts/taiwan/missileSystem/moveToPosition.lua` - Taiwan TEL move to each positions
 - `src/scripts/score/successfulLanding.lua` - Score tracking for successful amphibious landings
 
 **1-Minute Regular Time Event Scripts**:
-- `src/scripts/china/EW/commsJamming.lua` - China communications jamming operations
+- `src/scripts/china/ew/commsJamming.lua` - China communications jamming operations
 
 **5-Minute Regular Time Event Scripts**:
 - `src/scripts/china/amphibiousOps/landingCheck.lua` - Monitors amphibious landing progress
-- `src/scripts/china/EW/collectSIGINT.lua` - China SIGINT collection operations
+- `src/scripts/china/ew/collectSigint.lua` - China SIGINT collection operations
 - `src/scripts/china/scheduledStrikePlanner.lua` - China strike planning coordination
 - `src/scripts/china/missileSystem/scheduledReloadHideCheck.lua` - China TEL reload/hide status monitoring
 - `src/scripts/taiwan/missileSystem/scheduledReloadHideCheck.lua` - Taiwan TEL reload/hide status monitoring
-- `src/scripts/us/collectSIGINT.lua` - US SIGINT collection operations
+- `src/scripts/us/collectSigint.lua` - US SIGINT collection operations
 - `src/scripts/scheduledRunwayRepairment.lua` - Automated runway damage repair scheduling
 
 **Scen Loaded Event**:
 All core systems (`src/core/`), modules (`src/modules/`), and utilities (`src/utils/`) are initialized when the scenario loads. The main entry point `src/core/init.lua` orchestrates the initialization of all game systems, configuration loading, and module setup at scenario start.
+
+## htmls-app (React UI)
+
+The `htmls-app/` directory contains React-based UI components that are built into single HTML files for CMO's embedded browser.
+
+### Tech Stack
+React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Uses `vite-plugin-singlefile` to bundle into single HTML files. ESLint 9 + Prettier for code quality.
+
+### Project Structure
+```
+htmls-app/src/
+├── components/     # Shared components
+├── pages/          # Each page has its own main.tsx entry point
+├── types/          # TypeScript type definitions
+├── utils/          # Utility functions
+├── data/           # Static mock data for development
+└── index.css       # Global styles + Tailwind @theme custom colors
+```
+
+### Code Style
+- Function components + React Hooks only (no class components)
+- Props defined with `interface`, named `{ComponentName}Props`
+- Use `import type { ... }` for type imports
+- Path aliases: `@/`, `@components/`, `@pages/`, `@utils/`, `@types/`
+- Section separators: `// ============================================================================`
+- State management: React built-in Hooks only (no external state libraries)
+- Styling: Tailwind utility classes only; custom colors defined in `index.css` `@theme`
+- Utility functions: Pure functions with named exports and JSDoc comments
+
+### Data Flow
+CMO game engine injects JSON data via `window.__INJECT_*__` globals. Components parse with `parseJSON()` and fall back to mock data from `src/data/` during development.
+
+### Build Commands
+```bash
+cd htmls-app
+npm run dev          # Development server
+npm run build        # Build all pages to ../src/htmls/
+npm run lint         # Run ESLint
+npm run format       # Format with Prettier
+```
 
 ## Critical Development Guidelines
 
@@ -251,4 +300,5 @@ All core systems (`src/core/`), modules (`src/modules/`), and utilities (`src/ut
 - Unit tests located in `test/modules/` using Busted framework
 - Mock game APIs comprehensively for isolated testing
 - Test critical modules like `assignMission.lua` and `unitGenerator.lua`
-- Run tests before deployment: `busted` from test directory
+- Run tests before deployment: `busted test` from project root
+- Claude Code must use `cmd.exe //c "busted test"` due to Git Bash environment

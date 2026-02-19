@@ -4,9 +4,9 @@ local config = require("src.core.config")
 local saveData = require("src.core.saveData")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local UnitGenerator = require("src.modules.unitGenerator")
-local IADS = require("src.modules.IADS")
-local CommsJamming = require("src.modules.EW.commsJamming")
-local SIGINT = require("src.modules.EW.sigint")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
+local CommsJamming = require("src.modules.ew.commsJamming")
+local Sigint = require("src.modules.ew.sigint")
 local MissileSystem = require("src.modules.missileSystem")
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local Recon = require("src.modules.strikePlanner.recon")
@@ -24,13 +24,13 @@ local function initEventActions()
     "scripts\\china\\amphibiousOps\\launchACV.lua",
     "scripts\\china\\amphibiousOps\\neutralizeAirlandingZone.lua",
     "scripts\\china\\amphibiousOps\\offloadVehicles.lua",
-    "scripts\\china\\EW\\collectSIGINT.lua",
-    "scripts\\china\\EW\\commsJamming.lua",
+    "scripts\\china\\ew\\collectSigint.lua",
+    "scripts\\china\\ew\\commsJamming.lua",
     "scripts\\china\\missileSystem\\moveToPosition.lua",
     "scripts\\china\\missileSystem\\scheduledReloadHideCheck.lua",
     "scripts\\china\\aircraftLanding.lua",
-    "scripts\\china\\CSGEnterArea.lua",
-    "scripts\\china\\H6NLaunchWZ8.lua",
+    "scripts\\china\\csgEnterArea.lua",
+    "scripts\\china\\launchWZ8.lua",
     "scripts\\china\\scheduledStrikePlanner.lua",
     "scripts\\score\\destroyUnits.lua",
     "scripts\\score\\successfulLanding.lua",
@@ -39,7 +39,7 @@ local function initEventActions()
     "scripts\\taiwan\\missileSystem\\scheduledReloadHideCheck.lua",
     "scripts\\taiwan\\activiateANTISHIPMission.lua",
     "scripts\\taiwan\\aircraftLanding.lua",
-    "scripts\\us\\collectSIGINT.lua",
+    "scripts\\us\\collectSigint.lua",
     "scripts\\runwayIsDamaged.lua",
     "scripts\\scheduledRunwayRepairment.lua",
   }
@@ -54,7 +54,7 @@ local function initSpecialActions()
     { path = "src\\scripts\\china\\specialActions\\addACs.lua",                  actionName = "Add aircraft" },
     { path = "src\\scripts\\china\\specialActions\\addC2Facilities.lua",         actionName = "Add C2 facilities" },
     { path = "src\\scripts\\china\\specialActions\\addCSG.lua",                  actionName = "Add CSG" },
-    { path = "src\\scripts\\china\\specialActions\\addGPSJammers.lua",           actionName = "Add GPS jammers" },
+    { path = "src\\scripts\\china\\specialActions\\addGnssJammers.lua",          actionName = "Add GNSS jammers" },
     { path = "src\\scripts\\china\\specialActions\\addLandingShips.lua",         actionName = "Add landing ships" },
     { path = "src\\scripts\\china\\specialActions\\addSAGs.lua",                 actionName = "Add SAGs" },
     { path = "src\\scripts\\china\\specialActions\\addSubmarines.lua",           actionName = "Add submarines" },
@@ -63,7 +63,7 @@ local function initSpecialActions()
     { path = "src\\scripts\\taiwan\\specialActions\\addACs.lua",                 actionName = "Add aircraft" },
     { path = "src\\scripts\\taiwan\\specialActions\\addDeployedShipsAtPort.lua", actionName = "Add deployed ships at port" },
     { path = "src\\scripts\\taiwan\\specialActions\\addSAGs.lua",                actionName = "Add SAGs" },
-    { path = "src\\scripts\\taiwan\\specialActions\\WCSSettingMenu.lua",         actionName = "WCS setting menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\wcsSettingMenu.lua",         actionName = "WCS setting menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",         actionName = "Unit status menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",              actionName = "Setup menu" },
     { path = "src\\scripts\\taiwan\\specialActions\\addMissileSystems.lua",      actionName = "Add missile systems" },
@@ -88,7 +88,7 @@ end
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
-  ShipMovement.calculateDestination(config.c.PHIBOP, saveData.c.PHIBOP.calculationResult)
+  ShipMovement.calculateDestination(config.c.amphibOps, saveData.c.amphibOps.calculationResult)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
@@ -97,21 +97,21 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
     Recon.initReconQueueEntries(config.c.recon, saveData.c.recon)
   end
 
-  if saveData.t.IADS.enabled then
-    IADS.initIADSContexts(config.t.IADS, saveData.t.IADS)
+  if saveData.t.iads.enabled then
+    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, saveData.t.iads)
   end
 
-  if saveData.c.IADS.enabled then
-    IADS.initC2FacilitiesContext(config.c.IADS, saveData.c.IADS)
+  if saveData.c.iads.enabled then
+    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, saveData.c.iads)
   end
 
   if saveData.c.commsJamming.enabled then
     CommsJamming.initCommsJammersContext(saveData.c.commsJamming, "China")
   end
 
-  if saveData.u.SIGINT.enabled then
-    SIGINT.initReconAircraftContexts(saveData.u.SIGINT, "US")
-    SIGINT.initReconAircraftContexts(saveData.c.SIGINT, "China")
+  if saveData.u.sigint.enabled then
+    Sigint.initReconAircraftContexts(saveData.u.sigint, "US")
+    Sigint.initReconAircraftContexts(saveData.c.sigint, "China")
   end
 
   if saveData.c.ground.enabled then

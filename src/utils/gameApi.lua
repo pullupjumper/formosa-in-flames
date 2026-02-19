@@ -511,6 +511,21 @@ function realApi.ScenEdit_AddZone(side, zoneType, opts)
   return result
 end
 
+---Get a zone by name
+---@param sideName string Side name
+---@param zoneName string Zone name
+---@param zoneType number Zone type code
+---@return CMO__Zone|nil # Zone object
+function realApi.ScenEdit_GetZone(sideName, zoneName, zoneType)
+  local result = ScenEdit_GetZone(sideName, zoneName, zoneType)
+
+  if not result then
+    error("Failed to get zone with name: " .. tostring(zoneName))
+  end
+
+  return result
+end
+
 ---Get player's current side
 ---@return string # Player side name
 function realApi.ScenEdit_PlayerSide()
@@ -582,7 +597,7 @@ end
 ---Create mission flight plan
 ---@param side string Side name
 ---@param missionName string Mission name
----@param opts CMO__FlightPlanOptions Flight plan options
+---@param opts CMO__FlightPlanOptions|{} Flight plan options
 ---@return table<number, any>|nil # Flight plan waypoints
 function realApi.ScenEdit_CreateMissionFlightPlan(side, missionName, opts)
   return ScenEdit_CreateMissionFlightPlan(side, missionName, opts)

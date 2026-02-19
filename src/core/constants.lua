@@ -188,6 +188,7 @@ constants.BASES = {
 }
 
 constants.PLATFORMS = {
+  YJ12B = 3177,
   TB001 = 7062,
   WZ7 = 7371,
   J16D = 4632,
@@ -369,35 +370,37 @@ constants.LOADOUTS = {
 }
 
 constants.WEAPONS = {
-  FD280 = 4472,       -- FD280 Multiple Launch Rocket System
-  CJ10A = 4515,       -- CJ-10A Cruise Missile
-  DF11A = 2142,       -- DF-11A Short-Range Ballistic Missile
-  DF16A = 4511,       -- DF-16A Short-Range Ballistic Missile
-  DF15C = 2145,       -- DF-15C Short-Range Ballistic Missile
-  DF15B = 4509,       -- DF-15B Short-Range Ballistic Missile
-  DF21D = 2105,       -- DF-21D Medium-Range Ballistic Missile
-  YJ21 = 4058,        -- YJ-18A Land Attack Cruise Missile
-  CJ10_SLCM = 3716,   -- YJ-18 Submarine-Launched Cruise Missile
-  AKD88 = 2876,       -- AKD-88 Air-to-Surface Missile
-  PL15 = 3413,        -- PL-15 Air-to-Air Missile
-  YJ91_ARM = 2875,    -- YJ-91 Anti-Radiation Missile
-  YJ63 = 2107,        -- YJ-63 Air-Launched Cruise Missile
-  KAB1500 = 3077,     -- KAB-1500 Laser-Guided Bomb
-  LS_6_500 = 3226,    -- LS-6-500 Glide Bomb
-  CS_BBC_5 = 4541,    -- CS-BBC-5 Glide Bomb (Submunitions)
-  YJ91_ASM = 276,     -- YJ-91 Anti-Ship Missile
-  YJ83 = 2137,        -- YJ-83 Anti-Ship Missile
-  MK45_AMLRS = 2948,  -- MK45 AMLRS Multiple Launch Rocket System
-  ATACMS = 1717,      -- ATACMS Tactical Missile System
-  HF2E = 3228,        -- HF-2E Anti-Ship Cruise Missile
-  HF3 = 1133,         -- HF-2 Anti-Ship Missile
-  MK48_TORPEDO = 905, -- MK-48 Torpedo
-  HARPOON_II = 816,   -- Harpoon II
-  JSOW = 826,         -- JSOW
-  WAN_CHIEN = 3026,   -- Wan Chien
-  SLAMER = 452,       -- SLAMER
-  JDAM = 554,         -- JDAM
-  HPJ_38 = 2691,      -- H/PJ-38 130mm
+  YJ12 = 2862,         -- YJ-12 Anti-Ship Missile
+  FD280 = 4472,        -- FD280 Multiple Launch Rocket System
+  CJ10A = 4515,        -- CJ-10A Cruise Missile
+  DF11A = 2142,        -- DF-11A Short-Range Ballistic Missile
+  DF16A = 4511,        -- DF-16A Short-Range Ballistic Missile
+  DF15C = 2145,        -- DF-15C Short-Range Ballistic Missile
+  DF15B = 4509,        -- DF-15B Short-Range Ballistic Missile
+  DF21D = 2105,        -- DF-21D Medium-Range Ballistic Missile
+  YJ21 = 4058,         -- YJ-18A Land Attack Cruise Missile
+  CJ10_SLCM = 3716,    -- YJ-18 Submarine-Launched Cruise Missile
+  AKD88 = 2876,        -- AKD-88 Air-to-Surface Missile
+  PL15 = 3413,         -- PL-15 Air-to-Air Missile
+  YJ91_ARM = 2875,     -- YJ-91 Anti-Radiation Missile
+  YJ63 = 2107,         -- YJ-63 Air-Launched Cruise Missile
+  KAB1500 = 3077,      -- KAB-1500 Laser-Guided Bomb
+  LS_6_500 = 3226,     -- LS-6-500 Glide Bomb
+  CS_BBC_5 = 4541,     -- CS-BBC-5 Glide Bomb (Submunitions)
+  YJ91_ASM = 276,      -- YJ-91 Anti-Ship Missile
+  YJ83 = 2137,         -- YJ-83 Anti-Ship Missile
+  MK45_AMLRS = 2948,   -- MK45 AMLRS Multiple Launch Rocket System
+  ATACMS = 1717,       -- ATACMS Tactical Missile System
+  HF2E = 3228,         -- HF-2E Anti-Ship Cruise Missile
+  HF3 = 1133,          -- HF-2 Anti-Ship Missile
+  MK48_TORPEDO = 905,  -- MK-48 Torpedo
+  HARPOON_II = 816,    -- Harpoon II
+  JSOW = 826,          -- JSOW
+  WAN_CHIEN = 3026,    -- Wan Chien
+  SLAMER = 452,        -- SLAMER
+  JDAM = 554,          -- JDAM
+  HPJ_38 = 2691,       -- H/PJ-38 130mm
+  MIM104F_PAC3 = 1150, -- MIM-104F PAC-3 Air Defense Missile
 }
 
 constants.UNIT_TYPES = {
@@ -440,41 +443,52 @@ constants.FIXED_FACILITY_CATEGORIES = {
   AIR_BASE = 9001
 }
 
+constants.SPEEDS = {
+  NORMAL = 20,
+  FAST = 30,
+}
+
+constants.THROTTLES = {
+  FLANK = "Flank",
+  FULL = "Full",
+  CRUSE = "Cruse",
+}
+
 ---@type table<string, SBJ__OperationalArea>
 constants.OPERATIONAL_AREAS = {
   PINGTAN = {
     RL = { {
       course = {
-        { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 25.30.13", longitude = "E 119.47.36", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 25.30.13", longitude = "E 119.47.36", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_PINGTAN
     } },
     HA = { {
       course = {
-        { latitude = "N 25.30.02", longitude = "E 119.47.17", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.30.02", longitude = "E 119.47.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_PINGTAN
     } },
     FP = {
       {
         course = {
-          { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = 30, presetThrottle = "Flank" },
-          { latitude = "N 25.25.45", longitude = "E 119.44.25", desiredSpeed = 30, presetThrottle = "Flank" },
+          { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+          { latitude = "N 25.25.45", longitude = "E 119.44.25", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
         },
         area = constants.AREAS.FIRE_POINT_PINGTAN_1
       },
       {
         course = {
-          { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = 30, presetThrottle = "Flank" },
-          { latitude = "N 25.27.22", longitude = "E 119.45.39", desiredSpeed = 30, presetThrottle = "Flank" },
+          { latitude = "N 25.30.20", longitude = "E 119.46.50", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+          { latitude = "N 25.27.22", longitude = "E 119.45.39", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
         },
         area = constants.AREAS.FIRE_POINT_PINGTAN_2
       },
     },
     AHA = { {
       course = {
-        { latitude = "N 25.30.31", longitude = "E 119.47.37", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.30.31", longitude = "E 119.47.37", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_PINGTAN
     } },
@@ -482,27 +496,27 @@ constants.OPERATIONAL_AREAS = {
   CHINCHEW = {
     RL = { {
       course = {
-        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.46.36", longitude = "E 118.42.17", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.46.36", longitude = "E 118.42.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_CHINCHEW
     } },
     HA = { {
       course = {
-        { latitude = "N 24.46.31", longitude = "E 118.41.51", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.31", longitude = "E 118.41.51", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_CHINCHEW
     } },
     FP = { {
       course = {
-        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.41.45", longitude = "E 118.43.18", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.41.45", longitude = "E 118.43.18", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_CHINCHEW_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.47.10", longitude = "E 118.42.22", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.47.10", longitude = "E 118.42.22", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_CHINCHEW
     } },
@@ -510,27 +524,27 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_635 = {
     RL = { {
       course = {
-        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.46.36", longitude = "E 118.42.17", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.46.36", longitude = "E 118.42.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_CHINCHEW
     } },
     HA = { {
       course = {
-        { latitude = "N 24.46.31", longitude = "E 118.41.51", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.31", longitude = "E 118.41.51", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_CHINCHEW
     } },
     FP = { {
       course = {
-        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.41.45", longitude = "E 118.43.18", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.46.44", longitude = "E 118.40.37", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.41.45", longitude = "E 118.43.18", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_CHINCHEW_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.47.10", longitude = "E 118.42.22", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.47.10", longitude = "E 118.42.22", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_CHINCHEW
     } },
@@ -538,27 +552,27 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_615 = {
     RL = { {
       course = {
-        { latitude = "N 24.17.32", longitude = "E 115.58.09", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.16.56", longitude = "E 115.58.12", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.17.32", longitude = "E 115.58.09", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.16.56", longitude = "E 115.58.12", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE615
     } },
     HA = { {
       course = {
-        { latitude = "N 24.17.06", longitude = "E 115.58.35", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.17.06", longitude = "E 115.58.35", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE615
     } },
     FP = { {
       course = {
-        { latitude = "N 24.17.32", longitude = "E 115.58.09", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.17.05", longitude = "E 115.59.41", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.17.32", longitude = "E 115.58.09", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.17.05", longitude = "E 115.59.41", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE615_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.17.05", longitude = "E 115.58.00", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.17.05", longitude = "E 115.58.00", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE615
     } },
@@ -566,27 +580,27 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_614 = {
     RL = { {
       course = {
-        { latitude = "N 26.04.01", longitude = "E 117.18.55", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 26.03.40", longitude = "E 117.18.55", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 26.04.01", longitude = "E 117.18.55", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 26.03.40", longitude = "E 117.18.55", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE614
     } },
     HA = { {
       course = {
-        { latitude = "N 26.03.48", longitude = "E 117.19.11", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 26.03.48", longitude = "E 117.19.11", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE614
     } },
     FP = { {
       course = {
-        { latitude = "N 26.04.18", longitude = "E 117.18.51", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 26.03.49", longitude = "E 117.20.05", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 26.04.18", longitude = "E 117.18.51", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 26.03.49", longitude = "E 117.20.05", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE614_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 26.03.47", longitude = "E 117.18.50", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 26.03.47", longitude = "E 117.18.50", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE614
     } },
@@ -594,27 +608,27 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_636 = {
     RL = { {
       course = {
-        { latitude = "N 24.45.52", longitude = "E 113.40.52", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.45.25", longitude = "E 113.40.29", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.45.52", longitude = "E 113.40.52", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.45.25", longitude = "E 113.40.29", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE636
     } },
     HA = { {
       course = {
-        { latitude = "N 24.45.33", longitude = "E 113.40.47", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.45.33", longitude = "E 113.40.47", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE636
     } },
     FP = { {
       course = {
-        { latitude = "N 24.45.52", longitude = "E 113.40.52", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 24.45.52", longitude = "E 113.41.35", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.45.52", longitude = "E 113.40.52", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.45.52", longitude = "E 113.41.35", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE636_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.45.34", longitude = "E 113.40.14", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 24.45.34", longitude = "E 113.40.14", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE636
     } },
@@ -622,25 +636,25 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_616 = {
     RL = { {
       course = {
-        { latitude = "N 25.54.31", longitude = "E 114.57.21", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.54.31", longitude = "E 114.57.21", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE616
     } },
     HA = { {
       course = {
-        { latitude = "N 25.54.40", longitude = "E 114.57.42", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.54.40", longitude = "E 114.57.42", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE616
     } },
     FP = { {
       course = {
-        { latitude = "N 25.55.33", longitude = "E 114.58.25", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.55.33", longitude = "E 114.58.25", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE616_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 25.54.38", longitude = "E 114.57.06", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 25.54.38", longitude = "E 114.57.06", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE616
     } },
@@ -648,29 +662,29 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_613 = {
     RL = { {
       course = {
-        { latitude = "N 28.27.25", longitude = "E 117.51.51", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 28.27.26", longitude = "E 117.51.02", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 28.27.03", longitude = "E 117.51.04", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 28.27.25", longitude = "E 117.51.51", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 28.27.26", longitude = "E 117.51.02", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 28.27.03", longitude = "E 117.51.04", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE613
     } },
     HA = { {
       course = {
-        { latitude = "N 28.27.12", longitude = "E 117.51.17", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 28.27.12", longitude = "E 117.51.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE613
     } },
     FP = { {
       course = {
-        { latitude = 28.455760146701, longitude = 117.85790803852, desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = 28.455941652975, longitude = 117.86516402324, desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = 28.443410902986, longitude = 117.86719441616, desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = 28.455760146701, longitude = 117.85790803852, desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = 28.455941652975, longitude = 117.86516402324, desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = 28.443410902986, longitude = 117.86719441616, desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE613_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 28.27.12", longitude = "E 117.50.55", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 28.27.12", longitude = "E 117.50.55", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE613
     } },
@@ -678,27 +692,27 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_617 = {
     RL = { {
       course = {
-        { latitude = "N 29.09.32", longitude = "E 119.36.38", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 29.08.57", longitude = "E 119.36.31", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 29.09.32", longitude = "E 119.36.38", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 29.08.57", longitude = "E 119.36.31", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE617
     } },
     HA = { {
       course = {
-        { latitude = "N 29.09.01", longitude = "E 119.36.49", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 29.09.01", longitude = "E 119.36.49", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE617
     } },
     FP = { {
       course = {
-        { latitude = 29.158533243915, longitude = 119.61541712539, desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = 29.158295428459, longitude = 119.62849131226, desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = 29.158533243915, longitude = 119.61541712539, desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = 29.158295428459, longitude = 119.62849131226, desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE617_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 29.09.03", longitude = "E 119.36.26", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 29.09.03", longitude = "E 119.36.26", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE617
     } },
@@ -706,28 +720,28 @@ constants.OPERATIONAL_AREAS = {
   BRIGADE_624 = {
     RL = { {
       course = {
-        { latitude = "N 19.29.01", longitude = "E 109.26.40", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 19.28.27", longitude = "E 109.26.56", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 19.28.29", longitude = "E 109.27.44", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 19.29.01", longitude = "E 109.26.40", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 19.28.27", longitude = "E 109.26.56", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 19.28.29", longitude = "E 109.27.44", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_BRIGADE624
     } },
     HA = { {
       course = {
-        { latitude = "N 19.28.35", longitude = "E 109.27.22", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 19.28.35", longitude = "E 109.27.22", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.HIDE_AREA_BRIGADE624
     } },
     FP = { {
       course = {
-        { latitude = "N 19.29.01", longitude = "E 109.26.40", desiredSpeed = 30, presetThrottle = "Flank" },
-        { latitude = "N 19.29.40", longitude = "E 109.27.17", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 19.29.01", longitude = "E 109.26.40", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 19.29.40", longitude = "E 109.27.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_BRIGADE624_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 19.28.12", longitude = "E 109.27.21", desiredSpeed = 30, presetThrottle = "Flank" },
+        { latitude = "N 19.28.12", longitude = "E 109.27.21", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_BRIGADE624
     } },
@@ -735,27 +749,27 @@ constants.OPERATIONAL_AREAS = {
   PINGZHEN = {
     RL = { {
       course = {
-        { latitude = "N 24.58.05", longitude = "E 121.14.26", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.57.08", longitude = "E 121.13.34", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.58.05", longitude = "E 121.14.26", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.57.08", longitude = "E 121.13.34", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_PINGZHEN
     } },
     HA = { {
       course = {
-        { longitude = 121.221227094132, latitude = 24.9616387895855, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.221227094132, latitude = 24.9616387895855, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.HIDE_AREA_PINGZHEN
     } },
     FP = { {
       course = {
-        { latitude = "N 24.55.15", longitude = "E 121.16.02", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.53.01", longitude = "E 121.14.17", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.55.15", longitude = "E 121.16.02", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.53.01", longitude = "E 121.14.17", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_PINGZHEN_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.56.47", longitude = "E 121.13.04", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.56.47", longitude = "E 121.13.04", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_PINGZHEN
     } },
@@ -763,27 +777,27 @@ constants.OPERATIONAL_AREAS = {
   DADU = {
     RL = { {
       course = {
-        { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.09.03", longitude = "E 120.35.48", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.09.03", longitude = "E 120.35.48", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.RELOAD_POINT_DADU
     } },
     HA = { {
       course = {
-        { longitude = 120.589821349405, latitude = 24.1559842079347, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 120.589821349405, latitude = 24.1559842079347, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.HIDE_AREA_DADU
     } },
     FP = { {
       course = {
-        { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = 10, presetThrottle = "Flank" },
-        { latitude = "N 24.11.43", longitude = "E 120.38.29", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.09.07", longitude = "E 120.36.27", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
+        { latitude = "N 24.11.43", longitude = "E 120.38.29", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.FIRE_POINT_DADU_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 24.08.34", longitude = "E 120.35.46", desiredSpeed = 10, presetThrottle = "Flank" },
+        { latitude = "N 24.08.34", longitude = "E 120.35.46", desiredSpeed = constants.SPEEDS.NORMAL, presetThrottle = constants.THROTTLES.FULL },
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_DADU
     } },
@@ -791,72 +805,72 @@ constants.OPERATIONAL_AREAS = {
   QUANXI = {
     RL = { {
       course = {
-        { longitude = 121.179149023446, latitude = 24.7548412166634, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 121.161117811075, latitude = 24.7448213059531, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.179149023446, latitude = 24.7548412166634, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 121.161117811075, latitude = 24.7448213059531, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.RELOAD_POINT_QUANXI
     } },
     HA = { {
       course = {
-        { longitude = 121.162516333524, latitude = 24.7543716717316, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.162516333524, latitude = 24.7543716717316, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.HIDE_AREA_QUANXI
     } },
     FP = { {
       course = {
-        { longitude = 121.181657018384, latitude = 24.7581044314196, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 121.166583134758, latitude = 24.7982814982329, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.181657018384, latitude = 24.7581044314196, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 121.166583134758, latitude = 24.7982814982329, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.FIRE_POINT_PINGZHEN_1
     }, },
     AHA = { {
       course = {
-        { longitude = 121.162860203748, latitude = 24.7349448104926, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.162860203748, latitude = 24.7349448104926, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_QUANXI
     } },
   },
   NEIPU = {
     RL = { {
-      course = { { longitude = 120.571632791171, latitude = 22.6161659351347, presetThrottle = 'Flank', desiredSpeed = 10 } },
+      course = { { longitude = 120.571632791171, latitude = 22.6161659351347, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL } },
       area = constants.AREAS.RELOAD_POINT_NEIPU
     } },
     HA = { {
-      course = { { longitude = 120.570964156615, latitude = 22.611499688403, presetThrottle = 'Flank', desiredSpeed = 10 } },
+      course = { { longitude = 120.570964156615, latitude = 22.611499688403, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL } },
       area = constants.AREAS.HIDE_AREA_NEIPU
     } },
     FP = { {
-      course = { { longitude = 120.586114743326, latitude = 22.59100072935, presetThrottle = 'Flank', desiredSpeed = 10 } },
+      course = { { longitude = 120.586114743326, latitude = 22.59100072935, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL } },
       area = constants.AREAS.FIRE_POINT_NEIPU_1
     }, },
     AHA = { {
-      course = { { longitude = 120.570952099511, latitude = 22.6197721668878, presetThrottle = 'Flank', desiredSpeed = 10 } },
+      course = { { longitude = 120.570952099511, latitude = 22.6197721668878, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL } },
       area = constants.AREAS.AMMO_HOLDING_AREA_NEIPU
     } },
   },
   LUZHU = {
     RL = { {
       course = {
-        { longitude = 121.281989734655, latitude = 25.1097631655077, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 121.270666657797, latitude = 25.0888221064414, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.281989734655, latitude = 25.1097631655077, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 121.270666657797, latitude = 25.0888221064414, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.RELOAD_POINT_LUZHU
     } },
     HA = { {
       course = {
-        { longitude = "E 121.16.08", latitude = "N 25.05.54", presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = "E 121.16.08", latitude = "N 25.05.54", presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.HIDE_AREA_LUZHU
     } },
     FP = { {
       course = {
-        { longitude = 121.269481491653, latitude = 25.0982908744975, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 121.269481491653, latitude = 25.0982908744975, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.FIRE_POINT_LUZHU_1
     }, },
     AHA = { {
       course = {
-        { latitude = "N 25.04.42", longitude = "E 121.16.38", presetThrottle = 'Flank', desiredSpeed = 10 }
+        { latitude = "N 25.04.42", longitude = "E 121.16.38", presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_LUZHU
     } },
@@ -864,30 +878,30 @@ constants.OPERATIONAL_AREAS = {
   DONG = {
     RL = { {
       course = {
-        { longitude = 120.191077772224, latitude = 22.9661322579385, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 120.218578452291, latitude = 22.9684370553959, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 120.206723697215, latitude = 22.9878644814624, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 120.191077772224, latitude = 22.9661322579385, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 120.218578452291, latitude = 22.9684370553959, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 120.206723697215, latitude = 22.9878644814624, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.RELOAD_POINT_DONG
     } },
     HA = { {
       course = {
-        { longitude = 120.202558172184, latitude = 22.9807310705356, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 120.202558172184, latitude = 22.9807310705356, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.HIDE_AREA_DONG
     } },
     FP = { {
       course = {
-        { longitude = 120.217736845027, latitude = 22.9764260820491, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 120.213207981986, latitude = 22.9681240060408, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 120.185310873882, latitude = 22.9670171679084, presetThrottle = 'Flank', desiredSpeed = 10 },
-        { longitude = 120.180049825109, latitude = 22.9729687929043, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 120.217736845027, latitude = 22.9764260820491, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 120.213207981986, latitude = 22.9681240060408, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 120.185310873882, latitude = 22.9670171679084, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL },
+        { longitude = 120.180049825109, latitude = 22.9729687929043, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.FIRE_POINT_DONG_1
     }, },
     AHA = { {
       course = {
-        { longitude = 120.20315506959, latitude = 22.9961443656098, presetThrottle = 'Flank', desiredSpeed = 10 }
+        { longitude = 120.20315506959, latitude = 22.9961443656098, presetThrottle = constants.THROTTLES.FULL, desiredSpeed = constants.SPEEDS.NORMAL }
       },
       area = constants.AREAS.AMMO_HOLDING_AREA_DONG
     } },

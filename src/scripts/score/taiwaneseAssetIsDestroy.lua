@@ -3,8 +3,8 @@ local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
-local IADS = require("src.modules.IADS")
-local GPSJamming = require("src.modules.EW.GPSJamming")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
+local GnssJamming = require("src.modules.ew.gnssJamming")
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData|nil
@@ -35,15 +35,15 @@ if unit then
         unit.dbid == constants.PLATFORMS.TPS43F or
         unit.dbid == constants.PLATFORMS.HR3000 or
         unit.dbid == constants.PLATFORMS.GE592 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, "radar", unit)
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "radar", unit)
     elseif unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or unit.dbid == constants.PLATFORMS.PAC3 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.ROCC, "SAM", unit)
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "sam", unit)
     elseif unit.dbid == constants.PLATFORMS.TC2 or unit.dbid == constants.PLATFORMS.SKY_GUARD then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.t.IADS.TAAOC, "SAM", unit)
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.taaoc, "sam", unit)
     elseif unit.dbid == constants.PLATFORMS.C2 or unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
-      IADS.processC2Disruption(saveData.t.IADS, unit)
+      IntegratedAirDefenseSystem.processC2Disruption(saveData.t.iads, unit)
     elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
-      GPSJamming.removeJammingZoneByName(saveData.t.GPSJamming.jammers, "Taiwan", unit.name)
+      GnssJamming.removeJammingZoneByName(saveData.t.gnssJamming.jammers, "Taiwan", unit.name)
     end
   end
 
@@ -55,7 +55,7 @@ if unit then
     end
 
     if unit.dbid == constants.PLATFORMS.RC135V then
-      saveData.u.SIGINT.RA[unit.guid] = nil
+      saveData.u.sigint.reconAircraft[unit.guid] = nil
     end
   end
 end

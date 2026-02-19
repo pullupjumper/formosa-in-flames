@@ -3,8 +3,8 @@ local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
-local GPSJamming = require("src.modules.EW.GPSJamming")
-local IADS = require("src.modules.IADS")
+local GnssJamming = require("src.modules.ew.gnssJamming")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 ---@type SBJ__SaveData|nil
@@ -37,7 +37,7 @@ if unit then
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed a recon aircraft."
       )
-      saveData.c.SIGINT.RA[unit.guid] = nil
+      saveData.c.sigint.reconAircraft[unit.guid] = nil
     elseif unit.dbid == constants.PLATFORMS.Y9 or
         unit.dbid == constants.PLATFORMS.J16D or
         unit.dbid == constants.PLATFORMS.J15D then
@@ -106,7 +106,7 @@ if unit then
         "You have destroyed a GPS jammer."
       )
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
-      GPSJamming.removeJammingZoneByName(saveData.c.GPSJamming.jammers, "China", unit.name)
+      GnssJamming.removeJammingZoneByName(saveData.c.gnssJamming.jammers, "China", unit.name)
     elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
       local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
@@ -121,29 +121,29 @@ if unit then
         unit.dbid == constants.PLATFORMS.S300 or
         unit.dbid == constants.PLATFORMS.S400 or
         unit.dbid == constants.PLATFORMS.HQ12 then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, "SAM", unit)
-      IADS.activateNearestRadar(
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.c.iads.c2, "sam", unit)
+      IntegratedAirDefenseSystem.activateNearestRadar(
         config,
         filteredUnits,
         unit
       )
     elseif unit.dbid == constants.PLATFORMS.JY26 or unit.dbid == constants.PLATFORMS.YLC8B then
-      IADS.removeDestroyedUnitContextFromIADS(saveData.c.IADS.C2, "radar", unit)
-      IADS.activateNearestRadar(
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.c.iads.c2, "radar", unit)
+      IntegratedAirDefenseSystem.activateNearestRadar(
         config,
         filteredUnits,
         unit
       )
     else
-      for _, DBID in ipairs(config.c.IADS.C2FacilityDBIDs) do
-        if unit.dbid == DBID and not saveData.c.IADS.C2[unit.guid] then
+      for _, dbid in ipairs(config.c.iads.c2FacilityDBIDs) do
+        if unit.dbid == dbid and not saveData.c.iads.c2[unit.guid] then
           GameApi.ScenEdit_SetScore(
             "Taiwan",
             (score + config.s.destroyingCivilianFacility),
             "Destruction of civilian facilities"
           )
-        elseif unit.dbid == DBID and saveData.c.IADS.C2[unit.guid] then
-          IADS.processC2Disruption(saveData.c.IADS, unit)
+        elseif unit.dbid == dbid and saveData.c.iads.c2[unit.guid] then
+          IntegratedAirDefenseSystem.processC2Disruption(saveData.c.iads, unit)
         end
       end
     end

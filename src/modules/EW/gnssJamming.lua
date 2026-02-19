@@ -4,12 +4,12 @@ local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local constants = require("src.core.constants")
 
-local GPSJamming = {}
+local GnssJamming = {}
 
----Add jamming zone for a GPS jammer unit
+---Add jamming zone for a GNSS jammer unit
 ---Creates a circular zone around the jammer and sets up event trigger for weapons entering the zone
----@param unit CMO__Unit The GPS jammer unit
----@param descriptor SBJ__GPSJammerDescriptor Jammer configuration descriptor containing zone name and radius
+---@param unit CMO__Unit The GNSS jammer unit
+---@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration descriptor containing zone name and radius
 ---@param point CMO__Location Center point for the jamming zone
 ---@param sideName string Side name that owns the jammer (e.g., 'China', 'Taiwan')
 ---@param enemySideName string Enemy side name whose weapons will be jammed
@@ -33,7 +33,7 @@ local function addJammingZone(unit, descriptor, point, sideName, enemySideName)
       descriptor.zoneName,
       { TargetSide = enemySideName, TargetType = 6 },
       area,
-      "GPSJamming.jamming(config, \\\"" .. sideName .. "\\\")",
+      "GnssJamming.jamming(config, \\\"" .. sideName .. "\\\")",
       "add",
       false,
       true,
@@ -44,9 +44,9 @@ local function addJammingZone(unit, descriptor, point, sideName, enemySideName)
   return false
 end
 
----Remove GPS jamming event and cleanup
+---Remove GNSS jamming event and cleanup
 ---Deletes reference points, removes zone, optionally deletes unit, and removes event trigger
----@param descriptor SBJ__GPSJammerDescriptor Jammer configuration descriptor
+---@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration descriptor
 ---@param zone CMO__Zone The zone object to remove
 ---@param sideObj CMO__Side Side object that owns the zone
 ---@param sideName string Side name (e.g., 'China', 'Taiwan')
@@ -69,17 +69,17 @@ local function removeEvent(descriptor, zone, sideObj, sideName, isDeleted)
     GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = descriptor.name })
   end
   GameUtils.unitEntersAreaEvent(descriptor.zoneName, {}, {}, "", "remove", false, false, false)
-  Logger.log("GPSJamming", "[GPS Jamming] Removed GPS jamming zone: " .. descriptor.zoneName)
+  Logger.log("gnssJamming", "[Gnss Jamming] Removed Gnss jamming zone: " .. descriptor.zoneName)
   return true
 end
 
----Process GPS jamming for weapons entering jamming zone
----Checks if weapon is GPS-guided, applies random deviation to terminal waypoint based on jamming resistance
+---Process GNSS jamming for weapons entering jamming zone
+---Checks if weapon is GNSS-guided, applies random deviation to terminal waypoint based on jamming resistance
 ---Should be called from 'Unit Enters Area' event trigger
----@param config SBJ__Config Configuration object containing GPS jamming settings and weapon DBIDs
+---@param config SBJ__Config Configuration object containing GNSS jamming settings and weapon DBIDs
 ---@param sideName string Enemy side name whose weapons are being jammed (e.g., 'Taiwan', 'US')
 ---@return boolean # Whether jamming was successfully applied to the weapon
-function GPSJamming.jamming(config, sideName)
+function GnssJamming.jamming(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local side = sideConfig.field
   local weapon = GameApi.ScenEdit_UnitX()
@@ -88,21 +88,21 @@ function GPSJamming.jamming(config, sideName)
   if weapon then
     weaponU = GameApi.ScenEdit_GetUnit(weapon.guid)
   else
-    Logger.error("[GPS Jamming] No weapon unit found in jamming event")
+    Logger.error("[Gnss Jamming] No weapon unit found in jamming event")
     return false
   end
 
   if not weaponU then
-    Logger.error("[GPS Jamming] Failed to get weapon unit wrapper")
+    Logger.error("[Gnss Jamming] Failed to get weapon unit wrapper")
     return false
   end
 
-  for i, wpn in ipairs(config[side].GPSJamming.GPSGuidedWeapons) do
+  for i, wpn in ipairs(config[side].gnssJamming.gnssGuidedWeapons) do
     if weaponU and weaponU.dbid == wpn.dbid then
       local jamChance = math.random(100)
 
       if jamChance > wpn.jammingResistance then
-        Logger.log("GPSJamming", "[GPS Jamming] GPS jamming successful on " .. weaponU.name)
+        Logger.log("gnssJamming", "[Gnss Jamming] Gnss jamming successful on " .. weaponU.name)
 
         if weaponU.course then
           local count = Utils.getCount(weaponU.course)
@@ -137,12 +137,12 @@ function GPSJamming.jamming(config, sideName)
             weaponU.target = { latitude = lat, longitude = lon, guid = "BOL" }
           end
         else
-          Logger.error("[GPS Jamming] Weapon " .. weaponU.name .. " has no course data")
+          Logger.error("[Gnss Jamming] Weapon " .. weaponU.name .. " has no course data")
           return false
         end
         return true
       else
-        Logger.log("GPSJamming", "[GPS Jamming] Weapon " .. weaponU.name .. " resisted jamming")
+        Logger.log("gnssJamming", "[Gnss Jamming] Weapon " .. weaponU.name .. " resisted jamming")
         return false
       end
     end
@@ -151,12 +151,12 @@ function GPSJamming.jamming(config, sideName)
   return false
 end
 
----Remove all GPS jammers for a side
----Iterates through all standard zones and removes matching GPS jamming zones and their units
----@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors indexed by name
+---Remove all GNSS jammers for a side
+---Iterates through all standard zones and removes matching GNSS jamming zones and their units
+---@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors indexed by name
 ---@param sideName string Side name that owns the jammers (e.g., 'China', 'Taiwan')
 ---@return number # Number of jammers successfully removed
-function GPSJamming.removeJammers(jammerDescriptors, sideName)
+function GnssJamming.removeJammers(jammerDescriptors, sideName)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if sideObj == nil then return 0 end
 
@@ -173,13 +173,13 @@ function GPSJamming.removeJammers(jammerDescriptors, sideName)
   return removedCount
 end
 
----Add a single GPS jammer
----Creates a GPS jammer unit at the specified location and sets up its jamming zone
----@param descriptor SBJ__GPSJammerDescriptor Jammer configuration with name, location, zone name, and radius
+---Add a single GNSS jammer
+---Creates a GNSS jammer unit at the specified location and sets up its jamming zone
+---@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration with name, location, zone name, and radius
 ---@param sideName string Side name that will own the jammer (e.g., 'China', 'Taiwan')
 ---@return boolean success Whether jammer was successfully created and zone set up
 ---@return CMO__Unit|nil unit The created jammer unit, or nil if creation failed
-function GPSJamming.addGPSJammer(descriptor, sideName)
+function GnssJamming.addGnssJammer(descriptor, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
   local unit = GameApi.ScenEdit_AddUnit({
@@ -200,13 +200,13 @@ function GPSJamming.addGPSJammer(descriptor, sideName)
   return false, nil
 end
 
----Add all GPS jammers for a side
----Creates multiple GPS jammer units at randomized positions and sets up their jamming zones
+---Add all GNSS jammers for a side
+---Creates multiple GNSS jammer units at randomized positions and sets up their jamming zones
 ---Uses retry logic to find valid placement locations within the random radius
----@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors to create
+---@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors to create
 ---@param sideName string Side name that will own the jammers (e.g., 'China', 'Taiwan')
 ---@return number # Number of jammers successfully created with zones
-function GPSJamming.addGPSJammers(jammerDescriptors, sideName)
+function GnssJamming.addGnssJammers(jammerDescriptors, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
   local successCount = 0
@@ -234,17 +234,17 @@ end
 ---comment
 -- -@param config SBJ__CONFIG
 -- -@param unit CMO__Unit
--- function GPSJamming.turnOffGPSEffectByUnit(config, unit)
+-- function GNSSJamming.turnOffGNSSEffectByUnit(config, unit)
 --   local s = GameApi.VP_GetSide({ name = 'China' })
 --   if s == nil then return end
 
---   for _, jammer in ipairs(config.c.GPSJamming.jammers) do
+--   for _, jammer in ipairs(config.c.GNSSJamming.jammers) do
 --     if unit.name ~= jammer.name then goto continue end
 
 --     for _, zone in ipairs(s.standardzones) do
 --       if zone.description == jammer.zoneName then
 --         local myz = s:getstandardzone(zone.guid)
---         myz.enablers = { GNSS_GLONASS = true, GNSS_GPS = true, GNSS_BeiDou = true, GNSS_NavIC = true }
+--         myz.enablers = { GNSS_GLONASS = true, GNSS_GNSS = true, GNSS_BeiDou = true, GNSS_NavIC = true }
 --       end
 --     end
 
@@ -252,14 +252,14 @@ end
 --   end
 -- end
 
----Remove specific GPS jamming zone by name
+---Remove specific GNSS jamming zone by name
 ---Searches for a jamming zone matching the descriptor name and removes it
 ---Does NOT delete the jammer unit itself, only the zone and event
----@param jammerDescriptors table<string, SBJ__GPSJammerDescriptor> Collection of jammer descriptors indexed by name
+---@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors indexed by name
 ---@param sideName string Side name that owns the jammer (e.g., 'China', 'Taiwan')
 ---@param name string Unique name/key of the jammer descriptor to remove
 ---@return boolean # Whether the zone was successfully found and removed
-function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
+function GnssJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if sideObj == nil then return false end
 
@@ -274,7 +274,7 @@ function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
   end
   return false
 
-  -- for _, jammerData in pairs(config[side].GPSJamming.jammers) do
+  -- for _, jammerData in pairs(config[side].GNSSJamming.jammers) do
   --   if unit.name ~= jammerData.name then goto continue end
 
   --   for _, zone in ipairs(s.standardzones) do
@@ -287,7 +287,7 @@ function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
 
   --       GameApi.ScenEdit_RemoveZone(sideName, -925, { Description = myz.description })
   --       GameUtils.unitEntersAreaEvent(jammerData.zoneName, {}, {}, '', 'remove', false, false, false)
-  --       Logger.log("GPSJamming", "[GPS Jamming] Removed GPS jamming zone: " .. jammerData.zoneName)
+  --       Logger.log("GNSSJamming", "[GNSS Jamming] Removed GNSS jamming zone: " .. jammerData.zoneName)
   --     end
   --   end
 
@@ -295,4 +295,4 @@ function GPSJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
   -- end
 end
 
-return GPSJamming
+return GnssJamming

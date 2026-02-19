@@ -36,22 +36,22 @@ if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(saveData, 
     return
   end
 
-  saveData.c.PHIBOP.barges[ship.guid].bridgeGUID = bridge.guid
+  saveData.c.amphibOps.barges[ship.guid].bridgeGUID = bridge.guid
 end
 
 if ship.name == "Barge" and not SecondWaveUnloading.isBridgeDestroyed(saveData, ship) then
-  for _, guid in ipairs(saveData.c.PHIBOP.barges[ship.guid].roros) do
+  for _, guid in ipairs(saveData.c.amphibOps.barges[ship.guid].roros) do
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
     if roro then
-      local zone = SecondWaveUnloading.getBargeROROZone(config.c.PHIBOP, ship, roro)
+      local zone = SecondWaveUnloading.getBargeROROZone(config.c.amphibOps, ship, roro)
 
       if zone then
         SecondWaveUnloading.offloadVehicles({
           ship = roro,
           num = 20,
-          bearing = zone.ACV.bearing + 90,
-          distance = zone.ACV.distance,
+          bearing = zone.acv.bearing + 90,
+          distance = zone.acv.distance,
           firstDistance = 1
         })
       end
