@@ -150,8 +150,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
 
     -- Aircraft availability: base has 4 aircraft, 2 required
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -214,8 +213,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -292,10 +290,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubFindNaval = trackStub(stub(TargetingProcess, "findNavalTargets").returns({ "SHIP-1", "SHIP-2" }))
-    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
-      for _, v in ipairs(src) do table.insert(dest, v) end
-    end))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "SHIP-1", "SHIP-2" }))
 
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
@@ -314,124 +309,7 @@ describe("DynamicATOInsertion", function()
     local result = DynamicATOInsertion.process({}, saveData, {})
 
     assert.is_true(result)
-    assert.stub(stubFindNaval).was.called(1)
-    -- Verify shouldTrack is true for findNavalTargets
-    assert.is_true(stubFindNaval.calls[1].vals[1].shouldTrack)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/AIRCRAFT/ANTISHIP/1/1"])
-  end)
-
-  -- Positive: shouldTrack true for findRadioDirection
-  it("should set shouldTrack true for findRadioDirection filter", function()
-    local reconEntry = makeReconEntry({ type = "aircraft" })
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "SEAD/1",
-        isFirstWave = false,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              areas = { { "RP-1", "RP-2", "RP-3", "RP-4" } },
-              filterNames = { "findRadioDirection" },
-              contactAge = 600,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubFindRadio = trackStub(stub(TargetingProcess, "findRadioDirection").returns({ "RADAR-1" }))
-    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
-      for _, v in ipairs(src) do table.insert(dest, v) end
-    end))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/SEAD/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_true(result)
-    assert.stub(stubFindRadio).was.called(1)
-    assert.is_true(stubFindRadio.calls[1].vals[1].shouldTrack)
-  end)
-
-  -- Positive: shouldTrack false for non-tracking filters
-  it("should set shouldTrack false for non-tracking filters", function()
-    local reconEntry = makeReconEntry({ type = "aircraft" })
-    local operation = {
-      type = "air",
-      executed = false,
-      template = {
-        name = "STRIKE/1",
-        isFirstWave = false,
-        strikeInterval = 0,
-        packages = {
-          {
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
-            target = {
-              areas = { { "RP-1", "RP-2" } },
-              filterNames = { "findInfantry" },
-              contactAge = 600,
-              minTargetCount = 1
-            }
-          }
-        }
-      }
-    }
-
-    local saveData = makeSaveData({ reconEntry })
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
-    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
-    }))
-    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubFindInfantry = trackStub(stub(TargetingProcess, "findInfantry").returns({ "INF-1" }))
-    trackStub(stub(Utils, "insertList").invokes(function(dest, src)
-      for _, v in ipairs(src) do table.insert(dest, v) end
-    end))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-      if guid == "BASE-1" then
-        return {
-          guid = "BASE-1", name = "Air Base",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
-        }
-      end
-      return { dbid = 100, mission = nil }
-    end))
-
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
-
-    local result = DynamicATOInsertion.process({}, saveData, {})
-
-    assert.is_true(result)
-    assert.stub(stubFindInfantry).was.called(1)
-    assert.is_false(stubFindInfantry.calls[1].vals[1].shouldTrack)
   end)
 
   -- ============================================================================
@@ -482,14 +360,12 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Package 1 (TAOYUAN) gets 3 targets, Package 2 (HSINCHU) gets 1 target (needs 10)
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").invokes(function(_, queryParams)
-      if queryParams[1] and queryParams[1].baseName == "TAOYUAN" then
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+      if targetConfig and targetConfig.objs and targetConfig.objs[1]
+          and targetConfig.objs[1].baseName == "TAOYUAN" then
         return { "TGT-1", "TGT-2", "TGT-3" }
       end
       return { "TGT-4" }
-    end))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").invokes(function(task)
-      return task.target.list
     end))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" or guid == "BASE-2" then
@@ -551,8 +427,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry2, operation = operation2 }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -620,8 +495,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
 
     -- Aircraft availability
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -695,8 +569,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" or guid == "BASE-2" then
         return {
@@ -769,8 +642,7 @@ describe("DynamicATOInsertion", function()
     }))
     -- isAfterStartTime(1500) with current time 2000 => true
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -948,8 +820,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Returns only 1 target but minTargetCount = 5
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
 
     local result = DynamicATOInsertion.process({}, saveData, {})
@@ -990,8 +861,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base has only 2 aircraft but package requires 4
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
@@ -1044,8 +914,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Exactly 3 targets = exactly minTargetCount
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1", "TGT-2", "TGT-3" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1", "TGT-2", "TGT-3" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2", "TGT-3" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -1098,8 +967,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Only 2 targets, minTargetCount = 3
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1", "TGT-2" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1", "TGT-2" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
 
     local result = DynamicATOInsertion.process({}, saveData, {})
 
@@ -1138,8 +1006,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Only 1 target, no minTargetCount => defaults to 1 => pass
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -1208,8 +1075,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base has 4 aircraft total available, 2 already assigned, needs 3 more => 4-2=2 < 3
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
@@ -1277,8 +1143,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base has 4 aircraft available
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
@@ -1330,8 +1195,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base has 3 aircraft: AC-1 free, AC-2 on mission, AC-3 wrong DBID
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
@@ -1387,8 +1251,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base exists but has no embarked aircraft
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
       guid = "BASE-1", name = "Empty Air Base",
@@ -1431,8 +1294,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base not found
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
@@ -1473,8 +1335,7 @@ describe("DynamicATOInsertion", function()
       { reconEntry = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    trackStub(stub(TargetingProcess, "filterTargetsByTypeAndBase").returns({ "TGT-1" }))
-    trackStub(stub(TargetingProcess, "assessTargetsDamage").returns({ "TGT-1" }))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {

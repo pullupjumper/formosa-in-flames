@@ -948,7 +948,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field saveData? SBJ__SaveData Saved data
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
----@field shouldTrack? boolean Whether to track contacts (optional)
 
 ---Firing unit definition for fire support operations
 ---@class SBJ__FiringUnit: table
