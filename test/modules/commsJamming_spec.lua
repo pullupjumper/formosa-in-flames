@@ -3,6 +3,7 @@
 local CommsJamming = require("src.modules.ew.commsJamming")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
+local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
@@ -1139,7 +1140,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.is_not_nil(commsJammingCtx.jammers["Y9-001"])
       assert.are.equal("Y9-001", commsJammingCtx.jammers["Y9-001"].guid)
@@ -1161,7 +1162,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.is_not_nil(commsJammingCtx.jammers["J15D-001"])
       assert.are.equal("J15D-001", commsJammingCtx.jammers["J15D-001"].guid)
@@ -1179,7 +1180,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.is_not_nil(commsJammingCtx.jammers["J16D-001"])
       assert.are.equal("J16D-001", commsJammingCtx.jammers["J16D-001"].guid)
@@ -1197,7 +1198,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.is_nil(commsJammingCtx.jammers["F16-001"])
     end)
@@ -1210,7 +1211,7 @@ describe("CommsJamming", function()
         unitsBy = function() return nil end,
       }))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.are.equal(0, Utils.getCount(commsJammingCtx.jammers))
     end)
@@ -1222,7 +1223,7 @@ describe("CommsJamming", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "GHOST-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.are.equal(0, Utils.getCount(commsJammingCtx.jammers))
     end)
@@ -1253,7 +1254,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China")
+      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
 
       assert.is_not_nil(commsJammingCtx.jammers["Y9-001"])
       assert.is_not_nil(commsJammingCtx.jammers["J15D-001"])

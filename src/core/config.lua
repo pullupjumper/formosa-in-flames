@@ -14,8 +14,8 @@ config.logging = {
     amphibOps = { verbose = false },
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
-    sigint = { verbose = false },
-    commsJamming = { verbose = true },
+    sigint = { verbose = true },
+    commsJamming = { verbose = false },
     gnssJamming = { verbose = false },
     integratedAirDefenseSystem = { verbose = false },
     attackManager = { verbose = false },
@@ -236,6 +236,12 @@ config.c.commsJamming.randomVariance = {
   distant = { min = -10, max = 10 }
 }
 config.c.commsJamming.mode = "omnidirectional"
+config.c.commsJamming.aircraftDefaults = {
+  commsLevel = 40,
+  commsBase = 40,
+  commsThreshold = 30,
+  outOfComms = 0,
+}
 
 
 -- ============================================================================

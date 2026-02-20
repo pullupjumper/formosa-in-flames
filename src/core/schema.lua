@@ -136,6 +136,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field minPolygonPoints integer Minimum polygon points for area validation
 ---@field detectionSkipProbability number Probability to skip detection check for performance (0-1)
 
+---Aircraft communications default values
+---@class SBJ__AircraftCommsDefaults: table
+---@field commsLevel number Default communications level
+---@field commsBase number Default communications base level
+---@field commsThreshold number Communications threshold for RTB trigger
+---@field outOfComms number Default out-of-communications counter
+
 ---Communications jamming configuration
 ---@class SBJ__CommsJammingConfig: table
 ---@field limit number Jammer unit limit
@@ -151,6 +158,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field cooldownTime { min: number, max: number } Cooldown time range
 ---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
 ---@field mode string Jamming mode ('omnidirectional' or 'directional')
+---@field aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
 
 ---GNSS jammer weapon configuration
 ---@class SBJ__GNSSJammedWeapon: table

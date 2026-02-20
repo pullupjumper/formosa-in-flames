@@ -974,4 +974,8 @@ constants.MISSILE_SYSTEM_STATE = {
   HIDE = 3,
 }
 
+constants.UNIT_CONDITIONS = {
+  AIRBORNE = "Airborne",
+}
+
 return constants

@@ -9,10 +9,6 @@ local CommsJamming = {}
 -- Enumerations & Constants
 -- ============================================================================
 
-local UNIT_CONDITION = {
-  AIRBORNE = "Airborne",
-}
-
 local DISTANCE_CATEGORY = {
   CLOSE   = "close",
   MEDIUM  = "medium",
@@ -39,12 +35,6 @@ local EW_PLATFORM_DBIDS = {
   [constants.PLATFORMS.J16D] = true,
 }
 
-local JAMMER_DEFAULTS = {
-  COMMS_LEVEL = 40,
-  COMMS_BASE = 40,
-  COMMS_THRESHOLD = 30,
-}
-
 local RESULT_TAGS = {
   [JAMMING_RESULT.JAMMED]   = "[OK]",
   [JAMMING_RESULT.RESISTED] = "[RESIST]",
@@ -65,6 +55,7 @@ local jammingStrategies = {
   end,
 }
 
+local COMMS_JAMMING_LOG_TAG = "commsJamming"
 
 -- ============================================================================
 -- Signal Level Calculation
@@ -102,7 +93,7 @@ local function calculateJammerImpact(commsJammingConfig, jammers, affectedUnitGU
   for _, jammerCtx in pairs(jammers) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammerCtx.guid)
 
-    if actualJammer and actualJammer.condition == UNIT_CONDITION.AIRBORNE and actualJammer.jammer then
+    if actualJammer and actualJammer.condition == constants.UNIT_CONDITIONS.AIRBORNE and actualJammer.jammer then
       impact = commsJammingConfig.baseJammingPower +
           GameApi.Tool_Range(affectedUnitGUID, actualJammer.guid) ^ commsJammingConfig.distanceExponent + impact
     end
@@ -123,7 +114,7 @@ local function calculateAEWSupport(commsJammingConfig, aewContexts, affectedUnit
   for _, AEWCtx in pairs(aewContexts) do
     local actualAEW = GameApi.ScenEdit_GetUnit(AEWCtx.guid)
 
-    if actualAEW and actualAEW.condition == UNIT_CONDITION.AIRBORNE then
+    if actualAEW and actualAEW.condition == constants.UNIT_CONDITIONS.AIRBORNE then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualAEW.guid)
       local category = getDistanceCategory(commsJammingConfig, distance)
 
@@ -335,7 +326,7 @@ local function findJammers(jammers)
   for _, jammer in pairs(jammers) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammer.guid)
 
-    if actualJammer and actualJammer.condition == UNIT_CONDITION.AIRBORNE and actualJammer.jammer then
+    if actualJammer and actualJammer.condition == constants.UNIT_CONDITIONS.AIRBORNE and actualJammer.jammer then
       table.insert(airborneJammers, actualJammer)
     end
   end
@@ -423,7 +414,8 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
       end
 
       local result = jammingFn(commsJammingConfig, entry, jammer)
-      table.insert(entries, "    " .. RESULT_TAGS[result] .. " " .. entry.unitCtx.name .. " (" .. math.floor(entry.distance) .. "nm)")
+      table.insert(entries,
+        "    " .. RESULT_TAGS[result] .. " " .. entry.unitCtx.name .. " (" .. math.floor(entry.distance) .. "nm)")
       count = count + 1
     end
 
@@ -455,7 +447,7 @@ local function processAircraftComms(commsJammingConfig, saveData)
   for _, aircraftCtx in pairs(saveData.t.air.landBased.AC) do
     local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftCtx.guid)
 
-    if actualAircraft and actualAircraft.condition == UNIT_CONDITION.AIRBORNE then
+    if actualAircraft and actualAircraft.condition == constants.UNIT_CONDITIONS.AIRBORNE then
       aircraftProcessed = aircraftProcessed + 1
       aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(commsJammingConfig, saveData, actualAircraft.guid)
 
@@ -507,15 +499,15 @@ function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   table.insert(reportLines, string.format("  Summary: %d/%d jamming processed, %d/%d aircraft RTB",
     totalJammed, totalAttempts, aircraftRTB, aircraftProcessed))
 
-  Logger.log("commsJamming", table.concat(reportLines, "\n"))
+  Logger.log(COMMS_JAMMING_LOG_TAG, table.concat(reportLines, "\n"))
 end
-
 
 ---Initialize communications jammer contexts for the specified side
 ---Scans all aircraft on the side and creates contexts for electronic warfare aircraft
 ---@param commsJammingCtx SBJ__CommsJammingContext Jamming context where jammer contexts will be stored
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
-function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName)
+---@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
+function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -529,14 +521,13 @@ function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName)
       commsJammingCtx.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
-        commsLevel = JAMMER_DEFAULTS.COMMS_LEVEL,
-        commsBase = JAMMER_DEFAULTS.COMMS_BASE,
-        commsThreshold = JAMMER_DEFAULTS.COMMS_THRESHOLD,
-        outofcomms = 0,
+        commsLevel = aircraftDefaults.commsLevel,
+        commsBase = aircraftDefaults.commsBase,
+        commsThreshold = aircraftDefaults.commsThreshold,
+        outofcomms = aircraftDefaults.outOfComms,
       }
     end
   end
 end
-
 
 return CommsJamming

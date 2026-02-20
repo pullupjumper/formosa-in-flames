@@ -89,7 +89,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
   ShipMovement.calculateDestination(config.c.amphibOps, saveData.c.amphibOps.calculationResult)
-  UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
+  UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
@@ -106,12 +106,12 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.commsJamming.enabled then
-    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, "China")
+    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, "China", config.c.commsJamming.aircraftDefaults)
   end
 
   if saveData.u.sigint.enabled then
-    Sigint.initReconAircraftContexts(saveData.u.sigint, "US")
-    Sigint.initReconAircraftContexts(saveData.c.sigint, "China")
+    Sigint.initReconAircraftContexts(saveData.u.sigint, "US", config.c.commsJamming.aircraftDefaults)
+    Sigint.initReconAircraftContexts(saveData.c.sigint, "China", config.c.commsJamming.aircraftDefaults)
   end
 
   if saveData.c.ground.enabled then

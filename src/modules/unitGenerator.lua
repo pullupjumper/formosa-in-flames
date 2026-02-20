@@ -734,8 +734,9 @@ end
 
 ---Initialize aircraft units for Taiwan air operations
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
+---@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
 ---@return boolean # Whether initialization was successful
-function UnitGenerator.initAircraftContexts(context)
+function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -755,20 +756,20 @@ function UnitGenerator.initAircraftContexts(context)
       context.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
+        commsLevel = aircraftDefaults.commsLevel,
+        commsBase = aircraftDefaults.commsBase,
+        commsThreshold = aircraftDefaults.commsThreshold,
+        outofcomms = aircraftDefaults.outOfComms,
       }
       aewCount = aewCount + 1
     elseif actualUnit and actualUnit.type == "Aircraft" then
       context.AC[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
-        commsLevel = 40,
-        commsBase = 40,
-        commsThreshold = 30,
-        outofcomms = 0,
+        commsLevel = aircraftDefaults.commsLevel,
+        commsBase = aircraftDefaults.commsBase,
+        commsThreshold = aircraftDefaults.commsThreshold,
+        outofcomms = aircraftDefaults.outOfComms,
       }
       acCount = acCount + 1
     end
