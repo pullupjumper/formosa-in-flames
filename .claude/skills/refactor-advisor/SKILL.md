@@ -30,8 +30,8 @@ disable-model-invocation: true
   - 搭配 status counter 模式進行彙總統計
 
   ### 日誌策略
-  - 不在迴圈內逐筆輸出日誌
-  - 迴圈中收集結果到陣列，結束後批次輸出
+  - 日誌集中原則：所有內部函式（local function）不得直接呼叫 Logger，僅回傳結構化資料；由 Public API 函式在末尾組合成單一多行報告，一次 `Logger.log` 輸出
+  - 迴圈中收集結果到陣列，由呼叫端逐層往上傳遞至 Public API
   - 使用語義標籤區分結果類型：`[OK]`, `[SKIP]`, `[FAIL]`, `[ERROR]`
   - 正常/跳過結果用 `Logger.log`，錯誤用 `Logger.error`，分開輸出
 

@@ -15,7 +15,7 @@ config.logging = {
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
     sigint = { verbose = false },
-    commsJamming = { verbose = false },
+    commsJamming = { verbose = true },
     gnssJamming = { verbose = false },
     integratedAirDefenseSystem = { verbose = false },
     attackManager = { verbose = false },
@@ -235,6 +235,7 @@ config.c.commsJamming.randomVariance = {
   far = { min = -6, max = 6 },
   distant = { min = -10, max = 10 }
 }
+config.c.commsJamming.mode = "omnidirectional"
 
 
 -- ============================================================================

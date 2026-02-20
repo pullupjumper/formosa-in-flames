@@ -150,6 +150,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field jammingTime { min: number, max: number } Jamming time range
 ---@field cooldownTime { min: number, max: number } Cooldown time range
 ---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
+---@field mode string Jamming mode ('omnidirectional' or 'directional')
 
 ---GNSS jammer weapon configuration
 ---@class SBJ__GNSSJammedWeapon: table
