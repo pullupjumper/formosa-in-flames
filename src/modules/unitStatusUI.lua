@@ -600,7 +600,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     -- Apply aircraft and loadout configurations
     if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
       UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
-      UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
+      UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
     end
 
     -- Apply TEL launcher deployments

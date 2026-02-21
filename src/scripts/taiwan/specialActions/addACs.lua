@@ -11,6 +11,6 @@ if not saveData then
 end
 
 UnitGenerator.addAircraft(config.t.air.landBased.deployedACs)
-UnitGenerator.initAircraftContexts(saveData.t.air.landBased)
+UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
