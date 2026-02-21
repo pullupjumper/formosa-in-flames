@@ -26,7 +26,7 @@ local DETECTION_STATUS = {
   NO_CHANGE    = "no_change",
 }
 
-local RESULT_TAGS = {
+local SIGINT_RESULT_TAGS = {
   [DETECTION_STATUS.DETECTED]     = "[OK]",
   [DETECTION_STATUS.NOT_EMITTING] = "[SKIP]",
   [DETECTION_STATUS.SKIPPED]      = "[SKIP]",
@@ -397,13 +397,15 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       -- Resolve actual unit
       local actualUnit = resolveUnit(unitCtx, enemySide)
       if not actualUnit then
-        table.insert(reportEntries, "  " .. RESULT_TAGS[DETECTION_STATUS.NOT_FOUND] .. " " .. ctxName .. " (not found)")
+        table.insert(reportEntries,
+          "  " .. SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND] .. " " .. ctxName .. " (not found)")
         goto continue
       end
 
       -- Skip some units randomly for performance
       if math.random() <= detectionSkipProbability then
-        table.insert(reportEntries, "  " .. RESULT_TAGS[DETECTION_STATUS.SKIPPED] .. " " .. ctxName .. " (random skip)")
+        table.insert(reportEntries,
+          "  " .. SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED] .. " " .. ctxName .. " (random skip)")
         goto continue
       end
 
@@ -420,7 +422,7 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       if result.isDetected then
         totalDetected = totalDetected + 1
         local status = updateTransmissionData(sigintContext, unitCtx, result, actualUnit)
-        table.insert(reportEntries, "  " .. RESULT_TAGS[status] .. " " .. ctxName .. " (detected)")
+        table.insert(reportEntries, "  " .. SIGINT_RESULT_TAGS[status] .. " " .. ctxName .. " (detected)")
 
         if isShown then
           showDetectionNotification(result, unitCtx.msg, sigintConfig)
@@ -428,7 +430,7 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       else
         local status = handleUndetected(sigintContext, actualUnit)
         table.insert(reportEntries,
-          "  " .. RESULT_TAGS[status] .. " " .. ctxName .. " (" .. (emissionReason or "unknown") .. ")")
+          "  " .. SIGINT_RESULT_TAGS[status] .. " " .. ctxName .. " (" .. (emissionReason or "unknown") .. ")")
       end
 
       ::continue::

@@ -16,7 +16,7 @@ local DISTANCE_CATEGORY = {
   DISTANT = "distant",
 }
 
-local JAMMING_RESULT = {
+local COMMS_JAMMING_RESULT = {
   JAMMED   = "jammed",
   RESISTED = "resisted",
   COOLDOWN = "cooldown",
@@ -24,7 +24,7 @@ local JAMMING_RESULT = {
   SKIPPED  = "skipped",
 }
 
-local JAMMING_MODE = {
+local COMMS_JAMMING_MODE = {
   OMNIDIRECTIONAL = "omnidirectional",
   DIRECTIONAL     = "directional",
 }
@@ -35,22 +35,22 @@ local EW_PLATFORM_DBIDS = {
   [constants.PLATFORMS.J16D] = true,
 }
 
-local RESULT_TAGS = {
-  [JAMMING_RESULT.JAMMED]   = "[OK]",
-  [JAMMING_RESULT.RESISTED] = "[RESIST]",
-  [JAMMING_RESULT.COOLDOWN] = "[CD]",
-  [JAMMING_RESULT.RECOVERY] = "[RCV]",
-  [JAMMING_RESULT.SKIPPED]  = "[SKIP]",
+local COMMS_RESULT_TAGS = {
+  [COMMS_JAMMING_RESULT.JAMMED]   = "[OK]",
+  [COMMS_JAMMING_RESULT.RESISTED] = "[RESIST]",
+  [COMMS_JAMMING_RESULT.COOLDOWN] = "[CD]",
+  [COMMS_JAMMING_RESULT.RECOVERY] = "[RCV]",
+  [COMMS_JAMMING_RESULT.SKIPPED]  = "[SKIP]",
 }
 
 local omnidirectionalJammingWithDistance
 local directionalJammingWithDistance
 
 local jammingStrategies = {
-  [JAMMING_MODE.OMNIDIRECTIONAL] = function(config, entry, jammer)
+  [COMMS_JAMMING_MODE.OMNIDIRECTIONAL] = function(config, entry, jammer)
     return omnidirectionalJammingWithDistance(config, entry, jammer)
   end,
-  [JAMMING_MODE.DIRECTIONAL] = function(config, entry, jammer)
+  [COMMS_JAMMING_MODE.DIRECTIONAL] = function(config, entry, jammer)
     return directionalJammingWithDistance(config, entry, jammer)
   end,
 }
@@ -227,14 +227,14 @@ end
 ---@return string # JAMMING_RESULT enum value
 local function applyJammingStateTransition(commsJammingConfig, affectedUnitCtx, shouldJam)
   if affectedUnitCtx.isOutOfComms ~= false then
-    return JAMMING_RESULT.SKIPPED
+    return COMMS_JAMMING_RESULT.SKIPPED
   end
 
   if affectedUnitCtx.outofcomms < 0 then
     GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
     affectedUnitCtx.isOutOfComms = false
     affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
-    return JAMMING_RESULT.RECOVERY
+    return COMMS_JAMMING_RESULT.RECOVERY
   end
 
   local jammingThreshold = math.random(commsJammingConfig.jammingTime.min, commsJammingConfig.jammingTime.max)
@@ -244,19 +244,19 @@ local function applyJammingStateTransition(commsJammingConfig, affectedUnitCtx, 
       GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
       affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
       affectedUnitCtx.isOutOfComms = true
-      return JAMMING_RESULT.JAMMED
+      return COMMS_JAMMING_RESULT.JAMMED
     else
       GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
       affectedUnitCtx.outofcomms = 0
       affectedUnitCtx.isOutOfComms = false
-      return JAMMING_RESULT.RESISTED
+      return COMMS_JAMMING_RESULT.RESISTED
     end
   end
 
   GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
   affectedUnitCtx.isOutOfComms = false
   affectedUnitCtx.outofcomms = math.random(commsJammingConfig.cooldownTime.min, commsJammingConfig.cooldownTime.max)
-  return JAMMING_RESULT.COOLDOWN
+  return COMMS_JAMMING_RESULT.COOLDOWN
 end
 
 
@@ -415,7 +415,7 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
 
       local result = jammingFn(commsJammingConfig, entry, jammer)
       table.insert(entries,
-        "    " .. RESULT_TAGS[result] .. " " .. entry.unitCtx.name .. " (" .. math.floor(entry.distance) .. "nm)")
+        "    " .. COMMS_RESULT_TAGS[result] .. " " .. entry.unitCtx.name .. " (" .. math.floor(entry.distance) .. "nm)")
       count = count + 1
     end
 
