@@ -33,7 +33,7 @@ function IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
   -- Check China C2 nodes
   if iadsContext.c2 and iadsContext.c2[c2.guid] then
     disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "SAM")
+    disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "sam")
     iadsContext.c2[c2.guid] = nil
     Logger.log("integratedAirDefenseSystem", c2.name .. "'s C2 is destroyed")
   end
@@ -41,14 +41,14 @@ function IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
   -- Check Taiwan ROCC nodes
   if iadsContext.rocc and iadsContext.rocc[c2.guid] then
     disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "SAM")
+    disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "sam")
     iadsContext.rocc[c2.guid] = nil
     Logger.log("integratedAirDefenseSystem", c2.name .. "'s ROCC is destroyed")
   end
 
   -- Check Taiwan TAAOC nodes
   if iadsContext.taaoc and iadsContext.taaoc[c2.guid] then
-    disableUnitsUnderC2Node(iadsContext.taaoc[c2.guid], "SAM")
+    disableUnitsUnderC2Node(iadsContext.taaoc[c2.guid], "sam")
     iadsContext.taaoc[c2.guid] = nil
     Logger.log("integratedAirDefenseSystem", c2.name .. "'s TAAOC is destroyed")
   end
@@ -56,7 +56,7 @@ end
 
 ---Remove destroyed unit from IADS tracking by clearing its data from C2 context
 ---@param c2TypeContext table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.c2, IADSContext.rocc, or IADSContext.taaoc)
----@param type string Unit type ('radar' or 'SAM')
+---@param type string Unit type ('radar' or 'sam')
 ---@param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
 function IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeContext, type, destroyedUnit)
   -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
