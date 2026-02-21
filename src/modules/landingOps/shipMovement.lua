@@ -2,8 +2,69 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local constants = require("src.core.constants")
+local Logger = require("src.utils.logger")
 
 local ShipMovement = {}
+
+-- ============================================================================
+-- Enumerations and Constants
+-- ============================================================================
+
+---@type {key: string, dbid: number}[]
+local SHIP_TYPE_DBIDS = {
+  { key = "type075",    dbid = constants.PLATFORMS.TYPE_075 },
+  { key = "type076",    dbid = constants.PLATFORMS.TYPE_076 },
+  { key = "type072iii", dbid = constants.PLATFORMS.TYPE_072III },
+  { key = "type072a",   dbid = constants.PLATFORMS.TYPE_072A },
+  { key = "type073a",   dbid = constants.PLATFORMS.TYPE_073A },
+  { key = "type071",    dbid = constants.PLATFORMS.TYPE_071 },
+}
+
+---@type table<string, string>
+local NAME_TO_KEY = {
+  Ferry = "ferry",
+  RORO  = "roro",
+  Barge = "barge",
+}
+
+local SAG_FORMATION = {
+  FLANK_DISTANCE  = 1.5,
+  TRAIL_DISTANCE  = 1.5,
+  PORT_ANGLE      = -45,
+  STARBOARD_ANGLE = 45,
+}
+
+---@type {key: string, dbid: number}[]
+local ALL_RESULT_KEYS = {
+  { key = "type075",          dbid = constants.PLATFORMS.TYPE_075 },
+  { key = "type071",          dbid = constants.PLATFORMS.TYPE_071 },
+  { key = "type076",          dbid = constants.PLATFORMS.TYPE_076 },
+  { key = "type072iii",       dbid = constants.PLATFORMS.TYPE_072III },
+  { key = "type072a",         dbid = constants.PLATFORMS.TYPE_072A },
+  { key = "type073a",         dbid = constants.PLATFORMS.TYPE_073A },
+  { key = "type071InLSTArea", dbid = constants.PLATFORMS.TYPE_071 },
+  { key = "ferry",            dbid = constants.PLATFORMS.FERRY },
+  { key = "roro",             dbid = constants.PLATFORMS.FERRY },
+  { key = "barge",            dbid = constants.PLATFORMS.BARGE },
+}
+
+---@type {key: string, from: string, distanceKey: string}[]
+local SHIP_ROW_LAYOUT = {
+  { key = "type076",          from = "type071",          distanceKey = "verticalDistance" },
+  { key = "barge",            from = "type075",          distanceKey = "distanceBetweenLSTAndLPDArea" },
+  { key = "roro",             from = "barge",            distanceKey = "verticalDistance" },
+  { key = "type072a",         from = "roro",             distanceKey = "verticalDistance" },
+  { key = "type072iii",       from = "type072a",         distanceKey = "verticalDistance" },
+  { key = "ferry",            from = "type072iii",       distanceKey = "verticalDistance" },
+  { key = "type071InLSTArea", from = "ferry",            distanceKey = "verticalDistance" },
+  { key = "type073a",         from = "type071InLSTArea", distanceKey = "verticalDistance" },
+}
+
+local SHIP_MOVEMENT_TAG = "shipMovement"
+
+-- ============================================================================
+-- Ship Position Utilities
+-- ============================================================================
 
 ---Move a ship to a target location with specified speed
 ---In testing mode, teleports the ship directly to the destination
@@ -23,55 +84,6 @@ local function moveShip(unit, location, speed, isTesting)
       manualSpeed = 0
     })
   end
-end
-
----Handle ship movement for standard amphibious assault ship types
----Assigns next available location from pre-calculated positions and increments index
----@param unit CMO__Unit The ship unit to move
----@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations for all ship types
----@param shipType string Ship type identifier (type075, type076, type072iii, etc.)
----@param shipSettings table<string, number> Ship movement configuration
----@param isTesting boolean If true, enables testing mode with instant teleportation
-local function handleShipType(unit, resultTable, shipType, shipSettings, isTesting)
-  local index = resultTable[shipType].locationIndex
-  local location = resultTable[shipType].locations[index]
-  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
-  resultTable[shipType].locationIndex = index + 1
-end
-
----Handle ship movement for auxiliary vessels identified by name (ferry, RORO, barge)
----Similar to handleShipType but uses ship name instead of DBID for matching
----@param unit CMO__Unit The ship unit to move
----@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations
----@param nameType string Ship name type (ferry, RORO, barge)
----@param shipSettings table<string, number> Ship movement configuration
----@param isTesting boolean If true, enables testing mode with instant teleportation
-local function handleNameType(unit, resultTable, nameType, shipSettings, isTesting)
-  nameType = string.lower(nameType)
-  local index = resultTable[nameType].locationIndex
-  local location = resultTable[nameType].locations[index]
-  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
-  resultTable[nameType].locationIndex = index + 1
-end
-
----Handle Type 071 LPD movement with overflow support to LST area
----When LPD area is full, overflow Type 071s are placed in LST area
----@param unit CMO__Unit The Type 071 ship to move
----@param resultTable table<string, SBJ__ShipCalculationResult> Pre-calculated destination locations
----@param shipType string Ship type identifier (always "type071")
----@param shipSettings table<string, number> Ship movement configuration
----@param isTesting boolean If true, enables testing mode with instant teleportation
-local function handle071(unit, resultTable, shipType, shipSettings, isTesting)
-  local index = resultTable.type071.locationIndex
-  local len = #resultTable.type071.locations
-  local location
-  if index > len then
-    location = resultTable.type071InLSTArea.locations[index - len]
-  else
-    location = resultTable.type071.locations[index]
-  end
-  moveShip(unit, location, shipSettings.shipSpeed, isTesting)
-  resultTable.type071.locationIndex = index + 1
 end
 
 ---Set ship position and heading instantly (used in testing mode)
@@ -103,6 +115,83 @@ local function getNextPosition(latitude, longitude, bearing, distance)
   })
 end
 
+-- ============================================================================
+-- Ship Type Movement
+-- ============================================================================
+
+---Move ship to next pre-calculated location and increment index
+---@param unit CMO__Unit Ship unit
+---@param resultEntry SBJ__ShipCalculationResult Calculation result entry
+---@param speed number Ship speed in knots
+---@param isTesting boolean Testing mode flag
+---@return string tag Result tag (OK/SKIP)
+---@return string msg Description
+local function moveShipToNextLocation(unit, resultEntry, speed, isTesting)
+  local index = resultEntry.locationIndex
+  local location = resultEntry.locations[index]
+  if not location then
+    return "SKIP", string.format("%s no location at index %d", unit.name, index)
+  end
+  moveShip(unit, location, speed, isTesting)
+  resultEntry.locationIndex = index + 1
+  return "OK", string.format("%s → location #%d", unit.name, index)
+end
+
+---Handle Type 071 movement with overflow to LST area
+---@param unit CMO__Unit The Type 071 ship
+---@param result table<string, SBJ__ShipCalculationResult> Full result table
+---@param speed number Ship speed
+---@param isTesting boolean Testing mode flag
+---@return string tag Result tag
+---@return string msg Description
+local function moveType071(unit, result, speed, isTesting)
+  local entry = result.type071
+  local index = entry.locationIndex
+  local len = #entry.locations
+  local location
+  if index > len then
+    location = result.type071InLSTArea.locations[index - len]
+  else
+    location = entry.locations[index]
+  end
+  if not location then
+    return "SKIP", string.format("%s no 071 location at index %d", unit.name, index)
+  end
+  moveShip(unit, location, speed, isTesting)
+  entry.locationIndex = index + 1
+  local area = index > len and "LST" or "LPD"
+  return "OK", string.format("%s → %sArea #%d", unit.name, area, index)
+end
+
+---Match ship by DBID or name and move to next location
+---@param unit CMO__Unit Ship unit
+---@param result table<string, SBJ__ShipCalculationResult> Calculation results
+---@param speed number Ship speed
+---@param isTesting boolean Testing mode flag
+---@return string tag Result tag
+---@return string msg Description
+local function matchAndMoveShip(unit, result, speed, isTesting)
+  for _, entry in ipairs(SHIP_TYPE_DBIDS) do
+    if unit.dbid == entry.dbid then
+      if entry.key == "type071" then
+        return moveType071(unit, result, speed, isTesting)
+      end
+      return moveShipToNextLocation(unit, result[entry.key], speed, isTesting)
+    end
+  end
+
+  local nameKey = NAME_TO_KEY[unit.name]
+  if nameKey then
+    return moveShipToNextLocation(unit, result[nameKey], speed, isTesting)
+  end
+
+  return "SKIP", string.format("%s (DBID:%d) unmatched", unit.name, unit.dbid)
+end
+
+-- ============================================================================
+-- SAG Formation Positioning
+-- ============================================================================
+
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
@@ -133,7 +222,7 @@ local function handleSAG(descriptor, isTesting)
               descriptor.to.anchorageArea[count].latitude,
               descriptor.to.anchorageArea[count].longitude,
               descriptor.to.heading - 180,
-              1.5
+              SAG_FORMATION.TRAIL_DISTANCE
             )
             if point then
               setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
@@ -142,12 +231,12 @@ local function handleSAG(descriptor, isTesting)
 
           type052d = type052d + 1
         elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
-          local angle = (type054a == 0) and -45 or 45
+          local angle = (type054a == 0) and SAG_FORMATION.PORT_ANGLE or SAG_FORMATION.STARBOARD_ANGLE
           local point = getNextPosition(
             descriptor.to.anchorageArea[count].latitude,
             descriptor.to.anchorageArea[count].longitude,
             descriptor.to.heading - angle,
-            1.5
+            SAG_FORMATION.FLANK_DISTANCE
           )
           if point then
             setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
@@ -159,55 +248,108 @@ local function handleSAG(descriptor, isTesting)
   end
 end
 
+-- ============================================================================
+-- Destination Calculation
+-- ============================================================================
+
+---Initialize calculation result structure for an operation
+---@param operationName string Operation name
+---@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Target table
+local function initOperationResult(operationName, calculationResult)
+  if calculationResult[operationName] then return end
+  local result = {}
+  for _, entry in ipairs(ALL_RESULT_KEYS) do
+    result[entry.key] = { locations = {}, locationIndex = 1, dbid = entry.dbid }
+  end
+  calculationResult[operationName] = { name = operationName, result = result }
+end
+
+---Calculate starting points for all ship types from two reference points
+---@param area table Area configuration with startingPoints, heading
+---@param formationSettings table Formation distance settings
+---@return table<string, CMO__Location> # Mapping of key to starting location
+local function calculateStartingPoints(area, formationSettings)
+  local startingPoints = {}
+  startingPoints.type075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
+  startingPoints.type071 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
+
+  for _, row in ipairs(SHIP_ROW_LAYOUT) do
+    startingPoints[row.key] = GameApi.World_GetPointFromBearing({
+      latitude = startingPoints[row.from].latitude,
+      longitude = startingPoints[row.from].longitude,
+      bearing = area.heading.vertical,
+      distance = formationSettings[row.distanceKey],
+    })
+  end
+
+  return startingPoints
+end
+
+---Generate and append locations for all ship types in an area
+---@param opResult table<string, SBJ__ShipCalculationResult> Operation result to populate
+---@param startingPoints table<string, CMO__Location> Starting points per ship type
+---@param area table Area configuration with heading and num
+---@param horizontalDistance number Horizontal spacing
+local function generateAllShipLocations(opResult, startingPoints, area, horizontalDistance)
+  for _, entry in ipairs(ALL_RESULT_KEYS) do
+    Utils.insertList(
+      opResult[entry.key].locations,
+      GameUtils.generateLocations({
+        initialLocation = startingPoints[entry.key],
+        num = area.num[entry.key],
+        bearing = area.heading.horizontal,
+        distance = horizontalDistance,
+      })
+    )
+  end
+end
+
+---Pre-calculate all destination positions for amphibious assault ships
+---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
+---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
+---@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Calculation result where calculated positions will be stored
+function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
+  local formationSettings = amphibOpsConfig.formationSettings
+  for _, operation in ipairs(amphibOpsConfig.operations) do
+    for _, area in ipairs(operation.to.areas) do
+      initOperationResult(operation.name, calculationResult)
+      local startingPoints = calculateStartingPoints(area, formationSettings)
+      generateAllShipLocations(
+        calculationResult[operation.name].result,
+        startingPoints, area,
+        formationSettings.horizontalDistance
+      )
+    end
+  end
+end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
+
 ---Move all amphibious assault ships from staging area to designated anchorage positions
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
 ---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
----@return boolean # True if all ship movement orders were successfully issued
+---@return boolean # True when all movement orders have been issued
 function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits)
   local formationSettings = amphibOpsConfig.formationSettings
   local operations = amphibOpsConfig.operations
   local calculationResult = saveData.c.amphibOps.calculationResult
   local isTesting = saveData.c.amphibOps.isTesting
-  local allUnitsMoved = false
+  local logEntries = {}
+  local movedCount = 0
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
     if unit then
       for _, operation in ipairs(operations) do
         if unit:inArea(operation.from.stagingArea) then
           local result = calculationResult[operation.name].result
-          local matched = false
-
-          for shipType, handler in pairs({
-            type075 = handleShipType,
-            type076 = handleShipType,
-            type072iii = handleShipType,
-            type072a = handleShipType,
-            type073a = handleShipType,
-            type071 = handle071,
-          }) do
-            if unit.dbid == result[shipType].dbid then
-              handler(unit, result, shipType, formationSettings, isTesting)
-              matched = true
-              break
-            end
-          end
-
-          if not matched then
-            for nameType, handler in pairs({
-              ferry = handleNameType,
-              RORO = handleNameType,
-              barge = handleNameType,
-            }) do
-              if unit.name == nameType:gsub("^%l", string.upper) then
-                handler(unit, result, nameType, formationSettings, isTesting)
-                break
-              end
-            end
-          end
+          local tag, msg = matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting)
+          table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+          if tag == "OK" then movedCount = movedCount + 1 end
         end
       end
     end
@@ -217,172 +359,14 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
     handleSAG(SAGDescriptor, isTesting)
   end
 
-  allUnitsMoved = true
-  return allUnitsMoved
-end
-
----Pre-calculate all destination positions for amphibious assault ships
----Generates grid of anchorage positions for each ship type with layered arrangement and spacing
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
----@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Calculation result where calculated positions will be stored
-function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
-  local operations = amphibOpsConfig.operations
-  local formationSettings = amphibOpsConfig.formationSettings
-
-  for _, operation in ipairs(operations) do
-    for _, area in ipairs(operation.to.areas) do
-      local firstRp075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-      local firstRp071 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
-      local firstRp076 = GameApi.World_GetPointFromBearing({
-        latitude = firstRp071.latitude,
-        longitude = firstRp071.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRpBarge = GameApi.World_GetPointFromBearing({
-        latitude = firstRp075.latitude,
-        longitude = firstRp075.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.distanceBetweenLSTAndLPDArea
-      })
-      local firstRpRORO = GameApi.World_GetPointFromBearing({
-        latitude = firstRpBarge.latitude,
-        longitude = firstRpBarge.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRp072a = GameApi.World_GetPointFromBearing({
-        latitude = firstRpRORO.latitude,
-        longitude = firstRpRORO.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRp072iii = GameApi.World_GetPointFromBearing({
-        latitude = firstRp072a.latitude,
-        longitude = firstRp072a.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRpFerry = GameApi.World_GetPointFromBearing({
-        latitude = firstRp072iii.latitude,
-        longitude = firstRp072iii.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRp071InLSTArea = GameApi.World_GetPointFromBearing({
-        latitude = firstRpFerry.latitude,
-        longitude = firstRpFerry.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-      local firstRp073a = GameApi.World_GetPointFromBearing({
-        latitude = firstRp071InLSTArea.latitude,
-        longitude = firstRp071InLSTArea.longitude,
-        bearing = area.heading.vertical,
-        distance = formationSettings.verticalDistance
-      })
-
-      if not calculationResult[operation.name] then
-        calculationResult[operation.name] = {
-          name = operation.name,
-          result = {
-            type075 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_075, },
-            type071 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-            type076 = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_076, },
-            type072iii = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072III, },
-            type072a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_072A, },
-            type073a = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_073A, },
-            type071InLSTArea = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.TYPE_071, },
-            ferry = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-            roro = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.FERRY, },
-            barge = { locations = {}, locationIndex = 1, dbid = constants.PLATFORMS.BARGE, },
-          }
-        }
-      end
-
-      Utils.insertList(
-        calculationResult[operation.name].result.type075.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp075,
-          num = area.num.type075,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type071.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp071,
-          num = area.num.type071,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type076.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp076,
-          num = area.num.type076,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.barge.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRpBarge,
-          num = area.num.barge,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        })
-      )
-      Utils.insertList(
-        calculationResult[operation.name].result.roro.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRpRORO,
-          num = area.num.roro,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type072iii.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp072iii,
-          num = area.num.type072iii,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type072a.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp072a,
-          num = area.num.type072a,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.ferry.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRpFerry,
-          num = area.num.ferry,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type073a.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp073a,
-          num = area.num.type073a,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-      Utils.insertList(
-        calculationResult[operation.name].result.type071InLSTArea.locations,
-        GameUtils.generateLocations({
-          initialLocation = firstRp071InLSTArea,
-          num = area.num.type071InLSTArea,
-          bearing = area.heading.horizontal,
-          distance = formationSettings.horizontalDistance
-        }))
-    end
+  if #logEntries > 0 then
+    Logger.log(SHIP_MOVEMENT_TAG, string.format(
+      "Move to staging area: %d ships moved\n%s",
+      movedCount, table.concat(logEntries, "\n")
+    ))
   end
+
+  return true
 end
 
 return ShipMovement

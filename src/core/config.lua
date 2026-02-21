@@ -11,7 +11,7 @@ config.logging = {
   modules = {
     ground = { verbose = true },
     air = { verbose = true },
-    amphibOps = { verbose = false },
+    amphibOps = { verbose = true },
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
     sigint = { verbose = false },
@@ -23,6 +23,7 @@ config.logging = {
     missileSystem = { verbose = false },
     score = { verbose = true },
     init = { verbose = true },
+    shipMovement = { verbose = true }
   }
 }
 config.c = {}
