@@ -10,13 +10,6 @@ local TargetingProcess = {}
 -- Enumerations & Lookup Tables
 -- ============================================================================
 
----CMO contact typed values
-local CONTACT_TYPE = {
-  AIRCRAFT = 0,
-  NAVAL = 2,
-  GROUND = 8,
-}
-
 ---Target category labels for targetlist entries
 local TARGET_CATEGORY = {
   AIRFIELD = "Airfield",
@@ -50,15 +43,12 @@ local BDA_STATUS = {
   HEAVY_DAMAGE = "Heavy damage",
 }
 
----Side name for CMO API calls (contacts, units)
-local SIDE_NAME = "China"
-
 ---Standalone target matching rules: { patternKey, subKey, category }
 local STANDALONE_TARGET_RULES = {
-  { patternKey = "radar", subKey = "radarPattern", category = TARGET_CATEGORY.ISR },
-  { patternKey = "sam", subKey = "skyBowPattern", category = TARGET_CATEGORY.SAM },
-  { patternKey = "asm", subKey = "asmPattern", category = TARGET_CATEGORY.ASM },
-  { patternKey = "c2", subKey = "hengshanPattern", category = TARGET_CATEGORY.C2 },
+  { patternKey = "radar", subKey = "radarPattern",    category = TARGET_CATEGORY.ISR },
+  { patternKey = "sam",   subKey = "skyBowPattern",   category = TARGET_CATEGORY.SAM },
+  { patternKey = "asm",   subKey = "asmPattern",      category = TARGET_CATEGORY.ASM },
+  { patternKey = "c2",    subKey = "hengshanPattern", category = TARGET_CATEGORY.C2 },
 }
 
 ---Reconnaissance tracking configuration per filter
@@ -78,7 +68,7 @@ local RECON_TRACKING_CONFIG = {
   findRadioDirection = {
     platformDBID = constants.PLATFORMS.BZK005,
     getTarget = function(opts, targetGUIDs)
-      return GameApi.ScenEdit_GetContact(SIDE_NAME, targetGUIDs[1])
+      return GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, targetGUIDs[1])
     end,
   },
 }
@@ -293,7 +283,7 @@ end
 ---@return string[] # Array of ground unit GUIDs found in target areas
 local function findGroundTargets(opts)
   return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
-    if contact.typed ~= CONTACT_TYPE.GROUND then
+    if contact.typed ~= constants.CONTACT_TYPES.FACILITY_MOBILE then
       return false
     end
     contact.posture = "H"
@@ -310,7 +300,7 @@ local function findAirborne(opts)
       return false
     end
     return AEW_SENSOR_DBIDS[contact.emissions[1].sensor_dbid] ~= nil
-        and contact.typed == CONTACT_TYPE.AIRCRAFT
+        and contact.typed == constants.CONTACT_TYPES.AIR
   end)
 end
 
@@ -355,7 +345,7 @@ local function findNavalTargets(opts)
   local contactAge = task.target.contactAge
 
   return filterContactsInAreas(contacts, task.target.areas, function(contact)
-    return contact.typed == CONTACT_TYPE.NAVAL
+    return contact.typed == constants.CONTACT_TYPES.SURFACE
         and contact.lastDetections ~= nil
         and contact.lastDetections[1].age <= contactAge
   end)
@@ -380,7 +370,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
   local targets = {}
 
   for _, guid in ipairs(contacts) do
-    local contact = GameApi.ScenEdit_GetContact(SIDE_NAME, guid)
+    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
 
     if contact then
       for _, tm in pairs(saveData.c.sigint.transmissions) do
@@ -470,7 +460,7 @@ local function assessTargetsDamage(task, isFirstWave)
   end
 
   for _, guid in ipairs(task.target.list) do
-    local actualTarget = GameApi.ScenEdit_GetContact(SIDE_NAME, guid)
+    local actualTarget = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
 
     if actualTarget and evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)
@@ -526,7 +516,7 @@ local function triggerReconTracking(opts, filterName, targetGUIDs)
     return
   end
 
-  local side = GameApi.VP_GetSide({ side = SIDE_NAME })
+  local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
   if not side then return end
 
   local filteredUnits = side:unitsBy(constants.UNIT_TYPES.AIRCRAFT)

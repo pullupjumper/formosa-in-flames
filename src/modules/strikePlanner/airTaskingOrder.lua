@@ -3,12 +3,12 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local AssignMission = require("src.modules.assignMission")
+local constants = require("src.core.constants")
 
 local AirTaskingOrder = {}
 
 local AIR_LOG_TAG = "air"
 local ADVANCE_SECONDS = 300
-local SIDE_NAME = "China"
 local LOADOUT_ROLES = { "striker", "escort", "wildWeasel", "jammer" }
 local ALL_ROLES = { "tanker", "striker", "escort", "wildWeasel", "jammer" }
 local ASSIGN_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
@@ -159,11 +159,11 @@ end
 local function createMission(packageData, role)
   ---@type SBJ__MissionDeploymentDescriptor
   local missionRole = packageData[role]
-  local mission = GameApi.ScenEdit_GetMission(SIDE_NAME, missionRole.missionCreationParams.name)
+  local mission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, missionRole.missionCreationParams.name)
 
   if not mission then
     mission = GameUtils.createMission(
-      SIDE_NAME,
+      constants.SIDES.ENEMY,
       missionRole.missionCreationParams.name,
       missionRole.missionCreationParams.type,
       missionRole.missionCreationParams.opts,
@@ -185,7 +185,8 @@ local function createMission(packageData, role)
       end
 
       if missionRole.missionCreationParams.type == "strike" then
-        GameApi.ScenEdit_SetDoctrine({ side = SIDE_NAME, mission = mission.name }, { automatic_evasion = false })
+        GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.ENEMY, mission = mission.name },
+          { automatic_evasion = false })
       end
     end
   end
@@ -239,7 +240,7 @@ local function assignUnits(packageData)
         false
       )
       if role ~= "tanker" and role ~= "striker" then
-        GameApi.ScenEdit_CreateMissionFlightPlan(SIDE_NAME, missionRole.missionCreationParams.name, {})
+        GameApi.ScenEdit_CreateMissionFlightPlan(constants.SIDES.ENEMY, missionRole.missionCreationParams.name, {})
       end
 
       if role == "striker" and result and #result > 0 then

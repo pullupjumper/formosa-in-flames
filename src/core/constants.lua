@@ -983,4 +983,15 @@ constants.PLATFORM_TYPES = {
   BOATS    = "Boats",
 }
 
+constants.CONTACT_TYPES = {
+  AIR = 0,
+  SURFACE = 2,
+  FACILITY_MOBILE = 8
+}
+
+constants.SIDES = {
+  ENEMY = "China",
+  PLAYER = "Taiwan"
+}
+
 return constants

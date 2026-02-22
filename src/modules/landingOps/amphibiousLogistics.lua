@@ -9,8 +9,6 @@ local AmphibiousLogistics = {}
 -- Enumerations and Constants
 -- ============================================================================
 
-local SIDE_NAME = "China"
-
 local MISSION_TYPE = {
   CARGO = "Cargo",
 }
@@ -226,13 +224,14 @@ end
 ---@return boolean # True if mission was successfully created and configured
 local function createSingleCargoMission(platformType, zone, missionName)
   local descriptor = zone[platformType]
-  local m = GameApi.ScenEdit_AddMission(SIDE_NAME, missionName, MISSION_TYPE.CARGO, { zone = descriptor.zone })
+  local m = GameApi.ScenEdit_AddMission(constants.SIDES.ENEMY, missionName, MISSION_TYPE.CARGO,
+    { zone = descriptor.zone })
   if not m then return false end
 
-  m = GameApi.ScenEdit_SetMission(SIDE_NAME, missionName, descriptor.settings)
+  m = GameApi.ScenEdit_SetMission(constants.SIDES.ENEMY, missionName, descriptor.settings)
   if not m then return false end
 
-  m = GameApi.ScenEdit_SetDoctrine({ side = SIDE_NAME, mission = missionName }, { automatic_evasion = false })
+  m = GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.ENEMY, mission = missionName }, { automatic_evasion = false })
   if not m then return false end
 
   return true

@@ -24,7 +24,8 @@ config.logging = {
     score = { verbose = true },
     init = { verbose = true },
     shipMovement = { verbose = true },
-    amphibiousLogistics = { verbose = true }
+    amphibiousLogistics = { verbose = true },
+    amphibiousAssault = { verbose = true }
   }
 }
 config.c = {}
