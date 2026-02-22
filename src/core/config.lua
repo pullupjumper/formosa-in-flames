@@ -11,7 +11,7 @@ config.logging = {
   modules = {
     ground = { verbose = true },
     air = { verbose = true },
-    amphibOps = { verbose = true },
+    secondWaveUnloading = { verbose = true },
     recon = { verbose = true },
     dynamicOperations = { verbose = true },
     sigint = { verbose = false },

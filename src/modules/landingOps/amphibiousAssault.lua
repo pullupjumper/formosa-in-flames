@@ -304,7 +304,7 @@ function AmphibiousAssault.countContactsInArea(contacts, area)
   return countGroundContacts(contacts, area)
 end
 
----Launch Air Cushion Vehicles (ACVs) from an amphibious assault ship
+---Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship
 ---Spawns ZBD-05 and ZTD-05 amphibious vehicles in formation toward landing zone
 ---@param params SBJ__ACVDeploymentParams Deployment configuration (ship, bearing, distance, destination)
 ---@return integer|nil # Number of ACVs successfully launched, or nil on failure
