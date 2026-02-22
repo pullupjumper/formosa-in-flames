@@ -978,4 +978,9 @@ constants.UNIT_CONDITIONS = {
   AIRBORNE = "Airborne",
 }
 
+constants.PLATFORM_TYPES = {
+  AIRCRAFT = "Aircraft",
+  BOATS    = "Boats",
+}
+
 return constants

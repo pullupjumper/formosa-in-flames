@@ -23,7 +23,8 @@ config.logging = {
     missileSystem = { verbose = false },
     score = { verbose = true },
     init = { verbose = true },
-    shipMovement = { verbose = true }
+    shipMovement = { verbose = true },
+    amphibiousLogistics = { verbose = true }
   }
 }
 config.c = {}
