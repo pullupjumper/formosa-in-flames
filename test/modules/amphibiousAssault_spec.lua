@@ -167,35 +167,37 @@ describe("AmphibiousAssault", function()
       stubGetMission = trackStub(stub(GameApi, "ScenEdit_GetMission"))
     end)
 
-    -- Positive: sets start times for all missions across all zones
-    it("should set start times for all missions in all operational zones", function()
+    -- Positive: sets start times for all missions in a zone
+    it("should set start times for all missions in the operational zone", function()
       stubCurrentTime.returns(1000)
       local missionObj = { starttime = nil }
       stubGetMission.returns(missionObj)
 
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_true(result)
-      assert.are.equal(1000, saveData.c.amphibOps.airlandingMissionStartTime)
+      assert.are.equal(1000, zoneState.airlandingMissionStartTime)
       -- 3 missions (helo + boat + atkHelo), each calls GetMission once
       assert.stub(stubGetMission).was.called(3)
       assert.stub(Logger.log).was.called()
     end)
 
-    -- Positive: records current time into saveData
-    it("should store current time as airlandingMissionStartTime in saveData", function()
+    -- Positive: records current time into zoneState
+    it("should store current time as airlandingMissionStartTime in zoneState", function()
       stubCurrentTime.returns(5000)
       stubGetMission.returns({ starttime = nil })
 
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
-      assert.are.equal(5000, saveData.c.amphibOps.airlandingMissionStartTime)
+      assert.are.equal(5000, zoneState.airlandingMissionStartTime)
     end)
 
     -- Positive: correctly calculates start time string
@@ -209,34 +211,29 @@ describe("AmphibiousAssault", function()
         boat = { missions = {} },
         attackHelicopter = { missions = {} },
       })
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       local expectedTime = os.date("%Y-%m-%d %H:%M:%S", 1600)
       assert.are.equal(expectedTime, missionObj.starttime)
     end)
 
-    -- Positive: handles multiple zones
-    it("should process missions across multiple operational zones", function()
+    -- Positive: processes missions in a zone with specific categories
+    it("should process missions in specified categories of a single zone", function()
       stubCurrentTime.returns(2000)
       stubGetMission.returns({ starttime = nil })
 
-      local zone1 = makeZone({
+      local zone = makeZone({
         transportHelicopter = { missions = { makeMission({ name = "Z1Helo" }) } },
-        boat = { missions = {} },
+        boat = { missions = { makeMission({ name = "Z1Boat" }) } },
         attackHelicopter = { missions = {} },
       })
-      local zone2 = makeZone({
-        transportHelicopter = { missions = {} },
-        boat = { missions = { makeMission({ name = "Z2Boat" }) } },
-        attackHelicopter = { missions = {} },
-      })
-      local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_true(result)
       assert.stub(stubGetMission).was.called(2)
@@ -246,10 +243,11 @@ describe("AmphibiousAssault", function()
     it("should return false when current time is unavailable", function()
       stubCurrentTime.returns(nil)
 
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_false(result)
     end)
@@ -259,10 +257,11 @@ describe("AmphibiousAssault", function()
       stubCurrentTime.returns(1000)
       stubGetMission.returns(nil)
 
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_false(result)
       assert.stub(Logger.log).was.called()
@@ -277,10 +276,10 @@ describe("AmphibiousAssault", function()
         boat = { missions = {} },
         attackHelicopter = { missions = {} },
       })
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
+      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(config, saveData)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_true(result)
       assert.stub(stubGetMission).was_not.called()
@@ -304,30 +303,24 @@ describe("AmphibiousAssault", function()
       local destination = { latitude = 24.5, longitude = 120.5 }
       stubGetPoint.returns(destination)
 
+      local zone = makeZone()
       local unit = makeUnit({
         name = "LST-001",
         inArea = function(_, area)
-          return area == makeAmphibOpsConfig().operationalZones[1].lstAnchorageArea
+          return area == zone.lstAnchorageArea
         end,
       })
-      -- Use a consistent zone so inArea can match
-      local zone = makeZone()
-      unit.inArea = function(_, area)
-        return area == zone.lstAnchorageArea
-      end
 
       stubGetUnit.invokes(function(id)
         if id == "SHIP-001" then return unit end
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        operationalZones = { zone },
-        sag = {},
-      })
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, units)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.is_true(result)
       assert.are.same({ destination }, unit.course)
@@ -353,13 +346,11 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        operationalZones = { zone },
-        sag = {},
-      })
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(config, units)
+      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.are.same({}, unit.course)
       assert.are.equal(0, unit.manualSpeed)
@@ -383,13 +374,11 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        operationalZones = { zone },
-        sag = {},
-      })
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(config, units)
+      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.are.same({}, unit.course)
     end)
@@ -403,16 +392,16 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        sag = {
-          alpha = {
-            groupName = "SAG Alpha",
-            to = { amphibiousVehicleStagingArea = sagCourse },
-          },
+      local zone = makeZone()
+      local operation = { sagNames = { "alpha" } }
+      local sagLookup = {
+        alpha = {
+          groupName = "SAG Alpha",
+          to = { amphibiousVehicleStagingArea = sagCourse },
         },
-      })
+      }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, {})
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
 
       assert.is_true(result)
       assert.are.same(sagCourse, sagUnit.course)
@@ -435,13 +424,11 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        operationalZones = { zone },
-        sag = {},
-      })
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, units)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.is_false(result)
     end)
@@ -450,16 +437,16 @@ describe("AmphibiousAssault", function()
     it("should return false when SAG unit is not found", function()
       stubGetUnit.returns(nil)
 
-      local config = makeAmphibOpsConfig({
-        sag = {
-          alpha = {
-            groupName = "SAG Alpha",
-            to = { amphibiousVehicleStagingArea = {} },
-          },
+      local zone = makeZone()
+      local operation = { sagNames = { "alpha" } }
+      local sagLookup = {
+        alpha = {
+          groupName = "SAG Alpha",
+          to = { amphibiousVehicleStagingArea = {} },
         },
-      })
+      }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, {})
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
 
       assert.is_false(result)
     end)
@@ -468,10 +455,12 @@ describe("AmphibiousAssault", function()
     it("should skip units that cannot be retrieved", function()
       stubGetUnit.returns(nil)
 
-      local config = makeAmphibOpsConfig({ sag = {} })
+      local zone = makeZone()
       local units = { { guid = "MISSING-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, units)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.is_true(result)
     end)
@@ -494,13 +483,11 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({
-        operationalZones = { zone },
-        sag = {},
-      })
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(config, units)
+      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.are.same({}, unit.course)
     end)
@@ -519,19 +506,23 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local config = makeAmphibOpsConfig({ sag = {} })
+      local zone = makeZone()
       local units = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(config, units)
+      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.are.same({}, unit.course)
     end)
 
     -- Boundary: empty units list
     it("should return true when units list is empty and no SAG", function()
-      local config = makeAmphibOpsConfig({ sag = {} })
+      local zone = makeZone()
+      local operation = { sagNames = {} }
+      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(config, {})
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
 
       assert.is_true(result)
     end)

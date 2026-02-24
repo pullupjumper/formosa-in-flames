@@ -123,7 +123,7 @@ describe("SecondWaveUnloading", function()
       guid = "CARGO-001",
       dbid = 3001,
       name = "Vehicle-1",
-      type = 1,
+      Type = 1,
     }
     if overrides then
       for k, v in pairs(overrides) do item[k] = v end
@@ -191,7 +191,6 @@ describe("SecondWaveUnloading", function()
     -- Positive: processes barges and sets course to offload area
     it("should set barge course and speed toward offload area", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -222,7 +221,7 @@ describe("SecondWaveUnloading", function()
       stubGetPointFromBearing.returns(destination)
 
       local filteredUnits = { makeSideUnit({ guid = "BARGE-001" }) }
-      local result = SecondWaveUnloading.startSecondWaveUnloading(config, saveData, filteredUnits)
+      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUnits)
 
       assert.is_true(result)
       assert.are.same({ destination }, bargeUnit.course)
@@ -233,7 +232,6 @@ describe("SecondWaveUnloading", function()
     -- Positive: registers barge in saveData with empty roros list
     it("should register barge in saveData with empty roros array", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -258,7 +256,7 @@ describe("SecondWaveUnloading", function()
       stubGetPointFromBearing.returns({ latitude = 24.8, longitude = 120.8 })
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-001"])
@@ -270,7 +268,6 @@ describe("SecondWaveUnloading", function()
     -- Positive: pairs RORO ships with barges in same zone
     it("should pair RORO with barge and set RORO course", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -326,7 +323,7 @@ describe("SecondWaveUnloading", function()
         makeSideUnit({ guid = "RORO-001" }),
       }
 
-      SecondWaveUnloading.startSecondWaveUnloading(config, saveData, filteredUnits)
+      SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUnits)
 
       -- RORO should be registered under the barge's roros list
       assert.are.same({ "RORO-001" }, saveData.c.amphibOps.barges["BARGE-001"].roros)
@@ -338,13 +335,13 @@ describe("SecondWaveUnloading", function()
 
     -- Negative: skips units that cannot be resolved
     it("should skip units when ScenEdit_GetUnit returns nil", function()
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
 
       stubGetUnit.returns(nil)
 
       local filteredUnits = { makeSideUnit({ guid = "MISSING-001" }) }
-      local result = SecondWaveUnloading.startSecondWaveUnloading(config, saveData, filteredUnits)
+      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUnits)
 
       assert.is_true(result)
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -354,7 +351,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: skips barge when reference points unavailable
     it("should skip barge when offload area reference points return nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -368,7 +364,7 @@ describe("SecondWaveUnloading", function()
       stubGetRefPoints.returns(nil)
 
       local result = SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.is_true(result)
@@ -379,7 +375,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: skips barge when spherical center calculation fails
     it("should skip barge when center point calculation returns nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -399,7 +394,7 @@ describe("SecondWaveUnloading", function()
       stubCalcCenter.returns(nil)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -409,7 +404,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: skips barge when Tool_Range returns nil
     it("should skip barge when Tool_Range returns nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -430,7 +424,7 @@ describe("SecondWaveUnloading", function()
       stubToolRange.returns(nil)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -440,7 +434,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: skips barge when Tool_Bearing returns nil
     it("should skip barge when Tool_Bearing returns nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -462,7 +455,7 @@ describe("SecondWaveUnloading", function()
       stubToolBearing.returns(nil)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -472,7 +465,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: skips barge when World_GetPointFromBearing returns nil
     it("should skip barge when destination calculation returns nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -495,7 +487,7 @@ describe("SecondWaveUnloading", function()
       stubGetPointFromBearing.returns(nil)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -505,7 +497,6 @@ describe("SecondWaveUnloading", function()
     -- Negative: does not set RORO course when RORO destination calculation fails
     it("should not set RORO course when World_GetPointFromBearing fails for RORO", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -552,7 +543,7 @@ describe("SecondWaveUnloading", function()
       end)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData,
+        zone, saveData,
         { makeSideUnit({ guid = "BARGE-001" }), makeSideUnit({ guid = "RORO-001" }) }
       )
 
@@ -566,7 +557,6 @@ describe("SecondWaveUnloading", function()
     -- Boundary: ignores non-Barge/non-RORO ships
     it("should ignore units that are not Barge or RORO", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
       local saveData = makeSaveData()
 
       local otherUnit = makeUnit({
@@ -579,16 +569,16 @@ describe("SecondWaveUnloading", function()
       stubGetUnit.returns(otherUnit)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "LST-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "LST-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
       assert.stub(Logger.log).was_not.called()
     end)
 
-    -- Boundary: ignores barge not in any zone's anchorage area
-    it("should ignore barge that is not in any lstAnchorageArea", function()
-      local config = makeAmphibOpsConfig()
+    -- Boundary: ignores barge not in zone's anchorage area
+    it("should ignore barge that is not in lstAnchorageArea", function()
+      local zone = makeZone()
       local saveData = makeSaveData()
 
       local bargeUnit = makeUnit({
@@ -601,7 +591,7 @@ describe("SecondWaveUnloading", function()
       stubGetUnit.returns(bargeUnit)
 
       SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
+        zone, saveData, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
@@ -610,21 +600,20 @@ describe("SecondWaveUnloading", function()
 
     -- Boundary: handles empty filteredUnits array
     it("should return true when filteredUnits is empty", function()
-      local config = makeAmphibOpsConfig()
+      local zone = makeZone()
       local saveData = makeSaveData()
 
-      local result = SecondWaveUnloading.startSecondWaveUnloading(config, saveData, {})
+      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, {})
 
       assert.is_true(result)
       assert.are.same({}, saveData.c.amphibOps.barges)
       assert.stub(Logger.log).was_not.called()
     end)
 
-    -- Boundary: handles multiple zones with matching barges and ROROs
-    it("should match barges and ROROs per zone across multiple zones", function()
+    -- Boundary: caller invokes once per zone; each call processes its own barges
+    it("should process barges for each zone when called separately per zone", function()
       local zone1 = makeZone({ name = "Zone1", lstAnchorageArea = { "AREA-Z1" } })
       local zone2 = makeZone({ name = "Zone2", lstAnchorageArea = { "AREA-Z2" } })
-      local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
       local saveData = makeSaveData()
 
       local barge1 = makeUnit({
@@ -662,14 +651,17 @@ describe("SecondWaveUnloading", function()
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns({ latitude = 24.8, longitude = 120.8 })
 
-      SecondWaveUnloading.startSecondWaveUnloading(
-        config, saveData,
-        { makeSideUnit({ guid = "BARGE-Z1" }), makeSideUnit({ guid = "BARGE-Z2" }) }
-      )
+      local allUnits = {
+        makeSideUnit({ guid = "BARGE-Z1" }),
+        makeSideUnit({ guid = "BARGE-Z2" }),
+      }
+
+      SecondWaveUnloading.startSecondWaveUnloading(zone1, saveData, allUnits)
+      SecondWaveUnloading.startSecondWaveUnloading(zone2, saveData, allUnits)
 
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-Z1"])
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-Z2"])
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(Logger.log).was.called(2)
     end)
   end)
 
@@ -712,7 +704,7 @@ describe("SecondWaveUnloading", function()
           cargo = {
             [1] = {
               cargo = {
-                makeCargoItem({ guid = "C-1", name = "GroundUnit-1", type = 2 }),
+                makeCargoItem({ guid = "C-1", name = "GroundUnit-1", Type = 2 }),
               },
             },
           },
@@ -746,7 +738,7 @@ describe("SecondWaveUnloading", function()
           cargo = {
             [1] = {
               cargo = {
-                makeCargoItem({ guid = "C-1", name = "Facility-1", type = 1 }),
+                makeCargoItem({ guid = "C-1", name = "Facility-1", Type = 1 }),
               },
             },
           },

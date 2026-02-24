@@ -26,106 +26,118 @@ if not contacts then
   return
 end
 
-if not currentTime then
-  Logger.error("currentTime is nil")
-  return
-end
-
 if saveData == nil then
   Logger.error("saveData is nil")
   return
 end
 
-if saveData.c.amphibOps.isShipsStartedMoving and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
-  local hasIssuedShipMovementOrder = ShipMovement.moveToStagingArea(config.c.amphibOps, saveData, filteredShips)
-
-  if hasIssuedShipMovementOrder then
-    saveData.c.amphibOps.isWaitingForShipArrival = true
-    saveData.c.amphibOps.isShipsStartedMoving = false
+---Find an operation descriptor by zone name
+---@param operations SBJ__AmphibiousOperationDescriptor[] Operation descriptors to search
+---@param name string Zone name to match
+---@return SBJ__AmphibiousOperationDescriptor|nil # Matched descriptor, or nil if not found
+local function findOperationByName(operations, name)
+  for _, op in ipairs(operations) do
+    if op.name == name then return op end
   end
+  return nil
 end
 
-if saveData.c.amphibOps.isWaitingForShipArrival then
-  local result = AmphibiousLogistics.getUnitsInAnchorageArea(config.c.amphibOps, filteredShips)
-  local hasArrived = Utils.getCount(result.units) > 15 and not result.isUnitMoving
+for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+  local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+  local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
 
-  if hasArrived then
-    local creatingCompleted = AmphibiousLogistics.createCargoMissions(config.c.amphibOps)
-    local transferingCompleted = AmphibiousLogistics.transferAndAssign(config.c.amphibOps, result.units)
-    local hasAssignedAndTransfered = creatingCompleted and transferingCompleted
+  if not operation then
+    Logger.error(string.format("Operation not found for zone: %s", zone.name))
+    goto continue
+  end
 
-    if hasAssignedAndTransfered then
-      saveData.c.amphibOps.isWaitingForShipArrival = false
-      saveData.c.amphibOps.isWaitingForAmphibiousAssault = true
-      saveData.c.amphibOps.amphibiousAssaultStartTime = currentTime
-      local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
-      ---@cast entry SBJ__ReconQueueEntry
-      local distance, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
-      local endTime = currentTime + flightTime
-      entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime) --[[@as string]]
-      entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
-      entry.hasLaunched = false
-      entry.isFinished = false
-      entry.trackingTargetGUID = nil
-      table.insert(saveData.c.recon.queue, entry)
+  -- Phase 1: Fleet movement
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
+      and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
+    local done = ShipMovement.moveToStagingArea(config.c.amphibOps, saveData, filteredShips, operation)
+    if done then
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
     end
   end
-end
 
-if saveData.c.amphibOps.isWaitingForAmphibiousAssault then
-  local operations = config.c.amphibOps.operations
-  local elapsedTime = 0
-  local amphibiousAssaultStartTime = saveData.c.amphibOps.amphibiousAssaultStartTime
+  -- Phase 2: Arrival check + logistics loading
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL then
+    local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredShips)
+    local hasArrived = Utils.getCount(result.units) > zone.arrivalThreshold
+        and not result.isUnitMoving
 
-  if amphibiousAssaultStartTime then
-    elapsedTime = currentTime - amphibiousAssaultStartTime
-  end
+    if hasArrived then
+      local ok = AmphibiousLogistics.createCargoMissions(zone)
+          and AmphibiousLogistics.transferAndAssign(zone, result.units)
+      if ok then
+        zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
+        zoneState.amphibiousAssaultStartTime = currentTime
 
-  local contactCount = AmphibiousAssault.countContactsInArea(contacts, operations[1].airLandingZone)
-  local isContactCountLessThan = contactCount < operations[1].numOfContactsInAirLandingZone
-  local isTimeExceeded = amphibiousAssaultStartTime and elapsedTime >= config.c.amphibOps.periodOfTime
-  local shouldLaunchAmphibiousAssault = isContactCountLessThan or isTimeExceeded
+        -- Transport aircraft loading: Taoyuan only (temporary)
+        if zone.name == "Taoyuan" then
+          AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
+        end
 
-  if shouldLaunchAmphibiousAssault then
-    local settingStartTimeCompleted = AmphibiousAssault.setLandingMissionStartTime(config.c.amphibOps, saveData)
-    local settingCoursesCompleted = AmphibiousAssault.setCoursesForLSTs(config.c.amphibOps, filteredShips)
-    local hasLaunchedAmphibiousAssault = settingStartTimeCompleted and settingCoursesCompleted
-
-    if hasLaunchedAmphibiousAssault then
-      GameApi.ScenEdit_MsgBox("Start air landing", 0)
-      saveData.c.amphibOps.isWaitingForAmphibiousAssault = false
-      saveData.c.amphibOps.isWaitingForSecondWaveUnloading = true
+        -- GJ-11 recon mission: Taoyuan only (temporary)
+        if zone.name == "Taoyuan" then
+          local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
+          ---@cast entry SBJ__ReconQueueEntry
+          local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
+          local endTime = currentTime + flightTime
+          entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime) --[[@as string]]
+          entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+          entry.hasLaunched = false
+          entry.isFinished = false
+          entry.trackingTargetGUID = nil
+          table.insert(saveData.c.recon.queue, entry)
+        end
+      end
     end
   end
-end
 
-if saveData.c.amphibOps.isWaitingForSecondWaveUnloading then
-  local result = UnitStatusUI.countUnitsInEachArea(config)
-  local hasEstablishedBeachheads = Utils.getCount(result) > 0 and result["Taoyuan"]["ZBD-05"] >= 1
+  -- Phase 3: Amphibious assault
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
+    local contactCount = AmphibiousAssault.countContactsInArea(contacts, operation.airLandingZone)
+    local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
+    local shouldLaunch = contactCount < operation.numOfContactsInAirLandingZone
+        or elapsed >= config.c.amphibOps.periodOfTime
 
-  if hasEstablishedBeachheads then
-    local hasStartedSecondWaveUnloading = SecondWaveUnloading.startSecondWaveUnloading(
-      config.c.amphibOps, saveData, filteredShips
-    )
-
-    if hasStartedSecondWaveUnloading then
-      saveData.c.amphibOps.isWaitingForSecondWaveUnloading = false
+    if shouldLaunch then
+      local ok = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.c.amphibOps.sag)
+      if ok then
+        zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
+      end
     end
   end
+
+  -- Phase 4: Second wave unloading
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE then
+    local result = UnitStatusUI.countUnitsInEachArea(config)
+    local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
+
+    if hasBeachhead then
+      local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredShips)
+      if ok then
+        zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
+      end
+    end
+  end
+  ::continue::
 end
 
-if saveData.c.amphibOps.airlandingMissionStartTime ~= nil then
-  local elapsedTime = currentTime - saveData.c.amphibOps.airlandingMissionStartTime
-  local isTimeExceeded = elapsedTime >= (3600 * 2)
-
-  if isTimeExceeded then
-    local hasTransfered = AmphibiousLogistics.retransferCargos(config.c.amphibOps, filteredShips)
-
-    if hasTransfered then
-      saveData.c.amphibOps.airlandingMissionStartTime = currentTime
+-- Cargo retransfer
+for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+  local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+  if zoneState.airlandingMissionStartTime ~= nil then
+    local elapsed = currentTime - zoneState.airlandingMissionStartTime
+    if elapsed >= (3600 * 2) then
+      local ok = AmphibiousLogistics.retransferCargos(zone, filteredShips)
+      if ok then
+        zoneState.airlandingMissionStartTime = currentTime
+      end
     end
   end
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
---OnPlottedCourse OnFerryMission RTB_Manual Tasked Unassigned

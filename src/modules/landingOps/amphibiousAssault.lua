@@ -194,7 +194,7 @@ local function setCourseForLST(unit, zone)
 end
 
 ---Set course for a Surface Action Group
----@param descriptor table SAG descriptor with groupName and destination
+---@param descriptor SBJ__SAGDescriptor SAG descriptor with groupName and destination
 ---@return string tag Result tag (OK/FAIL)
 ---@return string msg Description
 local function setCourseForSAG(descriptor)
@@ -212,40 +212,34 @@ end
 -- Public API
 -- ============================================================================
 
----Set start times for all amphibious assault missions across all operational zones
+---Set start times for amphibious assault missions in a single operational zone
 ---Configures transport helicopters, landing craft, attack helicopters and records start timestamp
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@param saveData SBJ__SaveData Save data to record mission start time
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
+---@param zoneState SBJ__ZoneState Per-zone state to record mission start time
 ---@return boolean # True if all mission start times were successfully set
-function AmphibiousAssault.setLandingMissionStartTime(amphibOpsConfig, saveData)
+function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   if not currentTime then
     return false
   end
 
-  saveData.c.amphibOps.airlandingMissionStartTime = currentTime
-  local operationalZones = amphibOpsConfig.operationalZones
-  local allLogEntries = {}
+  zoneState.airlandingMissionStartTime = currentTime
 
-  for _, zone in ipairs(operationalZones) do
-    local success, logEntries = setZoneMissionStartTimes(zone, currentTime)
-    for _, entry in ipairs(logEntries) do
-      table.insert(allLogEntries, entry)
-    end
-    if not success then
-      Logger.log(AMPHIB_ASSAULT_TAG, string.format(
-        "Set landing mission start times: failed\n%s",
-        table.concat(allLogEntries, "\n")
-      ))
-      return false
-    end
+  local success, logEntries = setZoneMissionStartTimes(zone, currentTime)
+
+  if not success then
+    Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+      "[%s] Set landing mission start times: failed\n%s",
+      zone.name, table.concat(logEntries, "\n")
+    ))
+    return false
   end
 
-  if #allLogEntries > 0 then
+  if #logEntries > 0 then
     Logger.log(AMPHIB_ASSAULT_TAG, string.format(
-      "Set landing mission start times: %d missions configured\n%s",
-      #allLogEntries, table.concat(allLogEntries, "\n")
+      "[%s] Set landing mission start times: %d missions configured\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
   end
 
@@ -254,41 +248,43 @@ end
 
 ---Set course for LSTs to approach beach and move SAGs to staging areas
 ---LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
+---@param sagLookup table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
 ---@return boolean # True if all LST courses were successfully set
-function AmphibiousAssault.setCoursesForLSTs(amphibOpsConfig, units)
-  local operationalZones = amphibOpsConfig.operationalZones
+function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
   local logEntries = {}
 
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
-      for _, zone in ipairs(operationalZones) do
-        if unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-          local tag, msg = setCourseForLST(unit, zone)
-          table.insert(logEntries, string.format("  [%s] %s", tag, msg))
-          if tag == "FAIL" then
-            return false
-          end
+      if unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+        local tag, msg = setCourseForLST(unit, zone)
+        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+        if tag == "FAIL" then
+          return false
         end
       end
     end
   end
 
-  for _, descriptor in pairs(amphibOpsConfig.sag) do
-    local tag, msg = setCourseForSAG(descriptor)
-    table.insert(logEntries, string.format("  [%s] %s", tag, msg))
-    if tag == "FAIL" then
-      return false
+  for _, sagName in ipairs(operation.sagNames) do
+    local descriptor = sagLookup[sagName]
+    if descriptor then
+      local tag, msg = setCourseForSAG(descriptor)
+      table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+      if tag == "FAIL" then
+        return false
+      end
     end
   end
 
   if #logEntries > 0 then
     Logger.log(AMPHIB_ASSAULT_TAG, string.format(
-      "Set courses for LSTs: %d entries\n%s",
-      #logEntries, table.concat(logEntries, "\n")
+      "[%s] Set courses for LSTs: %d entries\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
   end
 

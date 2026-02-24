@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：協調 ACV 發射、LST 搶灘航向設定、任務時序設定與空降區威脅評估
+**職責**：協調 ACV 釋放、LST 航至泛水編波區航向設定、任務時序設定與空降區威脅評估
 
 ---
 
@@ -10,9 +10,9 @@
 
 amphibiousAssault 負責登陸作戰的第三階段——兩棲突擊。系統協調三項核心作業：
 
-1. **任務時序設定**：計算各登陸任務（直升機、登陸艇、攻擊直升機）的開始時間，確保各波次按既定間隔投入
-2. **LST 航向設定**：驅動在錨泊區的 LST 向灘頭前進，同時引導 SAG 至兩棲載具集結區
-3. **ACV 發射**：從登陸艦刪除貨物並生成兩棲戰車單元，以編隊形式向灘頭推進
+1. **任務時序設定**：計算各登陸任務（直升機、氣墊船、攻擊直升機）的開始時間，確保各波次按既定間隔投入
+2. **LST 航向設定**：驅動在錨泊區的 LST 向泛水編波區前進，同時引導 SAG 至兩棲載具集結區
+3. **ACV 釋放**：從登陸艦刪除貨物並生成兩棲戰車單位，以編隊形式向灘頭推進
 
 系統透過 `landingCheck.lua` 的狀態機驅動，在空降區威脅清除（敵方地面接觸數低於門檻）或等待超時後自動發起突擊。
 
@@ -20,7 +20,7 @@ amphibiousAssault 負責登陸作戰的第三階段——兩棲突擊。系統�
 
 ## ACV 發射機制
 
-ACV（兩棲戰車）發射是兩棲突擊的核心。系統從 LST/渡輪刪除貨物並在船側生成戰車單元：
+ACV（兩棲戰鬥車）發射是兩棲突擊的核心。系統從 LST/渡輪刪除貨物並在船側生成兩棲戰鬥車單位：
 
 ```mermaid
 flowchart TD
@@ -42,12 +42,12 @@ flowchart TD
 
 | 優先順序 | 車型 | 常數 | 說明 |
 |:-:|---|---|---|
-| 1 | ZBD-05 | `constants.PLATFORMS.ZBD05` | 兩棲步兵戰車 |
+| 1 | ZBD-05 | `constants.PLATFORMS.ZBD05` | 兩棲步兵戰鬥車 |
 | 2 | ZTD-05 | `constants.PLATFORMS.ZTD05` | 兩棲突擊車 |
 
 `deleteCargoByPriority` 依序嘗試刪除各型 ACV，以 `remaining` 計數器確保不超過總需求數。
 
-### 發射腳本觸發
+### 釋放腳本觸發
 
 `launchACV.lua` 事件腳本（Unit Remains in Area）在 ACV 區域內觸發：
 
@@ -64,13 +64,12 @@ flowchart TD
 flowchart TD
     START["setLandingMissionStartTime()"]
     TIME["取得當前時間<br>ScenEdit_CurrentTime()"]
-    SAVE["記錄至<br>saveData.c.amphibOps<br>.airlandingMissionStartTime"]
-    ZONE["遍歷 operationalZones"]
+    SAVE["記錄至<br>zoneState<br>.airlandingMissionStartTime"]
     CAT["遍歷任務類別<br>transportHelicopter / boat / attackHelicopter"]
     CALC["計算 startTime<br>= currentTime + mission.startTime"]
     SET["設定任務開始時間<br>mission.starttime = startTime"]
 
-    START --> TIME --> SAVE --> ZONE --> CAT --> CALC --> SET
+    START --> TIME --> SAVE --> CAT --> CALC --> SET
 ```
 
 任務類別與延遲：
@@ -87,7 +86,7 @@ flowchart TD
 
 `setCoursesForLSTs` 驅動兩類艦船移動：
 
-### LST 搶灘
+### LST 航至泛水編波區
 
 | 步驟 | 說明 |
 |---|---|
@@ -107,11 +106,11 @@ flowchart TD
 
 ## 空降區威脅評估
 
-`countContactsInArea` 計算空降區內的敵方地面接觸：
+`countContactsInArea` 計算空降區內的目標數量：
 
 - 篩選條件：`contact.typed == FACILITY_MOBILE`（地面可移動設施）
 - 結果用於 `landingCheck.lua` 判斷是否可發起突擊
-- 當接觸數 < `operations[1].numOfContactsInAirLandingZone` 或等待超時，觸發突擊
+- 當接觸數 < `operation.numOfContactsInAirLandingZone` 或等待超時，觸發突擊
 
 ---
 
@@ -119,10 +118,10 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `setLandingMissionStartTime(amphibOpsConfig, saveData)` | 設定所有登陸任務的開始時間 |
-| `setCoursesForLSTs(amphibOpsConfig, units)` | 設定 LST 搶灘航向與 SAG 移動 |
-| `countContactsInArea(contacts, area)` | 計算區域內敵方地面接觸數 |
-| `launchACV(params)` | 從登陸艦發射兩棲戰車 |
+| `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
+| `setCoursesForLSTs(zone, units, operation, sagLookup)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
+| `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
+| `launchACV(params)` | 從登陸艦釋放兩棲戰鬥車 |
 | `isFerryOrLST(ship)` | 判斷艦船是否為渡輪或 LST |
 | `getShipZone(amphibOpsConfig, ship)` | 取得艦船所在的作戰區 |
 

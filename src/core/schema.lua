@@ -554,16 +554,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
 ---@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
 
+---Per-zone state for amphibious operation phase tracking
+---@class SBJ__ZoneState: table
+---@field phase string Current phase (constants.AMPHIBIOUS_PHASES value)
+---@field amphibiousAssaultStartTime? number Amphibious assault start timestamp (optional)
+---@field airlandingMissionStartTime? number Air landing mission start timestamp (optional)
+
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
 ---@field startTime string Operation start time
 ---@field isTesting boolean Whether in testing mode
----@field isShipsStartedMoving boolean Whether ships have started moving
----@field isWaitingForShipArrival boolean Whether waiting for ship arrival
----@field amphibiousAssaultStartTime? number Amphibious assault start timestamp (optional)
----@field isWaitingForAmphibiousAssault boolean Whether waiting for amphibious assault
----@field isWaitingForSecondWaveUnloading boolean Whether waiting for second wave unloading
----@field airlandingMissionStartTime? number Air landing mission start timestamp (optional)
+---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
 ---@field calculationResult table<string, SBJ__OperationZoneCalculationResult> Operation zone calculation results indexed by zone name
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
 
@@ -644,6 +645,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field baseGUID string Home base GUID for embarked units
 ---@field anchorageArea string[] LHD/LPD anchorage area reference points
 ---@field lstAnchorageArea string[] LST anchorage area reference points
+---@field arrivalThreshold integer Minimum unit count to consider fleet arrived
 ---@field area string[] General operational area reference points
 ---@field offloadArea string[] Vehicle offload area reference points
 ---@field boat SBJ__BoatMissionDescriptor Landing craft configuration
@@ -704,6 +706,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AmphibiousOperationDescriptor: table
 ---@field name string Operation name (e.g., "Taoyuan", "Sishu", "Penghu")
 ---@field names string[] Unit name array
+---@field sagNames string[] Surface Action Group names assigned to this operation
 ---@field from SBJ__AmphibiousLocationDescriptor Departure configuration
 ---@field to SBJ__AmphibiousLocationDescriptor Destination configuration
 ---@field airLandingZone string[] Air landing zone reference area

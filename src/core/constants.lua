@@ -994,4 +994,12 @@ constants.SIDES = {
   PLAYER = "Taiwan"
 }
 
+constants.AMPHIBIOUS_PHASES = {
+  MOVING              = "MOVING",
+  WAITING_ARRIVAL     = "WAITING_ARRIVAL",
+  WAITING_ASSAULT     = "WAITING_ASSAULT",
+  WAITING_SECOND_WAVE = "WAITING_SECOND_WAVE",
+  COMPLETED           = "COMPLETED",
+}
+
 return constants

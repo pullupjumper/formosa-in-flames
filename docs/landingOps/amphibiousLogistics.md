@@ -38,8 +38,8 @@ SHIP_TRANSFER_SPECS[]
 
 | 艦型 | manifestKey | 轉移目標 | 任務指派 |
 |---|---|---|---|
-| Type 075 / Type 076 | `type075` | 登陸艇（loadout 1）、運輸直升機（loadout 1, 2） | 登陸艇、運輸直升機、攻擊直升機 |
-| Type 071 | `type071` | 登陸艇（loadout 1）、運輸直升機（loadout 1） | 登陸艇、運輸直升機 |
+| Type 075 / Type 076 | `type075` | 氣墊船（loadout 1）、運輸直升機（loadout 1, 2） | 氣墊船、運輸直升機、攻擊直升機 |
+| Type 071 | `type071` | 氣墊船（loadout 1）、運輸直升機（loadout 1） | 氣墊船、運輸直升機 |
 
 ---
 
@@ -48,20 +48,18 @@ SHIP_TRANSFER_SPECS[]
 ```mermaid
 flowchart TD
     START["transferAndAssign()"]
-    ITER_ZONE["遍歷 operationalZones"]
     ITER_UNIT["遍歷錨泊區單元"]
     IN_AREA{單元在<br>anchorageArea?}
     FIND_SPEC["findTransferSpec<br>匹配艦型"]
     TRANSFER["processShipTransfers<br>依 spec.transfers 轉移貨物"]
     ASSIGN["processShipAssignments<br>依 spec.assignments 指派任務"]
-    TRANSPORT["處理陸基運輸機<br>（transportAircraft）"]
     DONE["完成"]
 
-    START --> ITER_ZONE --> ITER_UNIT --> IN_AREA
+    START --> ITER_UNIT --> IN_AREA
     IN_AREA -->|是| FIND_SPEC --> TRANSFER --> ASSIGN
     ASSIGN -.-> ITER_UNIT
     IN_AREA -->|否| ITER_UNIT
-    ITER_ZONE --> TRANSPORT --> DONE
+    ITER_UNIT -->|遍歷完成| DONE
 ```
 
 ### 貨物轉移細節
@@ -105,10 +103,11 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `getUnitsInAnchorageArea(amphibOpsConfig, filteredUnits)` | 取得錨泊區內艦船清單及移動狀態 |
-| `createCargoMissions(amphibOpsConfig)` | 為所有作戰區建立貨物運輸任務 |
-| `transferAndAssign(amphibOpsConfig, unitsInAnchorageArea)` | 執行貨物轉移並指派登陸載具至任務 |
-| `retransferCargos(amphibOpsConfig, units)` | 第二波作戰的貨物重新裝載 |
+| `getUnitsInAnchorageArea(zone, filteredUnits)` | 取得錨泊區內艦船清單及移動狀態 |
+| `createCargoMissions(zone)` | 為作戰區建立貨物運輸任務 |
+| `transferAndAssign(zone, unitsInAnchorageArea)` | 執行貨物轉移並指派登陸載具至任務 |
+| `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
+| `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
 | `updateCargo(fromUnit, toUnit, cargoItem)` | 單筆貨物從來源轉移至目標 |
 | `deleteCargo(fromUnit, cargoItem)` | 從單元刪除指定貨物 |
 | `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單元 |
@@ -118,6 +117,6 @@ flowchart TD
 ## 相關模組
 
 - [shipMovement](shipMovement.md) — 前置階段：艦隊移動至錨泊區
-- [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 發射時呼叫 `deleteCargo`
+- [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 釋放時呼叫 `deleteCargo`
 - `assignMission` — `transferAndAssign` 呼叫 `AssignMission.assignEmbarkedUnitsToMissions`
 - [系統架構](README.md)

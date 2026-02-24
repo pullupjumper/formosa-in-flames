@@ -146,30 +146,25 @@ describe("AmphibiousLogistics", function()
     return zone
   end
 
-  ---Create an amphibious operations config
+  ---Create a transport aircraft configuration item
   ---@param overrides? table
   ---@return table
-  local function makeAmphibOpsConfig(overrides)
-    local cfg = {
-      operationalZones = { makeOperationalZone() },
-      transportAircraft = {
-        {
-          name = "AirBase-1",
-          guid = "BASE-001",
-          dbid = 6001,
-          missions = {
-            { name = "AirliftMission-1", loadoutId = 40, unitCount = 1, startTime = 0 },
-          },
-          cargoItemsForTransfer = {
-            [1] = { loadoutId = 40, cargoItems = { [1] = { makeCargoItem({ dbid = 3003 }) } } },
-          },
-        },
+  local function makeTransportAircraftItem(overrides)
+    local item = {
+      name = "AirBase-1",
+      guid = "BASE-001",
+      dbid = 6001,
+      missions = {
+        { name = "AirliftMission-1", loadoutId = 40, unitCount = 1, startTime = 0 },
+      },
+      cargoItemsForTransfer = {
+        [1] = { loadoutId = 40, cargoItems = { [1] = { makeCargoItem({ dbid = 3003 }) } } },
       },
     }
     if overrides then
-      for k, v in pairs(overrides) do cfg[k] = v end
+      for k, v in pairs(overrides) do item[k] = v end
     end
-    return cfg
+    return item
   end
 
   -- ============================================================================
@@ -635,8 +630,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(1, #result.units)
@@ -645,8 +640,8 @@ describe("AmphibiousLogistics", function()
 
     -- Positive: should collect ships in LST anchorage area
     it("should collect ships that are in LST anchorage area", function()
-      local config = makeAmphibOpsConfig()
-      local lstArea = config.operationalZones[1].lstAnchorageArea
+      local zone = makeOperationalZone()
+      local lstArea = zone.lstAnchorageArea
       local unit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_072III,
@@ -659,7 +654,7 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(1, #result.units)
@@ -696,8 +691,8 @@ describe("AmphibiousLogistics", function()
         return unitMap[guid]
       end))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(#shipDBIDs, #result.units)
@@ -714,8 +709,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_true(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -742,8 +737,8 @@ describe("AmphibiousLogistics", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_true(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -761,8 +756,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -774,15 +769,15 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
     end)
 
-    -- Negative: should not collect ships outside all zones
-    it("should not collect ships outside all operational zones", function()
+    -- Negative: should not collect ships outside the zone
+    it("should not collect ships outside the operational zone", function()
       local unit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_075,
@@ -793,8 +788,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, filteredUnits)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -802,8 +797,8 @@ describe("AmphibiousLogistics", function()
 
     -- Boundary: should return empty results for empty filtered units
     it("should return empty results for empty filtered units list", function()
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(config, {})
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, {})
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -825,8 +820,8 @@ describe("AmphibiousLogistics", function()
 
     -- Positive: should create cargo missions for boats and helicopters
     it("should create cargo missions for all boat and helicopter missions", function()
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_true(result)
       assert.stub(stubAddMission).was.called(2)
@@ -837,23 +832,23 @@ describe("AmphibiousLogistics", function()
 
     -- Positive: should create missions with correct parameters
     it("should pass correct side and mission type to AddMission", function()
-      local config = makeAmphibOpsConfig()
-      AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      AmphibiousLogistics.createCargoMissions(zone)
 
       assert.stub(stubAddMission).was.called_with(
         "China", "BoatMission-1", "Cargo",
-        { zone = config.operationalZones[1].boat.zone }
+        { zone = zone.boat.zone }
       )
       assert.stub(stubAddMission).was.called_with(
         "China", "HeloMission-1", "Cargo",
-        { zone = config.operationalZones[1].transportHelicopter.zone }
+        { zone = zone.transportHelicopter.zone }
       )
     end)
 
     -- Positive: should set doctrine with automatic_evasion disabled
     it("should disable automatic evasion in mission doctrine", function()
-      local config = makeAmphibOpsConfig()
-      AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      AmphibiousLogistics.createCargoMissions(zone)
 
       assert.stub(stubSetDoctrine).was.called_with(
         { side = "China", mission = "BoatMission-1" },
@@ -861,38 +856,35 @@ describe("AmphibiousLogistics", function()
       )
     end)
 
-    -- Positive: should handle multiple zones with multiple missions
-    it("should create missions for all zones and mission types", function()
-      local zone2 = makeOperationalZone({
-        name = "ZoneBravo",
+    -- Positive: should handle zone with multiple missions per platform type
+    it("should create missions for all missions in a zone", function()
+      local zone = makeOperationalZone({
         boat = {
-          dbid = 3002,
-          zone = { "RP-BOAT-2" },
+          dbid = 3001,
+          zone = { "RP-BOAT-1" },
           settings = { throttle = "Full" },
           missions = {
-            { name = "BoatMission-2A", loadoutId = 10, unitCount = 1, startTime = 0 },
-            { name = "BoatMission-2B", loadoutId = 11, unitCount = 1, startTime = 0 },
+            { name = "BoatMission-1A", loadoutId = 10, unitCount = 1, startTime = 0 },
+            { name = "BoatMission-1B", loadoutId = 11, unitCount = 1, startTime = 0 },
           },
           transferManifest = { type075 = {}, type071 = {} },
         },
         transportHelicopter = {
-          dbid = 4002,
-          zone = { "RP-HELO-2" },
+          dbid = 4001,
+          zone = { "RP-HELO-1" },
           settings = { throttle = "Full" },
           missions = {
-            { name = "HeloMission-2", loadoutId = 20, unitCount = 1, startTime = 0 },
+            { name = "HeloMission-1", loadoutId = 20, unitCount = 1, startTime = 0 },
           },
           transferManifest = { type075 = {}, type071 = {} },
         },
       })
-      local config = makeAmphibOpsConfig()
-      table.insert(config.operationalZones, zone2)
 
-      local result = AmphibiousLogistics.createCargoMissions(config)
+      local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_true(result)
-      -- Zone1: 1 boat + 1 helo = 2, Zone2: 2 boats + 1 helo = 3, total = 5
-      assert.stub(stubAddMission).was.called(5)
+      -- 2 boat missions + 1 helo mission = 3
+      assert.stub(stubAddMission).was.called(3)
     end)
 
     -- Negative: should return false when AddMission fails
@@ -900,8 +892,8 @@ describe("AmphibiousLogistics", function()
       stubAddMission:revert()
       stubAddMission = trackStub(stub(GameApi, "ScenEdit_AddMission").returns(nil))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
     end)
@@ -911,8 +903,8 @@ describe("AmphibiousLogistics", function()
       stubSetMission:revert()
       stubSetMission = trackStub(stub(GameApi, "ScenEdit_SetMission").returns(nil))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
     end)
@@ -922,8 +914,8 @@ describe("AmphibiousLogistics", function()
       stubSetDoctrine:revert()
       stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine").returns(nil))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.createCargoMissions(config)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
     end)
@@ -948,17 +940,15 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(config, { unit075 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { unit075 })
 
       assert.is_true(result)
       -- Type 075: 3 transferCargo calls (boats + 2 helo loadouts)
-      -- + transport aircraft: 1 transferCargo call
-      assert.stub(stubTransferCargo).was.called(4)
+      assert.stub(stubTransferCargo).was.called(3)
       -- Type 075: 3 assignMission calls (boats + helo + attack helo)
-      -- + transport aircraft: 1 assignMission call
-      assert.stub(stubAssignMission).was.called(4)
+      assert.stub(stubAssignMission).was.called(3)
       assert.stub(Logger.log).was.called(1)
     end)
 
@@ -969,13 +959,13 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_076,
         inArea = function() return true end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(config, { unit076 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { unit076 })
 
       assert.is_true(result)
-      -- Type 076 uses same path as Type 075: 3 transfers + 1 transport aircraft
-      assert.stub(stubTransferCargo).was.called(4)
+      -- Type 076 uses same path as Type 075: 3 transfers
+      assert.stub(stubTransferCargo).was.called(3)
     end)
 
     -- Positive: should transfer and assign for Type 071 in anchorage area
@@ -985,34 +975,15 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_071,
         inArea = function() return true end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(config, { unit071 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { unit071 })
 
       assert.is_true(result)
       -- Type 071: 2 transferCargo calls (boats + helo)
-      -- + transport aircraft: 1 transferCargo call
-      assert.stub(stubTransferCargo).was.called(3)
+      assert.stub(stubTransferCargo).was.called(2)
       -- Type 071: 2 assignMission calls (boats + helo) - no attack helo
-      -- + transport aircraft: 1 assignMission call
-      assert.stub(stubAssignMission).was.called(3)
-    end)
-
-    -- Positive: should handle transport aircraft transfers
-    it("should transfer cargo and assign missions for transport aircraft", function()
-      local config = makeAmphibOpsConfig()
-
-      local result = AmphibiousLogistics.transferAndAssign(config, {})
-
-      assert.is_true(result)
-      -- Only transport aircraft: 1 transfer + 1 assign
-      assert.stub(stubTransferCargo).was.called(1)
-      assert.stub(stubAssignMission).was.called(1)
-
-      assert.stub(stubTransferCargo).was.called_with(
-        "BASE-001", "Aircraft", 6001, 40,
-        config.transportAircraft[1].cargoItemsForTransfer[1].cargoItems
-      )
+      assert.stub(stubAssignMission).was.called(2)
     end)
 
     -- Positive: should handle mixed fleet in anchorage
@@ -1027,13 +998,13 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_071,
         inArea = function() return true end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(config, { unit075, unit071 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { unit075, unit071 })
 
       assert.is_true(result)
-      -- Type 075: 3 transfers + Type 071: 2 transfers + transport aircraft: 1
-      assert.stub(stubTransferCargo).was.called(6)
+      -- Type 075: 3 transfers + Type 071: 2 transfers = 5
+      assert.stub(stubTransferCargo).was.called(5)
     end)
 
     -- Negative: should skip units not in anchorage area
@@ -1043,13 +1014,12 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return false end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(config, { unit075 })
+      AmphibiousLogistics.transferAndAssign(zone, { unit075 })
 
-      -- Only transport aircraft call, not the Type 075
-      assert.stub(stubTransferCargo).was.called(1)
-      assert.stub(stubAssignMission).was.called(1)
+      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(stubAssignMission).was_not.called()
     end)
 
     -- Negative: should skip non-amphibious unit types
@@ -1059,21 +1029,75 @@ describe("AmphibiousLogistics", function()
         dbid = constants.PLATFORMS.TYPE_072III,
         inArea = function() return true end,
       })
-      local config = makeAmphibOpsConfig()
+      local zone = makeOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(config, { otherUnit })
+      AmphibiousLogistics.transferAndAssign(zone, { otherUnit })
 
-      -- Only transport aircraft
-      assert.stub(stubTransferCargo).was.called(1)
-      assert.stub(stubAssignMission).was.called(1)
+      -- No matching transfer spec for TYPE_072III, so no transfers or assignments
+      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(stubAssignMission).was_not.called()
     end)
 
     -- Boundary: should return true with empty units list
-    it("should return true with empty units list processing only transport aircraft", function()
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.transferAndAssign(config, {})
+    it("should return true with empty units list", function()
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.transferAndAssign(zone, {})
 
       assert.is_true(result)
+      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(stubAssignMission).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- transferAndAssignTransportAircraft
+  -- ============================================================================
+
+  describe("transferAndAssignTransportAircraft", function()
+    local stubTransferCargo, stubAssignMission
+
+    before_each(function()
+      stubTransferCargo = trackStub(stub(AmphibiousLogistics, "transferCargo"))
+      stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
+    end)
+
+    -- Positive: should transfer cargo and assign missions for transport aircraft
+    it("should transfer cargo and assign missions for transport aircraft", function()
+      local transportAircraft = { makeTransportAircraftItem() }
+
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
+
+      assert.is_true(result)
+      assert.stub(stubTransferCargo).was.called(1)
+      assert.stub(stubAssignMission).was.called(1)
+
+      assert.stub(stubTransferCargo).was.called_with(
+        "BASE-001", "Aircraft", 6001, 40,
+        transportAircraft[1].cargoItemsForTransfer[1].cargoItems
+      )
+    end)
+
+    -- Positive: should handle multiple transport aircraft entries
+    it("should process all transport aircraft entries", function()
+      local transportAircraft = {
+        makeTransportAircraftItem(),
+        makeTransportAircraftItem({ name = "AirBase-2", guid = "BASE-002", dbid = 6002 }),
+      }
+
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
+
+      assert.is_true(result)
+      assert.stub(stubTransferCargo).was.called(2)
+      assert.stub(stubAssignMission).was.called(2)
+    end)
+
+    -- Boundary: should return true with empty transport aircraft list
+    it("should return true with empty transport aircraft list", function()
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft({})
+
+      assert.is_true(result)
+      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(stubAssignMission).was_not.called()
     end)
   end)
 
@@ -1103,8 +1127,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit075))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       -- Type 075: 3 transferCargo calls (boats + 2 helo loadouts)
@@ -1122,8 +1146,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit076))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       assert.stub(stubTransferCargo).was.called(3)
@@ -1139,8 +1163,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit071))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       -- Type 071: 2 transferCargo calls (boats + helo)
@@ -1159,8 +1183,8 @@ describe("AmphibiousLogistics", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       -- Type 075: 3 + Type 071: 2 = 5
@@ -1173,8 +1197,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       assert.stub(stubTransferCargo).was_not.called()
@@ -1191,8 +1215,8 @@ describe("AmphibiousLogistics", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(otherUnit))
 
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, units)
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
       assert.stub(stubTransferCargo).was_not.called()
@@ -1200,8 +1224,8 @@ describe("AmphibiousLogistics", function()
 
     -- Boundary: should return true for empty units list
     it("should return true when no units are provided", function()
-      local config = makeAmphibOpsConfig()
-      local result = AmphibiousLogistics.retransferCargos(config, {})
+      local zone = makeOperationalZone()
+      local result = AmphibiousLogistics.retransferCargos(zone, {})
 
       assert.is_true(result)
       assert.stub(stubTransferCargo).was_not.called()

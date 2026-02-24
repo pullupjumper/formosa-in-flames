@@ -143,12 +143,11 @@ saveData.c.air.airTaskingOrder = {}
 saveData.c.amphibOps = {}
 saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
 saveData.c.amphibOps.isTesting = true
-saveData.c.amphibOps.isShipsStartedMoving = true
-saveData.c.amphibOps.isWaitingForShipArrival = false
-saveData.c.amphibOps.amphibiousAssaultStartTime = nil
-saveData.c.amphibOps.isWaitingForAmphibiousAssault = false
-saveData.c.amphibOps.isWaitingForSecondWaveUnloading = false
-saveData.c.amphibOps.airlandingMissionStartTime = nil
+saveData.c.amphibOps.zoneStates = {
+  Taoyuan = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
+  Sishu   = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
+  Penghu  = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
+}
 saveData.c.amphibOps.calculationResult = {}
 saveData.c.amphibOps.barges = {}
 

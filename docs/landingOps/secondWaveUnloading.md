@@ -172,7 +172,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `startSecondWaveUnloading(amphibOpsConfig, saveData, filteredUnits)` | 啟動第二波卸載：駁船搶灘、RORO 配對 |
+| `startSecondWaveUnloading(zone, saveData, filteredUnits)` | 啟動第二波卸載：駁船搶灘、RORO 配對（單一作戰區） |
 | `offloadVehicles(params)` | 從船艦卸載車輛至灘頭 |
 
 ---

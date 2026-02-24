@@ -121,12 +121,12 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `calculateDestination(amphibOpsConfig, calculationResult)` | 預算所有作戰區域的艦船錨泊位置 |
-| `moveToStagingArea(amphibOpsConfig, saveData, filteredUnits)` | 驅動艦隊從集結區移動至錨泊位置 |
+| `moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)` | 驅動艦隊從集結區移動至錨泊位置（單一作戰區） |
 
 ---
 
 ## 相關模組
 
 - [amphibiousLogistics](amphibiousLogistics.md) — 艦隊到達後的貨物裝載與任務建立
-- [amphibiousAssault](amphibiousAssault.md) — LST 搶灘航向設定
+- [amphibiousAssault](amphibiousAssault.md) — LST 航至泛水編波區的航向設定
 - [系統架構](README.md)

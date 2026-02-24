@@ -327,15 +327,15 @@ end
 -- Public API
 -- ============================================================================
 
----Move all amphibious assault ships from staging area to designated anchorage positions
+---Move amphibious assault ships from staging area to designated anchorage positions for a single operation
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
 ---@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
 ---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the target zone
 ---@return boolean # True when all movement orders have been issued
-function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits)
+function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)
   local formationSettings = amphibOpsConfig.formationSettings
-  local operations = amphibOpsConfig.operations
   local calculationResult = saveData.c.amphibOps.calculationResult
   local isTesting = saveData.c.amphibOps.isTesting
   local logEntries = {}
@@ -344,25 +344,26 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit then
-      for _, operation in ipairs(operations) do
-        if unit:inArea(operation.from.stagingArea) then
-          local result = calculationResult[operation.name].result
-          local tag, msg = matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting)
-          table.insert(logEntries, string.format("  [%s] %s", tag, msg))
-          if tag == "OK" then movedCount = movedCount + 1 end
-        end
+      if unit:inArea(operation.from.stagingArea) then
+        local result = calculationResult[operation.name].result
+        local tag, msg = matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting)
+        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+        if tag == "OK" then movedCount = movedCount + 1 end
       end
     end
   end
 
-  for _, SAGDescriptor in pairs(amphibOpsConfig.sag) do
-    handleSAG(SAGDescriptor, isTesting)
+  for _, sagName in ipairs(operation.sagNames) do
+    local descriptor = amphibOpsConfig.sag[sagName]
+    if descriptor then
+      handleSAG(descriptor, isTesting)
+    end
   end
 
   if #logEntries > 0 then
     Logger.log(SHIP_MOVEMENT_TAG, string.format(
-      "Move to staging area: %d ships moved\n%s",
-      movedCount, table.concat(logEntries, "\n")
+      "[%s] Move to staging area: %d ships moved\n%s",
+      operation.name, movedCount, table.concat(logEntries, "\n")
     ))
   end
 

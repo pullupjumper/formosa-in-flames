@@ -243,11 +243,10 @@ end
 
 ---Get units in anchorage area and check their movement status
 ---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param filteredUnits CMO__SideUnit Unit list from the side (filtered for ships)
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
-function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, filteredUnits)
-  local operationalZones = amphibOpsConfig.operationalZones
+function AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
   local unitsInAnchorageArea = {}
   local isUnitMoving = false
 
@@ -260,10 +259,8 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, filteredUn
         break
       end
 
-      for _, zone in ipairs(operationalZones) do
-        if unit:inArea(zone.anchorageArea) or unit:inArea(zone.lstAnchorageArea) then
-          table.insert(unitsInAnchorageArea, unit)
-        end
+      if unit:inArea(zone.anchorageArea) or unit:inArea(zone.lstAnchorageArea) then
+        table.insert(unitsInAnchorageArea, unit)
       end
     end
   end
@@ -271,32 +268,29 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(amphibOpsConfig, filteredUn
   return { units = unitsInAnchorageArea, isUnitMoving = isUnitMoving }
 end
 
----Create cargo transport missions for all operational zones
+---Create cargo transport missions for an operational zone
 ---Sets up ferry missions for landing craft and transport helicopters with configured doctrine
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@return boolean # True if all cargo missions were successfully created
-function AmphibiousLogistics.createCargoMissions(amphibOpsConfig)
-  local operationalZones = amphibOpsConfig.operationalZones
+function AmphibiousLogistics.createCargoMissions(zone)
   local logEntries = {}
 
-  for _, zone in ipairs(operationalZones) do
-    for _, mission in ipairs(zone.boat.missions) do
-      local result = createSingleCargoMission("boat", zone, mission.name)
-      if not result then return false end
-      table.insert(logEntries, string.format("  [OK] %s", mission.name))
-    end
+  for _, mission in ipairs(zone.boat.missions) do
+    local result = createSingleCargoMission("boat", zone, mission.name)
+    if not result then return false end
+    table.insert(logEntries, string.format("  [OK] %s", mission.name))
+  end
 
-    for _, mission in ipairs(zone.transportHelicopter.missions) do
-      local result = createSingleCargoMission("transportHelicopter", zone, mission.name)
-      if not result then return false end
-      table.insert(logEntries, string.format("  [OK] %s", mission.name))
-    end
+  for _, mission in ipairs(zone.transportHelicopter.missions) do
+    local result = createSingleCargoMission("transportHelicopter", zone, mission.name)
+    if not result then return false end
+    table.insert(logEntries, string.format("  [OK] %s", mission.name))
   end
 
   if #logEntries > 0 then
     Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
-      "Created %d cargo missions\n%s",
-      #logEntries, table.concat(logEntries, "\n")
+      "[%s] Created cargo missions: %d entries\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
   end
 
@@ -305,24 +299,37 @@ end
 
 ---Transfer cargo to embarked units and assign them to missions
 ---Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
 ---@return boolean # True if all transfers and assignments completed successfully
-function AmphibiousLogistics.transferAndAssign(amphibOpsConfig, unitsInAnchorageArea)
-  local operationalZones = amphibOpsConfig.operationalZones
+function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
   local logEntries = {}
 
-  for _, zone in ipairs(operationalZones) do
-    for _, u in ipairs(unitsInAnchorageArea) do
-      if u:inArea(zone.anchorageArea) then
-        processShipTransfers(u.guid, u.dbid, zone)
-        processShipAssignments(u.guid, u.dbid, zone)
-        table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", u.name or u.guid, u.dbid))
-      end
+  for _, u in ipairs(unitsInAnchorageArea) do
+    if u:inArea(zone.anchorageArea) then
+      processShipTransfers(u.guid, u.dbid, zone)
+      processShipAssignments(u.guid, u.dbid, zone)
+      table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", u.name or u.guid, u.dbid))
     end
   end
 
-  for _, item in ipairs(amphibOpsConfig.transportAircraft) do
+  if #logEntries > 0 then
+    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+      "[%s] Transfer and assign: %d entries\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
+    ))
+  end
+
+  return true
+end
+
+---Transfer cargo and assign missions for land-based transport aircraft
+---@param transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
+---@return boolean # True if all transfers and assignments completed successfully
+function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
+  local logEntries = {}
+
+  for _, item in ipairs(transportAircraft) do
     AmphibiousLogistics.transferCargo(
       item.guid,
       constants.PLATFORM_TYPES.AIRCRAFT,
@@ -341,7 +348,7 @@ function AmphibiousLogistics.transferAndAssign(amphibOpsConfig, unitsInAnchorage
 
   if #logEntries > 0 then
     Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
-      "Transfer and assign: %d entries\n%s",
+      "Transfer and assign transport aircraft: %d entries\n%s",
       #logEntries, table.concat(logEntries, "\n")
     ))
   end
@@ -351,33 +358,30 @@ end
 
 ---Re-transfer cargo to embarked units for second wave operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all cargo was successfully re-transferred
-function AmphibiousLogistics.retransferCargos(amphibOpsConfig, units)
-  local operationalZones = amphibOpsConfig.operationalZones
+function AmphibiousLogistics.retransferCargos(zone, units)
   local logEntries = {}
 
-  for _, zone in ipairs(operationalZones) do
-    for _, u in ipairs(units) do
-      local unit = GameApi.ScenEdit_GetUnit(u.guid)
+  for _, u in ipairs(units) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-      if not unit then
-        table.insert(logEntries, string.format("  [SKIP] %s: unit not found", u.guid))
-        goto continue
-      end
-
-      processShipTransfers(unit.guid, unit.dbid, zone)
-      table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", unit.name or unit.guid, unit.dbid))
-
-      ::continue::
+    if not unit then
+      table.insert(logEntries, string.format("  [SKIP] %s: unit not found", u.guid))
+      goto continue
     end
+
+    processShipTransfers(unit.guid, unit.dbid, zone)
+    table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", unit.name or unit.guid, unit.dbid))
+
+    ::continue::
   end
 
   if #logEntries > 0 then
     Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
-      "Retransfer cargos: %d entries\n%s",
-      #logEntries, table.concat(logEntries, "\n")
+      "[%s] Retransfer cargos: %d entries\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
   end
 

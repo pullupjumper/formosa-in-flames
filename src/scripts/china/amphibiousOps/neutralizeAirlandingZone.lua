@@ -14,11 +14,11 @@ if not ship then
   return
 end
 
-if ship and ship.group and ship.dbid == constants.PLATFORMS.TYPE_052D then
+if ship.group and ship.dbid == constants.PLATFORMS.TYPE_052D then
   local filteredContacts = {}
 
   for _, contact in ipairs(contacts) do
-    if contact:inArea(config.c.amphibOps.sag[ship.group.name].area) and (contact.typed == 8) then
+    if contact:inArea(config.c.amphibOps.sag[ship.group.name].area) and (contact.typed == constants.CONTACT_TYPES.FACILITY_MOBILE) then
       table.insert(filteredContacts, contact.guid)
     end
   end

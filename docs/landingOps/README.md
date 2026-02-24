@@ -6,11 +6,11 @@
 
 ## 概述
 
-Landing Operations 是中國陣營的兩棲登陸作戰系統，模擬從艦隊集結到灘頭建立的完整登陸流程。系統分為四個核心階段：
+Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦隊集結到灘頭建立的完整登陸流程。系統分為四個核心階段：
 
 - **艦隊移動**：登陸艦從集結區移動至錨泊區，依艦型分層佈置陣形
-- **後勤裝載**：貨物轉移至登陸載具（直升機、登陸艇），建立運輸任務
-- **兩棲突擊**：LST 搶灘、ACV 兩棲戰車發射、直升機空中突擊
+- **後勤裝載**：貨物轉移至登陸載具（直升機、氣墊船），建立運輸任務
+- **兩棲突擊**：LST 航至泛水編波區、ACV 兩棲步兵戰鬥車釋放、直升機空中突擊
 - **第二波卸載**：駁船與 RORO 船組成後勤橋樑，卸載重型裝備
 
 ### 登陸作戰階段對應
@@ -19,7 +19,7 @@ Landing Operations 是中國陣營的兩棲登陸作戰系統，模擬從艦隊�
 |:-:|---|---|
 | **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向錨泊區 |
 | **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單元指派 |
-| **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 發射、LST 搶灘、任務時序設定 |
+| **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 釋放、LST 航至泛水編波區、任務時序設定 |
 | **卸載** | [secondWaveUnloading](secondWaveUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
 
 ---
@@ -30,7 +30,7 @@ Landing Operations 是中國陣營的兩棲登陸作戰系統，模擬從艦隊�
 |---|---|---|
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至錨泊區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
-| [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 發射、LST 航向設定與兩棲突擊協調 |
+| [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
 | [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載 |
 
 ---
@@ -86,12 +86,14 @@ flowchart TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> isShipsStartedMoving: 場景載入
-    isShipsStartedMoving --> isWaitingForShipArrival: 艦隊發出移動命令
-    isWaitingForShipArrival --> isWaitingForAmphibiousAssault: 艦隊到達錨泊區<br>完成裝載與任務建立
-    isWaitingForAmphibiousAssault --> isWaitingForSecondWaveUnloading: 空降區威脅清除或超時<br>發起兩棲突擊
-    isWaitingForSecondWaveUnloading --> [*]: 灘頭建立<br>啟動第二波卸載
+    [*] --> MOVING: 場景載入
+    MOVING --> WAITING_ARRIVAL: 艦隊發出移動命令
+    WAITING_ARRIVAL --> WAITING_ASSAULT: 艦隊到達錨泊區<br>完成裝載與任務建立
+    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 空降區威脅清除或超時<br>發起兩棲突擊
+    WAITING_SECOND_WAVE --> COMPLETED: 灘頭陣地建立<br>啟動第二波卸載
 ```
+
+每個作戰區（Taoyuan、Sishu、Penghu）各自維護獨立的 `zoneState.phase`，透過 `constants.AMPHIBIOUS_PHASES` 列舉值推進。
 
 ---
 
@@ -103,12 +105,11 @@ stateDiagram-v2
 saveData.c.amphibOps
 ├── startTime: string                    -- 作戰開始時間
 ├── isTesting: boolean                   -- 測試模式（瞬間移動）
-├── isShipsStartedMoving: boolean        -- 階段旗標：艦隊移動中
-├── isWaitingForShipArrival: boolean     -- 階段旗標：等待到達
-├── isWaitingForAmphibiousAssault: boolean -- 階段旗標：等待突擊
-├── isWaitingForSecondWaveUnloading: boolean -- 階段旗標：等待第二波
-├── amphibiousAssaultStartTime: number|nil  -- 突擊開始時間戳
-├── airlandingMissionStartTime: number|nil  -- 空降任務開始時間
+├── zoneStates: table<string, SBJ__ZoneState>
+│   └── [zoneName]                       -- 以區域名稱索引（Taoyuan / Sishu / Penghu）
+│       ├── phase: string                -- 當前階段（constants.AMPHIBIOUS_PHASES 值）
+│       ├── amphibiousAssaultStartTime: number|nil  -- 突擊開始時間戳
+│       └── airlandingMissionStartTime: number|nil  -- 空降任務開始時間
 ├── calculationResult: table<string, SBJ__OperationZoneCalculationResult>
 │   └── OperationZoneCalculationResult
 │       ├── name: string                 -- 作戰名稱
@@ -169,7 +170,7 @@ flowchart BT
 | `config.c.amphibOps.missionStartime` | 各載具類型任務延遲時間 |
 | `config.c.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
 | `config.c.amphibOps.operations` | 作戰區域定義（集結區→錨泊區） |
-| `config.c.amphibOps.operationalZones` | 作戰區設定（錨泊區、ACV 區、任務） |
+| `config.c.amphibOps.operationalZones` | 作戰區設定（錨泊區、泛水編波區、任務） |
 | `config.c.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |
 | `config.c.amphibOps.sag` | SAG 護航編隊描述符 |
 | `config.c.triggers.amphibiousOps.startTime` | 兩棲作戰觸發開始時間 |
@@ -181,8 +182,8 @@ flowchart BT
 | `constants.PLATFORMS.TYPE_075` | 075 型兩棲攻擊艦 DBID |
 | `constants.PLATFORMS.TYPE_076` | 076 型兩棲攻擊艦 DBID |
 | `constants.PLATFORMS.TYPE_071` | 071 型船塢登陸艦 DBID |
-| `constants.PLATFORMS.TYPE_072III` | 072III 型坦克登陸艦 DBID |
-| `constants.PLATFORMS.TYPE_072A` | 072A 型坦克登陸艦 DBID |
+| `constants.PLATFORMS.TYPE_072III` | 072III 型戰車登陸艦 DBID |
+| `constants.PLATFORMS.TYPE_072A` | 072A 型戰車登陸艦 DBID |
 | `constants.PLATFORMS.TYPE_073A` | 073A 型登陸艦 DBID |
 | `constants.PLATFORMS.FERRY` | 民用渡輪 DBID |
 | `constants.PLATFORMS.BARGE` | 駁船 DBID |
@@ -192,6 +193,7 @@ flowchart BT
 | `constants.PLATFORMS.TYPE_054A` | 054A 型護衛艦 DBID |
 | `constants.PLATFORMS.BRIDGE` | 後勤浮橋設施 DBID |
 | `constants.PLATFORMS.HPJ_38` | H/PJ-38 130mm 艦砲武器 ID |
+| `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / WAITING_SECOND_WAVE / COMPLETED） |
 | `constants.SIDES.ENEMY` | 中國陣營名稱 |
 | `constants.CONTACT_TYPES.FACILITY_MOBILE` | 可移動設施接觸類型 |
 | `constants.PLATFORM_TYPES.AIRCRAFT` | 航空器平台類型 |

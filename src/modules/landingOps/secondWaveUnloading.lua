@@ -244,14 +244,13 @@ end
 -- Public API: Operations
 -- ============================================================================
 
----Initiate second wave unloading operations
+---Initiate second wave unloading operations for a single zone
 ---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param saveData SBJ__SaveData Save data to track barge-RORO relationships
 ---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if second wave unloading successfully started
-function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData, filteredUnits)
-  local operationalZones = amphibOpsConfig.operationalZones
+function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUnits)
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
@@ -262,18 +261,16 @@ function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData,
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
-      for _, zone in ipairs(operationalZones) do
-        if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-          local tag, msg, dest = processBarge(unit, zone, saveData)
-          table.insert(logEntries, string.format("  [%s] %s", tag, msg))
-          if dest then
-            table.insert(barges, { unit = unit, zone = zone, dest = dest })
-          end
+      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+        local tag, msg, dest = processBarge(unit, zone, saveData)
+        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+        if dest then
+          table.insert(barges, { unit = unit, zone = zone, dest = dest })
         end
+      end
 
-        if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-          table.insert(roros, { unit = unit, zone = zone })
-        end
+      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+        table.insert(roros, { unit = unit, zone = zone })
       end
     end
   end
@@ -289,8 +286,8 @@ function SecondWaveUnloading.startSecondWaveUnloading(amphibOpsConfig, saveData,
 
   if #logEntries > 0 then
     Logger.log(SECOND_WAVE_TAG, string.format(
-      "Second wave unloading: %d entries\n%s",
-      #logEntries, table.concat(logEntries, "\n")
+      "[%s] Second wave unloading: %d entries\n%s",
+      zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
   end
 

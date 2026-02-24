@@ -144,6 +144,7 @@ describe("ShipMovement", function()
     local op = {
       name = "Taoyuan",
       from = { stagingArea = { "RP-STAGING-1", "RP-STAGING-2" } },
+      sagNames = { "SAG Alpha" },
       to = {
         areas = {
           {
@@ -232,7 +233,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_true(result)
       assert.are.equal(targetLocation, unit.course[1])
@@ -255,7 +257,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -285,7 +288,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(lstLocation, unit.course[1])
     end)
@@ -306,7 +310,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -327,7 +332,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -348,7 +354,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -367,7 +374,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(3, resultTable.type075.locationIndex)
     end)
@@ -389,7 +397,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.stub(stubSetUnit).was.called_with({
@@ -412,8 +421,9 @@ describe("ShipMovement", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
     end)
@@ -440,8 +450,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(1)
       local callArgs = stubSetUnit.calls[1].vals[1]
@@ -474,8 +485,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(2)
       local secondCall = stubSetUnit.calls[2].vals[1]
@@ -507,8 +519,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubGetPoint).was.called(2)
@@ -527,7 +540,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_true(result)
     end)
@@ -546,7 +560,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.equal(1, resultTable.type075.locationIndex)
     end)
@@ -559,8 +574,9 @@ describe("ShipMovement", function()
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_true(result)
     end)
@@ -582,8 +598,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -608,8 +625,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -630,7 +648,8 @@ describe("ShipMovement", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -639,9 +658,10 @@ describe("ShipMovement", function()
     it("should return true when filteredUnits is empty", function()
       local saveData = makeSaveData()
       local config = makeAmphibOpsConfig()
+      local operation = config.operations[1]
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local result = ShipMovement.moveToStagingArea(config, saveData, {})
+      local result = ShipMovement.moveToStagingArea(config, saveData, {}, operation)
 
       assert.is_true(result)
     end)
@@ -660,8 +680,9 @@ describe("ShipMovement", function()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sag = { alpha = sagDesc } })
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits)
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
       assert.stub(stubSetUnit).was_not.called()

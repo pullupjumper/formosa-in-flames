@@ -1344,6 +1344,7 @@ config.c.amphibOps.formationSettings = {
 config.c.amphibOps.operations = {
   {
     name = "Taoyuan",
+    sagNames = { "SAG 173", "SAG 155" },
     names = {
       "Air Assault Bn",
       "Combined Arms Bn",
@@ -1395,6 +1396,7 @@ config.c.amphibOps.operations = {
   },
   {
     name = "Sishu",
+    sagNames = { "SAG 154", "SAG 175" },
     names = {
       "Air Assault Bn",
       "Combined Arms Bn",
@@ -1447,6 +1449,7 @@ config.c.amphibOps.operations = {
   },
   {
     name = "Penghu",
+    sagNames = { "SAG 167" },
     names = {
       "Air Assault Bn",
       "Combined Arms Bn",
@@ -1501,6 +1504,7 @@ config.c.amphibOps.operations = {
 config.c.amphibOps.operationalZones = {
   {
     name = "Taoyuan",
+    arrivalThreshold = 15,
     baseGUID = constants.BASES.PINGTAN_PORT,
     anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
@@ -1637,6 +1641,7 @@ config.c.amphibOps.operationalZones = {
   },
   {
     name = "Sishu",
+    arrivalThreshold = 10,
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
@@ -1773,6 +1778,7 @@ config.c.amphibOps.operationalZones = {
   },
   {
     name = "Penghu",
+    arrivalThreshold = 5,
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
