@@ -4,12 +4,12 @@ local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
-  if unit.dbid == constants.PLATFORMS.J20
-      or unit.dbid == constants.PLATFORMS.J16
-      or unit.dbid == constants.PLATFORMS.SU30
-      or unit.dbid == constants.PLATFORMS.H6K
-      or unit.dbid == constants.PLATFORMS.J35
-      or unit.dbid == constants.PLATFORMS.J10C then
+  if unit.dbid == constants.PLATFORMS.J20 or
+      unit.dbid == constants.PLATFORMS.J16 or
+      unit.dbid == constants.PLATFORMS.SU30 or
+      unit.dbid == constants.PLATFORMS.H6K or
+      unit.dbid == constants.PLATFORMS.J35 or
+      unit.dbid == constants.PLATFORMS.J10C then
     -- if unit.mission then
     --   local mission = ScenEdit_GetMission('China', unit.mission.guid)
 

@@ -48,8 +48,8 @@ SHIP_TRANSFER_SPECS[]
 ```mermaid
 flowchart TD
     START["transferAndAssign()"]
-    ITER_UNIT["遍歷錨泊區單元"]
-    IN_AREA{單元在<br>anchorageArea?}
+    ITER_UNIT["遍歷錨泊區單位"]
+    IN_AREA{單位在<br>anchorageArea?}
     FIND_SPEC["findTransferSpec<br>匹配艦型"]
     TRANSFER["processShipTransfers<br>依 spec.transfers 轉移貨物"]
     ASSIGN["processShipAssignments<br>依 spec.assignments 指派任務"]
@@ -109,8 +109,8 @@ flowchart TD
 | `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
 | `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
 | `updateCargo(fromUnit, toUnit, cargoItem)` | 單筆貨物從來源轉移至目標 |
-| `deleteCargo(fromUnit, cargoItem)` | 從單元刪除指定貨物 |
-| `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單元 |
+| `deleteCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
+| `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單位 |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/secondWaveUnloading.lua`
 
-**職責**：管理駁船-RORO 後勤鏈建立、重型車輛卸載與灘頭浮橋部署
+**職責**：管理駁船-RORO 後勤鏈建立、重型車輛卸載與灘頭浮橋架設
 
 ---
 
@@ -13,7 +13,7 @@ secondWaveUnloading 負責登陸作戰的第四階段——第二波重裝備卸
 1. **駁船搶灘**：計算駁船從錨泊區到卸載區的航向，投影至 LST 搶灘航線
 2. **RORO 跟隨**：RORO 船與同區域駁船配對，跟隨駁船前進
 3. **浮橋架設**：駁船到達灘頭後停止並架設後勤浮橋（Bridge Facility）
-4. **車輛卸載**：透過後勤鏈（RORO → 駁船 → 灘頭）卸載重型裝備
+4. **車輛卸載**：透過後勤鏈（RORO → 駁船 → 灘頭）下卸重型裝備
 
 本模組由兩個事件腳本驅動：`landingCheck.lua`（啟動第二波）和 `offloadVehicles.lua`（執行卸載）。
 
@@ -98,7 +98,7 @@ RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.ls
 
 ## 車輛卸載機制
 
-`offloadVehicles` 從船艦貨物中提取車輛並生成地面單元：
+`offloadVehicles` 從船艦貨物中提取車輛並生成地面單位：
 
 ```mermaid
 flowchart TD
@@ -106,11 +106,11 @@ flowchart TD
     CHECK{船艦存在<br>且未被擊毀?}
     LOCS["generateLocations<br>計算卸載位置<br>（含 firstDistance）"]
     EXTRACT["extractCargoItems<br>提取貨物項目"]
-    SPAWN["spawnOffloadedVehicle<br>刪除貨物 → 生成單元"]
+    SPAWN["spawnOffloadedVehicle<br>刪除貨物 → 生成單位"]
     TYPE{貨物類型?}
     GROUND["生成 Ground unit"]
     FACILITY["生成 Facility"]
-    COUNT["回傳卸載數量"]
+    COUNT["回傳下卸數量"]
 
     START --> CHECK
     CHECK -->|否| NIL["回傳 nil"]
@@ -123,7 +123,7 @@ flowchart TD
 
 ### 貨物類型對應
 
-| `item.Type` | 生成單元類型 |
+| `item.Type` | 生成單位類型 |
 |:-:|---|
 | 2 | `Ground unit` |
 | 其他 | `Facility` |
@@ -136,7 +136,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    TRIGGER["單元進入 ACV 區域"]
+    TRIGGER["單位進入 ACV 區域"]
     IS_BARGE{是 Barge?}
     HAS_BRIDGE{已架設浮橋?}
     STOP["停止航行<br>固定位置"]
@@ -173,7 +173,7 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `startSecondWaveUnloading(zone, saveData, filteredUnits)` | 啟動第二波卸載：駁船搶灘、RORO 配對（單一作戰區） |
-| `offloadVehicles(params)` | 從船艦卸載車輛至灘頭 |
+| `offloadVehicles(params)` | 從船艦下卸車輛至灘頭 |
 
 ---
 

@@ -265,13 +265,17 @@ local function initOperationResult(operationName, calculationResult)
 end
 
 ---Calculate starting points for all ship types from two reference points
----@param area table Area configuration with startingPoints, heading
----@param formationSettings table Formation distance settings
+---@param area SBJ__OperationAreaDescriptor Area configuration with startingPoints, heading
+---@param formationSettings SBJ__AmphibiousFormationSettings Formation distance settings
 ---@return table<string, CMO__Location> # Mapping of key to starting location
 local function calculateStartingPoints(area, formationSettings)
   local startingPoints = {}
-  startingPoints.type075 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type075)[1]
-  startingPoints.type071 = GameApi.ScenEdit_GetReferencePoints(area.startingPoints.type071)[1]
+  startingPoints.type075 = GameApi.ScenEdit_GetReferencePoints({
+    side = constants.SIDES.ENEMY, area = area.startingPoints.type075
+  })[1]
+  startingPoints.type071 = GameApi.ScenEdit_GetReferencePoints({
+    side = constants.SIDES.ENEMY, area = area.startingPoints.type071
+  })[1]
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
     startingPoints[row.key] = GameApi.World_GetPointFromBearing({
@@ -288,7 +292,7 @@ end
 ---Generate and append locations for all ship types in an area
 ---@param opResult table<string, SBJ__ShipCalculationResult> Operation result to populate
 ---@param startingPoints table<string, CMO__Location> Starting points per ship type
----@param area table Area configuration with heading and num
+---@param area SBJ__OperationAreaDescriptor Area configuration with heading and shipCounts
 ---@param horizontalDistance number Horizontal spacing
 local function generateAllShipLocations(opResult, startingPoints, area, horizontalDistance)
   for _, entry in ipairs(ALL_RESULT_KEYS) do
@@ -296,7 +300,7 @@ local function generateAllShipLocations(opResult, startingPoints, area, horizont
       opResult[entry.key].locations,
       GameUtils.generateLocations({
         initialLocation = startingPoints[entry.key],
-        num = area.num[entry.key],
+        num = area.shipCounts[entry.key],
         bearing = area.heading.horizontal,
         distance = horizontalDistance,
       })
