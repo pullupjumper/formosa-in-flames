@@ -24,7 +24,7 @@ if not unit then
 end
 
 local positionType = ""
-local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
+local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm", "sam" }
 
 for _, trigger in ipairs(event.triggers) do
   if trigger["UnitEntersArea"] then
@@ -36,7 +36,16 @@ for _, trigger in ipairs(event.triggers) do
 end
 
 if positionType == "FP" then
+  for _, missileSystem in ipairs(missileSystems) do
+    ---@type SBJ__MissileSystemContext|nil
+    local missileSystemCtx = saveData.t.ground[missileSystem]
 
+    if missileSystemCtx and missileSystemCtx.enabled then
+      if MissileSystem.isRepositioning(missileSystemCtx.firingUnits[unit.name], false) then
+        MissileSystem.setWCSToFree(missileSystemCtx.firingUnits[unit.name], unit, false)
+      end
+    end
+  end
 elseif positionType == "HA" then
   if contacts then
     for _, contact in ipairs(contacts) do

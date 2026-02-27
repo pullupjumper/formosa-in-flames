@@ -25,6 +25,16 @@ local ZONE_COLORS = {
   DEFAULT = "4d8b5cf6"            -- Semi-transparent purple
 }
 
+---Normalize weaponDBID to always be an array
+---@param weaponDBID number|number[] Weapon DBID or array of weapon DBIDs
+---@return number[]
+local function normalizeWeaponDBIDs(weaponDBID)
+  if type(weaponDBID) == "table" then
+    return weaponDBID
+  end
+  return { weaponDBID }
+end
+
 ---Check if a platform is a SAM system
 ---@param dbid number Platform database ID
 ---@return boolean # True if the platform is a SAM system, false otherwise
@@ -229,28 +239,33 @@ end
 
 ---Reload ammunition for a single unit
 ---@param unit CMO__Unit|nil Unit object
----@param weaponDBID number Weapon database ID
+---@param weaponDBID number|number[] Weapon database ID(s)
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@return integer # Total ammunition consumed
 local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   if not unit then return 0 end
-  local wpnInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
-  local required = wpnInfo.maxWeapons - wpnInfo.availableWeapons
+  local weaponDBIDs = normalizeWeaponDBIDs(weaponDBID)
+  local totalLoaded = 0
 
-  if required > 0 and resupplyUnitCtx.wpnCurrent > 0 then
-    local ammoToLoad = math.min(required, resupplyUnitCtx.wpnCurrent)
-    GameApi.ScenEdit_AddReloadsToUnit({ guid = unit.guid, side = unit.side, wpn_dbid = weaponDBID, number = ammoToLoad })
-    resupplyUnitCtx.wpnCurrent = resupplyUnitCtx.wpnCurrent - ammoToLoad
-    return ammoToLoad
+  for _, dbid in ipairs(weaponDBIDs) do
+    local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
+    local required = wpnInfo.maxWeapons - wpnInfo.availableWeapons
+
+    if required > 0 and resupplyUnitCtx.wpnCurrent > 0 then
+      local ammoToLoad = math.min(required, resupplyUnitCtx.wpnCurrent)
+      GameApi.ScenEdit_AddReloadsToUnit({ guid = unit.guid, side = unit.side, wpn_dbid = dbid, number = ammoToLoad })
+      resupplyUnitCtx.wpnCurrent = resupplyUnitCtx.wpnCurrent - ammoToLoad
+      totalLoaded = totalLoaded + ammoToLoad
+    end
   end
 
-  return 0
+  return totalLoaded
 end
 
 ---Execute reload for firing unit
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param weaponDBID number Weapon database ID
+---@param weaponDBID number|number[] Weapon database ID(s)
 ---@param sideName string Side name
 ---@return integer # Total ammunition loaded
 function MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
@@ -281,8 +296,15 @@ function MissileSystem.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if unit and isAuto then
-      setUnitProperties({ unit = unit, holdPosition = true, formation = { spacing = 0, transpose = true } })
+    if unit then
+      setUnitProperties({
+        unit = unit,
+        holdPosition = isAuto and true or false,
+        manualthrottle = isAuto and "Stop" or "OFF",
+        manualSpeed = isAuto and 0 or "OFF",
+        wcs = constants.WCS.HOLD,
+        formation = isAuto and { spacing = 0, transpose = true } or nil
+      })
     end
   end
 end
@@ -298,12 +320,14 @@ function MissileSystem.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if unit and isAuto then
+    if unit then
       setUnitProperties({
         unit = unit,
-        holdPosition = true,
+        holdPosition = isAuto and true or false,
+        manualthrottle = isAuto and "Stop" or "OFF",
+        manualSpeed = isAuto and 0 or "OFF",
         wcs = constants.WCS.FREE, -- Free fire
-        formation = { spacing = 0, transpose = true }
+        formation = isAuto and { spacing = 0, transpose = true } or nil
       })
     end
   end
@@ -320,12 +344,14 @@ function MissileSystem.setStateToHIDE(firingUnitCtx, firingUnit, isAuto)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if unit and isAuto then
+    if unit then
       setUnitProperties({
         unit = unit,
-        holdPosition = true,
+        holdPosition = isAuto and true or false,
+        manualthrottle = isAuto and "Stop" or "OFF",
+        manualSpeed = isAuto and 0 or "OFF",
         wcs = constants.WCS.HOLD, -- Hold fire while hiding
-        formation = { spacing = 0, transpose = true }
+        formation = isAuto and { spacing = 0, transpose = true } or nil
       })
     end
   end
@@ -346,12 +372,13 @@ function MissileSystem.setStateToStatic(systemCtx, firingUnit, isAuto)
     for _, guid in ipairs(units) do
       local unit = GameApi.ScenEdit_GetUnit(guid)
 
-      if unit and isAuto then
+      if unit then
         setUnitProperties({
           unit = unit,
-          holdPosition = true,
+          holdPosition = isAuto and true or false,
+          manualthrottle = isAuto and "stop" or "OFF",
           wcs = constants.WCS.HOLD, -- Hold fire while hiding
-          formation = { spacing = 0, transpose = true }
+          formation = isAuto and { spacing = 0, transpose = true } or nil
         })
       end
     end
@@ -378,13 +405,14 @@ end
 ---Check if unit/group ammunition is below specified percentage
 ---@param firingUnit CMO__Unit Unit or group object
 ---@param percentage number|nil Percentage threshold
----@param weaponDBID number|nil Weapon database ID
+---@param weaponDBID number|number[]|nil Weapon database ID(s)
 ---@return boolean # Whether it is low ammunition
 function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
   if not percentage or not weaponDBID then
     return false
   end
 
+  local weaponDBIDs = normalizeWeaponDBIDs(weaponDBID)
   local totalCurrent = 0
   local totalMax = 0
 
@@ -394,9 +422,11 @@ function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit then
-      local wpnInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
-      totalCurrent = totalCurrent + wpnInfo.availableWeapons
-      totalMax = totalMax + wpnInfo.maxWeapons
+      for _, dbid in ipairs(weaponDBIDs) do
+        local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
+        totalCurrent = totalCurrent + wpnInfo.availableWeapons
+        totalMax = totalMax + wpnInfo.maxWeapons
+      end
     end
   end
 
@@ -539,7 +569,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param isMet boolean Whether firing unit has met with resupply unit
 ---@param firingUnit CMO__Unit Firing unit group
----@param weaponDBID number Weapon database ID
+---@param weaponDBID number|number[] Weapon database ID(s)
 ---@return boolean # Whether reload conditions are met
 local function isReadyToReloadFiringUnit(firingUnitCtx, systemCtx, isMet, firingUnit, weaponDBID)
   if firingUnitCtx.reloadStartTime == nil then return false end
@@ -751,7 +781,7 @@ local function addTriggerToEvent(positionType, position, index, operationalArea,
       Description = triggerName,
       Mode = "add",
       type = "UnitEntersArea",
-      TargetFilter = { TargetSide = enemySide },
+      TargetFilter = { TargetSide = sideName },
       Area = position.area,
       ExitArea = false
     })
@@ -932,35 +962,79 @@ local function addFiringUnit(systemCfg, descriptor, sideName)
     })
 
     if addedUnit then
-      GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
-      local totalRemovedWpnCount = 0
-      local removedWpnDBID
+      if descriptor.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
+        for _, mount in ipairs(addedUnit.mounts) do
+          GameApi.ScenEdit_UpdateUnit({
+            guid = addedUnit.guid,
+            mode = "remove_mount",
+            dbid = mount.mount_dbid,
+            mountid = mount.mount_guid
+          })
+        end
 
+        for i = 1, 6 do
+          GameApi.ScenEdit_UpdateUnit({
+            guid = addedUnit.guid,
+            mode = "add_mount",
+            dbid = 45,
+            arc_mount = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
+          })
+        end
+
+        GameApi.ScenEdit_UpdateUnit({
+          guid = addedUnit.guid,
+          mode = "add_mount",
+          dbid = 1630,
+          arc_mount = constants.SENSOR_ARCS,
+        })
+
+        GameApi.ScenEdit_UpdateUnit({
+          guid = addedUnit.guid,
+          mode = "update_sensor_arc",
+          dbid = addedUnit.sensors[2].sensor_dbid,
+          sensorid = addedUnit.sensors[2].sensor_guid,
+          arc_detect = constants.SENSOR_ARCS,
+          arc_track = constants.SENSOR_ARCS
+        })
+      end
+
+      GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
+      local weaponDBIDs = normalizeWeaponDBIDs(descriptor.weaponDBID)
+      local weaponDBIDSet = {}
+      for _, id in ipairs(weaponDBIDs) do weaponDBIDSet[id] = true end
+
+      -- Track removals per weapon type
+      local removals = {} -- { [wpn_dbid] = count }
       for _, mount in ipairs(addedUnit.mounts) do
         if #mount.mount_weapons > 1 then
           for _, wpn in ipairs(mount.mount_weapons) do
-            if wpn.wpn_current > 0 and wpn.wpn_dbid ~= descriptor.weaponDBID then
-              totalRemovedWpnCount = totalRemovedWpnCount + wpn.wpn_current
-              removedWpnDBID = wpn.wpn_dbid
+            if wpn.wpn_current > 0 and not weaponDBIDSet[wpn.wpn_dbid] then
+              removals[wpn.wpn_dbid] = (removals[wpn.wpn_dbid] or 0) + wpn.wpn_current
             end
           end
         end
       end
 
-      if totalRemovedWpnCount > 0 and removedWpnDBID ~= nil then
+      -- Remove unwanted weapons per type
+      local totalRemovedCount = 0
+      for wpnDbid, count in pairs(removals) do
         GameApi.ScenEdit_AddReloadsToUnit({
           side = sideName,
           guid = addedUnit.guid,
-          wpn_dbid = removedWpnDBID,
-          number = totalRemovedWpnCount,
+          wpn_dbid = wpnDbid,
+          number = count,
           remove = true
         })
+        totalRemovedCount = totalRemovedCount + count
+      end
 
+      -- For single-weapon configs, redistribute removed ammo to the desired weapon
+      if totalRemovedCount > 0 and #weaponDBIDs == 1 then
         GameApi.ScenEdit_AddReloadsToUnit({
           side = sideName,
           guid = addedUnit.guid,
-          wpn_dbid = descriptor.weaponDBID,
-          number = totalRemovedWpnCount,
+          wpn_dbid = weaponDBIDs[1],
+          number = totalRemovedCount,
         })
       end
 

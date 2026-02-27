@@ -535,7 +535,7 @@ function UnitStatusUI.createUI(config, sideName)
     local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
   else
     local signalDataString = createSignalDataString(saveData, "US")
-    local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm")
+    local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm", "sam")
     local magazineDataString = createMagazineDataString(config, sideName)
     local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 

@@ -35,8 +35,6 @@ local MISSION_RESULT = {
 }
 
 local MAX_TRACKING_DISTANCE = 1000
-
-local WZ8_SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 local WZ8_INITIAL_ALTITUDE = 20574
 local WZ8_INITIAL_HEADING = 180
 local WZ8_INITIAL_SPEED = 3300
@@ -114,8 +112,8 @@ function Recon.launchWZ8(h6n, course)
     guid = wz8.guid,
     mode = "add_sensor",
     dbid = constants.SENSORS.WZ8_RADAR,
-    arc_detect = WZ8_SENSOR_ARCS,
-    arc_track = WZ8_SENSOR_ARCS
+    arc_detect = constants.SENSOR_ARCS,
+    arc_track = constants.SENSOR_ARCS
   })
 
   if not updatedUnit then

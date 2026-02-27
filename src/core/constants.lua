@@ -401,6 +401,8 @@ constants.WEAPONS = {
   JDAM = 554,          -- JDAM
   HPJ_38 = 2691,       -- H/PJ-38 130mm
   MIM104F_PAC3 = 1150, -- MIM-104F PAC-3 Air Defense Missile
+  MIM104F_PAC2 = 642,  -- MIM-104F PAC-2 Air Defense Missile
+  TK3 = 888,           -- TK-3 Air-to-Surface Missile
 }
 
 constants.UNIT_TYPES = {
@@ -1001,5 +1003,7 @@ constants.AMPHIBIOUS_PHASES = {
   WAITING_SECOND_WAVE = "WAITING_SECOND_WAVE",
   COMPLETED           = "COMPLETED",
 }
+
+constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 
 return constants

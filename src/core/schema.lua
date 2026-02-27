@@ -819,7 +819,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Firing unit descriptor with weapon configuration and status
 ---@class SBJ__FiringUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus
----@field weaponDBID number The weapon database ID to use for the firing unit
+---@field weaponDBID number|number[] The weapon database ID(s) to use for the firing unit
 ---@field ammoThreshold number The ammunition threshold for the firing unit, if not specified, the default value will be used
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit

@@ -9,7 +9,7 @@ if saveData == nil then
   return
 end
 
-local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
+local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm", "sam" }
 
 for _, missileSystem in ipairs(missileSystems) do
   if saveData.t.ground[missileSystem] and saveData.t.ground[missileSystem].enabled then
