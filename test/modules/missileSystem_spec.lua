@@ -100,7 +100,6 @@ end
 -- ============================================================================
 
 describe("MissileSystem", function()
-
   before_each(function()
     stub(Logger, "log")
     stub(Logger, "error")
@@ -751,6 +750,8 @@ describe("MissileSystem", function()
 
       assert.are.equal(20, resupplyUnitCtx.wpnCurrent)
       assert.are.equal(0, ammoDepotCtx.wpnCurrent)
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
+      assert.is_nil(resupplyUnitCtx.reloadStartTime)
     end)
   end)
 

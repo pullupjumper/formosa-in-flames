@@ -130,8 +130,8 @@ local function buildModeProperties(unit, isAuto, wcs)
   return {
     unit = unit,
     holdPosition = isAuto and true or false,
-    manualthrottle = isAuto and "Stop" or "OFF",
-    manualSpeed = isAuto and 0 or "OFF",
+    throttle = isAuto and "Stop" or "OFF",
+    speed = isAuto and 0 or "OFF",
     wcs = wcs,
     formation = isAuto and { spacing = 0, transpose = true } or nil
   }
