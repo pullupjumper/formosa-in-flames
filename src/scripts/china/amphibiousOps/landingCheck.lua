@@ -52,8 +52,7 @@ for _, zone in ipairs(config.c.amphibOps.operationalZones) do
   end
 
   -- Phase 1: Fleet movement
-  if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
-      and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
     local done = ShipMovement.moveToStagingArea(config.c.amphibOps, saveData, filteredShips, operation)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
@@ -63,12 +62,11 @@ for _, zone in ipairs(config.c.amphibOps.operationalZones) do
   -- Phase 2: Arrival check + logistics loading
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL then
     local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredShips)
-    local hasArrived = Utils.getCount(result.units) > zone.arrivalThreshold
-        and not result.isUnitMoving
+    local hasArrived = Utils.getCount(result.units) > zone.arrivalThreshold and not result.isUnitMoving
 
     if hasArrived then
-      local ok = AmphibiousLogistics.createCargoMissions(zone)
-          and AmphibiousLogistics.transferAndAssign(zone, result.units)
+      local ok = AmphibiousLogistics.createCargoMissions(zone) and
+          AmphibiousLogistics.transferAndAssign(zone, result.units)
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
         zoneState.amphibiousAssaultStartTime = currentTime
@@ -99,8 +97,7 @@ for _, zone in ipairs(config.c.amphibOps.operationalZones) do
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
     local contactCount = AmphibiousAssault.countContactsInArea(contacts, operation.airLandingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < operation.numOfContactsInAirLandingZone
-        or elapsed >= config.c.amphibOps.periodOfTime
+    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.c.amphibOps.periodOfTime
 
     if shouldLaunch then
       local ok = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)

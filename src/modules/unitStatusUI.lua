@@ -137,7 +137,7 @@ function UnitStatusUI.countUnitsInEachArea(config)
     for _, u in ipairs(unitsFromChina) do
       local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-      if unit and unit:inArea(zone.area) then
+      if unit and unit:inArea(zone.casArea) then
         if unit.dbid == constants.PLATFORMS.ZBD05 then
           item["ZBD-05"] = item["ZBD-05"] + 1
         end

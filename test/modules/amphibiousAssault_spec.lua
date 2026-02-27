@@ -239,19 +239,6 @@ describe("AmphibiousAssault", function()
       assert.stub(stubGetMission).was.called(2)
     end)
 
-    -- Negative: returns false when ScenEdit_CurrentTime returns nil
-    it("should return false when current time is unavailable", function()
-      stubCurrentTime.returns(nil)
-
-      local zone = makeZone()
-      local saveData = makeSaveData()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
-
-      assert.is_false(result)
-    end)
-
     -- Negative: returns false when GetMission returns nil for a mission
     it("should return false when a mission cannot be found", function()
       stubCurrentTime.returns(1000)

@@ -219,13 +219,7 @@ end
 ---@return boolean # True if all mission start times were successfully set
 function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   local currentTime = GameApi.ScenEdit_CurrentTime()
-
-  if not currentTime then
-    return false
-  end
-
   zoneState.airlandingMissionStartTime = currentTime
-
   local success, logEntries = setZoneMissionStartTimes(zone, currentTime)
 
   if not success then

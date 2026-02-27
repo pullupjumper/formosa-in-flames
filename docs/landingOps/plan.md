@@ -81,7 +81,7 @@ saveData.c.amphibOps.barges = {}
 | `arrivalThreshold` | `operationalZones[].arrivalThreshold` | 到達錨泊區的最低艦船數 | `15`（全域） |
 | `sagNames` | `operations[].sagNames` | 該作戰區對應的 SAG 群組名稱清單 | 無（全域遍歷 `sag`） |
 
-`airLandingZone` 和 `numOfContactsInAirLandingZone` 已在 `operations` 中以 per-zone 存在。
+`airLandingZone` 和 `contactThreshold` 已在 `operations` 中以 per-zone 存在。
 
 #### SAG 對應關係
 
@@ -168,7 +168,7 @@ for _, zone in ipairs(amphibOpsConfig.operationalZones) do
       contacts, operation.airLandingZone
     )
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < operation.numOfContactsInAirLandingZone
+    local shouldLaunch = contactCount < operation.contactThreshold
         or elapsed >= amphibOpsConfig.periodOfTime
 
     if shouldLaunch then

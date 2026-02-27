@@ -149,11 +149,11 @@ describe("ShipMovement", function()
         areas = {
           {
             startingPoints = {
-              type075 = { sideName = "China", area = { "RP-075-1" } },
-              type071 = { sideName = "China", area = { "RP-071-1" } },
+              type075 = { "RP-075-1" },
+              type071 = { "RP-071-1" },
             },
             heading = { horizontal = 90, vertical = 0 },
-            num = {
+            shipCounts = {
               type075 = 2, type071 = 2, type076 = 1,
               type072iii = 2, type072a = 2, type073a = 1,
               type071InLSTArea = 1, ferry = 1, roro = 1, barge = 1,
@@ -910,7 +910,7 @@ describe("ShipMovement", function()
       stubInsertList.invokes(function(list) return list end)
 
       local op = makeOperation()
-      op.to.areas[1].num.type075 = 0
+      op.to.areas[1].shipCounts.type075 = 0
       local config = makeAmphibOpsConfig({ operations = { op } })
       local calculationResult = {}
 

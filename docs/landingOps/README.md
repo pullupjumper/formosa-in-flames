@@ -18,7 +18,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | 作戰階段 | 對應模組 | 說明 |
 |:-:|---|---|
 | **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向錨泊區 |
-| **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單元指派 |
+| **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單位指派 |
 | **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 釋放、LST 航至泛水編波區、任務時序設定 |
 | **卸載** | [secondWaveUnloading](secondWaveUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
 
@@ -86,10 +86,10 @@ flowchart TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> MOVING: 場景載入
+    [*] --> MOVING: 想定載入
     MOVING --> WAITING_ARRIVAL: 艦隊發出移動命令
     WAITING_ARRIVAL --> WAITING_ASSAULT: 艦隊到達錨泊區<br>完成裝載與任務建立
-    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 空降區威脅清除或超時<br>發起兩棲突擊
+    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 空/機降區威脅清除或超時<br>發起兩棲突擊
     WAITING_SECOND_WAVE --> COMPLETED: 灘頭陣地建立<br>啟動第二波卸載
 ```
 
@@ -109,7 +109,7 @@ saveData.c.amphibOps
 │   └── [zoneName]                       -- 以區域名稱索引（Taoyuan / Sishu / Penghu）
 │       ├── phase: string                -- 當前階段（constants.AMPHIBIOUS_PHASES 值）
 │       ├── amphibiousAssaultStartTime: number|nil  -- 突擊開始時間戳
-│       └── airlandingMissionStartTime: number|nil  -- 空降任務開始時間
+│       └── airlandingMissionStartTime: number|nil  -- 空/機降任務開始時間
 ├── calculationResult: table<string, SBJ__OperationZoneCalculationResult>
 │   └── OperationZoneCalculationResult
 │       ├── name: string                 -- 作戰名稱
@@ -118,8 +118,8 @@ saveData.c.amphibOps
 │               ├── locations: CMO__Location[]  -- 預算位置陣列
 │               ├── locationIndex: number       -- 目前分配索引
 │               └── dbid: number                -- 平台 DBID
-└── barges: table<string, SBJ__BargeEntry>
-    └── BargeEntry
+└── barges: table<string, SBJ__BargeContext>
+    └── BargeContext
         ├── guid: string                 -- 駁船 GUID
         ├── bridgeGUID: string|nil       -- 後勤橋 GUID
         └── roros: string[]              -- 配對的 RORO 船 GUID
@@ -197,7 +197,7 @@ flowchart BT
 | `constants.SIDES.ENEMY` | 中國陣營名稱 |
 | `constants.CONTACT_TYPES.FACILITY_MOBILE` | 可移動設施接觸類型 |
 | `constants.PLATFORM_TYPES.AIRCRAFT` | 航空器平台類型 |
-| `constants.PLATFORM_TYPES.BOATS` | 小艇平台類型 |
+| `constants.PLATFORM_TYPES.BOATS` | 氣墊船平台類型 |
 
 ---
 
@@ -206,12 +206,12 @@ flowchart BT
 | 檔案 | 說明 |
 |---|---|
 | `src/scripts/china/amphibiousOps/landingCheck.lua` | 主排程腳本（每 5 分鐘觸發），驅動整體狀態機 |
-| `src/scripts/china/amphibiousOps/launchACV.lua` | ACV 發射事件腳本（單元進入區域觸發） |
-| `src/scripts/china/amphibiousOps/offloadVehicles.lua` | 車輛卸載事件腳本（單元進入區域觸發） |
-| `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` | 空降區壓制腳本（SAG 進入區域觸發） |
+| `src/scripts/china/amphibiousOps/launchACV.lua` | ACV 釋放事件腳本（單位進入區域觸發） |
+| `src/scripts/china/amphibiousOps/offloadVehicles.lua` | 重裝備下卸事件腳本（單位進入區域觸發） |
+| `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` | 空/機降區壓制腳本（SAG 進入區域觸發） |
 | `src/modules/assignMission.lua` | 任務指派模組 |
 | `src/modules/strikePlanner/attackManager.lua` | 打擊管理（SAG 艦砲射擊） |
-| `src/modules/unitStatusUI.lua` | 單元狀態監控（灘頭建立判定） |
+| `src/modules/unitStatusUI.lua` | 單位狀態監控（灘頭陣地建立判定） |
 | `src/core/config.lua` | 運行期配置 |
 | `src/core/constants.lua` | 不可變常數 |
 | `src/core/saveData.lua` | 持久化狀態管理 |

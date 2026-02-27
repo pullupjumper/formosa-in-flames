@@ -1345,160 +1345,142 @@ config.c.amphibOps.operations = {
   {
     name = "Taoyuan",
     sagNames = { "SAG 173", "SAG 155" },
-    names = {
-      "Air Assault Bn",
-      "Combined Arms Bn",
-      "5th Landing Ship Div"
-    },
+    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
     from = {
       areas = { {
-        startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_TAOYUAN } },
-        heading = config.c.amphibOps.formationSettings.heading.north
+        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
+        heading = config.c.amphibOps.formationSettings.heading.north,
+        shipCounts = {
+          type075 = 2,
+          type071 = 4,
+          type076 = 1,
+          type072iii = 7,
+          type072a = 8,
+          type073a = 7,
+          ferry = 4,
+          roro = 2,
+          barge = 1,
+        }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_D,
-      num = {
-        type075 = 2,
-        type071 = 4,
-        type076 = 1,
-        type072iii = 7,
-        type072a = 8,
-        type073a = 7,
-        ferry = 4,
-        roro = 2,
-        barge = 1,
-      }
     },
     to = {
-      areas = {
-        {
-          startingPoints = {
-            type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_TAOYUAN },
-            type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_TAOYUAN },
-          },
-          heading = config.c.amphibOps.formationSettings.heading.west,
-          num = {
-            type075 = 2,
-            type071 = 4,
-            type076 = 1,
-            type072iii = 7,
-            type072a = 8,
-            type073a = 7,
-            type071InLSTArea = 0,
-            ferry = 4,
-            roro = 2,
-            barge = 1,
-          }
+      areas = { {
+        startingPoints = {
+          type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
+          type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
         },
-      }
+        heading = config.c.amphibOps.formationSettings.heading.west,
+        shipCounts = {
+          type075 = 2,
+          type071 = 4,
+          type076 = 1,
+          type072iii = 7,
+          type072a = 8,
+          type073a = 7,
+          type071InLSTArea = 0,
+          ferry = 4,
+          roro = 2,
+          barge = 1,
+        }
+      }, }
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    numOfContactsInAirLandingZone = 3
+    contactThreshold = 3
   },
   {
     name = "Sishu",
     sagNames = { "SAG 154", "SAG 175" },
-    names = {
-      "Air Assault Bn",
-      "Combined Arms Bn",
-      "5th Landing Ship Div"
-    },
+    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
     from = {
       areas = { {
-        startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_SISHU } },
-        heading = config.c.amphibOps.formationSettings.heading.sishu
+        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
+        heading = config.c.amphibOps.formationSettings.heading.sishu,
+        shipCounts = {
+          type075 = 1,
+          type071 = 3,
+          type076 = 0,
+          type072iii = 2,
+          type072a = 4,
+          type073a = 2,
+          type071InLSTArea = 0,
+          ferry = 4,
+          roro = 2,
+          barge = 1,
+        }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_F,
-      num = {
-        type075 = 1,
-        type071 = 3,
-        type076 = 0,
-        type072iii = 2,
-        type072a = 4,
-        type073a = 2,
-        type071InLSTArea = 0,
-        ferry = 4,
-        roro = 2,
-        barge = 1,
-      }
     },
     to = {
-      areas = {
-        {
-          startingPoints = {
-            type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_SISHU },
-            type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_SISHU },
-          },
-          heading = config.c.amphibOps.formationSettings.heading.sishu,
-          num = {
-            type075 = 1,
-            type071 = 3,
-            type076 = 0,
-            type072iii = 2,
-            type072a = 4,
-            type073a = 2,
-            type071InLSTArea = 0,
-            ferry = 4,
-            roro = 2,
-            barge = 1,
-          }
+      areas = { {
+        startingPoints = {
+          type075 = constants.AREAS.DESTINATION_075_SISHU,
+          type071 = constants.AREAS.DESTINATION_071_SISHU,
         },
-      }
+        heading = config.c.amphibOps.formationSettings.heading.sishu,
+        shipCounts = {
+          type075 = 1,
+          type071 = 3,
+          type076 = 0,
+          type072iii = 2,
+          type072a = 4,
+          type073a = 2,
+          type071InLSTArea = 0,
+          ferry = 4,
+          roro = 2,
+          barge = 1,
+        }
+      }, }
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    numOfContactsInAirLandingZone = 3
+    contactThreshold = 3
   },
   {
     name = "Penghu",
     sagNames = { "SAG 167" },
-    names = {
-      "Air Assault Bn",
-      "Combined Arms Bn",
-      "5th Landing Ship Div"
-    },
+    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
     from = {
       areas = { {
-        startingPoints = { type075 = { sideName = "China", area = constants.AREAS.STARTING_POINT_075_PENGHU } },
-        heading = config.c.amphibOps.formationSettings.heading.penghu
+        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
+        heading = config.c.amphibOps.formationSettings.heading.penghu,
+        shipCounts = {
+          type075 = 1,
+          type071 = 1,
+          type076 = 0,
+          type072iii = 2,
+          type072a = 3,
+          type073a = 1,
+          type071InLSTArea = 0,
+          ferry = 0,
+          roro = 0,
+          barge = 0,
+        }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_E,
-      num = {
-        type075 = 1,
-        type071 = 1,
-        type076 = 0,
-        type072iii = 2,
-        type072a = 3,
-        type073a = 1,
-        type071InLSTArea = 0,
-        ferry = 0,
-        roro = 0,
-        barge = 0,
-      }
     },
     to = {
-      areas = {
-        {
-          startingPoints = {
-            type075 = { sideName = "China", area = constants.AREAS.DESTINATION_075_PENGHU },
-            type071 = { sideName = "China", area = constants.AREAS.DESTINATION_071_PENGHU },
-          },
-          heading = config.c.amphibOps.formationSettings.heading.penghu,
-          num = {
-            type075 = 1,
-            type071 = 1,
-            type076 = 0,
-            type072iii = 2,
-            type072a = 3,
-            type073a = 1,
-            type071InLSTArea = 0,
-            ferry = 0,
-            roro = 0,
-            barge = 0,
-          }
+      areas = { {
+        startingPoints = {
+          type075 = constants.AREAS.DESTINATION_075_PENGHU,
+          type071 = constants.AREAS.DESTINATION_071_PENGHU,
         },
-      }
+        heading = config.c.amphibOps.formationSettings.heading.penghu,
+        shipCounts = {
+          type075 = 1,
+          type071 = 1,
+          type076 = 0,
+          type072iii = 2,
+          type072a = 3,
+          type073a = 1,
+          type071InLSTArea = 0,
+          ferry = 0,
+          roro = 0,
+          barge = 0,
+        }
+      }, }
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    numOfContactsInAirLandingZone = 3
+    contactThreshold = 3
   },
 }
 config.c.amphibOps.operationalZones = {
@@ -1508,7 +1490,7 @@ config.c.amphibOps.operationalZones = {
     baseGUID = constants.BASES.PINGTAN_PORT,
     anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
-    area = constants.AREAS.CAS_E,
+    casArea = constants.AREAS.CAS_E,
     offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
     boat = {
       dbid = constants.PLATFORMS.TYPE_726A,
@@ -1645,7 +1627,7 @@ config.c.amphibOps.operationalZones = {
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
-    area = constants.AREAS.CAS_S,
+    casArea = constants.AREAS.CAS_S,
     offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
     boat = {
       dbid = constants.PLATFORMS.TYPE_726A,
@@ -1782,7 +1764,7 @@ config.c.amphibOps.operationalZones = {
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
     lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
-    area = constants.AREAS.CAS_PENGHU,
+    casArea = constants.AREAS.CAS_PENGHU,
     offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
     boat = {
       dbid = constants.PLATFORMS.TYPE_726A,
@@ -3951,6 +3933,9 @@ config.t.ground.ascm.firingUnits = {
 }
 
 
+-- ============================================================================
+-- SAM (Taiwan)
+-- ============================================================================
 
 config.t.ground.sam = {}
 config.t.ground.sam.wpnDefault = 54

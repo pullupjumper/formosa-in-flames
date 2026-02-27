@@ -646,7 +646,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field anchorageArea string[] LHD/LPD anchorage area reference points
 ---@field lstAnchorageArea string[] LST anchorage area reference points
 ---@field arrivalThreshold integer Minimum unit count to consider fleet arrived
----@field area string[] General operational area reference points
+---@field casArea string[] CAS area reference points
 ---@field offloadArea string[] Vehicle offload area reference points
 ---@field boat SBJ__BoatMissionDescriptor Landing craft configuration
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
@@ -668,11 +668,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field acvTransitDistance number Amphibious combat vehicle transit distance
 ---@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
 
----Ship type starting point configuration
----@class SBJ__ShipTypeStartPoint: table
----@field sideName string Side name (e.g., "China", "Taiwan")
----@field area string[] Area reference points array
-
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
 ---@class SBJ__FleetComposition: table
@@ -687,17 +682,20 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
 
----Amphibious operation area descriptor
----@class SBJ__AmphibiousAreaDescriptor: table
----@field startingPoints table<string, SBJ__ShipTypeStartPoint> Starting points for each ship type
+---Operation area descriptor for amphibious operation origin or destination
+---@class SBJ__OperationAreaDescriptor: table
+---@field startingPoints { type075: string[], type071?: string[] } Starting point reference points (type071 used at destination only)
 ---@field heading SBJ__FormationHeading Formation heading angle
----@field num? SBJ__FleetComposition Ship quantity configuration (optional, only in destination)
+---@field shipCounts SBJ__FleetComposition Ship quantity configuration
 
----Amphibious operation departure/destination descriptor
----@class SBJ__AmphibiousLocationDescriptor: table
----@field areas SBJ__AmphibiousAreaDescriptor[] Array of area descriptors
----@field stagingArea? string[] Staging area reference (optional, only in departure)
----@field num? SBJ__FleetComposition Ship quantity configuration (optional, only in departure)
+---Departure descriptor for amphibious operation origin
+---@class SBJ__DepartureDescriptor: table
+---@field areas SBJ__OperationAreaDescriptor[] Array of departure area descriptors
+---@field stagingArea string[] Staging area reference points
+
+---Destination descriptor for amphibious operation target
+---@class SBJ__DestinationDescriptor: table
+---@field areas SBJ__OperationAreaDescriptor[] Array of destination area descriptors
 
 ---Amphibious operation descriptor
 ---Comprehensive configuration for one complete amphibious landing operation
@@ -707,10 +705,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string Operation name (e.g., "Taoyuan", "Sishu", "Penghu")
 ---@field names string[] Unit name array
 ---@field sagNames string[] Surface Action Group names assigned to this operation
----@field from SBJ__AmphibiousLocationDescriptor Departure configuration
----@field to SBJ__AmphibiousLocationDescriptor Destination configuration
+---@field from SBJ__DepartureDescriptor Departure configuration
+---@field to SBJ__DestinationDescriptor Destination configuration
 ---@field airLandingZone string[] Air landing zone reference area
----@field numOfContactsInAirLandingZone integer Number of contacts required in air landing zone
+---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including

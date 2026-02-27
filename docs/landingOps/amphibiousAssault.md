@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：協調 ACV 釋放、LST 航至泛水編波區航向設定、任務時序設定與空降區威脅評估
+**職責**：協調 ACV 釋放、LST 航至泛水編波區航向設定、任務時序設定與空/機降區威脅評估
 
 ---
 
@@ -14,13 +14,13 @@ amphibiousAssault 負責登陸作戰的第三階段——兩棲突擊。系統�
 2. **LST 航向設定**：驅動在錨泊區的 LST 向泛水編波區前進，同時引導 SAG 至兩棲載具集結區
 3. **ACV 釋放**：從登陸艦刪除貨物並生成兩棲戰車單位，以編隊形式向灘頭推進
 
-系統透過 `landingCheck.lua` 的狀態機驅動，在空降區威脅清除（敵方地面接觸數低於門檻）或等待超時後自動發起突擊。
+系統透過 `landingCheck.lua` 的狀態機驅動，在空/機降區威脅清除（敵方地面接觸目標數低於門檻）或等待超時後自動發起突擊。
 
 ---
 
 ## ACV 發射機制
 
-ACV（兩棲戰鬥車）發射是兩棲突擊的核心。系統從 LST/渡輪刪除貨物並在船側生成兩棲戰鬥車單位：
+ACV（兩棲步兵戰鬥車）發射是兩棲突擊的核心。系統從 LST/渡輪刪除貨物並在船側生成兩棲戰鬥車單位：
 
 ```mermaid
 flowchart TD
@@ -31,7 +31,7 @@ flowchart TD
     SPAWN["spawnSingleACV<br>生成 ZBD-05 / ZTD-05"]
     DOCTRINE["設定 Doctrine<br>關閉自動迴避"]
     COURSE["設定航向<br>全速前進"]
-    COUNT["回傳發射數量"]
+    COUNT["回傳釋放數量"]
 
     START --> CHECK
     CHECK -->|否| RETURN_NIL["回傳 nil"]
@@ -106,11 +106,11 @@ flowchart TD
 
 ## 空降區威脅評估
 
-`countContactsInArea` 計算空降區內的目標數量：
+`countContactsInArea` 計算空/機降區內的目標數量：
 
 - 篩選條件：`contact.typed == FACILITY_MOBILE`（地面可移動設施）
 - 結果用於 `landingCheck.lua` 判斷是否可發起突擊
-- 當接觸數 < `operation.numOfContactsInAirLandingZone` 或等待超時，觸發突擊
+- 當接觸數 < `operation.contactThreshold` 或等待超時，觸發突擊
 
 ---
 
@@ -121,7 +121,7 @@ flowchart TD
 | `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
 | `setCoursesForLSTs(zone, units, operation, sagLookup)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
 | `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
-| `launchACV(params)` | 從登陸艦釋放兩棲戰鬥車 |
+| `launchACV(params)` | 從登陸艦釋放兩棲步兵戰鬥車 |
 | `isFerryOrLST(ship)` | 判斷艦船是否為渡輪或 LST |
 | `getShipZone(amphibOpsConfig, ship)` | 取得艦船所在的作戰區 |
 

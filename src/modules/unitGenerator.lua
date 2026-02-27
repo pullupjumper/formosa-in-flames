@@ -180,7 +180,7 @@ end
 
 ---Create ships by type
 ---@param position CMO__Location Position
----@param areaDescriptor SBJ__AmphibiousAreaDescriptor Area configuration
+---@param areaDescriptor SBJ__OperationAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
 ---@param shipSettings SBJ__AmphibiousFormationSettings Amphibious layout configuration
 ---@param cargoList table<string, SBJ__CargoDescriptor[]> Cargo list
@@ -233,7 +233,7 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
     initialLocation = position,
     bearing = areaDescriptor.heading.horizontal,
     distance = shipSettings.horizontalDistance,
-    num = descriptor.from.num[shipType]
+    num = areaDescriptor.shipCounts[shipType]
   }
 
   local unitDescriptor = {
@@ -669,7 +669,9 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
 
   for _, descriptor in ipairs(descriptors) do
     for _, areaDescriptor in ipairs(descriptor.from.areas) do
-      local firstRp075 = GameApi.ScenEdit_GetReferencePoints(areaDescriptor.startingPoints.type075)[1]
+      local firstRp075 = GameApi.ScenEdit_GetReferencePoints({
+        side = constants.SIDES.ENEMY, area = areaDescriptor.startingPoints.type075
+      })[1]
 
       -- Calculate starting positions for various ships
       local positions = calculateShipPositions(firstRp075, areaDescriptor.heading.vertical, layoutConfig
