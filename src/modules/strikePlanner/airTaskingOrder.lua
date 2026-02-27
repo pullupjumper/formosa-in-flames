@@ -175,13 +175,13 @@ local function createMission(packageData, role)
       mission.OnDeactivateRTB = true
 
       if missionRole.startTime then
-        mission.TakeOffTime = missionRole.startTime
+        mission.TakeOffTime = missionRole.startTime .. "!yyyy-MM-dd H:mm:ss"
       end
 
-      mission.endtime = missionRole.endTime
+      mission.endtime = missionRole.endTime .. "!yyyy-MM-dd H:mm:ss"
 
       if missionRole.timeOnStation then
-        mission.TimeOnTargetStation = missionRole.timeOnStation
+        mission.TimeOnTargetStation = missionRole.timeOnStation .. "!yyyy-MM-dd H:mm:ss"
       end
 
       if missionRole.missionCreationParams.type == "strike" then

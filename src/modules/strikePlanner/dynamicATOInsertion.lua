@@ -461,6 +461,8 @@ local function buildATOWave(waveTemplate, waveName)
   }
 
   local previousPackage = nil
+  local allRoles = { "striker", "escort", "wildWeasel", "jammer", "tanker", "reconUAV" }
+
   for packageIndex, packageData in ipairs(waveTemplate.packages) do
     local newPackage = createPackageWithTiming(
       packageData,
@@ -469,6 +471,26 @@ local function buildATOWave(waveTemplate, waveName)
       waveTemplate.strikeInterval or 0
     )
     table.insert(newWave.packages, newPackage)
+
+    -- Log each role's startTime and endTime
+    local timingLines = {}
+    for _, role in ipairs(allRoles) do
+      local roleData = newPackage[role]
+      if roleData then
+        table.insert(timingLines, string.format("    %s: start=%s, end=%s",
+          role,
+          roleData.startTime or "N/A",
+          roleData.endTime or "N/A"
+        ))
+      end
+    end
+    if #timingLines > 0 then
+      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+        "Wave [%s] Package #%d timing:\n%s",
+        waveName, packageIndex, table.concat(timingLines, "\n")
+      ))
+    end
+
     previousPackage = packageData
   end
 
