@@ -20,7 +20,7 @@ config.logging = {
     integratedAirDefenseSystem = { verbose = false },
     attackManager = { verbose = false },
     unitGenerator = { verbose = false },
-    missileSystem = { verbose = false },
+    missileSystem = { verbose = true },
     score = { verbose = true },
     init = { verbose = true },
     shipMovement = { verbose = true },
