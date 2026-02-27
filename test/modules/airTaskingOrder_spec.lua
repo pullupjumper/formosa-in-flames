@@ -761,9 +761,9 @@ describe("AirTaskingOrder", function()
 
       assert.is_true(missionObj.OnDeactivateDelete)
       assert.is_true(missionObj.OnDeactivateRTB)
-      assert.are.equal("2026-02-14 06:00:00", missionObj.TakeOffTime)
-      assert.are.equal("2026-02-14 08:00:00", missionObj.endtime)
-      assert.are.equal("00:30", missionObj.TimeOnTargetStation)
+      assert.are.equal("2026-02-14 06:00:00!yyyy-MM-dd H:mm:ss", missionObj.TakeOffTime)
+      assert.are.equal("2026-02-14 08:00:00!yyyy-MM-dd H:mm:ss", missionObj.endtime)
+      assert.are.equal("00:30!yyyy-MM-dd H:mm:ss", missionObj.TimeOnTargetStation)
       assert.stub(stubDoctrine).was.called(1)
     end)
 

@@ -80,7 +80,7 @@ local function setMissionStartTime(mission, currentTime)
     return "FAIL", string.format("Mission not found: %s", mission.name)
   end
 
-  m.starttime = startTime
+  m.starttime = startTime .. "!yyyy-MM-dd H:mm:ss"
   return "OK", string.format("%s → %s", mission.name, startTime)
 end
 
