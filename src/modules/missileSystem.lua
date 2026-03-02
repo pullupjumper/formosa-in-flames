@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 
 local MissileSystem = {}
 
@@ -258,6 +259,54 @@ local function moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
     areaName = resupplyUnitCtx.operationalArea.name,
     useLastCourse = true
   })
+end
+
+---comment
+---@param building CMO__Unit
+---@param firingUnitGUID string
+---@return boolean
+local function isHideSiteOccupied(building, firingUnitGUID)
+  if not building.cargo or not building.cargo[1] or not building.cargo[1].cargo then
+    return false
+  end
+
+  for _, item in ipairs(building.cargo[1].cargo) do
+    if item.guid == firingUnitGUID then
+      return true
+    end
+  end
+
+  return false
+end
+
+---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
+---@param firingUnit CMO__Unit Firing unit group
+function MissileSystem.moveFromHideArea(firingUnitCtx, firingUnit)
+  local group = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
+  local filteredUnits = GameApi.VP_GetSide({ name = firingUnit.side }):unitsInArea({
+    Area = firingUnitCtx.operationalArea.mask.area,
+    TargetFilter = {
+      TargetType = "Facility",
+      SpecificUnitClass = constants.PLATFORMS.BUILDING,
+      TargetSide = firingUnit.side
+    }
+  })
+
+  if not filteredUnits then
+    return
+  end
+
+  for _, u in ipairs(filteredUnits) do
+    local building = GameApi.ScenEdit_GetUnit(u.guid)
+
+    if building then
+      for _, firingUnitGUID in ipairs(group) do
+        if isHideSiteOccupied(building, firingUnitGUID) then
+          GameApi.ScenEdit_UnloadCargo(building.guid, firingUnitGUID)
+        end
+      end
+    end
+  end
 end
 
 ---Command firing unit to move to firing point (FP)
@@ -1110,6 +1159,34 @@ function MissileSystem.isRepositioning(firingUnitCtx, isAuto)
   end
 
   return true
+end
+
+---comment
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
+function MissileSystem.hideFiringUnit(firingUnitCtx, firingUnit)
+  local filteredUnits = GameApi.VP_GetSide({ name = firingUnit.side }):unitsInArea({
+    Area = firingUnitCtx.operationalArea.mask.area,
+    TargetFilter = {
+      TargetType = "Facility",
+      SpecificUnitClass = constants.PLATFORMS.BUILDING,
+      TargetSide = firingUnit.side
+    }
+  })
+
+  if not filteredUnits then
+    return
+  end
+
+  local idx = math.random(#filteredUnits)
+  local randomUnit = filteredUnits[idx]
+  local building = GameApi.ScenEdit_GetUnit(randomUnit.guid)
+
+  if not building then
+    return
+  end
+
+  AmphibiousLogistics.loadCargo(building, firingUnitCtx, firingUnit.side)
 end
 
 ---Check if unit/group ammunition is below specified percentage

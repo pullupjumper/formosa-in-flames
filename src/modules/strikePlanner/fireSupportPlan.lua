@@ -58,6 +58,7 @@ local function deploySingleFiringUnit(saveData, task, firingUnit)
   local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
 
   if isFiringUnitReady(firingUnitCtx, actualUnit) then
+    MissileSystem.moveFromHideArea(firingUnitCtx, actualUnit)
     MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)
   end
 

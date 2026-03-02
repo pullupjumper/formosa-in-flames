@@ -675,6 +675,13 @@ function realApi.ScenEdit_UpdateUnitCargo(opts)
   return ScenEdit_UpdateUnitCargo(opts)
 end
 
+---@param fromUnit CMO__UnitSelector|string The unit with cargo
+---@param cargoList string|table List of cargo to unload: table of {guids}, or { { number, DBID}}
+---@return boolean @ true if Successful or false if not
+function realApi.ScenEdit_UnloadCargo(fromUnit, cargoList)
+  return ScenEdit_UnloadCargo(fromUnit, cargoList)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

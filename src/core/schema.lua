@@ -789,6 +789,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field HA SBJ__Position[] Hide Areas
 ---@field AHA SBJ__Position[] Ammo Holding Areas
 ---@field RL SBJ__Position[] Reload Points
+---@field mask {area: string[]}
 ---@field name? string Area name (optional)
 ---@field uShapeVertices? CMO__Location[] U shape vertices (optional)
 
