@@ -668,6 +668,13 @@ function realApi.ScenEdit_ClearAllMagazines(opts)
   return ScenEdit_ClearAllMagazines(opts)
 end
 
+---comment
+---@param opts CMO__UpdateUnitCargo
+---@return CMO__Unit|nil
+function realApi.ScenEdit_UpdateUnitCargo(opts)
+  return ScenEdit_UpdateUnitCargo(opts)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
