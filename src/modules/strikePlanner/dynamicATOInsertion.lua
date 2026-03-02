@@ -4,6 +4,7 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local constants = require("src.core.constants")
 
 local DynamicATOInsertion = {}
 local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
@@ -209,7 +210,7 @@ local function getPatrolZonePoint(packageData)
     return nil
   end
 
-  local point = GameApi.ScenEdit_GetReferencePoint({ side = "China", name = patrolZone[1] })
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = constants.SIDES.ENEMY, name = patrolZone[1] })
   if not point then
     return nil
   end

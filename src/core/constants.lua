@@ -1005,5 +1005,6 @@ constants.AMPHIBIOUS_PHASES = {
 }
 
 constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
+constants.TIME_FORMATS = "!yyyy-MM-dd HH:mm:ss"
 
 return constants
