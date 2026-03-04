@@ -823,6 +823,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
 ---@field dbid number The firing unit database ID
+---@field mountDescriptors? {dbid:number, mountCount:integer}[]
 
 ---Ammunition context data structure
 ---Tracks ammunition unit status and remaining ammunition counts
@@ -870,6 +871,31 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field holdPosition boolean? Whether to hold position (default: true)
 ---@field wcs integer? Weapon control status: 1=Free, 2=Hold (optional)
 ---@field formation CMO__FormationGroup? Formation settings (optional)
+
+---Movement options for commanding units to a randomly selected position
+---@class SBJ__MoveToPositionOpts: table
+---@field unitName string Unit name (for messages)
+---@field battery CMO__Unit Unit group
+---@field positions SBJ__Position[] Position array
+---@field positionType string Position type (RL/HA/AHA/FP)
+---@field areaName string Operational area name (for messages)
+---@field wcs integer? Weapon control status (optional)
+---@field useLastCourse boolean? Whether to use the last waypoint in course
+
+---Structured result from a reload cycle action
+---@class SBJ__ReloadCycleResult: table
+---@field tag string Result tag (e.g. "OK")
+---@field unitName string Unit name
+---@field action string Action description
+
+---Options for adding a unit-enters-area trigger to an event
+---@class SBJ__AddTriggerOpts: table
+---@field positionType string Position type (RL/HA/FP)
+---@field position SBJ__Position Position configuration
+---@field index integer Position index within operational area
+---@field operationalArea SBJ__OperationalArea Operational area configuration
+---@field enemySide string Enemy side name for target filter
+---@field sideName string Owner side name
 
 
 -- ============================================================================

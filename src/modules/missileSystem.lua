@@ -13,8 +13,6 @@ local MissileSystem = {}
 
 local MISSILE_SYSTEM_TAG = "missileSystem"
 
-local UNIT_TYPE_FACILITY = "Facility"
-
 ---@type table<number, true>
 local SAM_DBIDS = {
   [constants.PLATFORMS.PAC3] = true,
@@ -42,10 +40,6 @@ local ZONE_COLORS = {
   MASK = "4dff6b6b",
   DEFAULT = "4d8b5cf6"
 }
-
-local TK3_MOUNT_DBID = 45
-local TK3_MOUNT_COUNT = 6
-local TK3_SENSOR_MOUNT_DBID = 1630
 
 -- ============================================================================
 -- Unit Properties and Movement Helpers
@@ -141,15 +135,6 @@ end
 -- ============================================================================
 -- Movement Operations
 -- ============================================================================
-
----@class SBJ__MoveToPositionOpts
----@field unitName string Unit name (for messages)
----@field battery CMO__Unit Unit group
----@field positions SBJ__Position[] Position array
----@field positionType string Position type (RL/HA/AHA/FP)
----@field areaName string Operational area name (for messages)
----@field wcs integer? Weapon control status (optional)
----@field useLastCourse boolean? Whether to use the last waypoint in course
 
 ---Move units to a randomly selected position
 ---@param opts SBJ__MoveToPositionOpts Movement options
@@ -261,17 +246,17 @@ local function moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
   })
 end
 
----comment
----@param building CMO__Unit
----@param firingUnitGUID string
----@return boolean
-local function isHideSiteOccupied(building, firingUnitGUID)
+---Check if a unit is already loaded in the building's cargo
+---@param building CMO__Unit Building to check for cargo
+---@param unitGUID string GUID of the unit to find in cargo
+---@return boolean # Whether the unit is loaded in the building
+local function isHideSiteOccupied(building, unitGUID)
   if not building.cargo or not building.cargo[1] or not building.cargo[1].cargo then
     return false
   end
 
   for _, item in ipairs(building.cargo[1].cargo) do
-    if item.guid == firingUnitGUID then
+    if item.guid == unitGUID then
       return true
     end
   end
@@ -279,34 +264,72 @@ local function isHideSiteOccupied(building, firingUnitGUID)
   return false
 end
 
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
-function MissileSystem.moveFromHideArea(firingUnitCtx, firingUnit)
-  local group = firingUnit.group and firingUnit.group.unitlist or { firingUnit.guid }
-  local filteredUnits = GameApi.VP_GetSide({ name = firingUnit.side }):unitsInArea({
-    Area = firingUnitCtx.operationalArea.mask.area,
+---Find buildings within the mask area for TEL concealment
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
+---@param sideName string Side name
+---@return CMO__Unit[]|nil # Array of building units or nil
+local function findBuildingsInMaskArea(unitCtx, sideName)
+  return GameApi.VP_GetSide({ name = sideName }):unitsInArea({
+    Area = unitCtx.operationalArea.mask.area,
     TargetFilter = {
-      TargetType = "Facility",
+      TargetType = constants.UNIT_TYPES.FACILITY,
+      TargetSubType = constants.FIXED_FACILITY_CATEGORIES.BUILDING_SURFACE,
       SpecificUnitClass = constants.PLATFORMS.BUILDING,
-      TargetSide = firingUnit.side
+      TargetSide = sideName
     }
   })
+end
 
-  if not filteredUnits then
-    return
+---Unload firing unit group from hide area buildings
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
+---@param unit CMO__Unit Firing unit to unload
+---@return boolean success Whether unload was performed
+---@return string? errorMsg Error message if failed
+local function moveFromHideArea(unitCtx, unit)
+  local group = getGroupUnits(unit)
+  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
+
+  if not buildings then
+    return false, "No buildings found in mask area"
   end
 
-  for _, u in ipairs(filteredUnits) do
+  for _, u in ipairs(buildings) do
     local building = GameApi.ScenEdit_GetUnit(u.guid)
 
     if building then
       for _, firingUnitGUID in ipairs(group) do
         if isHideSiteOccupied(building, firingUnitGUID) then
-          GameApi.ScenEdit_UnloadCargo(building.guid, firingUnitGUID)
+          GameApi.ScenEdit_UnloadCargo(building.guid, { firingUnitGUID })
         end
       end
     end
   end
+
+  return true, nil
+end
+
+---Load firing unit into a random building within mask area
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
+---@param unit CMO__Unit Firing unit to hide
+---@return boolean success Whether hide was performed
+---@return string? errorMsg Error message if failed
+local function hideUnit(unitCtx, unit)
+  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
+
+  if not buildings then
+    return false, "No buildings found in mask area"
+  end
+
+  local idx = math.random(#buildings)
+  local randomUnit = buildings[idx]
+  local building = GameApi.ScenEdit_GetUnit(randomUnit.guid)
+
+  if not building then
+    return false, string.format("Building %s not found", randomUnit.guid)
+  end
+
+  AmphibiousLogistics.loadCargo(building, unitCtx, unit.side)
+  return true, nil
 end
 
 ---Command firing unit to move to firing point (FP)
@@ -579,13 +602,13 @@ local function isReadyToReloadResupplyUnit(resupplyUnitCtx, systemCtx, isMet)
 end
 
 ---Handle firing unit reload cycle
----Returns structured result for caller to log
+---Returns structured result for caller to format
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return string? message Result message if action was taken
+---@return SBJ__ReloadCycleResult? result Structured result if action was taken
 local function handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto, sideName)
   if isAuto and firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC then
     if isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
@@ -610,7 +633,7 @@ local function handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit,
         moveToHideArea(firingUnitCtx, firingUnit)
       end
 
-      return string.format("  [OK] Missile reload finished: %s", firingUnitCtx.name)
+      return { tag = "OK", unitName = firingUnitCtx.name, action = "Missile reload finished" }
     end
   end
 
@@ -618,12 +641,12 @@ local function handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit,
 end
 
 ---Handle resupply unit reload cycle
----Returns structured result for caller to log
+---Returns structured result for caller to format
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@param isAuto boolean Whether in automatic mode
----@return string? message Result message if action was taken
+---@return SBJ__ReloadCycleResult? result Structured result if action was taken
 local function handleResupplyUnitReloadCycle(systemCtx, resupplyUnitCtx, resupplyUnit, isAuto)
   if isAuto and resupplyUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC then
     if resupplyUnitCtx.wpnCurrent == 0 and findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
@@ -647,47 +670,47 @@ local function handleResupplyUnitReloadCycle(systemCtx, resupplyUnitCtx, resuppl
         moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
       end
 
-      return string.format("  [OK] Ammo transload finished: %s", resupplyUnitCtx.name)
+      return { tag = "OK", unitName = resupplyUnitCtx.name, action = "Ammo transload finished" }
     end
   end
 
   return nil
 end
 
----Process all firing units and collect result messages
+---Process all firing units and collect structured results
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return string[] messages Collected result messages
+---@return SBJ__ReloadCycleResult[] results Collected structured results
 local function processFiringUnits(systemCtx, isAuto, sideName)
-  local messages = {}
+  local results = {}
   for _, firingUnitCtx in pairs(systemCtx.firingUnits) do
     local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
 
     if firingUnit then
-      local msg = handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto, sideName)
-      if msg then table.insert(messages, msg) end
+      local result = handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto, sideName)
+      if result then table.insert(results, result) end
     end
   end
-  return messages
+  return results
 end
 
----Process all resupply units and collect result messages
+---Process all resupply units and collect structured results
 ---@param msContext SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return string[] messages Collected result messages
+---@return SBJ__ReloadCycleResult[] results Collected structured results
 local function processResupplyUnits(msContext, isAuto, sideName)
-  local messages = {}
+  local results = {}
   for _, resupplyUnitCtx in pairs(msContext.resupplyUnits) do
     local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
 
     if resupplyUnit then
-      local msg = handleResupplyUnitReloadCycle(msContext, resupplyUnitCtx, resupplyUnit, isAuto)
-      if msg then table.insert(messages, msg) end
+      local result = handleResupplyUnitReloadCycle(msContext, resupplyUnitCtx, resupplyUnit, isAuto)
+      if result then table.insert(results, result) end
     end
   end
-  return messages
+  return results
 end
 
 -- ============================================================================
@@ -723,31 +746,26 @@ local function buildEventAndTriggerNames(sideName, positionTypes)
 end
 
 ---Add a unit-enters-area trigger to the specified event
----@param positionType string Position type (RL/HA/FP)
----@param position SBJ__Position Position configuration
----@param index integer Position index within operational area
----@param operationalArea SBJ__OperationalArea Operational area configuration
----@param enemySide string Enemy side name for target filter
----@param sideName string Owner side name
+---@param opts SBJ__AddTriggerOpts Trigger creation options
 ---@return boolean # Whether trigger was successfully added
-local function addTriggerToEvent(positionType, position, index, operationalArea, enemySide, sideName)
-  local triggerName = string.format("(%s) Arrive in %s - %d - %s", sideName, positionType, index, operationalArea.name)
-  local zoneName = positionType .. "/" .. tostring(index) .. "/" .. operationalArea.name
-  local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.STANDARD, {
-    area = position.area,
+local function addTriggerToEvent(opts)
+  local triggerName = string.format("(%s) Arrive in %s - %d - %s", opts.sideName, opts.positionType, opts.index, opts.operationalArea.name)
+  local zoneName = opts.positionType .. "/" .. tostring(opts.index) .. "/" .. opts.operationalArea.name
+  local zone = GameApi.ScenEdit_AddZone(opts.sideName, constants.ZONE_TYPES.STANDARD, {
+    area = opts.position.area,
     description = zoneName
   })
 
   if zone then
-    local eventName = string.format("(%s) Arrive in %s", sideName, positionType)
-    zone.areacolor = getOperationalAreaColor(positionType)
-    position.area = GameUtils.convertToRPArray(zone)
+    local eventName = string.format("(%s) Arrive in %s", opts.sideName, opts.positionType)
+    zone.areacolor = getOperationalAreaColor(opts.positionType)
+    opts.position.area = GameUtils.convertToRPArray(zone)
     GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
       Mode = "add",
       type = "UnitEntersArea",
-      TargetFilter = { TargetSide = sideName },
-      Area = position.area,
+      TargetFilter = { TargetSide = opts.sideName },
+      Area = opts.position.area,
       ExitArea = false
     })
     GameApi.ScenEdit_SetEventTrigger(eventName, { mode = "add", name = triggerName })
@@ -803,7 +821,14 @@ local function createPositionTriggers(operationalArea, positionTypes, enemySide,
   for _, positionType in ipairs(positionTypes) do
     for index, position in ipairs(operationalArea[positionType]) do
       ---@cast position SBJ__Position
-      if addTriggerToEvent(positionType, position, index, operationalArea, enemySide, sideName) then
+      if addTriggerToEvent({
+        positionType = positionType,
+        position = position,
+        index = index,
+        operationalArea = operationalArea,
+        enemySide = enemySide,
+        sideName = sideName
+      }) then
         created = created + 1
       else
         failed = failed + 1
@@ -840,44 +865,6 @@ local function removeMissileSystem(descriptor, sideName)
   end
 
   return false
-end
-
----Configure custom TK3 mounts and sensors
----@param addedUnit CMO__Unit Newly created unit to configure
-local function configureCustomTK3Mounts(addedUnit)
-  for _, mount in ipairs(addedUnit.mounts) do
-    GameApi.ScenEdit_UpdateUnit({
-      guid = addedUnit.guid,
-      mode = "remove_mount",
-      dbid = mount.mount_dbid,
-      mountid = mount.mount_guid
-    })
-  end
-
-  for _ = 1, TK3_MOUNT_COUNT do
-    GameApi.ScenEdit_UpdateUnit({
-      guid = addedUnit.guid,
-      mode = "add_mount",
-      dbid = TK3_MOUNT_DBID,
-      arc_mount = constants.SENSOR_ARCS
-    })
-  end
-
-  GameApi.ScenEdit_UpdateUnit({
-    guid = addedUnit.guid,
-    mode = "add_mount",
-    dbid = TK3_SENSOR_MOUNT_DBID,
-    arc_mount = constants.SENSOR_ARCS,
-  })
-
-  GameApi.ScenEdit_UpdateUnit({
-    guid = addedUnit.guid,
-    mode = "update_sensor_arc",
-    dbid = addedUnit.sensors[2].sensor_dbid,
-    sensorid = addedUnit.sensors[2].sensor_guid,
-    arc_detect = constants.SENSOR_ARCS,
-    arc_track = constants.SENSOR_ARCS
-  })
 end
 
 ---Remove unwanted weapons and redistribute ammo for desired weapon types
@@ -959,15 +946,24 @@ local function addFiringUnit(systemCfg, descriptor, sideName)
       side = sideName,
       unitname = name,
       dbid = descriptor.dbid,
-      type = UNIT_TYPE_FACILITY,
+      type = constants.UNIT_TYPES.FACILITY,
       group = expected > 1 and descriptor.name or nil,
       latitude = haPosition.course[size].latitude,
       longitude = haPosition.course[size].longitude
     })
 
     if addedUnit then
-      if descriptor.dbid == constants.PLATFORMS.CUSTOMED_TK3 then
-        configureCustomTK3Mounts(addedUnit)
+      if descriptor.mountDescriptors then
+        for _, desc in ipairs(descriptor.mountDescriptors) do
+          for _ = 1, desc.mountCount do
+            GameApi.ScenEdit_UpdateUnit({
+              guid = addedUnit.guid,
+              mode = "add_mount",
+              dbid = desc.dbid,
+              arc_mount = constants.SENSOR_ARCS
+            })
+          end
+        end
       end
 
       cleanupAndRedistributeWeapons(addedUnit, normalizeWeaponDBIDs(descriptor.weaponDBID), sideName)
@@ -1009,7 +1005,7 @@ local function addResupplyUnit(descriptor, sideName)
       side = sideName,
       unitname = name,
       dbid = constants.PLATFORMS.AMMO_TRUCK,
-      type = UNIT_TYPE_FACILITY,
+      type = constants.UNIT_TYPES.FACILITY,
       group = expected > 1 and descriptor.name or nil,
       latitude = descriptor.operationalArea.RL[1].course[size].latitude,
       longitude = descriptor.operationalArea.RL[1].course[size].longitude
@@ -1051,7 +1047,7 @@ local function addAmmunition(systemCfg, descriptor, sideName)
       side = sideName,
       unitname = descriptor.name,
       dbid = constants.PLATFORMS.AMMO,
-      type = UNIT_TYPE_FACILITY,
+      type = constants.UNIT_TYPES.FACILITY,
       latitude = resupplyUnitDescriptor.operationalArea.AHA[1].course[size].latitude,
       longitude = resupplyUnitDescriptor.operationalArea.AHA[1].course[size].longitude
     })
@@ -1161,32 +1157,22 @@ function MissileSystem.isRepositioning(firingUnitCtx, isAuto)
   return true
 end
 
----comment
----@param firingUnitCtx SBJ__FiringUnitContext
----@param firingUnit CMO__Unit
-function MissileSystem.hideFiringUnit(firingUnitCtx, firingUnit)
-  local filteredUnits = GameApi.VP_GetSide({ name = firingUnit.side }):unitsInArea({
-    Area = firingUnitCtx.operationalArea.mask.area,
-    TargetFilter = {
-      TargetType = "Facility",
-      SpecificUnitClass = constants.PLATFORMS.BUILDING,
-      TargetSide = firingUnit.side
-    }
-  })
+---Unload firing unit group from hide area buildings
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
+---@param unit CMO__Unit Firing unit to unload
+---@return boolean success Whether unload was performed
+---@return string? errorMsg Error message if failed
+function MissileSystem.moveFromHideArea(unitCtx, unit)
+  return moveFromHideArea(unitCtx, unit)
+end
 
-  if not filteredUnits then
-    return
-  end
-
-  local idx = math.random(#filteredUnits)
-  local randomUnit = filteredUnits[idx]
-  local building = GameApi.ScenEdit_GetUnit(randomUnit.guid)
-
-  if not building then
-    return
-  end
-
-  AmphibiousLogistics.loadCargo(building, firingUnitCtx, firingUnit.side)
+---Load firing unit into a random building within mask area
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
+---@param unit CMO__Unit Firing unit to hide
+---@return boolean success Whether hide was performed
+---@return string? errorMsg Error message if failed
+function MissileSystem.hideUnit(unitCtx, unit)
+  return hideUnit(unitCtx, unit)
 end
 
 ---Check if unit/group ammunition is below specified percentage
@@ -1223,17 +1209,21 @@ end
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
 function MissileSystem.checkMissileSystemState(systemCtx, isAuto, sideName)
-  local firingMessages = processFiringUnits(systemCtx, isAuto, sideName)
-  local resupplyMessages = processResupplyUnits(systemCtx, isAuto, sideName)
+  local firingResults = processFiringUnits(systemCtx, isAuto, sideName)
+  local resupplyResults = processResupplyUnits(systemCtx, isAuto, sideName)
 
-  local allMessages = {}
-  for _, msg in ipairs(firingMessages) do table.insert(allMessages, msg) end
-  for _, msg in ipairs(resupplyMessages) do table.insert(allMessages, msg) end
+  local allResults = {}
+  for _, r in ipairs(firingResults) do table.insert(allResults, r) end
+  for _, r in ipairs(resupplyResults) do table.insert(allResults, r) end
 
-  if #allMessages > 0 then
+  if #allResults > 0 then
+    local lines = {}
+    for _, r in ipairs(allResults) do
+      table.insert(lines, string.format("  [%s] %s: %s", r.tag, r.action, r.unitName))
+    end
     Logger.log(MISSILE_SYSTEM_TAG, string.format(
       "Reload cycle completed: %d events\n%s",
-      #allMessages, table.concat(allMessages, "\n")
+      #allResults, table.concat(lines, "\n")
     ))
   end
 end

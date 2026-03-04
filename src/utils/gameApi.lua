@@ -380,6 +380,7 @@ end
 
 ---Get current score for a side
 ---@param side string Side name
+---@return number # Current score value
 function realApi.ScenEdit_GetScore(side)
   return ScenEdit_GetScore(side)
 end
@@ -668,16 +669,17 @@ function realApi.ScenEdit_ClearAllMagazines(opts)
   return ScenEdit_ClearAllMagazines(opts)
 end
 
----comment
----@param opts CMO__UpdateUnitCargo
----@return CMO__Unit|nil
+---Update unit cargo contents
+---@param opts CMO__UpdateUnitCargo Cargo update parameters
+---@return CMO__Unit|nil # Updated unit object
 function realApi.ScenEdit_UpdateUnitCargo(opts)
   return ScenEdit_UpdateUnitCargo(opts)
 end
 
+---Unload cargo from a unit
 ---@param fromUnit CMO__UnitSelector|string The unit with cargo
----@param cargoList string|table List of cargo to unload: table of {guids}, or { { number, DBID}}
----@return boolean @ true if Successful or false if not
+---@param cargoList string[]|number[][] List of cargo to unload: table of {guids}, or { { number, DBID}}
+---@return boolean #True if Successful or false if not
 function realApi.ScenEdit_UnloadCargo(fromUnit, cargoList)
   return ScenEdit_UnloadCargo(fromUnit, cargoList)
 end

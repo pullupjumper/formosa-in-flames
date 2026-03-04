@@ -313,6 +313,8 @@ constants.PLATFORMS = {
   LT2000 = 2251,
   HIMARS = 2446,
   BUILDING = 448,
+  CUSTOMED_SSM = 3727,
+  CUSTOMED_SAM = 2988,
 }
 
 constants.SENSORS = {
@@ -422,14 +424,14 @@ constants.WEAPONS = {
 }
 
 constants.UNIT_TYPES = {
-  AIRCRAFT = "1",
-  SHIP = "2",
-  SUBMARINE = "3",
-  FACILITY = "4",
-  AIMPOINT = "5",
-  WEAPON = "6",
-  SATELLITE = "7",
-  GROUND_UNIT = "8"
+  AIRCRAFT = "Aircraft",
+  SHIP = "Ship",
+  SUBMARINE = "Submarine",
+  FACILITY = "Facility",
+  AIMPOINT = "AimPoint",
+  WEAPON = "Weapon",
+  SATELLITE = "Satellite",
+  GROUND_UNIT = "GroundUnit"
 }
 
 constants.AIRCRAFT_CATEGORIES = {
@@ -1038,5 +1040,15 @@ constants.AMPHIBIOUS_PHASES = {
 
 constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 constants.TIME_FORMATS = "!yyyy-MM-dd HH:mm:ss"
+constants.MOUNT_DESCRIPTORS = {
+  CUSTOMED_TK3 = { { dbid = 1630, mountCount = 1 }, { dbid = 45, mountCount = 6 } },
+  HF2E = { { dbid = 2782, mountCount = 2 } },
+  CSS5_MOD5 = { { dbid = 1858, mountCount = 4 } },
+  CSS11_MOD1 = { { dbid = 4274, mountCount = 4 } },
+  CSS6_MOD3 = { { dbid = 1882, mountCount = 6 } },
+  CSS6_MOD2 = { { dbid = 4272, mountCount = 6 } },
+  CSS7_MOD2 = { { dbid = 4263, mountCount = 6 } },
+  CH_SSC_9 = { { dbid = 4276, mountCount = 9 } }
+}
 
 return constants

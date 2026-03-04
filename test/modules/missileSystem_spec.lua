@@ -6,6 +6,7 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 
 -- ============================================================================
 -- Stub Tracking
@@ -1999,6 +2000,216 @@ describe("MissileSystem", function()
 
       assert.is_not_nil(groundForceCtx.sysA.firingUnits["A"])
       assert.is_not_nil(groundForceCtx.sysB.resupplyUnits["B"])
+    end)
+  end)
+
+  -- ==========================================================================
+  -- hideUnit
+  -- ==========================================================================
+
+  describe("hideUnit", function()
+    after_each(function()
+      for _, s in ipairs(activeStubs) do s:revert() end
+      activeStubs = {}
+    end)
+
+    local function createHideUnitCtx()
+      return {
+        name = "TEL Alpha",
+        operationalArea = {
+          name = "OPAREA-1",
+          mask = { area = { "MASK-001", "MASK-002", "MASK-003", "MASK-004" } }
+        }
+      }
+    end
+
+    local function createMockSide(filteredUnits)
+      return {
+        unitsInArea = function() return filteredUnits end
+      }
+    end
+
+    it("should return false when no buildings found in mask area", function()
+      local unitCtx = createHideUnitCtx()
+      local unit = { guid = "U1", side = "China" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide(nil))
+
+      local success, errorMsg = MissileSystem.hideUnit(unitCtx, unit)
+
+      assert.is_false(success)
+      assert.are.equal("No buildings found in mask area", errorMsg)
+    end)
+
+    it("should return false when selected building cannot be retrieved", function()
+      local unitCtx = createHideUnitCtx()
+      local unit = { guid = "U1", side = "China" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
+      trackStub(math, "random").returns(1)
+
+      local success, errorMsg = MissileSystem.hideUnit(unitCtx, unit)
+
+      assert.is_false(success)
+      assert.is_truthy(errorMsg:match("Building"))
+    end)
+
+    it("should call loadCargo when building exists and return true", function()
+      local unitCtx = createHideUnitCtx()
+      local unit = { guid = "U1", side = "China" }
+      local mockBuilding = { guid = "B1", name = "Building 1" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
+      trackStub(math, "random").returns(1)
+      local stubLoadCargo = trackStub(AmphibiousLogistics, "loadCargo")
+
+      local success, errorMsg = MissileSystem.hideUnit(unitCtx, unit)
+
+      assert.is_true(success)
+      assert.is_nil(errorMsg)
+      assert.stub(stubLoadCargo).was.called(1)
+      assert.are.same(mockBuilding, stubLoadCargo.calls[1].vals[1])
+      assert.are.same(unitCtx, stubLoadCargo.calls[1].vals[2])
+      assert.are.equal("China", stubLoadCargo.calls[1].vals[3])
+    end)
+
+    it("should select a random building from the list", function()
+      local unitCtx = createHideUnitCtx()
+      local unit = { guid = "U1", side = "China" }
+      local mockBuilding2 = { guid = "B2", name = "Building 2" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({
+        { guid = "B1" }, { guid = "B2" }, { guid = "B3" }
+      }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding2)
+      trackStub(math, "random").returns(2)
+      local stubLoadCargo = trackStub(AmphibiousLogistics, "loadCargo")
+
+      MissileSystem.hideUnit(unitCtx, unit)
+
+      assert.stub(stubLoadCargo).was.called(1)
+      assert.are.same(mockBuilding2, stubLoadCargo.calls[1].vals[1])
+    end)
+  end)
+
+  -- ==========================================================================
+  -- moveFromHideArea
+  -- ==========================================================================
+
+  describe("moveFromHideArea", function()
+    after_each(function()
+      for _, s in ipairs(activeStubs) do s:revert() end
+      activeStubs = {}
+    end)
+
+    local function createMoveFromHideCtx()
+      return {
+        name = "TEL Alpha",
+        operationalArea = {
+          name = "OPAREA-1",
+          mask = { area = { "MASK-001", "MASK-002", "MASK-003", "MASK-004" } }
+        }
+      }
+    end
+
+    local function createMockSide(filteredUnits)
+      return {
+        unitsInArea = function() return filteredUnits end
+      }
+    end
+
+    it("should return false when no buildings found in mask area", function()
+      local unitCtx = createMoveFromHideCtx()
+      local unit = { guid = "U1", side = "China" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide(nil))
+
+      local success, errorMsg = MissileSystem.moveFromHideArea(unitCtx, unit)
+
+      assert.is_false(success)
+      assert.are.equal("No buildings found in mask area", errorMsg)
+    end)
+
+    it("should unload cargo when unit is found in building", function()
+      local unitCtx = createMoveFromHideCtx()
+      local unit = { guid = "U1", side = "China" }
+      local mockBuilding = {
+        guid = "B1",
+        cargo = { { cargo = { { guid = "U1" } } } }
+      }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
+      local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
+
+      local success = MissileSystem.moveFromHideArea(unitCtx, unit)
+
+      assert.is_true(success)
+      assert.stub(stubUnload).was.called(1)
+      assert.are.equal("B1", stubUnload.calls[1].vals[1])
+    end)
+
+    it("should not unload when unit is not in building cargo", function()
+      local unitCtx = createMoveFromHideCtx()
+      local unit = { guid = "U1", side = "China" }
+      local mockBuilding = {
+        guid = "B1",
+        cargo = { { cargo = { { guid = "OTHER" } } } }
+      }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
+      local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
+
+      local success = MissileSystem.moveFromHideArea(unitCtx, unit)
+
+      assert.is_true(success)
+      assert.stub(stubUnload).was_not.called()
+    end)
+
+    it("should unload all group units from buildings", function()
+      local unitCtx = createMoveFromHideCtx()
+      local unit = { guid = "G1", side = "China", group = { unitlist = { "U1", "U2" } } }
+
+      local mockBuilding1 = {
+        guid = "B1",
+        cargo = { { cargo = { { guid = "U1" } } } }
+      }
+      local mockBuilding2 = {
+        guid = "B2",
+        cargo = { { cargo = { { guid = "U2" } } } }
+      }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" }, { guid = "B2" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        if guid == "B1" then return mockBuilding1 end
+        if guid == "B2" then return mockBuilding2 end
+        return nil
+      end)
+      local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
+
+      local success = MissileSystem.moveFromHideArea(unitCtx, unit)
+
+      assert.is_true(success)
+      assert.stub(stubUnload).was.called(2)
+      assert.are.equal("B1", stubUnload.calls[1].vals[1])
+      assert.are.equal("B2", stubUnload.calls[2].vals[1])
+    end)
+
+    it("should skip buildings that cannot be retrieved", function()
+      local unitCtx = createMoveFromHideCtx()
+      local unit = { guid = "U1", side = "China" }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" }, { guid = "B2" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
+      local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
+
+      local success = MissileSystem.moveFromHideArea(unitCtx, unit)
+
+      assert.is_true(success)
+      assert.stub(stubUnload).was_not.called()
     end)
   end)
 end)

@@ -62,7 +62,7 @@ elseif positionType == "HA" then
     if missileSystemCtx and missileSystemCtx.enabled then
       if MissileSystem.isRepositioning(missileSystemCtx.firingUnits[unit.name], true) then
         MissileSystem.setStateToHIDE(missileSystemCtx.firingUnits[unit.name], unit, true)
-        MissileSystem.hideFiringUnit(missileSystemCtx.firingUnits[unit.name], unit)
+        MissileSystem.hideUnit(missileSystemCtx.firingUnits[unit.name], unit)
       end
     end
   end

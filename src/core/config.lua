@@ -390,7 +390,8 @@ config.c.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.CJ10A,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
-    dbid = constants.PLATFORMS.CH_SSC_9
+    dbid = constants.PLATFORMS.CH_SSC_9,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9
   },
 }
 
@@ -514,7 +515,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS7_MOD2
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2
   },
   ["614th Bde, PLARF"] = {
     guid = "X58F5H-0HN1LQGRV8HNQ",
@@ -525,7 +527,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS7_MOD2
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2
   },
   ["636th Bde, PLARF"] = {
     guid = "IC8B0X-0HN822OHANPB3",
@@ -536,7 +539,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS11_MOD1
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1
   },
   ["616th Bde, PLARF"] = {
     guid = "X58F5H-0HN1G2IFLF6QE",
@@ -547,7 +551,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF15C,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS6_MOD2
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD2
   },
   ["613rd Bde, PLARF"] = {
     guid = "X58F5H-0HN1G2DEBC7O8",
@@ -558,7 +563,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF15B,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS6_MOD3
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD3
   },
   ["617th Bde, PLARF"] = {
     guid = "IC8B0X-0HN822OHANRHI",
@@ -569,7 +575,8 @@ config.c.ground.srbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.c.ground.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS11_MOD1
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1
   },
 }
 
@@ -613,7 +620,8 @@ config.c.ground.mrbm.firingUnits = {
     weaponDBID = constants.WEAPONS.DF21D,
     ammoThreshold = config.c.ground.mrbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
-    dbid = constants.PLATFORMS.CSS5_MOD5
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS5_MOD5
   },
 }
 
@@ -657,7 +665,8 @@ config.c.ground.ascm.firingUnits = {
     weaponDBID = constants.WEAPONS.YJ12,
     ammoThreshold = config.c.ground.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Pili Reg",
-    dbid = constants.PLATFORMS.YJ12B
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = { { dbid = 1778, mountCount = 1 }, { dbid = 3062, mountCount = 4 } }
   },
 }
 
@@ -3813,7 +3822,8 @@ config.t.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
-    dbid = constants.PLATFORMS.HF2E
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E
   }
 }
 
@@ -3996,7 +4006,8 @@ config.t.ground.sam.firingUnits = {
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.t.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
-    dbid = constants.PLATFORMS.CUSTOMED_TK3
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
   },
 }
 
