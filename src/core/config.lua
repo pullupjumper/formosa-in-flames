@@ -313,6 +313,7 @@ config.c.ground.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
+    firingUnit = "1st Bn, 1st Rockets Arty Bde"
   },
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
     guid = "IC8B0X-0HNBRRE2PRRG9",
@@ -323,6 +324,7 @@ config.c.ground.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.CHINCHEW,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
+    firingUnit = "6th Bn, 73rd Arty Bde"
   },
 }
 config.c.ground.mlrs.firingUnits = {
@@ -378,6 +380,7 @@ config.c.ground.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_635,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 635th Bde, PLARF",
+    firingUnit = "635th Bde, PLARF"
   },
 }
 config.c.ground.glcm.firingUnits = {
@@ -390,7 +393,7 @@ config.c.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.CJ10A,
     ammoThreshold = config.c.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
-    dbid = constants.PLATFORMS.CH_SSC_9,
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9
   },
 }
@@ -453,6 +456,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_615,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 615th Bde, PLARF",
+    firingUnit = "615th Bde, PLARF"
   },
   ["Ammo Sec, 614th Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVLSG",
@@ -463,6 +467,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_614,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 614th Bde, PLARF",
+    firingUnit = "614th Bde, PLARF"
   },
   ["Ammo Sec, 636th Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVMO1",
@@ -473,6 +478,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_636,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 636th Bde, PLARF",
+    firingUnit = "636th Bde, PLARF"
   },
   ["Ammo Sec, 616th Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVOSN",
@@ -483,6 +489,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_616,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 616th Bde, PLARF",
+    firingUnit = "616th Bde, PLARF"
   },
   ["Ammo Sec, 613rd Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVPNC",
@@ -493,6 +500,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_613,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 613rd Bde, PLARF",
+    firingUnit = "613rd Bde, PLARF"
   },
   ["Ammo Sec, 617th Bde, PLARF"] = {
     guid = "IC8B0X-0HN7R5QOIVQ6P",
@@ -503,6 +511,7 @@ config.c.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_617,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 617th Bde, PLARF",
+    firingUnit = "617th Bde, PLARF"
   },
 }
 config.c.ground.srbm.firingUnits = {
@@ -608,6 +617,7 @@ config.c.ground.mrbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BRIGADE_624,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 624th Bde, PLARF",
+    firingUnit = "624th Bde, PLARF"
   },
 }
 config.c.ground.mrbm.firingUnits = {
@@ -653,6 +663,7 @@ config.c.ground.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PINGTAN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 1st Pili Reg",
+    firingUnit = "1st Pili Reg"
   },
 }
 config.c.ground.ascm.firingUnits = {
@@ -3697,6 +3708,7 @@ config.t.ground.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PINGZHEN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
+    firingUnit = "Rocket Arty Coy, 21st Arty Command"
   }
 }
 config.t.ground.mlrs.firingUnits = {
@@ -3740,6 +3752,7 @@ config.t.ground.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DADU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
+    firingUnit = "Rocket Arty Coy, 58th Arty Command"
   }
 }
 config.t.ground.srbm.firingUnits = {
@@ -3789,6 +3802,7 @@ config.t.ground.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
+    firingUnit = "641st Bn, 791st AFAD & Arty Bde"
   },
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
     name = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
@@ -3799,6 +3813,7 @@ config.t.ground.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.NEIPU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
+    firingUnit = "642nd Bn, 791st AFAD & Arty Bde"
   },
 }
 config.t.ground.glcm.firingUnits = {
@@ -3861,6 +3876,7 @@ config.t.ground.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.LUZHU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, Hai Feng Shore-based ASM SUPP Sqn, Luzhu",
+    firingUnit = { "2nd Hai Feng Shore-based ASM MOB Sqn", "4th Hai Feng Shore-based ASM MOB Sqn", "5th Hai Feng Shore-based ASM MOB Sqn" },
   },
   ["Hai Feng Shore-based ASM SUPP Sqn, Dong"] = {
     name = "Hai Feng Shore-based ASM SUPP Sqn, Dong",
@@ -3871,6 +3887,7 @@ config.t.ground.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DONG,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, Hai Feng Shore-based ASM SUPP Sqn, Dong",
+    firingUnit = { "1st Hai Feng Shore-based ASM MOB Sqn", "3rd Hai Feng Shore-based ASM MOB Sqn", "6th Hai Feng Shore-based ASM MOB Sqn" },
   },
 }
 config.t.ground.ascm.firingUnits = {
@@ -3975,6 +3992,7 @@ config.t.ground.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
@@ -3985,6 +4003,7 @@ config.t.ground.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"
   },
 }
 config.t.ground.sam.firingUnits = {

@@ -815,6 +815,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ResupplyUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus, SBJ__WeaponStatus
 ---@field unitCount number Number of resupply vehicles in this unit
 ---@field ammunition string Associated ammunition unit name for this resupply unit
+---@field firingUnit string|string[] Associated firing unit name for this resupply unit
 
 ---Firing unit descriptor with weapon configuration and status
 ---@class SBJ__FiringUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus

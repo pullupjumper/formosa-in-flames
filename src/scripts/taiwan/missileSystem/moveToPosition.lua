@@ -2,6 +2,7 @@ local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem")
+local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
 local contacts = GameApi.ScenEdit_GetContacts("Taiwan")
@@ -35,7 +36,7 @@ for _, trigger in ipairs(event.triggers) do
   end
 end
 
-if positionType == "FP" then
+if positionType == constants.POSITION_TYPES.FIRING_POINT then
   for _, missileSystem in ipairs(missileSystems) do
     ---@type SBJ__MissileSystemContext|nil
     local missileSystemCtx = saveData.t.ground[missileSystem]
@@ -46,7 +47,7 @@ if positionType == "FP" then
       end
     end
   end
-elseif positionType == "HA" then
+elseif positionType == constants.POSITION_TYPES.HIDE_AREA then
   if contacts then
     for _, contact in ipairs(contacts) do
       if unit.guid == contact.actualunitid then
@@ -65,7 +66,7 @@ elseif positionType == "HA" then
       end
     end
   end
-elseif positionType == "RL" then
+elseif positionType == constants.POSITION_TYPES.RELOAD_POINT then
   if contacts then
     for _, contact in ipairs(contacts) do
       if unit.guid == contact.actualunitid then
@@ -79,16 +80,17 @@ elseif positionType == "RL" then
     local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
-      local isMet, context = MissileSystem.isMetWithResupplyUnits(missileSystemCtx, unit, false)
+      local hasMet, context = MissileSystem.hasMetResupplyUnit(missileSystemCtx, unit, false)
+      local firingUnitCtx = missileSystemCtx.firingUnits[unit.name]
 
-      if isMet and context then
+      if firingUnitCtx and hasMet and context then
         MissileSystem.setReloadStartTime(context, unit, false)
       else
         MissileSystem.setStateToStatic(missileSystemCtx, unit, false)
       end
     end
   end
-elseif positionType == "AHA" then
+elseif positionType == constants.POSITION_TYPES.AMMO_HOLDING_AREA then
   if contacts then
     for _, contact in ipairs(contacts) do
       if unit.guid == contact.actualunitid then
@@ -102,9 +104,10 @@ elseif positionType == "AHA" then
     local missileSystemCtx = saveData.t.ground[missileSystem]
 
     if missileSystemCtx and missileSystemCtx.enabled then
-      local isMet, resupplyUnit = MissileSystem.isMetWithAmmoDepot(missileSystemCtx, unit, false)
+      local hasMet, resupplyUnit = MissileSystem.hasMetAmmoDepot(missileSystemCtx, unit, false)
+      local resupplyUnitCtx = missileSystemCtx.resupplyUnits[unit.name]
 
-      if isMet and resupplyUnit then
+      if resupplyUnitCtx and hasMet and resupplyUnit then
         MissileSystem.setReloadStartTime(resupplyUnit, unit, false)
       else
         MissileSystem.setStateToStatic(missileSystemCtx, unit, false)

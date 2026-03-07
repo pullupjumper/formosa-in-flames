@@ -220,10 +220,10 @@ describe("MissileSystem", function()
   end)
 
   -- ==========================================================================
-  -- isMetWithResupplyUnits
+  -- hasMetResupplyUnit
   -- ==========================================================================
 
-  describe("isMetWithResupplyUnits", function()
+  describe("hasMetResupplyUnit", function()
     local mockSystemCtx
 
     before_each(function()
@@ -238,8 +238,8 @@ describe("MissileSystem", function()
     -- Boundary cases
     it("should return false when unit name not in firingUnits or resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "Taiwan" }
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, unit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, unit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -251,8 +251,8 @@ describe("MissileSystem", function()
         inArea = function() return false end
       }
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, firingUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -264,8 +264,8 @@ describe("MissileSystem", function()
         inArea = function() return false end
       }
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, resupplyUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -292,8 +292,8 @@ describe("MissileSystem", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, firingUnit, true)
-      assert.is_true(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
 
@@ -319,8 +319,8 @@ describe("MissileSystem", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, resupplyUnit, true)
-      assert.is_true(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
+      assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
     end)
 
@@ -345,8 +345,8 @@ describe("MissileSystem", function()
         return nil
       end)
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, firingUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -361,8 +361,8 @@ describe("MissileSystem", function()
         inArea = function(_, area) return area[1] == "RP-001" end
       }
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, firingUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -390,134 +390,17 @@ describe("MissileSystem", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local isMet, ctx = MissileSystem.isMetWithResupplyUnits(mockSystemCtx, firingUnit, false)
-      assert.is_true(isMet)
+      local hasMet, ctx = MissileSystem.hasMetResupplyUnit(mockSystemCtx, firingUnit, false)
+      assert.is_true(hasMet)
       assert.is_not_nil(ctx)
     end)
   end)
 
   -- ==========================================================================
-  -- reload
+  -- hasMetAmmoDepot
   -- ==========================================================================
 
-  describe("reload", function()
-    after_each(function()
-      for _, s in ipairs(activeStubs) do s:revert() end
-      activeStubs = {}
-    end)
-
-    it("should return 0 when firing unit not found", function()
-      local firingUnitCtx = createMockFiringUnitCtx({
-        state = constants.MISSILE_SYSTEM_STATE.RELOAD,
-        reloadStartTime = 123,
-      })
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 10 })
-
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-
-      local loaded = MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, 1234, "Taiwan")
-      assert.are.equal(0, loaded)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, firingUnitCtx.state)
-      assert.are.equal(123, firingUnitCtx.reloadStartTime)
-      assert.are.equal(10, resupplyUnitCtx.wpnCurrent)
-    end)
-
-    it("should reload single unit and consume resupply ammo", function()
-      local firingUnitCtx = createMockFiringUnitCtx({
-        state = constants.MISSILE_SYSTEM_STATE.RELOAD,
-        reloadStartTime = 456,
-      })
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 5 })
-
-      local firingUnit = { guid = "F1", side = "Taiwan" }
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
-        return nil
-      end)
-      trackStub(GameUtils, "getWeaponInfo").returns({ maxWeapons = 10, availableWeapons = 7 })
-      local stubAddReloads = trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
-
-      local loaded = MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, 1234, "Taiwan")
-      assert.are.equal(3, loaded)
-      assert.are.equal(2, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingUnitCtx.state)
-      assert.is_nil(firingUnitCtx.reloadStartTime)
-      assert.stub(stubAddReloads).was.called(1)
-      assert.are.equal("F1", stubAddReloads.calls[1].vals[1].guid)
-      assert.are.equal(1234, stubAddReloads.calls[1].vals[1].wpn_dbid)
-      assert.are.equal(3, stubAddReloads.calls[1].vals[1].number)
-    end)
-
-    it("should reload group units and cap by resupply ammo", function()
-      local firingUnitCtx = createMockFiringUnitCtx({
-        state = constants.MISSILE_SYSTEM_STATE.RELOAD,
-        reloadStartTime = 789,
-      })
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 5 })
-
-      local firingUnit = { guid = "G1", side = "Taiwan", group = { unitlist = { "U1", "U2" } } }
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "U1" then return { guid = "U1", side = "Taiwan" } end
-        if guidOrName == "U2" then return { guid = "U2", side = "Taiwan" } end
-        return nil
-      end)
-      trackStub(GameUtils, "getWeaponInfo").invokes(function(unit)
-        if unit.guid == "U1" then
-          return { maxWeapons = 10, availableWeapons = 6 } -- needs 4
-        end
-        return { maxWeapons = 10, availableWeapons = 6 }   -- needs 4
-      end)
-      local stubAddReloads = trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
-
-      local loaded = MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, 5678, "Taiwan")
-      assert.are.equal(5, loaded)
-      assert.are.equal(0, resupplyUnitCtx.wpnCurrent)
-      assert.stub(stubAddReloads).was.called(2)
-      assert.are.equal("U1", stubAddReloads.calls[1].vals[1].guid)
-      assert.are.equal(4, stubAddReloads.calls[1].vals[1].number)
-      assert.are.equal("U2", stubAddReloads.calls[2].vals[1].guid)
-      assert.are.equal(1, stubAddReloads.calls[2].vals[1].number)
-    end)
-
-    -- Positive: multi-weapon DBID array
-    it("should reload multiple weapon types from resupply ammo", function()
-      local firingUnitCtx = createMockFiringUnitCtx({
-        state = constants.MISSILE_SYSTEM_STATE.RELOAD,
-        reloadStartTime = 111,
-      })
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 20 })
-
-      local firingUnit = { guid = "F1", side = "Taiwan" }
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
-        return nil
-      end)
-      trackStub(GameUtils, "getWeaponInfo").invokes(function(_, dbid)
-        if dbid == 1111 then return { maxWeapons = 10, availableWeapons = 7 } end -- needs 3
-        if dbid == 2222 then return { maxWeapons = 10, availableWeapons = 5 } end -- needs 5
-        return { maxWeapons = 0, availableWeapons = 0 }
-      end)
-      local stubAddReloads = trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
-
-      local loaded = MissileSystem.reload(firingUnitCtx, resupplyUnitCtx, { 1111, 2222 }, "Taiwan")
-      assert.are.equal(8, loaded)
-      assert.are.equal(12, resupplyUnitCtx.wpnCurrent)
-      assert.stub(stubAddReloads).was.called(2)
-      assert.are.equal(1111, stubAddReloads.calls[1].vals[1].wpn_dbid)
-      assert.are.equal(3, stubAddReloads.calls[1].vals[1].number)
-      assert.are.equal(2222, stubAddReloads.calls[2].vals[1].wpn_dbid)
-      assert.are.equal(5, stubAddReloads.calls[2].vals[1].number)
-    end)
-  end)
-
-  -- ==========================================================================
-  -- isMetWithAmmoDepot
-  -- ==========================================================================
-
-  describe("isMetWithAmmoDepot", function()
+  describe("hasMetAmmoDepot", function()
     local mockSystemCtx
 
     before_each(function()
@@ -546,8 +429,8 @@ describe("MissileSystem", function()
     -- Boundary cases
     it("should return false when unit name not in resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "China" }
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, unit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, unit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -569,8 +452,8 @@ describe("MissileSystem", function()
         return nil
       end)
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -593,8 +476,8 @@ describe("MissileSystem", function()
         return nil
       end)
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert.is_true(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
     end)
 
@@ -616,8 +499,8 @@ describe("MissileSystem", function()
         return nil
       end)
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -631,8 +514,8 @@ describe("MissileSystem", function()
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -647,8 +530,8 @@ describe("MissileSystem", function()
         inArea = function(_, area) return area[1] == "RP-101" end
       }
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert.is_false(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
@@ -672,87 +555,9 @@ describe("MissileSystem", function()
         return nil
       end)
 
-      local isMet, ctx = MissileSystem.isMetWithAmmoDepot(mockSystemCtx, resupplyUnit, false)
-      assert.is_true(isMet)
+      local hasMet, ctx = MissileSystem.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, false)
+      assert.is_true(hasMet)
       assert.is_not_nil(ctx)
-    end)
-  end)
-
-  -- ==========================================================================
-  -- transferAmmunition
-  -- ==========================================================================
-
-  describe("transferAmmunition", function()
-    -- Boundary cases
-    it("should not transfer when ammo depot has no ammunition", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx()
-      local ammoDepotCtx = { wpnCurrent = 0 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(5, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(0, ammoDepotCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
-      assert.is_nil(resupplyUnitCtx.reloadStartTime)
-    end)
-
-    it("should not transfer when resupply unit is already full", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 20 })
-      local ammoDepotCtx = { wpnCurrent = 100 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(20, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(100, ammoDepotCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
-      assert.is_nil(resupplyUnitCtx.reloadStartTime)
-    end)
-
-    it("should not transfer when resupply unit exceeds default", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 25 })
-      local ammoDepotCtx = { wpnCurrent = 100 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(25, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(100, ammoDepotCtx.wpnCurrent)
-    end)
-
-    -- Normal cases
-    it("should transfer full deficit when ammo depot has enough", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx()
-      local ammoDepotCtx = { wpnCurrent = 100 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(20, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(85, ammoDepotCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
-      assert.is_nil(resupplyUnitCtx.reloadStartTime)
-    end)
-
-    it("should transfer only available ammo when depot has insufficient", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx()
-      local ammoDepotCtx = { wpnCurrent = 10 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(15, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(0, ammoDepotCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
-      assert.is_nil(resupplyUnitCtx.reloadStartTime)
-    end)
-
-    it("should transfer exact deficit when depot matches deficit exactly", function()
-      local resupplyUnitCtx = createMockResupplyUnitCtx({ wpnCurrent = 12 })
-      local ammoDepotCtx = { wpnCurrent = 8 }
-
-      MissileSystem.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-
-      assert.are.equal(20, resupplyUnitCtx.wpnCurrent)
-      assert.are.equal(0, ammoDepotCtx.wpnCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, resupplyUnitCtx.state)
-      assert.is_nil(resupplyUnitCtx.reloadStartTime)
     end)
   end)
 
@@ -2041,18 +1846,34 @@ describe("MissileSystem", function()
       assert.are.equal("No buildings found in mask area", errorMsg)
     end)
 
-    it("should return false when selected building cannot be retrieved", function()
+    it("should return false when no buildings can be retrieved", function()
       local unitCtx = createHideUnitCtx()
       local unit = { guid = "U1", side = "China" }
 
       trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-      trackStub(math, "random").returns(1)
 
       local success, errorMsg = MissileSystem.hideUnit(unitCtx, unit)
 
       assert.is_false(success)
-      assert.is_truthy(errorMsg:match("Building"))
+      assert.is_truthy(errorMsg:match("No available building"))
+    end)
+
+    it("should return false when all buildings are occupied", function()
+      local unitCtx = createHideUnitCtx()
+      local unit = { guid = "U1", side = "China" }
+      local mockBuilding = {
+        guid = "B1",
+        cargo = { { cargo = { { guid = "OTHER" } } } }
+      }
+
+      trackStub(GameApi, "VP_GetSide").returns(createMockSide({ { guid = "B1" } }))
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
+
+      local success, errorMsg = MissileSystem.hideUnit(unitCtx, unit)
+
+      assert.is_false(success)
+      assert.is_truthy(errorMsg:match("No available building"))
     end)
 
     it("should call loadCargo when building exists and return true", function()
