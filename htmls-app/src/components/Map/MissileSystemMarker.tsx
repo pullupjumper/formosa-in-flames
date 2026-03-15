@@ -325,3 +325,103 @@ export function DeployedMissileSystems({
     </>
   );
 }
+
+// ============================================================================
+// MissileSystemPreview Component
+// ============================================================================
+interface MissileSystemPreviewProps {
+  uShapeVertices: { latitude: number; longitude: number }[];
+  ammoArea: { latitude: number; longitude: number }[];
+  hideArea: { latitude: number; longitude: number }[];
+  reloadArea: { latitude: number; longitude: number }[];
+  firePoints: { latitude: number; longitude: number }[][];
+  isValid: boolean;
+}
+
+export function MissileSystemPreview({
+  uShapeVertices,
+  ammoArea,
+  hideArea,
+  reloadArea,
+  firePoints,
+  isValid,
+}: MissileSystemPreviewProps) {
+  const invalidColor = '#ff4444';
+  const dashArray = '6, 4';
+  const color = (validColor: string) => (isValid ? validColor : invalidColor);
+
+  return (
+    <>
+      {uShapeVertices.length > 0 && (
+        <Polygon
+          positions={coordinatesToLatLng(uShapeVertices)}
+          interactive={false}
+          pathOptions={{
+            color: color(COLORS.USHAPE),
+            fillColor: color(COLORS.USHAPE),
+            fillOpacity: isValid ? 0.1 : 0.08,
+            weight: 2,
+            dashArray,
+          }}
+        />
+      )}
+
+      {ammoArea.length > 0 && (
+        <Polygon
+          positions={coordinatesToLatLng(ammoArea)}
+          interactive={false}
+          pathOptions={{
+            color: color(COLORS.AMMO_AREA),
+            fillColor: color(COLORS.AMMO_AREA),
+            fillOpacity: isValid ? 0.15 : 0.1,
+            weight: 1.5,
+            dashArray,
+          }}
+        />
+      )}
+
+      {hideArea.length > 0 && (
+        <Polygon
+          positions={coordinatesToLatLng(hideArea)}
+          interactive={false}
+          pathOptions={{
+            color: color(COLORS.HIDE_AREA),
+            fillColor: color(COLORS.HIDE_AREA),
+            fillOpacity: isValid ? 0.15 : 0.1,
+            weight: 1.5,
+            dashArray,
+          }}
+        />
+      )}
+
+      {reloadArea.length > 0 && (
+        <Polygon
+          positions={coordinatesToLatLng(reloadArea)}
+          interactive={false}
+          pathOptions={{
+            color: color(COLORS.RELOAD_AREA),
+            fillColor: color(COLORS.RELOAD_AREA),
+            fillOpacity: isValid ? 0.15 : 0.1,
+            weight: 1.5,
+            dashArray,
+          }}
+        />
+      )}
+
+      {firePoints.map((fp, i) => (
+        <Polygon
+          key={`preview-fp-${i}`}
+          positions={coordinatesToLatLng(fp)}
+          interactive={false}
+          pathOptions={{
+            color: color(COLORS.FIRE_POINT),
+            fillColor: color(COLORS.FIRE_POINT),
+            fillOpacity: isValid ? 0.15 : 0.1,
+            weight: 1.5,
+            dashArray,
+          }}
+        />
+      ))}
+    </>
+  );
+}
