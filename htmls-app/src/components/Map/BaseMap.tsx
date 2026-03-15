@@ -11,10 +11,18 @@ const DEFAULT_ZOOM = 8;
 interface BaseMapProps {
   children?: React.ReactNode;
   onMapClick?: (lat: number, lng: number) => void;
+  onMouseMove?: (lat: number, lng: number) => void;
+  cursorStyle?: string;
   className?: string;
 }
 
-export function BaseMap({ children, onMapClick, className = '' }: BaseMapProps) {
+export function BaseMap({
+  children,
+  onMapClick,
+  onMouseMove,
+  cursorStyle,
+  className = '',
+}: BaseMapProps) {
   return (
     <MapContainer
       center={TAIWAN_CENTER}
@@ -28,6 +36,8 @@ export function BaseMap({ children, onMapClick, className = '' }: BaseMapProps) 
         maxZoom={18}
       />
       {onMapClick && <MapClickHandler onClick={onMapClick} />}
+      {onMouseMove && <MapMouseMoveHandler onMouseMove={onMouseMove} />}
+      {cursorStyle && <MapCursorStyle cursor={cursorStyle} />}
       <MapResizeHandler />
       {children}
     </MapContainer>
@@ -44,6 +54,33 @@ function MapClickHandler({ onClick }: MapClickHandlerProps) {
       onClick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+function MapMouseMoveHandler({
+  onMouseMove,
+}: {
+  onMouseMove: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    mousemove: (e) => {
+      onMouseMove(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function MapCursorStyle({ cursor }: { cursor: string }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    container.style.cursor = cursor;
+    return () => {
+      container.style.cursor = '';
+    };
+  }, [map, cursor]);
+
   return null;
 }
 

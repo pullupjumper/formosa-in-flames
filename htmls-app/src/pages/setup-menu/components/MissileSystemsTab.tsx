@@ -1,6 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { MissileSystems, Airbase, DeployedMissileSystemData } from '@/types/setupMenu';
-import { BaseMap, AirbaseMarkers, DeployedMissileSystems } from '@/components/Map';
+import {
+  BaseMap,
+  AirbaseMarkers,
+  DeployedMissileSystems,
+  MissileSystemPreview,
+} from '@/components/Map';
 import {
   getWeaponSystemName,
   isPointInTaiwan,
@@ -30,6 +35,42 @@ const AREA_CONFIG = {
   },
 };
 
+// ============================================================================
+// PREVIEW TYPES & CONSTANTS
+// ============================================================================
+interface OffsetVertex {
+  dLat: number;
+  dLng: number;
+}
+
+interface PreviewOffsets {
+  uShapeVertices: OffsetVertex[];
+  ammoArea: OffsetVertex[];
+  hideArea: OffsetVertex[];
+  reloadArea: OffsetVertex[];
+  firePoints: OffsetVertex[][];
+}
+
+const REF_CENTER = { lat: 23.8, lng: 121.0 };
+
+function resultToOffsets(
+  result: ReturnType<typeof generateUShapeVertices>,
+  refLat: number,
+  refLng: number
+): PreviewOffsets {
+  const toOffset = (c: { latitude: number; longitude: number }): OffsetVertex => ({
+    dLat: c.latitude - refLat,
+    dLng: c.longitude - refLng,
+  });
+  return {
+    uShapeVertices: result.uShapeVertices.map(toOffset),
+    ammoArea: (result.ammoArea ?? []).map(toOffset),
+    hideArea: (result.hideArea ?? []).map(toOffset),
+    reloadArea: (result.reloadArea ?? []).map(toOffset),
+    firePoints: (result.firePoints ?? []).map((fp) => fp.map(toOffset)),
+  };
+}
+
 interface MissileSystemsTabProps {
   missileSystems: MissileSystems;
   airbases: Airbase[];
@@ -55,6 +96,10 @@ export function MissileSystemsTab({
     'Select a missile system unit then click on the map to deploy'
   );
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [previewOffsets, setPreviewOffsets] = useState<Record<number, PreviewOffsets> | null>(null);
+  const [previewAngle, setPreviewAngle] = useState<number | null>(null);
+  const [mousePosition, setMousePosition] = useState<{ lat: number; lng: number } | null>(null);
+  const lastMouseMoveRef = useRef(0);
 
   const categories = Object.keys(missileSystems);
 
@@ -139,39 +184,91 @@ export function MissileSystemsTab({
     }
   };
 
+  const generateOffsetsForAngle = useCallback((angle: number): PreviewOffsets => {
+    const result = generateUShapeVertices({
+      centerLat: REF_CENTER.lat,
+      centerLon: REF_CENTER.lng,
+      ...AREA_CONFIG,
+      openingAngle: angle,
+    });
+    return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
+  }, []);
+
   const handleMapClick = (lat: number, lng: number) => {
     setCoordinates({ lat, lng });
-    setExpandedUnitKey(null); // Collapse expanded items when clicking map
+    setExpandedUnitKey(null);
 
-    // If no unit selected, just clear selection state
-    if (selectedUnit === null) {
+    if (selectedUnit === null || !previewOffsets) {
       return;
     }
 
     if (!isPointInTaiwan(lat, lng)) {
-      setStatus('⚠️ Missile systems can only be deployed on Taiwan mainland');
+      setStatus('Warning: Missile systems can only be deployed on Taiwan mainland');
       return;
     }
 
-    const autoAngle = determineOpeningAngle(lat, lng);
-    const deploymentData = generateDeploymentData(
-      selectedUnit.name,
-      selectedUnit.category,
-      lat,
-      lng,
-      autoAngle
-    );
+    const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
 
-    if (!deploymentData) {
-      setStatus('⚠️ Generated tactical area extends outside Taiwan boundary');
+    let offsets = previewOffsets[autoAngle];
+    if (!offsets) {
+      offsets = generateOffsetsForAngle(autoAngle);
+    }
+
+    const translate = (o: OffsetVertex) => ({
+      latitude: lat + o.dLat,
+      longitude: lng + o.dLng,
+    });
+
+    const uShapeVertices = offsets.uShapeVertices.map(translate);
+    const ammoArea = offsets.ammoArea.map(translate);
+    const hideArea = offsets.hideArea.map(translate);
+    const reloadArea = offsets.reloadArea.map(translate);
+    const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
+
+    if (!checkPolygonInTaiwan(uShapeVertices)) {
+      setStatus('Warning: Generated tactical area extends outside Taiwan boundary');
       return;
     }
 
-    onDeploySystem(selectedUnit.key, deploymentData);
+    let paths: DeployedMissileSystemData['paths'] = {
+      FP: [],
+      HA: { waypoints: [] },
+      RL: [],
+      AHA: { waypoints: [] },
+    };
+
+    if (ammoArea.length > 0 && hideArea.length > 0 && reloadArea.length > 0) {
+      paths = calculateMovementPaths({
+        centerLat: lat,
+        centerLon: lng,
+        width: AREA_CONFIG.width,
+        height: AREA_CONFIG.height,
+        thickness: AREA_CONFIG.thickness,
+        openingAngle: autoAngle,
+        ammoArea,
+        hideArea,
+        reloadArea,
+        firePoints,
+        avoidanceMargin: 0.05,
+      });
+    }
+
+    onDeploySystem(selectedUnit.key, {
+      unitName: selectedUnit.name,
+      category: selectedUnit.category,
+      center: { lat, lng },
+      openingAngle: autoAngle,
+      tacticalAreas: { uShapeVertices, ammoArea, hideArea, reloadArea, firePoints },
+      paths,
+    });
+
     setStatus(
-      `✓ ${selectedUnit.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°, Angle: ${autoAngle}°`
+      `Done: ${selectedUnit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
     );
     setSelectedUnit(null);
+    setPreviewOffsets(null);
+    setPreviewAngle(null);
+    setMousePosition(null);
   };
 
   const handleUnitSelect = (unitKey: string, unitName: string, category: string) => {
@@ -179,11 +276,20 @@ export function MissileSystemsTab({
       return;
     }
     setSelectedUnit({ key: unitKey, name: unitName, category });
+    setPreviewAngle(null);
     setStatus(`${unitName} selected - Click map to deploy`);
+
+    setPreviewOffsets({
+      90: generateOffsetsForAngle(90),
+      270: generateOffsetsForAngle(270),
+    });
   };
 
   const handleCancelSelect = () => {
     setSelectedUnit(null);
+    setPreviewOffsets(null);
+    setPreviewAngle(null);
+    setMousePosition(null);
     setStatus('Select a missile system unit then click on the map to deploy');
   };
 
@@ -211,13 +317,79 @@ export function MissileSystemsTab({
     }
   };
 
+  const handlePreviewAngleChange = useCallback(
+    (newAngle: number) => {
+      if (isNaN(newAngle) || newAngle < 0 || newAngle > 359) return;
+      setPreviewAngle(newAngle);
+      setPreviewOffsets((prev) => {
+        if (!prev || prev[newAngle]) return prev;
+        return { ...prev, [newAngle]: generateOffsetsForAngle(newAngle) };
+      });
+    },
+    [generateOffsetsForAngle]
+  );
+
+  const handleMouseMove = useCallback(
+    (lat: number, lng: number) => {
+      if (!selectedUnit) return;
+      const now = Date.now();
+      if (now - lastMouseMoveRef.current < 50) return;
+      lastMouseMoveRef.current = now;
+      setMousePosition({ lat, lng });
+    },
+    [selectedUnit]
+  );
+
+  const previewData = useMemo(() => {
+    if (!previewOffsets || !mousePosition) return null;
+
+    const angle = previewAngle ?? determineOpeningAngle(mousePosition.lat, mousePosition.lng);
+    const offsets = previewOffsets[angle];
+    if (!offsets) return null;
+
+    const translate = (o: OffsetVertex) => ({
+      latitude: mousePosition.lat + o.dLat,
+      longitude: mousePosition.lng + o.dLng,
+    });
+
+    const uShapeVertices = offsets.uShapeVertices.map(translate);
+    const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
+
+    const allVerticesInTaiwan =
+      uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
+      firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
+
+    return {
+      uShapeVertices,
+      ammoArea: offsets.ammoArea.map(translate),
+      hideArea: offsets.hideArea.map(translate),
+      reloadArea: offsets.reloadArea.map(translate),
+      firePoints,
+      isValid: allVerticesInTaiwan,
+    };
+  }, [previewOffsets, previewAngle, mousePosition]);
+
   return (
     <div className="flex h-full">
       {/* Map Container */}
       <div className="flex-1">
-        <BaseMap onMapClick={handleMapClick}>
+        <BaseMap
+          onMapClick={handleMapClick}
+          onMouseMove={selectedUnit ? handleMouseMove : undefined}
+          cursorStyle={selectedUnit ? 'crosshair' : undefined}
+        >
           <AirbaseMarkers airbases={airbases} />
           <DeployedMissileSystems deployedSystems={deployedSystems} getUnitInfo={getUnitInfo} />
+          {previewData && (
+            <MissileSystemPreview
+              uShapeVertices={previewData.uShapeVertices}
+              ammoArea={previewData.ammoArea}
+              hideArea={previewData.hideArea}
+              reloadArea={previewData.reloadArea}
+              firePoints={previewData.firePoints}
+              isValid={previewData.isValid}
+            />
+          )}
         </BaseMap>
       </div>
 
@@ -316,6 +488,41 @@ export function MissileSystemsTab({
                             <div className="mt-2 rounded bg-accent-blue/10 p-1.5">
                               <div className="text-[11px] text-accent-blue">
                                 Click map to deploy
+                              </div>
+                              <div className="mt-1.5">
+                                <label className="text-[11px] text-text-secondary">
+                                  Opening Angle
+                                </label>
+                                <div className="mt-0.5 flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={359}
+                                    value={previewAngle ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === '') {
+                                        setPreviewAngle(null);
+                                      } else {
+                                        handlePreviewAngleChange(parseInt(val));
+                                      }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
+                                    placeholder="Auto (90/270)"
+                                  />
+                                  {previewAngle !== null && (
+                                    <button
+                                      className="shrink-0 rounded bg-dark-border px-1.5 py-1 text-[11px] text-text-secondary hover:bg-dark-hover"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewAngle(null);
+                                      }}
+                                    >
+                                      Auto
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <button
                                 className="mt-2 w-full rounded bg-dark-border px-2 py-1 text-[11px] font-semibold text-text-secondary hover:bg-dark-hover"
