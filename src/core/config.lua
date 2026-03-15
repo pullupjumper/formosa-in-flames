@@ -3826,7 +3826,8 @@ config.t.ground.glcm.firingUnits = {
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.t.ground.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
-    dbid = constants.PLATFORMS.HF2E
+    dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E
   },
   ["642nd Bn, 791st AFAD & Arty Bde"] = {
     guid = "X58F5H-0HN1ESDRTLGU7",
@@ -3975,9 +3976,87 @@ config.t.ground.sam.ammunitions = {
     wpnCurrent = config.t.ground.sam.wpnDefault * 2,
     wpnDefault = config.t.ground.sam.wpnDefault * 2,
   },
-  ["Ammo Revetment, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"] = {
+  ["Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
-    name = "Ammo Revetment, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
+    name = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    wpnCurrent = 48 * 2,
+    wpnDefault = 48 * 2,
+  },
+  ["Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    wpnCurrent = 48 * 2,
+    wpnDefault = 48 * 2,
+  },
+  ["Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    wpnCurrent = 48 * 2,
+    wpnDefault = 48 * 2,
+  },
+  ["Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    wpnCurrent = 48 * 2,
+    wpnDefault = 48 * 2,
+  },
+  ["Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    wpnCurrent = 48 * 2,
+    wpnDefault = 48 * 2,
+  },
+  ["Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     wpnCurrent = 48 * 2,
     wpnDefault = 48 * 2,
   },
@@ -3994,16 +4073,159 @@ config.t.ground.sam.resupplyUnits = {
     ammunition = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     firingUnit = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
-  ["Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"] = {
-    name = "Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
+  ["Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    firingUnit = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    firingUnit = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    firingUnit = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = config.t.ground.sam.wpnDefault,
+    wpnDefault = config.t.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    firingUnit = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     guid = "",
     wpnCurrent = 48,
     wpnDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"
+    ammunition = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    firingUnit = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = 48,
+    wpnDefault = 48,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = 48,
+    wpnDefault = 48,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    firingUnit = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = 48,
+    wpnDefault = 48,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = 48,
+    wpnDefault = 48,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"
+  },
+  ["Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    name = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    guid = "",
+    wpnCurrent = 48,
+    wpnDefault = 48,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    firingUnit = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
 }
 config.t.ground.sam.firingUnits = {
@@ -4017,14 +4239,149 @@ config.t.ground.sam.firingUnits = {
     resupplyUnit = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3
   },
-  ["2nd Coy, 615th Bn, 792nd AFAD & Arty Bde"] = {
+  ["2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
-    name = "2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
+    name = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
+    guid = "",
+    name = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.PAC3
+  },
+  ["3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.t.ground.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 615th Bn, 792nd AFAD & Arty Bde",
+    resupplyUnit = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
+  },
+  ["2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.TK3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
+  },
+  ["1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.TK3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
+  },
+  ["3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.TK3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
+  },
+  ["2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.TK3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
+  },
+  ["1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
+    guid = "",
+    name = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    state = constants.MISSILE_SYSTEM_STATE.HIDE,
+    operationalArea = constants.OPERATIONAL_AREAS.QUANXI,
+    weaponDBID = constants.WEAPONS.TK3,
+    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3
   },

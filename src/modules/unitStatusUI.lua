@@ -52,7 +52,7 @@ local function transformData(missileSystem)
     AHA = {},
     HA = {},
     uShapeVertices = missileSystem.tacticalAreas.uShapeVertices,
-    name = "#" .. Utils.randomTxt(2)
+    name = "#" .. Utils.randomTxt(3)
   }
 
   for index, firePoint in ipairs(missileSystem.paths.FP) do
@@ -630,9 +630,12 @@ function UnitStatusUI.createSetupMenu(config, sideName)
           firingUnitdescriptor.operationalArea = operationalArea
           resupplyUnitDescriptor.operationalArea = operationalArea
           table.insert(operationalAreas, operationalArea)
-          groundCig[missileSystem.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
-          groundCig[missileSystem.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-          groundCig[missileSystem.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
+          -- groundCig[missileSystem.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
+          -- groundCig[missileSystem.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+          -- groundCig[missileSystem.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
+          systemCfg.firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
+          systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+          systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
         end
       end
 
@@ -642,8 +645,10 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, sideName)
-      MissileSystem.addMissileSystems(groundCig, sideName)
-      MissileSystem.initMissileSystemContexts(groundCig, saveData.t.ground)
+      -- MissileSystem.addMissileSystems(groundCig, sideName)
+      -- MissileSystem.initMissileSystemContexts(groundCig, saveData.t.ground)
+      MissileSystem.addMissileSystems(config.t.ground, sideName)
+      MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
     end
   end
 

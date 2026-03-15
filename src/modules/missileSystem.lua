@@ -761,6 +761,16 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
   })
 
   if zone then
+    local rps = GameUtils.convertToRPArray(zone)
+    local filteredRPs = {}
+
+    for index, rp in ipairs(rps) do
+      if index > 3 and index < 8 then
+        table.insert(filteredRPs, rp)
+      end
+    end
+
+    operationalArea.mask = { area = filteredRPs }
     zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
     zone.landcoverheight = MASK_ZONE.LAND_COVER_HEIGHT
     zone.landcovertype = MASK_ZONE.LAND_COVER_TYPE

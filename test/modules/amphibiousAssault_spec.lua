@@ -216,7 +216,7 @@ describe("AmphibiousAssault", function()
 
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
-      local expectedTime = os.date("%Y-%m-%d %H:%M:%S", 1600)
+      local expectedTime = os.date("%Y-%m-%d %H:%M:%S", 1600) .. constants.TIME_FORMATS
       assert.are.equal(expectedTime, missionObj.starttime)
     end)
 

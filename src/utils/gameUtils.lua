@@ -791,4 +791,383 @@ function GameUtils.getWeaponInfo(unit, weaponDBID)
   }
 end
 
+-- ============================================================================
+-- Operational Area Code Generation
+-- ============================================================================
+
+local AREA_NAME_PREFIXES = {
+  RL = "RELOAD_POINT",
+  HA = "HIDE_AREA",
+  FP = "FIRE_POINT",
+  AHA = "AMMO_HOLDING_AREA",
+}
+local POSITION_TYPE_ORDER = { "RL", "HA", "FP", "AHA" }
+
+---Serialize coordinate value (string or number) to Lua code
+---@param val string|number
+---@return string
+local function serializeCoord(val)
+  return type(val) == "string" and ('"' .. val .. '"') or tostring(val)
+end
+
+---Serialize string array on single line
+---@param arr string[]
+---@return string
+local function serializeStringArray(arr)
+  local parts = {}
+  for _, v in ipairs(arr) do parts[#parts + 1] = '"' .. v .. '"' end
+  return "{ " .. table.concat(parts, ", ") .. " }"
+end
+
+---Serialize waypoint to inline Lua code
+---@param wp CMO__Waypoint
+---@return string
+local function serializeWaypoint(wp)
+  return "{ latitude = " .. serializeCoord(wp.latitude) .. ", longitude = " .. serializeCoord(wp.longitude) .. ", }"
+end
+
+---Resolve operational area key name from name field or constants reverse-lookup
+---@param opArea SBJ__OperationalArea
+---@return string|nil
+local function resolveOpAreaKey(opArea)
+  if opArea.name then
+    return opArea.name:gsub("#", "")
+  end
+  for constKey, constOpArea in pairs(constants.OPERATIONAL_AREAS) do
+    if constOpArea == opArea then
+      return constKey
+    end
+  end
+  return nil
+end
+
+---Recursive Lua value serializer with operationalArea replacement
+---@param value any Value to serialize
+---@param level integer Indentation level
+---@param opAreaMap table<table, string> Maps operationalArea table refs to constant key names
+---@return string
+local function serializeValue(value, level, opAreaMap)
+  local pad = string.rep("  ", level)
+  local pad1 = string.rep("  ", level + 1)
+
+  if value == nil then return "nil" end
+  if type(value) == "boolean" then return tostring(value) end
+  if type(value) == "number" then return tostring(value) end
+  if type(value) == "string" then return string.format("%q", value) end
+  if type(value) ~= "table" then return tostring(value) end
+
+  local isArray = true
+  for k in pairs(value) do
+    if type(k) ~= "number" then isArray = false; break end
+  end
+
+  local lines = { "{" }
+
+  if isArray then
+    for _, v in ipairs(value) do
+      lines[#lines + 1] = pad1 .. serializeValue(v, level + 1, opAreaMap) .. ","
+    end
+  else
+    local keys = {}
+    for k in pairs(value) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+
+    for _, k in ipairs(keys) do
+      local v = value[k]
+      local keyStr = type(k) == "string"
+          and (k:match("^[%a_][%w_]*$") and k or '["' .. k .. '"]')
+          or ("[" .. tostring(k) .. "]")
+
+      if k == "operationalArea" and type(v) == "table" then
+        local opKey = opAreaMap[v] or resolveOpAreaKey(v)
+        if opKey then
+          lines[#lines + 1] = pad1 .. keyStr .. " = constants.OPERATIONAL_AREAS." .. opKey .. ","
+        else
+          lines[#lines + 1] = pad1 .. keyStr .. " = " .. serializeValue(v, level + 1, opAreaMap) .. ","
+        end
+      else
+        lines[#lines + 1] = pad1 .. keyStr .. " = " .. serializeValue(v, level + 1, opAreaMap) .. ","
+      end
+    end
+  end
+
+  lines[#lines + 1] = pad .. "}"
+  return table.concat(lines, "\n")
+end
+
+---Emit config assignments with basePath prefix
+---@param outLines string[] Output lines
+---@param basePath string Base config path
+---@param value any Value to serialize
+---@param opAreaMap table<table, string> Operational area lookup
+local function emitAssignments(outLines, basePath, value, opAreaMap)
+  if type(value) ~= "table" then
+    outLines[#outLines + 1] = basePath .. " = " .. serializeValue(value, 0, opAreaMap)
+    return
+  end
+
+  local hasStringKey = false
+  local hasNonNumberKey = false
+  for k in pairs(value) do
+    if type(k) == "string" then
+      hasStringKey = true
+    elseif type(k) ~= "number" then
+      hasNonNumberKey = true
+    end
+  end
+
+  -- Arrays or mixed non-string keys: assign whole table inline
+  if not hasStringKey or hasNonNumberKey then
+    outLines[#outLines + 1] = basePath .. " = " .. serializeValue(value, 0, opAreaMap)
+    return
+  end
+
+  outLines[#outLines + 1] = basePath .. " = {}"
+
+  local keys = {}
+  for k in pairs(value) do keys[#keys + 1] = k end
+  table.sort(keys, function(a, b) return a < b end)
+  for _, k in ipairs(keys) do
+    local keyPath
+    if type(k) == "string" and k:match("^[%a_][%w_]*$") then
+      keyPath = basePath .. "." .. k
+    else
+      keyPath = basePath .. "[" .. serializeValue(k, 0, opAreaMap) .. "]"
+    end
+    emitAssignments(outLines, keyPath, value[k], opAreaMap)
+  end
+end
+
+---Extract operational areas from ground force config and generate Lua code strings
+---Collects unique SBJ__OperationalArea from firingUnits, generates constants.AREAS
+---and constants.OPERATIONAL_AREAS code, then returns modified config with constant references
+---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
+---@return string areasStr constants.AREAS entries
+---@return string opAreasStr constants.OPERATIONAL_AREAS entries
+---@return string configStr Modified config with operationalArea replaced by constant references
+function GameUtils.extractOperationalAreas(groundForceConfig)
+  -- Phase 1: Collect unique operational areas
+  local uniqueAreas = {} ---@type {key: string, opArea: SBJ__OperationalArea}[]
+  local seenKeys = {}
+  local opAreaMap = {} ---@type table<table, string>
+
+  for _, sysConfig in pairs(groundForceConfig) do
+    if type(sysConfig) == "table" and sysConfig.firingUnits then
+      for _, unit in pairs(sysConfig.firingUnits) do
+        local opArea = unit.operationalArea
+        if opArea then
+          local key = resolveOpAreaKey(opArea)
+          if key then
+            opAreaMap[opArea] = key
+            if not seenKeys[key] then
+              seenKeys[key] = true
+              uniqueAreas[#uniqueAreas + 1] = { key = key, opArea = opArea }
+            end
+          end
+        end
+      end
+    end
+  end
+
+  table.sort(uniqueAreas, function(a, b) return a.key < b.key end)
+
+  -- Phase 2: Generate constants.AREAS entries
+  local areasLines = {}
+  local areaRefMap = {} ---@type table<string, table<string, string>>
+
+  for _, entry in ipairs(uniqueAreas) do
+    local key, opArea = entry.key, entry.opArea
+    areaRefMap[key] = {}
+
+    for _, posType in ipairs(POSITION_TYPE_ORDER) do
+      local positions = opArea[posType]
+      if positions then
+        for i, pos in ipairs(positions) do
+          if pos.area then
+            local constName = AREA_NAME_PREFIXES[posType] .. "_" .. key
+            if posType == "FP" then constName = constName .. "_" .. i end
+            areasLines[#areasLines + 1] = "  " .. constName .. " = " .. serializeStringArray(pos.area) .. ","
+            areaRefMap[key][posType .. "_" .. i] = constName
+          end
+        end
+      end
+    end
+
+    if opArea.mask and opArea.mask.area then
+      local constName = "MASK_" .. key
+      areasLines[#areasLines + 1] = "  " .. constName .. " = " .. serializeStringArray(opArea.mask.area) .. ","
+      areaRefMap[key]["mask"] = constName
+    end
+  end
+
+  -- Phase 3: Generate constants.OPERATIONAL_AREAS entries
+  local opLines = {}
+
+  for _, entry in ipairs(uniqueAreas) do
+    local key, opArea = entry.key, entry.opArea
+    opLines[#opLines + 1] = "  " .. key .. " = {"
+
+    for _, posType in ipairs(POSITION_TYPE_ORDER) do
+      local positions = opArea[posType]
+      if positions then
+        if #positions == 1 then
+          local pos = positions[1]
+          opLines[#opLines + 1] = "    " .. posType .. " = { {"
+          opLines[#opLines + 1] = "      course = {"
+          for _, wp in ipairs(pos.course) do
+            opLines[#opLines + 1] = "        " .. serializeWaypoint(wp)
+          end
+          opLines[#opLines + 1] = "      },"
+          opLines[#opLines + 1] = "      area = constants.AREAS." .. areaRefMap[key][posType .. "_1"]
+          opLines[#opLines + 1] = "    } },"
+        else
+          opLines[#opLines + 1] = "    " .. posType .. " = {"
+          for i, pos in ipairs(positions) do
+            opLines[#opLines + 1] = "      {"
+            opLines[#opLines + 1] = "        course = {"
+            for _, wp in ipairs(pos.course) do
+              opLines[#opLines + 1] = "          " .. serializeWaypoint(wp)
+            end
+            opLines[#opLines + 1] = "        },"
+            opLines[#opLines + 1] = "        area = constants.AREAS." .. areaRefMap[key][posType .. "_" .. i]
+            opLines[#opLines + 1] = "      },"
+          end
+          opLines[#opLines + 1] = "    },"
+        end
+      end
+    end
+
+    if opArea.mask then
+      local maskRef = areaRefMap[key]["mask"]
+      if maskRef then
+        opLines[#opLines + 1] = "    mask = { area = constants.AREAS." .. maskRef .. " },"
+      end
+    end
+
+    opLines[#opLines + 1] = "  },"
+  end
+
+  -- Phase 4: Serialize firingUnits with constant references
+  local areasStr = "constants.AREAS = {\n" .. table.concat(areasLines, "\n") .. "\n}"
+  local opAreasStr = "constants.OPERATIONAL_AREAS = {\n" .. table.concat(opLines, "\n") .. "\n}"
+
+  local FIELD_ORDER = {
+    "guid", "name", "msg", "state", "operationalArea",
+    "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "mountDescriptors"
+  }
+
+  local reverseState = {}
+  for k, v in pairs(constants.MISSILE_SYSTEM_STATE) do reverseState[v] = k end
+  local reverseWeapons = {}
+  for k, v in pairs(constants.WEAPONS) do reverseWeapons[v] = k end
+  local reversePlatforms = {}
+  for k, v in pairs(constants.PLATFORMS) do reversePlatforms[v] = k end
+
+  local firingUnitBlocks = {}
+  local groundKeys = {}
+  for k in pairs(groundForceConfig) do
+    if type(k) == "string" then
+      groundKeys[#groundKeys + 1] = k
+    end
+  end
+  table.sort(groundKeys, function(a, b) return a < b end)
+
+  for _, sysKey in ipairs(groundKeys) do
+    local sysConfig = groundForceConfig[sysKey]
+    if type(sysConfig) == "table" and sysConfig.firingUnits then
+      local configPath = "config.t.ground." .. sysKey
+      local lines = { configPath .. ".firingUnits = {" }
+
+      local unitNames = {}
+      for unitName in pairs(sysConfig.firingUnits) do
+        unitNames[#unitNames + 1] = unitName
+      end
+      table.sort(unitNames)
+
+      for _, unitName in ipairs(unitNames) do
+        local unit = sysConfig.firingUnits[unitName]
+        lines[#lines + 1] = '  ["' .. unitName .. '"] = {'
+
+        local orderedFields = {}
+        local fieldSet = {}
+        for _, f in ipairs(FIELD_ORDER) do
+          if unit[f] ~= nil then
+            orderedFields[#orderedFields + 1] = f
+            fieldSet[f] = true
+          end
+        end
+        local extraFields = {}
+        for f in pairs(unit) do
+          if not fieldSet[f] then extraFields[#extraFields + 1] = f end
+        end
+        table.sort(extraFields)
+        for _, f in ipairs(extraFields) do orderedFields[#orderedFields + 1] = f end
+
+        for _, field in ipairs(orderedFields) do
+          local value = unit[field]
+          local serialized
+
+          if field == "state" and type(value) == "number" then
+            local stateKey = reverseState[value]
+            serialized = stateKey and ("constants.MISSILE_SYSTEM_STATE." .. stateKey) or tostring(value)
+          elseif field == "operationalArea" and type(value) == "table" then
+            local opKey = opAreaMap[value]
+            serialized = opKey and ("constants.OPERATIONAL_AREAS." .. opKey) or serializeValue(value, 2, opAreaMap)
+          elseif field == "weaponDBID" then
+            if type(value) == "number" then
+              local wpnKey = reverseWeapons[value]
+              serialized = wpnKey and ("constants.WEAPONS." .. wpnKey) or tostring(value)
+            elseif type(value) == "table" then
+              local parts = {}
+              for _, v in ipairs(value) do
+                local wpnKey = reverseWeapons[v]
+                parts[#parts + 1] = wpnKey and ("constants.WEAPONS." .. wpnKey) or tostring(v)
+              end
+              serialized = "{ " .. table.concat(parts, ", ") .. " }"
+            end
+          elseif field == "ammoThreshold" then
+            serialized = configPath .. ".ammoThreshold"
+          elseif field == "dbid" and type(value) == "number" then
+            local platKey = reversePlatforms[value]
+            serialized = platKey and ("constants.PLATFORMS." .. platKey) or tostring(value)
+          elseif field == "mountDescriptors" and type(value) == "table" then
+            local mountKey
+            for k, v in pairs(constants.MOUNT_DESCRIPTORS) do
+              if #v == #value then
+                local match = true
+                for i, entry in ipairs(v) do
+                  if not value[i] or entry.dbid ~= value[i].dbid or entry.mountCount ~= value[i].mountCount then
+                    match = false; break
+                  end
+                end
+                if match then mountKey = k; break end
+              end
+            end
+            serialized = mountKey and ("constants.MOUNT_DESCRIPTORS." .. mountKey) or serializeValue(value, 2, opAreaMap)
+          end
+
+          if not serialized then
+            if type(value) == "string" then
+              serialized = string.format("%q", value)
+            elseif type(value) == "number" or type(value) == "boolean" then
+              serialized = tostring(value)
+            else
+              serialized = serializeValue(value, 2, opAreaMap)
+            end
+          end
+
+          lines[#lines + 1] = "    " .. field .. " = " .. serialized .. ","
+        end
+
+        lines[#lines + 1] = "  },"
+      end
+
+      lines[#lines + 1] = "}"
+      firingUnitBlocks[#firingUnitBlocks + 1] = table.concat(lines, "\n")
+    end
+  end
+
+  return areasStr, opAreasStr, table.concat(firingUnitBlocks, "\n")
+end
+
 return GameUtils
