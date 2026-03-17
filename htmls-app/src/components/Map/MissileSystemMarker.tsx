@@ -29,9 +29,10 @@ function coordinatesToLatLng(
   return coords.map((c) => [c.latitude, c.longitude] as LatLngExpression);
 }
 
-function calculateCenter(
-  coords: { latitude: number; longitude: number }[]
-): { lat: number; lng: number } {
+function calculateCenter(coords: { latitude: number; longitude: number }[]): {
+  lat: number;
+  lng: number;
+} {
   const sum = coords.reduce(
     (acc, c) => ({ lat: acc.lat + c.latitude, lng: acc.lng + c.longitude }),
     { lat: 0, lng: 0 }
@@ -70,9 +71,9 @@ export function MissileSystemMarker({ data }: MissileSystemMarkerProps) {
           pathOptions={{
             color: '#ff4444',
             fillColor: '#ff4444',
-            fillOpacity: 0.08,
-            weight: 2,
-            opacity: 0.5,
+            fillOpacity: 0.01,
+            weight: 1.5,
+            opacity: 0.25,
             dashArray: '5, 10',
           }}
         />
@@ -188,9 +189,9 @@ export function MissileSystemMarker({ data }: MissileSystemMarkerProps) {
               pathOptions={{
                 color: COLORS.WEAPON_RANGE,
                 fillColor: COLORS.WEAPON_RANGE,
-                fillOpacity: 0.08,
-                weight: 2,
-                opacity: 0.5,
+                fillOpacity: 0.01,
+                weight: 1.5,
+                opacity: 0.25,
                 dashArray: '5, 10',
               }}
             />
@@ -314,9 +315,7 @@ interface DeployedMissileSystemsProps {
   getUnitInfo: (unitKey: string) => { name: string; category: string } | null;
 }
 
-export function DeployedMissileSystems({
-  deployedSystems,
-}: DeployedMissileSystemsProps) {
+export function DeployedMissileSystems({ deployedSystems }: DeployedMissileSystemsProps) {
   return (
     <>
       {Array.from(deployedSystems.entries()).map(([unitKey, data]) => (

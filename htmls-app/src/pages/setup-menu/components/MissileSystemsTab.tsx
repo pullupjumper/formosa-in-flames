@@ -184,14 +184,19 @@ export function MissileSystemsTab({
     }
   };
 
-  const generateOffsetsForAngle = useCallback((angle: number): PreviewOffsets => {
-    const result = generateUShapeVertices({
-      centerLat: REF_CENTER.lat,
-      centerLon: REF_CENTER.lng,
-      ...AREA_CONFIG,
-      openingAngle: angle,
-    });
-    return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
+  const generateOffsetsForAngle = useCallback((angle: number): PreviewOffsets | null => {
+    try {
+      const result = generateUShapeVertices({
+        centerLat: REF_CENTER.lat,
+        centerLon: REF_CENTER.lng,
+        ...AREA_CONFIG,
+        openingAngle: angle,
+      });
+      return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
+    } catch (error) {
+      console.error('Failed to generate offsets for angle:', angle, error);
+      return null;
+    }
   }, []);
 
   const handleMapClick = (lat: number, lng: number) => {
@@ -209,9 +214,13 @@ export function MissileSystemsTab({
 
     const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
 
-    let offsets = previewOffsets[autoAngle];
+    let offsets: PreviewOffsets | null = previewOffsets[autoAngle] ?? null;
     if (!offsets) {
       offsets = generateOffsetsForAngle(autoAngle);
+    }
+    if (!offsets) {
+      setStatus('Warning: Failed to generate tactical area for this angle');
+      return;
     }
 
     const translate = (o: OffsetVertex) => ({
@@ -279,10 +288,13 @@ export function MissileSystemsTab({
     setPreviewAngle(null);
     setStatus(`${unitName} selected - Click map to deploy`);
 
-    setPreviewOffsets({
-      90: generateOffsetsForAngle(90),
-      270: generateOffsetsForAngle(270),
-    });
+    const offsets: Record<number, PreviewOffsets> = {};
+    const o90 = generateOffsetsForAngle(90);
+    const o270 = generateOffsetsForAngle(270);
+    if (o90) offsets[90] = o90;
+    if (o270) offsets[270] = o270;
+
+    setPreviewOffsets(offsets);
   };
 
   const handleCancelSelect = () => {
@@ -323,7 +335,9 @@ export function MissileSystemsTab({
       setPreviewAngle(newAngle);
       setPreviewOffsets((prev) => {
         if (!prev || prev[newAngle]) return prev;
-        return { ...prev, [newAngle]: generateOffsetsForAngle(newAngle) };
+        const offsets = generateOffsetsForAngle(newAngle);
+        if (!offsets) return prev;
+        return { ...prev, [newAngle]: offsets };
       });
     },
     [generateOffsetsForAngle]

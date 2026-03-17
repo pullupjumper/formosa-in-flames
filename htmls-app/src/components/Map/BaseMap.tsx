@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { LayersControl, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './leaflet-dark.css';
@@ -30,11 +30,22 @@ export function BaseMap({
       className={`h-full w-full ${className}`}
       style={{ background: '#10161a' }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-        maxZoom={18}
-      />
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer checked name="Dark">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+            maxZoom={18}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="Terrain">
+          <TileLayer
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={18}
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       {onMapClick && <MapClickHandler onClick={onMapClick} />}
       {onMouseMove && <MapMouseMoveHandler onMouseMove={onMouseMove} />}
       {cursorStyle && <MapCursorStyle cursor={cursorStyle} />}
@@ -57,11 +68,7 @@ function MapClickHandler({ onClick }: MapClickHandlerProps) {
   return null;
 }
 
-function MapMouseMoveHandler({
-  onMouseMove,
-}: {
-  onMouseMove: (lat: number, lng: number) => void;
-}) {
+function MapMouseMoveHandler({ onMouseMove }: { onMouseMove: (lat: number, lng: number) => void }) {
   useMapEvents({
     mousemove: (e) => {
       onMouseMove(e.latlng.lat, e.latlng.lng);
