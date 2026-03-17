@@ -772,8 +772,8 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
 
     operationalArea.mask = { area = filteredRPs }
     zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
-    zone.landcoverheight = MASK_ZONE.LAND_COVER_HEIGHT
-    zone.landcovertype = MASK_ZONE.LAND_COVER_TYPE
+    -- zone.landcoverheight = MASK_ZONE.LAND_COVER_HEIGHT
+    -- zone.landcovertype = MASK_ZONE.LAND_COVER_TYPE
     return true
   end
   return false

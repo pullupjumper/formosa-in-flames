@@ -938,13 +938,34 @@ local function emitAssignments(outLines, basePath, value, opAreaMap)
   end
 end
 
+---Serialize wpnCurrent/wpnDefault value as configPath reference when possible
+---@param value number Ammunition count value
+---@param wpnDefault number System's default weapon count
+---@param configPath string Config path prefix
+---@return string # Serialized expression string
+local function serializeWpnRef(value, wpnDefault, configPath)
+  if wpnDefault and wpnDefault > 0 and value > 0 then
+    if value == wpnDefault then
+      return configPath .. ".wpnDefault"
+    end
+    local ratio = value / wpnDefault
+    if ratio == math.floor(ratio) and ratio > 1 then
+      return configPath .. ".wpnDefault * " .. math.floor(ratio)
+    end
+    if value * 2 == wpnDefault then
+      return configPath .. ".wpnDefault / 2"
+    end
+  end
+  return tostring(value)
+end
+
 ---Extract operational areas from ground force config and generate Lua code strings
 ---Collects unique SBJ__OperationalArea from firingUnits, generates constants.AREAS
 ---and constants.OPERATIONAL_AREAS code, then returns modified config with constant references
 ---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@return string areasStr constants.AREAS entries
 ---@return string opAreasStr constants.OPERATIONAL_AREAS entries
----@return string configStr Modified config with operationalArea replaced by constant references
+---@return string configStr Modified config with ammunitions, resupplyUnits, and firingUnits using constant references
 function GameUtils.extractOperationalAreas(groundForceConfig)
   -- Phase 1: Collect unique operational areas
   local uniqueAreas = {} ---@type {key: string, opArea: SBJ__OperationalArea}[]
@@ -962,6 +983,21 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
             if not seenKeys[key] then
               seenKeys[key] = true
               uniqueAreas[#uniqueAreas + 1] = { key = key, opArea = opArea }
+            end
+          end
+        end
+      end
+      if sysConfig.resupplyUnits then
+        for _, unit in pairs(sysConfig.resupplyUnits) do
+          local opArea = unit.operationalArea
+          if opArea then
+            local key = resolveOpAreaKey(opArea)
+            if key then
+              opAreaMap[opArea] = key
+              if not seenKeys[key] then
+                seenKeys[key] = true
+                uniqueAreas[#uniqueAreas + 1] = { key = key, opArea = opArea }
+              end
             end
           end
         end
@@ -1015,7 +1051,7 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
           opLines[#opLines + 1] = "    " .. posType .. " = { {"
           opLines[#opLines + 1] = "      course = {"
           for _, wp in ipairs(pos.course) do
-            opLines[#opLines + 1] = "        " .. serializeWaypoint(wp)
+            opLines[#opLines + 1] = "        " .. serializeWaypoint(wp) .. ","
           end
           opLines[#opLines + 1] = "      },"
           opLines[#opLines + 1] = "      area = constants.AREAS." .. areaRefMap[key][posType .. "_1"]
@@ -1026,7 +1062,7 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
             opLines[#opLines + 1] = "      {"
             opLines[#opLines + 1] = "        course = {"
             for _, wp in ipairs(pos.course) do
-              opLines[#opLines + 1] = "          " .. serializeWaypoint(wp)
+              opLines[#opLines + 1] = "          " .. serializeWaypoint(wp) .. ","
             end
             opLines[#opLines + 1] = "        },"
             opLines[#opLines + 1] = "        area = constants.AREAS." .. areaRefMap[key][posType .. "_" .. i]
@@ -1076,6 +1112,69 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
     local sysConfig = groundForceConfig[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       local configPath = "config.t.ground." .. sysKey
+
+      -- Serialize ammunitions
+      if sysConfig.ammunitions then
+        local ammoLines = { configPath .. ".ammunitions = {" }
+        local ammoNames = {}
+        for k in pairs(sysConfig.ammunitions) do ammoNames[#ammoNames + 1] = k end
+        table.sort(ammoNames)
+
+        for _, ammoName in ipairs(ammoNames) do
+          local ammo = sysConfig.ammunitions[ammoName]
+          ammoLines[#ammoLines + 1] = '  ["' .. ammoName .. '"] = {'
+          ammoLines[#ammoLines + 1] = "    guid = " .. string.format("%q", ammo.guid) .. ","
+          ammoLines[#ammoLines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
+          ammoLines[#ammoLines + 1] = "    wpnCurrent = " .. serializeWpnRef(ammo.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
+          ammoLines[#ammoLines + 1] = "    wpnDefault = " .. serializeWpnRef(ammo.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
+          ammoLines[#ammoLines + 1] = "  },"
+        end
+
+        ammoLines[#ammoLines + 1] = "}"
+        firingUnitBlocks[#firingUnitBlocks + 1] = table.concat(ammoLines, "\n")
+      end
+
+      -- Serialize resupplyUnits
+      if sysConfig.resupplyUnits then
+        local resLines = { configPath .. ".resupplyUnits = {" }
+        local resNames = {}
+        for k in pairs(sysConfig.resupplyUnits) do resNames[#resNames + 1] = k end
+        table.sort(resNames)
+
+        for _, resName in ipairs(resNames) do
+          local unit = sysConfig.resupplyUnits[resName]
+          resLines[#resLines + 1] = '  ["' .. resName .. '"] = {'
+          resLines[#resLines + 1] = "    guid = " .. string.format("%q", unit.guid) .. ","
+          resLines[#resLines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
+          resLines[#resLines + 1] = "    wpnCurrent = " .. serializeWpnRef(unit.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
+          resLines[#resLines + 1] = "    wpnDefault = " .. serializeWpnRef(unit.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
+          resLines[#resLines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
+
+          local opKey = opAreaMap[unit.operationalArea]
+          resLines[#resLines + 1] = "    operationalArea = " .. (opKey and ("constants.OPERATIONAL_AREAS." .. opKey) or serializeValue(unit.operationalArea, 2, opAreaMap)) .. ","
+
+          local stateKey = reverseState[unit.state]
+          resLines[#resLines + 1] = "    state = " .. (stateKey and ("constants.MISSILE_SYSTEM_STATE." .. stateKey) or tostring(unit.state)) .. ","
+
+          resLines[#resLines + 1] = "    ammunition = " .. string.format("%q", unit.ammunition) .. ","
+
+          if type(unit.firingUnit) == "string" then
+            resLines[#resLines + 1] = "    firingUnit = " .. string.format("%q", unit.firingUnit)
+          elseif type(unit.firingUnit) == "table" then
+            local parts = {}
+            for _, v in ipairs(unit.firingUnit) do
+              parts[#parts + 1] = string.format("%q", v)
+            end
+            resLines[#resLines + 1] = "    firingUnit = { " .. table.concat(parts, ", ") .. " }"
+          end
+
+          resLines[#resLines + 1] = "  },"
+        end
+
+        resLines[#resLines + 1] = "}"
+        firingUnitBlocks[#firingUnitBlocks + 1] = table.concat(resLines, "\n")
+      end
+
       local lines = { configPath .. ".firingUnits = {" }
 
       local unitNames = {}

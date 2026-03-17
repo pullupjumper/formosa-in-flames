@@ -139,8 +139,8 @@ function IntegratedAirDefenseSystem.addC2Facilities(iadsConfig)
       dbids = iadsConfig.c2FacilityDBIDs,
       count = 3,
       randomRadius = iadsConfig.randomRadius,
-      sideName = "China",
-      unitType = "Facility",
+      sideName = constants.SIDES.ENEMY,
+      unitType = constants.UNIT_TYPES.FACILITY,
       unitname = "Suspected C2 Facility#",
       autodetectable = true
     })
@@ -160,7 +160,7 @@ end
 ---@param iadsContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
 function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsContext)
-  local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ name = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
   iadsContext.c2 = {}
 
   if not filteredUnits then
@@ -267,7 +267,7 @@ end
 ---@param iadsConfig SBJ__IADSFactionConfig IADS configuration for faction
 ---@param iadsContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
-  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
@@ -277,11 +277,11 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
     for _, descriptor in pairs(iadsConfig.rocc) do
-      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, "Taiwan")
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.PLAYER)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
-          if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or actualUnit.dbid == constants.PLATFORMS.PAC3 then
+          if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_SAM or actualUnit.dbid == constants.PLATFORMS.PAC3 then
             if not iadsContext.rocc[c2.guid] then
               initC2Context(iadsContext.rocc, descriptor, c2.guid, "rocc")
             end
@@ -320,7 +320,7 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
     end
 
     for _, descriptor in pairs(iadsConfig.taaoc) do
-      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, "Taiwan")
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.PLAYER)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
@@ -349,7 +349,7 @@ end
 ---@param iadsConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 ---@return boolean # True if removal operation completed, false if unit query failed
 function IntegratedAirDefenseSystem.removeC2Facilities(iadsConfig)
-  local filteredUnits = GameApi.VP_GetSide({ name = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ name = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 
   if not filteredUnits then
@@ -362,7 +362,7 @@ function IntegratedAirDefenseSystem.removeC2Facilities(iadsConfig)
     if actualUnit then
       for _, dbid in ipairs(iadsConfig.c2FacilityDBIDs) do
         if actualUnit.dbid == dbid then
-          GameApi.ScenEdit_DeleteUnit({ side = "China", guid = actualUnit.guid })
+          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.ENEMY, guid = actualUnit.guid })
           removedCount = removedCount + 1
           break
         end
