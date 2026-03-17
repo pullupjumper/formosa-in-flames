@@ -1005,25 +1005,20 @@ function generateInternalSquares(
     }
   }
 
+  const safeVertices = (index: number): Coordinate[] =>
+    centers[index]
+      ? generateSquareVertices(
+          centers[index].latitude,
+          centers[index].longitude,
+          squareSize,
+          openingAngle
+        )
+      : [];
+
   return {
-    ammoArea: generateSquareVertices(
-      centers[0].latitude,
-      centers[0].longitude,
-      squareSize,
-      openingAngle
-    ),
-    hideArea: generateSquareVertices(
-      centers[1].latitude,
-      centers[1].longitude,
-      squareSize,
-      openingAngle
-    ),
-    reloadArea: generateSquareVertices(
-      centers[2].latitude,
-      centers[2].longitude,
-      squareSize,
-      openingAngle
-    ),
+    ammoArea: safeVertices(0),
+    hideArea: safeVertices(1),
+    reloadArea: safeVertices(2),
   };
 }
 
