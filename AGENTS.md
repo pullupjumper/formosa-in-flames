@@ -11,41 +11,23 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 ### Testing
 ```bash
 # Run all tests (from project root)
-busted test
+busted --lua=luajit test
 
 # Run specific test file
-busted test/modules/missileSystem_spec.lua
-```
-
-**Claude Code Testing Note**:
-Claude Code runs commands via Git Bash (MSYS2), where `.bat` files cannot be executed directly. Use `cmd.exe //c` to run busted:
-```bash
-# Run tests from Claude Code
-cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test"
-
-# Run specific test file
-cd /d/codes/lua/CMOScripts/formosa-in-flames && cmd.exe //c "busted test\\modules\\missileSystem_spec.lua"
+busted --lua=luajit test/modules/missileSystem_spec.lua
 ```
 
 ### Build and Deployment
 ```bash
 # Process Lua modules for deployment (removes requires, cleans modules)
-python tools/build_lua_scenario.py
-
-# On Windows Traditional Chinese systems, set UTF-8 encoding (script uses emoji characters)
-PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py
+python3 tools/build_lua_scenario.py
 
 # Clean only (src -> slim)
-PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py --clean-only
+python3 tools/build_lua_scenario.py --clean-only
 
 # Merge only (slim -> main.lua)
-PYTHONIOENCODING=utf-8 python tools/build_lua_scenario.py --merge-only
+python3 tools/build_lua_scenario.py --merge-only
 ```
-
-**Windows Encoding Note**:
-- Windows Traditional Chinese systems default to CP950 encoding, which cannot display emoji characters used in Python scripts
-- Must set `PYTHONIOENCODING=utf-8` environment variable before execution
-- This is a Windows OS limitation, not a code issue
 
 ### Development Mode
 Set `config.isDevMode = true` in `src/core/config.lua` for development features including console logging.
