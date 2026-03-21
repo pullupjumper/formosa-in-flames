@@ -887,10 +887,11 @@ end
 ---@param systemCfg SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
 ---@param sideName string Side name for unit creation
+---@param isSam boolean True if it is SAM
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return string? errorMsg Error message if validation failed
-local function addFiringUnit(systemCfg, descriptor, sideName)
+local function addFiringUnit(systemCfg, descriptor, sideName, isSam)
   if not descriptor.operationalArea.HA or #descriptor.operationalArea.HA == 0 then
     return 0, 0, string.format("No HA defined for firing unit '%s' (OPAREA: %s), cannot add unit",
       descriptor.name, descriptor.operationalArea.name)
@@ -899,6 +900,12 @@ local function addFiringUnit(systemCfg, descriptor, sideName)
   local haPosition = descriptor.operationalArea.HA[1]
   if not haPosition.course or #haPosition.course == 0 then
     return 0, 0, string.format("No course defined for HA[1] in '%s' (OPAREA: %s), cannot add unit",
+      descriptor.name, descriptor.operationalArea.name)
+  end
+
+  local fpPositions = descriptor.operationalArea.FP
+  if isSam and (not fpPositions or #fpPositions == 0) then
+    return 0, 0, string.format("No FP defined for SAM firing unit '%s' (OPAREA: %s), cannot add unit",
       descriptor.name, descriptor.operationalArea.name)
   end
 
@@ -915,14 +922,25 @@ local function addFiringUnit(systemCfg, descriptor, sideName)
       name = GameUtils.formatOrdinalUnitName(i, unitType or "", ", " .. descriptor.name)
     end
 
+    local lat, lon
+    if isSam then
+      local fp = fpPositions[math.random(#fpPositions)]
+      local fpSize = #fp.course
+      lat = fp.course[fpSize].latitude
+      lon = fp.course[fpSize].longitude
+    else
+      lat = haPosition.course[size].latitude
+      lon = haPosition.course[size].longitude
+    end
+
     local addedUnit = GameApi.ScenEdit_AddUnit({
       side = sideName,
       unitname = name,
       dbid = descriptor.dbid,
       type = constants.UNIT_TYPES.FACILITY,
       group = expected > 1 and descriptor.name or nil,
-      latitude = haPosition.course[size].latitude,
-      longitude = haPosition.course[size].longitude
+      latitude = lat,
+      longitude = lon
     })
 
     if addedUnit then
@@ -1349,10 +1367,11 @@ function MissileSystem.addMissileSystems(groundForceCfg, sideName)
 
   for systemName, systemCfg in pairs(groundForceCfg) do
     ---@cast systemCfg SBJ__MissileSystemConfig
+    local isSam = systemName == "sam"
     local fuTotal, fuExpected = 0, 0
     for _, descriptor in pairs(systemCfg.firingUnits) do
       removeMissileSystem(descriptor, sideName)
-      local created, expected, errorMsg = addFiringUnit(systemCfg, descriptor, sideName)
+      local created, expected, errorMsg = addFiringUnit(systemCfg, descriptor, sideName, isSam)
       fuTotal = fuTotal + created
       fuExpected = fuExpected + expected
       if errorMsg then table.insert(failLines, "  [FAIL] " .. errorMsg) end

@@ -7,7 +7,11 @@
       "Bash(rm cleanup_ato.py)",
       "Bash(grep -n \"baseGUID\\s*=\" src/core/constants.lua src/core/saveData.lua)",
       "Bash(grep:*)",
-      "Bash(grep -A 5 -B 5 \"baseGUID = ''6Z8LM5-0HMIJ3QGCRQ2G''\" src/core/constants.lua)"
+      "Bash(grep -A 5 -B 5 \"baseGUID = ''6Z8LM5-0HMIJ3QGCRQ2G''\" src/core/constants.lua)",
+      "Bash(python -c \"\npath = 'D:/codes/lua/CMOScripts/formosa-in-flames/src/core/constants.lua'\nimport re\nwith open\\(path, 'r', newline=''\\) as f:\n    for i, line in enumerate\\(f, 1\\):\n        stripped = line.rstrip\\('\\\\r\\\\n'\\)\n        if re.search\\(r'\\(latitude|longitude\\)', stripped\\) and stripped.rstrip\\(\\).endswith\\('}'\\) and not stripped.rstrip\\(\\).endswith\\('},'\\):\n            print\\(f'{i}: {stripped}'\\)\nprint\\('Done - no output above means all fixed'\\)\n\")",
+      "Bash(git apply:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

@@ -831,7 +831,8 @@ end
 ---@return string|nil
 local function resolveOpAreaKey(opArea)
   if opArea.name then
-    return opArea.name:gsub("#", "")
+    local str = opArea.name:gsub("#", "")
+    return str
   end
   for constKey, constOpArea in pairs(constants.OPERATIONAL_AREAS) do
     if constOpArea == opArea then
@@ -858,7 +859,9 @@ local function serializeValue(value, level, opAreaMap)
 
   local isArray = true
   for k in pairs(value) do
-    if type(k) ~= "number" then isArray = false; break end
+    if type(k) ~= "number" then
+      isArray = false; break
+    end
   end
 
   local lines = { "{" }
@@ -893,49 +896,6 @@ local function serializeValue(value, level, opAreaMap)
 
   lines[#lines + 1] = pad .. "}"
   return table.concat(lines, "\n")
-end
-
----Emit config assignments with basePath prefix
----@param outLines string[] Output lines
----@param basePath string Base config path
----@param value any Value to serialize
----@param opAreaMap table<table, string> Operational area lookup
-local function emitAssignments(outLines, basePath, value, opAreaMap)
-  if type(value) ~= "table" then
-    outLines[#outLines + 1] = basePath .. " = " .. serializeValue(value, 0, opAreaMap)
-    return
-  end
-
-  local hasStringKey = false
-  local hasNonNumberKey = false
-  for k in pairs(value) do
-    if type(k) == "string" then
-      hasStringKey = true
-    elseif type(k) ~= "number" then
-      hasNonNumberKey = true
-    end
-  end
-
-  -- Arrays or mixed non-string keys: assign whole table inline
-  if not hasStringKey or hasNonNumberKey then
-    outLines[#outLines + 1] = basePath .. " = " .. serializeValue(value, 0, opAreaMap)
-    return
-  end
-
-  outLines[#outLines + 1] = basePath .. " = {}"
-
-  local keys = {}
-  for k in pairs(value) do keys[#keys + 1] = k end
-  table.sort(keys, function(a, b) return a < b end)
-  for _, k in ipairs(keys) do
-    local keyPath
-    if type(k) == "string" and k:match("^[%a_][%w_]*$") then
-      keyPath = basePath .. "." .. k
-    else
-      keyPath = basePath .. "[" .. serializeValue(k, 0, opAreaMap) .. "]"
-    end
-    emitAssignments(outLines, keyPath, value[k], opAreaMap)
-  end
 end
 
 ---Serialize wpnCurrent/wpnDefault value as configPath reference when possible
@@ -1125,8 +1085,10 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
           ammoLines[#ammoLines + 1] = '  ["' .. ammoName .. '"] = {'
           ammoLines[#ammoLines + 1] = "    guid = " .. string.format("%q", ammo.guid) .. ","
           ammoLines[#ammoLines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
-          ammoLines[#ammoLines + 1] = "    wpnCurrent = " .. serializeWpnRef(ammo.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
-          ammoLines[#ammoLines + 1] = "    wpnDefault = " .. serializeWpnRef(ammo.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
+          ammoLines[#ammoLines + 1] = "    wpnCurrent = " ..
+              serializeWpnRef(ammo.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
+          ammoLines[#ammoLines + 1] = "    wpnDefault = " ..
+              serializeWpnRef(ammo.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
           ammoLines[#ammoLines + 1] = "  },"
         end
 
@@ -1146,15 +1108,20 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
           resLines[#resLines + 1] = '  ["' .. resName .. '"] = {'
           resLines[#resLines + 1] = "    guid = " .. string.format("%q", unit.guid) .. ","
           resLines[#resLines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
-          resLines[#resLines + 1] = "    wpnCurrent = " .. serializeWpnRef(unit.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
-          resLines[#resLines + 1] = "    wpnDefault = " .. serializeWpnRef(unit.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
+          resLines[#resLines + 1] = "    wpnCurrent = " ..
+              serializeWpnRef(unit.wpnCurrent, sysConfig.wpnDefault, configPath) .. ","
+          resLines[#resLines + 1] = "    wpnDefault = " ..
+              serializeWpnRef(unit.wpnDefault, sysConfig.wpnDefault, configPath) .. ","
           resLines[#resLines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
 
           local opKey = opAreaMap[unit.operationalArea]
-          resLines[#resLines + 1] = "    operationalArea = " .. (opKey and ("constants.OPERATIONAL_AREAS." .. opKey) or serializeValue(unit.operationalArea, 2, opAreaMap)) .. ","
+          resLines[#resLines + 1] = "    operationalArea = " ..
+              (opKey and ("constants.OPERATIONAL_AREAS." .. opKey) or serializeValue(unit.operationalArea, 2, opAreaMap)) ..
+              ","
 
           local stateKey = reverseState[unit.state]
-          resLines[#resLines + 1] = "    state = " .. (stateKey and ("constants.MISSILE_SYSTEM_STATE." .. stateKey) or tostring(unit.state)) .. ","
+          resLines[#resLines + 1] = "    state = " ..
+              (stateKey and ("constants.MISSILE_SYSTEM_STATE." .. stateKey) or tostring(unit.state)) .. ","
 
           resLines[#resLines + 1] = "    ammunition = " .. string.format("%q", unit.ammunition) .. ","
 
@@ -1239,7 +1206,9 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
                     match = false; break
                   end
                 end
-                if match then mountKey = k; break end
+                if match then
+                  mountKey = k; break
+                end
               end
             end
             serialized = mountKey and ("constants.MOUNT_DESCRIPTORS." .. mountKey) or serializeValue(value, 2, opAreaMap)

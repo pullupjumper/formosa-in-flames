@@ -298,7 +298,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "BASE-1" then
           return {
-            guid = "BASE-1", name = "Air Base",
+            guid = "BASE-1",
+            name = "Air Base",
             embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
           }
         end
@@ -377,7 +378,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "BASE-1" then
           return {
-            guid = "BASE-1", name = "Air Base",
+            guid = "BASE-1",
+            name = "Air Base",
             embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
           }
         end
@@ -415,7 +417,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "BASE-1" then
           return {
-            guid = "BASE-1", name = "Air Base",
+            guid = "BASE-1",
+            name = "Air Base",
             embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
           }
         end
@@ -519,7 +522,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(3000))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
-        guid = "BASE-1", name = "Air Base",
+        guid = "BASE-1",
+        name = "Air Base",
         embarkedUnits = { Aircraft = {} }
       }))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout"))
@@ -549,7 +553,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "BASE-1" then
           return {
-            guid = "BASE-1", name = "Air Base",
+            guid = "BASE-1",
+            name = "Air Base",
             embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
           }
         end
@@ -1247,19 +1252,23 @@ describe("AirTaskingOrder", function()
     -- Positive: all support roles
     it("should launch package with all four support roles", function()
       local escort = makeRole({
-        missionName = "ESCORT-1", missionType = "patrol",
+        missionName = "ESCORT-1",
+        missionType = "patrol",
         startTime = "2026-02-14 05:50:00"
       })
       local wildWeasel = makeRole({
-        missionName = "SEAD-1", missionType = "strike",
+        missionName = "SEAD-1",
+        missionType = "strike",
         startTime = "2026-02-14 05:45:00"
       })
       local jammer = makeRole({
-        missionName = "JAMMER-1", missionType = "patrol",
+        missionName = "JAMMER-1",
+        missionType = "patrol",
         startTime = "2026-02-14 05:55:00"
       })
       local tanker = makeRole({
-        missionName = "TANKER-1", missionType = "support",
+        missionName = "TANKER-1",
+        missionType = "support",
         startTime = "2026-02-14 05:30:00"
       })
       local pkg = makePackage({
