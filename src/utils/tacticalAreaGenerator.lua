@@ -5,20 +5,21 @@ local Logger = require("src.utils.logger")
 
 local TacticalAreaGenerator = {}
 
----Generate a random square center within valid bounds of internal rectangle
----@param centerLat number Center latitude of internal rectangle
----@param centerLon number Center longitude of internal rectangle
+-- ============================================================================
+-- Helper Functions
+-- ============================================================================
+
+---Generate a random square center within valid bounds of boundary rectangle
+---@param centerLat number Center latitude of boundary rectangle
+---@param centerLon number Center longitude of boundary rectangle
 ---@param maxOffsetX number Maximum offset in X direction (perpendicular to opening)
 ---@param maxOffsetY number Maximum offset in Y direction (parallel to opening)
 ---@param openingAngle number Opening direction in degrees
 ---@return CMO__Location # Random center point
 local function generateRandomSquareCenter(centerLat, centerLon, maxOffsetX, maxOffsetY, openingAngle)
-  -- Random offset in X direction (perpendicular to opening)
   local offsetX = (math.random() * 2 - 1) * maxOffsetX
-  -- Random offset in Y direction (parallel to opening, negative = away from opening)
   local offsetY = (math.random() * 2 - 1) * maxOffsetY
 
-  -- Move from center by offsetX perpendicular to opening direction
   local tempPos = GameApi.World_GetPointFromBearing({
     latitude = centerLat,
     longitude = centerLon,
@@ -26,35 +27,12 @@ local function generateRandomSquareCenter(centerLat, centerLon, maxOffsetX, maxO
     distance = offsetX
   })
 
-  -- Then move by offsetY parallel to opening direction
   return GameApi.World_GetPointFromBearing({
     latitude = tempPos.latitude,
     longitude = tempPos.longitude,
     bearing = (180 + openingAngle) % 360,
     distance = offsetY
   })
-end
-
----Check if a fire point square overlaps with U-shape bounding box
----@param squareLat number|string Fire point center latitude
----@param squareLon number|string Fire point center longitude
----@param centerLat number|string U-shape center latitude
----@param centerLon number|string U-shape center longitude
----@param uShapeMaxDist number U-shape maximum distance from center
----@param squareSize number Fire point square size
----@param margin number Safety margin
----@return boolean # True if overlaps with U-shape
-local function checkFirePointOverlapsWithUShape(squareLat, squareLon, centerLat, centerLon, uShapeMaxDist, squareSize,
-                                                margin)
-  local distanceToCenter = GameUtils.calculateDistance(centerLat, centerLon, squareLat, squareLon)
-
-  -- Check if square is too close to U-shape
-  -- Square should be outside U-shape bounding box plus its own half diagonal
-  local halfSquare = squareSize / 2
-  local squareDiagonal = math.sqrt(2) * halfSquare
-  local minSafeDistance = uShapeMaxDist + squareDiagonal + margin
-
-  return distanceToCenter < minSafeDistance
 end
 
 ---Calculate center point of square from four vertices
@@ -76,6 +54,19 @@ local function calculateSquareCenter(vertices)
   }
 end
 
+---Check if two squares overlap based on center distance and size
+---@param center1Lat number|string First square center latitude
+---@param center1Lon number|string First square center longitude
+---@param center2Lat number|string Second square center latitude
+---@param center2Lon number|string Second square center longitude
+---@param squareSize number|string Square size in nautical miles
+---@param margin number Safety margin in nautical miles
+---@return boolean # True if squares overlap (including margin)
+local function checkSquaresOverlap(center1Lat, center1Lon, center2Lat, center2Lon, squareSize, margin)
+  local distance = GameUtils.calculateDistance(center1Lat, center1Lon, center2Lat, center2Lon)
+  return distance < (squareSize + margin)
+end
+
 ---Check if a point is inside a square defined by vertices
 ---@param pointLat number|string Point latitude
 ---@param pointLon number|string Point longitude
@@ -85,17 +76,33 @@ end
 ---@return boolean # True if point is inside square (including margin)
 local function checkPointInSquare(pointLat, pointLon, squareCenter, squareSize, margin)
   local distance = GameUtils.calculateDistance(squareCenter.latitude, squareCenter.longitude, pointLat, pointLon)
-
-  -- First use diagonal distance as bounding circle for quick rejection
-  local halfDiagonal = math.sqrt(2) * (squareSize / 2 + margin)
-  if distance >= halfDiagonal then
-    return false -- Definitely outside
-  end
-
-  -- For more accurate check, use square bounding box instead of circle
-  -- This prevents false positives from the circular approximation
   local halfSize = squareSize / 2 + margin
   return distance < halfSize
+end
+
+---Generate square vertices from center point
+---@param centerLat number|string Center latitude in degrees
+---@param centerLon number|string Center longitude in degrees
+---@param size number Square size in nautical miles
+---@param rotationAngle number Rotation angle in degrees
+---@return CMO__Location[] # Array of 4 vertices forming a square
+local function generateSquareVertices(centerLat, centerLon, size, rotationAngle)
+  local halfSize = size / 2
+  local diagonalDist = math.sqrt(2) * halfSize
+  local vertices = {}
+
+  local cornerAngles = { 45, 135, 225, 315 }
+  for _, cornerAngle in ipairs(cornerAngles) do
+    local vertex = GameApi.World_GetPointFromBearing({
+      latitude = centerLat,
+      longitude = centerLon,
+      bearing = (cornerAngle + rotationAngle) % 360,
+      distance = diagonalDist
+    })
+    table.insert(vertices, vertex)
+  end
+
+  return vertices
 end
 
 ---Check if a line segment intersects with a square area
@@ -109,14 +116,12 @@ end
 local function checkPathIntersectsSquare(startLat, startLon, endLat, endLon, squareVertices, margin)
   local squareCenter = calculateSquareCenter(squareVertices)
 
-  -- Calculate square size from vertices
   local dist1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
     squareVertices[2].latitude, squareVertices[2].longitude)
   local dist2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
     squareVertices[3].latitude, squareVertices[3].longitude)
-  local squareSize = (dist1 + dist2) / 2 -- Average of two sides
+  local squareSize = (dist1 + dist2) / 2
 
-  -- Sample points along the path
   local numSamples = 10
   for i = 0, numSamples do
     local t = i / numSamples
@@ -139,16 +144,13 @@ local function calculateSquareOffsetCorners(squareVertices, offset)
   local squareCenter = calculateSquareCenter(squareVertices)
   local offsetCorners = {}
 
-  -- For each vertex, calculate offset corner in the direction away from center
-  for i, vertex in ipairs(squareVertices) do
+  for _, vertex in ipairs(squareVertices) do
     local bearing = GameApi.Tool_Bearing(
       { latitude = squareCenter.latitude, longitude = squareCenter.longitude },
       { latitude = vertex.latitude, longitude = vertex.longitude }
     )
 
-    -- Calculate offset distance (reduced from sqrt(2) to 1.2 to minimize collision with adjacent squares)
     local offsetDist = offset * 1.2
-
     local offsetCorner = GameApi.World_GetPointFromBearing({
       latitude = vertex.latitude,
       longitude = vertex.longitude,
@@ -163,16 +165,15 @@ local function calculateSquareOffsetCorners(squareVertices, offset)
 end
 
 ---Select best pair of adjacent avoidance corners from offset corners
----Chooses two adjacent corners that minimize total path distance and don't create new collisions
 ---@param startLat number Start point latitude
 ---@param startLon number Start point longitude
 ---@param endLat number End point latitude
 ---@param endLon number End point longitude
----@param offsetCorners CMO__Location[] Four offset corner points (must be 4 points forming a square)
+---@param offsetCorners CMO__Location[] Four offset corner points
 ---@param allSquares CMO__Location[][] All square areas to check for collisions
 ---@param margin number Safety margin in nautical miles
----@return CMO__Location|nil corner1 First corner point for avoidance, or nil if none found
----@return CMO__Location|nil corner2 Second corner point for avoidance, or nil if none found
+---@return CMO__Location|nil corner1 First corner point, or nil if none found
+---@return CMO__Location|nil corner2 Second corner point, or nil if none found
 local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon, offsetCorners, allSquares, margin)
   if #offsetCorners ~= 4 then
     return nil, nil
@@ -181,13 +182,10 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
   local bestPair = nil
   local minDistance = math.huge
 
-  -- Try all 4 pairs of adjacent corners in BOTH directions (clockwise and counter-clockwise)
-  -- This gives us 8 possible routes: 4 edges × 2 directions
   for i = 1, 4 do
-    -- Try both directions for each edge
     local pairs = {
-      { offsetCorners[i],           offsetCorners[(i % 4) + 1] }, -- Clockwise
-      { offsetCorners[(i % 4) + 1], offsetCorners[i] }            -- Counter-clockwise
+      { offsetCorners[i],           offsetCorners[(i % 4) + 1] },
+      { offsetCorners[(i % 4) + 1], offsetCorners[i] }
     }
 
     for _, pair in ipairs(pairs) do
@@ -198,11 +196,11 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
       -- Check path segment: start -> corner1
       for _, squareVertices in ipairs(allSquares) do
         local squareCenter = calculateSquareCenter(squareVertices)
-        local dist1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
+        local d1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
           squareVertices[2].latitude, squareVertices[2].longitude)
-        local dist2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
+        local d2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
           squareVertices[3].latitude, squareVertices[3].longitude)
-        local squareSize = (dist1 + dist2) / 2
+        local squareSize = (d1 + d2) / 2
 
         local startInSquare = checkPointInSquare(startLat, startLon, squareCenter, squareSize, 0)
         local corner1InSquare = checkPointInSquare(corner1.latitude, corner1.longitude, squareCenter, squareSize, 0)
@@ -219,11 +217,11 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
       if not hasCollision then
         for _, squareVertices in ipairs(allSquares) do
           local squareCenter = calculateSquareCenter(squareVertices)
-          local dist1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
+          local d1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
             squareVertices[2].latitude, squareVertices[2].longitude)
-          local dist2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
+          local d2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
             squareVertices[3].latitude, squareVertices[3].longitude)
-          local squareSize = (dist1 + dist2) / 2
+          local squareSize = (d1 + d2) / 2
 
           local corner1InSquare = checkPointInSquare(corner1.latitude, corner1.longitude, squareCenter, squareSize, 0)
           local corner2InSquare = checkPointInSquare(corner2.latitude, corner2.longitude, squareCenter, squareSize, 0)
@@ -241,11 +239,11 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
       if not hasCollision then
         for _, squareVertices in ipairs(allSquares) do
           local squareCenter = calculateSquareCenter(squareVertices)
-          local dist1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
+          local d1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
             squareVertices[2].latitude, squareVertices[2].longitude)
-          local dist2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
+          local d2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
             squareVertices[3].latitude, squareVertices[3].longitude)
-          local squareSize = (dist1 + dist2) / 2
+          local squareSize = (d1 + d2) / 2
 
           local corner2InSquare = checkPointInSquare(corner2.latitude, corner2.longitude, squareCenter, squareSize, 0)
           local endInSquare = checkPointInSquare(endLat, endLon, squareCenter, squareSize, 0)
@@ -259,13 +257,11 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
         end
       end
 
-      -- Only consider corner pairs that don't create new collisions
       if not hasCollision then
-        local dist1 = GameUtils.calculateDistance(startLat, startLon, corner1.latitude, corner1.longitude)
-        local dist2 = GameUtils.calculateDistance(corner1.latitude, corner1.longitude, corner2.latitude,
-          corner2.longitude)
-        local dist3 = GameUtils.calculateDistance(corner2.latitude, corner2.longitude, endLat, endLon)
-        local totalDist = dist1 + dist2 + dist3
+        local d1 = GameUtils.calculateDistance(startLat, startLon, corner1.latitude, corner1.longitude)
+        local d2 = GameUtils.calculateDistance(corner1.latitude, corner1.longitude, corner2.latitude, corner2.longitude)
+        local d3 = GameUtils.calculateDistance(corner2.latitude, corner2.longitude, endLat, endLon)
+        local totalDist = d1 + d2 + d3
 
         if totalDist < minDistance then
           minDistance = totalDist
@@ -282,529 +278,150 @@ local function selectBestAvoidanceCornerPair(startLat, startLon, endLat, endLon,
   end
 end
 
----Check if a line segment intersects with U-shape wall area
----Enhanced detection to distinguish between entering through opening vs crossing walls
+-- ============================================================================
+-- Path Generation (avoid other position squares only)
+-- ============================================================================
+
+---Generate path with avoidance of position squares
 ---@param startLat number|string Start point latitude
 ---@param startLon number|string Start point longitude
 ---@param endLat number|string End point latitude
 ---@param endLon number|string End point longitude
----@param uShapeCenterLat number|string U-shape center latitude
----@param uShapeCenterLon number|string U-shape center longitude
----@param uShapeMaxDist number U-shape maximum distance from center (outer radius)
----@param uShapeInnerDist number U-shape inner rectangle approximate radius
----@param openingAngle number U-shape opening direction in degrees
----@param margin number Safety margin in nautical miles
----@return boolean # True if path intersects U-shape wall
-local function checkPathIntersectsUShape(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
-                                         uShapeMaxDist, uShapeInnerDist, openingAngle, margin)
-  -- Calculate distances from start and end points to U-shape center
-  local startDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, startLat, startLon)
-  local endDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, endLat, endLon)
-
-  -- If both points are inside the inner area, no avoidance needed
-  -- (path stays within U-shape interior)
-  if startDist < uShapeInnerDist and endDist < uShapeInnerDist then
-    return false
-  end
-
-  -- If both points are far outside, check path midpoint
-  if startDist > (uShapeMaxDist + margin) and endDist > (uShapeMaxDist + margin) then
-    return false
-  end
-
-  -- Critical case: path from outside to inside (or vice versa)
-  -- Must check if entering through opening or crossing walls
-  if (startDist > uShapeInnerDist and endDist < uShapeInnerDist) or
-      (startDist < uShapeInnerDist and endDist > uShapeInnerDist) then
-    -- Determine which point is outside
-    local outsideLat, outsideLon = startLat, startLon
-    if endDist > startDist then
-      outsideLat, outsideLon = endLat, endLon
-    end
-
-    -- Calculate bearing from U-shape center to outside point
-    local bearingToOutside = GameApi.Tool_Bearing(
-      { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
-      { latitude = outsideLat, longitude = outsideLon }
-    )
-
-    -- Calculate angular difference from opening direction
-    local angleDiff = (bearingToOutside - openingAngle + 360) % 360
-    -- Normalize to [-180, 180]
-    if angleDiff > 180 then
-      angleDiff = angleDiff - 360
-    end
-
-    -- If outside point is in opening direction (within ±90°), allow passage
-    if math.abs(angleDiff) <= 90 then
-      return false -- Entering/exiting through opening is valid
-    end
-
-    -- Otherwise, path crosses walls
-    return true
-  end
-
-  -- Sample-based detection for other cases
-  -- This catches paths that cross through U-shape walls
-  local numSamples = 10
-  for i = 0, numSamples do
-    local t = i / numSamples
-    local sampleLat = startLat + t * (endLat - startLat)
-    local sampleLon = startLon + t * (endLon - startLon)
-    local sampleDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, sampleLat, sampleLon)
-
-    -- Check if sample point is in the wall area (between inner and outer boundaries)
-    if sampleDist > uShapeInnerDist and sampleDist < (uShapeMaxDist + margin) then
-      return true
-    end
-  end
-
-  return false
-end
-
----Calculate U-shape outline corner points with offset (both outer and inner corners)
----@param uShapeCenterLat number|string U-shape center latitude
----@param uShapeCenterLon number|string U-shape center longitude
----@param width number U-shape width in nautical miles
----@param height number U-shape height in nautical miles
----@param thickness number U-shape wall thickness in nautical miles
----@param openingAngle number U-shape opening direction in degrees
----@param offset number Offset distance from U-shape edges in nautical miles
----@return {topLeft:CMO__Location, topRight:CMO__Location, bottomRight:CMO__Location, bottomLeft:CMO__Location, innerTopLeft:CMO__Location, innerTopRight:CMO__Location} # Corner points
-local function calculateOutlineCorners(uShapeCenterLat, uShapeCenterLon, width, height, thickness, openingAngle, offset)
-  local corners = {}
-
-  -- Calculate outer rectangle corners
-  local halfWidth = width / 2
-  local halfHeight = height / 2
-  local outerDiagonalDist = math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight)
-  local outerBaseAngle = math.deg(Utils.atan2(halfWidth, halfHeight))
-
-  -- Outer corners without offset (base points)
-  local outerTopRight = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle + outerBaseAngle) % 360,
-    distance = outerDiagonalDist
-  })
-
-  local outerTopLeft = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle - outerBaseAngle + 360) % 360,
-    distance = outerDiagonalDist
-  })
-
-  -- Outer corners with offset
-  local outerHalfWidthOffset = halfWidth + offset
-  local outerHalfHeightOffset = halfHeight + offset
-  local outerDiagonalDistOffset = math.sqrt(outerHalfWidthOffset * outerHalfWidthOffset +
-    outerHalfHeightOffset * outerHalfHeightOffset)
-  local outerBaseAngleOffset = math.deg(Utils.atan2(outerHalfWidthOffset, outerHalfHeightOffset))
-
-  corners.topRight = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle + outerBaseAngleOffset) % 360,
-    distance = outerDiagonalDistOffset
-  })
-
-  corners.topLeft = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle - outerBaseAngleOffset + 360) % 360,
-    distance = outerDiagonalDistOffset
-  })
-
-  corners.bottomRight = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle + 180 - outerBaseAngleOffset) % 360,
-    distance = outerDiagonalDistOffset
-  })
-
-  corners.bottomLeft = GameApi.World_GetPointFromBearing({
-    latitude = uShapeCenterLat,
-    longitude = uShapeCenterLon,
-    bearing = (openingAngle + 180 + outerBaseAngleOffset) % 360,
-    distance = outerDiagonalDistOffset
-  })
-
-  -- Calculate inner rectangle corners
-  -- Find base points of inner rectangle (without offset)
-  -- Inner top-right base: from outer top-right, move inward by thickness
-  local innerTopRightBase = GameApi.World_GetPointFromBearing({
-    latitude = outerTopRight.latitude,
-    longitude = outerTopRight.longitude,
-    bearing = (270 + openingAngle) % 360, -- Move left (toward center)
-    distance = thickness
-  })
-
-  -- Inner top-left base: from outer top-left, move inward by thickness
-  local innerTopLeftBase = GameApi.World_GetPointFromBearing({
-    latitude = outerTopLeft.latitude,
-    longitude = outerTopLeft.longitude,
-    bearing = (90 + openingAngle) % 360, -- Move right (toward center)
-    distance = thickness
-  })
-
-  -- Apply diagonal offset from base points (toward interior)
-  local offsetDiagonal = offset * math.sqrt(2)
-
-  -- Inner top-right: diagonal toward bottom-left (away from right wall and opening edge)
-  corners.innerTopRight = GameApi.World_GetPointFromBearing({
-    latitude = innerTopRightBase.latitude,
-    longitude = innerTopRightBase.longitude,
-    bearing = (openingAngle - 45 + 360) % 360, -- Bottom-left diagonal
-    distance = offsetDiagonal
-  })
-
-  -- Inner top-left: diagonal toward bottom-right (away from left wall and opening edge)
-  corners.innerTopLeft = GameApi.World_GetPointFromBearing({
-    latitude = innerTopLeftBase.latitude,
-    longitude = innerTopLeftBase.longitude,
-    bearing = (openingAngle + 45) % 360, -- Bottom-right diagonal
-    distance = offsetDiagonal
-  })
-
-  return corners
-end
-
----Generate path with U-shape avoidance by following rectangular perimeter
----Creates a waypoint array from start to end, routing around U-shape rectangular outline and internal square obstacles
----@param startLat number|string Start point latitude
----@param startLon number|string Start point longitude
----@param endLat number|string End point latitude
----@param endLon number|string End point longitude
----@param uShapeCenterLat number|string U-shape center latitude
----@param uShapeCenterLon number|string U-shape center longitude
----@param uShapeMaxDist number U-shape maximum distance from center
----@param uShapeInnerDist number U-shape inner rectangle approximate radius
----@param openingAngle number U-shape opening direction in degrees
 ---@param avoidanceMargin number Safety margin for intersection check
----@param avoidanceDistance number Distance for avoidance waypoint
----@param width number U-shape width in nautical miles
----@param height number U-shape height in nautical miles
----@param thickness number U-shape wall thickness in nautical miles
----@param internalSquares? {ammoArea:CMO__Location[], hideArea:CMO__Location[], reloadArea:CMO__Location[]} Optional internal square areas to avoid
+---@param avoidSquares CMO__Location[][] Array of square areas to avoid
 ---@return SBJ__PathWaypoint[] # Array of waypoints forming the path
-local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, uShapeCenterLat, uShapeCenterLon,
-                                         uShapeMaxDist, uShapeInnerDist, openingAngle, avoidanceMargin,
-                                         avoidanceDistance, width, height, thickness, internalSquares)
-  local waypoints = {}
+local function generatePathWithAvoidance(startLat, startLon, endLat, endLon, avoidanceMargin, avoidSquares)
+  local waypoints = {
+    { latitude = startLat, longitude = startLon },
+    { latitude = endLat, longitude = endLon },
+  }
 
-  -- Add start waypoint
-  table.insert(waypoints, {
-    latitude = startLat,
-    longitude = startLon
-  })
+  if #avoidSquares == 0 then return waypoints end
 
-  -- Check if direct path intersects U-shape
-  local intersectsUShape = checkPathIntersectsUShape(
-    startLat, startLon, endLat, endLon,
-    uShapeCenterLat, uShapeCenterLon,
-    uShapeMaxDist, uShapeInnerDist, openingAngle, avoidanceMargin
-  )
+  local maxIterations = 20
+  local modified = true
+  local iteration = 0
 
-  if intersectsUShape then
-    -- Calculate U-shape outline corners (both outer and inner)
-    local corners = calculateOutlineCorners(
-      uShapeCenterLat, uShapeCenterLon, width, height, thickness,
-      openingAngle, avoidanceMargin
-    )
+  while modified and iteration < maxIterations do
+    modified = false
+    iteration = iteration + 1
 
-    -- Determine path direction: inside→outside or outside→inside
-    local startDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, startLat, startLon)
-    local endDist = GameUtils.calculateDistance(uShapeCenterLat, uShapeCenterLon, endLat, endLon)
-    local startInside = startDist < uShapeInnerDist
-    local endInside = endDist < uShapeInnerDist
+    for i = 1, #waypoints - 1 do
+      local segStart = waypoints[i]
+      local segEnd = waypoints[i + 1]
 
-    -- Calculate bearing from U-shape center to start and end points
-    local bearingToStart = GameApi.Tool_Bearing(
-      { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
-      { latitude = startLat, longitude = startLon }
-    )
-    local bearingToEnd = GameApi.Tool_Bearing(
-      { latitude = uShapeCenterLat, longitude = uShapeCenterLon },
-      { latitude = endLat, longitude = endLon }
-    )
+      for squareIdx, squareVertices in ipairs(avoidSquares) do
+        local squareCenter = calculateSquareCenter(squareVertices)
+        local d1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
+          squareVertices[2].latitude, squareVertices[2].longitude)
+        local d2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
+          squareVertices[3].latitude, squareVertices[3].longitude)
+        local squareSize = (d1 + d2) / 2
 
-    -- Calculate angular difference from opening for both points
-    local normalizedOpening = openingAngle % 360
-    local normalizedStart = bearingToStart % 360
-    local normalizedEnd = bearingToEnd % 360
-    local angleDiffStart = (normalizedStart - normalizedOpening + 180) % 360 - 180
-    local angleDiffEnd = (normalizedEnd - normalizedOpening + 180) % 360 - 180
+        local startInSquare = checkPointInSquare(segStart.latitude, segStart.longitude, squareCenter, squareSize, 0)
+        local endInSquare = checkPointInSquare(segEnd.latitude, segEnd.longitude, squareCenter, squareSize, 0)
 
-    -- Select which point's angle to use for corner selection
-    -- Use the outside point's angle to determine routing
-    local angleDiff, useRightPath
-    if not startInside then
-      -- Start is outside: use start angle for routing
-      angleDiff = angleDiffStart
-      useRightPath = angleDiff > 0
-    else
-      -- Start is inside: use end angle for routing
-      angleDiff = angleDiffEnd
-      useRightPath = angleDiff > 0
-    end
+        if not (startInSquare or endInSquare) and checkPathIntersectsSquare(
+              segStart.latitude, segStart.longitude,
+              segEnd.latitude, segEnd.longitude,
+              squareVertices, avoidanceMargin
+            ) then
+          local corner1, corner2 = nil, nil
+          local offsetMultipliers = { 2.0, 2.5, 3.0, 3.5, 4.0, 5.0 }
 
-    -- Build corner sequence based on path direction
-    local cornerSequence = {}
-
-    -- If starting from outside, add outer corners first
-    if not startInside then
-      -- Outside → Inside: need to route along perimeter to opening
-      if angleDiff > 90 and angleDiff <= 135 then
-        -- Right side: bottomRight → topRight
-        table.insert(cornerSequence, corners.bottomRight)
-        table.insert(cornerSequence, corners.topRight)
-      elseif angleDiff > 135 then
-        -- Back-right side: bottomRight → topRight or bottomLeft → bottomRight → topRight
-        if angleDiff > 170 then
-          table.insert(cornerSequence, corners.bottomLeft)
-        end
-        table.insert(cornerSequence, corners.bottomRight)
-        table.insert(cornerSequence, corners.topRight)
-      elseif angleDiff < -135 then
-        -- Back-left side: bottomLeft → topLeft or bottomRight → bottomLeft → topLeft
-        if angleDiff < -170 then
-          table.insert(cornerSequence, corners.bottomRight)
-        end
-        table.insert(cornerSequence, corners.bottomLeft)
-        table.insert(cornerSequence, corners.topLeft)
-      elseif angleDiff < -90 and angleDiff >= -135 then
-        -- Left side: bottomLeft → topLeft
-        table.insert(cornerSequence, corners.bottomLeft)
-        table.insert(cornerSequence, corners.topLeft)
-      end
-      -- Add inner corner (entry point to U-shape interior)
-      if useRightPath then
-        table.insert(cornerSequence, corners.innerTopRight)
-      else
-        table.insert(cornerSequence, corners.innerTopLeft)
-      end
-    else
-      -- Inside → Outside: add inner corner first, then outer corners
-      if useRightPath then
-        table.insert(cornerSequence, corners.innerTopRight)
-      else
-        table.insert(cornerSequence, corners.innerTopLeft)
-      end
-
-      -- Add outer corners
-      if angleDiff > 90 and angleDiff <= 135 then
-        table.insert(cornerSequence, corners.topRight)
-      elseif angleDiff > 135 then
-        table.insert(cornerSequence, corners.topRight)
-        table.insert(cornerSequence, corners.bottomRight)
-        if angleDiff > 170 then
-          table.insert(cornerSequence, corners.bottomLeft)
-        end
-      elseif angleDiff < -135 then
-        table.insert(cornerSequence, corners.topLeft)
-        table.insert(cornerSequence, corners.bottomLeft)
-        if angleDiff < -170 then
-          table.insert(cornerSequence, corners.bottomRight)
-        end
-      elseif angleDiff < -90 and angleDiff >= -135 then
-        table.insert(cornerSequence, corners.topLeft)
-      end
-    end
-
-    -- Add all corners to waypoints
-    for _, corner in ipairs(cornerSequence) do
-      table.insert(waypoints, {
-        latitude = corner.latitude,
-        longitude = corner.longitude
-      })
-    end
-  end
-
-  -- Add end waypoint
-  table.insert(waypoints, {
-    latitude = endLat,
-    longitude = endLon
-  })
-
-  -- Handle internal square obstacle avoidance
-  if internalSquares then
-    local internalAreas = { internalSquares.ammoArea, internalSquares.hideArea, internalSquares.reloadArea }
-    local maxIterations = 20 -- Prevent infinite loops
-    local modified = true
-    local iteration = 0
-
-    while modified and iteration < maxIterations do
-      modified = false
-      iteration = iteration + 1
-
-      -- Check each path segment
-      for i = 1, #waypoints - 1 do
-        local segStart = waypoints[i]
-        local segEnd = waypoints[i + 1]
-
-        -- Check if this segment intersects any internal square
-        for squareIdx, squareVertices in ipairs(internalAreas) do
-          -- Check if start or end point is inside this square
-          local squareCenter = calculateSquareCenter(squareVertices)
-          local dist1 = GameUtils.calculateDistance(squareVertices[1].latitude, squareVertices[1].longitude,
-            squareVertices[2].latitude, squareVertices[2].longitude)
-          local dist2 = GameUtils.calculateDistance(squareVertices[2].latitude, squareVertices[2].longitude,
-            squareVertices[3].latitude, squareVertices[3].longitude)
-          local squareSize = (dist1 + dist2) / 2
-
-          local startInSquare = checkPointInSquare(segStart.latitude, segStart.longitude, squareCenter, squareSize, 0)
-          local endInSquare = checkPointInSquare(segEnd.latitude, segEnd.longitude, squareCenter, squareSize, 0)
-
-          -- Skip collision check if either endpoint is inside this square
-          -- (path is starting from or ending in this square, which is valid)
-          if not (startInSquare or endInSquare) and checkPathIntersectsSquare(
-                segStart.latitude, segStart.longitude,
-                segEnd.latitude, segEnd.longitude,
-                squareVertices, avoidanceMargin
-              ) then
-            -- Try multiple offset distances to find valid avoidance points
-            local corner1, corner2 = nil, nil
-            -- Use progressively larger multipliers to ensure sufficient clearance
-            local offsetMultipliers = { 2.0, 2.5, 3.0, 3.5, 4.0, 5.0 }
-
-            -- Create a filtered list excluding the current square being avoided
-            -- This allows the avoidance path to route around the square without being blocked by it
-            local otherSquares = {}
-            for idx, sq in ipairs(internalAreas) do
-              if idx ~= squareIdx then
-                table.insert(otherSquares, sq)
-              end
-            end
-
-            for _, multiplier in ipairs(offsetMultipliers) do
-              local offsetDist = avoidanceMargin * multiplier
-              local offsetCorners = calculateSquareOffsetCorners(squareVertices, offsetDist)
-
-              corner1, corner2 = selectBestAvoidanceCornerPair(
-                segStart.latitude, segStart.longitude,
-                segEnd.latitude, segEnd.longitude,
-                offsetCorners,
-                otherSquares,   -- Only check collision with OTHER squares
-                avoidanceMargin -- Use full margin for other squares
-              )
-
-              if corner1 and corner2 then
-                break -- Found valid corner pair
-              end
-            end
-
-            if corner1 and corner2 then
-              -- Insert TWO avoidance waypoints after current segment start
-              table.insert(waypoints, i + 1, {
-                latitude = corner1.latitude,
-                longitude = corner1.longitude
-              })
-              table.insert(waypoints, i + 2, {
-                latitude = corner2.latitude,
-                longitude = corner2.longitude
-              })
-
-              modified = true
-              break -- Restart checking from beginning after modification
-            else
-              Logger.error(string.format(
-                "Cannot find valid avoidance path at segment %d->%d. Try increasing avoidanceMargin or adjusting square positions.",
-                i, i + 1
-              ))
+          local otherSquares = {}
+          for idx, sq in ipairs(avoidSquares) do
+            if idx ~= squareIdx then
+              table.insert(otherSquares, sq)
             end
           end
-        end
 
-        if modified then
-          break -- Restart outer loop
+          for _, multiplier in ipairs(offsetMultipliers) do
+            local offsetDist = avoidanceMargin * multiplier
+            local offsetCorners = calculateSquareOffsetCorners(squareVertices, offsetDist)
+
+            corner1, corner2 = selectBestAvoidanceCornerPair(
+              segStart.latitude, segStart.longitude,
+              segEnd.latitude, segEnd.longitude,
+              offsetCorners,
+              otherSquares,
+              avoidanceMargin
+            )
+
+            if corner1 and corner2 then
+              break
+            end
+          end
+
+          if corner1 and corner2 then
+            table.insert(waypoints, i + 1, {
+              latitude = corner1.latitude,
+              longitude = corner1.longitude
+            })
+            table.insert(waypoints, i + 2, {
+              latitude = corner2.latitude,
+              longitude = corner2.longitude
+            })
+
+            modified = true
+            break
+          else
+            Logger.error(string.format(
+              "Cannot find valid avoidance path at segment %d->%d.", i, i + 1
+            ))
+          end
         end
       end
-    end
 
-    if iteration >= maxIterations then
-      Logger.error("Failed to generate collision-free path after " .. maxIterations .. " iterations")
+      if modified then
+        break
+      end
     end
+  end
+
+  if iteration >= maxIterations then
+    Logger.error("Failed to generate collision-free path after " .. maxIterations .. " iterations")
   end
 
   return waypoints
 end
 
----Generate square vertices from center point
----@param centerLat number|string Center latitude in degrees
----@param centerLon number|string Center longitude in degrees
----@param size number Square size in nautical miles
----@param rotationAngle number Rotation angle in degrees
----@return CMO__Location[] # Array of 4 vertices forming a square
-local function generateSquareVertices(centerLat, centerLon, size, rotationAngle)
-  local halfSize = size / 2
-  local diagonalDist = math.sqrt(2) * halfSize
-  local vertices = {}
+-- ============================================================================
+-- Internal Area Generation
+-- ============================================================================
 
-  -- Four corners at 45, 135, 225, 315 degrees relative to rotation
-  local cornerAngles = { 45, 135, 225, 315 }
-  for _, cornerAngle in ipairs(cornerAngles) do
-    local vertex = GameApi.World_GetPointFromBearing({
-      latitude = centerLat,
-      longitude = centerLon,
-      bearing = (cornerAngle + rotationAngle) % 360,
-      distance = diagonalDist
-    })
-    table.insert(vertices, vertex)
-  end
-
-  return vertices
-end
-
----Check if two squares overlap based on center distance and size
----@param center1Lat number|string First square center latitude
----@param center1Lon number|string First square center longitude
----@param center2Lat number|string Second square center latitude
----@param center2Lon number|string Second square center longitude
----@param squareSize number|string Square size in nautical miles
----@param margin number Safety margin in nautical miles
----@return boolean # True if squares overlap (including margin)
-local function checkSquaresOverlap(center1Lat, center1Lon, center2Lat, center2Lon, squareSize, margin)
-  local distance = GameUtils.calculateDistance(center1Lat, center1Lon, center2Lat, center2Lon)
-  return distance < (squareSize + margin)
-end
-
----Generate three non-overlapping squares inside the U-shape's internal rectangle
----@param innerCorners CMO__Location[] Four corners of internal rectangle
+---Generate three non-overlapping squares inside the boundary rectangle
+---@param boundaryCorners CMO__Location[] Four corners of boundary rectangle
 ---@param openingAngle number Opening direction in degrees
 ---@param squareSize number Size of squares in nautical miles
----@param innerWidth number Width of internal rectangle in nautical miles
----@param innerHeight number Height of internal rectangle in nautical miles
----@param marginToWall? number Safety margin between squares and U-shape walls in nm (default: 0.1)
+---@param areaWidth number Width of boundary rectangle in nautical miles
+---@param areaHeight number Height of boundary rectangle in nautical miles
+---@param marginToWall? number Safety margin between squares and boundary walls in nm (default: 0.1)
 ---@param marginBetweenSquares? number Safety margin between squares in nm (default: 0.1)
----@return {ammoArea: CMO__Location[], hideArea: CMO__Location[], reloadArea: CMO__Location[]} # Contains ammoArea, hideArea, reloadArea with vertices arrays
-local function generateInternalSquares(innerCorners, openingAngle, squareSize, innerWidth, innerHeight,
+---@return {ammoArea: CMO__Location[], hideArea: CMO__Location[], reloadArea: CMO__Location[]}
+local function generateInternalSquares(boundaryCorners, openingAngle, squareSize, areaWidth, areaHeight,
                                        marginToWall, marginBetweenSquares)
   local areas = {}
-  -- Default values for margins
   local wallMargin = marginToWall or 0.1
   local squareMargin = marginBetweenSquares or 0.1
   local maxAttempts = 100
   local halfSquare = squareSize / 2
 
-  -- Calculate the center of internal rectangle
-  local centerLat = (innerCorners[1].latitude + innerCorners[2].latitude +
-    innerCorners[3].latitude + innerCorners[4].latitude) / 4
-  local centerLon = (innerCorners[1].longitude + innerCorners[2].longitude +
-    innerCorners[3].longitude + innerCorners[4].longitude) / 4
+  local centerLat = (boundaryCorners[1].latitude + boundaryCorners[2].latitude +
+    boundaryCorners[3].latitude + boundaryCorners[4].latitude) / 4
+  local centerLon = (boundaryCorners[1].longitude + boundaryCorners[2].longitude +
+    boundaryCorners[3].longitude + boundaryCorners[4].longitude) / 4
 
-  -- Calculate valid range for square centers (must be within safe bounds)
-  local maxOffsetX = (innerWidth / 2) - halfSquare - wallMargin
-  local maxOffsetY = (innerHeight / 2) - halfSquare - wallMargin
+  local maxOffsetX = areaWidth / 2 - halfSquare - wallMargin
+  local maxOffsetY = areaHeight / 2 - halfSquare - wallMargin
 
   if maxOffsetX <= 0 or maxOffsetY <= 0 then
     Logger.error(string.format(
-      "Square size (%.2f nm) too large for internal area (%.2f x %.2f nm) with wall margin %.2f nm",
-      squareSize, innerWidth, innerHeight, wallMargin
+      "Square size (%.2f nm) too large for boundary area (%.2f x %.2f nm) with wall margin %.2f nm",
+      squareSize, areaWidth, areaHeight, wallMargin
     ))
   end
 
-  -- Generate three square centers
   ---@type CMO__Location[]
   local centers = {}
   local areaNames = { "ammoArea", "hideArea", "reloadArea" }
@@ -817,7 +434,6 @@ local function generateInternalSquares(innerCorners, openingAngle, squareSize, i
       attempts = attempts + 1
       local candidate = generateRandomSquareCenter(centerLat, centerLon, maxOffsetX, maxOffsetY, openingAngle)
 
-      -- Check if this center doesn't overlap with existing squares
       local overlap = false
       for _, existingCenter in ipairs(centers) do
         if checkSquaresOverlap(
@@ -841,57 +457,34 @@ local function generateInternalSquares(innerCorners, openingAngle, squareSize, i
     end
   end
 
-  -- Generate vertices for each square
-  areas.ammoArea = generateSquareVertices(
-    centers[1].latitude,
-    centers[1].longitude,
-    squareSize,
-    openingAngle
-  )
-  areas.hideArea = generateSquareVertices(
-    centers[2].latitude,
-    centers[2].longitude,
-    squareSize,
-    openingAngle
-  )
-  areas.reloadArea = generateSquareVertices(
-    centers[3].latitude,
-    centers[3].longitude,
-    squareSize,
-    openingAngle
-  )
+  areas.ammoArea = generateSquareVertices(centers[1].latitude, centers[1].longitude, squareSize, openingAngle)
+  areas.hideArea = generateSquareVertices(centers[2].latitude, centers[2].longitude, squareSize, openingAngle)
+  areas.reloadArea = generateSquareVertices(centers[3].latitude, centers[3].longitude, squareSize, openingAngle)
 
   return areas
 end
 
----Generate fire point squares on circle perimeter around U-shape
+---Generate fire point squares on circle perimeter around boundary
 ---@param centerLat number Center latitude in degrees
 ---@param centerLon number Center longitude in degrees
 ---@param radius number Radius of circle in nautical miles
 ---@param squareSize number Size of fire point squares in nautical miles
 ---@param count number Number of fire points to generate
----@param angleRange number Angular range for placement in degrees (360 = full circle)
----@param openingAngle number U-shape opening direction in degrees
+---@param angleRange number Angular range for placement in degrees
+---@param openingAngle number Opening direction in degrees
 ---@param margin number Safety margin between fire points in nautical miles
----@param uShapeVertices table<CMO__Location> U-shape vertices for collision detection
----@param uShapeWidth number U-shape width in nautical miles
----@param uShapeHeight number U-shape height in nautical miles
+---@param boundaryWidth number Boundary width in nautical miles
+---@param boundaryHeight number Boundary height in nautical miles
 ---@return table<integer, CMO__Location[]> # Array of fire point areas, each with 4 vertices
 local function generateFirePoints(centerLat, centerLon, radius, squareSize, count, angleRange,
-                                   openingAngle, margin, uShapeVertices, uShapeWidth, uShapeHeight)
+                                   openingAngle, margin, boundaryWidth, boundaryHeight)
   ---@type {center:CMO__Location, vertices:CMO__Location[]}[]
   local firePoints = {}
   local maxAttempts = 200
 
-  -- Calculate U-shape bounding box for collision detection
-  local uShapeMaxDist = math.sqrt((uShapeWidth / 2) ^ 2 + (uShapeHeight / 2) ^ 2)
-
-  -- Calculate angle range boundaries
-  -- Opening angle points to the opening direction
-  -- We want to avoid placing fire points directly in the opening
+  local boundaryMaxDist = math.sqrt((boundaryWidth / 2) ^ 2 + (boundaryHeight / 2) ^ 2)
   local startAngle = openingAngle + 180 - (angleRange / 2)
 
-  -- Generate fire points
   for i = 1, count do
     local validPosition = false
     local attempts = 0
@@ -899,11 +492,9 @@ local function generateFirePoints(centerLat, centerLon, radius, squareSize, coun
     while not validPosition and attempts < maxAttempts do
       attempts = attempts + 1
 
-      -- Generate random angle within range
       local randomAngle = startAngle + (math.random() * angleRange)
       randomAngle = randomAngle % 360
 
-      -- Calculate position on circle perimeter
       local candidate = GameApi.World_GetPointFromBearing({
         latitude = centerLat,
         longitude = centerLon,
@@ -911,12 +502,15 @@ local function generateFirePoints(centerLat, centerLon, radius, squareSize, coun
         distance = radius
       })
 
-      -- Check if position is valid
       local valid = true
 
-      -- Check overlap with U-shape
-      if checkFirePointOverlapsWithUShape(candidate.latitude, candidate.longitude, centerLat, centerLon,
-            uShapeMaxDist, squareSize, margin) then
+      -- Ensure fire point is outside the boundary rectangle
+      local distanceToCenter = GameUtils.calculateDistance(centerLat, centerLon, candidate.latitude, candidate.longitude)
+      local halfSquare = squareSize / 2
+      local squareDiagonal = math.sqrt(2) * halfSquare
+      local minSafeDistance = boundaryMaxDist + squareDiagonal + margin
+
+      if distanceToCenter < minSafeDistance then
         valid = false
       end
 
@@ -935,7 +529,6 @@ local function generateFirePoints(centerLat, centerLon, radius, squareSize, coun
       end
 
       if valid then
-        -- Calculate square rotation to face toward U-shape center
         local bearingToCenter = GameApi.Tool_Bearing(
           { latitude = candidate.latitude, longitude = candidate.longitude },
           { latitude = centerLat, longitude = centerLon }
@@ -956,16 +549,15 @@ local function generateFirePoints(centerLat, centerLon, radius, squareSize, coun
 
     if not validPosition then
       Logger.error(string.format(
-        "Failed to place fire point %d/%d after %d attempts. Try: larger radius, smaller squares, fewer count, or larger angleRange",
+        "Failed to place fire point %d/%d after %d attempts.",
         i, count, maxAttempts
       ))
     end
   end
 
-  -- Return only vertices arrays for compatibility
   local firePointVertices = {}
-  for i, fp in ipairs(firePoints) do
-    firePointVertices[i] = fp.vertices
+  for idx, fp in ipairs(firePoints) do
+    firePointVertices[idx] = fp.vertices
   end
 
   return firePointVertices
@@ -975,40 +567,31 @@ end
 -- Public API Functions
 -- ============================================================================
 
----Generate U-shaped area vertices with specified configuration
----Returns ordered vertices forming a U-shape (3 sides closed, 1 side open), and optionally generates internal squares and fire points
----@param areaConfig SBJ__UShapeAreaConfig Configuration object for U-shaped area generation
----@return SBJ__UShapeAreaResult result Contains uShapeVertices and optionally ammoArea, hideArea, reloadArea, firePoints with vertices
+---Generate rectangular boundary area vertices with specified configuration
+---Returns ordered vertices forming a quadrilateral, and optionally generates internal squares and fire points
+---@param areaConfig SBJ__UShapeAreaConfig Configuration object for area generation
+---@return SBJ__UShapeAreaResult result Contains uShapeVertices and optionally ammoArea, hideArea, reloadArea, firePoints
 function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
-  -- Validate required fields
   assert(areaConfig.centerLat, "config.centerLat is required")
   assert(areaConfig.centerLon, "config.centerLon is required")
-  assert(areaConfig.thickness, "config.thickness is required")
   assert(areaConfig.width, "config.width is required")
   assert(areaConfig.height, "config.height is required")
   assert(areaConfig.openingAngle, "config.openingAngle is required")
 
   local result = {}
-  local vertices = {}
 
-  -- Extract config values
   local centerLat = areaConfig.centerLat
   local centerLon = areaConfig.centerLon
-  local thickness = areaConfig.thickness
   local width = areaConfig.width
   local height = areaConfig.height
   local openingAngle = areaConfig.openingAngle
 
-  -- Calculate half dimensions for positioning from center
   local halfWidth = width / 2
   local halfHeight = height / 2
 
-  -- Calculate diagonal distance and angle for outer rectangle corners
   local outerDiagonalDist = math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight)
   local baseAngle = math.deg(Utils.atan2(halfWidth, halfHeight))
 
-  -- Calculate 4 corners of outer rectangle (relative to north, will rotate later)
-  -- Top-left, top-right, bottom-right, bottom-left
   local outerAngles = {
     360 - baseAngle, -- Top-left
     baseAngle,       -- Top-right
@@ -1016,7 +599,6 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
     180 + baseAngle  -- Bottom-left
   }
 
-  -- Generate outer corners (rotated by openingAngle)
   local outerCorners = {}
   for i = 1, 4 do
     outerCorners[i] = GameApi.World_GetPointFromBearing({
@@ -1027,67 +609,16 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
     })
   end
 
-  -- Generate inner corners by offsetting from outer corners
-  -- Top corners (opening edge): only offset horizontally inward by thickness
-  -- Bottom corners: offset both horizontally and vertically by thickness
-  local innerCorners = {}
+  -- Boundary is a simple quadrilateral (4 vertices)
+  result.uShapeVertices = { outerCorners[1], outerCorners[2], outerCorners[3], outerCorners[4] }
 
-  -- Inner top-left: from outer top-left, move right (90° from opening direction)
-  innerCorners[1] = GameApi.World_GetPointFromBearing({
-    latitude = outerCorners[1].latitude,
-    longitude = outerCorners[1].longitude,
-    bearing = (90 + openingAngle) % 360,
-    distance = thickness
-  })
-
-  -- Inner top-right: from outer top-right, move left (270° from opening direction)
-  innerCorners[2] = GameApi.World_GetPointFromBearing({
-    latitude = outerCorners[2].latitude,
-    longitude = outerCorners[2].longitude,
-    bearing = (270 + openingAngle) % 360,
-    distance = thickness
-  })
-
-  -- Inner bottom-right: from inner top-right, move down (180° from opening direction)
-  innerCorners[3] = GameApi.World_GetPointFromBearing({
-    latitude = innerCorners[2].latitude,
-    longitude = innerCorners[2].longitude,
-    bearing = (180 + openingAngle) % 360,
-    distance = height - thickness
-  })
-
-  -- Inner bottom-left: from inner top-left, move down (180° from opening direction)
-  innerCorners[4] = GameApi.World_GetPointFromBearing({
-    latitude = innerCorners[1].latitude,
-    longitude = innerCorners[1].longitude,
-    bearing = (180 + openingAngle) % 360,
-    distance = height - thickness
-  })
-
-  -- Build U-shape vertices in order (counter-clockwise)
-  -- Opening is at the top (after rotation)
-  -- Outer bottom-left → outer bottom-right → outer top-right →
-  -- inner top-right → inner bottom-right → inner bottom-left →
-  -- inner top-left → outer top-left
-  table.insert(vertices, outerCorners[4]) -- Outer bottom-left
-  table.insert(vertices, outerCorners[3]) -- Outer bottom-right
-  table.insert(vertices, outerCorners[2]) -- Outer top-right
-  table.insert(vertices, innerCorners[2]) -- Inner top-right
-  table.insert(vertices, innerCorners[3]) -- Inner bottom-right
-  table.insert(vertices, innerCorners[4]) -- Inner bottom-left
-  table.insert(vertices, innerCorners[1]) -- Inner top-left
-  table.insert(vertices, outerCorners[1]) -- Outer top-left
-
-  result.uShapeVertices = vertices
-
-  -- Generate three non-overlapping squares inside if internalSquares config is specified
   if areaConfig.internalSquares then
     local internalSquares = generateInternalSquares(
-      innerCorners,
+      outerCorners,
       openingAngle,
       areaConfig.internalSquares.size,
-      width - 2 * thickness,
-      height - thickness,
+      width,
+      height,
       areaConfig.internalSquares.marginToWall,
       areaConfig.internalSquares.marginBetweenSquares
     )
@@ -1097,7 +628,6 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
     result.reloadArea = internalSquares.reloadArea
   end
 
-  -- Generate fire points on circle perimeter if firePoints config is specified
   if areaConfig.firePoints then
     result.firePoints = generateFirePoints(
       centerLat,
@@ -1108,7 +638,6 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
       areaConfig.firePoints.angleRange or 360,
       openingAngle,
       areaConfig.firePoints.margin or 0.1,
-      vertices,
       width,
       height
     )
@@ -1117,18 +646,10 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
   return result
 end
 
----Calculate movement paths between tactical positions with U-shape avoidance
----Generates optimized paths for TEL movement between different tactical zones
+---Calculate movement paths between tactical positions (avoid other position squares only)
 ---@param pathConfig SBJ__MovementPathsConfig Configuration for path calculation
 ---@return SBJ__MovementPaths # Movement paths organized by type (FP, HA, RL, AHA)
 function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
-  -- Validate required fields
-  assert(pathConfig.centerLat, "config.centerLat is required")
-  assert(pathConfig.centerLon, "config.centerLon is required")
-  assert(pathConfig.width, "config.width is required")
-  assert(pathConfig.height, "config.height is required")
-  assert(pathConfig.thickness, "config.thickness is required")
-  assert(pathConfig.openingAngle, "config.openingAngle is required")
   assert(pathConfig.ammoArea, "config.ammoArea is required")
   assert(pathConfig.hideArea, "config.hideArea is required")
   assert(pathConfig.reloadArea, "config.reloadArea is required")
@@ -1141,50 +662,27 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
     AHA = { waypoints = {} }
   }
 
-  -- Calculate U-shape bounding parameters
-  local uShapeMaxDist = math.sqrt((pathConfig.width / 2) ^ 2 + (pathConfig.height / 2) ^ 2)
-  local avoidanceDistance = uShapeMaxDist + avoidanceMargin + 0.5 -- Extra buffer for detour
-
-  -- Calculate inner rectangle dimensions for collision detection
-  local innerWidth = pathConfig.width - 2 * pathConfig.thickness
-  local innerHeight = pathConfig.height - pathConfig.thickness
-  local uShapeInnerDist = math.sqrt((innerWidth / 2) ^ 2 + (innerHeight / 2) ^ 2)
-
-  -- Calculate center points of tactical zones
   local ammoCtr = calculateSquareCenter(pathConfig.ammoArea)
   local hideCtr = calculateSquareCenter(pathConfig.hideArea)
   local reloadCtr = calculateSquareCenter(pathConfig.reloadArea)
 
-  -- Prepare internal squares for obstacle avoidance (only for FP and RL paths)
-  local internalSquares = {
-    ammoArea = pathConfig.ammoArea,
-    hideArea = pathConfig.hideArea,
-    reloadArea = pathConfig.reloadArea
-  }
-
-  -- Generate HA path: Reload Area -> Hide Area (no internal obstacle avoidance needed)
+  -- HA: reload -> hide, avoid ammo
   paths.HA.waypoints = generatePathWithAvoidance(
     reloadCtr.latitude, reloadCtr.longitude,
     hideCtr.latitude, hideCtr.longitude,
-    pathConfig.centerLat, pathConfig.centerLon,
-    uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-    avoidanceMargin, avoidanceDistance,
-    pathConfig.width, pathConfig.height, pathConfig.thickness,
-    nil -- No internal obstacle avoidance for HA path
+    avoidanceMargin,
+    { pathConfig.ammoArea }
   )
 
-  -- Generate AHA path: Reload Area -> Ammo Holding Area (no internal obstacle avoidance needed)
+  -- AHA: reload -> ammo, avoid hide
   paths.AHA.waypoints = generatePathWithAvoidance(
     reloadCtr.latitude, reloadCtr.longitude,
     ammoCtr.latitude, ammoCtr.longitude,
-    pathConfig.centerLat, pathConfig.centerLon,
-    uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-    avoidanceMargin, avoidanceDistance,
-    pathConfig.width, pathConfig.height, pathConfig.thickness,
-    nil -- No internal obstacle avoidance for AHA path
+    avoidanceMargin,
+    { pathConfig.hideArea }
   )
 
-  -- Generate FP paths: Hide Area -> each Fire Point
+  -- FP: hide -> fire points, avoid ammo & reload
   if pathConfig.firePoints then
     for i, firePoint in ipairs(pathConfig.firePoints) do
       local fpCtr = calculateSquareCenter(firePoint)
@@ -1192,17 +690,14 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
         waypoints = generatePathWithAvoidance(
           hideCtr.latitude, hideCtr.longitude,
           fpCtr.latitude, fpCtr.longitude,
-          pathConfig.centerLat, pathConfig.centerLon,
-          uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-          avoidanceMargin, avoidanceDistance,
-          pathConfig.width, pathConfig.height, pathConfig.thickness,
-          internalSquares
+          avoidanceMargin,
+          { pathConfig.ammoArea, pathConfig.reloadArea }
         )
       }
     end
   end
 
-  -- Generate RL paths: each Fire Point -> Reload Area
+  -- RL: fire points -> reload, avoid ammo & hide
   if pathConfig.firePoints then
     for i, firePoint in ipairs(pathConfig.firePoints) do
       local fpCtr = calculateSquareCenter(firePoint)
@@ -1210,11 +705,8 @@ function TacticalAreaGenerator.calculateMovementPaths(pathConfig)
         waypoints = generatePathWithAvoidance(
           fpCtr.latitude, fpCtr.longitude,
           reloadCtr.latitude, reloadCtr.longitude,
-          pathConfig.centerLat, pathConfig.centerLon,
-          uShapeMaxDist, uShapeInnerDist, pathConfig.openingAngle,
-          avoidanceMargin, avoidanceDistance,
-          pathConfig.width, pathConfig.height, pathConfig.thickness,
-          internalSquares
+          avoidanceMargin,
+          { pathConfig.ammoArea, pathConfig.hideArea }
         )
       }
     end
@@ -1230,33 +722,32 @@ end
 -- local u = ScenEdit_GetUnit({name='3MN-1 Bison B [Bomber]', guid='L13OAU-0HNI52ARQHQNF'})
 
 -- local result = TacticalAreaGenerator.generateUShapeVertices({
---   -- U-shape basic configuration (required)
+--   -- Boundary basic configuration (required)
 --   centerLat = u.latitude,
 --   centerLon = u.longitude,
---   thickness = 0.5,       -- U-shape wall thickness (nautical miles)
---   width = 2.5,           -- U-shape width (nautical miles)
---   height = 2,          -- U-shape height (nautical miles)
---   openingAngle = 30,     -- Opening direction angle (0=North, 90=East, 180=South, 270=West)
+--   width = 1.5,            -- Boundary width (nautical miles)
+--   height = 1.5,           -- Boundary height (nautical miles)
+--   openingAngle = 30,      -- Opening direction angle (0=North, 90=East, 180=South, 270=West)
 
 --   -- Internal three functional zones configuration (optional)
 --   internalSquares = {
 --     size = 0.2,                    -- Square side length (nautical miles)
---     marginToWall = 0.1,            -- Distance to U-shape inner wall (nautical miles)
---     marginBetweenSquares = 0.5    -- Distance between squares (nautical miles)
+--     marginToWall = 0.1,            -- Distance to boundary wall (nautical miles)
+--     marginBetweenSquares = 0.5     -- Distance between squares (nautical miles)
 --   },
 
 --   -- Outer fire points configuration (optional)
 --   firePoints = {
---     radius = 4,          -- Fire point circle radius (nautical miles)
---     squareSize = 0.3,    -- Fire point square side length (nautical miles)
---     count = 2,           -- Number of fire points
---     angleRange = 90,    -- Angular range (degrees), 360=full circle, 180=semicircle
---     margin = 0.2         -- Safety margin between fire points (nautical miles)
+--     radius = 3,            -- Fire point circle radius (nautical miles)
+--     squareSize = 0.3,      -- Fire point square side length (nautical miles)
+--     count = 2,             -- Number of fire points
+--     angleRange = 90,       -- Angular range (degrees), 360=full circle, 180=semicircle
+--     margin = 0.2           -- Safety margin between fire points (nautical miles)
 --   }
 -- })
 
 -- -- Create reference areas
--- ScenEdit_AddReferencePoint({side="Taiwan", name="U-Shape Area", area = result.uShapeVertices})
+-- ScenEdit_AddReferencePoint({side="Taiwan", name="Boundary Area", area = result.uShapeVertices})
 
 -- if result.ammoArea then
 --   ScenEdit_AddReferencePoint({side="Taiwan", name="Ammo Holding Area", area = result.ammoArea})
@@ -1277,17 +768,11 @@ end
 -- -- Calculate movement paths
 -- if result.ammoArea and result.hideArea and result.reloadArea then
 --   local paths = TacticalAreaGenerator.calculateMovementPaths({
---     centerLat = u.latitude,
---     centerLon = u.longitude,
---     width = 2.5,
---     height = 2,
---     thickness = 0.5,
---     openingAngle = 30,
 --     ammoArea = result.ammoArea,
 --     hideArea = result.hideArea,
 --     reloadArea = result.reloadArea,
 --     firePoints = result.firePoints,
---     avoidanceMargin = 0.05  -- Safety distance to avoid U-shape (nautical miles)
+--     avoidanceMargin = 0.05  -- Safety distance to avoid positions (nautical miles)
 --   })
 
 --   -- Path usage example: Hide Area -> Fire Point

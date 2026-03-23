@@ -61,8 +61,8 @@ local function transformData(missileSystem)
       table.insert(course, {
         latitude = waypoint.latitude,
         longitude = waypoint.longitude,
-        desiredSpeed = 30,
-        presetThrottle = "Flank"
+        desiredSpeed = constants.SPEEDS.FAST,
+        presetThrottle = constants.THROTTLES.FLANK
       })
     end
     table.insert(operationalArea.FP, {
@@ -77,8 +77,8 @@ local function transformData(missileSystem)
     table.insert(course, {
       latitude = waypoint.latitude,
       longitude = waypoint.longitude,
-      desiredSpeed = 30,
-      presetThrottle = "Flank"
+      desiredSpeed = constants.SPEEDS.FAST,
+      presetThrottle = constants.THROTTLES.FLANK
     })
   end
   table.remove(course, 1)
@@ -92,8 +92,8 @@ local function transformData(missileSystem)
     table.insert(ahaCourse, {
       latitude = waypoint.latitude,
       longitude = waypoint.longitude,
-      desiredSpeed = 30,
-      presetThrottle = "Flank"
+      desiredSpeed = constants.SPEEDS.FAST,
+      presetThrottle = constants.THROTTLES.FLANK
     })
   end
   table.insert(operationalArea.AHA, {
@@ -106,8 +106,8 @@ local function transformData(missileSystem)
     table.insert(haCourse, {
       latitude = waypoint.latitude,
       longitude = waypoint.longitude,
-      desiredSpeed = 30,
-      presetThrottle = "Flank"
+      desiredSpeed = constants.SPEEDS.FAST,
+      presetThrottle = constants.THROTTLES.FLANK
     })
   end
   table.insert(operationalArea.HA, { course = haCourse, area = missileSystem.tacticalAreas.hideArea })

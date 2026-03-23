@@ -18,9 +18,8 @@ import { generateUShapeVertices, calculateMovementPaths } from '@/utils/tactical
 // AREA CONFIG
 // ============================================================================
 const AREA_CONFIG = {
-  thickness: 0.5,
-  width: 2.5,
-  height: 2.0,
+  width: 1.5,
+  height: 1.5,
   internalSquares: {
     size: 0.2,
     marginToWall: 0.1,
@@ -147,21 +146,13 @@ export function MissileSystemsTab({
       };
 
       if (result.ammoArea && result.hideArea && result.reloadArea) {
-        const pathConfig = {
-          centerLat: lat,
-          centerLon: lng,
-          width: AREA_CONFIG.width,
-          height: AREA_CONFIG.height,
-          thickness: AREA_CONFIG.thickness,
-          openingAngle: angle,
+        paths = calculateMovementPaths({
           ammoArea: result.ammoArea,
           hideArea: result.hideArea,
           reloadArea: result.reloadArea,
           firePoints: result.firePoints,
           avoidanceMargin: 0.05,
-        };
-
-        paths = calculateMovementPaths(pathConfig);
+        });
       }
 
       return {
@@ -248,12 +239,6 @@ export function MissileSystemsTab({
 
     if (ammoArea.length > 0 && hideArea.length > 0 && reloadArea.length > 0) {
       paths = calculateMovementPaths({
-        centerLat: lat,
-        centerLon: lng,
-        width: AREA_CONFIG.width,
-        height: AREA_CONFIG.height,
-        thickness: AREA_CONFIG.thickness,
-        openingAngle: autoAngle,
         ammoArea,
         hideArea,
         reloadArea,
