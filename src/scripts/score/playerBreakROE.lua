@@ -1,13 +1,15 @@
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
+local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 
 
 if unit then
-  local score = GameApi.ScenEdit_GetScore("Taiwan")
+  local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
   GameApi.ScenEdit_SetScore(
-    "Taiwan", (score + config.s.attackBeforeTheHHour),
+    constants.SIDES.PLAYER,
+    (score + config.s.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )
   Logger.log("score", "You have attacked first to cause a military esclaion.")

@@ -32,6 +32,10 @@ const AREA_CONFIG = {
     angleRange: 90,
     margin: 0.2,
   },
+  ahaPoint: {
+    radius: 15,
+    squareSize: 0.3,
+  },
 };
 
 // ============================================================================
@@ -97,6 +101,7 @@ export function MissileSystemsTab({
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [previewOffsets, setPreviewOffsets] = useState<Record<number, PreviewOffsets> | null>(null);
   const [previewAngle, setPreviewAngle] = useState<number | null>(null);
+  const [ahaRadius, setAhaRadius] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState<{ lat: number; lng: number } | null>(null);
   const lastMouseMoveRef = useRef(0);
 
@@ -121,7 +126,8 @@ export function MissileSystemsTab({
     category: string,
     lat: number,
     lng: number,
-    angle: number
+    angle: number,
+    ahaRadiusOverride?: number
   ): DeployedMissileSystemData | null => {
     try {
       const areaConfig = {
@@ -129,6 +135,10 @@ export function MissileSystemsTab({
         centerLon: lng,
         openingAngle: angle,
         ...AREA_CONFIG,
+        ahaPoint: {
+          ...AREA_CONFIG.ahaPoint,
+          radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
+        },
       };
 
       const result = generateUShapeVertices(areaConfig);
@@ -160,6 +170,7 @@ export function MissileSystemsTab({
         category,
         center: { lat, lng },
         openingAngle: angle,
+        ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
         tacticalAreas: {
           uShapeVertices: result.uShapeVertices,
           ammoArea: result.ammoArea,
@@ -175,20 +186,27 @@ export function MissileSystemsTab({
     }
   };
 
-  const generateOffsetsForAngle = useCallback((angle: number): PreviewOffsets | null => {
-    try {
-      const result = generateUShapeVertices({
-        centerLat: REF_CENTER.lat,
-        centerLon: REF_CENTER.lng,
-        ...AREA_CONFIG,
-        openingAngle: angle,
-      });
-      return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
-    } catch (error) {
-      console.error('Failed to generate offsets for angle:', angle, error);
-      return null;
-    }
-  }, []);
+  const generateOffsetsForAngle = useCallback(
+    (angle: number, ahaRadiusOverride?: number): PreviewOffsets | null => {
+      try {
+        const result = generateUShapeVertices({
+          centerLat: REF_CENTER.lat,
+          centerLon: REF_CENTER.lng,
+          ...AREA_CONFIG,
+          ahaPoint: {
+            ...AREA_CONFIG.ahaPoint,
+            radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
+          },
+          openingAngle: angle,
+        });
+        return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
+      } catch (error) {
+        console.error('Failed to generate offsets for angle:', angle, error);
+        return null;
+      }
+    },
+    []
+  );
 
   const handleMapClick = (lat: number, lng: number) => {
     setCoordinates({ lat, lng });
@@ -207,7 +225,7 @@ export function MissileSystemsTab({
 
     let offsets: PreviewOffsets | null = previewOffsets[autoAngle] ?? null;
     if (!offsets) {
-      offsets = generateOffsetsForAngle(autoAngle);
+      offsets = generateOffsetsForAngle(autoAngle, ahaRadius ?? AREA_CONFIG.ahaPoint.radius);
     }
     if (!offsets) {
       setStatus('Warning: Failed to generate tactical area for this angle');
@@ -252,6 +270,7 @@ export function MissileSystemsTab({
       category: selectedUnit.category,
       center: { lat, lng },
       openingAngle: autoAngle,
+      ahaRadius: ahaRadius ?? AREA_CONFIG.ahaPoint.radius,
       tacticalAreas: { uShapeVertices, ammoArea, hideArea, reloadArea, firePoints },
       paths,
     });
@@ -271,6 +290,7 @@ export function MissileSystemsTab({
     }
     setSelectedUnit({ key: unitKey, name: unitName, category });
     setPreviewAngle(null);
+    setAhaRadius(null);
     setStatus(`${unitName} selected - Click map to deploy`);
 
     const offsets: Record<number, PreviewOffsets> = {};
@@ -305,7 +325,28 @@ export function MissileSystemsTab({
         deployment.category,
         deployment.center.lat,
         deployment.center.lng,
-        newAngle
+        newAngle,
+        deployment.ahaRadius
+      );
+
+      if (newData) {
+        onDeploySystem(unitKey, newData);
+      }
+    }
+  };
+
+  const handleAhaRadiusChangeDeployed = (unitKey: string, newRadius: number) => {
+    const deployment = deployedSystems.get(unitKey);
+    if (!deployment) return;
+
+    if (!isNaN(newRadius) && newRadius > 0) {
+      const newData = generateDeploymentData(
+        deployment.unitName,
+        deployment.category,
+        deployment.center.lat,
+        deployment.center.lng,
+        deployment.openingAngle,
+        newRadius
       );
 
       if (newData) {
@@ -320,9 +361,30 @@ export function MissileSystemsTab({
       setPreviewAngle(newAngle);
       setPreviewOffsets((prev) => {
         if (!prev || prev[newAngle]) return prev;
-        const offsets = generateOffsetsForAngle(newAngle);
+        const effectiveRadius = ahaRadius ?? AREA_CONFIG.ahaPoint.radius;
+        const offsets = generateOffsetsForAngle(newAngle, effectiveRadius);
         if (!offsets) return prev;
         return { ...prev, [newAngle]: offsets };
+      });
+    },
+    [ahaRadius, generateOffsetsForAngle]
+  );
+
+  const handleAhaRadiusChange = useCallback(
+    (newRadius: number | null) => {
+      if (newRadius !== null && (isNaN(newRadius) || newRadius <= 0)) return;
+      setAhaRadius(newRadius);
+      const effectiveRadius = newRadius ?? AREA_CONFIG.ahaPoint.radius;
+      // Regenerate all cached offsets with the new radius
+      setPreviewOffsets((prev) => {
+        if (!prev) return prev;
+        const updated: Record<number, PreviewOffsets> = {};
+        for (const angleKey of Object.keys(prev)) {
+          const angle = Number(angleKey);
+          const offsets = generateOffsetsForAngle(angle, effectiveRadius);
+          if (offsets) updated[angle] = offsets;
+        }
+        return updated;
       });
     },
     [generateOffsetsForAngle]
@@ -352,15 +414,17 @@ export function MissileSystemsTab({
     });
 
     const uShapeVertices = offsets.uShapeVertices.map(translate);
+    const ammoArea = offsets.ammoArea.map(translate);
     const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
 
     const allVerticesInTaiwan =
       uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-      firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
+      firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude))) &&
+      ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude));
 
     return {
       uShapeVertices,
-      ammoArea: offsets.ammoArea.map(translate),
+      ammoArea,
       hideArea: offsets.hideArea.map(translate),
       reloadArea: offsets.reloadArea.map(translate),
       firePoints,
@@ -453,7 +517,8 @@ export function MissileSystemsTab({
                           {isDeployed && deployment && (
                             <div className="mt-2 rounded bg-status-success/10 p-1.5">
                               <div className="text-[11px] text-status-success">
-                                ✓ Deployed | Angle: {deployment.openingAngle}°
+                                ✓ Deployed | Angle: {deployment.openingAngle}° | AHA:{' '}
+                                {deployment.ahaRadius} NM
                               </div>
                               {isExpanded && (
                                 <>
@@ -466,8 +531,24 @@ export function MissileSystemsTab({
                                       handleAngleChange(unitKey, parseInt(e.target.value))
                                     }
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mt-1 mb-2 w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
+                                    className="mt-1 w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
                                     placeholder="Angle (0-359°)"
+                                  />
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={50}
+                                    step={0.5}
+                                    value={deployment.ahaRadius}
+                                    onChange={(e) =>
+                                      handleAhaRadiusChangeDeployed(
+                                        unitKey,
+                                        parseFloat(e.target.value)
+                                      )
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="mt-1 mb-2 w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
+                                    placeholder="AHA Distance (NM)"
                                   />
                                   <button
                                     className="w-full rounded bg-status-danger px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-700"
@@ -521,6 +602,31 @@ export function MissileSystemsTab({
                                       Auto
                                     </button>
                                   )}
+                                </div>
+                              </div>
+                              <div className="mt-1.5">
+                                <label className="text-[11px] text-text-secondary">
+                                  AHA Distance (NM)
+                                </label>
+                                <div className="mt-0.5 flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={50}
+                                    step={0.5}
+                                    value={ahaRadius ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === '') {
+                                        handleAhaRadiusChange(null);
+                                      } else {
+                                        handleAhaRadiusChange(parseFloat(val));
+                                      }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
+                                    placeholder={`Default (${AREA_CONFIG.ahaPoint.radius})`}
+                                  />
                                 </div>
                               </div>
                               <button

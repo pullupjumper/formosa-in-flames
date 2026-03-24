@@ -22,18 +22,18 @@ if saveData == nil then
 end
 
 if unit then
-  local score = GameApi.ScenEdit_GetScore("Taiwan")
+  local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
 
-  if unit.type == "Aircraft" then
+  if unit.type == constants.UNIT_TYPES.AIRCRAFT then
     if unit.condition == "Parked" and unit.dbid == constants.PLATFORMS.Z10 then
       GameApi.ScenEdit_SetScore(
-        "Taiwan",
+        constants.SIDES.PLAYER,
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed an helicopter on the ground."
       )
     elseif unit.dbid == constants.PLATFORMS.Y9DZ then
       GameApi.ScenEdit_SetScore(
-        "Taiwan",
+        constants.SIDES.PLAYER,
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed a recon aircraft."
       )
@@ -42,7 +42,7 @@ if unit then
         unit.dbid == constants.PLATFORMS.J16D or
         unit.dbid == constants.PLATFORMS.J15D then
       GameApi.ScenEdit_SetScore(
-        "Taiwan",
+        constants.SIDES.PLAYER,
         (score + config.s.destroyingAircraftOnTheGround),
         "Destroyed a communications jammer."
       )
@@ -52,7 +52,7 @@ if unit then
         unit.dbid == constants.PLATFORMS.WZ7 or
         unit.dbid == constants.PLATFORMS.GJ11 then
       GameApi.ScenEdit_SetScore(
-        "Taiwan",
+        constants.SIDES.PLAYER,
         (score + config.s.uav),
         "Destroyed a recon UAV."
       )
@@ -66,54 +66,42 @@ if unit then
     end
   end
 
-  if unit.type == "Ship" then
+  if unit.type == constants.UNIT_TYPES.SHIP then
     if unit.dbid == constants.PLATFORMS.TYPE_071 or
         unit.dbid == constants.PLATFORMS.TYPE_072III or
         unit.dbid == constants.PLATFORMS.TYPE_072A or
         unit.dbid == constants.PLATFORMS.TYPE_073A then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.lst), "You have destroyed a ship (LST).")
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.lst), "You have destroyed a ship (LST).")
     elseif unit.dbid == constants.PLATFORMS.TYPE_075 then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.lhd), "You have destroyed a ship (LHD).")
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.lhd), "You have destroyed a ship (LHD).")
     elseif unit.dbid == constants.PLATFORMS.TYPE_002 then
-      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.cv), "You have destroyed a carrier.")
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.cv), "You have destroyed a carrier.")
     else
-      GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.ddg), "You have destroyed a ship.")
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.ddg), "You have destroyed a ship.")
     end
   end
 
-  if unit.type == "Submarine" then
-    GameApi.ScenEdit_SetScore(
-      "Taiwan",
-      (score + config.s.sub),
-      "You have destroyed a submarine."
-    )
+  if unit.type == constants.UNIT_TYPES.SUBMARINE then
+    GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.sub), "You have destroyed a submarine.")
   end
 
-  if unit.type == "Facility" then
+  if unit.type == constants.UNIT_TYPES.FACILITY then
     if unit.dbid == constants.PLATFORMS.PHL16 or
         unit.dbid == constants.PLATFORMS.PHL03 or
         string.find(unit.name, "DF") or
         string.find(unit.name, "CJ") then
-      GameApi.ScenEdit_SetScore(
-        "Taiwan",
-        (score + config.s.tel),
-        "You have destroyed a TEL."
-      )
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a TEL.")
     elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
-      GameApi.ScenEdit_SetScore(
-        "Taiwan",
-        (score + config.s.tel),
-        "You have destroyed a GPS jammer."
-      )
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a GPS jammer.")
       -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
-      GnssJamming.removeJammingZoneByName(saveData.c.gnssJamming.jammers, "China", unit.name)
+      GnssJamming.removeJammingZoneByName(saveData.c.gnssJamming.jammers, constants.SIDES.ENEMY, unit.name)
     elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
       local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       GameApi.ScenEdit_SetScore(
-        "Taiwan",
+        constants.SIDES.PLAYER,
         (score + config.s.destroyingAmmo),
         "You have destroyed a " .. text
       )
@@ -122,23 +110,15 @@ if unit then
         unit.dbid == constants.PLATFORMS.S400 or
         unit.dbid == constants.PLATFORMS.HQ12 then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.c.iads.c2, "sam", unit)
-      IntegratedAirDefenseSystem.activateNearestRadar(
-        config,
-        filteredUnits,
-        unit
-      )
+      IntegratedAirDefenseSystem.activateNearestRadar(config, filteredUnits, unit)
     elseif unit.dbid == constants.PLATFORMS.JY26 or unit.dbid == constants.PLATFORMS.YLC8B then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.c.iads.c2, "radar", unit)
-      IntegratedAirDefenseSystem.activateNearestRadar(
-        config,
-        filteredUnits,
-        unit
-      )
+      IntegratedAirDefenseSystem.activateNearestRadar(config, filteredUnits, unit)
     else
       for _, dbid in ipairs(config.c.iads.c2FacilityDBIDs) do
         if unit.dbid == dbid and not saveData.c.iads.c2[unit.guid] then
           GameApi.ScenEdit_SetScore(
-            "Taiwan",
+            constants.SIDES.PLAYER,
             (score + config.s.destroyingCivilianFacility),
             "Destruction of civilian facilities"
           )

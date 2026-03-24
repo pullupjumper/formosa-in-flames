@@ -20,8 +20,8 @@
   --color-status-danger: #db3737;
   --color-status-warning: #d9822b;
 
-  --font-family-sans: -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue',
-    Arial, sans-serif;
+  --font-family-sans:
+    -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Reset game engine's font wrapper */

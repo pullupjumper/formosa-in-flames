@@ -390,7 +390,7 @@ end
 -- Internal Area Generation
 -- ============================================================================
 
----Generate three non-overlapping squares inside the boundary rectangle
+---Generate two non-overlapping squares inside the boundary rectangle
 ---@param boundaryCorners CMO__Location[] Four corners of boundary rectangle
 ---@param openingAngle number Opening direction in degrees
 ---@param squareSize number Size of squares in nautical miles
@@ -398,7 +398,7 @@ end
 ---@param areaHeight number Height of boundary rectangle in nautical miles
 ---@param marginToWall? number Safety margin between squares and boundary walls in nm (default: 0.1)
 ---@param marginBetweenSquares? number Safety margin between squares in nm (default: 0.1)
----@return {ammoArea: CMO__Location[], hideArea: CMO__Location[], reloadArea: CMO__Location[]}
+---@return {hideArea: CMO__Location[], reloadArea: CMO__Location[]}
 local function generateInternalSquares(boundaryCorners, openingAngle, squareSize, areaWidth, areaHeight,
                                        marginToWall, marginBetweenSquares)
   local areas = {}
@@ -424,9 +424,9 @@ local function generateInternalSquares(boundaryCorners, openingAngle, squareSize
 
   ---@type CMO__Location[]
   local centers = {}
-  local areaNames = { "ammoArea", "hideArea", "reloadArea" }
+  local areaNames = { "hideArea", "reloadArea" }
 
-  for i = 1, 3 do
+  for i = 1, 2 do
     local validCenter = false
     local attempts = 0
 
@@ -457,9 +457,8 @@ local function generateInternalSquares(boundaryCorners, openingAngle, squareSize
     end
   end
 
-  areas.ammoArea = generateSquareVertices(centers[1].latitude, centers[1].longitude, squareSize, openingAngle)
-  areas.hideArea = generateSquareVertices(centers[2].latitude, centers[2].longitude, squareSize, openingAngle)
-  areas.reloadArea = generateSquareVertices(centers[3].latitude, centers[3].longitude, squareSize, openingAngle)
+  areas.hideArea = generateSquareVertices(centers[1].latitude, centers[1].longitude, squareSize, openingAngle)
+  areas.reloadArea = generateSquareVertices(centers[2].latitude, centers[2].longitude, squareSize, openingAngle)
 
   return areas
 end
@@ -563,6 +562,23 @@ local function generateFirePoints(centerLat, centerLon, radius, squareSize, coun
   return firePointVertices
 end
 
+---Generate AHA (Ammo Holding Area) position outside the boundary, along openingAngle direction
+---@param centerLat number Center latitude in degrees
+---@param centerLon number Center longitude in degrees
+---@param radius number Distance from center in nautical miles
+---@param squareSize number AHA square size in nautical miles
+---@param openingAngle number Opening direction in degrees
+---@return CMO__Location[] # Array of 4 vertices forming the AHA square
+local function generateAhaPosition(centerLat, centerLon, radius, squareSize, openingAngle)
+  local ahaCenter = GameApi.World_GetPointFromBearing({
+    latitude = centerLat,
+    longitude = centerLon,
+    bearing = openingAngle,
+    distance = radius
+  })
+  return generateSquareVertices(ahaCenter.latitude, ahaCenter.longitude, squareSize, openingAngle)
+end
+
 -- ============================================================================
 -- Public API Functions
 -- ============================================================================
@@ -623,9 +639,18 @@ function TacticalAreaGenerator.generateUShapeVertices(areaConfig)
       areaConfig.internalSquares.marginBetweenSquares
     )
 
-    result.ammoArea = internalSquares.ammoArea
     result.hideArea = internalSquares.hideArea
     result.reloadArea = internalSquares.reloadArea
+  end
+
+  if areaConfig.ahaPoint then
+    result.ammoArea = generateAhaPosition(
+      centerLat,
+      centerLon,
+      areaConfig.ahaPoint.radius,
+      areaConfig.ahaPoint.squareSize,
+      openingAngle
+    )
   end
 
   if areaConfig.firePoints then
@@ -729,7 +754,7 @@ end
 --   height = 1.5,           -- Boundary height (nautical miles)
 --   openingAngle = 30,      -- Opening direction angle (0=North, 90=East, 180=South, 270=West)
 
---   -- Internal three functional zones configuration (optional)
+--   -- Internal two functional zones configuration (optional)
 --   internalSquares = {
 --     size = 0.2,                    -- Square side length (nautical miles)
 --     marginToWall = 0.1,            -- Distance to boundary wall (nautical miles)
@@ -743,6 +768,12 @@ end
 --     count = 2,             -- Number of fire points
 --     angleRange = 90,       -- Angular range (degrees), 360=full circle, 180=semicircle
 --     margin = 0.2           -- Safety margin between fire points (nautical miles)
+--   },
+
+--   -- External AHA (Ammo Holding Area) configuration (optional)
+--   ahaPoint = {
+--     radius = 15,           -- Distance from center along openingAngle direction (nautical miles)
+--     squareSize = 0.3       -- AHA square side length (nautical miles)
 --   }
 -- })
 

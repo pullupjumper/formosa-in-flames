@@ -30,6 +30,10 @@ export interface AreaConfig {
     angleRange?: number;
     margin?: number;
   };
+  ahaPoint?: {
+    radius: number;
+    squareSize: number;
+  };
 }
 
 export interface PathConfig {
@@ -605,7 +609,7 @@ function generateInternalSquares(
   areaHeight: number,
   marginToWall = 0.1,
   marginBetweenSquares = 0.1
-): { ammoArea: Coordinate[]; hideArea: Coordinate[]; reloadArea: Coordinate[] } {
+): { hideArea: Coordinate[]; reloadArea: Coordinate[] } {
   const maxAttempts = 100;
   const halfSquare = squareSize / 2;
 
@@ -630,16 +634,15 @@ function generateInternalSquares(
       `Square size (${squareSize} nm) too large for boundary area (${areaWidth} x ${areaHeight} nm)`
     );
     return {
-      ammoArea: [],
       hideArea: [],
       reloadArea: [],
     };
   }
 
   const centers: Coordinate[] = [];
-  const areaNames = ['ammoArea', 'hideArea', 'reloadArea'];
+  const areaNames = ['hideArea', 'reloadArea'];
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     let validCenter = false;
     let attempts = 0;
 
@@ -692,10 +695,20 @@ function generateInternalSquares(
       : [];
 
   return {
-    ammoArea: safeVertices(0),
-    hideArea: safeVertices(1),
-    reloadArea: safeVertices(2),
+    hideArea: safeVertices(0),
+    reloadArea: safeVertices(1),
   };
+}
+
+function generateAhaPosition(
+  centerLat: number,
+  centerLon: number,
+  radius: number,
+  squareSize: number,
+  openingAngle: number
+): Coordinate[] {
+  const ahaCenter = getPointFromBearing(centerLat, centerLon, openingAngle, radius);
+  return generateSquareVertices(ahaCenter.latitude, ahaCenter.longitude, squareSize, openingAngle);
 }
 
 function generateFirePoints(
@@ -841,9 +854,18 @@ export function generateUShapeVertices(areaConfig: AreaConfig): GenerateResult {
       areaConfig.internalSquares.marginBetweenSquares
     );
 
-    result.ammoArea = internalSquares.ammoArea;
     result.hideArea = internalSquares.hideArea;
     result.reloadArea = internalSquares.reloadArea;
+  }
+
+  if (areaConfig.ahaPoint) {
+    result.ammoArea = generateAhaPosition(
+      centerLat,
+      centerLon,
+      areaConfig.ahaPoint.radius,
+      areaConfig.ahaPoint.squareSize,
+      openingAngle
+    );
   }
 
   if (areaConfig.firePoints) {
