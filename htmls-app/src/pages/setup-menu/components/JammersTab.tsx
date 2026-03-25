@@ -7,6 +7,7 @@ interface JammersTabProps {
   jammers: Jammer[];
   airbases: Airbase[];
   deployedJammers: Map<number, { lat: number; lng: number }>;
+  shouldValidateTaiwanBoundary: boolean;
   onDeployJammer: (index: number, lat: number, lng: number) => void;
   onUndeployJammer: (index: number) => void;
 }
@@ -15,6 +16,7 @@ export function JammersTab({
   jammers,
   airbases,
   deployedJammers,
+  shouldValidateTaiwanBoundary,
   onDeployJammer,
   onUndeployJammer,
 }: JammersTabProps) {
@@ -28,7 +30,7 @@ export function JammersTab({
     setExpandedIndex(null); // Collapse expanded items when clicking map
 
     if (selectedUnit !== null) {
-      if (!isPointInTaiwan(lat, lng)) {
+      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
         setStatus('⚠️ EW units can only be deployed on Taiwan mainland');
         return;
       }

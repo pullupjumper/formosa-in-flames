@@ -118,7 +118,7 @@ end
 ---@param config SBJ__Config Configuration table
 ---@return table<string, table<string, number>> # Table with area names as keys and unit type counts as values
 function UnitStatusUI.countUnitsInEachArea(config)
-  local unitsFromChina = GameApi.VP_GetSide({ side = "China" }).units
+  local unitsFromChina = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }).units
   local result = {}
 
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
@@ -194,7 +194,7 @@ end
 
 ---Display HTML dialog for EMCON settings configuration
 function UnitStatusUI.wcsSettingTable()
-  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
@@ -514,7 +514,7 @@ function UnitStatusUI.createUI(config, sideName)
     return
   end
 
-  if sideName == "China" then
+  if sideName == constants.SIDES.ENEMY then
     local signalDataString = createSignalDataString(saveData, sideName)
     local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm", "mrbm")
     local magazineDataString = createMagazineDataString(config, sideName)
@@ -564,17 +564,18 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     return
   end
 
-  if sideName ~= "Taiwan" then
-    Logger.error("Unsupported side name")
-    return
-  end
-
   -- Prepare data for HTML template
   local gpsJammerDataString = createGnssJammerDataString(config, sideName)
   local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
   local missileSystemDataString = createMissileSystemDataString(config, sideName)
   local HTMLTemplate = getSetupMenuTemplate()
-  local msg = string.format(HTMLTemplate, gpsJammerDataString, deployedAircraftDataString, missileSystemDataString)
+  local msg = string.format(
+    HTMLTemplate,
+    gpsJammerDataString,
+    deployedAircraftDataString,
+    missileSystemDataString,
+    sideName
+  )
 
   -- Display interactive setup dialog
   local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
@@ -583,6 +584,11 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   if form["pressed"] and form["pressed"] == "Done" and form["summaryData"] then
     -- Parse JSON configuration from form
     local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
+
+    if jsonStr == nil then
+      return
+    end
+
     local result = gKH.json.parse(jsonStr)
     ---@cast result SBJ__SetupResult
     local jammerDescriptors = result.jammers
@@ -600,7 +606,12 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     -- Apply aircraft and loadout configurations
     if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
       UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
-      UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+
+      if sideName == constants.SIDES.PLAYER then
+        UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+      else
+        UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+      end
     end
 
     -- Apply TEL launcher deployments
@@ -609,14 +620,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
       local field = sideConfig.field
       local operationalAreas = {}
       ---@cast operationalAreas SBJ__OperationalArea[]
-      local groundCig = {
-        srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        ascm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        glcm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        mlrs = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        sam = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-      }
-      ---@cast groundCig SBJ__GroundForceConfig
+
       -- Update missile system configurations in config
       for _, missileSystem in ipairs(missileSystems) do
         ---@type SBJ__MissileSystemConfig
@@ -630,9 +634,6 @@ function UnitStatusUI.createSetupMenu(config, sideName)
           firingUnitdescriptor.operationalArea = operationalArea
           resupplyUnitDescriptor.operationalArea = operationalArea
           table.insert(operationalAreas, operationalArea)
-          -- groundCig[missileSystem.category].firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
-          -- groundCig[missileSystem.category].resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-          -- groundCig[missileSystem.category].ammunitions[ammoDescriptor.name] = ammoDescriptor
           systemCfg.firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
           systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
           systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
@@ -645,10 +646,14 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, sideName)
-      -- MissileSystem.addMissileSystems(groundCig, sideName)
-      -- MissileSystem.initMissileSystemContexts(groundCig, saveData.t.ground)
-      MissileSystem.addMissileSystems(config.t.ground, sideName)
-      MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+
+      if sideName == constants.SIDES.PLAYER then
+        MissileSystem.addMissileSystems(config.t.ground, sideName)
+        MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+      else
+        MissileSystem.addMissileSystems(config.c.ground, sideName)
+        MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+      end
     end
   end
 

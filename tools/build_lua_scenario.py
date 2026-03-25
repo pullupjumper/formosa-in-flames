@@ -493,6 +493,12 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                     html_content,
                     flags=re.DOTALL,
                 )
+                html_content = re.sub(
+                    r"window\.__INJECT_SIDE_NAME__\s*=\s*`[^`]*`;",
+                    "window.__INJECT_SIDE_NAME__ = `%s`;",
+                    html_content,
+                    flags=re.DOTALL,
+                )
 
                 # Determine the required long string level to avoid conflicts
                 level = get_long_string_level(html_content)

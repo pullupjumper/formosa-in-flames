@@ -22,6 +22,7 @@ declare global {
     __INJECT_JAMMERS__?: string;
     __INJECT_AIRBASES__?: string;
     __INJECT_MISSILE_SYSTEMS__?: string;
+    __INJECT_SIDE_NAME__?: string;
   }
 }
 
@@ -45,6 +46,7 @@ function loadInjectedData() {
       window.__INJECT_MISSILE_SYSTEMS__,
       MISSILE_SYSTEMS_DATA
     ),
+    sideName: window.__INJECT_SIDE_NAME__ || 'Taiwan',
   };
 }
 
@@ -76,6 +78,8 @@ function SetupMenuPage() {
   const [airbases, setAirbases] = useState(() => structuredClone(injectedData.airbases));
   const jammers = injectedData.jammers;
   const missileSystems = injectedData.missileSystems;
+  const sideName = injectedData.sideName;
+  const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
   const [deployedJammers, setDeployedJammers] = useState<Map<number, { lat: number; lng: number }>>(
     new Map()
   );
@@ -123,7 +127,7 @@ function SetupMenuPage() {
       {/* Top Bar */}
       <div className="flex h-12.5 items-center justify-between border-b border-dark-border bg-dark-panel px-5">
         <div className="text-sm font-medium text-text-secondary">
-          <span className="text-text-primary">TAIWAN</span> / DEPLOYMENT PLANNING
+          <span className="text-text-primary">{sideName.toUpperCase()}</span> / DEPLOYMENT PLANNING
         </div>
       </div>
 
@@ -160,6 +164,7 @@ function SetupMenuPage() {
             jammers={jammers}
             airbases={airbases}
             deployedJammers={deployedJammers}
+            shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
             onDeployJammer={(index, lat, lng) => {
               setDeployedJammers((prev) => new Map(prev).set(index, { lat, lng }));
             }}
@@ -177,6 +182,7 @@ function SetupMenuPage() {
             missileSystems={missileSystems}
             airbases={airbases}
             deployedSystems={deployedMissileSystems}
+            shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
             onDeploySystem={(key, data) => {
               setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
             }}

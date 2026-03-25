@@ -78,6 +78,7 @@ interface MissileSystemsTabProps {
   missileSystems: MissileSystems;
   airbases: Airbase[];
   deployedSystems: Map<string, DeployedMissileSystemData>;
+  shouldValidateTaiwanBoundary: boolean;
   onDeploySystem: (key: string, data: DeployedMissileSystemData) => void;
   onUndeploySystem: (key: string) => void;
 }
@@ -86,6 +87,7 @@ export function MissileSystemsTab({
   missileSystems,
   airbases,
   deployedSystems,
+  shouldValidateTaiwanBoundary,
   onDeploySystem,
   onUndeploySystem,
 }: MissileSystemsTabProps) {
@@ -144,7 +146,7 @@ export function MissileSystemsTab({
       const result = generateUShapeVertices(areaConfig);
 
       // Check if U-shape is within Taiwan
-      if (!checkPolygonInTaiwan(result.uShapeVertices)) {
+      if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
         return null;
       }
 
@@ -216,7 +218,7 @@ export function MissileSystemsTab({
       return;
     }
 
-    if (!isPointInTaiwan(lat, lng)) {
+    if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
       setStatus('Warning: Missile systems can only be deployed on Taiwan mainland');
       return;
     }
@@ -243,7 +245,7 @@ export function MissileSystemsTab({
     const reloadArea = offsets.reloadArea.map(translate);
     const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
 
-    if (!checkPolygonInTaiwan(uShapeVertices)) {
+    if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(uShapeVertices)) {
       setStatus('Warning: Generated tactical area extends outside Taiwan boundary');
       return;
     }
@@ -418,9 +420,10 @@ export function MissileSystemsTab({
     const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
 
     const allVerticesInTaiwan =
-      uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-      firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude))) &&
-      ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude));
+      !shouldValidateTaiwanBoundary ||
+      (uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
+        firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude))) &&
+        ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
 
     return {
       uShapeVertices,
@@ -430,7 +433,7 @@ export function MissileSystemsTab({
       firePoints,
       isValid: allVerticesInTaiwan,
     };
-  }, [previewOffsets, previewAngle, mousePosition]);
+  }, [previewOffsets, previewAngle, mousePosition, shouldValidateTaiwanBoundary]);
 
   return (
     <div className="flex h-full">
