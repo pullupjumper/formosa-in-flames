@@ -5,4 +5,6 @@ export {
   MissileSystemMarker,
   DeployedMissileSystems,
   MissileSystemPreview,
+  AreaRelocatePreview,
 } from './MissileSystemMarker';
+export type { RelocatingArea, AreaType } from './MissileSystemMarker';

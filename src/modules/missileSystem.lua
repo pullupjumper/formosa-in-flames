@@ -721,7 +721,11 @@ local function addTriggerToEvent(opts)
 
   if zone then
     local eventName = string.format("(%s) Arrive in %s", opts.sideName, opts.positionType)
-    zone.areacolor = getOperationalAreaColor(opts.positionType)
+
+    if opts.sideName == constants.SIDES.PLAYER then
+      zone.areacolor = getOperationalAreaColor(opts.positionType)
+    end
+
     opts.position.area = GameUtils.convertToRPArray(zone)
     GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
@@ -772,7 +776,10 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
 
     -- operationalArea.mask = { area = filteredRPs }
     operationalArea.mask = { area = rps }
-    zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
+
+    if sideName == constants.SIDES.PLAYER then
+      zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
+    end
     -- zone.landcoverheight = MASK_ZONE.LAND_COVER_HEIGHT
     -- zone.landcovertype = MASK_ZONE.LAND_COVER_TYPE
     return true

@@ -136,6 +136,7 @@ export interface DeployedMissileSystemData {
   center: { lat: number; lng: number };
   openingAngle: number;
   ahaRadius: number;
+  ahaCenter?: { lat: number; lng: number };
   tacticalAreas: TacticalAreas;
   paths: MovementPaths;
 }

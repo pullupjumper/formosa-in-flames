@@ -33,6 +33,7 @@ export interface AreaConfig {
   ahaPoint?: {
     radius: number;
     squareSize: number;
+    center?: { latitude: number; longitude: number };
   };
 }
 
@@ -167,7 +168,7 @@ function calculateSquareCenter(vertices: Coordinate[]): Coordinate {
   };
 }
 
-function checkSquaresOverlap(
+export function checkSquaresOverlap(
   center1Lat: number,
   center1Lon: number,
   center2Lat: number,
@@ -705,8 +706,23 @@ function generateAhaPosition(
   centerLon: number,
   radius: number,
   squareSize: number,
-  openingAngle: number
+  openingAngle: number,
+  customCenter?: { latitude: number; longitude: number }
 ): Coordinate[] {
+  if (customCenter) {
+    const bearingToCenter = calculateBearing(
+      customCenter.latitude,
+      customCenter.longitude,
+      centerLat,
+      centerLon
+    );
+    return generateSquareVertices(
+      customCenter.latitude,
+      customCenter.longitude,
+      squareSize,
+      bearingToCenter
+    );
+  }
   const ahaCenter = getPointFromBearing(centerLat, centerLon, openingAngle, radius);
   return generateSquareVertices(ahaCenter.latitude, ahaCenter.longitude, squareSize, openingAngle);
 }
@@ -805,6 +821,15 @@ function generateFirePoints(
   return firePoints.map((fp) => fp.vertices);
 }
 
+export function generateSquareVerticesPublic(
+  centerLat: number,
+  centerLon: number,
+  size: number,
+  rotationAngle: number
+): Coordinate[] {
+  return generateSquareVertices(centerLat, centerLon, size, rotationAngle);
+}
+
 // ============================================================================
 // Public API Functions
 // ============================================================================
@@ -864,7 +889,8 @@ export function generateUShapeVertices(areaConfig: AreaConfig): GenerateResult {
       centerLon,
       areaConfig.ahaPoint.radius,
       areaConfig.ahaPoint.squareSize,
-      openingAngle
+      openingAngle,
+      areaConfig.ahaPoint.center
     );
   }
 

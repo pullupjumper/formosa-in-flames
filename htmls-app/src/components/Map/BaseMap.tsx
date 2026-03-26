@@ -1,5 +1,12 @@
-import { useEffect } from 'react';
-import { LayersControl, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  CircleMarker,
+  LayersControl,
+  MapContainer,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './leaflet-dark.css';
@@ -50,6 +57,7 @@ export function BaseMap({
       {onMouseMove && <MapMouseMoveHandler onMouseMove={onMouseMove} />}
       {cursorStyle && <MapCursorStyle cursor={cursorStyle} />}
       <MapResizeHandler />
+      <CoordinateSearch />
       {children}
     </MapContainer>
   );
@@ -104,6 +112,107 @@ function MapResizeHandler() {
   }, [map]);
 
   return null;
+}
+
+// ============================================================================
+// CoordinateSearch — input box on the map to jump to a lat,lng
+// ============================================================================
+function CoordinateSearch() {
+  const map = useMap();
+  const [value, setValue] = useState('');
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const trimmed = value.trim();
+      if (!trimmed) return;
+
+      // Accept "lat, lng" or "lat lng"
+      const parts = trimmed.split(/[,\s]+/).filter(Boolean);
+      if (parts.length < 2) return;
+
+      const lat = parseFloat(parts[0]);
+      const lng = parseFloat(parts[1]);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      map.setView([lat, lng], map.getZoom(), { animate: true });
+      setPin({ lat, lng });
+      setValue('');
+    },
+    [value, map]
+  );
+
+  const clearPin = useCallback(() => {
+    setPin(null);
+  }, []);
+
+  return (
+    <>
+      {/* Search input overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: 60,
+          zIndex: 1000,
+        }}
+      >
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 4 }}>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="lat, lng"
+            style={{
+              width: 200,
+              padding: '4px 8px',
+              fontSize: 12,
+              background: '#202b33',
+              border: '1px solid #30404d',
+              borderRadius: 4,
+              color: '#e1e8ed',
+              outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '4px 8px',
+              fontSize: 12,
+              background: '#137cbd',
+              border: '1px solid #137cbd',
+              borderRadius: 4,
+              color: '#e1e8ed',
+              cursor: 'pointer',
+            }}
+          >
+            Go
+          </button>
+        </form>
+      </div>
+
+      {/* Pin marker */}
+      {pin && (
+        <CircleMarker
+          center={[pin.lat, pin.lng]}
+          radius={7}
+          pathOptions={{
+            color: '#fff',
+            fillColor: '#137cbd',
+            fillOpacity: 1,
+            weight: 2,
+          }}
+          eventHandlers={{
+            click: (e) => {
+              e.originalEvent.stopPropagation();
+              clearPin();
+            },
+          }}
+        />
+      )}
+    </>
+  );
 }
 
 export { TAIWAN_CENTER, DEFAULT_ZOOM };

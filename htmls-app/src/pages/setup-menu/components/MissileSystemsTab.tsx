@@ -1,18 +1,26 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { MissileSystems, Airbase, DeployedMissileSystemData } from '@/types/setupMenu';
 import {
   BaseMap,
   AirbaseMarkers,
   DeployedMissileSystems,
   MissileSystemPreview,
+  AreaRelocatePreview,
 } from '@/components/Map';
+import type { RelocatingArea, AreaType } from '@/components/Map';
 import {
   getWeaponSystemName,
   isPointInTaiwan,
   determineOpeningAngle,
   checkPolygonInTaiwan,
 } from '@/utils/map';
-import { generateUShapeVertices, calculateMovementPaths } from '@/utils/tacticalAreaGenerator';
+import {
+  generateUShapeVertices,
+  calculateMovementPaths,
+  calculateBearing,
+  generateSquareVerticesPublic,
+  checkSquaresOverlap,
+} from '@/utils/tacticalAreaGenerator';
 
 // ============================================================================
 // AREA CONFIG
@@ -33,10 +41,91 @@ const AREA_CONFIG = {
     margin: 0.2,
   },
   ahaPoint: {
-    radius: 15,
+    radius: 7,
     squareSize: 0.3,
   },
 };
+
+const MOVEMENT_PATH_AVOIDANCE_MARGIN = 0.05;
+const DEFAULT_STATUS = 'Select a missile system unit then click on the map to deploy';
+
+type RelocatableSquareType = Exclude<AreaType, 'ushape'>;
+
+const AREA_SQUARE_SIZE: Record<RelocatableSquareType, number> = {
+  aha: AREA_CONFIG.ahaPoint.squareSize,
+  hide: AREA_CONFIG.internalSquares.size,
+  reload: AREA_CONFIG.internalSquares.size,
+  fp: AREA_CONFIG.firePoints.squareSize,
+};
+
+const AREA_LABEL: Record<AreaType, string> = {
+  ushape: 'U-Shape',
+  aha: 'AHA',
+  hide: 'Hide Area',
+  reload: 'Reload Area',
+  fp: 'Fire Point',
+};
+
+function createEmptyMovementPaths(): DeployedMissileSystemData['paths'] {
+  return {
+    FP: [],
+    HA: { waypoints: [] },
+    RL: [],
+    AHA: { waypoints: [] },
+  };
+}
+
+function buildMovementPaths(
+  tacticalAreas: DeployedMissileSystemData['tacticalAreas']
+): DeployedMissileSystemData['paths'] {
+  if (!tacticalAreas.ammoArea || !tacticalAreas.hideArea || !tacticalAreas.reloadArea) {
+    return createEmptyMovementPaths();
+  }
+
+  return calculateMovementPaths({
+    ammoArea: tacticalAreas.ammoArea,
+    hideArea: tacticalAreas.hideArea,
+    reloadArea: tacticalAreas.reloadArea,
+    firePoints: tacticalAreas.firePoints,
+    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+  });
+}
+
+function isValidAngle(angle: number): boolean {
+  return Number.isFinite(angle) && angle >= 0 && angle <= 359;
+}
+
+function isPointInPolygon(
+  point: { latitude: number; longitude: number },
+  polygon: { latitude: number; longitude: number }[]
+): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const yi = polygon[i].latitude;
+    const xi = polygon[i].longitude;
+    const yj = polygon[j].latitude;
+    const xj = polygon[j].longitude;
+    if (
+      yi > point.latitude !== yj > point.latitude &&
+      point.longitude < ((xj - xi) * (point.latitude - yi)) / (yj - yi) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function areAllPointsInPolygon(
+  points: { latitude: number; longitude: number }[],
+  polygon: { latitude: number; longitude: number }[]
+): boolean {
+  return points.every((point) => isPointInPolygon(point, polygon));
+}
+
+function formatAreaLabel(area: RelocatingArea): string {
+  if (area.type !== 'fp') return AREA_LABEL[area.type];
+  return `${AREA_LABEL.fp} ${(area.fpIndex ?? 0) + 1}`;
+}
 
 // ============================================================================
 // PREVIEW TYPES & CONSTANTS
@@ -97,14 +186,17 @@ export function MissileSystemsTab({
     category: string;
   } | null>(null);
   const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
-  const [status, setStatus] = useState(
-    'Select a missile system unit then click on the map to deploy'
-  );
+  const [status, setStatus] = useState(DEFAULT_STATUS);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [previewOffsets, setPreviewOffsets] = useState<Record<number, PreviewOffsets> | null>(null);
   const [previewAngle, setPreviewAngle] = useState<number | null>(null);
-  const [ahaRadius, setAhaRadius] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [relocatingArea, setRelocatingArea] = useState<RelocatingArea | null>(null);
+  const [rotatingUnit, setRotatingUnit] = useState<{
+    unitKey: string;
+    center: { lat: number; lng: number };
+  } | null>(null);
+  const [rotationPreviewAngle, setRotationPreviewAngle] = useState<number | null>(null);
   const lastMouseMoveRef = useRef(0);
 
   const categories = Object.keys(missileSystems);
@@ -123,70 +215,63 @@ export function MissileSystemsTab({
     [missileSystems]
   );
 
-  const generateDeploymentData = (
-    unitName: string,
-    category: string,
-    lat: number,
-    lng: number,
-    angle: number,
-    ahaRadiusOverride?: number
-  ): DeployedMissileSystemData | null => {
-    try {
-      const areaConfig = {
-        centerLat: lat,
-        centerLon: lng,
-        openingAngle: angle,
-        ...AREA_CONFIG,
-        ahaPoint: {
-          ...AREA_CONFIG.ahaPoint,
-          radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-        },
-      };
+  const generateDeploymentData = useCallback(
+    (
+      unitName: string,
+      category: string,
+      lat: number,
+      lng: number,
+      angle: number,
+      ahaRadiusOverride?: number,
+      ahaCenterOverride?: { lat: number; lng: number }
+    ): DeployedMissileSystemData | null => {
+      try {
+        const areaConfig = {
+          centerLat: lat,
+          centerLon: lng,
+          openingAngle: angle,
+          ...AREA_CONFIG,
+          ahaPoint: {
+            ...AREA_CONFIG.ahaPoint,
+            radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
+            ...(ahaCenterOverride
+              ? { center: { latitude: ahaCenterOverride.lat, longitude: ahaCenterOverride.lng } }
+              : {}),
+          },
+        };
 
-      const result = generateUShapeVertices(areaConfig);
+        const result = generateUShapeVertices(areaConfig);
 
-      // Check if U-shape is within Taiwan
-      if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
-        return null;
-      }
+        // Check if U-shape is within Taiwan
+        if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
+          return null;
+        }
 
-      let paths = {
-        FP: [] as { waypoints: { latitude: number; longitude: number }[] }[],
-        HA: { waypoints: [] as { latitude: number; longitude: number }[] },
-        RL: [] as { waypoints: { latitude: number; longitude: number }[] }[],
-        AHA: { waypoints: [] as { latitude: number; longitude: number }[] },
-      };
-
-      if (result.ammoArea && result.hideArea && result.reloadArea) {
-        paths = calculateMovementPaths({
-          ammoArea: result.ammoArea,
-          hideArea: result.hideArea,
-          reloadArea: result.reloadArea,
-          firePoints: result.firePoints,
-          avoidanceMargin: 0.05,
-        });
-      }
-
-      return {
-        unitName,
-        category,
-        center: { lat, lng },
-        openingAngle: angle,
-        ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-        tacticalAreas: {
+        const tacticalAreas = {
           uShapeVertices: result.uShapeVertices,
           ammoArea: result.ammoArea,
           hideArea: result.hideArea,
           reloadArea: result.reloadArea,
           firePoints: result.firePoints,
-        },
-        paths,
-      };
-    } catch (error) {
-      console.error('Error generating tactical areas:', error);
-      return null;
-    }
-  };
+        };
+
+        return {
+          unitName,
+          category,
+          center: { lat, lng },
+          openingAngle: angle,
+          ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
+          ...(ahaCenterOverride ? { ahaCenter: ahaCenterOverride } : {}),
+          tacticalAreas,
+          paths: buildMovementPaths(tacticalAreas),
+        };
+      } catch (error) {
+        console.error('Error generating tactical areas:', error);
+        return null;
+      }
+    },
+    [shouldValidateTaiwanBoundary]
+  );
 
   const generateOffsetsForAngle = useCallback(
     (angle: number, ahaRadiusOverride?: number): PreviewOffsets | null => {
@@ -210,197 +295,372 @@ export function MissileSystemsTab({
     []
   );
 
-  const handleMapClick = (lat: number, lng: number) => {
-    setCoordinates({ lat, lng });
-    setExpandedUnitKey(null);
+  // ============================================================================
+  // Area Relocation Logic
+  // ============================================================================
+  const applyAreaRelocation = useCallback(
+    (lat: number, lng: number) => {
+      if (!relocatingArea) return false;
 
-    if (selectedUnit === null || !previewOffsets) {
-      return;
-    }
+      const deployment = deployedSystems.get(relocatingArea.unitKey);
+      if (!deployment) {
+        setRelocatingArea(null);
+        return true;
+      }
 
-    if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
-      setStatus('Warning: Missile systems can only be deployed on Taiwan mainland');
-      return;
-    }
+      const { tacticalAreas } = deployment;
+      const newTacticalAreas = { ...tacticalAreas };
+      const extraFields: Partial<DeployedMissileSystemData> = {};
 
-    const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
+      if (relocatingArea.type === 'ushape') {
+        const regenerated = generateDeploymentData(
+          deployment.unitName,
+          deployment.category,
+          lat,
+          lng,
+          deployment.openingAngle,
+          deployment.ahaRadius,
+          deployment.ahaCenter
+        );
 
-    let offsets: PreviewOffsets | null = previewOffsets[autoAngle] ?? null;
-    if (!offsets) {
-      offsets = generateOffsetsForAngle(autoAngle, ahaRadius ?? AREA_CONFIG.ahaPoint.radius);
-    }
-    if (!offsets) {
-      setStatus('Warning: Failed to generate tactical area for this angle');
-      return;
-    }
+        if (!regenerated) {
+          setStatus('Warning: Failed to relocate U-Shape');
+          return true;
+        }
 
-    const translate = (o: OffsetVertex) => ({
-      latitude: lat + o.dLat,
-      longitude: lng + o.dLng,
-    });
+        newTacticalAreas.uShapeVertices = regenerated.tacticalAreas.uShapeVertices;
+        newTacticalAreas.hideArea = regenerated.tacticalAreas.hideArea;
+        newTacticalAreas.reloadArea = regenerated.tacticalAreas.reloadArea;
+        extraFields.center = { lat, lng };
+      } else {
+        const bearingToCenter = calculateBearing(
+          lat,
+          lng,
+          deployment.center.lat,
+          deployment.center.lng
+        );
+        const squareSize = AREA_SQUARE_SIZE[relocatingArea.type];
+        const newVertices = generateSquareVerticesPublic(lat, lng, squareSize, bearingToCenter);
 
-    const uShapeVertices = offsets.uShapeVertices.map(translate);
-    const ammoArea = offsets.ammoArea.map(translate);
-    const hideArea = offsets.hideArea.map(translate);
-    const reloadArea = offsets.reloadArea.map(translate);
-    const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
+        // Validate hide/reload must be inside U-Shape boundary
+        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
+          const boundary = tacticalAreas.uShapeVertices;
+          if (boundary && boundary.length >= 3) {
+            const allInside = areAllPointsInPolygon(newVertices, boundary);
+            if (!allInside) {
+              setStatus('Warning: Must be within the boundary area');
+              return true;
+            }
+          }
+        }
 
-    if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(uShapeVertices)) {
-      setStatus('Warning: Generated tactical area extends outside Taiwan boundary');
-      return;
-    }
+        // Validate hide/reload don't overlap with each other
+        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
+          const otherArea =
+            relocatingArea.type === 'hide' ? tacticalAreas.reloadArea : tacticalAreas.hideArea;
+          if (otherArea && otherArea.length === 4) {
+            const otherCenterLat = otherArea.reduce((sum, vertex) => sum + vertex.latitude, 0) / 4;
+            const otherCenterLon = otherArea.reduce((sum, vertex) => sum + vertex.longitude, 0) / 4;
+            if (
+              checkSquaresOverlap(
+                lat,
+                lng,
+                otherCenterLat,
+                otherCenterLon,
+                squareSize,
+                AREA_CONFIG.internalSquares.marginBetweenSquares
+              )
+            ) {
+              const otherLabel =
+                relocatingArea.type === 'hide' ? AREA_LABEL.reload : AREA_LABEL.hide;
+              setStatus(`Warning: Overlaps with ${otherLabel}, choose another location`);
+              return true;
+            }
+          }
+        }
 
-    let paths: DeployedMissileSystemData['paths'] = {
-      FP: [],
-      HA: { waypoints: [] },
-      RL: [],
-      AHA: { waypoints: [] },
-    };
+        // Build updated tactical areas — only replace the target area
+        switch (relocatingArea.type) {
+          case 'aha':
+            newTacticalAreas.ammoArea = newVertices;
+            extraFields.ahaCenter = { lat, lng };
+            break;
+          case 'hide':
+            newTacticalAreas.hideArea = newVertices;
+            break;
+          case 'reload':
+            newTacticalAreas.reloadArea = newVertices;
+            break;
+          case 'fp':
+            if (tacticalAreas.firePoints) {
+              const newFirePoints = [...tacticalAreas.firePoints];
+              newFirePoints[relocatingArea.fpIndex!] = newVertices;
+              newTacticalAreas.firePoints = newFirePoints;
+            }
+            break;
+        }
+      }
 
-    if (ammoArea.length > 0 && hideArea.length > 0 && reloadArea.length > 0) {
-      paths = calculateMovementPaths({
+      // Recalculate paths with updated areas
+      const paths = buildMovementPaths(newTacticalAreas);
+      const label = formatAreaLabel(relocatingArea);
+
+      onDeploySystem(relocatingArea.unitKey, {
+        ...deployment,
+        ...extraFields,
+        tacticalAreas: newTacticalAreas,
+        paths,
+      });
+      setStatus(`${label} relocated for ${deployment.unitName}`);
+      setRelocatingArea(null);
+      setMousePosition(null);
+      return true;
+    },
+    [relocatingArea, deployedSystems, generateDeploymentData, onDeploySystem]
+  );
+
+  const handleAngleChange = useCallback(
+    (unitKey: string, newAngle: number) => {
+      const deployment = deployedSystems.get(unitKey);
+      if (!deployment) return;
+
+      if (isValidAngle(newAngle)) {
+        const newData = generateDeploymentData(
+          deployment.unitName,
+          deployment.category,
+          deployment.center.lat,
+          deployment.center.lng,
+          newAngle,
+          deployment.ahaRadius,
+          deployment.ahaCenter
+        );
+
+        if (newData) {
+          // Preserve existing fire points (like AHA)
+          newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
+          newData.paths = buildMovementPaths(newData.tacticalAreas);
+          onDeploySystem(unitKey, newData);
+        }
+      }
+    },
+    [deployedSystems, generateDeploymentData, onDeploySystem]
+  );
+
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      setCoordinates({ lat, lng });
+      setExpandedUnitKey(null);
+
+      // Rotation mode
+      if (rotatingUnit && rotationPreviewAngle !== null) {
+        handleAngleChange(rotatingUnit.unitKey, rotationPreviewAngle);
+        const deployment = deployedSystems.get(rotatingUnit.unitKey);
+        setStatus(
+          `Angle set to ${rotationPreviewAngle}° for ${deployment?.unitName ?? rotatingUnit.unitKey}`
+        );
+        setRotatingUnit(null);
+        setRotationPreviewAngle(null);
+        setMousePosition(null);
+        return;
+      }
+
+      // Area relocation mode
+      if (relocatingArea) {
+        applyAreaRelocation(lat, lng);
+        return;
+      }
+
+      if (selectedUnit === null || !previewOffsets) {
+        return;
+      }
+
+      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+        setStatus('Warning: Missile systems can only be deployed on Taiwan mainland');
+        return;
+      }
+
+      const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
+
+      let offsets: PreviewOffsets | null = previewOffsets[autoAngle] ?? null;
+      if (!offsets) {
+        offsets = generateOffsetsForAngle(autoAngle);
+      }
+      if (!offsets) {
+        setStatus('Warning: Failed to generate tactical area for this angle');
+        return;
+      }
+
+      const translate = (o: OffsetVertex) => ({
+        latitude: lat + o.dLat,
+        longitude: lng + o.dLng,
+      });
+
+      const uShapeVertices = offsets.uShapeVertices.map(translate);
+      const ammoArea = offsets.ammoArea.map(translate);
+      const hideArea = offsets.hideArea.map(translate);
+      const reloadArea = offsets.reloadArea.map(translate);
+      const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
+
+      if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(uShapeVertices)) {
+        setStatus('Warning: Generated tactical area extends outside Taiwan boundary');
+        return;
+      }
+
+      const tacticalAreas: DeployedMissileSystemData['tacticalAreas'] = {
+        uShapeVertices,
         ammoArea,
         hideArea,
         reloadArea,
         firePoints,
-        avoidanceMargin: 0.05,
+      };
+
+      onDeploySystem(selectedUnit.key, {
+        unitName: selectedUnit.name,
+        category: selectedUnit.category,
+        center: { lat, lng },
+        openingAngle: autoAngle,
+        ahaRadius: AREA_CONFIG.ahaPoint.radius,
+        tacticalAreas,
+        paths: buildMovementPaths(tacticalAreas),
       });
-    }
 
-    onDeploySystem(selectedUnit.key, {
-      unitName: selectedUnit.name,
-      category: selectedUnit.category,
-      center: { lat, lng },
-      openingAngle: autoAngle,
-      ahaRadius: ahaRadius ?? AREA_CONFIG.ahaPoint.radius,
-      tacticalAreas: { uShapeVertices, ammoArea, hideArea, reloadArea, firePoints },
-      paths,
-    });
+      setStatus(
+        `Done: ${selectedUnit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
+      );
+      setSelectedUnit(null);
+      setPreviewOffsets(null);
+      setPreviewAngle(null);
+      setMousePosition(null);
+    },
+    [
+      rotatingUnit,
+      rotationPreviewAngle,
+      handleAngleChange,
+      deployedSystems,
+      relocatingArea,
+      applyAreaRelocation,
+      selectedUnit,
+      previewOffsets,
+      shouldValidateTaiwanBoundary,
+      previewAngle,
+      generateOffsetsForAngle,
+      onDeploySystem,
+    ]
+  );
 
-    setStatus(
-      `Done: ${selectedUnit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
-    );
-    setSelectedUnit(null);
-    setPreviewOffsets(null);
-    setPreviewAngle(null);
-    setMousePosition(null);
-  };
+  const handleUnitSelect = useCallback(
+    (unitKey: string, unitName: string, category: string) => {
+      if (deployedSystems.has(unitKey)) {
+        return;
+      }
+      setSelectedUnit({ key: unitKey, name: unitName, category });
+      setPreviewAngle(null);
+      setStatus(`${unitName} selected - Click map to deploy`);
 
-  const handleUnitSelect = (unitKey: string, unitName: string, category: string) => {
-    if (deployedSystems.has(unitKey)) {
-      return;
-    }
-    setSelectedUnit({ key: unitKey, name: unitName, category });
-    setPreviewAngle(null);
-    setAhaRadius(null);
-    setStatus(`${unitName} selected - Click map to deploy`);
+      const offsets: Record<number, PreviewOffsets> = {};
+      const o90 = generateOffsetsForAngle(90);
+      const o270 = generateOffsetsForAngle(270);
+      if (o90) offsets[90] = o90;
+      if (o270) offsets[270] = o270;
 
-    const offsets: Record<number, PreviewOffsets> = {};
-    const o90 = generateOffsetsForAngle(90);
-    const o270 = generateOffsetsForAngle(270);
-    if (o90) offsets[90] = o90;
-    if (o270) offsets[270] = o270;
-
-    setPreviewOffsets(offsets);
-  };
+      setPreviewOffsets(offsets);
+    },
+    [deployedSystems, generateOffsetsForAngle]
+  );
 
   const handleCancelSelect = () => {
     setSelectedUnit(null);
     setPreviewOffsets(null);
     setPreviewAngle(null);
     setMousePosition(null);
-    setStatus('Select a missile system unit then click on the map to deploy');
+    setRelocatingArea(null);
+    setRotatingUnit(null);
+    setRotationPreviewAngle(null);
+    setStatus(DEFAULT_STATUS);
   };
+
+  const handleAreaClick = useCallback(
+    (area: RelocatingArea) => {
+      // Toggle off if clicking the same area
+      if (
+        relocatingArea &&
+        relocatingArea.unitKey === area.unitKey &&
+        relocatingArea.type === area.type &&
+        relocatingArea.fpIndex === area.fpIndex
+      ) {
+        setRelocatingArea(null);
+        setMousePosition(null);
+        setStatus('Relocation cancelled');
+        return;
+      }
+      setRelocatingArea(area);
+      setSelectedUnit(null);
+      setPreviewOffsets(null);
+      setPreviewAngle(null);
+      setRotatingUnit(null);
+      setRotationPreviewAngle(null);
+
+      const label = formatAreaLabel(area);
+      setStatus(`Click on the map to relocate ${label}, or click it again / press ESC to cancel`);
+    },
+    [relocatingArea]
+  );
+
+  const handleRotateClick = useCallback(
+    (unitKey: string) => {
+      const deployment = deployedSystems.get(unitKey);
+      if (!deployment) return;
+
+      setRotatingUnit({ unitKey, center: deployment.center });
+      setRotationPreviewAngle(null);
+      setRelocatingArea(null);
+      setSelectedUnit(null);
+      setPreviewOffsets(null);
+      setPreviewAngle(null);
+      setStatus(
+        `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
+      );
+    },
+    [deployedSystems]
+  );
+
+  useEffect(() => {
+    if (!relocatingArea && !rotatingUnit) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setRelocatingArea(null);
+        setRotatingUnit(null);
+        setRotationPreviewAngle(null);
+        setMousePosition(null);
+        setStatus(rotatingUnit ? 'Rotation cancelled' : 'Relocation cancelled');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [relocatingArea, rotatingUnit]);
 
   const handleUndeploy = (unitKey: string, unitName: string) => {
     onUndeploySystem(unitKey);
     setStatus(`${unitName} deployment cancelled`);
   };
 
-  const handleAngleChange = (unitKey: string, newAngle: number) => {
-    const deployment = deployedSystems.get(unitKey);
-    if (!deployment) return;
-
-    if (!isNaN(newAngle) && newAngle >= 0 && newAngle <= 359) {
-      const newData = generateDeploymentData(
-        deployment.unitName,
-        deployment.category,
-        deployment.center.lat,
-        deployment.center.lng,
-        newAngle,
-        deployment.ahaRadius
-      );
-
-      if (newData) {
-        onDeploySystem(unitKey, newData);
-      }
-    }
-  };
-
-  const handleAhaRadiusChangeDeployed = (unitKey: string, newRadius: number) => {
-    const deployment = deployedSystems.get(unitKey);
-    if (!deployment) return;
-
-    if (!isNaN(newRadius) && newRadius > 0) {
-      const newData = generateDeploymentData(
-        deployment.unitName,
-        deployment.category,
-        deployment.center.lat,
-        deployment.center.lng,
-        deployment.openingAngle,
-        newRadius
-      );
-
-      if (newData) {
-        onDeploySystem(unitKey, newData);
-      }
-    }
-  };
-
-  const handlePreviewAngleChange = useCallback(
-    (newAngle: number) => {
-      if (isNaN(newAngle) || newAngle < 0 || newAngle > 359) return;
-      setPreviewAngle(newAngle);
-      setPreviewOffsets((prev) => {
-        if (!prev || prev[newAngle]) return prev;
-        const effectiveRadius = ahaRadius ?? AREA_CONFIG.ahaPoint.radius;
-        const offsets = generateOffsetsForAngle(newAngle, effectiveRadius);
-        if (!offsets) return prev;
-        return { ...prev, [newAngle]: offsets };
-      });
-    },
-    [ahaRadius, generateOffsetsForAngle]
-  );
-
-  const handleAhaRadiusChange = useCallback(
-    (newRadius: number | null) => {
-      if (newRadius !== null && (isNaN(newRadius) || newRadius <= 0)) return;
-      setAhaRadius(newRadius);
-      const effectiveRadius = newRadius ?? AREA_CONFIG.ahaPoint.radius;
-      // Regenerate all cached offsets with the new radius
-      setPreviewOffsets((prev) => {
-        if (!prev) return prev;
-        const updated: Record<number, PreviewOffsets> = {};
-        for (const angleKey of Object.keys(prev)) {
-          const angle = Number(angleKey);
-          const offsets = generateOffsetsForAngle(angle, effectiveRadius);
-          if (offsets) updated[angle] = offsets;
-        }
-        return updated;
-      });
-    },
-    [generateOffsetsForAngle]
-  );
-
   const handleMouseMove = useCallback(
     (lat: number, lng: number) => {
-      if (!selectedUnit) return;
+      if (!selectedUnit && !relocatingArea && !rotatingUnit) return;
       const now = Date.now();
       if (now - lastMouseMoveRef.current < 50) return;
       lastMouseMoveRef.current = now;
       setMousePosition({ lat, lng });
+
+      if (rotatingUnit) {
+        const angle = Math.round(
+          calculateBearing(rotatingUnit.center.lat, rotatingUnit.center.lng, lat, lng)
+        );
+        setRotationPreviewAngle(angle);
+        setStatus(`Rotating: ${angle}° — Click to confirm. ESC to cancel`);
+      }
     },
-    [selectedUnit]
+    [selectedUnit, relocatingArea, rotatingUnit]
   );
 
   const previewData = useMemo(() => {
@@ -435,17 +695,106 @@ export function MissileSystemsTab({
     };
   }, [previewOffsets, previewAngle, mousePosition, shouldValidateTaiwanBoundary]);
 
+  const relocatePreviewVertices = useMemo(() => {
+    if (!relocatingArea || !mousePosition) return null;
+    const deployment = deployedSystems.get(relocatingArea.unitKey);
+    if (!deployment) return null;
+
+    if (relocatingArea.type === 'ushape') {
+      return deployment.tacticalAreas.uShapeVertices.map((v) => ({
+        latitude: v.latitude + (mousePosition.lat - deployment.center.lat),
+        longitude: v.longitude + (mousePosition.lng - deployment.center.lng),
+      }));
+    }
+
+    const bearingToCenter = calculateBearing(
+      mousePosition.lat,
+      mousePosition.lng,
+      deployment.center.lat,
+      deployment.center.lng
+    );
+    const squareSize = AREA_SQUARE_SIZE[relocatingArea.type];
+    return generateSquareVerticesPublic(
+      mousePosition.lat,
+      mousePosition.lng,
+      squareSize,
+      bearingToCenter
+    );
+  }, [relocatingArea, mousePosition, deployedSystems]);
+
+  const rotationPreviewData = useMemo(() => {
+    if (!rotatingUnit || rotationPreviewAngle === null) return null;
+    const deployment = deployedSystems.get(rotatingUnit.unitKey);
+    if (!deployment) return null;
+
+    try {
+      const result = generateUShapeVertices({
+        centerLat: rotatingUnit.center.lat,
+        centerLon: rotatingUnit.center.lng,
+        ...AREA_CONFIG,
+        ahaPoint: {
+          ...AREA_CONFIG.ahaPoint,
+          radius: deployment.ahaRadius ?? AREA_CONFIG.ahaPoint.radius,
+          ...(deployment.ahaCenter
+            ? {
+                center: {
+                  latitude: deployment.ahaCenter.lat,
+                  longitude: deployment.ahaCenter.lng,
+                },
+              }
+            : {}),
+        },
+        openingAngle: rotationPreviewAngle,
+      });
+
+      return {
+        uShapeVertices: result.uShapeVertices,
+        ammoArea: result.ammoArea ?? [],
+        hideArea: result.hideArea ?? [],
+        reloadArea: result.reloadArea ?? [],
+        firePoints: deployment.tacticalAreas.firePoints ?? [],
+      };
+    } catch {
+      return null;
+    }
+  }, [rotatingUnit, rotationPreviewAngle, deployedSystems]);
+
+  const isInteractive = selectedUnit || relocatingArea || rotatingUnit;
+
   return (
     <div className="flex h-full">
       {/* Map Container */}
       <div className="flex-1">
         <BaseMap
           onMapClick={handleMapClick}
-          onMouseMove={selectedUnit ? handleMouseMove : undefined}
-          cursorStyle={selectedUnit ? 'crosshair' : undefined}
+          onMouseMove={isInteractive ? handleMouseMove : undefined}
+          cursorStyle={isInteractive ? 'crosshair' : undefined}
         >
           <AirbaseMarkers airbases={airbases} />
-          <DeployedMissileSystems deployedSystems={deployedSystems} getUnitInfo={getUnitInfo} />
+          <DeployedMissileSystems
+            deployedSystems={deployedSystems}
+            getUnitInfo={getUnitInfo}
+            onAreaClick={handleAreaClick}
+            onRotateClick={handleRotateClick}
+            relocatingArea={relocatingArea}
+            rotatingUnitKey={rotatingUnit?.unitKey ?? null}
+          />
+          {relocatePreviewVertices && relocatingArea && (
+            <AreaRelocatePreview
+              vertices={relocatePreviewVertices}
+              areaType={relocatingArea.type}
+            />
+          )}
+          {rotationPreviewData && (
+            <MissileSystemPreview
+              uShapeVertices={rotationPreviewData.uShapeVertices}
+              ammoArea={rotationPreviewData.ammoArea}
+              hideArea={rotationPreviewData.hideArea}
+              reloadArea={rotationPreviewData.reloadArea}
+              firePoints={rotationPreviewData.firePoints}
+              isValid={true}
+            />
+          )}
           {previewData && (
             <MissileSystemPreview
               uShapeVertices={previewData.uShapeVertices}
@@ -520,49 +869,18 @@ export function MissileSystemsTab({
                           {isDeployed && deployment && (
                             <div className="mt-2 rounded bg-status-success/10 p-1.5">
                               <div className="text-[11px] text-status-success">
-                                ✓ Deployed | Angle: {deployment.openingAngle}° | AHA:{' '}
-                                {deployment.ahaRadius} NM
+                                ✓ Deployed | Angle: {deployment.openingAngle}°
                               </div>
                               {isExpanded && (
-                                <>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    max={359}
-                                    value={deployment.openingAngle}
-                                    onChange={(e) =>
-                                      handleAngleChange(unitKey, parseInt(e.target.value))
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="mt-1 w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
-                                    placeholder="Angle (0-359°)"
-                                  />
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={50}
-                                    step={0.5}
-                                    value={deployment.ahaRadius}
-                                    onChange={(e) =>
-                                      handleAhaRadiusChangeDeployed(
-                                        unitKey,
-                                        parseFloat(e.target.value)
-                                      )
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="mt-1 mb-2 w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
-                                    placeholder="AHA Distance (NM)"
-                                  />
-                                  <button
-                                    className="w-full rounded bg-status-danger px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-700"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUndeploy(unitKey, unit.name);
-                                    }}
-                                  >
-                                    Cancel Deployment
-                                  </button>
-                                </>
+                                <button
+                                  className="w-full rounded bg-status-danger px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUndeploy(unitKey, unit.name);
+                                  }}
+                                >
+                                  Cancel Deployment
+                                </button>
                               )}
                             </div>
                           )}
@@ -571,66 +889,6 @@ export function MissileSystemsTab({
                             <div className="mt-2 rounded bg-accent-blue/10 p-1.5">
                               <div className="text-[11px] text-accent-blue">
                                 Click map to deploy
-                              </div>
-                              <div className="mt-1.5">
-                                <label className="text-[11px] text-text-secondary">
-                                  Opening Angle
-                                </label>
-                                <div className="mt-0.5 flex items-center gap-1.5">
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    max={359}
-                                    value={previewAngle ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val === '') {
-                                        setPreviewAngle(null);
-                                      } else {
-                                        handlePreviewAngleChange(parseInt(val));
-                                      }
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
-                                    placeholder="Auto (90/270)"
-                                  />
-                                  {previewAngle !== null && (
-                                    <button
-                                      className="shrink-0 rounded bg-dark-border px-1.5 py-1 text-[11px] text-text-secondary hover:bg-dark-hover"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewAngle(null);
-                                      }}
-                                    >
-                                      Auto
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="mt-1.5">
-                                <label className="text-[11px] text-text-secondary">
-                                  AHA Distance (NM)
-                                </label>
-                                <div className="mt-0.5 flex items-center gap-1.5">
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={50}
-                                    step={0.5}
-                                    value={ahaRadius ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val === '') {
-                                        handleAhaRadiusChange(null);
-                                      } else {
-                                        handleAhaRadiusChange(parseFloat(val));
-                                      }
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="w-full rounded border border-accent-blue bg-dark-bg px-2 py-1 text-xs"
-                                    placeholder={`Default (${AREA_CONFIG.ahaPoint.radius})`}
-                                  />
-                                </div>
                               </div>
                               <button
                                 className="mt-2 w-full rounded bg-dark-border px-2 py-1 text-[11px] font-semibold text-text-secondary hover:bg-dark-hover"

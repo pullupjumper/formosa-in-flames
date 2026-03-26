@@ -52,6 +52,15 @@
   background-color: #202b33;
   border: 1px solid #30404d;
   color: #e1e8ed;
+  opacity: 1 !important;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: #30404d;
+}
+
+.leaflet-tooltip-bottom::before {
+  border-bottom-color: #30404d;
 }
 
 .leaflet-tooltip-left::before {
