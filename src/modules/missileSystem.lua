@@ -42,11 +42,6 @@ local ZONE_COLORS = {
   DEFAULT = "4d8b5cf6"
 }
 
-local MASK_ZONE = {
-  LAND_COVER_HEIGHT = 1000,
-  LAND_COVER_TYPE = 254,
-}
-
 -- ============================================================================
 -- Unit Properties and Movement Helpers
 -- ============================================================================
@@ -565,7 +560,12 @@ local function completeFiringUnitReload(systemCtx, firingUnitCtx, firingUnit, is
     if resupplyUnit and resupplyUnitCtx.wpnCurrent > 0 and findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
       MissileSystem.hideUnit(resupplyUnitCtx, resupplyUnit)
     end
-    moveToHideArea(firingUnitCtx, firingUnit)
+
+    if systemCtx.name == constants.MISSILE_SYSTEM_TYPES.SAM then
+      moveToFiringPoint(firingUnitCtx, firingUnit)
+    else
+      moveToHideArea(firingUnitCtx, firingUnit)
+    end
   end
 
   return { tag = "OK", unitName = firingUnitCtx.name, action = "Missile reload finished" }
@@ -721,11 +721,7 @@ local function addTriggerToEvent(opts)
 
   if zone then
     local eventName = string.format("(%s) Arrive in %s", opts.sideName, opts.positionType)
-
-    if opts.sideName == constants.SIDES.PLAYER then
-      zone.areacolor = getOperationalAreaColor(opts.positionType)
-    end
-
+    zone.areacolor = getOperationalAreaColor(opts.positionType)
     opts.position.area = GameUtils.convertToRPArray(zone)
     GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
@@ -758,7 +754,7 @@ end
 ---@param sideName string Side name for zone ownership
 ---@return boolean # Whether zone was successfully created
 local function addCustomEnvironmentZone(operationalArea, sideName)
-  local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
+  local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.STANDARD, {
     description = constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name,
     area = operationalArea.uShapeVertices,
     sideName = sideName
@@ -766,22 +762,8 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
 
   if zone then
     local rps = GameUtils.convertToRPArray(zone)
-    -- local filteredRPs = {}
-
-    -- for index, rp in ipairs(rps) do
-    --   if index > 3 and index < 8 then
-    --     table.insert(filteredRPs, rp)
-    --   end
-    -- end
-
-    -- operationalArea.mask = { area = filteredRPs }
     operationalArea.mask = { area = rps }
-
-    if sideName == constants.SIDES.PLAYER then
-      zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
-    end
-    -- zone.landcoverheight = MASK_ZONE.LAND_COVER_HEIGHT
-    -- zone.landcovertype = MASK_ZONE.LAND_COVER_TYPE
+    zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
     return true
   end
   return false

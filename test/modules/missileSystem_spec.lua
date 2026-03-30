@@ -1684,6 +1684,246 @@ describe("MissileSystem", function()
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
         systemCtx.firingUnits["Firing Unit Alpha"].state)
     end)
+
+    it("should move non-SAM firing unit to hide area after reload in auto mode", function()
+      local hideCourse = {
+        { latitude = "N 25.10.00", longitude = "E 121.10.00" }
+      }
+      local systemCtx = createMockSystemCtx({
+        name = "srbm",
+        reloadTime = 60,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            reloadStartTime = 1000,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
+              HA = { { course = hideCourse, area = { "HA-001", "HA-002", "HA-003", "HA-004" } } }
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+            wpnCurrent = 10,
+            wpnDefault = 20,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
+              mask = { area = { "MASK-001", "MASK-002", "MASK-003", "MASK-004" } }
+            }
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } },
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+      local resupplyUnit = {
+        guid = "R1",
+        name = "Ammo Sec, Alpha",
+        side = "Taiwan",
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
+      trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
+      local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
+      local stubHideUnit = trackStub(MissileSystem, "hideUnit").returns(true)
+      trackStub(math, "random").returns(1)
+
+      MissileSystem.checkMissileSystemState(systemCtx, true, "Taiwan")
+
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
+      assert.stub(stubHideUnit).was.called(1)
+      assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
+    end)
+
+    it("should move SAM firing unit to firing point after reload in auto mode", function()
+      local fpCourse = {
+        { latitude = "N 25.20.00", longitude = "E 121.20.00" }
+      }
+      local systemCtx = createMockSystemCtx({
+        name = "sam",
+        reloadTime = 60,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            reloadStartTime = 1000,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
+              FP = { { course = fpCourse, area = { "FP-001", "FP-002", "FP-003", "FP-004" } } },
+              HA = { { course = { { latitude = "N 25.30.00", longitude = "E 121.30.00" } } } }
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+            wpnCurrent = 10,
+            wpnDefault = 20,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
+              mask = { area = { "MASK-001", "MASK-002", "MASK-003", "MASK-004" } }
+            }
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } },
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+      local resupplyUnit = {
+        guid = "R1",
+        name = "Ammo Sec, Alpha",
+        side = "Taiwan",
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
+      trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
+      local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
+      local stubHideUnit = trackStub(MissileSystem, "hideUnit").returns(true)
+      trackStub(math, "random").returns(1)
+
+      MissileSystem.checkMissileSystemState(systemCtx, true, "Taiwan")
+
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
+      assert.stub(stubHideUnit).was.called(1)
+      assert.are.same(fpCourse, stubSetUnit.calls[1].vals[1].course)
+    end)
+  end)
+
+  -- ==========================================================================
+  -- initEventTriggers
+  -- ==========================================================================
+
+  describe("initEventTriggers", function()
+    after_each(function()
+      for _, s in ipairs(activeStubs) do s:revert() end
+      activeStubs = {}
+    end)
+
+    it("should set area color for standard position zones regardless of side", function()
+      local operationalAreas = {
+        {
+          name = "OPAREA-1",
+          uShapeVertices = { "MASK-RP-1", "MASK-RP-2", "MASK-RP-3", "MASK-RP-4" },
+          RL = {
+            { area = { "RL-RP-1", "RL-RP-2", "RL-RP-3", "RL-RP-4" } }
+          }
+        }
+      }
+      local createdZones = {}
+
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameUtils, "removeZones")
+      trackStub(GameUtils, "removeEventTriggers")
+      trackStub(GameUtils, "convertToRPArray").invokes(function(zone)
+        return zone.area
+      end)
+      trackStub(GameApi, "ScenEdit_SetTrigger")
+      trackStub(GameApi, "ScenEdit_SetEventTrigger")
+      trackStub(GameApi, "ScenEdit_AddZone").invokes(function(_, zoneType, opts)
+        local zone = {
+          description = opts.description,
+          area = opts.area,
+          zoneType = zoneType
+        }
+        table.insert(createdZones, zone)
+        return zone
+      end)
+
+      MissileSystem.initEventTriggers(
+        operationalAreas,
+        { constants.POSITION_TYPES.RELOAD_POINT },
+        constants.SIDES.ENEMY
+      )
+
+      assert.are.equal(2, #createdZones)
+      assert.are.equal("4dd9822b", createdZones[1].areacolor)
+      assert.are.equal(constants.ZONE_TYPES.STANDARD, createdZones[1].zoneType)
+    end)
+
+    it("should create mask zone as standard zone and store converted area", function()
+      local operationalArea = {
+        name = "OPAREA-1",
+        uShapeVertices = { "MASK-RP-1", "MASK-RP-2", "MASK-RP-3", "MASK-RP-4" },
+        RL = {
+          { area = { "RL-RP-1", "RL-RP-2", "RL-RP-3", "RL-RP-4" } }
+        }
+      }
+      local maskZoneType
+      local maskZone
+
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameUtils, "removeZones")
+      trackStub(GameUtils, "removeEventTriggers")
+      trackStub(GameUtils, "convertToRPArray").invokes(function(zone)
+        return { zone.description .. "-RP-1", zone.description .. "-RP-2" }
+      end)
+      trackStub(GameApi, "ScenEdit_SetTrigger")
+      trackStub(GameApi, "ScenEdit_SetEventTrigger")
+      trackStub(GameApi, "ScenEdit_AddZone").invokes(function(_, zoneType, opts)
+        local zone = {
+          description = opts.description,
+          area = opts.area
+        }
+        if opts.description == constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name then
+          maskZoneType = zoneType
+          maskZone = zone
+        end
+        return zone
+      end)
+
+      MissileSystem.initEventTriggers(
+        { operationalArea },
+        { constants.POSITION_TYPES.RELOAD_POINT },
+        constants.SIDES.PLAYER
+      )
+
+      assert.are.equal(constants.ZONE_TYPES.STANDARD, maskZoneType)
+      assert.are.equal("4dff6b6b", maskZone.areacolor)
+      assert.are.same({
+        constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name .. "-RP-1",
+        constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name .. "-RP-2"
+      }, operationalArea.mask.area)
+    end)
   end)
 
   -- ==========================================================================

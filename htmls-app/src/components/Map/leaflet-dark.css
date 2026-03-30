@@ -47,6 +47,11 @@
   color: #137cbd !important;
 }
 
+/* Remove white outline on click */
+.leaflet-interactive:focus {
+  outline: none;
+}
+
 /* Tooltip */
 .leaflet-tooltip {
   background-color: #202b33;

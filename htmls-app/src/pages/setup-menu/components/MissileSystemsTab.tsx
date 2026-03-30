@@ -579,50 +579,55 @@ export function MissileSystemsTab({
     setStatus(DEFAULT_STATUS);
   };
 
-  const handleAreaClick = useCallback(
-    (area: RelocatingArea) => {
-      // Toggle off if clicking the same area
-      if (
-        relocatingArea &&
-        relocatingArea.unitKey === area.unitKey &&
-        relocatingArea.type === area.type &&
-        relocatingArea.fpIndex === area.fpIndex
-      ) {
-        setRelocatingArea(null);
-        setMousePosition(null);
-        setStatus('Relocation cancelled');
-        return;
-      }
-      setRelocatingArea(area);
-      setSelectedUnit(null);
-      setPreviewOffsets(null);
-      setPreviewAngle(null);
-      setRotatingUnit(null);
-      setRotationPreviewAngle(null);
+  // Refs for stable callbacks (avoid breaking MissileSystemMarker memo)
+  const relocatingAreaRef = useRef(relocatingArea);
+  useEffect(() => {
+    relocatingAreaRef.current = relocatingArea;
+  }, [relocatingArea]);
+  const deployedSystemsRef = useRef(deployedSystems);
+  useEffect(() => {
+    deployedSystemsRef.current = deployedSystems;
+  }, [deployedSystems]);
 
-      const label = formatAreaLabel(area);
-      setStatus(`Click on the map to relocate ${label}, or click it again / press ESC to cancel`);
-    },
-    [relocatingArea]
-  );
-
-  const handleRotateClick = useCallback(
-    (unitKey: string) => {
-      const deployment = deployedSystems.get(unitKey);
-      if (!deployment) return;
-
-      setRotatingUnit({ unitKey, center: deployment.center });
-      setRotationPreviewAngle(null);
+  const handleAreaClick = useCallback((area: RelocatingArea) => {
+    const current = relocatingAreaRef.current;
+    // Toggle off if clicking the same area
+    if (
+      current &&
+      current.unitKey === area.unitKey &&
+      current.type === area.type &&
+      current.fpIndex === area.fpIndex
+    ) {
       setRelocatingArea(null);
-      setSelectedUnit(null);
-      setPreviewOffsets(null);
-      setPreviewAngle(null);
-      setStatus(
-        `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
-      );
-    },
-    [deployedSystems]
-  );
+      setMousePosition(null);
+      setStatus('Relocation cancelled');
+      return;
+    }
+    setRelocatingArea(area);
+    setSelectedUnit(null);
+    setPreviewOffsets(null);
+    setPreviewAngle(null);
+    setRotatingUnit(null);
+    setRotationPreviewAngle(null);
+
+    const label = formatAreaLabel(area);
+    setStatus(`Click on the map to relocate ${label}, or click it again / press ESC to cancel`);
+  }, []);
+
+  const handleRotateClick = useCallback((unitKey: string) => {
+    const deployment = deployedSystemsRef.current.get(unitKey);
+    if (!deployment) return;
+
+    setRotatingUnit({ unitKey, center: deployment.center });
+    setRotationPreviewAngle(null);
+    setRelocatingArea(null);
+    setSelectedUnit(null);
+    setPreviewOffsets(null);
+    setPreviewAngle(null);
+    setStatus(
+      `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
+    );
+  }, []);
 
   useEffect(() => {
     if (!relocatingArea && !rotatingUnit) return;

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Jammer, Airbase } from '@/types/setupMenu';
-import { BaseMap, AirbaseMarkers, DeployedJammers } from '@/components/Map';
+import { BaseMap, AirbaseMarkers, DeployedJammers, JammerRelocatePreview } from '@/components/Map';
 import { isPointInTaiwan } from '@/utils/map';
+
+const DEFAULT_STATUS = 'Select an EW unit then click on the map to deploy';
 
 interface JammersTabProps {
   jammers: Jammer[];
@@ -22,32 +24,105 @@ export function JammersTab({
 }: JammersTabProps) {
   const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [status, setStatus] = useState('Select an EW unit then click on the map to deploy');
+  const [status, setStatus] = useState(DEFAULT_STATUS);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [relocatingIndex, setRelocatingIndex] = useState<number | null>(null);
+  const [mousePosition, setMousePosition] = useState<{ lat: number; lng: number } | null>(null);
+  const lastMouseMoveRef = useRef(0);
 
-  const handleMapClick = (lat: number, lng: number) => {
-    setCoordinates({ lat, lng });
-    setExpandedIndex(null); // Collapse expanded items when clicking map
+  // Stable callback via ref
+  const relocatingIndexRef = useRef(relocatingIndex);
+  useEffect(() => {
+    relocatingIndexRef.current = relocatingIndex;
+  }, [relocatingIndex]);
 
-    if (selectedUnit !== null) {
-      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
-        setStatus('⚠️ EW units can only be deployed on Taiwan mainland');
+  const handleRelocateClick = useCallback((index: number) => {
+    const current = relocatingIndexRef.current;
+    // Toggle off if clicking the same jammer
+    if (current === index) {
+      setRelocatingIndex(null);
+      setMousePosition(null);
+      setStatus('Relocation cancelled');
+      return;
+    }
+    setRelocatingIndex(index);
+    setSelectedUnit(null);
+    setStatus('Click on the map to relocate, or click it again / press ESC to cancel');
+  }, []);
+
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      setCoordinates({ lat, lng });
+      setExpandedIndex(null);
+
+      // Relocation mode
+      if (relocatingIndex !== null) {
+        if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+          setStatus('Warning: EW units can only be deployed on Taiwan mainland');
+          return;
+        }
+        const jammer = jammers[relocatingIndex];
+        onDeployJammer(relocatingIndex, lat, lng);
+        setStatus(`${jammer.name} relocated to ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`);
+        setRelocatingIndex(null);
+        setMousePosition(null);
         return;
       }
 
-      const jammer = jammers[selectedUnit];
-      onDeployJammer(selectedUnit, lat, lng);
-      setStatus(`✓ ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`);
-      setSelectedUnit(null);
-    }
+      // Deploy mode
+      if (selectedUnit !== null) {
+        if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+          setStatus('Warning: EW units can only be deployed on Taiwan mainland');
+          return;
+        }
+        const jammer = jammers[selectedUnit];
+        onDeployJammer(selectedUnit, lat, lng);
+        setStatus(`Done: ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`);
+        setSelectedUnit(null);
+      }
+    },
+    [relocatingIndex, selectedUnit, jammers, shouldValidateTaiwanBoundary, onDeployJammer]
+  );
+
+  const handleMouseMove = useCallback(
+    (lat: number, lng: number) => {
+      if (relocatingIndex === null) return;
+      const now = Date.now();
+      if (now - lastMouseMoveRef.current < 50) return;
+      lastMouseMoveRef.current = now;
+      setMousePosition({ lat, lng });
+    },
+    [relocatingIndex]
+  );
+
+  const handleCancelAll = () => {
+    setSelectedUnit(null);
+    setRelocatingIndex(null);
+    setMousePosition(null);
+    setStatus(DEFAULT_STATUS);
   };
+
+  // ESC to cancel relocation
+  useEffect(() => {
+    if (relocatingIndex === null) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setRelocatingIndex(null);
+        setMousePosition(null);
+        setStatus('Relocation cancelled');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [relocatingIndex]);
 
   const handleUnitSelect = (index: number) => {
     if (deployedJammers.has(index)) {
-      // Already deployed, toggle expand
       setExpandedIndex(expandedIndex === index ? null : index);
       return;
     }
+    setRelocatingIndex(null);
+    setMousePosition(null);
     setSelectedUnit(index);
     const jammer = jammers[index];
     setStatus(`${jammer.name} selected - Click map to deploy`);
@@ -60,13 +135,28 @@ export function JammersTab({
     setStatus(`${jammer.name} deployment cancelled`);
   };
 
+  const isInteractive = selectedUnit !== null || relocatingIndex !== null;
+  const relocatingJammer = relocatingIndex !== null ? jammers[relocatingIndex] : null;
+
   return (
     <div className="flex h-full">
       {/* Map Container */}
       <div className="flex-1">
-        <BaseMap onMapClick={handleMapClick}>
+        <BaseMap
+          onMapClick={handleMapClick}
+          onMouseMove={isInteractive ? handleMouseMove : undefined}
+          cursorStyle={isInteractive ? 'crosshair' : undefined}
+        >
           <AirbaseMarkers airbases={airbases} />
-          <DeployedJammers jammers={jammers} deployedPositions={deployedJammers} />
+          <DeployedJammers
+            jammers={jammers}
+            deployedPositions={deployedJammers}
+            relocatingIndex={relocatingIndex}
+            onRelocateClick={handleRelocateClick}
+          />
+          {relocatingJammer && mousePosition && (
+            <JammerRelocatePreview radius={relocatingJammer.radius} position={mousePosition} />
+          )}
         </BaseMap>
       </div>
 
@@ -128,6 +218,15 @@ export function JammersTab({
                     {isSelected && !isDeployed && (
                       <div className="mt-2 rounded bg-accent-blue/10 p-1.5">
                         <div className="text-[11px] text-accent-blue">Click map to deploy</div>
+                        <button
+                          className="mt-2 w-full rounded bg-dark-border px-2 py-1 text-[11px] font-semibold text-text-secondary hover:bg-dark-hover"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelAll();
+                          }}
+                        >
+                          Cancel Selection
+                        </button>
                       </div>
                     )}
                   </div>

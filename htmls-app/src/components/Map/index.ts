@@ -1,6 +1,6 @@
 export { BaseMap, TAIWAN_CENTER, DEFAULT_ZOOM } from './BaseMap';
 export { AirbaseMarker, AirbaseMarkers } from './AirbaseMarker';
-export { JammerMarker, DeployedJammers } from './JammerMarker';
+export { JammerMarker, DeployedJammers, JammerRelocatePreview } from './JammerMarker';
 export {
   MissileSystemMarker,
   DeployedMissileSystems,

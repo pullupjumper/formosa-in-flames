@@ -71,6 +71,30 @@ flowchart TD
 3. 對每個匹配的載具執行 `updateCargo`：從母艦刪除貨物、在載具上建立對應貨物
 4. 支援共用貨物清單（所有載具相同）與個別貨物清單（依索引分配）
 
+### 建築物 / Cargo Proxy 裝載流程
+
+`loadCargo` 主要供其他模組將地面單位轉為 cargo proxy 使用，目前 `missileSystem.hideUnit` 會用它把 TEL / 補給車載入建築物。
+
+流程如下：
+
+1. 依 `unitCtx.name` 取得來源單位，並展開 group member 清單
+2. 透過 `createCargoProxy` 在目標載具或建築物上建立對應 cargo proxy
+3. 對 cargo proxy 執行 `stripCargoProxyMounts`：清空彈匣並移除原有 mounts
+4. 將來源單位的 mounts 複製到 cargo proxy，並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
+5. 執行 `syncWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
+6. 複製群組名稱與單位名稱後，刪除原始來源單位
+
+### 武器同步規則
+
+`loadCargo` 的武器同步分成兩個步驟：
+
+| 步驟 | 行為 |
+|---|---|
+| 清除既有 reload | 掃描 cargo proxy 目前 `mounts[].mount_weapons[]`，若 `wpn_default > 0` 則以 `remove = true` 清除 reload |
+| 回填目標 reload | 僅針對 `unitCtx.weaponDBID` 指定的武器，依來源單位實際 `wpn_current` 回填數量 |
+
+這表示 `weaponDBID` 控制的是「哪些武器要保留並回填」，而不是「哪些武器要先被清除」。
+
 ---
 
 ## 錨泊區監控
@@ -111,6 +135,7 @@ flowchart TD
 | `updateCargo(fromUnit, toUnit, cargoItem)` | 單筆貨物從來源轉移至目標 |
 | `deleteCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
 | `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單位 |
+| `loadCargo(base, unitCtx, sideName)` | 將地面單位轉為 cargo proxy 並載入目標載具或建築物 |
 
 ---
 

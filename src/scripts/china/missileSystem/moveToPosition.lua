@@ -25,7 +25,6 @@ end
 
 local contacts = GameApi.ScenEdit_GetContacts(unit.side)
 local positionType
-local missileSystems = { "srbm", "mrbm", "mlrs", "glcm", "ascm" }
 
 for _, trigger in ipairs(event.triggers) do
   if trigger["UnitEntersArea"] then
@@ -37,7 +36,7 @@ for _, trigger in ipairs(event.triggers) do
 end
 
 if positionType == constants.POSITION_TYPES.FIRING_POINT then
-  for _, missileSystem in ipairs(missileSystems) do
+  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     ---@type SBJ__MissileSystemContext|nil
     local missileSystemCtx = saveData.c.ground[missileSystem]
 
@@ -56,7 +55,7 @@ elseif positionType == constants.POSITION_TYPES.HIDE_AREA then
     end
   end
 
-  for _, missileSystem in ipairs(missileSystems) do
+  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     ---@type SBJ__MissileSystemContext|nil
     local missileSystemCtx = saveData.c.ground[missileSystem]
 
@@ -82,7 +81,7 @@ elseif positionType == constants.POSITION_TYPES.RELOAD_POINT then
     end
   end
 
-  for _, missileSystem in ipairs(missileSystems) do
+  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     ---@type SBJ__MissileSystemContext|nil
     local missileSystemCtx = saveData.c.ground[missileSystem]
 
@@ -122,7 +121,7 @@ elseif positionType == constants.POSITION_TYPES.AMMO_HOLDING_AREA then
     end
   end
 
-  for _, missileSystem in ipairs(missileSystems) do
+  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     ---@type SBJ__MissileSystemContext|nil
     local missileSystemCtx = saveData.c.ground[missileSystem]
     if missileSystemCtx and missileSystemCtx.enabled then

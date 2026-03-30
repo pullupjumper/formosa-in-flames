@@ -516,7 +516,15 @@ function UnitStatusUI.createUI(config, sideName)
 
   if sideName == constants.SIDES.ENEMY then
     local signalDataString = createSignalDataString(saveData, sideName)
-    local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm", "mrbm")
+    local batteryDataString = createBatteryDataString(
+      config, saveData, sideName,
+      constants.MISSILE_SYSTEM_TYPES.SRBM,
+      constants.MISSILE_SYSTEM_TYPES.MLRSM,
+      constants.MISSILE_SYSTEM_TYPES.GLCM,
+      constants.MISSILE_SYSTEM_TYPES.ASCM,
+      constants.MISSILE_SYSTEM_TYPES.MRBM,
+      constants.MISSILE_SYSTEM_TYPES.SAM
+    )
     local magazineDataString = createMagazineDataString(config, sideName)
     local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
     local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
@@ -535,7 +543,14 @@ function UnitStatusUI.createUI(config, sideName)
     local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
   else
     local signalDataString = createSignalDataString(saveData, "US")
-    local batteryDataString = createBatteryDataString(config, saveData, sideName, "srbm", "mlrs", "glcm", "ascm", "sam")
+    local batteryDataString = createBatteryDataString(
+      config, saveData, sideName,
+      constants.MISSILE_SYSTEM_TYPES.SRBM,
+      constants.MISSILE_SYSTEM_TYPES.MLRSM,
+      constants.MISSILE_SYSTEM_TYPES.GLCM,
+      constants.MISSILE_SYSTEM_TYPES.ASCM,
+      constants.MISSILE_SYSTEM_TYPES.SAM
+    )
     local magazineDataString = createMagazineDataString(config, sideName)
     local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 

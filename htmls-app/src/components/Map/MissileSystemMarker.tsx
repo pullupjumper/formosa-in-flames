@@ -1,4 +1,6 @@
+import { memo, useMemo, useCallback } from 'react';
 import { Circle, CircleMarker, Polygon, Polyline, Popup, Tooltip } from 'react-leaflet';
+import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { DeployedMissileSystemData } from '@/types/setupMenu';
 import { CONFIG } from '@/types/setupMenu';
@@ -15,9 +17,6 @@ export interface RelocatingArea {
   fpIndex?: number;
 }
 
-// ============================================================================
-// COLORS
-// ============================================================================
 // ============================================================================
 // COLORS
 // ============================================================================
@@ -43,6 +42,48 @@ const AREA_TYPE_COLOR: Record<AreaType, string> = {
 };
 
 // ============================================================================
+// Static pathOptions (never re-created)
+// ============================================================================
+const PATH_OPTIONS_HA = { color: COLORS.PATH_HA, weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_AHA = { color: COLORS.PATH_AHA, weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_FP = { color: COLORS.PATH_FP, weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_RL = { color: COLORS.PATH_RL, weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_RANGE = {
+  color: COLORS.WEAPON_RANGE,
+  fillColor: COLORS.WEAPON_RANGE,
+  fillOpacity: 0.01,
+  weight: 1.5,
+  opacity: 0.25,
+  dashArray: '5, 10',
+};
+const PATH_OPTIONS_ROTATE_HANDLE = {
+  color: '#fff',
+  fillColor: COLORS.USHAPE,
+  fillOpacity: 1,
+  weight: 2,
+};
+const PATH_OPTIONS_HIDE_CENTER = {
+  color: '#fff',
+  fillColor: COLORS.HIDE_AREA,
+  fillOpacity: 1,
+  weight: 2,
+};
+const PATH_OPTIONS_FALLBACK_RANGE = {
+  color: '#ff4444',
+  fillColor: '#ff4444',
+  fillOpacity: 0.01,
+  weight: 1.5,
+  opacity: 0.25,
+  dashArray: '5, 10',
+};
+const PATH_OPTIONS_FALLBACK_MARKER = {
+  color: '#fff',
+  fillColor: '#ff6b6b',
+  fillOpacity: 1,
+  weight: 2,
+};
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 function coordinatesToLatLng(
@@ -62,6 +103,28 @@ function calculateCenter(coords: { latitude: number; longitude: number }[]): {
   return { lat: sum.lat / coords.length, lng: sum.lng / coords.length };
 }
 
+function calcTooltipAnchor(
+  coords: { latitude: number; longitude: number }[] | undefined
+): L.LatLng | null {
+  if (!coords || coords.length < 3) return null;
+  const center = calculateCenter(coords);
+  const maxLat = Math.max(...coords.map((v) => v.latitude));
+  return L.latLng(center.lat + (maxLat - center.lat), center.lng);
+}
+
+function useTooltipAnchor(coords: { latitude: number; longitude: number }[] | undefined) {
+  const anchor = useMemo(() => calcTooltipAnchor(coords), [coords]);
+  const refCallback = useCallback(
+    (node: L.Polygon | null) => {
+      if (node && anchor) {
+        node.getCenter = () => anchor;
+      }
+    },
+    [anchor]
+  );
+  return refCallback;
+}
+
 // ============================================================================
 // MissileSystemMarker Component
 // ============================================================================
@@ -70,81 +133,262 @@ interface MissileSystemMarkerProps {
   data: DeployedMissileSystemData;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
+  /** Only the relocatingArea relevant to THIS unit (or null) */
   relocatingArea?: RelocatingArea | null;
+  /** Whether ANY unit is currently in relocating mode */
+  isAnyRelocating?: boolean;
   isRotating?: boolean;
 }
 
-export function MissileSystemMarker({
+export const MissileSystemMarker = memo(function MissileSystemMarker({
   unitKey,
   data,
   onAreaClick,
   onRotateClick,
   relocatingArea,
+  isAnyRelocating = false,
   isRotating,
 }: MissileSystemMarkerProps) {
   const { unitName, category, tacticalAreas, paths } = data;
   const rangeNM = CONFIG.WEAPON_RANGES[category] || 100;
   const radiusMeters = rangeNM * 1852;
 
-  const isThisUnit = relocatingArea?.unitKey === unitKey;
-  const isAnyRelocating = Boolean(relocatingArea);
+  const ushapeRefCb = useTooltipAnchor(tacticalAreas.uShapeVertices);
+  const ahaRefCb = useTooltipAnchor(tacticalAreas.ammoArea);
+  const hideRefCb = useTooltipAnchor(tacticalAreas.hideArea);
+  const reloadRefCb = useTooltipAnchor(tacticalAreas.reloadArea);
 
-  const isAreaRelocating = (type: AreaType, fpIndex?: number) =>
-    isThisUnit &&
-    relocatingArea?.type === type &&
-    (type !== 'fp' || relocatingArea?.fpIndex === fpIndex);
-
-  const canInteractArea = (type: AreaType, fpIndex?: number) => {
-    if (!onAreaClick) return false;
-    if (!isAnyRelocating) return true;
-    return isAreaRelocating(type, fpIndex);
-  };
-
-  const makeClickHandler = (type: AreaType, fpIndex?: number) =>
-    canInteractArea(type, fpIndex)
-      ? {
-          click: (e: L.LeafletMouseEvent) => {
-            e.originalEvent.stopImmediatePropagation?.();
-            e.originalEvent.stopPropagation();
-            onAreaClick?.({ unitKey, type, fpIndex });
-          },
+  const fpAnchors = useMemo(
+    () => (tacticalAreas.firePoints ?? []).map((fp) => calcTooltipAnchor(fp)),
+    [tacticalAreas.firePoints]
+  );
+  const fpRefCallbacks = useMemo(
+    () =>
+      fpAnchors.map((anchor) => (node: L.Polygon | null) => {
+        if (node && anchor) {
+          node.getCenter = () => anchor;
         }
-      : undefined;
+      }),
+    [fpAnchors]
+  );
+
+  // Relocating state for this unit
+  const isThisUnit = relocatingArea?.unitKey === unitKey;
+
+  const isAreaRelocating = useCallback(
+    (type: AreaType, fpIndex?: number) =>
+      isThisUnit &&
+      relocatingArea?.type === type &&
+      (type !== 'fp' || relocatingArea?.fpIndex === fpIndex),
+    [isThisUnit, relocatingArea?.type, relocatingArea?.fpIndex]
+  );
+
+  const canInteractArea = useCallback(
+    (type: AreaType, fpIndex?: number) => {
+      if (!onAreaClick) return false;
+      if (!isAnyRelocating) return true;
+      return isAreaRelocating(type, fpIndex);
+    },
+    [onAreaClick, isAnyRelocating, isAreaRelocating]
+  );
+
+  const handleAreaClickCb = useCallback(
+    (e: L.LeafletMouseEvent, type: AreaType, fpIndex?: number) => {
+      e.originalEvent.stopImmediatePropagation?.();
+      e.originalEvent.stopPropagation();
+      onAreaClick?.({ unitKey, type, fpIndex });
+    },
+    [onAreaClick, unitKey]
+  );
+
+  const handleRotateClickCb = useCallback(
+    (e: L.LeafletMouseEvent) => {
+      e.originalEvent.stopImmediatePropagation?.();
+      e.originalEvent.stopPropagation();
+      onRotateClick?.(unitKey);
+    },
+    [onRotateClick, unitKey]
+  );
+
+  // Memoized pathOptions that change with relocating state
+  const ushapePathOptions = useMemo(() => {
+    const relocating = isAreaRelocating('ushape');
+    return {
+      color: COLORS.USHAPE,
+      fillColor: COLORS.USHAPE,
+      fillOpacity: relocating ? 0.08 : 0.15,
+      weight: 2,
+      dashArray: relocating ? '6, 4' : undefined,
+    };
+  }, [isAreaRelocating]);
+
+  const ahaPathOptions = useMemo(() => {
+    const relocating = isAreaRelocating('aha');
+    return {
+      color: COLORS.AMMO_AREA,
+      fillColor: COLORS.AMMO_AREA,
+      fillOpacity: relocating ? 0.1 : 0.3,
+      weight: 2,
+      dashArray: relocating ? '6, 4' : undefined,
+    };
+  }, [isAreaRelocating]);
+
+  const hidePathOptions = useMemo(() => {
+    const relocating = isAreaRelocating('hide');
+    return {
+      color: COLORS.HIDE_AREA,
+      fillColor: COLORS.HIDE_AREA,
+      fillOpacity: relocating ? 0.1 : 0.3,
+      weight: 2,
+      dashArray: relocating ? '6, 4' : undefined,
+    };
+  }, [isAreaRelocating]);
+
+  const reloadPathOptions = useMemo(() => {
+    const relocating = isAreaRelocating('reload');
+    return {
+      color: COLORS.RELOAD_AREA,
+      fillColor: COLORS.RELOAD_AREA,
+      fillOpacity: relocating ? 0.1 : 0.3,
+      weight: 2,
+      dashArray: relocating ? '6, 4' : undefined,
+    };
+  }, [isAreaRelocating]);
+
+  const fpPathOptionsList = useMemo(
+    () =>
+      (tacticalAreas.firePoints ?? []).map((_fp, i) => {
+        const relocating = isAreaRelocating('fp', i);
+        return {
+          color: COLORS.FIRE_POINT,
+          fillColor: COLORS.FIRE_POINT,
+          fillOpacity: relocating ? 0.1 : 0.3,
+          weight: 2,
+          dashArray: relocating ? '6, 4' : undefined,
+        };
+      }),
+    [tacticalAreas.firePoints, isAreaRelocating]
+  );
+
+  // Memoized eventHandlers
+  const ushapeHandlers = useMemo(
+    () =>
+      canInteractArea('ushape')
+        ? { click: (e: L.LeafletMouseEvent) => handleAreaClickCb(e, 'ushape') }
+        : undefined,
+    [canInteractArea, handleAreaClickCb]
+  );
+  const ahaHandlers = useMemo(
+    () =>
+      canInteractArea('aha')
+        ? { click: (e: L.LeafletMouseEvent) => handleAreaClickCb(e, 'aha') }
+        : undefined,
+    [canInteractArea, handleAreaClickCb]
+  );
+  const hideHandlers = useMemo(
+    () =>
+      canInteractArea('hide')
+        ? { click: (e: L.LeafletMouseEvent) => handleAreaClickCb(e, 'hide') }
+        : undefined,
+    [canInteractArea, handleAreaClickCb]
+  );
+  const reloadHandlers = useMemo(
+    () =>
+      canInteractArea('reload')
+        ? { click: (e: L.LeafletMouseEvent) => handleAreaClickCb(e, 'reload') }
+        : undefined,
+    [canInteractArea, handleAreaClickCb]
+  );
+  const fpHandlersList = useMemo(
+    () =>
+      (tacticalAreas.firePoints ?? []).map((_fp, i) =>
+        canInteractArea('fp', i)
+          ? { click: (e: L.LeafletMouseEvent) => handleAreaClickCb(e, 'fp', i) }
+          : undefined
+      ),
+    [tacticalAreas.firePoints, canInteractArea, handleAreaClickCb]
+  );
+
+  const rotateHandlers = useMemo(() => ({ click: handleRotateClickCb }), [handleRotateClickCb]);
+
+  // Memoized positions
+  const ushapePositions = useMemo(
+    () => coordinatesToLatLng(tacticalAreas.uShapeVertices ?? []),
+    [tacticalAreas.uShapeVertices]
+  );
+  const ahaPositions = useMemo(
+    () => (tacticalAreas.ammoArea ? coordinatesToLatLng(tacticalAreas.ammoArea) : []),
+    [tacticalAreas.ammoArea]
+  );
+  const hidePositions = useMemo(
+    () => (tacticalAreas.hideArea ? coordinatesToLatLng(tacticalAreas.hideArea) : []),
+    [tacticalAreas.hideArea]
+  );
+  const reloadPositions = useMemo(
+    () => (tacticalAreas.reloadArea ? coordinatesToLatLng(tacticalAreas.reloadArea) : []),
+    [tacticalAreas.reloadArea]
+  );
+  const fpPositionsList = useMemo(
+    () => (tacticalAreas.firePoints ?? []).map((fp) => coordinatesToLatLng(fp)),
+    [tacticalAreas.firePoints]
+  );
+
+  // Path positions
+  const haPathPositions = useMemo(
+    () =>
+      paths.HA?.waypoints && paths.HA.waypoints.length > 1
+        ? coordinatesToLatLng(paths.HA.waypoints)
+        : null,
+    [paths.HA]
+  );
+  const ahaPathPositions = useMemo(
+    () =>
+      paths.AHA?.waypoints && paths.AHA.waypoints.length > 1
+        ? coordinatesToLatLng(paths.AHA.waypoints)
+        : null,
+    [paths.AHA]
+  );
+  const fpPathPositionsList = useMemo(
+    () =>
+      (paths.FP ?? []).map((fp) =>
+        fp?.waypoints && fp.waypoints.length > 1 ? coordinatesToLatLng(fp.waypoints) : null
+      ),
+    [paths.FP]
+  );
+  const rlPathPositionsList = useMemo(
+    () =>
+      (paths.RL ?? []).map((rl) =>
+        rl?.waypoints && rl.waypoints.length > 1 ? coordinatesToLatLng(rl.waypoints) : null
+      ),
+    [paths.RL]
+  );
 
   // Calculate hide area center for range circle
-  const hideCenter =
-    tacticalAreas.hideArea && tacticalAreas.hideArea.length > 0
-      ? calculateCenter(tacticalAreas.hideArea)
-      : null;
+  const hideCenter = useMemo(
+    () =>
+      tacticalAreas.hideArea && tacticalAreas.hideArea.length > 0
+        ? calculateCenter(tacticalAreas.hideArea)
+        : null,
+    [tacticalAreas.hideArea]
+  );
+  const hideCenterLatLng = useMemo(
+    () => (hideCenter ? ([hideCenter.lat, hideCenter.lng] as LatLngExpression) : null),
+    [hideCenter]
+  );
 
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {
     const weaponName = getWeaponSystemName(category);
+    const center: LatLngExpression = [data.center.lat, data.center.lng];
     return (
       <>
         <Circle
-          center={[data.center.lat, data.center.lng]}
+          center={center}
           radius={radiusMeters}
           interactive={false}
-          pathOptions={{
-            color: '#ff4444',
-            fillColor: '#ff4444',
-            fillOpacity: 0.01,
-            weight: 1.5,
-            opacity: 0.25,
-            dashArray: '5, 10',
-          }}
+          pathOptions={PATH_OPTIONS_FALLBACK_RANGE}
         />
-        <CircleMarker
-          center={[data.center.lat, data.center.lng]}
-          radius={8}
-          pathOptions={{
-            color: '#fff',
-            fillColor: '#ff6b6b',
-            fillOpacity: 1,
-            weight: 2,
-          }}
-        >
+        <CircleMarker center={center} radius={8} pathOptions={PATH_OPTIONS_FALLBACK_MARKER}>
           <Popup>
             <div className="text-text-primary">
               <strong>{unitName}</strong>
@@ -170,16 +414,11 @@ export function MissileSystemMarker({
     <>
       {/* U-Shape */}
       <Polygon
-        positions={coordinatesToLatLng(tacticalAreas.uShapeVertices)}
+        ref={ushapeRefCb}
+        positions={ushapePositions}
         interactive={canInteractArea('ushape')}
-        pathOptions={{
-          color: COLORS.USHAPE,
-          fillColor: COLORS.USHAPE,
-          fillOpacity: isAreaRelocating('ushape') ? 0.08 : 0.15,
-          weight: 2,
-          dashArray: isAreaRelocating('ushape') ? '6, 4' : undefined,
-        }}
-        eventHandlers={makeClickHandler('ushape')}
+        pathOptions={ushapePathOptions}
+        eventHandlers={ushapeHandlers}
       >
         <Tooltip direction="top">
           <strong>U-Shape Area</strong>
@@ -196,37 +435,21 @@ export function MissileSystemMarker({
             tacticalAreas.uShapeVertices[0].longitude,
           ]}
           radius={5}
-          pathOptions={{
-            color: '#fff',
-            fillColor: COLORS.USHAPE,
-            fillOpacity: 1,
-            weight: 2,
-          }}
-          eventHandlers={{
-            click: (e: L.LeafletMouseEvent) => {
-              e.originalEvent.stopImmediatePropagation?.();
-              e.originalEvent.stopPropagation();
-              onRotateClick(unitKey);
-            },
-          }}
+          pathOptions={PATH_OPTIONS_ROTATE_HANDLE}
+          eventHandlers={rotateHandlers}
         >
           <Tooltip direction="top">Rotate</Tooltip>
         </CircleMarker>
       )}
 
       {/* Ammo Area */}
-      {tacticalAreas.ammoArea && tacticalAreas.ammoArea.length > 0 && (
+      {ahaPositions.length > 0 && (
         <Polygon
-          positions={coordinatesToLatLng(tacticalAreas.ammoArea)}
+          ref={ahaRefCb}
+          positions={ahaPositions}
           interactive={canInteractArea('aha')}
-          pathOptions={{
-            color: COLORS.AMMO_AREA,
-            fillColor: COLORS.AMMO_AREA,
-            fillOpacity: isAreaRelocating('aha') ? 0.1 : 0.3,
-            weight: 2,
-            dashArray: isAreaRelocating('aha') ? '6, 4' : undefined,
-          }}
-          eventHandlers={makeClickHandler('aha')}
+          pathOptions={ahaPathOptions}
+          eventHandlers={ahaHandlers}
         >
           <Tooltip direction="top">
             <strong>Ammo Holding Area (AHA)</strong>
@@ -235,19 +458,14 @@ export function MissileSystemMarker({
       )}
 
       {/* Hide Area */}
-      {tacticalAreas.hideArea && tacticalAreas.hideArea.length > 0 && (
+      {hidePositions.length > 0 && (
         <>
           <Polygon
-            positions={coordinatesToLatLng(tacticalAreas.hideArea)}
+            ref={hideRefCb}
+            positions={hidePositions}
             interactive={canInteractArea('hide')}
-            pathOptions={{
-              color: COLORS.HIDE_AREA,
-              fillColor: COLORS.HIDE_AREA,
-              fillOpacity: isAreaRelocating('hide') ? 0.1 : 0.3,
-              weight: 2,
-              dashArray: isAreaRelocating('hide') ? '6, 4' : undefined,
-            }}
-            eventHandlers={makeClickHandler('hide')}
+            pathOptions={hidePathOptions}
+            eventHandlers={hideHandlers}
           >
             <Tooltip direction="top">
               <strong>Hide Area (HA)</strong>
@@ -255,16 +473,11 @@ export function MissileSystemMarker({
           </Polygon>
 
           {/* Hide Area Center Marker */}
-          {hideCenter && (
+          {hideCenterLatLng && (
             <CircleMarker
-              center={[hideCenter.lat, hideCenter.lng]}
+              center={hideCenterLatLng}
               radius={6}
-              pathOptions={{
-                color: '#fff',
-                fillColor: COLORS.HIDE_AREA,
-                fillOpacity: 1,
-                weight: 2,
-              }}
+              pathOptions={PATH_OPTIONS_HIDE_CENTER}
             >
               <Tooltip direction="top">
                 <strong>Hide Area Center</strong>
@@ -273,37 +486,25 @@ export function MissileSystemMarker({
           )}
 
           {/* Weapon Range Circle (from hide area center) */}
-          {hideCenter && (
+          {hideCenterLatLng && (
             <Circle
-              center={[hideCenter.lat, hideCenter.lng]}
+              center={hideCenterLatLng}
               radius={radiusMeters}
               interactive={false}
-              pathOptions={{
-                color: COLORS.WEAPON_RANGE,
-                fillColor: COLORS.WEAPON_RANGE,
-                fillOpacity: 0.01,
-                weight: 1.5,
-                opacity: 0.25,
-                dashArray: '5, 10',
-              }}
+              pathOptions={PATH_OPTIONS_RANGE}
             />
           )}
         </>
       )}
 
       {/* Reload Area */}
-      {tacticalAreas.reloadArea && tacticalAreas.reloadArea.length > 0 && (
+      {reloadPositions.length > 0 && (
         <Polygon
-          positions={coordinatesToLatLng(tacticalAreas.reloadArea)}
+          ref={reloadRefCb}
+          positions={reloadPositions}
           interactive={canInteractArea('reload')}
-          pathOptions={{
-            color: COLORS.RELOAD_AREA,
-            fillColor: COLORS.RELOAD_AREA,
-            fillOpacity: isAreaRelocating('reload') ? 0.1 : 0.3,
-            weight: 2,
-            dashArray: isAreaRelocating('reload') ? '6, 4' : undefined,
-          }}
-          eventHandlers={makeClickHandler('reload')}
+          pathOptions={reloadPathOptions}
+          eventHandlers={reloadHandlers}
         >
           <Tooltip direction="top">
             <strong>Reload Area (RL)</strong>
@@ -312,97 +513,39 @@ export function MissileSystemMarker({
       )}
 
       {/* Fire Points */}
-      {tacticalAreas.firePoints &&
-        tacticalAreas.firePoints.map((fp, i) => {
-          const relocating = isAreaRelocating('fp', i);
-          return (
-            <Polygon
-              key={`fp-${i}`}
-              positions={coordinatesToLatLng(fp)}
-              interactive={canInteractArea('fp', i)}
-              pathOptions={{
-                color: COLORS.FIRE_POINT,
-                fillColor: COLORS.FIRE_POINT,
-                fillOpacity: relocating ? 0.1 : 0.3,
-                weight: 2,
-                dashArray: relocating ? '6, 4' : undefined,
-              }}
-              eventHandlers={makeClickHandler('fp', i)}
-            >
-              <Tooltip direction="top">
-                <strong>Fire Point {i + 1}</strong>
-              </Tooltip>
-            </Polygon>
-          );
-        })}
+      {fpPositionsList.map((positions, i) => (
+        <Polygon
+          key={`fp-${i}`}
+          ref={fpRefCallbacks[i]}
+          positions={positions}
+          interactive={canInteractArea('fp', i)}
+          pathOptions={fpPathOptionsList[i]}
+          eventHandlers={fpHandlersList[i]}
+        >
+          <Tooltip direction="top">
+            <strong>Fire Point {i + 1}</strong>
+          </Tooltip>
+        </Polygon>
+      ))}
 
       {/* Movement Paths */}
-      {/* HA Path: Reload -> Hide */}
-      {paths.HA?.waypoints && paths.HA.waypoints.length > 1 && (
-        <Polyline
-          positions={coordinatesToLatLng(paths.HA.waypoints)}
-          pathOptions={{
-            color: COLORS.PATH_HA,
-            weight: 2,
-            opacity: 0.7,
-            dashArray: '5, 5',
-          }}
-        />
+      {haPathPositions && <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA} />}
+      {ahaPathPositions && <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA} />}
+      {fpPathPositionsList.map(
+        (positions, i) =>
+          positions && (
+            <Polyline key={`path-fp-${i}`} positions={positions} pathOptions={PATH_OPTIONS_FP} />
+          )
       )}
-
-      {/* AHA Path: Reload -> Ammo */}
-      {paths.AHA?.waypoints && paths.AHA.waypoints.length > 1 && (
-        <Polyline
-          positions={coordinatesToLatLng(paths.AHA.waypoints)}
-          pathOptions={{
-            color: COLORS.PATH_AHA,
-            weight: 2,
-            opacity: 0.7,
-            dashArray: '5, 5',
-          }}
-        />
+      {rlPathPositionsList.map(
+        (positions, i) =>
+          positions && (
+            <Polyline key={`path-rl-${i}`} positions={positions} pathOptions={PATH_OPTIONS_RL} />
+          )
       )}
-
-      {/* FP Paths: Hide -> Fire Points */}
-      {paths.FP &&
-        paths.FP.map(
-          (fp, i) =>
-            fp?.waypoints &&
-            fp.waypoints.length > 1 && (
-              <Polyline
-                key={`path-fp-${i}`}
-                positions={coordinatesToLatLng(fp.waypoints)}
-                pathOptions={{
-                  color: COLORS.PATH_FP,
-                  weight: 2,
-                  opacity: 0.7,
-                  dashArray: '5, 5',
-                }}
-              />
-            )
-        )}
-
-      {/* RL Paths: Fire Points -> Reload */}
-      {paths.RL &&
-        paths.RL.map(
-          (rl, i) =>
-            rl?.waypoints &&
-            rl.waypoints.length > 1 && (
-              <Polyline
-                key={`path-rl-${i}`}
-                positions={coordinatesToLatLng(rl.waypoints)}
-                pathOptions={{
-                  color: COLORS.PATH_RL,
-                  weight: 2,
-                  opacity: 0.7,
-                  dashArray: '5, 5',
-                }}
-              />
-            )
-        )}
     </>
   );
-}
+});
 
 // ============================================================================
 // DeployedMissileSystems Component
@@ -423,6 +566,8 @@ export function DeployedMissileSystems({
   relocatingArea,
   rotatingUnitKey,
 }: DeployedMissileSystemsProps) {
+  const isAnyRelocating = Boolean(relocatingArea);
+
   return (
     <>
       {Array.from(deployedSystems.entries()).map(([unitKey, data]) => (
@@ -432,7 +577,8 @@ export function DeployedMissileSystems({
           data={data}
           onAreaClick={onAreaClick}
           onRotateClick={onRotateClick}
-          relocatingArea={relocatingArea}
+          relocatingArea={relocatingArea?.unitKey === unitKey ? relocatingArea : null}
+          isAnyRelocating={isAnyRelocating}
           isRotating={rotatingUnitKey === unitKey}
         />
       ))}

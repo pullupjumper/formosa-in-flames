@@ -922,11 +922,14 @@ end
 ---Extract operational areas from ground force config and generate Lua code strings
 ---Collects unique SBJ__OperationalArea from firingUnits, generates constants.AREAS
 ---and constants.OPERATIONAL_AREAS code, then returns modified config with constant references
+---@param sideName string Side name ('Taiwan' or 'China')
 ---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@return string areasStr constants.AREAS entries
 ---@return string opAreasStr constants.OPERATIONAL_AREAS entries
 ---@return string configStr Modified config with ammunitions, resupplyUnits, and firingUnits using constant references
-function GameUtils.extractOperationalAreas(groundForceConfig)
+function GameUtils.extractOperationalAreas(sideName, groundForceConfig)
+  local sideObj = GameUtils.getCachedSideConfig(sideName)
+
   -- Phase 1: Collect unique operational areas
   local uniqueAreas = {} ---@type {key: string, opArea: SBJ__OperationalArea}[]
   local seenKeys = {}
@@ -1071,7 +1074,7 @@ function GameUtils.extractOperationalAreas(groundForceConfig)
   for _, sysKey in ipairs(groundKeys) do
     local sysConfig = groundForceConfig[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
-      local configPath = "config.t.ground." .. sysKey
+      local configPath = "config." .. sideObj.field .. ".ground." .. sysKey
 
       -- Serialize ammunitions
       if sysConfig.ammunitions then

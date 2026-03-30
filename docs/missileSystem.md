@@ -12,7 +12,7 @@ missileSystem 是雙陣營共用的飛彈系統核心模組，管理發射單元
 
 支援的武器系統子類別：`srbm`、`mrbm`、`mlrs`、`glcm`、`ascm`、`sam`
 
-模組透過 `isAuto` 參數區分自動模式（中國陣營，AI 控制）與手動模式（台灣陣營，玩家控制）。自動模式下，定時檢查會自動偵測低彈量並驅動完整的「RL → 裝填 → HA → 隱蔽」閉環，模擬 AI 陣營的自主後勤行為；手動模式下，模組僅處理會合後的裝填完成與區域觸發回應，轉移陣地與隱蔽等操作由玩家自行決定。
+模組透過 `isAuto` 參數區分自動模式（中國陣營，AI 控制）與手動模式（台灣陣營，玩家控制）。自動模式下，定時檢查會自動偵測低彈量並驅動完整後勤閉環；非 `sam` 系統走「RL → 裝填 → HA → 隱蔽」，`sam` 系統則走「RL → 裝填 → FP」，模擬 AI 陣營的自主後勤與防空待戰行為。手動模式下，模組僅處理會合後的裝填完成與區域觸發回應，轉移陣地與隱蔽等操作由玩家自行決定。
 
 ### SAM 整合
 
@@ -57,7 +57,8 @@ stateDiagram-v2
     STATIC --> REPOSITIONING: (auto) 彈量低於門檻，移動至 RL
     REPOSITIONING --> RELOAD: 抵達 RL，與補給單元會合
     REPOSITIONING --> STATIC: 抵達 RL，未會合
-    RELOAD --> REPOSITIONING: (auto) 裝填完成，移動至 HA
+    RELOAD --> REPOSITIONING: (auto, non-SAM) 裝填完成，移動至 HA
+    RELOAD --> REPOSITIONING: (auto, SAM) 裝填完成，移動至 FP
     RELOAD --> STATIC: (manual) 裝填完成
     REPOSITIONING --> HIDE: 抵達 HA
 
@@ -78,7 +79,7 @@ stateDiagram-v2
 | `HA` | Hide Area | 隱蔽區，射後轉移用 | Standard |
 | `RL` | Reload Point | 裝填點，發射單元與補給單元會合 | Standard |
 | `AHA` | Ammo Holding Area | 彈藥集結區，補給單元與彈藥庫會合 | Standard |
-| `MASK` | Mask | 地形遮蔽區，包含建築物供隱蔽 | Custom Environment |
+| `MASK` | Mask | 地形遮蔽區，包含建築物供隱蔽 | Standard |
 
 ```mermaid
 flowchart TB
@@ -101,7 +102,7 @@ flowchart TB
 
     HA -->|部署| FP
     FP -->|低彈量| RL
-    RL -->|裝填完成| HA
+    RL -->|裝填完成| HA / FP(SAM)
     HA ---|隱蔽| MASK
     RL <-->|補給車往返| AHA
     AHA --- DEPOT
@@ -144,8 +145,12 @@ sequenceDiagram
 
     Note over FU,RU: 等待 reloadTime
     RU->>FU: reload()
-    FU->>FU: moveToHideArea()
-    FU->>BLDG: hideUnit()（載貨隱蔽）
+    alt 非 SAM
+        FU->>FU: moveToHideArea()
+        FU->>BLDG: hideUnit()（載貨隱蔽）
+    else SAM
+        FU->>FU: moveToFiringPoint()
+    end
 
     Note over RU: 彈量歸零
     RU->>RU: moveToAmmoHoldingArea()
@@ -211,10 +216,7 @@ TEL 單元在隱蔽區（HA）時可載入 MASK 區域內的建築物，降低�
 
 ### MASK Zone 環境設定
 
-| 參數 | 值 | 說明 |
-|------|-----|------|
-| `landcoverheight` | 1000 | 地形遮蔽高度 |
-| `landcovertype` | 254 | 地形遮蔽類型 |
+目前 `MASK` 區僅建立為 `STANDARD` zone，並將 `operationalArea.uShapeVertices` 轉為 `operationalArea.mask.area` 供建築物搜尋使用，同時套用 `MASK` 對應顏色。模組目前**未設定** `landcoverheight` 或 `landcovertype`。
 
 ---
 
@@ -253,8 +255,9 @@ TEL 單元在隱蔽區（HA）時可載入 MASK 區域內的建築物，降低�
 | 偵測低彈量並移動至 RL | Yes | No |
 | 觸發補給單元移動至 AHA | Yes | No |
 | 會合後開始裝填計時 | Yes | Yes |
-| 裝填完成後自動移動至 HA | Yes | No |
+| 裝填完成後自動移動至 HA / FP | Yes（非 `sam` → HA；`sam` → FP） | No |
 | 裝填完成後隱蔽補給單元 | Yes | No |
+| 建立 trigger/mask zone 時設定顏色 | Yes | Yes |
 | `isRepositioning` 狀態檢查 | 檢查 state | 直接返回 true |
 | `isValidStateForMeeting` 狀態檢查 | 檢查 REPOSITIONING/RELOAD | 直接返回 true |
 

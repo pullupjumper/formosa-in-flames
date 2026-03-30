@@ -1317,7 +1317,11 @@ describe("AmphibiousLogistics", function()
         guid = "CARGO-001",
         name = "CargoProxy",
         mounts = {
-          makeMount({ mount_dbid = 200, mount_guid = "MNT-P1", mount_weapons = {} }),
+          makeMount({
+            mount_dbid = 200,
+            mount_guid = "MNT-P1",
+            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }) },
+          }),
         },
       })
 
@@ -1464,7 +1468,16 @@ describe("AmphibiousLogistics", function()
           }),
         },
       })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
+      local cargoProxy = makeLoadCargoUnit({
+        guid = "CARGO-001",
+        mounts = {
+          makeMount({
+            mount_dbid = 200,
+            mount_guid = "MNT-P1",
+            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }) },
+          }),
+        },
+      })
       local base = makeUnit({
         guid = "BASE-001", name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
@@ -1503,7 +1516,19 @@ describe("AmphibiousLogistics", function()
           }),
         },
       })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
+      local cargoProxy = makeLoadCargoUnit({
+        guid = "CARGO-001",
+        mounts = {
+          makeMount({
+            mount_dbid = 200,
+            mount_guid = "MNT-P1",
+            mount_weapons = {
+              makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }),
+              makeMountWeapon({ wpn_dbid = 600, wpn_default = 10 }),
+            },
+          }),
+        },
+      })
       local base = makeUnit({
         guid = "BASE-001", name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },

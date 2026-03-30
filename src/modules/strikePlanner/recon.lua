@@ -13,6 +13,7 @@ local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
 local ENTRY_TYPE = {
   UAV = "UAV",
   SATELLITE = "satellite",
+  SIGINT = "SIGINT"
 }
 
 local LAUNCH_STATUS = {
@@ -591,7 +592,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
 
     if entry.type == ENTRY_TYPE.UAV then
       tag, message = processUAVEntry(config, reconSchedule, entry, LACMContext)
-    elseif entry.type == ENTRY_TYPE.SATELLITE then
+    elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
       tag, message = processSatelliteEntry(config, reconSchedule, entry, LACMContext)
     end
 
@@ -659,7 +660,7 @@ function Recon.initReconQueueEntries(reconConfig, reconContext)
       entry.isFinished = false
     end
 
-    if entry.type == ENTRY_TYPE.SATELLITE then
+    if entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
       entry.isFinished = false
     end
   end

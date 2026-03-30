@@ -309,17 +309,20 @@ end
 ---Clears all tracked weapon reloads then sets them to actual counts
 ---@param cargo CMO__Unit Cargo proxy unit
 ---@param sideName string Side name
----@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to sync
 ---@param weaponCounts table<number, number> Actual weapon counts (DBID to count)
-local function syncWeaponReloads(cargo, sideName, weaponDBIDSet, weaponCounts)
-  for wpnDBID, _ in pairs(weaponDBIDSet) do
-    GameApi.ScenEdit_AddReloadsToUnit({
-      side = sideName,
-      guid = cargo.guid,
-      wpn_dbid = wpnDBID,
-      number = WEAPON_CLEAR_AMOUNT,
-      remove = true
-    })
+local function syncWeaponReloads(cargo, sideName, weaponCounts)
+  for _, mount in ipairs(cargo.mounts) do
+    for _, wpn in ipairs(mount.mount_weapons) do
+      if wpn.wpn_default > 0 then
+        GameApi.ScenEdit_AddReloadsToUnit({
+          side = sideName,
+          guid = cargo.guid,
+          wpn_dbid = wpn.wpn_dbid,
+          number = WEAPON_CLEAR_AMOUNT,
+          remove = true
+        })
+      end
+    end
   end
 
   for wpnDBID, count in pairs(weaponCounts) do
@@ -349,7 +352,7 @@ local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName
 
   stripCargoProxyMounts(cargo, sideName)
   local weaponCounts = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  syncWeaponReloads(cargo, sideName, weaponDBIDSet, weaponCounts)
+  syncWeaponReloads(cargo, sideName, weaponCounts)
 
   if sourceUnit.group then
     cargo.group = sourceUnit.group.name

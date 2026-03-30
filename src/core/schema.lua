@@ -840,9 +840,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__FiringUnitContext: SBJ__FiringUnitDescriptor
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 
----Weapon system context data structure
----Consolidates all components of a complete weapon system (firing units, resupply units, ammunition)
+---Missile system runtime context data structure
+---Contains the missile system name, runtime status, and all system components
 ---@class SBJ__MissileSystemContext: table
+---@field name string Missile system identifier
 ---@field enabled boolean Whether the weapon system is currently active
 ---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations

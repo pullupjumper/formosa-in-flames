@@ -53,6 +53,7 @@ saveData.c.gnssJamming.jammers = {}
 
 saveData.c.ground = {}
 saveData.c.ground.mlrs = {}
+saveData.c.ground.mlrs.name = "mlrs"
 saveData.c.ground.mlrs.enabled = true
 saveData.c.ground.mlrs.reloadTime = config.c.ground.mlrs.reloadTime
 saveData.c.ground.mlrs.ammunitions = {}
@@ -65,6 +66,7 @@ saveData.c.ground.mlrs.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.glcm = {}
+saveData.c.ground.glcm.name = "glcm"
 saveData.c.ground.glcm.enabled = true
 saveData.c.ground.glcm.reloadTime = config.c.ground.glcm.reloadTime
 saveData.c.ground.glcm.ammunitions = {}
@@ -77,6 +79,7 @@ saveData.c.ground.glcm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.srbm = {}
+saveData.c.ground.srbm.name = "srbm"
 saveData.c.ground.srbm.enabled = true
 saveData.c.ground.srbm.reloadTime = config.c.ground.srbm.reloadTime
 saveData.c.ground.srbm.ammunitions = {}
@@ -89,6 +92,7 @@ saveData.c.ground.srbm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.mrbm = {}
+saveData.c.ground.mrbm.name = "mrbm"
 saveData.c.ground.mrbm.enabled = true
 saveData.c.ground.mrbm.reloadTime = config.c.ground.mrbm.reloadTime
 saveData.c.ground.mrbm.ammunitions = {}
@@ -101,11 +105,25 @@ saveData.c.ground.mrbm.firingUnits = {}
 -- ============================================================================
 
 saveData.c.ground.ascm = {}
+saveData.c.ground.ascm.name = "ascm"
 saveData.c.ground.ascm.enabled = true
 saveData.c.ground.ascm.reloadTime = config.c.ground.ascm.reloadTime
 saveData.c.ground.ascm.ammunitions = {}
 saveData.c.ground.ascm.resupplyUnits = {}
 saveData.c.ground.ascm.firingUnits = {}
+
+
+-- ============================================================================
+-- SAM (China)
+-- ============================================================================
+
+saveData.c.ground.sam = {}
+saveData.c.ground.sam.name = "sam"
+saveData.c.ground.sam.enabled = true
+saveData.c.ground.sam.reloadTime = config.c.ground.sam.reloadTime
+saveData.c.ground.sam.ammunitions = {}
+saveData.c.ground.sam.resupplyUnits = {}
+saveData.c.ground.sam.firingUnits = {}
 
 
 -- ============================================================================
@@ -194,6 +212,7 @@ saveData.t.ground.enabled = true
 -- ============================================================================
 
 saveData.t.ground.mlrs = {}
+saveData.t.ground.mlrs.name = "mlrs"
 saveData.t.ground.mlrs.enabled = true
 saveData.t.ground.mlrs.reloadTime = config.t.ground.mlrs.reloadTime
 saveData.t.ground.mlrs.ammunitions = {}
@@ -206,6 +225,7 @@ saveData.t.ground.mlrs.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.srbm = {}
+saveData.t.ground.srbm.name = "srbm"
 saveData.t.ground.srbm.enabled = true
 saveData.t.ground.srbm.reloadTime = config.t.ground.srbm.reloadTime
 saveData.t.ground.srbm.ammunitions = {}
@@ -218,6 +238,7 @@ saveData.t.ground.srbm.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.glcm = {}
+saveData.t.ground.glcm.name = "glcm"
 saveData.t.ground.glcm.enabled = true
 saveData.t.ground.glcm.reloadTime = config.t.ground.glcm.reloadTime
 saveData.t.ground.glcm.ammunitions = {}
@@ -230,6 +251,7 @@ saveData.t.ground.glcm.firingUnits = {}
 -- ============================================================================
 
 saveData.t.ground.ascm = {}
+saveData.t.ground.ascm.name = "ascm"
 saveData.t.ground.ascm.enabled = true
 saveData.t.ground.ascm.reloadTime = config.t.ground.ascm.reloadTime
 saveData.t.ground.ascm.ammunitions = {}
@@ -245,6 +267,7 @@ saveData.t.ground.ascm.test = {
 
 
 saveData.t.ground.sam = {}
+saveData.t.ground.sam.name = "sam"
 saveData.t.ground.sam.enabled = true
 saveData.t.ground.sam.reloadTime = config.t.ground.sam.reloadTime
 saveData.t.ground.sam.ammunitions = {}

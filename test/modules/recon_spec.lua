@@ -110,6 +110,21 @@ describe("Recon", function()
     return entry
   end
 
+  ---Create a SIGINT reconnaissance queue entry
+  ---@param overrides? table
+  ---@return table
+  local function makeSIGINTEntry(overrides)
+    local entry = {
+      type = "SIGINT",
+      endTime = "2026-02-14 08:00:00",
+      isFinished = false,
+    }
+    if overrides then
+      for k, v in pairs(overrides) do entry[k] = v end
+    end
+    return entry
+  end
+
   ---Create a minimal reconContext
   ---@param queue? table[]
   ---@return table
@@ -556,6 +571,20 @@ describe("Recon", function()
 
       -- Should not schedule duplicate operations
       assert.are.equal(0, #reconSchedule)
+    end)
+
+    it("should finish SIGINT mission when endTime reached", function()
+      local entry = makeSIGINTEntry()
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+        air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
+      }))
+
+      local reconContext = makeReconContext({ entry })
+      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
+
+      assert.is_true(entry.isFinished)
     end)
 
     -- ========================================================================
@@ -1018,6 +1047,21 @@ describe("Recon", function()
       local reconConfig = {
         queue = {
           { type = "satellite", endTime = "2026-02-14 08:00:00" },
+        },
+      }
+      local reconContext = {}
+
+      Recon.initReconQueueEntries(reconConfig, reconContext)
+
+      assert.is_table(reconContext.queue)
+      assert.are.equal(1, #reconContext.queue)
+      assert.is_false(reconContext.queue[1].isFinished)
+    end)
+
+    it("should set isFinished to false for SIGINT entries", function()
+      local reconConfig = {
+        queue = {
+          { type = "SIGINT", endTime = "2026-02-14 08:00:00" },
         },
       }
       local reconContext = {}

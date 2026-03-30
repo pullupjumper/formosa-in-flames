@@ -4,6 +4,7 @@ import type {
   Jammer,
   MissileSystems,
   DeployedMissileSystemData,
+  MovementPaths,
 } from '@/types/setupMenu';
 
 // ============================================================================
@@ -15,6 +16,33 @@ function getWeaponSystemName(category: string): string {
     ascm: 'Anti-Ship Cruise Missile',
   };
   return names[category] || category.toUpperCase();
+}
+
+function trimLeadingWaypoint(
+  waypoints: { latitude: number; longitude: number }[]
+): { latitude: number; longitude: number }[] {
+  return waypoints.length > 1 ? waypoints.slice(1) : waypoints;
+}
+
+function normalizeExportPaths(paths: MovementPaths): MovementPaths {
+  return {
+    FP: paths.FP.map((path) => ({
+      ...path,
+      waypoints: trimLeadingWaypoint(path.waypoints),
+    })),
+    HA: {
+      ...paths.HA,
+      waypoints: trimLeadingWaypoint(paths.HA.waypoints),
+    },
+    RL: paths.RL.map((path) => ({
+      ...path,
+      waypoints: trimLeadingWaypoint(path.waypoints),
+    })),
+    AHA: {
+      ...paths.AHA,
+      waypoints: trimLeadingWaypoint(paths.AHA.waypoints),
+    },
+  };
 }
 
 // ============================================================================
@@ -123,7 +151,7 @@ export function SummaryTab({
         center: data.center,
         openingAngle: data.openingAngle,
         tacticalAreas: data.tacticalAreas,
-        paths: data.paths,
+        paths: normalizeExportPaths(data.paths),
       })),
     };
     const jsonString = JSON.stringify(exportData, null, 2);
