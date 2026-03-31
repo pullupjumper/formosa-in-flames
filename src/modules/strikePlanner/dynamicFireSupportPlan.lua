@@ -2,7 +2,7 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local constants = require("src.core.constants")
 

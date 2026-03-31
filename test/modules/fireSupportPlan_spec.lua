@@ -5,7 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local AttackManager = require("src.modules.attackManager")
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 describe("FireSupportPlan", function()

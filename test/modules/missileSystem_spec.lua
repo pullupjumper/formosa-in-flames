@@ -1,6 +1,7 @@
 -- MissileSystem Unit Tests
 ---@diagnostic disable: undefined-field
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
+local Concealment = require("src.modules.missileSystem.concealment")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
@@ -1746,7 +1747,7 @@ describe("MissileSystem", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
       trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
-      local stubHideUnit = trackStub(MissileSystem, "hideUnit").returns(true)
+      local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
       MissileSystem.checkMissileSystemState(systemCtx, true, "Taiwan")
@@ -1818,7 +1819,7 @@ describe("MissileSystem", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
       trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
-      local stubHideUnit = trackStub(MissileSystem, "hideUnit").returns(true)
+      local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
       MissileSystem.checkMissileSystemState(systemCtx, true, "Taiwan")

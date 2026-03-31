@@ -1,5 +1,5 @@
 local gKH = require("src.core.gKH_State_Standalone")
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 ---@type SBJ__SaveData|nil

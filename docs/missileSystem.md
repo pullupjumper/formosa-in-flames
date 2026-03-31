@@ -1,6 +1,8 @@
 # missileSystem — TEL/SAM 飛彈系統管理
 
-> 原始碼：`src/modules/missileSystem.lua`
+> 入口：`src/modules/missileSystem/init.lua`
+>
+> 子模組目錄：`src/modules/missileSystem/`
 
 **職責**：管理 TEL 機動飛彈與 SAM 防空飛彈的狀態機、三級再裝填循環、建築物隱蔽機制及單元建立
 
@@ -16,7 +18,7 @@ missileSystem 是雙陣營共用的飛彈系統核心模組，管理發射單元
 
 ### SAM 整合
 
-模組透過 `SAM_DBIDS` 查詢表辨識 SAM 平台，自動調整武器管制目標（`weapon_control_status_air` vs `weapon_control_status_land`）：
+模組透過 `shared.lua` 內的 `SAM_DBIDS` 查詢表辨識 SAM 平台，自動調整武器管制目標（`weapon_control_status_air` vs `weapon_control_status_land`）：
 
 | 平台 | DBID 常數 |
 |------|-----------|
@@ -32,7 +34,7 @@ missileSystem 是雙陣營共用的飛彈系統核心模組，管理發射單元
 
 ### 多武器 DBID 支援
 
-`weaponDBID` 參數支援 `number|number[]`，允許單一發射單元配備多種彈藥類型。彈量檢查（`isLowAmmo`）與裝填（`reload`）均會彙總所有武器 DBID 進行計算。
+`weaponDBID` 參數支援 `number|number[]`，允許單一發射單元配備多種彈藥類型。彈量檢查（`isLowAmmo`）與裝填（`ammo.lua`）均會彙總所有武器 DBID 進行計算。
 
 ---
 

@@ -803,7 +803,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94695 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
   ["94759 Unit, PLAAF"] = {
     guid = "",
@@ -815,7 +814,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94759 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
   ["94777 Unit, PLAAF"] = {
     guid = "",
@@ -827,7 +825,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94777 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
   ["94908 Unit, PLAAF"] = {
     guid = "",
@@ -839,7 +836,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94908 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
   ["94967 Unit, PLAAF"] = {
     guid = "",
@@ -851,7 +847,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94967 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
   ["95324 Unit, PLAAF"] = {
     guid = "",
@@ -863,7 +858,6 @@ config.c.ground.sam.firingUnits = {
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 95324 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
-    -- mountDescriptors = constants.MOUNT_DESCRIPTORS.S300,
   },
 }
 

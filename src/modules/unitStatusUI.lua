@@ -4,7 +4,7 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
 local gKH = require("src.core.gKH_State_Standalone")
 local constants = require("src.core.constants")
 

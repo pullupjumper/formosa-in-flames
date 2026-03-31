@@ -1,6 +1,6 @@
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
-local MissileSystem = require("src.modules.missileSystem")
+local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")

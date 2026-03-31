@@ -248,7 +248,7 @@ flowchart BT
 | `src/scripts/china/scheduledStrikePlanner.lua` | 主排程腳本（每 5 分鐘觸發） |
 | `src/modules/attackManager.lua` | 打擊執行（發射武器） |
 | `src/modules/assignMission.lua` | 任務指派（飛機分配） |
-| `src/modules/missileSystem.lua` | TEL 飛彈系統（發射單元狀態機），詳見 [missileSystem 文件](../missileSystem.md) |
+| `src/modules/missileSystem/init.lua` | TEL 飛彈系統入口模組（發射單元狀態機聚合），詳見 [missileSystem 文件](../missileSystem.md) |
 | `src/core/schema.lua` | 型別定義 |
 | `src/core/config.lua` | 運行期配置 |
 | `src/core/constants.lua` | 不可變常數 |
