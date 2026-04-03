@@ -1,4 +1,4 @@
-local ShipMovement = require("src.modules.landingOps.shipMovement")
+local LandingOps = require("src.modules.landingOps.init")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local saveData = require("src.core.saveData")
@@ -89,7 +89,7 @@ end
 if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initEventActions()
   initSpecialActions()
-  ShipMovement.calculateDestination(config.c.amphibOps, saveData.c.amphibOps.calculationResult)
+  LandingOps.init(config.c.amphibOps, saveData)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
   TargetingProcess.scanTargets("China", config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
