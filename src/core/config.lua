@@ -9,23 +9,24 @@ config.difficulty = "normal"
 -- Logging configuration
 config.logging = {
   modules = {
-    ground = { verbose = true },
-    air = { verbose = true },
-    secondWaveUnloading = { verbose = true },
-    recon = { verbose = true },
-    dynamicOperations = { verbose = true },
-    sigint = { verbose = false },
-    commsJamming = { verbose = false },
-    gnssJamming = { verbose = true },
-    integratedAirDefenseSystem = { verbose = false },
-    attackManager = { verbose = false },
-    unitGenerator = { verbose = false },
-    missileSystem = { verbose = true },
-    score = { verbose = true },
-    init = { verbose = true },
-    shipMovement = { verbose = true },
-    amphibiousLogistics = { verbose = true },
-    amphibiousAssault = { verbose = true }
+    [constants.TAGS.GROUND] = { verbose = true },
+    [constants.TAGS.AIR] = { verbose = true },
+    [constants.TAGS.SECOND_WAVE_UNLOADING] = { verbose = true },
+    [constants.TAGS.RECON] = { verbose = true },
+    [constants.TAGS.DYNAMIC_OPERATIONS] = { verbose = true },
+    [constants.TAGS.TARGETING_PROCESS] = { verbose = true },
+    [constants.TAGS.SIGINT] = { verbose = false },
+    [constants.TAGS.COMMS_JAMMING] = { verbose = false },
+    [constants.TAGS.GNSS_JAMMING] = { verbose = true },
+    [constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM] = { verbose = false },
+    [constants.TAGS.ATTACK_MANAGER] = { verbose = false },
+    [constants.TAGS.UNIT_GENERATOR] = { verbose = false },
+    [constants.TAGS.MISSILE_SYSTEM] = { verbose = true },
+    [constants.TAGS.SCORE] = { verbose = true },
+    [constants.TAGS.INIT] = { verbose = true },
+    [constants.TAGS.SHIP_MOVEMENT] = { verbose = true },
+    [constants.TAGS.AMPHIBIOUS_LOGISTICS] = { verbose = true },
+    [constants.TAGS.AMPHIBIOUS_ASSAULT] = { verbose = true }
   }
 }
 config.c = {}
@@ -105,8 +106,8 @@ config.readytime = 5 * 60
 -- ============================================================================
 
 config.c.triggers = {
-  amphibiousOps = { startTime = "2027-06-09 02:40:00" },
-  -- amphibiousOps = { startTime = "2027-06-09 1:00:00" },
+  -- amphibiousOps = { startTime = "2027-06-09 02:40:00" },
+  amphibiousOps = { startTime = "2027-06-09 1:00:00" },
   launchLACM = { startTime = "2027-06-09 06:00:00" },
   launchSLCM = { startTime = "2027-06-09 06:30:00" },
   -- launchSLCM = { startTime = "2027-06-09 01:00:00" },

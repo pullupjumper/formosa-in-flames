@@ -2,14 +2,14 @@ local LandingOps = require("src.modules.landingOps.init")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local saveData = require("src.core.saveData")
-local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local constants = require("src.core.constants")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local UnitGenerator = require("src.modules.unitGenerator")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local Sigint = require("src.modules.ew.sigint")
 local MissileSystem = require("src.modules.missileSystem.init")
 local RunwayRepairment = require("src.modules.runwayRepairment")
-local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 
 if config.isSaved then
@@ -91,11 +91,11 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, saveData)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-  TargetingProcess.scanTargets("China", config.targetScanning, saveData)
+  StrikePlanner.scanTargets(constants.SIDES.ENEMY, config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
   if saveData.c.recon.enabled then
-    Recon.initReconQueueEntries(config.c.recon, saveData.c.recon)
+    StrikePlanner.initReconQueueEntries(config.c.recon, saveData.c.recon)
   end
 
   if saveData.t.iads.enabled then
@@ -107,12 +107,13 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   end
 
   if saveData.c.commsJamming.enabled then
-    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, "China", config.c.commsJamming.aircraftDefaults)
+    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, constants.SIDES.ENEMY,
+      config.c.commsJamming.aircraftDefaults)
   end
 
   if saveData.u.sigint.enabled then
     Sigint.initReconAircraftContexts(saveData.u.sigint, "US", config.c.commsJamming.aircraftDefaults)
-    Sigint.initReconAircraftContexts(saveData.c.sigint, "China", config.c.commsJamming.aircraftDefaults)
+    Sigint.initReconAircraftContexts(saveData.c.sigint, constants.SIDES.ENEMY, config.c.commsJamming.aircraftDefaults)
   end
 
   if saveData.c.ground.enabled then
@@ -125,9 +126,9 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
 
   if config.isDevMode then
     gKH.State.SaveTableToKey(saveData, "SaveData")
-    Logger.log("init", "Init data and save.")
+    Logger.log(constants.TAGS.INIT, "Init data and save.")
   else
-    Logger.log("init", "Does not init data.")
+    Logger.log(constants.TAGS.INIT, "Does not init data.")
   end
 end
 

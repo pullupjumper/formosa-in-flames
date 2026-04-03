@@ -1,5 +1,5 @@
 local GameApi = require("src.utils.gameApi")
-local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 
@@ -16,17 +16,17 @@ function RunwayRepairment.initRunways(config, saveData)
     table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
   end
 
-  local targetlist = TargetingProcess.filterTargetsByTypeAndBase(saveData.c.targetlist, taiwanAirBases)
+  local targetlist = StrikePlanner.filterTargetsByTypeAndBase(saveData.c.targetlist, taiwanAirBases)
 
   for _, guid in ipairs(targetlist) do
-    local contact = GameApi.ScenEdit_GetContact("China", guid)
+    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
     if contact then
       table.insert(saveData.t.repairRunway.runways, { guid = contact.actualunitid, startTime = nil })
     end
   end
 
   -- Initialize China runways from facility units
-  local facilities = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local facilities = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
   if not facilities then return end
 
   for _, u in ipairs(facilities) do
