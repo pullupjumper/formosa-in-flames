@@ -7,7 +7,6 @@ local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperati
 local constants = require("src.core.constants")
 
 local DynamicATOInsertion = {}
-local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
 
 -- Time constants
 local TIME_CONSTANTS = {
@@ -486,7 +485,7 @@ local function buildATOWave(waveTemplate, waveName)
       end
     end
     if #timingLines > 0 then
-      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, string.format(
         "Wave [%s] Package #%d timing:\n%s",
         waveName, packageIndex, table.concat(timingLines, "\n")
       ))
@@ -649,7 +648,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     end
 
     if #infoLines > 0 then
-      Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, string.format(
         "Air operations processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
     end
 

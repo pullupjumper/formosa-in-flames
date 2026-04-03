@@ -6,8 +6,6 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Deployment = {}
 
-local MISSILE_SYSTEM_TAG = "missileSystem"
-
 ---Remove missile systems from the game
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor with removal info
 ---@param sideName string Side name for unit deletion
@@ -282,10 +280,10 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
   end
 
   if #okLines > 0 then
-    Logger.log(MISSILE_SYSTEM_TAG, "Unit creation summary:\n" .. table.concat(okLines, "\n"))
+    Logger.log(constants.TAGS.MISSILE_SYSTEM, "Unit creation summary:\n" .. table.concat(okLines, "\n"))
   end
   if #failLines > 0 then
-    Logger.error(MISSILE_SYSTEM_TAG .. ": Unit creation failures:\n" .. table.concat(failLines, "\n"))
+    Logger.error(constants.TAGS.MISSILE_SYSTEM .. ": Unit creation failures:\n" .. table.concat(failLines, "\n"))
   end
 end
 

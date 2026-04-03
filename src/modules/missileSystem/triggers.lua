@@ -5,8 +5,6 @@ local GameUtils = require("src.utils.gameUtils")
 
 local Triggers = {}
 
-local MISSILE_SYSTEM_TAG = "missileSystem"
-
 local ZONE_PATTERNS = {
   "^" .. constants.POSITION_TYPES.FIRING_POINT,
   "^" .. constants.POSITION_TYPES.HIDE_AREA,
@@ -178,14 +176,14 @@ function Triggers.initEventTriggers(operationalAreas, positionTypes, sideName)
     end
   end
 
-  Logger.log(MISSILE_SYSTEM_TAG, string.format(
+  Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
     "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created",
     sideName, totalCreated, totalCreated + totalFailed,
     maskCreated, maskCreated + maskFailed
   ))
 
   if #allFailMessages > 0 then
-    Logger.error(MISSILE_SYSTEM_TAG .. ": Trigger/zone creation failures:\n" .. table.concat(allFailMessages, "\n"))
+    Logger.error(constants.TAGS.MISSILE_SYSTEM .. ": Trigger/zone creation failures:\n" .. table.concat(allFailMessages, "\n"))
   end
 end
 

@@ -10,7 +10,6 @@ local SecondWaveUnloading = {}
 -- Enumerations and Constants
 -- ============================================================================
 
-local SECOND_WAVE_TAG = "secondWaveUnloading"
 
 local SHIP_NAMES = {
   BARGE = "Barge",
@@ -285,7 +284,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
   end
 
   if #logEntries > 0 then
-    Logger.log(SECOND_WAVE_TAG, string.format(
+    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
       "[%s] Second wave unloading: %d entries\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
@@ -319,7 +318,7 @@ function SecondWaveUnloading.offloadVehicles(params)
     table.insert(logEntries, string.format("  [%s] %s", tag, msg))
 
     if tag == "FAIL" then
-      Logger.log(SECOND_WAVE_TAG, string.format(
+      Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
         "Offload vehicles: failed at #%d\n%s",
         idx, table.concat(logEntries, "\n")
       ))
@@ -330,7 +329,7 @@ function SecondWaveUnloading.offloadVehicles(params)
   end
 
   if #logEntries > 0 then
-    Logger.log(SECOND_WAVE_TAG, string.format(
+    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
       "Offload vehicles: %d units offloaded\n%s",
       resultCount, table.concat(logEntries, "\n")
     ))

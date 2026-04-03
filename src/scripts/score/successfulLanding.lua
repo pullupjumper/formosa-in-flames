@@ -1,4 +1,5 @@
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
-local score = GameApi.ScenEdit_GetScore("Taiwan")
-GameApi.ScenEdit_SetScore("Taiwan", (score + config.s.ifv), "Landing successfully")
+local constants = require("src.core.constants")
+local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
+GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.ifv), "Landing successfully")

@@ -2250,6 +2250,27 @@ constants.MISSILE_SYSTEM_TYPES = {
   MLRS = "mlrs",
 }
 
+constants.TAGS = {
+  AIR = "air",
+  AMPHIBIOUS_ASSAULT = "amphibiousAssault",
+  AMPHIBIOUS_LOGISTICS = "amphibiousLogistics",
+  ATTACK_MANAGER = "attackManager",
+  COMMS_JAMMING = "commsJamming",
+  DYNAMIC_OPERATIONS = "dynamicOperations",
+  GNSS_JAMMING = "gnssJamming",
+  GROUND = "ground",
+  INIT = "init",
+  INTEGRATED_AIR_DEFENSE_SYSTEM = "integratedAirDefenseSystem",
+  MISSILE_SYSTEM = "missileSystem",
+  RECON = "recon",
+  SCORE = "score",
+  SECOND_WAVE_UNLOADING = "secondWaveUnloading",
+  SHIP_MOVEMENT = "shipMovement",
+  SIGINT = "sigint",
+  TARGETING_PROCESS = "targetingProcess",
+  UNIT_GENERATOR = "unitGenerator",
+}
+
 constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 constants.TIME_FORMATS = "!yyyy-MM-dd HH:mm:ss"
 constants.MOUNT_DESCRIPTORS = {

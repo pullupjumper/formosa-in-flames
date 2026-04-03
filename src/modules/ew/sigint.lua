@@ -36,7 +36,6 @@ local SIGINT_RESULT_TAGS = {
   [DETECTION_STATUS.NO_CHANGE]    = "[OK]",
 }
 
-local SIGINT_LOG_TAG = "sigint"
 
 
 -- ============================================================================
@@ -446,7 +445,7 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
     table.insert(reportLines, entry)
   end
 
-  Logger.log(SIGINT_LOG_TAG, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.SIGINT, table.concat(reportLines, "\n"))
   return results
 end
 
@@ -482,7 +481,7 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
     end
   end
 
-  Logger.log(SIGINT_LOG_TAG,
+  Logger.log(constants.TAGS.SIGINT,
     string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations", initializedCount, sideName))
   return initializedCount
 end

@@ -55,7 +55,6 @@ local jammingStrategies = {
   end,
 }
 
-local COMMS_JAMMING_LOG_TAG = "commsJamming"
 
 -- ============================================================================
 -- Signal Level Calculation
@@ -499,7 +498,7 @@ function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   table.insert(reportLines, string.format("  Summary: %d/%d jamming processed, %d/%d aircraft RTB",
     totalJammed, totalAttempts, aircraftRTB, aircraftProcessed))
 
-  Logger.log(COMMS_JAMMING_LOG_TAG, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.COMMS_JAMMING, table.concat(reportLines, "\n"))
 end
 
 ---Initialize communications jammer contexts for the specified side

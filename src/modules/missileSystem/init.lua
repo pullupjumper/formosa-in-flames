@@ -1,4 +1,5 @@
 local Logger = require("src.utils.logger")
+local constants = require("src.core.constants")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
@@ -10,8 +11,6 @@ local Context = require("src.modules.missileSystem.context")
 
 local MissileSystem = {}
 
-local MISSILE_SYSTEM_TAG = "missileSystem"
-
 ---Command firing unit to move to firing point (FP)
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
@@ -19,7 +18,7 @@ local MISSILE_SYSTEM_TAG = "missileSystem"
 function MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
   local success, errorMsg = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
   if not success and errorMsg then
-    Logger.error(MISSILE_SYSTEM_TAG .. ": [FAIL] " .. errorMsg)
+    Logger.error(constants.TAGS.MISSILE_SYSTEM .. ": [FAIL] " .. errorMsg)
   end
   return success
 end
@@ -124,7 +123,7 @@ function MissileSystem.checkMissileSystemState(systemCtx, isAuto, sideName)
     for _, r in ipairs(allResults) do
       table.insert(lines, string.format("  [%s] %s: %s", r.tag, r.action, r.unitName))
     end
-    Logger.log(MISSILE_SYSTEM_TAG, string.format(
+    Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
       "Reload cycle completed: %d events\n%s",
       #allResults, table.concat(lines, "\n")
     ))

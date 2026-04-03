@@ -90,7 +90,7 @@ local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
     local createdUnit = GameApi.ScenEdit_AddUnit(unitDescriptor)
 
     if createdUnit and unitDescriptor.cargo then
-      if createdUnit.type == "Ship" then
+      if createdUnit.type == constants.UNIT_TYPES.SHIP then
         GameApi.ScenEdit_SetDoctrine(
           { side = createdUnit.side, guid = createdUnit.guid },
           { weapon_control_status_land = constants.WCS.HOLD }
@@ -192,9 +192,9 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
       name = "Type 075",
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = "China", type = "ship",     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     type071 = {
@@ -202,8 +202,8 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
       name = "Type 071",
       cargo = cargoList.type071,
       embarkedUnits = {
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
-        { side = "China", type = "ship",     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
     type076 = {
@@ -211,10 +211,10 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
       name = "Type 076",
       cargo = cargoList.type075,
       embarkedUnits = {
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = "China", type = "aircraft", name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
-        { side = "China", type = "ship",     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
+        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge", cargo = nil, embarkedUnits = nil },
@@ -237,8 +237,8 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
   }
 
   local unitDescriptor = {
-    side = "China",
-    type = "Ship",
+    side = constants.SIDES.ENEMY,
+    type = constants.UNIT_TYPES.SHIP,
     name = shipConfig.name,
     dbid = shipConfig.dbid,
     cargo = shipConfig.cargo,
@@ -254,7 +254,7 @@ end
 ---@param sideName string Side name ('China' | 'Taiwan')
 ---@return SBJ__ShipFormationSpec[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
-  if sideName == "China" then
+  if sideName == constants.SIDES.ENEMY then
     return {
       {
         dbid = sagDescriptor.unitList.type052d.dbid,
@@ -392,7 +392,7 @@ local function createShipFormation(formationConfig)
       longitude = position.longitude,
       heading = formationConfig.heading,
       side = formationConfig.sideName,
-      type = "Ship",
+      type = constants.UNIT_TYPES.SHIP,
       dbid = shipConfig.dbid,
       group = formationConfig.groupName,
       unitname = shipConfig.unitname,
@@ -427,12 +427,12 @@ local function createShipFormation(formationConfig)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Successfully created formation %s with %d ships",
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully created formation %s with %d ships",
     formationConfig.groupName, #createdUnits))
 
   if leader then
     leader.group.lead = leader.guid
-    Logger.log("unitGenerator", string.format("Set %s as group leader", leader.guid))
+    Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Set %s as group leader", leader.guid))
   end
 
   return true
@@ -472,7 +472,7 @@ function UnitGenerator.createSAGs(sagDescriptors, sideName)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Successfully created SAGs for %s", sideName))
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully created SAGs for %s", sideName))
   return true
 end
 
@@ -484,7 +484,7 @@ function UnitGenerator.createCSG(csgDescriptor)
     centerPoint = csgDescriptor.from.startingPoint,
     heading = csgDescriptor.from.heading,
     groupName = csgDescriptor.groupName,
-    sideName = "China",
+    sideName = constants.SIDES.ENEMY,
     shipTypes = getCSGShipConfiguration(csgDescriptor)
   }
 
@@ -505,7 +505,7 @@ function UnitGenerator.createCSG(csgDescriptor)
 
     for _, area in ipairs(referenceAreas) do
       GameApi.ScenEdit_SetReferencePoint({
-        side = "China",
+        side = constants.SIDES.ENEMY,
         area = area,
         relativeTo = csg.guid,
         bearingtype = 1
@@ -515,7 +515,7 @@ function UnitGenerator.createCSG(csgDescriptor)
     csg.course = csgDescriptor.to.area
   end
 
-  Logger.log("unitGenerator", "Successfully created CSG")
+  Logger.log(constants.TAGS.UNIT_GENERATOR, "Successfully created CSG")
   return true
 end
 
@@ -538,7 +538,7 @@ function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Successfully added deployed ships for %s", sideName))
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully added deployed ships for %s", sideName))
   return true
 end
 
@@ -547,7 +547,7 @@ end
 ---@param sideName string Side name
 ---@return boolean # Whether successful
 function UnitGenerator.addSubmarines(config, sideName)
-  if sideName ~= "China" then
+  if sideName ~= constants.SIDES.ENEMY then
     return true -- Currently only supports Chinese submarines
   end
 
@@ -564,7 +564,7 @@ function UnitGenerator.addSubmarines(config, sideName)
       count = 1,
       randomRadius = config.c.subSurface.slcm.randomRadius,
       sideName = sideName,
-      unitType = "Submarine",
+      unitType = constants.UNIT_TYPES.SUBMARINE,
       unitname = unit.name,
       autodetectable = false,
       useRandomSuffix = false
@@ -594,7 +594,7 @@ function UnitGenerator.addSubmarines(config, sideName)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Successfully added submarines for %s", sideName))
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully added submarines for %s", sideName))
   return true
 end
 
@@ -632,7 +632,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Successfully added aircraft"))
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully added aircraft"))
   return true
 end
 
@@ -690,14 +690,14 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
     end
   end
 
-  Logger.log("unitGenerator", "Successfully added landing ships")
+  Logger.log(constants.TAGS.UNIT_GENERATOR, "Successfully added landing ships")
   return true
 end
 
 ---Remove landing ships
 ---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips()
-  local filteredUnits = GameApi.VP_GetSide({ side = "China" }):unitsBy(constants.UNIT_TYPES.SHIP)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.SHIP)
 
   if not filteredUnits then
     return false
@@ -722,7 +722,7 @@ function UnitGenerator.removeLandingShips()
     if unit then
       for _, dbid in ipairs(landingShipDBIDs) do
         if unit.dbid == dbid then
-          GameApi.ScenEdit_DeleteUnit({ side = "China", guid = unit.guid })
+          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.ENEMY, guid = unit.guid })
           removedCount = removedCount + 1
           break
         end
@@ -730,7 +730,7 @@ function UnitGenerator.removeLandingShips()
     end
   end
 
-  Logger.log("unitGenerator", string.format("Removed %d landing ships", removedCount))
+  Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Removed %d landing ships", removedCount))
   return true
 end
 
@@ -739,10 +739,10 @@ end
 ---@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
 ---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
-  local filteredUnits = GameApi.VP_GetSide({ side = "Taiwan" }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
-    Logger.log("unitGenerator", "No Taiwan aircraft units found for initialization")
+    Logger.log(constants.TAGS.UNIT_GENERATOR, "No Taiwan aircraft units found for initialization")
     return true -- Not an error condition, just no units to initialize
   end
 
@@ -754,7 +754,7 @@ function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
   for _, u in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if actualUnit and actualUnit.type == "Aircraft" and actualUnit.dbid == constants.PLATFORMS.E2K then
+    if actualUnit and actualUnit.type == constants.UNIT_TYPES.AIRCRAFT and actualUnit.dbid == constants.PLATFORMS.E2K then
       context.AEW[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
@@ -764,7 +764,7 @@ function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
         outofcomms = aircraftDefaults.outOfComms,
       }
       aewCount = aewCount + 1
-    elseif actualUnit and actualUnit.type == "Aircraft" then
+    elseif actualUnit and actualUnit.type == constants.UNIT_TYPES.AIRCRAFT then
       context.AC[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
@@ -777,7 +777,8 @@ function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
     end
   end
 
-  Logger.log("unitGenerator", string.format("Initialized aircraft contexts: %d AEW, %d AC", aewCount, acCount))
+  Logger.log(constants.TAGS.UNIT_GENERATOR,
+    string.format("Initialized aircraft contexts: %d AEW, %d AC", aewCount, acCount))
   return true
 end
 

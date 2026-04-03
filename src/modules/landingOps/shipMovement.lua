@@ -60,7 +60,6 @@ local SHIP_ROW_LAYOUT = {
   { key = "type073a",         from = "type071InLSTArea", distanceKey = "verticalDistance" },
 }
 
-local SHIP_MOVEMENT_TAG = "shipMovement"
 
 -- ============================================================================
 -- Ship Position Utilities
@@ -365,7 +364,7 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   end
 
   if #logEntries > 0 then
-    Logger.log(SHIP_MOVEMENT_TAG, string.format(
+    Logger.log(constants.TAGS.SHIP_MOVEMENT, string.format(
       "[%s] Move to staging area: %d ships moved\n%s",
       operation.name, movedCount, table.concat(logEntries, "\n")
     ))

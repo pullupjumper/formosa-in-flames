@@ -35,7 +35,7 @@ function IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
     disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "radar")
     disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "sam")
     iadsContext.c2[c2.guid] = nil
-    Logger.log("integratedAirDefenseSystem", c2.name .. "'s C2 is destroyed")
+    Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s C2 is destroyed")
   end
 
   -- Check Taiwan ROCC nodes
@@ -43,14 +43,14 @@ function IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
     disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "radar")
     disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "sam")
     iadsContext.rocc[c2.guid] = nil
-    Logger.log("integratedAirDefenseSystem", c2.name .. "'s ROCC is destroyed")
+    Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s ROCC is destroyed")
   end
 
   -- Check Taiwan TAAOC nodes
   if iadsContext.taaoc and iadsContext.taaoc[c2.guid] then
     disableUnitsUnderC2Node(iadsContext.taaoc[c2.guid], "sam")
     iadsContext.taaoc[c2.guid] = nil
-    Logger.log("integratedAirDefenseSystem", c2.name .. "'s TAAOC is destroyed")
+    Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s TAAOC is destroyed")
   end
 end
 
@@ -64,7 +64,7 @@ function IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeCon
     for _, area in pairs(ctx.areas) do
       if destroyedUnit:inArea(area) and c2TypeContext[ctx.guid] then
         c2TypeContext[ctx.guid][type][destroyedUnit.guid] = nil
-        Logger.log("integratedAirDefenseSystem", destroyedUnit.name .. "'s " .. type .. " is destroyed")
+        Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, destroyedUnit.name .. "'s " .. type .. " is destroyed")
       end
     end
   end
@@ -125,7 +125,7 @@ function IntegratedAirDefenseSystem.activateNearestRadar(config, sideUnits, dest
   -- Activate the nearest radar found
   if temp.unit then
     GameApi.ScenEdit_SetEMCON("Unit", temp.unit.guid, "Radar=Active")
-    Logger.log("integratedAirDefenseSystem", tostring(temp.unit.name) .. "'s radar is activated.")
+    Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, tostring(temp.unit.name) .. "'s radar is activated.")
   end
 end
 
@@ -151,7 +151,7 @@ function IntegratedAirDefenseSystem.addC2Facilities(iadsConfig)
     end
   end
 
-  Logger.log("integratedAirDefenseSystem", "Successfully added C2 facilities")
+  Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, "Successfully added C2 facilities")
   return true
 end
 
@@ -240,7 +240,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
     end
   end
 
-  Logger.log("integratedAirDefenseSystem", "Successfully initialized C2 facilities")
+  Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, "Successfully initialized C2 facilities")
   return true
 end
 
@@ -370,7 +370,7 @@ function IntegratedAirDefenseSystem.removeC2Facilities(iadsConfig)
     end
   end
 
-  Logger.log("integratedAirDefenseSystem", string.format("Removed %d C2 facilities", removedCount))
+  Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, string.format("Removed %d C2 facilities", removedCount))
   return true
 end
 

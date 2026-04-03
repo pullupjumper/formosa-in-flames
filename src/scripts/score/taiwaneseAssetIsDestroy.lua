@@ -30,7 +30,7 @@ if unit then
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
-      Logger.log("score", "An " .. text .. " has been destoryed.")
+      Logger.log(constants.TAGS.SCORE, "An " .. text .. " has been destoryed.")
     elseif unit.dbid == constants.PLATFORMS.FPS117 or
         unit.dbid == constants.PLATFORMS.TPS43F or
         unit.dbid == constants.PLATFORMS.HR3000 or

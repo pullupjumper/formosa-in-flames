@@ -10,7 +10,6 @@ local AmphibiousAssault = {}
 -- Enumerations and Constants
 -- ============================================================================
 
-local AMPHIB_ASSAULT_TAG = "amphibiousAssault"
 
 ---@type table<number, boolean>
 local FERRY_OR_LST_DBIDS = {
@@ -223,7 +222,7 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   local success, logEntries = setZoneMissionStartTimes(zone, currentTime)
 
   if not success then
-    Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
       "[%s] Set landing mission start times: failed\n%s",
       zone.name, table.concat(logEntries, "\n")
     ))
@@ -231,7 +230,7 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
       "[%s] Set landing mission start times: %d missions configured\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
@@ -276,7 +275,7 @@ function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
       "[%s] Set courses for LSTs: %d entries\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
@@ -321,7 +320,7 @@ function AmphibiousAssault.launchACV(params)
       local tag, msg = spawnSingleACV(allocation.acvType, ACVlocations[index], destination)
       table.insert(logEntries, string.format("  [%s] %s", tag, msg))
       if tag == "FAIL" then
-        Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+        Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
           "Launch ACV from %s: failed at #%d\n%s",
           ship.name, index, table.concat(logEntries, "\n")
         ))
@@ -332,7 +331,7 @@ function AmphibiousAssault.launchACV(params)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_ASSAULT_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
       "Launch ACV from %s: %d vehicles deployed\n%s",
       ship.name, count, table.concat(logEntries, "\n")
     ))

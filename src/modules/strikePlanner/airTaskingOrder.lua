@@ -7,7 +7,6 @@ local constants = require("src.core.constants")
 
 local AirTaskingOrder = {}
 
-local AIR_LOG_TAG = "air"
 local ADVANCE_SECONDS = 300
 local LOADOUT_ROLES = { "striker", "escort", "wildWeasel", "jammer" }
 local ALL_ROLES = { "tanker", "striker", "escort", "wildWeasel", "jammer" }
@@ -469,7 +468,7 @@ function AirTaskingOrder.airStrike(config, saveData)
   end
 
   if #infoLines > 0 then
-    Logger.log(AIR_LOG_TAG, string.format(
+    Logger.log(constants.TAGS.AIR, string.format(
       "Air tasking order: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
   end
 

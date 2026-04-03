@@ -13,7 +13,6 @@ local MISSION_TYPE = {
   CARGO = "Cargo",
 }
 
-local AMPHIB_LOGISTICS_TAG = "amphibiousLogistics"
 
 local CARGO_ENTRY = {
   TYPE = 3,
@@ -439,7 +438,7 @@ function AmphibiousLogistics.createCargoMissions(zone)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
       "[%s] Created cargo missions: %d entries\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
@@ -465,7 +464,7 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
       "[%s] Transfer and assign: %d entries\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))
@@ -498,7 +497,7 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
       "Transfer and assign transport aircraft: %d entries\n%s",
       #logEntries, table.concat(logEntries, "\n")
     ))
@@ -531,7 +530,7 @@ function AmphibiousLogistics.loadCargo(base, unitCtx, sideName)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
       "Load cargo onto %s: %d members\n%s",
       base.name or base.guid, #group, table.concat(logEntries, "\n")
     ))
@@ -561,7 +560,7 @@ function AmphibiousLogistics.retransferCargos(zone, units)
   end
 
   if #logEntries > 0 then
-    Logger.log(AMPHIB_LOGISTICS_TAG, string.format(
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
       "[%s] Retransfer cargos: %d entries\n%s",
       zone.name, #logEntries, table.concat(logEntries, "\n")
     ))

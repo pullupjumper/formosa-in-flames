@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
+local constants = require("src.core.constants")
 
 local AttackManager = {}
 
@@ -47,13 +48,13 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 
   -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
-    Logger.log("attackManager", "No weapons available, no need to fire more")
+    Logger.log(constants.TAGS.ATTACK_MANAGER, "No weapons available, no need to fire more")
     return false
   end
 
   -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
-    Logger.log("attackManager", "Maximum weapon allocation reached, no need to fire more")
+    Logger.log(constants.TAGS.ATTACK_MANAGER, "Maximum weapon allocation reached, no need to fire more")
     return false
   end
 
@@ -61,7 +62,7 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
-    Logger.log("attackManager", "Target already has sufficient weapons allocated, no need to fire more")
+    Logger.log(constants.TAGS.ATTACK_MANAGER, "Target already has sufficient weapons allocated, no need to fire more")
     return false -- Target already has sufficient weapons allocated, no need to fire more
   end
 
@@ -251,7 +252,7 @@ function AttackManager.attackContacts(opts)
   local qty = opts.qty or 1
   local firingUnits = opts.firingUnits
   local weaponDBID = opts.weaponDBID
-  local sideName = opts.sideName or "China"
+  local sideName = opts.sideName or constants.SIDES.ENEMY
 
   for _, contact in ipairs(contacts) do
     result = AttackManager.attackContact(contact, qty, firingUnits, result.firingUnitIdx, result.shooterIdx, weaponDBID,

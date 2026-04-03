@@ -7,8 +7,6 @@ local constants = require("src.core.constants")
 
 local Recon = {}
 
-local RECON_LOG_TAG = "recon"
-local DYNAMIC_OPS_LOG_TAG = "dynamicOperations"
 
 local ENTRY_TYPE = {
   UAV = "UAV",
@@ -303,7 +301,7 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
     table.insert(infoLines, "  [RESULT] No operations to schedule")
   end
 
-  Logger.log(DYNAMIC_OPS_LOG_TAG, string.format(
+  Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, string.format(
     "Dynamic recon scheduling for %s (%s)\n%s", entry.type, entry.endTime, table.concat(infoLines, "\n")))
 end
 
@@ -607,7 +605,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
   end
 
   if #infoLines > 0 then
-    Logger.log(RECON_LOG_TAG, string.format(
+    Logger.log(constants.TAGS.RECON, string.format(
       "Recon queue processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
   end
 
@@ -636,14 +634,14 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   local queueEntry = findQueueEntryByUnitGUID(reconContext.queue, UAV.guid)
   if not queueEntry then
-    Logger.log(RECON_LOG_TAG,
+    Logger.log(constants.TAGS.RECON,
       string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.", UAV.name,
         UAV.guid))
     return false
   end
 
   assignTrackingMission(queueEntry, target.guid)
-  Logger.log(RECON_LOG_TAG, string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
+  Logger.log(constants.TAGS.RECON, string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
   return true
 end
 

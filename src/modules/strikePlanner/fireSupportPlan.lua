@@ -6,7 +6,6 @@ local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 local FireSupportPlan = {}
-local GROUND_LOG_TAG = "ground"
 
 -- ============================================================================
 -- Firing Unit Readiness
@@ -218,7 +217,7 @@ function FireSupportPlan.strike(saveData)
   end
 
   if #infoLines > 0 then
-    Logger.log(GROUND_LOG_TAG, string.format(
+    Logger.log(constants.TAGS.GROUND, string.format(
       "Fire support plan: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
   end
 end

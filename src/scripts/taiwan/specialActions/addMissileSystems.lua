@@ -2,6 +2,7 @@ local gKH = require("src.core.gKH_State_Standalone")
 local MissileSystem = require("src.modules.missileSystem.init")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
+local constants = require("src.core.constants")
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
 
@@ -10,5 +11,5 @@ if not saveData then
   return
 end
 
-MissileSystem.addMissileSystems(config.t.ground, "Taiwan")
+MissileSystem.addMissileSystems(config.t.ground, constants.SIDES.PLAYER)
 MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)

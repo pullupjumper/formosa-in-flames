@@ -253,7 +253,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   end
 
   saveData.c.targetlist = targetlist
-  Logger.log("targetingProcess", string.format("Scanned %d targets for %s", #targetlist, sideName))
+  Logger.log(constants.TAGS.TARGETING_PROCESS, string.format("Scanned %d targets for %s", #targetlist, sideName))
 end
 
 -- ============================================================================
