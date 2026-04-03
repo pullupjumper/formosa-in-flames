@@ -3,16 +3,12 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.config")
-local Recon = require("src.modules.strikePlanner.recon")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local AttackManager = require("src.modules.attackManager")
-local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
-local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
-local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
-local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
 local constants = require("src.core.constants")
 ---@type SBJ__SaveData|nil
 local saveData = gKH.State.LoadTableFromKey("SaveData")
-local contacts = GameApi.ScenEdit_GetContacts("China")
+local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
 
 if not contacts then
   Logger.error("contacts is nil")
@@ -25,15 +21,16 @@ if saveData == nil then
 end
 
 -- Dynamic operations plan - unified handling of reconnaissance scheduling and various strike methods
-if saveData.c.dynamicOperations and saveData.c.dynamicOperations.enabled then
+if saveData.c.dynamicOperations.enabled then
   -- Execute ground fire support operations
-  DynamicFireSupportPlan.execute(config, saveData, contacts)
+  StrikePlanner.executeDynamicFireSupportPlan(config, saveData, contacts)
   -- Execute air combat missions
-  DynamicATOInsertion.process(config, saveData, contacts)
+  StrikePlanner.processDynamicATO(config, saveData, contacts)
 end
 
 if saveData.c.recon.enabled then
-  Recon.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule, saveData.c.surface.lacm)
+  StrikePlanner.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule,
+    saveData.c.surface.lacm)
 end
 
 if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
@@ -80,11 +77,11 @@ if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.
 end
 
 if saveData.c.ground.enabled then
-  FireSupportPlan.strike(saveData)
+  StrikePlanner.strikeGroundTargets(saveData)
 end
 
 if saveData.c.air.enabled then
-  AirTaskingOrder.airStrike(config, saveData)
+  StrikePlanner.executeAirStrike(config, saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
