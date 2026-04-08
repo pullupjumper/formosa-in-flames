@@ -140,10 +140,11 @@ end
 
 ---Initialize event triggers and zones for missile system operational areas
 ---@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
+---@param operationalAreasToRemove SBJ__OperationalArea[] Array of operational areas to remove triggers for
 ---@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
 ---@param sideName string Side name for zone/trigger ownership
-function MissileSystem.initEventTriggers(operationalAreas, positionTypes, sideName)
-  Triggers.initEventTriggers(operationalAreas, positionTypes, sideName)
+function MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
+  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
 end
 
 ---Add missile system units to the game

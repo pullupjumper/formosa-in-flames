@@ -1,156 +1,157 @@
 local constants = {}
 
 constants.AREAS = {
-  RELOAD_POINT_AJL = { "RP-193750", "RP-193751", "RP-193752", "RP-193753" },
-  HIDE_AREA_AJL = { "RP-193762", "RP-193763", "RP-193764", "RP-193765" },
-  FIRE_POINT_AJL_1 = { "RP-193754", "RP-193755", "RP-193756", "RP-193757" },
-  FIRE_POINT_AJL_2 = { "RP-193758", "RP-193759", "RP-193760", "RP-193761" },
-  AMMO_HOLDING_AREA_AJL = { "RP-193766", "RP-193767", "RP-193768", "RP-193769" },
-  MASK_AJL = { "RP-193770", "RP-193771", "RP-193772", "RP-193773" },
-  RELOAD_POINT_AKB = { "RP-193774", "RP-193775", "RP-193776", "RP-193777" },
-  HIDE_AREA_AKB = { "RP-193786", "RP-193787", "RP-193788", "RP-193789" },
-  FIRE_POINT_AKB_1 = { "RP-193778", "RP-193779", "RP-193780", "RP-193781" },
-  FIRE_POINT_AKB_2 = { "RP-193782", "RP-193783", "RP-193784", "RP-193785" },
-  AMMO_HOLDING_AREA_AKB = { "RP-193790", "RP-193791", "RP-193792", "RP-193793" },
-  MASK_AKB = { "RP-193794", "RP-193795", "RP-193796", "RP-193797" },
-  RELOAD_POINT_BKC = { "RP-193510", "RP-193511", "RP-193512", "RP-193513" },
-  HIDE_AREA_BKC = { "RP-193522", "RP-193523", "RP-193524", "RP-193525" },
-  FIRE_POINT_BKC_1 = { "RP-193514", "RP-193515", "RP-193516", "RP-193517" },
-  FIRE_POINT_BKC_2 = { "RP-193518", "RP-193519", "RP-193520", "RP-193521" },
-  AMMO_HOLDING_AREA_BKC = { "RP-193526", "RP-193527", "RP-193528", "RP-193529" },
-  MASK_BKC = { "RP-193530", "RP-193531", "RP-193532", "RP-193533" },
-  RELOAD_POINT_BWW = { "RP-193702", "RP-193703", "RP-193704", "RP-193705" },
-  HIDE_AREA_BWW = { "RP-193714", "RP-193715", "RP-193716", "RP-193717" },
-  FIRE_POINT_BWW_1 = { "RP-193706", "RP-193707", "RP-193708", "RP-193709" },
-  FIRE_POINT_BWW_2 = { "RP-193710", "RP-193711", "RP-193712", "RP-193713" },
-  AMMO_HOLDING_AREA_BWW = { "RP-193718", "RP-193719", "RP-193720", "RP-193721" },
-  MASK_BWW = { "RP-193722", "RP-193723", "RP-193724", "RP-193725" },
-  RELOAD_POINT_DJN = { "RP-193582", "RP-193583", "RP-193584", "RP-193585" },
-  HIDE_AREA_DJN = { "RP-193594", "RP-193595", "RP-193596", "RP-193597" },
-  FIRE_POINT_DJN_1 = { "RP-193586", "RP-193587", "RP-193588", "RP-193589" },
-  FIRE_POINT_DJN_2 = { "RP-193590", "RP-193591", "RP-193592", "RP-193593" },
-  AMMO_HOLDING_AREA_DJN = { "RP-193598", "RP-193599", "RP-193600", "RP-193601" },
-  MASK_DJN = { "RP-193602", "RP-193603", "RP-193604", "RP-193605" },
-  RELOAD_POINT_DMF = { "RP-193318", "RP-193319", "RP-193320", "RP-193321" },
-  HIDE_AREA_DMF = { "RP-193330", "RP-193331", "RP-193332", "RP-193333" },
-  FIRE_POINT_DMF_1 = { "RP-193322", "RP-193323", "RP-193324", "RP-193325" },
-  FIRE_POINT_DMF_2 = { "RP-193326", "RP-193327", "RP-193328", "RP-193329" },
-  AMMO_HOLDING_AREA_DMF = { "RP-193334", "RP-193335", "RP-193336", "RP-193337" },
-  MASK_DMF = { "RP-193338", "RP-193339", "RP-193340", "RP-193341" },
-  RELOAD_POINT_GJI = { "RP-193342", "RP-193343", "RP-193344", "RP-193345" },
-  HIDE_AREA_GJI = { "RP-193354", "RP-193355", "RP-193356", "RP-193357" },
-  FIRE_POINT_GJI_1 = { "RP-193346", "RP-193347", "RP-193348", "RP-193349" },
-  FIRE_POINT_GJI_2 = { "RP-193350", "RP-193351", "RP-193352", "RP-193353" },
-  AMMO_HOLDING_AREA_GJI = { "RP-193358", "RP-193359", "RP-193360", "RP-193361" },
-  MASK_GJI = { "RP-193362", "RP-193363", "RP-193364", "RP-193365" },
-  RELOAD_POINT_HVB = { "RP-193558", "RP-193559", "RP-193560", "RP-193561" },
-  HIDE_AREA_HVB = { "RP-193570", "RP-193571", "RP-193572", "RP-193573" },
-  FIRE_POINT_HVB_1 = { "RP-193562", "RP-193563", "RP-193564", "RP-193565" },
-  FIRE_POINT_HVB_2 = { "RP-193566", "RP-193567", "RP-193568", "RP-193569" },
-  AMMO_HOLDING_AREA_HVB = { "RP-193574", "RP-193575", "RP-193576", "RP-193577" },
-  MASK_HVB = { "RP-193578", "RP-193579", "RP-193580", "RP-193581" },
-  RELOAD_POINT_ILM = { "RP-193294", "RP-193295", "RP-193296", "RP-193297" },
-  HIDE_AREA_ILM = { "RP-193306", "RP-193307", "RP-193308", "RP-193309" },
-  FIRE_POINT_ILM_1 = { "RP-193298", "RP-193299", "RP-193300", "RP-193301" },
-  FIRE_POINT_ILM_2 = { "RP-193302", "RP-193303", "RP-193304", "RP-193305" },
-  AMMO_HOLDING_AREA_ILM = { "RP-193310", "RP-193311", "RP-193312", "RP-193313" },
-  MASK_ILM = { "RP-193314", "RP-193315", "RP-193316", "RP-193317" },
-  RELOAD_POINT_KHL = { "RP-193630", "RP-193631", "RP-193632", "RP-193633" },
-  HIDE_AREA_KHL = { "RP-193642", "RP-193643", "RP-193644", "RP-193645" },
-  FIRE_POINT_KHL_1 = { "RP-193634", "RP-193635", "RP-193636", "RP-193637" },
-  FIRE_POINT_KHL_2 = { "RP-193638", "RP-193639", "RP-193640", "RP-193641" },
-  AMMO_HOLDING_AREA_KHL = { "RP-193646", "RP-193647", "RP-193648", "RP-193649" },
-  MASK_KHL = { "RP-193650", "RP-193651", "RP-193652", "RP-193653" },
-  RELOAD_POINT_KNB = { "RP-193390", "RP-193391", "RP-193392", "RP-193393" },
-  HIDE_AREA_KNB = { "RP-193402", "RP-193403", "RP-193404", "RP-193405" },
-  FIRE_POINT_KNB_1 = { "RP-193394", "RP-193395", "RP-193396", "RP-193397" },
-  FIRE_POINT_KNB_2 = { "RP-193398", "RP-193399", "RP-193400", "RP-193401" },
-  AMMO_HOLDING_AREA_KNB = { "RP-193406", "RP-193407", "RP-193408", "RP-193409" },
-  MASK_KNB = { "RP-193410", "RP-193411", "RP-193412", "RP-193413" },
-  RELOAD_POINT_KTU = { "RP-193246", "RP-193247", "RP-193248", "RP-193249" },
-  HIDE_AREA_KTU = { "RP-193258", "RP-193259", "RP-193260", "RP-193261" },
-  FIRE_POINT_KTU_1 = { "RP-193250", "RP-193251", "RP-193252", "RP-193253" },
-  FIRE_POINT_KTU_2 = { "RP-193254", "RP-193255", "RP-193256", "RP-193257" },
-  AMMO_HOLDING_AREA_KTU = { "RP-193262", "RP-193263", "RP-193264", "RP-193265" },
-  MASK_KTU = { "RP-193266", "RP-193267", "RP-193268", "RP-193269" },
-  RELOAD_POINT_LYR = { "RP-193366", "RP-193367", "RP-193368", "RP-193369" },
-  HIDE_AREA_LYR = { "RP-193378", "RP-193379", "RP-193380", "RP-193381" },
-  FIRE_POINT_LYR_1 = { "RP-193370", "RP-193371", "RP-193372", "RP-193373" },
-  FIRE_POINT_LYR_2 = { "RP-193374", "RP-193375", "RP-193376", "RP-193377" },
-  AMMO_HOLDING_AREA_LYR = { "RP-193382", "RP-193383", "RP-193384", "RP-193385" },
-  MASK_LYR = { "RP-193386", "RP-193387", "RP-193388", "RP-193389" },
-  RELOAD_POINT_MVW = { "RP-193198", "RP-193199", "RP-193200", "RP-193201" },
-  HIDE_AREA_MVW = { "RP-193210", "RP-193211", "RP-193212", "RP-193213" },
-  FIRE_POINT_MVW_1 = { "RP-193202", "RP-193203", "RP-193204", "RP-193205" },
-  FIRE_POINT_MVW_2 = { "RP-193206", "RP-193207", "RP-193208", "RP-193209" },
-  AMMO_HOLDING_AREA_MVW = { "RP-193214", "RP-193215", "RP-193216", "RP-193217" },
-  MASK_MVW = { "RP-193218", "RP-193219", "RP-193220", "RP-193221" },
-  RELOAD_POINT_NJI = { "RP-193726", "RP-193727", "RP-193728", "RP-193729" },
-  HIDE_AREA_NJI = { "RP-193738", "RP-193739", "RP-193740", "RP-193741" },
-  FIRE_POINT_NJI_1 = { "RP-193730", "RP-193731", "RP-193732", "RP-193733" },
-  FIRE_POINT_NJI_2 = { "RP-193734", "RP-193735", "RP-193736", "RP-193737" },
-  AMMO_HOLDING_AREA_NJI = { "RP-193742", "RP-193743", "RP-193744", "RP-193745" },
-  MASK_NJI = { "RP-193746", "RP-193747", "RP-193748", "RP-193749" },
-  RELOAD_POINT_QMT = { "RP-193414", "RP-193415", "RP-193416", "RP-193417" },
-  HIDE_AREA_QMT = { "RP-193426", "RP-193427", "RP-193428", "RP-193429" },
-  FIRE_POINT_QMT_1 = { "RP-193418", "RP-193419", "RP-193420", "RP-193421" },
-  FIRE_POINT_QMT_2 = { "RP-193422", "RP-193423", "RP-193424", "RP-193425" },
-  AMMO_HOLDING_AREA_QMT = { "RP-193430", "RP-193431", "RP-193432", "RP-193433" },
-  MASK_QMT = { "RP-193434", "RP-193435", "RP-193436", "RP-193437" },
-  RELOAD_POINT_QRM = { "RP-193462", "RP-193463", "RP-193464", "RP-193465" },
-  HIDE_AREA_QRM = { "RP-193474", "RP-193475", "RP-193476", "RP-193477" },
-  FIRE_POINT_QRM_1 = { "RP-193466", "RP-193467", "RP-193468", "RP-193469" },
-  FIRE_POINT_QRM_2 = { "RP-193470", "RP-193471", "RP-193472", "RP-193473" },
-  AMMO_HOLDING_AREA_QRM = { "RP-193478", "RP-193479", "RP-193480", "RP-193481" },
-  MASK_QRM = { "RP-193482", "RP-193483", "RP-193484", "RP-193485" },
-  RELOAD_POINT_RKB = { "RP-193486", "RP-193487", "RP-193488", "RP-193489" },
-  HIDE_AREA_RKB = { "RP-193498", "RP-193499", "RP-193500", "RP-193501" },
-  FIRE_POINT_RKB_1 = { "RP-193490", "RP-193491", "RP-193492", "RP-193493" },
-  FIRE_POINT_RKB_2 = { "RP-193494", "RP-193495", "RP-193496", "RP-193497" },
-  AMMO_HOLDING_AREA_RKB = { "RP-193502", "RP-193503", "RP-193504", "RP-193505" },
-  MASK_RKB = { "RP-193506", "RP-193507", "RP-193508", "RP-193509" },
-  RELOAD_POINT_SDG = { "RP-193654", "RP-193655", "RP-193656", "RP-193657" },
-  HIDE_AREA_SDG = { "RP-193666", "RP-193667", "RP-193668", "RP-193669" },
-  FIRE_POINT_SDG_1 = { "RP-193658", "RP-193659", "RP-193660", "RP-193661" },
-  FIRE_POINT_SDG_2 = { "RP-193662", "RP-193663", "RP-193664", "RP-193665" },
-  AMMO_HOLDING_AREA_SDG = { "RP-193670", "RP-193671", "RP-193672", "RP-193673" },
-  MASK_SDG = { "RP-193674", "RP-193675", "RP-193676", "RP-193677" },
-  RELOAD_POINT_TBG = { "RP-193534", "RP-193535", "RP-193536", "RP-193537" },
-  HIDE_AREA_TBG = { "RP-193546", "RP-193547", "RP-193548", "RP-193549" },
-  FIRE_POINT_TBG_1 = { "RP-193538", "RP-193539", "RP-193540", "RP-193541" },
-  FIRE_POINT_TBG_2 = { "RP-193542", "RP-193543", "RP-193544", "RP-193545" },
-  AMMO_HOLDING_AREA_TBG = { "RP-193550", "RP-193551", "RP-193552", "RP-193553" },
-  MASK_TBG = { "RP-193554", "RP-193555", "RP-193556", "RP-193557" },
-  RELOAD_POINT_VKU = { "RP-193606", "RP-193607", "RP-193608", "RP-193609" },
-  HIDE_AREA_VKU = { "RP-193618", "RP-193619", "RP-193620", "RP-193621" },
-  FIRE_POINT_VKU_1 = { "RP-193610", "RP-193611", "RP-193612", "RP-193613" },
-  FIRE_POINT_VKU_2 = { "RP-193614", "RP-193615", "RP-193616", "RP-193617" },
-  AMMO_HOLDING_AREA_VKU = { "RP-193622", "RP-193623", "RP-193624", "RP-193625" },
-  MASK_VKU = { "RP-193626", "RP-193627", "RP-193628", "RP-193629" },
-  RELOAD_POINT_VNB = { "RP-193222", "RP-193223", "RP-193224", "RP-193225" },
-  HIDE_AREA_VNB = { "RP-193234", "RP-193235", "RP-193236", "RP-193237" },
-  FIRE_POINT_VNB_1 = { "RP-193226", "RP-193227", "RP-193228", "RP-193229" },
-  FIRE_POINT_VNB_2 = { "RP-193230", "RP-193231", "RP-193232", "RP-193233" },
-  AMMO_HOLDING_AREA_VNB = { "RP-193238", "RP-193239", "RP-193240", "RP-193241" },
-  MASK_VNB = { "RP-193242", "RP-193243", "RP-193244", "RP-193245" },
-  RELOAD_POINT_XIX = { "RP-193270", "RP-193271", "RP-193272", "RP-193273" },
-  HIDE_AREA_XIX = { "RP-193282", "RP-193283", "RP-193284", "RP-193285" },
-  FIRE_POINT_XIX_1 = { "RP-193274", "RP-193275", "RP-193276", "RP-193277" },
-  FIRE_POINT_XIX_2 = { "RP-193278", "RP-193279", "RP-193280", "RP-193281" },
-  AMMO_HOLDING_AREA_XIX = { "RP-193286", "RP-193287", "RP-193288", "RP-193289" },
-  MASK_XIX = { "RP-193290", "RP-193291", "RP-193292", "RP-193293" },
-  RELOAD_POINT_YQS = { "RP-193438", "RP-193439", "RP-193440", "RP-193441" },
-  HIDE_AREA_YQS = { "RP-193450", "RP-193451", "RP-193452", "RP-193453" },
-  FIRE_POINT_YQS_1 = { "RP-193442", "RP-193443", "RP-193444", "RP-193445" },
-  FIRE_POINT_YQS_2 = { "RP-193446", "RP-193447", "RP-193448", "RP-193449" },
-  AMMO_HOLDING_AREA_YQS = { "RP-193454", "RP-193455", "RP-193456", "RP-193457" },
-  MASK_YQS = { "RP-193458", "RP-193459", "RP-193460", "RP-193461" },
-  RELOAD_POINT_ZTA = { "RP-193678", "RP-193679", "RP-193680", "RP-193681" },
-  HIDE_AREA_ZTA = { "RP-193690", "RP-193691", "RP-193692", "RP-193693" },
-  FIRE_POINT_ZTA_1 = { "RP-193682", "RP-193683", "RP-193684", "RP-193685" },
-  FIRE_POINT_ZTA_2 = { "RP-193686", "RP-193687", "RP-193688", "RP-193689" },
-  AMMO_HOLDING_AREA_ZTA = { "RP-193694", "RP-193695", "RP-193696", "RP-193697" },
-  MASK_ZTA = { "RP-193698", "RP-193699", "RP-193700", "RP-193701" },
+  -- Taiwan
+  RELOAD_POINT_AMG = { "RP-197738", "RP-197739", "RP-197740", "RP-197741" },
+  HIDE_AREA_AMG = { "RP-197750", "RP-197751", "RP-197752", "RP-197753" },
+  FIRE_POINT_AMG_1 = { "RP-197742", "RP-197743", "RP-197744", "RP-197745" },
+  FIRE_POINT_AMG_2 = { "RP-197746", "RP-197747", "RP-197748", "RP-197749" },
+  AMMO_HOLDING_AREA_AMG = { "RP-197754", "RP-197755", "RP-197756", "RP-197757" },
+  MASK_AMG = { "RP-197758", "RP-197759", "RP-197760", "RP-197761" },
+  RELOAD_POINT_BPM = { "RP-197954", "RP-197955", "RP-197956", "RP-197957" },
+  HIDE_AREA_BPM = { "RP-197966", "RP-197967", "RP-197968", "RP-197969" },
+  FIRE_POINT_BPM_1 = { "RP-197958", "RP-197959", "RP-197960", "RP-197961" },
+  FIRE_POINT_BPM_2 = { "RP-197962", "RP-197963", "RP-197964", "RP-197965" },
+  AMMO_HOLDING_AREA_BPM = { "RP-197970", "RP-197971", "RP-197972", "RP-197973" },
+  MASK_BPM = { "RP-197974", "RP-197975", "RP-197976", "RP-197977" },
+  RELOAD_POINT_CSC = { "RP-197426", "RP-197427", "RP-197428", "RP-197429" },
+  HIDE_AREA_CSC = { "RP-197438", "RP-197439", "RP-197440", "RP-197441" },
+  FIRE_POINT_CSC_1 = { "RP-197430", "RP-197431", "RP-197432", "RP-197433" },
+  FIRE_POINT_CSC_2 = { "RP-197434", "RP-197435", "RP-197436", "RP-197437" },
+  AMMO_HOLDING_AREA_CSC = { "RP-197442", "RP-197443", "RP-197444", "RP-197445" },
+  MASK_CSC = { "RP-197446", "RP-197447", "RP-197448", "RP-197449" },
+  RELOAD_POINT_DJA = { "RP-197474", "RP-197475", "RP-197476", "RP-197477" },
+  HIDE_AREA_DJA = { "RP-197486", "RP-197487", "RP-197488", "RP-197489" },
+  FIRE_POINT_DJA_1 = { "RP-197478", "RP-197479", "RP-197480", "RP-197481" },
+  FIRE_POINT_DJA_2 = { "RP-197482", "RP-197483", "RP-197484", "RP-197485" },
+  AMMO_HOLDING_AREA_DJA = { "RP-197490", "RP-197491", "RP-197492", "RP-197493" },
+  MASK_DJA = { "RP-197494", "RP-197495", "RP-197496", "RP-197497" },
+  RELOAD_POINT_DLF = { "RP-197834", "RP-197835", "RP-197836", "RP-197837" },
+  HIDE_AREA_DLF = { "RP-197846", "RP-197847", "RP-197848", "RP-197849" },
+  FIRE_POINT_DLF_1 = { "RP-197838", "RP-197839", "RP-197840", "RP-197841" },
+  FIRE_POINT_DLF_2 = { "RP-197842", "RP-197843", "RP-197844", "RP-197845" },
+  AMMO_HOLDING_AREA_DLF = { "RP-197850", "RP-197851", "RP-197852", "RP-197853" },
+  MASK_DLF = { "RP-197854", "RP-197855", "RP-197856", "RP-197857" },
+  RELOAD_POINT_FMK = { "RP-197690", "RP-197691", "RP-197692", "RP-197693" },
+  HIDE_AREA_FMK = { "RP-197702", "RP-197703", "RP-197704", "RP-197705" },
+  FIRE_POINT_FMK_1 = { "RP-197694", "RP-197695", "RP-197696", "RP-197697" },
+  FIRE_POINT_FMK_2 = { "RP-197698", "RP-197699", "RP-197700", "RP-197701" },
+  AMMO_HOLDING_AREA_FMK = { "RP-197706", "RP-197707", "RP-197708", "RP-197709" },
+  MASK_FMK = { "RP-197710", "RP-197711", "RP-197712", "RP-197713" },
+  RELOAD_POINT_FZM = { "RP-197906", "RP-197907", "RP-197908", "RP-197909" },
+  HIDE_AREA_FZM = { "RP-197918", "RP-197919", "RP-197920", "RP-197921" },
+  FIRE_POINT_FZM_1 = { "RP-197910", "RP-197911", "RP-197912", "RP-197913" },
+  FIRE_POINT_FZM_2 = { "RP-197914", "RP-197915", "RP-197916", "RP-197917" },
+  AMMO_HOLDING_AREA_FZM = { "RP-197922", "RP-197923", "RP-197924", "RP-197925" },
+  MASK_FZM = { "RP-197926", "RP-197927", "RP-197928", "RP-197929" },
+  RELOAD_POINT_GRV = { "RP-197546", "RP-197547", "RP-197548", "RP-197549" },
+  HIDE_AREA_GRV = { "RP-197558", "RP-197559", "RP-197560", "RP-197561" },
+  FIRE_POINT_GRV_1 = { "RP-197550", "RP-197551", "RP-197552", "RP-197553" },
+  FIRE_POINT_GRV_2 = { "RP-197554", "RP-197555", "RP-197556", "RP-197557" },
+  AMMO_HOLDING_AREA_GRV = { "RP-197562", "RP-197563", "RP-197564", "RP-197565" },
+  MASK_GRV = { "RP-197566", "RP-197567", "RP-197568", "RP-197569" },
+  RELOAD_POINT_IDW = { "RP-197714", "RP-197715", "RP-197716", "RP-197717" },
+  HIDE_AREA_IDW = { "RP-197726", "RP-197727", "RP-197728", "RP-197729" },
+  FIRE_POINT_IDW_1 = { "RP-197718", "RP-197719", "RP-197720", "RP-197721" },
+  FIRE_POINT_IDW_2 = { "RP-197722", "RP-197723", "RP-197724", "RP-197725" },
+  AMMO_HOLDING_AREA_IDW = { "RP-197730", "RP-197731", "RP-197732", "RP-197733" },
+  MASK_IDW = { "RP-197734", "RP-197735", "RP-197736", "RP-197737" },
+  RELOAD_POINT_IKJ = { "RP-197594", "RP-197595", "RP-197596", "RP-197597" },
+  HIDE_AREA_IKJ = { "RP-197606", "RP-197607", "RP-197608", "RP-197609" },
+  FIRE_POINT_IKJ_1 = { "RP-197598", "RP-197599", "RP-197600", "RP-197601" },
+  FIRE_POINT_IKJ_2 = { "RP-197602", "RP-197603", "RP-197604", "RP-197605" },
+  AMMO_HOLDING_AREA_IKJ = { "RP-197610", "RP-197611", "RP-197612", "RP-197613" },
+  MASK_IKJ = { "RP-197614", "RP-197615", "RP-197616", "RP-197617" },
+  RELOAD_POINT_LPK = { "RP-197786", "RP-197787", "RP-197788", "RP-197789" },
+  HIDE_AREA_LPK = { "RP-197798", "RP-197799", "RP-197800", "RP-197801" },
+  FIRE_POINT_LPK_1 = { "RP-197790", "RP-197791", "RP-197792", "RP-197793" },
+  FIRE_POINT_LPK_2 = { "RP-197794", "RP-197795", "RP-197796", "RP-197797" },
+  AMMO_HOLDING_AREA_LPK = { "RP-197802", "RP-197803", "RP-197804", "RP-197805" },
+  MASK_LPK = { "RP-197806", "RP-197807", "RP-197808", "RP-197809" },
+  RELOAD_POINT_MAK = { "RP-197618", "RP-197619", "RP-197620", "RP-197621" },
+  HIDE_AREA_MAK = { "RP-197630", "RP-197631", "RP-197632", "RP-197633" },
+  FIRE_POINT_MAK_1 = { "RP-197622", "RP-197623", "RP-197624", "RP-197625" },
+  FIRE_POINT_MAK_2 = { "RP-197626", "RP-197627", "RP-197628", "RP-197629" },
+  AMMO_HOLDING_AREA_MAK = { "RP-197634", "RP-197635", "RP-197636", "RP-197637" },
+  MASK_MAK = { "RP-197638", "RP-197639", "RP-197640", "RP-197641" },
+  RELOAD_POINT_NUJ = { "RP-197450", "RP-197451", "RP-197452", "RP-197453" },
+  HIDE_AREA_NUJ = { "RP-197462", "RP-197463", "RP-197464", "RP-197465" },
+  FIRE_POINT_NUJ_1 = { "RP-197454", "RP-197455", "RP-197456", "RP-197457" },
+  FIRE_POINT_NUJ_2 = { "RP-197458", "RP-197459", "RP-197460", "RP-197461" },
+  AMMO_HOLDING_AREA_NUJ = { "RP-197466", "RP-197467", "RP-197468", "RP-197469" },
+  MASK_NUJ = { "RP-197470", "RP-197471", "RP-197472", "RP-197473" },
+  RELOAD_POINT_NVD = { "RP-197810", "RP-197811", "RP-197812", "RP-197813" },
+  HIDE_AREA_NVD = { "RP-197822", "RP-197823", "RP-197824", "RP-197825" },
+  FIRE_POINT_NVD_1 = { "RP-197814", "RP-197815", "RP-197816", "RP-197817" },
+  FIRE_POINT_NVD_2 = { "RP-197818", "RP-197819", "RP-197820", "RP-197821" },
+  AMMO_HOLDING_AREA_NVD = { "RP-197826", "RP-197827", "RP-197828", "RP-197829" },
+  MASK_NVD = { "RP-197830", "RP-197831", "RP-197832", "RP-197833" },
+  RELOAD_POINT_PDN = { "RP-197858", "RP-197859", "RP-197860", "RP-197861" },
+  HIDE_AREA_PDN = { "RP-197870", "RP-197871", "RP-197872", "RP-197873" },
+  FIRE_POINT_PDN_1 = { "RP-197862", "RP-197863", "RP-197864", "RP-197865" },
+  FIRE_POINT_PDN_2 = { "RP-197866", "RP-197867", "RP-197868", "RP-197869" },
+  AMMO_HOLDING_AREA_PDN = { "RP-197874", "RP-197875", "RP-197876", "RP-197877" },
+  MASK_PDN = { "RP-197878", "RP-197879", "RP-197880", "RP-197881" },
+  RELOAD_POINT_PXV = { "RP-197642", "RP-197643", "RP-197644", "RP-197645" },
+  HIDE_AREA_PXV = { "RP-197654", "RP-197655", "RP-197656", "RP-197657" },
+  FIRE_POINT_PXV_1 = { "RP-197646", "RP-197647", "RP-197648", "RP-197649" },
+  FIRE_POINT_PXV_2 = { "RP-197650", "RP-197651", "RP-197652", "RP-197653" },
+  AMMO_HOLDING_AREA_PXV = { "RP-197658", "RP-197659", "RP-197660", "RP-197661" },
+  MASK_PXV = { "RP-197662", "RP-197663", "RP-197664", "RP-197665" },
+  RELOAD_POINT_QPF = { "RP-198530", "RP-198531", "RP-198532", "RP-198533" },
+  HIDE_AREA_QPF = { "RP-198542", "RP-198543", "RP-198544", "RP-198545" },
+  FIRE_POINT_QPF_1 = { "RP-198534", "RP-198535", "RP-198536", "RP-198537" },
+  FIRE_POINT_QPF_2 = { "RP-198538", "RP-198539", "RP-198540", "RP-198541" },
+  AMMO_HOLDING_AREA_QPF = { "RP-198546", "RP-198547", "RP-198548", "RP-198549" },
+  MASK_QPF = { "RP-198550", "RP-198551", "RP-198552", "RP-198553" },
+  RELOAD_POINT_QTZ = { "RP-197522", "RP-197523", "RP-197524", "RP-197525" },
+  HIDE_AREA_QTZ = { "RP-197534", "RP-197535", "RP-197536", "RP-197537" },
+  FIRE_POINT_QTZ_1 = { "RP-197526", "RP-197527", "RP-197528", "RP-197529" },
+  FIRE_POINT_QTZ_2 = { "RP-197530", "RP-197531", "RP-197532", "RP-197533" },
+  AMMO_HOLDING_AREA_QTZ = { "RP-197538", "RP-197539", "RP-197540", "RP-197541" },
+  MASK_QTZ = { "RP-197542", "RP-197543", "RP-197544", "RP-197545" },
+  RELOAD_POINT_RHM = { "RP-197498", "RP-197499", "RP-197500", "RP-197501" },
+  HIDE_AREA_RHM = { "RP-197510", "RP-197511", "RP-197512", "RP-197513" },
+  FIRE_POINT_RHM_1 = { "RP-197502", "RP-197503", "RP-197504", "RP-197505" },
+  FIRE_POINT_RHM_2 = { "RP-197506", "RP-197507", "RP-197508", "RP-197509" },
+  AMMO_HOLDING_AREA_RHM = { "RP-197514", "RP-197515", "RP-197516", "RP-197517" },
+  MASK_RHM = { "RP-197518", "RP-197519", "RP-197520", "RP-197521" },
+  RELOAD_POINT_SET = { "RP-197762", "RP-197763", "RP-197764", "RP-197765" },
+  HIDE_AREA_SET = { "RP-197774", "RP-197775", "RP-197776", "RP-197777" },
+  FIRE_POINT_SET_1 = { "RP-197766", "RP-197767", "RP-197768", "RP-197769" },
+  FIRE_POINT_SET_2 = { "RP-197770", "RP-197771", "RP-197772", "RP-197773" },
+  AMMO_HOLDING_AREA_SET = { "RP-197778", "RP-197779", "RP-197780", "RP-197781" },
+  MASK_SET = { "RP-197782", "RP-197783", "RP-197784", "RP-197785" },
+  RELOAD_POINT_SKB = { "RP-197882", "RP-197883", "RP-197884", "RP-197885" },
+  HIDE_AREA_SKB = { "RP-197894", "RP-197895", "RP-197896", "RP-197897" },
+  FIRE_POINT_SKB_1 = { "RP-197886", "RP-197887", "RP-197888", "RP-197889" },
+  FIRE_POINT_SKB_2 = { "RP-197890", "RP-197891", "RP-197892", "RP-197893" },
+  AMMO_HOLDING_AREA_SKB = { "RP-197898", "RP-197899", "RP-197900", "RP-197901" },
+  MASK_SKB = { "RP-197902", "RP-197903", "RP-197904", "RP-197905" },
+  RELOAD_POINT_TGO = { "RP-197930", "RP-197931", "RP-197932", "RP-197933" },
+  HIDE_AREA_TGO = { "RP-197942", "RP-197943", "RP-197944", "RP-197945" },
+  FIRE_POINT_TGO_1 = { "RP-197934", "RP-197935", "RP-197936", "RP-197937" },
+  FIRE_POINT_TGO_2 = { "RP-197938", "RP-197939", "RP-197940", "RP-197941" },
+  AMMO_HOLDING_AREA_TGO = { "RP-197946", "RP-197947", "RP-197948", "RP-197949" },
+  MASK_TGO = { "RP-197950", "RP-197951", "RP-197952", "RP-197953" },
+  RELOAD_POINT_UVY = { "RP-197666", "RP-197667", "RP-197668", "RP-197669" },
+  HIDE_AREA_UVY = { "RP-197678", "RP-197679", "RP-197680", "RP-197681" },
+  FIRE_POINT_UVY_1 = { "RP-197670", "RP-197671", "RP-197672", "RP-197673" },
+  FIRE_POINT_UVY_2 = { "RP-197674", "RP-197675", "RP-197676", "RP-197677" },
+  AMMO_HOLDING_AREA_UVY = { "RP-197682", "RP-197683", "RP-197684", "RP-197685" },
+  MASK_UVY = { "RP-197686", "RP-197687", "RP-197688", "RP-197689" },
+  RELOAD_POINT_UYO = { "RP-197570", "RP-197571", "RP-197572", "RP-197573" },
+  HIDE_AREA_UYO = { "RP-197582", "RP-197583", "RP-197584", "RP-197585" },
+  FIRE_POINT_UYO_1 = { "RP-197574", "RP-197575", "RP-197576", "RP-197577" },
+  FIRE_POINT_UYO_2 = { "RP-197578", "RP-197579", "RP-197580", "RP-197581" },
+  AMMO_HOLDING_AREA_UYO = { "RP-197586", "RP-197587", "RP-197588", "RP-197589" },
+  MASK_UYO = { "RP-197590", "RP-197591", "RP-197592", "RP-197593" },
+  RELOAD_POINT_XDY = { "RP-197402", "RP-197403", "RP-197404", "RP-197405" },
+  HIDE_AREA_XDY = { "RP-197414", "RP-197415", "RP-197416", "RP-197417" },
+  FIRE_POINT_XDY_1 = { "RP-197406", "RP-197407", "RP-197408", "RP-197409" },
+  FIRE_POINT_XDY_2 = { "RP-197410", "RP-197411", "RP-197412", "RP-197413" },
+  AMMO_HOLDING_AREA_XDY = { "RP-197418", "RP-197419", "RP-197420", "RP-197421" },
+  MASK_XDY = { "RP-197422", "RP-197423", "RP-197424", "RP-197425" },
 
 
   THEATER_OF_OPS_3RD = { "RP-83642", "RP-83643", "RP-83644", "RP-83645" },
@@ -178,7 +179,7 @@ constants.AREAS = {
   MILITARY_SUB_DISTRICT_MEIZHOU = { "RP-85130", "RP-85131", "RP-85132", "RP-85133", },
   RELOAD_POINT_PINGTAN = { "RP-114443", "RP-114444", "RP-114445", "RP-114446" },
 
-
+  -- China
   RELOAD_POINT_ANW = { "RP-195520", "RP-195521", "RP-195522", "RP-195523" },
   HIDE_AREA_ANW = { "RP-195532", "RP-195533", "RP-195534", "RP-195535" },
   FIRE_POINT_ANW_1 = { "RP-195524", "RP-195525", "RP-195526", "RP-195527" },
@@ -660,6 +661,7 @@ constants.THROTTLES = {
 
 ---@type table<string, SBJ__OperationalArea>
 constants.OPERATIONAL_AREAS = {
+  -- China
   ANW = {
     RL = { {
       course = {
@@ -1263,887 +1265,989 @@ constants.OPERATIONAL_AREAS = {
     mask = { area = constants.AREAS.MASK_ZZD },
   },
 
-
-  AJL = {
+  -- Taiwan
+  AMG = {
     RL = { {
       course = {
-        { latitude = 24.938398919339, longitude = 121.1653447046, },
+        { latitude = 22.591332673616, longitude = 120.518723497, },
       },
-      area = constants.AREAS.RELOAD_POINT_AJL
+      area = constants.AREAS.RELOAD_POINT_AMG
     } },
     HA = { {
       course = {
-        { latitude = 24.935412256628, longitude = 121.15226786798, },
+        { latitude = 22.591332673616, longitude = 120.518723497, },
+        { latitude = 22.589378374573, longitude = 120.53360294047, },
       },
-      area = constants.AREAS.HIDE_AREA_AJL
+      area = constants.AREAS.HIDE_AREA_AMG
     } },
     FP = {
       {
         course = {
-          { latitude = 24.902829974713, longitude = 121.11949, },
+          { latitude = 22.589378374573, longitude = 120.53360294047, },
+          { latitude = 22.594706962379, longitude = 120.47422575359, },
         },
-        area = constants.AREAS.FIRE_POINT_AJL_1
+        area = constants.AREAS.FIRE_POINT_AMG_1
       },
       {
         course = {
-          { latitude = 24.957566597306, longitude = 121.10778808594, },
+          { latitude = 22.589378374573, longitude = 120.53360294047, },
+          { latitude = 22.61709304586,  longitude = 120.48428899044, },
         },
-        area = constants.AREAS.FIRE_POINT_AJL_2
+        area = constants.AREAS.FIRE_POINT_AMG_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 24.943827491471, longitude = 121.22314453125, },
+        { latitude = 22.591332673616, longitude = 120.518723497, },
+        { latitude = 22.609346822358, longitude = 120.56980133057, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_AJL
+      area = constants.AREAS.AMMO_HOLDING_AREA_AMG
     } },
-    mask = { area = constants.AREAS.MASK_AJL },
+    mask = { area = constants.AREAS.MASK_AMG },
   },
-  AKB = {
+  BPM = {
     RL = { {
       course = {
-        { latitude = 24.956602189538, longitude = 121.27156003346, },
+        { latitude = 22.927993406315, longitude = 120.25782503585, },
       },
-      area = constants.AREAS.RELOAD_POINT_AKB
+      area = constants.AREAS.RELOAD_POINT_BPM
     } },
     HA = { {
       course = {
-        { latitude = 24.947541059236, longitude = 121.28772193384, },
+        { latitude = 22.927993406315, longitude = 120.25782503585, },
+        { latitude = 22.916020984047, longitude = 120.25797274645, },
       },
-      area = constants.AREAS.HIDE_AREA_AKB
+      area = constants.AREAS.HIDE_AREA_BPM
     } },
     FP = {
       {
         course = {
-          { latitude = 24.92311997469, longitude = 121.25303, },
+          { latitude = 22.916020984047, longitude = 120.25797274645, },
+          { latitude = 22.9327880751,   longitude = 120.20793914795, },
         },
-        area = constants.AREAS.FIRE_POINT_AKB_1
+        area = constants.AREAS.FIRE_POINT_BPM_1
       },
       {
         course = {
-          { latitude = 24.982485732748, longitude = 121.25129699707, },
+          { latitude = 22.916020984047, longitude = 120.25797274645, },
+          { latitude = 22.919186026348, longitude = 120.21137237549, },
         },
-        area = constants.AREAS.FIRE_POINT_AKB_2
+        area = constants.AREAS.FIRE_POINT_BPM_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 24.965641766752, longitude = 121.32064819336, },
+        { latitude = 22.927993406315, longitude = 120.25782503585, },
+        { latitude = 22.927768868871, longitude = 120.29720306396, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_AKB
+      area = constants.AREAS.AMMO_HOLDING_AREA_BPM
     } },
-    mask = { area = constants.AREAS.MASK_AKB },
+    mask = { area = constants.AREAS.MASK_BPM },
   },
-  BKC = {
+  CSC = {
     RL = { {
       course = {
-        { latitude = 25.190677426884, longitude = 121.46415608565, },
+        { latitude = 24.996670916322, longitude = 121.49693152645, },
       },
-      area = constants.AREAS.RELOAD_POINT_BKC
+      area = constants.AREAS.RELOAD_POINT_CSC
     } },
     HA = { {
       course = {
-        { latitude = 25.173948530502, longitude = 121.45644273398, },
+        { latitude = 24.996670916322, longitude = 121.49693152645, },
+        { latitude = 24.986807010466, longitude = 121.48943785733, },
       },
-      area = constants.AREAS.HIDE_AREA_BKC
+      area = constants.AREAS.HIDE_AREA_CSC
     } },
     FP = {
       {
         course = {
-          { latitude = 25.181987675669, longitude = 121.42330169678, },
-        },
-        area = constants.AREAS.FIRE_POINT_BKC_1
-      },
-      {
-        course = {
-          { latitude = 25.200720620209, longitude = 121.43012523651, },
-        },
-        area = constants.AREAS.FIRE_POINT_BKC_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 25.135735805467, longitude = 121.46389961243, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_BKC
-    } },
-    mask = { area = constants.AREAS.MASK_BKC },
-  },
-  BWW = {
-    RL = { {
-      course = {
-        { latitude = 24.326521615151, longitude = 120.66621020269, },
-      },
-      area = constants.AREAS.RELOAD_POINT_BWW
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.314906932294, longitude = 120.66942737575, },
-      },
-      area = constants.AREAS.HIDE_AREA_BWW
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.337545199175, longitude = 120.58010101318, },
-        },
-        area = constants.AREAS.FIRE_POINT_BWW_1
-      },
-      {
-        course = {
-          { latitude = 24.361967066441, longitude = 120.60516357422, },
-        },
-        area = constants.AREAS.FIRE_POINT_BWW_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.324386647041, longitude = 120.73425292969, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_BWW
-    } },
-    mask = { area = constants.AREAS.MASK_BWW },
-  },
-  DJN = {
-    RL = { {
-      course = {
-        { latitude = 25.035930356196, longitude = 121.19013303667, },
-      },
-      area = constants.AREAS.RELOAD_POINT_DJN
-    } },
-    HA = { {
-      course = {
-        { latitude = 25.019782176005, longitude = 121.1719850053, },
-      },
-      area = constants.AREAS.HIDE_AREA_DJN
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 25.061820644538, longitude = 121.13594055176, },
-        },
-        area = constants.AREAS.FIRE_POINT_DJN_1
-      },
-      {
-        course = {
-          { latitude = 25.070824741434, longitude = 121.16889953613, },
-        },
-        area = constants.AREAS.FIRE_POINT_DJN_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.996833672669, longitude = 121.2190246582, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_DJN
-    } },
-    mask = { area = constants.AREAS.MASK_DJN },
-  },
-  DMF = {
-    RL = { {
-      course = {
-        { latitude = 23.034193119779, longitude = 120.2805526879, },
-      },
-      area = constants.AREAS.RELOAD_POINT_DMF
-    } },
-    HA = { {
-      course = {
-        { latitude = 23.031024400107, longitude = 120.26776208994, },
-      },
-      area = constants.AREAS.HIDE_AREA_DMF
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.990396862269, longitude = 120.22682189941, },
-        },
-        area = constants.AREAS.FIRE_POINT_DMF_1
-      },
-      {
-        course = {
-          { latitude = 23.004299976875, longitude = 120.33748, },
-        },
-        area = constants.AREAS.FIRE_POINT_DMF_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 23.082457024631, longitude = 120.32020568848, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_DMF
-    } },
-    mask = { area = constants.AREAS.MASK_DMF },
-  },
-  GJI = {
-    RL = { {
-      course = {
-        { latitude = 24.244251500655, longitude = 120.6900157497, },
-      },
-      area = constants.AREAS.RELOAD_POINT_GJI
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.23511254796, longitude = 120.70582606981, },
-      },
-      area = constants.AREAS.HIDE_AREA_GJI
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.284629965513, longitude = 120.65065383911, },
-        },
-        area = constants.AREAS.FIRE_POINT_GJI_1
-      },
-      {
-        course = {
-          { latitude = 24.258289975454, longitude = 120.64492, },
-        },
-        area = constants.AREAS.FIRE_POINT_GJI_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.274430721982, longitude = 120.75227737427, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_GJI
-    } },
-    mask = { area = constants.AREAS.MASK_GJI },
-  },
-  HVB = {
-    RL = { {
-      course = {
-        { latitude = 25.084716133468, longitude = 121.28971878893, },
-      },
-      area = constants.AREAS.RELOAD_POINT_HVB
-    } },
-    HA = { {
-      course = {
-        { latitude = 25.073261546665, longitude = 121.28286880233, },
-      },
-      area = constants.AREAS.HIDE_AREA_HVB
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 25.105733913411, longitude = 121.22966766357, },
-        },
-        area = constants.AREAS.FIRE_POINT_HVB_1
-      },
-      {
-        course = {
-          { latitude = 25.111530742302, longitude = 121.25936508179, },
-        },
-        area = constants.AREAS.FIRE_POINT_HVB_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 25.040674977619, longitude = 121.3046836853, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_HVB
-    } },
-    mask = { area = constants.AREAS.MASK_HVB },
-  },
-  ILM = {
-    RL = { {
-      course = {
-        { latitude = 22.62731734906, longitude = 120.51046796524, },
-      },
-      area = constants.AREAS.RELOAD_POINT_ILM
-    } },
-    HA = { {
-      course = {
-        { latitude = 22.64311229647, longitude = 120.51001359682, },
-      },
-      area = constants.AREAS.HIDE_AREA_ILM
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.667660721713, longitude = 120.46312277046, },
-        },
-        area = constants.AREAS.FIRE_POINT_ILM_1
-      },
-      {
-        course = {
-          { latitude = 22.686386506319, longitude = 120.48946380615, },
-        },
-        area = constants.AREAS.FIRE_POINT_ILM_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 22.591881262371, longitude = 120.55469512939, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_ILM
-    } },
-    mask = { area = constants.AREAS.MASK_ILM },
-  },
-  KHL = {
-    RL = { {
-      course = {
-        { latitude = 23.015892962202, longitude = 120.20761645586, },
-      },
-      area = constants.AREAS.RELOAD_POINT_KHL
-    } },
-    HA = { {
-      course = {
-        { latitude = 23.004755124301, longitude = 120.21278029238, },
-      },
-      area = constants.AREAS.HIDE_AREA_KHL
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.967304390589, longitude = 120.18047332764, },
-        },
-        area = constants.AREAS.FIRE_POINT_KHL_1
-      },
-      {
-        course = {
-          { latitude = 22.984074051869, longitude = 120.16845703125, },
-        },
-        area = constants.AREAS.FIRE_POINT_KHL_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 23.028788433177, longitude = 120.24587631226, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_KHL
-    } },
-    mask = { area = constants.AREAS.MASK_KHL },
-  },
-  KNB = {
-    RL = { {
-      course = {
-        { latitude = 23.472901195665, longitude = 120.4305627098, },
-        { latitude = 23.463360484789, longitude = 120.44022077923, },
-      },
-      area = constants.AREAS.RELOAD_POINT_KNB
-    } },
-    HA = { {
-      course = {
-        { latitude = 23.469824223752, longitude = 120.42719947503, },
-      },
-      area = constants.AREAS.HIDE_AREA_KNB
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 23.492795914264, longitude = 120.39442695095, },
-        },
-        area = constants.AREAS.FIRE_POINT_KNB_1
-      },
-      {
-        course = {
-          { latitude = 23.439289976385, longitude = 120.39865, },
-        },
-        area = constants.AREAS.FIRE_POINT_KNB_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 23.492628457867, longitude = 120.50148010254, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_KNB
-    } },
-    mask = { area = constants.AREAS.MASK_KNB },
-  },
-  KTU = {
-    RL = { {
-      course = {
-        { latitude = 25.189160990819, longitude = 121.66208041479, },
-      },
-      area = constants.AREAS.RELOAD_POINT_KTU
-    } },
-    HA = { {
-      course = {
-        { latitude = 25.178870908795, longitude = 121.65140907788, },
-      },
-      area = constants.AREAS.HIDE_AREA_KTU
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 25.198459647108, longitude = 121.68113708496, },
-        },
-        area = constants.AREAS.FIRE_POINT_KTU_1
-      },
-      {
-        course = {
-          { latitude = 25.179879974393, longitude = 121.68202, },
-        },
-        area = constants.AREAS.FIRE_POINT_KTU_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 25.181957480474, longitude = 121.65478237142, },
-        { latitude = 25.181957480474, longitude = 121.64803578433, },
-        { latitude = 25.166767793448, longitude = 121.63066864014, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_KTU
-    } },
-    mask = { area = constants.AREAS.MASK_KTU },
-  },
-  LYR = {
-    RL = { {
-      course = {
-        { latitude = 24.176884987828, longitude = 120.6840181963, },
-      },
-      area = constants.AREAS.RELOAD_POINT_LYR
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.166028583601, longitude = 120.67333405178, },
-      },
-      area = constants.AREAS.HIDE_AREA_LYR
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.219887686837, longitude = 120.62335968018, },
-        },
-        area = constants.AREAS.FIRE_POINT_LYR_1
-      },
-      {
-        course = {
-          { latitude = 24.151219975577, longitude = 120.73539, },
-        },
-        area = constants.AREAS.FIRE_POINT_LYR_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.207922651422, longitude = 120.71296691895, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_LYR
-    } },
-    mask = { area = constants.AREAS.MASK_LYR },
-  },
-  MVW = {
-    RL = { {
-      course = {
-        { latitude = 25.065109952874, longitude = 121.5385002793, },
-      },
-      area = constants.AREAS.RELOAD_POINT_MVW
-    } },
-    HA = { {
-      course = {
-        { latitude = 25.055118833206, longitude = 121.54640520329, },
-      },
-      area = constants.AREAS.HIDE_AREA_MVW
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 25.038632645966, longitude = 121.59804221215, },
-        },
-        area = constants.AREAS.FIRE_POINT_MVW_1
-      },
-      {
-        course = {
-          { latitude = 25.066536164494, longitude = 121.60045623779, },
-        },
-        area = constants.AREAS.FIRE_POINT_MVW_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 25.022332554441, longitude = 121.54243469238, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_MVW
-    } },
-    mask = { area = constants.AREAS.MASK_MVW },
-  },
-  NJI = {
-    RL = { {
-      course = {
-        { latitude = 22.559167484133, longitude = 120.58766380323, },
-      },
-      area = constants.AREAS.RELOAD_POINT_NJI
-    } },
-    HA = { {
-      course = {
-        { latitude = 22.570629882914, longitude = 120.59980415511, },
-      },
-      area = constants.AREAS.HIDE_AREA_NJI
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.543682540339, longitude = 120.48397064209, },
-        },
-        area = constants.AREAS.FIRE_POINT_NJI_1
-      },
-      {
-        course = {
-          { latitude = 22.597631886407, longitude = 120.4808807373, },
-        },
-        area = constants.AREAS.FIRE_POINT_NJI_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 22.567557620532, longitude = 120.59644622906, },
-        { latitude = 22.573702138356, longitude = 120.59644612207, },
-        { latitude = 22.59716997733,  longitude = 120.62427, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_NJI
-    } },
-    mask = { area = constants.AREAS.MASK_NJI },
-  },
-  QMT = {
-    RL = { {
-      course = {
-        { latitude = 24.673791448452, longitude = 121.71366317444, },
-      },
-      area = constants.AREAS.RELOAD_POINT_QMT
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.684757447379, longitude = 121.70827788856, },
-      },
-      area = constants.AREAS.HIDE_AREA_QMT
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.68920997496, longitude = 121.66271, },
-        },
-        area = constants.AREAS.FIRE_POINT_QMT_1
-      },
-      {
-        course = {
-          { latitude = 24.704504120321, longitude = 121.74430847168, },
-        },
-        area = constants.AREAS.FIRE_POINT_QMT_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.66703174693, longitude = 121.64989471436, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_QMT
-    } },
-    mask = { area = constants.AREAS.MASK_QMT },
-  },
-  QRM = {
-    RL = { {
-      course = {
-        { latitude = 22.781707309476, longitude = 121.13220013186, },
-      },
-      area = constants.AREAS.RELOAD_POINT_QRM
-    } },
-    HA = { {
-      course = {
-        { latitude = 22.766436214128, longitude = 121.11643116471, },
-      },
-      area = constants.AREAS.HIDE_AREA_QRM
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.75561887486, longitude = 121.15808486938, },
-        },
-        area = constants.AREAS.FIRE_POINT_QRM_1
-      },
-      {
-        course = {
-          { latitude = 22.804029977099, longitude = 121.19269, },
-        },
-        area = constants.AREAS.FIRE_POINT_QRM_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 22.757065466286, longitude = 121.0693359375, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_QRM
-    } },
-    mask = { area = constants.AREAS.MASK_QRM },
-  },
-  RKB = {
-    RL = { {
-      course = {
-        { latitude = 24.801511630788, longitude = 120.96716955444, },
-      },
-      area = constants.AREAS.RELOAD_POINT_RKB
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.811728876339, longitude = 120.97659771268, },
-      },
-      area = constants.AREAS.HIDE_AREA_RKB
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.83900025723, longitude = 120.93595504761, },
-        },
-        area = constants.AREAS.FIRE_POINT_RKB_1
-      },
-      {
-        course = {
-          { latitude = 24.822229974807, longitude = 120.93603, },
-        },
-        area = constants.AREAS.FIRE_POINT_RKB_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.777097946791, longitude = 121.02058410645, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_RKB
-    } },
-    mask = { area = constants.AREAS.MASK_RKB },
-  },
-  SDG = {
-    RL = { {
-      course = {
-        { latitude = 22.933758119338, longitude = 120.29502926207, },
-      },
-      area = constants.AREAS.RELOAD_POINT_SDG
-    } },
-    HA = { {
-      course = {
-        { latitude = 22.942972226764, longitude = 120.30447634966, },
-      },
-      area = constants.AREAS.HIDE_AREA_SDG
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 22.92235123698, longitude = 120.20313262939, },
-        },
-        area = constants.AREAS.FIRE_POINT_SDG_1
-      },
-      {
-        course = {
-          { latitude = 22.938493481071, longitude = 120.19111633301, },
-        },
-        area = constants.AREAS.FIRE_POINT_SDG_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 22.957945312852, longitude = 120.33531188965, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_SDG
-    } },
-    mask = { area = constants.AREAS.MASK_SDG },
-  },
-  TBG = {
-    RL = { {
-      course = {
-        { latitude = 24.172153702877, longitude = 120.58324641601, },
-      },
-      area = constants.AREAS.RELOAD_POINT_TBG
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.171969678035, longitude = 120.57014669435, },
-      },
-      area = constants.AREAS.HIDE_AREA_TBG
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 24.213019975506, longitude = 120.5989, },
-        },
-        area = constants.AREAS.FIRE_POINT_TBG_1
-      },
-      {
-        course = {
-          { latitude = 24.236083272689, longitude = 120.56259155273, },
-        },
-        area = constants.AREAS.FIRE_POINT_TBG_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.124957721695, longitude = 120.65803527832, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_TBG
-    } },
-    mask = { area = constants.AREAS.MASK_TBG },
-  },
-  VKU = {
-    RL = { {
-      course = {
-        { latitude = 25.015390028215, longitude = 121.10802417894, },
-      },
-      area = constants.AREAS.RELOAD_POINT_VKU
-    } },
-    HA = { {
-      course = {
-        { latitude = 25.012209586834, longitude = 121.12285504259, },
-      },
-      area = constants.AREAS.HIDE_AREA_VKU
-    } },
-    FP = {
-      {
-        course = {
-          { latitude = 25.046230454588, longitude = 121.08615875244, },
-        },
-        area = constants.AREAS.FIRE_POINT_VKU_1
-      },
-      {
-        course = {
-          { latitude = 25.058684035152, longitude = 121.11637115479, },
-        },
-        area = constants.AREAS.FIRE_POINT_VKU_2
-      },
-    },
-    AHA = { {
-      course = {
-        { latitude = 24.969339899048, longitude = 121.17095947266, },
-      },
-      area = constants.AREAS.AMMO_HOLDING_AREA_VKU
-    } },
-    mask = { area = constants.AREAS.MASK_VKU },
-  },
-  VNB = {
-    RL = { {
-      course = {
-        { latitude = 24.993606254092, longitude = 121.50270329862, },
-        { latitude = 25.004989278442, longitude = 121.50353701689, },
-      },
-      area = constants.AREAS.RELOAD_POINT_VNB
-    } },
-    HA = { {
-      course = {
-        { latitude = 24.990520765635, longitude = 121.50607541505, },
-      },
-      area = constants.AREAS.HIDE_AREA_VNB
-    } },
-    FP = {
-      {
-        course = {
+          { latitude = 24.986807010466, longitude = 121.48943785733, },
           { latitude = 24.955269974653, longitude = 121.51283, },
         },
-        area = constants.AREAS.FIRE_POINT_VNB_1
+        area = constants.AREAS.FIRE_POINT_CSC_1
       },
       {
         course = {
-          { latitude = 25.022296475754, longitude = 121.46003723145, },
+          { latitude = 24.986807010466, longitude = 121.48943785733, },
+          { latitude = 25.009527119547, longitude = 121.51737213135, },
         },
-        area = constants.AREAS.FIRE_POINT_VNB_2
+        area = constants.AREAS.FIRE_POINT_CSC_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 24.987970557445, longitude = 121.55651092529, },
+        { latitude = 24.996670916322, longitude = 121.49693152645, },
+        { latitude = 25.018558792955, longitude = 121.47514343262, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_VNB
+      area = constants.AREAS.AMMO_HOLDING_AREA_CSC
     } },
-    mask = { area = constants.AREAS.MASK_VNB },
+    mask = { area = constants.AREAS.MASK_CSC },
   },
-  XIX = {
+  DJA = {
     RL = { {
       course = {
-        { latitude = 22.729295987113, longitude = 120.33944889276, },
+        { latitude = 22.647086037038, longitude = 120.49447696756, },
       },
-      area = constants.AREAS.RELOAD_POINT_XIX
+      area = constants.AREAS.RELOAD_POINT_DJA
     } },
     HA = { {
       course = {
-        { latitude = 22.722145342009, longitude = 120.35174883384, },
+        { latitude = 22.647086037038, longitude = 120.49447696756, },
+        { latitude = 22.649567006345, longitude = 120.48114186841, },
       },
-      area = constants.AREAS.HIDE_AREA_XIX
+      area = constants.AREAS.HIDE_AREA_DJA
     } },
     FP = {
       {
         course = {
+          { latitude = 22.649567006345, longitude = 120.48114186841, },
+          { latitude = 22.667125642789, longitude = 120.4630279541, },
+        },
+        area = constants.AREAS.FIRE_POINT_DJA_1
+      },
+      {
+        course = {
+          { latitude = 22.649567006345, longitude = 120.48114186841, },
+          { latitude = 22.681871235464, longitude = 120.4824256897, },
+        },
+        area = constants.AREAS.FIRE_POINT_DJA_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 22.647086037038, longitude = 120.49447696756, },
+        { latitude = 22.638437193317, longitude = 120.52207946777, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_DJA
+    } },
+    mask = { area = constants.AREAS.MASK_DJA },
+  },
+  DLF = {
+    RL = { {
+      course = {
+        { latitude = 25.063398424484, longitude = 121.26262664795, },
+      },
+      area = constants.AREAS.RELOAD_POINT_DLF
+    } },
+    HA = { {
+      course = {
+        { latitude = 25.063398424484, longitude = 121.26262664795, },
+        { latitude = 25.060752246291, longitude = 121.24649047852, },
+      },
+      area = constants.AREAS.HIDE_AREA_DLF
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 25.060752246291, longitude = 121.24649047852, },
+          { latitude = 25.104173455448, longitude = 121.24031066895, },
+        },
+        area = constants.AREAS.FIRE_POINT_DLF_1
+      },
+      {
+        course = {
+          { latitude = 25.060752246291, longitude = 121.24649047852, },
+          { latitude = 25.088300815978, longitude = 121.20357513428, },
+        },
+        area = constants.AREAS.FIRE_POINT_DLF_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 25.063398424484, longitude = 121.26262664795, },
+        { latitude = 25.031017714944, longitude = 121.26399993896, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_DLF
+    } },
+    mask = { area = constants.AREAS.MASK_DLF },
+  },
+  FMK = {
+    RL = { {
+      course = {
+        { latitude = 25.193052594676, longitude = 121.44377957358, },
+      },
+      area = constants.AREAS.RELOAD_POINT_FMK
+    } },
+    HA = { {
+      course = {
+        { latitude = 25.193052594676, longitude = 121.44377957358, },
+        { latitude = 25.195989167821, longitude = 121.45786596407, },
+      },
+      area = constants.AREAS.HIDE_AREA_FMK
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 25.195989167821, longitude = 121.45786596407, },
+          { latitude = 25.202960220492, longitude = 121.42965316772, },
+        },
+        area = constants.AREAS.FIRE_POINT_FMK_1
+      },
+      {
+        course = {
+          { latitude = 25.195989167821, longitude = 121.45786596407, },
+          { latitude = 25.189965987826, longitude = 121.44715303668, },
+          { latitude = 25.189965987826, longitude = 121.44040611047, },
+          { latitude = 25.18352390862,  longitude = 121.42587661743, },
+        },
+        area = constants.AREAS.FIRE_POINT_FMK_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 25.193052594676, longitude = 121.44377957358, },
+        { latitude = 25.170477243927, longitude = 121.45111083984, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_FMK
+    } },
+    mask = { area = constants.AREAS.MASK_FMK },
+  },
+  FZM = {
+    RL = { {
+      course = {
+        { latitude = 22.99888503755, longitude = 120.22496778269, },
+      },
+      area = constants.AREAS.RELOAD_POINT_FZM
+    } },
+    HA = { {
+      course = {
+        { latitude = 22.99888503755,  longitude = 120.22496778269, },
+        { latitude = 23.008049105164, longitude = 120.21583073004, },
+      },
+      area = constants.AREAS.HIDE_AREA_FZM
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 23.008049105164, longitude = 120.21583073004, },
+          { latitude = 22.982303193919, longitude = 120.1926612854, },
+        },
+        area = constants.AREAS.FIRE_POINT_FZM_1
+      },
+      {
+        course = {
+          { latitude = 23.008049105164, longitude = 120.21583073004, },
+          { latitude = 22.996688512305, longitude = 120.19180297852, },
+        },
+        area = constants.AREAS.FIRE_POINT_FZM_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 22.99888503755,  longitude = 120.22496778269, },
+        { latitude = 23.021994900691, longitude = 120.24948120117, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_FZM
+    } },
+    mask = { area = constants.AREAS.MASK_FZM },
+  },
+  GRV = {
+    RL = { {
+      course = {
+        { latitude = 24.144889102887, longitude = 120.69415442585, },
+      },
+      area = constants.AREAS.RELOAD_POINT_GRV
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.144889102887, longitude = 120.69415442585, },
+        { latitude = 24.156091874194, longitude = 120.678506361, },
+      },
+      area = constants.AREAS.HIDE_AREA_GRV
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.156091874194, longitude = 120.678506361, },
+          { latitude = 24.18414023037,  longitude = 120.71571350098, },
+        },
+        area = constants.AREAS.FIRE_POINT_GRV_1
+      },
+      {
+        course = {
+          { latitude = 24.156091874194, longitude = 120.678506361, },
+          { latitude = 24.151219975577, longitude = 120.73539, },
+        },
+        area = constants.AREAS.FIRE_POINT_GRV_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.144889102887, longitude = 120.69415442585, },
+        { latitude = 24.117972664249, longitude = 120.69957733154, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_GRV
+    } },
+    mask = { area = constants.AREAS.MASK_GRV },
+  },
+  IDW = {
+    RL = { {
+      course = {
+        { latitude = 24.210906690558, longitude = 120.64456462145, },
+      },
+      area = constants.AREAS.RELOAD_POINT_IDW
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.210906690558, longitude = 120.64456462145, },
+        { latitude = 24.198367916403, longitude = 120.63608364627, },
+      },
+      area = constants.AREAS.HIDE_AREA_IDW
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.198367916403, longitude = 120.63608364627, },
+          { latitude = 24.233601994155, longitude = 120.60619354248, },
+        },
+        area = constants.AREAS.FIRE_POINT_IDW_1
+      },
+      {
+        course = {
+          { latitude = 24.198367916403, longitude = 120.63608364627, },
+          { latitude = 24.213019975506, longitude = 120.5989, },
+        },
+        area = constants.AREAS.FIRE_POINT_IDW_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.210906690558, longitude = 120.64456462145, },
+        { latitude = 24.204453622669, longitude = 120.67691802979, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_IDW
+    } },
+    mask = { area = constants.AREAS.MASK_IDW },
+  },
+  IKJ = {
+    RL = { {
+      course = {
+        { latitude = 24.681100119978, longitude = 121.69604846787, },
+      },
+      area = constants.AREAS.RELOAD_POINT_IKJ
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.681100119978, longitude = 121.69604846787, },
+        { latitude = 24.684515996284, longitude = 121.70876933491, },
+      },
+      area = constants.AREAS.HIDE_AREA_IKJ
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.684515996284, longitude = 121.70876933491, },
+          { latitude = 24.678016413284, longitude = 121.69941865558, },
+          { latitude = 24.678016413284, longitude = 121.69267828016, },
+          { latitude = 24.665792968973, longitude = 121.65744781494, },
+        },
+        area = constants.AREAS.FIRE_POINT_IKJ_1
+      },
+      {
+        course = {
+          { latitude = 24.684515996284, longitude = 121.70876933491, },
+          { latitude = 24.68920997496,  longitude = 121.66271, },
+        },
+        area = constants.AREAS.FIRE_POINT_IKJ_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.681100119978, longitude = 121.69604846787, },
+        { latitude = 24.687599697885, longitude = 121.7053989455, },
+        { latitude = 24.687599697885, longitude = 121.71213972431, },
+        { latitude = 24.699206145513, longitude = 121.73847198486, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_IKJ
+    } },
+    mask = { area = constants.AREAS.MASK_IKJ },
+  },
+  LPK = {
+    RL = { {
+      course = {
+        { latitude = 24.256869004407, longitude = 120.6844420654, },
+      },
+      area = constants.AREAS.RELOAD_POINT_LPK
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.256869004407, longitude = 120.6844420654, },
+        { latitude = 24.271370367514, longitude = 120.68450484771, },
+      },
+      area = constants.AREAS.HIDE_AREA_LPK
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.271370367514, longitude = 120.68450484771, },
+          { latitude = 24.283496296826, longitude = 120.65065383911, },
+        },
+        area = constants.AREAS.FIRE_POINT_LPK_1
+      },
+      {
+        course = {
+          { latitude = 24.271370367514, longitude = 120.68450484771, },
+          { latitude = 24.267919975443, longitude = 120.65543, },
+        },
+        area = constants.AREAS.FIRE_POINT_LPK_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.256869004407, longitude = 120.6844420654, },
+        { latitude = 24.268653567806, longitude = 120.71674346924, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_LPK
+    } },
+    mask = { area = constants.AREAS.MASK_LPK },
+  },
+  MAK = {
+    RL = { {
+      course = {
+        { latitude = 24.010394755101, longitude = 121.61252864755, },
+      },
+      area = constants.AREAS.RELOAD_POINT_MAK
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.010394755101, longitude = 121.61252864755, },
+        { latitude = 23.999450330992, longitude = 121.62088394165, },
+      },
+      area = constants.AREAS.HIDE_AREA_MAK
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 23.999450330992, longitude = 121.62088394165, },
+          { latitude = 24.024557596076, longitude = 121.62363052368, },
+        },
+        area = constants.AREAS.FIRE_POINT_MAK_1
+      },
+      {
+        course = {
+          { latitude = 23.999450330992, longitude = 121.62088394165, },
+          { latitude = 24.040106033299, longitude = 121.61092758179, },
+        },
+        area = constants.AREAS.FIRE_POINT_MAK_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.010394755101, longitude = 121.61252864755, },
+        { latitude = 23.992085096831, longitude = 121.58946990967, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_MAK
+    } },
+    mask = { area = constants.AREAS.MASK_MAK },
+  },
+  NUJ = {
+    RL = { {
+      course = {
+        { latitude = 22.68333155036, longitude = 120.35560719907, },
+      },
+      area = constants.AREAS.RELOAD_POINT_NUJ
+    } },
+    HA = { {
+      course = {
+        { latitude = 22.68333155036,  longitude = 120.35560719907, },
+        { latitude = 22.690231999817, longitude = 120.34003892647, },
+      },
+      area = constants.AREAS.HIDE_AREA_NUJ
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 22.690231999817, longitude = 120.34003892647, },
+          { latitude = 22.715467639386, longitude = 120.35299301147, },
+        },
+        area = constants.AREAS.FIRE_POINT_NUJ_1
+      },
+      {
+        course = {
+          { latitude = 22.690231999817, longitude = 120.34003892647, },
           { latitude = 22.685259977232, longitude = 120.37584, },
         },
-        area = constants.AREAS.FIRE_POINT_XIX_1
-      },
-      {
-        course = {
-          { latitude = 22.738753512959, longitude = 120.29668807983, },
-        },
-        area = constants.AREAS.FIRE_POINT_XIX_2
+        area = constants.AREAS.FIRE_POINT_NUJ_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 22.757074967393, longitude = 120.38080215454, },
+        { latitude = 22.68333155036,  longitude = 120.35560719907, },
+        { latitude = 22.667125481647, longitude = 120.36483764648, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_XIX
+      area = constants.AREAS.AMMO_HOLDING_AREA_NUJ
     } },
-    mask = { area = constants.AREAS.MASK_XIX },
+    mask = { area = constants.AREAS.MASK_NUJ },
   },
-  YQS = {
+  NVD = {
     RL = { {
       course = {
-        { latitude = 23.979098483532, longitude = 121.58295817847, },
+        { latitude = 24.953020968327, longitude = 121.26220931594, },
       },
-      area = constants.AREAS.RELOAD_POINT_YQS
+      area = constants.AREAS.RELOAD_POINT_NVD
     } },
     HA = { {
       course = {
-        { latitude = 23.990681693431, longitude = 121.58090103385, },
+        { latitude = 24.953020968327, longitude = 121.26220931594, },
+        { latitude = 24.941711876692, longitude = 121.2710203593, },
       },
-      area = constants.AREAS.HIDE_AREA_YQS
+      area = constants.AREAS.HIDE_AREA_NVD
     } },
     FP = {
       {
         course = {
-          { latitude = 24.026689975719, longitude = 121.62726, },
+          { latitude = 24.941711876692, longitude = 121.2710203593, },
+          { latitude = 24.92311997469,  longitude = 121.25303, },
         },
-        area = constants.AREAS.FIRE_POINT_YQS_1
+        area = constants.AREAS.FIRE_POINT_NVD_1
       },
       {
         course = {
-          { latitude = 24.005592518396, longitude = 121.63341522217, },
+          { latitude = 24.941711876692, longitude = 121.2710203593, },
+          { latitude = 24.954399300483, longitude = 121.24322891235, },
         },
-        area = constants.AREAS.FIRE_POINT_YQS_2
+        area = constants.AREAS.FIRE_POINT_NVD_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 23.942362590507, longitude = 121.55204772949, },
+        { latitude = 24.953020968327, longitude = 121.26220931594, },
+        { latitude = 24.953359877396, longitude = 121.29867553711, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_YQS
+      area = constants.AREAS.AMMO_HOLDING_AREA_NVD
     } },
-    mask = { area = constants.AREAS.MASK_YQS },
+    mask = { area = constants.AREAS.MASK_NVD },
   },
-  ZTA = {
+  PDN = {
     RL = { {
       course = {
-        { latitude = 22.891903811932, longitude = 120.28368085713, },
+        { latitude = 25.025041308958, longitude = 121.17571141438, },
       },
-      area = constants.AREAS.RELOAD_POINT_ZTA
+      area = constants.AREAS.RELOAD_POINT_PDN
     } },
     HA = { {
       course = {
-        { latitude = 22.878517548502, longitude = 120.29268696346, },
+        { latitude = 25.025041308958, longitude = 121.17571141438, },
+        { latitude = 25.035771039053, longitude = 121.18603495447, },
       },
-      area = constants.AREAS.HIDE_AREA_ZTA
+      area = constants.AREAS.HIDE_AREA_PDN
     } },
     FP = {
       {
         course = {
-          { latitude = 22.905257352699, longitude = 120.19111633301, },
+          { latitude = 25.035771039053, longitude = 121.18603495447, },
+          { latitude = 25.059536375726, longitude = 121.14109039307, },
         },
-        area = constants.AREAS.FIRE_POINT_ZTA_1
+        area = constants.AREAS.FIRE_POINT_PDN_1
       },
       {
         course = {
-          { latitude = 22.884678522686, longitude = 120.20622253418, },
+          { latitude = 25.035771039053, longitude = 121.18603495447, },
+          { latitude = 25.07198860418,  longitude = 121.16683959961, },
         },
-        area = constants.AREAS.FIRE_POINT_ZTA_2
+        area = constants.AREAS.FIRE_POINT_PDN_2
       },
     },
     AHA = { {
       course = {
-        { latitude = 22.874966200179, longitude = 120.3438949585, },
+        { latitude = 25.025041308958, longitude = 121.17571141438, },
+        { latitude = 25.005665920798, longitude = 121.19979858398, },
       },
-      area = constants.AREAS.AMMO_HOLDING_AREA_ZTA
+      area = constants.AREAS.AMMO_HOLDING_AREA_PDN
     } },
-    mask = { area = constants.AREAS.MASK_ZTA },
+    mask = { area = constants.AREAS.MASK_PDN },
+  },
+  PXV = {
+    RL = { {
+      course = {
+        { latitude = 22.77038071148, longitude = 121.1333656311, },
+      },
+      area = constants.AREAS.RELOAD_POINT_PXV
+    } },
+    HA = { {
+      course = {
+        { latitude = 22.77038071148,  longitude = 121.1333656311, },
+        { latitude = 22.762933655154, longitude = 121.14435195923, },
+      },
+      area = constants.AREAS.HIDE_AREA_PXV
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 22.762933655154, longitude = 121.14435195923, },
+          { latitude = 22.782610425286, longitude = 121.17207527161, },
+        },
+        area = constants.AREAS.FIRE_POINT_PXV_1
+      },
+      {
+        course = {
+          { latitude = 22.762933655154, longitude = 121.14435195923, },
+          { latitude = 22.761349109982, longitude = 121.16254806519, },
+        },
+        area = constants.AREAS.FIRE_POINT_PXV_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 22.77038071148,  longitude = 121.1333656311, },
+        { latitude = 22.756280737026, longitude = 121.09783172607, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_PXV
+    } },
+    mask = { area = constants.AREAS.MASK_PXV },
+  },
+  QPF = {
+    RL = { {
+      course = {
+        { latitude = 25.189896214498, longitude = 121.65023803711, },
+      },
+      area = constants.AREAS.RELOAD_POINT_QPF
+    } },
+    HA = { {
+      course = {
+        { latitude = 25.189896214498, longitude = 121.65023803711, },
+        { latitude = 25.17960003939,  longitude = 121.65857346865, },
+      },
+      area = constants.AREAS.HIDE_AREA_QPF
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 25.17960003939,  longitude = 121.65857346865, },
+          { latitude = 25.180423451085, longitude = 121.67221069336, },
+        },
+        area = constants.AREAS.FIRE_POINT_QPF_1
+      },
+      {
+        course = {
+          { latitude = 25.17960003939,  longitude = 121.65857346865, },
+          { latitude = 25.195957263933, longitude = 121.67650222778, },
+        },
+        area = constants.AREAS.FIRE_POINT_QPF_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 25.189896214498, longitude = 121.65023803711, },
+        { latitude = 25.20376652339,  longitude = 121.64817810059, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_QPF
+    } },
+    mask = { area = constants.AREAS.MASK_QPF },
+  },
+  QTZ = {
+    RL = { {
+      course = {
+        { latitude = 24.240811593087, longitude = 120.66866274066, },
+      },
+      area = constants.AREAS.RELOAD_POINT_QTZ
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.240811593087, longitude = 120.66866274066, },
+        { latitude = 24.23111042603,  longitude = 120.67576661453, },
+      },
+      area = constants.AREAS.HIDE_AREA_QTZ
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.23111042603,  longitude = 120.67576661453, },
+          { latitude = 24.258289975454, longitude = 120.64492, },
+        },
+        area = constants.AREAS.FIRE_POINT_QTZ_1
+      },
+      {
+        course = {
+          { latitude = 24.23111042603,  longitude = 120.67576661453, },
+          { latitude = 24.240451109861, longitude = 120.63983917236, },
+        },
+        area = constants.AREAS.FIRE_POINT_QTZ_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.240811593087, longitude = 120.66866274066, },
+        { latitude = 24.244524862676, longitude = 120.72189331055, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_QTZ
+    } },
+    mask = { area = constants.AREAS.MASK_QTZ },
+  },
+  RHM = {
+    RL = { {
+      course = {
+        { latitude = 23.014333418832, longitude = 120.29055716718, },
+      },
+      area = constants.AREAS.RELOAD_POINT_RHM
+    } },
+    HA = { {
+      course = {
+        { latitude = 23.014333418832, longitude = 120.29055716718, },
+        { latitude = 23.007806699241, longitude = 120.30270871239, },
+      },
+      area = constants.AREAS.HIDE_AREA_RHM
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 23.007806699241, longitude = 120.30270871239, },
+          { latitude = 22.994809632343, longitude = 120.256690979, },
+        },
+        area = constants.AREAS.FIRE_POINT_RHM_1
+      },
+      {
+        course = {
+          { latitude = 23.007806699241, longitude = 120.30270871239, },
+          { latitude = 23.004299976875, longitude = 120.33748, },
+        },
+        area = constants.AREAS.FIRE_POINT_RHM_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 23.014333418832, longitude = 120.29055716718, },
+        { latitude = 23.047632063769, longitude = 120.31505584717, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_RHM
+    } },
+    mask = { area = constants.AREAS.MASK_RHM },
+  },
+  SET = {
+    RL = { {
+      course = {
+        { latitude = 24.938007232049, longitude = 121.14898681641, },
+      },
+      area = constants.AREAS.RELOAD_POINT_SET
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.938007232049, longitude = 121.14898681641, },
+        { latitude = 24.924763308786, longitude = 121.14489869143, },
+      },
+      area = constants.AREAS.HIDE_AREA_SET
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.924763308786, longitude = 121.14489869143, },
+          { latitude = 24.902829974713, longitude = 121.11949, },
+        },
+        area = constants.AREAS.FIRE_POINT_SET_1
+      },
+      {
+        course = {
+          { latitude = 24.924763308786, longitude = 121.14489869143, },
+          { latitude = 24.946090795328, longitude = 121.12426757813, },
+        },
+        area = constants.AREAS.FIRE_POINT_SET_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.938007232049, longitude = 121.14898681641, },
+        { latitude = 24.937594244742, longitude = 121.19207382202, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_SET
+    } },
+    mask = { area = constants.AREAS.MASK_SET },
+  },
+  SKB = {
+    RL = { {
+      course = {
+        { latitude = 25.014905380543, longitude = 121.13340714104, },
+      },
+      area = constants.AREAS.RELOAD_POINT_SKB
+    } },
+    HA = { {
+      course = {
+        { latitude = 25.014905380543, longitude = 121.13340714104, },
+        { latitude = 25.025124058379, longitude = 121.14088218672, },
+      },
+      area = constants.AREAS.HIDE_AREA_SKB
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 25.025124058379, longitude = 121.14088218672, },
+          { latitude = 25.055209119861, longitude = 121.12014770508, },
+        },
+        area = constants.AREAS.FIRE_POINT_SKB_1
+      },
+      {
+        course = {
+          { latitude = 25.025124058379, longitude = 121.14088218672, },
+          { latitude = 25.042132456373, longitude = 121.09268188477, },
+        },
+        area = constants.AREAS.FIRE_POINT_SKB_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 25.014905380543, longitude = 121.13340714104, },
+        { latitude = 24.987625022768, longitude = 121.16306304932, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_SKB
+    } },
+    mask = { area = constants.AREAS.MASK_SKB },
+  },
+  TGO = {
+    RL = { {
+      course = {
+        { latitude = 22.962051609203, longitude = 120.22955360473, },
+      },
+      area = constants.AREAS.RELOAD_POINT_TGO
+    } },
+    HA = { {
+      course = {
+        { latitude = 22.962051609203, longitude = 120.22955360473, },
+        { latitude = 22.976382255962, longitude = 120.2380254221, },
+      },
+      area = constants.AREAS.HIDE_AREA_TGO
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 22.976382255962, longitude = 120.2380254221, },
+          { latitude = 22.960470298444, longitude = 120.20175933838, },
+        },
+        area = constants.AREAS.FIRE_POINT_TGO_1
+      },
+      {
+        course = {
+          { latitude = 22.976382255962, longitude = 120.2380254221, },
+          { latitude = 22.974709543319, longitude = 120.19815444946, },
+        },
+        area = constants.AREAS.FIRE_POINT_TGO_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 22.962051609203, longitude = 120.22955360473, },
+        { latitude = 22.985330277832, longitude = 120.26630401611, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_TGO
+    } },
+    mask = { area = constants.AREAS.MASK_TGO },
+  },
+  UVY = {
+    RL = { {
+      course = {
+        { latitude = 24.809735208554, longitude = 120.96383050197, },
+      },
+      area = constants.AREAS.RELOAD_POINT_UVY
+    } },
+    HA = { {
+      course = {
+        { latitude = 24.809735208554, longitude = 120.96383050197, },
+        { latitude = 24.801253767602, longitude = 120.97802023059, },
+      },
+      area = constants.AREAS.HIDE_AREA_UVY
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 24.801253767602, longitude = 120.97802023059, },
+          { latitude = 24.806650826182, longitude = 120.96720168068, },
+          { latitude = 24.806650826182, longitude = 120.96045932326, },
+          { latitude = 24.822229974807, longitude = 120.93603, },
+        },
+        area = constants.AREAS.FIRE_POINT_UVY_1
+      },
+      {
+        course = {
+          { latitude = 24.801253767602, longitude = 120.97802023059, },
+          { latitude = 24.796408861253, longitude = 120.93011856079, },
+        },
+        area = constants.AREAS.FIRE_POINT_UVY_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 24.809735208554, longitude = 120.96383050197, },
+        { latitude = 24.793639155285, longitude = 121.01097106934, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_UVY
+    } },
+    mask = { area = constants.AREAS.MASK_UVY },
+  },
+  UYO = {
+    RL = { {
+      course = {
+        { latitude = 23.468881953898, longitude = 120.42542419753, },
+      },
+      area = constants.AREAS.RELOAD_POINT_UYO
+    } },
+    HA = { {
+      course = {
+        { latitude = 23.468881953898, longitude = 120.42542419753, },
+        { latitude = 23.460890248245, longitude = 120.43803053395, },
+      },
+      area = constants.AREAS.HIDE_AREA_UYO
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 23.460890248245, longitude = 120.43803053395, },
+          { latitude = 23.474026876493, longitude = 120.4079246521, },
+        },
+        area = constants.AREAS.FIRE_POINT_UYO_1
+      },
+      {
+        course = {
+          { latitude = 23.460890248245, longitude = 120.43803053395, },
+          { latitude = 23.439289976385, longitude = 120.39865, },
+        },
+        area = constants.AREAS.FIRE_POINT_UYO_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 23.468881953898, longitude = 120.42542419753, },
+        { latitude = 23.473130358125, longitude = 120.4712677002, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_UYO
+    } },
+    mask = { area = constants.AREAS.MASK_UYO },
+  },
+  XDY = {
+    RL = { {
+      course = {
+        { latitude = 25.048794038988, longitude = 121.56259734018, },
+      },
+      area = constants.AREAS.RELOAD_POINT_XDY
+    } },
+    HA = { {
+      course = {
+        { latitude = 25.048794038988, longitude = 121.56259734018, },
+        { latitude = 25.039813029546, longitude = 121.54914149835, },
+      },
+      area = constants.AREAS.HIDE_AREA_XDY
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 25.039813029546, longitude = 121.54914149835, },
+          { latitude = 25.0374173424,   longitude = 121.59702301025, },
+        },
+        area = constants.AREAS.FIRE_POINT_XDY_1
+      },
+      {
+        course = {
+          { latitude = 25.039813029546, longitude = 121.54914149835, },
+          { latitude = 25.052129056467, longitude = 121.59281730652, },
+        },
+        area = constants.AREAS.FIRE_POINT_XDY_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 25.048794038988, longitude = 121.56259734018, },
+        { latitude = 25.06250338587,  longitude = 121.53402328491, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_XDY
+    } },
+    mask = { area = constants.AREAS.MASK_XDY },
   },
 }
 

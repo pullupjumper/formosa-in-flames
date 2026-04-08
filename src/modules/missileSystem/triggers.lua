@@ -5,14 +5,6 @@ local GameUtils = require("src.utils.gameUtils")
 
 local Triggers = {}
 
-local ZONE_PATTERNS = {
-  "^" .. constants.POSITION_TYPES.FIRING_POINT,
-  "^" .. constants.POSITION_TYPES.HIDE_AREA,
-  "^" .. constants.POSITION_TYPES.AMMO_HOLDING_AREA,
-  "^" .. constants.POSITION_TYPES.RELOAD_POINT,
-  "^" .. constants.POSITION_TYPES.MASK
-}
-
 local ZONE_COLORS = {
   RELOAD_POINT = "4dd9822b",
   HIDE_AREA = "4d137cbd",
@@ -39,14 +31,204 @@ end
 ---@param sideName string Side name
 ---@param positionTypes string[] Position types
 ---@return string[] eventNames Array of event names
----@return string[] triggerPrefixes Array of trigger prefix strings
 local function buildEventAndTriggerNames(sideName, positionTypes)
-  local eventNames, triggerPrefixes = {}, {}
+  local eventNames = {}
   for _, posType in ipairs(positionTypes) do
     table.insert(eventNames, string.format("(%s) Arrive in %s", sideName, posType))
-    table.insert(triggerPrefixes, string.format("(%s)", posType))
   end
-  return eventNames, triggerPrefixes
+  return eventNames
+end
+
+---Check whether candidate area matches expected RP area
+---@param candidate CMO__Zone|CMO__TriggerResult|nil Zone or trigger object containing an area field
+---@param expectedArea string[]|nil Expected reference point names to compare against
+---@return boolean # True if candidate area matches expected area
+local function hasSameArea(candidate, expectedArea)
+  return candidate ~= nil
+      and expectedArea ~= nil
+      and GameUtils.isSameRPArray(GameUtils.convertToRPArray(candidate), expectedArea)
+end
+
+---Collect zones whose areas match any position or mask area
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas providing position and mask areas to match
+---@param posTypes string[] Position type keys used to look up positions in each operational area
+---@param zoneEntries { guid: string, name: string, description: string }[] Available zone entry descriptors to inspect
+---@param getZone fun(description: string): CMO__Zone|nil Function used to resolve a zone object from its description
+---@return CMO__Zone[] # Zones matched for removal
+local function collectZonesToRemove(operationalAreasToRemove, posTypes, zoneEntries, getZone)
+  local zonesToRemove = {}
+
+  for _, operationalAreaToRemove in ipairs(operationalAreasToRemove) do
+    for _, posType in ipairs(posTypes) do
+      for _, position in ipairs(operationalAreaToRemove[posType] or {}) do
+        ---@cast position SBJ__Position
+        for _, z in ipairs(zoneEntries) do
+          local zone = getZone(z.description)
+
+          if hasSameArea(zone, position.area) then
+            table.insert(zonesToRemove, zone)
+          end
+        end
+      end
+    end
+
+    if operationalAreaToRemove.mask and operationalAreaToRemove.mask.area then
+      for _, z in ipairs(zoneEntries) do
+        local zone = getZone(z.description)
+
+        if hasSameArea(zone, operationalAreaToRemove.mask.area) then
+          table.insert(zonesToRemove, zone)
+        end
+      end
+    end
+  end
+
+  return zonesToRemove
+end
+
+---Collect triggers whose areas match any position area
+---@param event CMO__Event Event object containing triggers to inspect
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas providing reference position areas
+---@param posTypes string[] Position type keys used to look up positions in each operational area
+---@param triggerType string Trigger type key to inspect on each event trigger
+---@return table[] # Triggers matched for removal
+local function collectTriggersToRemove(event, operationalAreasToRemove, posTypes, triggerType)
+  local triggersToRemove = {}
+
+  for _, operationalAreaToRemove in ipairs(operationalAreasToRemove) do
+    for _, posType in ipairs(posTypes) do
+      for _, position in ipairs(operationalAreaToRemove[posType] or {}) do
+        ---@cast position SBJ__Position
+        for _, trigger in ipairs(event.triggers) do
+          if trigger[triggerType] and trigger[triggerType].Area then
+            if hasSameArea(trigger[triggerType], position.area) then
+              table.insert(triggersToRemove, trigger)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  return triggersToRemove
+end
+
+---Remove zones matching specified operational area position keys
+---@param posTypes string[] Position type keys used to locate areas within operational areas
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas whose position and mask areas should be removed
+---@param zoneType integer Zone type to remove (`STANDARD` or `CUSTOM_ENVIRONMENT`)
+---@param sideName string Side name used to resolve or delete side-owned zones
+---@return integer # Number of zones successfully removed
+---@return boolean # True if all removals succeeded, false if any removal failed
+local function removeZones(posTypes, operationalAreasToRemove, zoneType, sideName)
+  local removedCount = 0
+  local allSuccessful = true
+
+  if zoneType == constants.ZONE_TYPES.STANDARD then
+    local sideObj = GameApi.VP_GetSide({ side = sideName })
+
+    if not sideObj then
+      return 0, false
+    end
+
+    local zonesToRemove = collectZonesToRemove(
+      operationalAreasToRemove,
+      posTypes,
+      sideObj.standardzones or {},
+      function(description)
+        return sideObj:getstandardzone(description)
+      end
+    )
+
+    for _, zone in ipairs(zonesToRemove) do
+      local rpsRemoved = GameUtils.removeRPs(zone, sideName)
+      local zoneRemoved = GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, {
+        description = zone.description
+      })
+
+      if rpsRemoved and zoneRemoved then
+        removedCount = removedCount + 1
+      else
+        allSuccessful = false
+      end
+    end
+  elseif zoneType == constants.ZONE_TYPES.CUSTOM_ENVIRONMENT then
+    local natureSideName = "Nature"
+    local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
+
+    if not natureSideObj then
+      return 0, false
+    end
+
+    local zonesToRemove = collectZonesToRemove(
+      operationalAreasToRemove,
+      posTypes,
+      natureSideObj.customenvironmentzones or {},
+      function(description)
+        return natureSideObj:getcustomenvironmentzone(description)
+      end
+    )
+
+    for _, zone in ipairs(zonesToRemove) do
+      local rpsRemoved = GameUtils.removeRPs(zone, natureSideName)
+      local zoneRemoved = GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
+        description = zone.description
+      })
+
+      if rpsRemoved and zoneRemoved then
+        removedCount = removedCount + 1
+      else
+        allSuccessful = false
+      end
+    end
+  end
+
+  return removedCount, allSuccessful
+end
+
+---Remove event triggers whose areas match specified operational area position keys
+---@param eventNames string[] Array of event names to search for triggers
+---@param posTypes string[] Position type keys used to locate areas within operational areas
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas whose position areas should be removed
+---@param triggerType string Trigger type key to filter by (for example `UnitEntersArea`)
+---@return integer # Total number of triggers successfully removed
+---@return boolean # True if all removals succeeded, false if any removal failed
+local function removeEventTriggers(eventNames, posTypes, operationalAreasToRemove, triggerType)
+  local removedCount = 0
+  local allSuccessful = true
+
+  for _, eventName in ipairs(eventNames) do
+    local event = GameApi.ScenEdit_GetEvent(eventName)
+
+    if not event then
+      allSuccessful = false
+    else
+      local triggersToRemove = collectTriggersToRemove(event, operationalAreasToRemove, posTypes, triggerType)
+
+      for _, trigger in ipairs(triggersToRemove) do
+        local triggerDesc = trigger[triggerType].Description
+
+        local eventTriggerResult = GameApi.ScenEdit_SetEventTrigger(eventName, {
+          mode = "remove",
+          description = triggerDesc,
+          name = eventName
+        })
+
+        local triggerResult = GameApi.ScenEdit_SetTrigger({
+          Description = triggerDesc,
+          Mode = "remove"
+        })
+
+        if eventTriggerResult and triggerResult then
+          removedCount = removedCount + 1
+        else
+          allSuccessful = false
+        end
+      end
+    end
+  end
+
+  return removedCount, allSuccessful
 end
 
 ---Add a unit-enters-area trigger to the specified event
@@ -82,13 +264,20 @@ end
 
 ---Clean up existing zones and event triggers for missile system
 ---@param posTypes string[] Position types to clean up
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove triggers for
 ---@param sideName string Side name for cleanup operations
-local function cleanupExistingTriggersAndZones(posTypes, sideName)
-  GameUtils.removeZones(ZONE_PATTERNS, constants.ZONE_TYPES.STANDARD, sideName)
-  GameUtils.removeZones(ZONE_PATTERNS, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, sideName)
+---@return integer removedTriggerCount Number of removed triggers
+---@return boolean triggerCleanupSuccessful Whether trigger cleanup fully succeeded
+---@return integer removedZoneCount Number of removed zones
+---@return boolean zoneCleanupSuccessful Whether zone cleanup fully succeeded
+local function cleanupExistingTriggersAndZones(posTypes, operationalAreasToRemove, sideName)
+  local eventNames = buildEventAndTriggerNames(sideName, posTypes)
+  local removedTriggerCount, triggerCleanupSuccessful =
+      removeEventTriggers(eventNames, posTypes, operationalAreasToRemove, "UnitEntersArea")
+  local removedZoneCount, zoneCleanupSuccessful = removeZones(posTypes, operationalAreasToRemove,
+    constants.ZONE_TYPES.STANDARD, sideName)
 
-  local eventNames, triggerPrefixes = buildEventAndTriggerNames(sideName, posTypes)
-  GameUtils.removeEventTriggers(eventNames, triggerPrefixes, "UnitEntersArea")
+  return removedTriggerCount, triggerCleanupSuccessful, removedZoneCount, zoneCleanupSuccessful
 end
 
 ---Add custom environment zone for terrain masking
@@ -148,12 +337,14 @@ end
 
 ---Initialize event triggers and zones for missile system operational areas
 ---@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove triggers for
 ---@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
 ---@param sideName string Side name for zone/trigger ownership
-function Triggers.initEventTriggers(operationalAreas, positionTypes, sideName)
+function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
 
-  cleanupExistingTriggersAndZones(positionTypes, sideName)
+  local removedTriggerCount, triggerCleanupSuccessful, removedZoneCount, zoneCleanupSuccessful =
+      cleanupExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
 
   local totalCreated, totalFailed, maskCreated, maskFailed = 0, 0, 0, 0
   local allFailMessages = {}
@@ -177,13 +368,23 @@ function Triggers.initEventTriggers(operationalAreas, positionTypes, sideName)
   end
 
   Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
+    "Cleanup for %s missile system: removed %d triggers (allSuccessful: %s), removed %d zones (allSuccessful: %s)",
+    sideName,
+    removedTriggerCount,
+    tostring(triggerCleanupSuccessful),
+    removedZoneCount,
+    tostring(zoneCleanupSuccessful)
+  ))
+
+  Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
     "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created",
     sideName, totalCreated, totalCreated + totalFailed,
     maskCreated, maskCreated + maskFailed
   ))
 
   if #allFailMessages > 0 then
-    Logger.error(constants.TAGS.MISSILE_SYSTEM .. ": Trigger/zone creation failures:\n" .. table.concat(allFailMessages, "\n"))
+    Logger.error(constants.TAGS.MISSILE_SYSTEM ..
+      ": Trigger/zone creation failures:\n" .. table.concat(allFailMessages, "\n"))
   end
 end
 

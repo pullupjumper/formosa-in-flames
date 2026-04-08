@@ -519,7 +519,7 @@ function UnitStatusUI.createUI(config, sideName)
     local batteryDataString = createBatteryDataString(
       config, saveData, sideName,
       constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRSM,
+      constants.MISSILE_SYSTEM_TYPES.MLRS,
       constants.MISSILE_SYSTEM_TYPES.GLCM,
       constants.MISSILE_SYSTEM_TYPES.ASCM,
       constants.MISSILE_SYSTEM_TYPES.MRBM,
@@ -546,7 +546,7 @@ function UnitStatusUI.createUI(config, sideName)
     local batteryDataString = createBatteryDataString(
       config, saveData, sideName,
       constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRSM,
+      constants.MISSILE_SYSTEM_TYPES.MLRS,
       constants.MISSILE_SYSTEM_TYPES.GLCM,
       constants.MISSILE_SYSTEM_TYPES.ASCM,
       constants.MISSILE_SYSTEM_TYPES.SAM
@@ -635,6 +635,8 @@ function UnitStatusUI.createSetupMenu(config, sideName)
       local field = sideConfig.field
       local operationalAreas = {}
       ---@cast operationalAreas SBJ__OperationalArea[]
+      local operationalAreasToRemove = {}
+      ---@cast operationalAreasToRemove SBJ__OperationalArea[]
 
       -- Update missile system configurations in config
       for _, missileSystem in ipairs(missileSystems) do
@@ -646,6 +648,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
           local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
           local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
           local operationalArea = transformData(missileSystem)
+          table.insert(operationalAreasToRemove, firingUnitdescriptor.operationalArea)
           firingUnitdescriptor.operationalArea = operationalArea
           resupplyUnitDescriptor.operationalArea = operationalArea
           table.insert(operationalAreas, operationalArea)
@@ -655,7 +658,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         end
       end
 
-      MissileSystem.initEventTriggers(operationalAreas, {
+      MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,
         constants.POSITION_TYPES.HIDE_AREA,

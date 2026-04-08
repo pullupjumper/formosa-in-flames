@@ -1,2 +1,5 @@
 references/*
 slim/*
+.agents/*
+.claude/*
+.opencode/*
