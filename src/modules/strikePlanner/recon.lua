@@ -53,7 +53,7 @@ local function launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
-    base = GameApi.ScenEdit_GetUnit(baseGUID, "China")
+    base = GameApi.ScenEdit_GetUnit(baseGUID, constants.SIDES.ENEMY)
   end
 
   if not base then
@@ -345,7 +345,7 @@ local function handleReconTracking(entry, actualUnit)
         string.format("No speed configured for unit %s", actualUnit.guid)
   end
 
-  local target = GameApi.ScenEdit_GetContact("China", entry.trackingTargetGUID)
+  local target = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, entry.trackingTargetGUID)
 
   if not target then
     return TRACKING_STATUS.TARGET_LOST,

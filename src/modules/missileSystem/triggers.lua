@@ -27,6 +27,26 @@ local function getOperationalAreaColor(positionType)
   return colorMap[positionType] or ZONE_COLORS.DEFAULT
 end
 
+---Get zone configuration based on zone type
+---@param zoneType integer Zone type identifier (STANDARD/CUSTOM_ENVIRONMENT)
+---@return table<string, function> # Zone configuration table with getSide, getEntries, and getZone functions
+local function getZoneConfig(zoneType)
+  local zoneConfigMap = {
+    [constants.ZONE_TYPES.STANDARD] = {
+      getSide = function(sideName) return sideName end,
+      getEntries = function(sideObj) return sideObj.standardzones or {} end,
+      getZone = function(sideObj) return function(desc) return sideObj:getstandardzone(desc) end end,
+    },
+    [constants.ZONE_TYPES.CUSTOM_ENVIRONMENT] = {
+      getSide = function() return "Nature" end,
+      getEntries = function(sideObj) return sideObj.customenvironmentzones or {} end,
+      getZone = function(sideObj) return function(desc) return sideObj:getcustomenvironmentzone(desc) end end,
+    },
+  }
+
+  return zoneConfigMap[zoneType] or zoneConfigMap[constants.ZONE_TYPES.STANDARD]
+end
+
 ---Build event names and trigger prefixes for a side
 ---@param sideName string Side name
 ---@param positionTypes string[] Position types
@@ -49,6 +69,68 @@ local function hasSameArea(candidate, expectedArea)
       and GameUtils.isSameRPArray(GameUtils.convertToRPArray(candidate), expectedArea)
 end
 
+---Get all positions in an area, including any mask area
+---@param area SBJ__OperationalArea Area containing position types and an optional mask
+---@param posTypes string[] Position type keys used to look up positions in each operational area
+---@return SBJ__Position[] # Positions from the area and mask, if present
+local function getPositionsIncludingMask(area, posTypes)
+  local positions = {}
+  for _, posType in ipairs(posTypes) do
+    for _, position in ipairs(area[posType] or {}) do
+      ---@cast position SBJ__Position
+      table.insert(positions, position)
+    end
+  end
+  if area.mask and area.mask.area then
+    table.insert(positions, area.mask) -- mask 本身就有 .area，結構一樣
+  end
+  return positions
+end
+
+---Iterate over each position in the operational areas and call the callback
+---@param operationalAreas SBJ__OperationalArea[] Operational areas providing position and mask areas to match
+---@param posTypes string[] Position type keys used to look up positions in each operational area
+---@param callback fun(position: SBJ__Position) Callback function to call for each position
+local function forEachPosition(operationalAreas, posTypes, callback)
+  for _, area in ipairs(operationalAreas) do
+    for _, position in ipairs(getPositionsIncludingMask(area, posTypes)) do
+      callback(position)
+    end
+  end
+end
+
+---Find zones whose areas match the given position area
+---@param positionArea string[] Area of the position to match
+---@param zoneEntries { guid: string, name: string, description: string }[] Available zone entry descriptors to inspect
+---@param getZone fun(description: string): CMO__Zone|nil Function to get a zone by its description
+---@return CMO__Zone|nil Matching zone
+local function findMatchingZone(positionArea, zoneEntries, getZone)
+  for _, z in ipairs(zoneEntries) do
+    local zone = getZone(z.description)
+    if hasSameArea(zone, positionArea) then
+      return zone
+    end
+  end
+  return nil
+end
+
+---Find a trigger whose area matches the given position area
+---@param positionArea string[] Area of the position to match
+---@param triggers table[] Available triggers to inspect
+---@param triggerType string Trigger type key used to look up the trigger's area
+---@return table|nil Matching trigger
+local function findMatchingTrigger(positionArea, triggers, triggerType)
+  for _, trigger in ipairs(triggers) do
+    if trigger[triggerType] and trigger[triggerType].Area then
+      if hasSameArea(trigger[triggerType], positionArea) then
+        return trigger
+      end
+    end
+  end
+
+  return nil
+end
+
 ---Collect zones whose areas match any position or mask area
 ---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas providing position and mask areas to match
 ---@param posTypes string[] Position type keys used to look up positions in each operational area
@@ -58,30 +140,12 @@ end
 local function collectZonesToRemove(operationalAreasToRemove, posTypes, zoneEntries, getZone)
   local zonesToRemove = {}
 
-  for _, operationalAreaToRemove in ipairs(operationalAreasToRemove) do
-    for _, posType in ipairs(posTypes) do
-      for _, position in ipairs(operationalAreaToRemove[posType] or {}) do
-        ---@cast position SBJ__Position
-        for _, z in ipairs(zoneEntries) do
-          local zone = getZone(z.description)
-
-          if hasSameArea(zone, position.area) then
-            table.insert(zonesToRemove, zone)
-          end
-        end
-      end
+  forEachPosition(operationalAreasToRemove, posTypes, function(position)
+    local matchZone = findMatchingZone(position.area, zoneEntries, getZone)
+    if matchZone then
+      table.insert(zonesToRemove, matchZone)
     end
-
-    if operationalAreaToRemove.mask and operationalAreaToRemove.mask.area then
-      for _, z in ipairs(zoneEntries) do
-        local zone = getZone(z.description)
-
-        if hasSameArea(zone, operationalAreaToRemove.mask.area) then
-          table.insert(zonesToRemove, zone)
-        end
-      end
-    end
-  end
+  end)
 
   return zonesToRemove
 end
@@ -95,20 +159,12 @@ end
 local function collectTriggersToRemove(event, operationalAreasToRemove, posTypes, triggerType)
   local triggersToRemove = {}
 
-  for _, operationalAreaToRemove in ipairs(operationalAreasToRemove) do
-    for _, posType in ipairs(posTypes) do
-      for _, position in ipairs(operationalAreaToRemove[posType] or {}) do
-        ---@cast position SBJ__Position
-        for _, trigger in ipairs(event.triggers) do
-          if trigger[triggerType] and trigger[triggerType].Area then
-            if hasSameArea(trigger[triggerType], position.area) then
-              table.insert(triggersToRemove, trigger)
-            end
-          end
-        end
-      end
+  forEachPosition(operationalAreasToRemove, posTypes, function(position)
+    local matchingTrigger = findMatchingTrigger(position.area, event.triggers, triggerType)
+    if matchingTrigger then
+      table.insert(triggersToRemove, matchingTrigger)
     end
-  end
+  end)
 
   return triggersToRemove
 end
@@ -124,62 +180,23 @@ local function removeZones(posTypes, operationalAreasToRemove, zoneType, sideNam
   local removedCount = 0
   local allSuccessful = true
 
-  if zoneType == constants.ZONE_TYPES.STANDARD then
-    local sideObj = GameApi.VP_GetSide({ side = sideName })
+  local cfg = getZoneConfig(zoneType)
+  local resolvedSide = cfg.getSide(sideName)
+  local sideObj = GameApi.VP_GetSide({ side = resolvedSide })
+  if not sideObj then return 0, false end
 
-    if not sideObj then
-      return 0, false
-    end
+  local zonesToRemove = collectZonesToRemove(
+    operationalAreasToRemove, posTypes, cfg.getEntries(sideObj), cfg.getZone(sideObj)
+  )
 
-    local zonesToRemove = collectZonesToRemove(
-      operationalAreasToRemove,
-      posTypes,
-      sideObj.standardzones or {},
-      function(description)
-        return sideObj:getstandardzone(description)
-      end
-    )
+  for _, zone in ipairs(zonesToRemove) do
+    local rpsRemoved = GameUtils.removeRPs(zone, resolvedSide)
+    local zoneRemoved = GameApi.ScenEdit_RemoveZone(resolvedSide, zoneType, { description = zone.description })
 
-    for _, zone in ipairs(zonesToRemove) do
-      local rpsRemoved = GameUtils.removeRPs(zone, sideName)
-      local zoneRemoved = GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, {
-        description = zone.description
-      })
-
-      if rpsRemoved and zoneRemoved then
-        removedCount = removedCount + 1
-      else
-        allSuccessful = false
-      end
-    end
-  elseif zoneType == constants.ZONE_TYPES.CUSTOM_ENVIRONMENT then
-    local natureSideName = "Nature"
-    local natureSideObj = GameApi.VP_GetSide({ side = natureSideName })
-
-    if not natureSideObj then
-      return 0, false
-    end
-
-    local zonesToRemove = collectZonesToRemove(
-      operationalAreasToRemove,
-      posTypes,
-      natureSideObj.customenvironmentzones or {},
-      function(description)
-        return natureSideObj:getcustomenvironmentzone(description)
-      end
-    )
-
-    for _, zone in ipairs(zonesToRemove) do
-      local rpsRemoved = GameUtils.removeRPs(zone, natureSideName)
-      local zoneRemoved = GameApi.ScenEdit_RemoveZone(natureSideName, constants.ZONE_TYPES.CUSTOM_ENVIRONMENT, {
-        description = zone.description
-      })
-
-      if rpsRemoved and zoneRemoved then
-        removedCount = removedCount + 1
-      else
-        allSuccessful = false
-      end
+    if rpsRemoved and zoneRemoved then
+      removedCount = removedCount + 1
+    else
+      allSuccessful = false
     end
   end
 
@@ -369,17 +386,12 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
 
   Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
     "Cleanup for %s missile system: removed %d triggers (allSuccessful: %s), removed %d zones (allSuccessful: %s)",
-    sideName,
-    removedTriggerCount,
-    tostring(triggerCleanupSuccessful),
-    removedZoneCount,
-    tostring(zoneCleanupSuccessful)
+    sideName, removedTriggerCount, tostring(triggerCleanupSuccessful), removedZoneCount, tostring(zoneCleanupSuccessful)
   ))
 
   Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
     "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created",
-    sideName, totalCreated, totalCreated + totalFailed,
-    maskCreated, maskCreated + maskFailed
+    sideName, totalCreated, totalCreated + totalFailed, maskCreated, maskCreated + maskFailed
   ))
 
   if #allFailMessages > 0 then
