@@ -11,10 +11,10 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 ### Testing
 ```bash
 # Run all tests (from project root)
-busted --lua=luajit test
+busted --lua=luajit spec
 
 # Run specific test file
-busted --lua=luajit test/modules/missileSystem_spec.lua
+busted --lua=luajit spec/modules/missileSystem_spec.lua
 ```
 
 ### Build and Deployment

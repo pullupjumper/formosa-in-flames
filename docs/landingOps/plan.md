@@ -265,7 +265,7 @@ SAG 護航編隊改為 per-zone，依各 zone 的階段執行：
 
 ### 7. 測試更新
 
-所有 `test/modules/landingOps/` 下的 spec 檔案需配合新簽名更新。
+所有 `spec/modules/landingOps/` 下的 spec 檔案需配合新簽名更新。
 
 ---
 
@@ -281,4 +281,4 @@ SAG 護航編隊改為 per-zone，依各 zone 的階段執行：
 | `src/modules/landingOps/amphibiousAssault.lua` | `setCoursesForLSTs` 改簽名（含 operation + sagLookup），移除內部 zone/SAG 迴圈 |
 | `src/modules/landingOps/shipMovement.lua` | `moveToStagingArea` 新增 `operation` 參數，SAG 依 `sagNames` 過濾 |
 | `src/modules/landingOps/secondWaveUnloading.lua` | `startSecondWaveUnloading` 改簽名 |
-| `test/modules/landingOps/*_spec.lua` | 配合新簽名更新 |
+| `spec/modules/landingOps/*_spec.lua` | 配合新簽名更新 |

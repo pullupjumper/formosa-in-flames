@@ -104,7 +104,8 @@ flowchart TB
 
     HA -->|部署| FP
     FP -->|低彈量| RL
-    RL -->|裝填完成| HA / FP(SAM)
+    RL -->|裝填完成| HA
+    RL -.->|裝填完成（SAM）| FP
     HA ---|隱蔽| MASK
     RL <-->|補給車往返| AHA
     AHA --- DEPOT
@@ -389,4 +390,4 @@ saveData.{c|t}.ground
 | `src/modules/strikePlanner/fireSupportPlan.lua` | 上游：呼叫 `moveToFiringPoint` / `isLowAmmo` |
 | `src/modules/strikePlanner/dynamicFireSupportPlan.lua` | 上游：檢查 `isLowAmmo` |
 | `src/modules/landingOps/amphibiousLogistics.lua` | 依賴：`loadCargo` 用於建築物隱蔽 |
-| `test/modules/missileSystem/` | 單元測試 |
+| `spec/modules/missileSystem/` | 單元測試 |
