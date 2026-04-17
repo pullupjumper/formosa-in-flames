@@ -29,22 +29,22 @@ end
 ---@return SBJ__SideConfig # Side configuration with field, enemySide, and displayName
 function GameUtils.getCachedSideConfig(sideName)
   if not sideConfigCache[sideName] then
-    if sideName == "China" then
+    if sideName == constants.SIDES.ENEMY then
       sideConfigCache[sideName] = {
         field = "c",
-        enemySide = "Taiwan",
-        displayName = "China"
+        enemySide = constants.SIDES.PLAYER,
+        displayName = constants.SIDES.ENEMY
       }
     elseif sideName == "US" then
       sideConfigCache[sideName] = {
         field = "u",
-        enemySide = "China",
+        enemySide = constants.SIDES.ENEMY,
         displayName = "United States"
       }
     else
       sideConfigCache[sideName] = {
         field = "t",
-        enemySide = "China",
+        enemySide = constants.SIDES.ENEMY,
         displayName = sideName
       }
     end

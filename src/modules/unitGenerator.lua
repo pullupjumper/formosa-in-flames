@@ -498,9 +498,11 @@ function UnitGenerator.createCSG(csgDescriptor)
   local csg = GameApi.ScenEdit_GetUnit(csgDescriptor.groupName)
   if csg then
     local referenceAreas = {
-      { "RP-40884", "RP-40885", "RP-40886", "RP-40887" },
-      { "RP-40830", "RP-40831", "RP-40832", "RP-40833" },
-      { "RP-40835", "RP-40836", "RP-40837", "RP-40838" }
+      { "RP-40884",  "RP-40885",  "RP-40886",  "RP-40887" },
+      { "RP-40830",  "RP-40831",  "RP-40832",  "RP-40833" },
+      { "RP-40835",  "RP-40836",  "RP-40837",  "RP-40838" },
+      { "RP-198948", "RP-198949", "RP-198950", "RP-198951" },
+      { "RP-198952", "RP-198953" }
     }
 
     for _, area in ipairs(referenceAreas) do

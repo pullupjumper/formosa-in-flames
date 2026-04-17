@@ -884,6 +884,21 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field wcs integer? Weapon control status (optional)
 ---@field useLastCourse boolean? Whether to use the last waypoint in course
 
+---Behavior switches for UnitEntersArea move-to-position flow
+---@class SBJ__MoveToPositionBehavior: table
+---@field hideOnEnterHA boolean Whether entering HA should force hide flow
+---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
+---@field firingUnitLookupSide string Side name used to resolve paired firing unit
+
+---Input options for missileSystem UnitEntersArea event handling
+---@class SBJ__MoveToPositionEventOpts: table
+---@field groundCtx table<string, SBJ__MissileSystemContext> Missile system runtime contexts by type
+---@field unit CMO__Unit Unit that triggered UnitEntersArea
+---@field event CMO__Event Event payload from CMO
+---@field isAuto boolean Whether the flow runs in automatic mode
+---@field contacts CMO__Contact[]|nil Current side contacts used for drop-contact handling
+---@field behavior SBJ__MoveToPositionBehavior|nil Optional behavior switches for side-specific differences
+
 ---Structured result from a reload cycle action
 ---@class SBJ__ReloadCycleResult: table
 ---@field tag string Result tag (e.g. "OK")

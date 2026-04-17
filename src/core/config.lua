@@ -106,8 +106,8 @@ config.readytime = 5 * 60
 -- ============================================================================
 
 config.c.triggers = {
-  -- amphibiousOps = { startTime = "2027-06-09 02:40:00" },
-  amphibiousOps = { startTime = "2027-06-09 1:00:00" },
+  amphibiousOps = { startTime = "2027-06-09 02:40:00" },
+  -- amphibiousOps = { startTime = "2027-06-09 1:00:00" },
   launchLACM = { startTime = "2027-06-09 06:00:00" },
   launchSLCM = { startTime = "2027-06-09 06:30:00" },
   -- launchSLCM = { startTime = "2027-06-09 01:00:00" },
@@ -1006,7 +1006,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.HUIZHOU_PINGTAN_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.Y8Q_CUB,
         platformName = "Y-8Q CUB",
@@ -1022,17 +1022,18 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
         name = "7th Air Bde",
         loadouts = {
           { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 },
+          { name = "PL-15 AAM",     loadoutId = constants.LOADOUTS.J16_PL15,  num = 12, missionName = "CAP/W/3" },
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.BZK005,
         platformName = "BZK-005",
@@ -1044,6 +1045,7 @@ config.c.air.landBased.deployedACs = {
     },
     loadouts = {
       { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 24 }, --AKD-88 X 2
+      { name = "PL-15 AAM",     loadoutId = constants.LOADOUTS.J16_PL15,  num = 12 },
     }
   },
   {
@@ -1051,7 +1053,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.ZHANGPU_AAB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
@@ -1061,7 +1063,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16D,
         platformName = "J-16D",
@@ -1071,7 +1073,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.IL76,
         platformName = "Il-76",
@@ -1081,7 +1083,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.Y9DZ,
         platformName = "Y-9DZ",
@@ -1090,6 +1092,7 @@ config.c.air.landBased.deployedACs = {
           { name = "SIGINT", loadoutId = constants.LOADOUTS.Y9DZ_SIGINT, num = 3, missionName = "SIGINT" },
         }
       },
+
     },
     loadouts = {
       { name = "KAB-1500 Strike",    loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
@@ -1101,7 +1104,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
@@ -1109,10 +1112,21 @@ config.c.air.landBased.deployedACs = {
         loadouts = {
           { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 },
         }
-      }
+      },
+      {
+        side = constants.SIDES.ENEMY,
+        type = "Air",
+        dbid = constants.PLATFORMS.J16,
+        platformName = "J-16",
+        name = "40th Air Bde",
+        loadouts = {
+          { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J16_PL15, num = 12, missionName = "CAP/W/2" },
+        }
+      },
     },
     loadouts = {
       { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 }, --YJ-91 X 2
+      { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J16_PL15,  num = 12 },
     }
   },
   {
@@ -1120,7 +1134,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.HUIAN_AAB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
@@ -1130,18 +1144,19 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J20,
         platformName = "J-20",
         name = "41st Air Bde",
         loadouts = {
           { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
+          { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J20_PL15, num = 12, missionName = "CAP/W/1" },
         }
       },
     },
     loadouts = {
-      { name = "PL-15 AAM",     loadoutId = constants.LOADOUTS.J20_PL15,  num = 12 }, --PL-15 X 4
+      { name = "PL-15 AAM",     loadoutId = constants.LOADOUTS.J20_PL15,  num = 24 }, --PL-15 X 4
       { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 2
     }
   },
@@ -1150,7 +1165,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.LONGTIAN_AAB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.BZK005,
         platformName = "BZK-005",
@@ -1160,7 +1175,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
@@ -1179,7 +1194,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.XINGNING_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.H6K,
         platformName = "H-6K",
@@ -1198,7 +1213,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.SHUIMEN_AAB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
@@ -1208,7 +1223,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
@@ -1218,7 +1233,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.KJ500,
         platformName = "KJ-500",
@@ -1228,7 +1243,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.HY6U_BADGER,
         platformName = "HY-6U Badger",
@@ -1238,7 +1253,7 @@ config.c.air.landBased.deployedACs = {
         }
       },
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J10C,
         platformName = "J-10C",
@@ -1259,7 +1274,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.ANQING_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.H6K,
         platformName = "H-6K",
@@ -1278,7 +1293,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.WUHU_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J20,
         platformName = "J-20",
@@ -1297,7 +1312,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.LIUAN_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.H6N,
         platformName = "H-6N",
@@ -1313,7 +1328,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.TAIZHOU_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
@@ -1332,7 +1347,7 @@ config.c.air.landBased.deployedACs = {
   --   baseGUID = constants.BASES.RUGAO_AB,
   --   embarkedUnits = {
   --     {
-  --       side = "China",
+  --       side = constants.SIDES.ENEMY,
   --       type = "Air",
   --       dbid = constants.PLATFORMS.J16,
   --       name = "7th Air Bde",
@@ -1352,7 +1367,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.XIAHGTANG_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16D,
         platformName = "J-16D",
@@ -1371,7 +1386,7 @@ config.c.air.landBased.deployedACs = {
   --   baseGUID = constants.BASES.WUYISHAN_AB,
   --   embarkedUnits = {
   --     {
-  --       side = "China",
+  --       side = constants.SIDES.ENEMY,
   --       type = "Air",
   --       dbid = constants.PLATFORMS.J20,
   --       name = "41st Air Bde",
@@ -1389,7 +1404,7 @@ config.c.air.landBased.deployedACs = {
     baseGUID = constants.BASES.JIAXING_AB,
     embarkedUnits = {
       {
-        side = "China",
+        side = constants.SIDES.ENEMY,
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
@@ -2249,18 +2264,19 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_002,
       embarkedUnits = {
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.J15,
           platformName = "J-15",
           name = "2nd Carrier Air Wing",
           loadouts = {
-            { loadoutId = constants.LOADOUTS.J15_YJ91,    num = 16 },
-            { loadoutId = constants.LOADOUTS.J15_LS6_500, num = 24 },
+            { loadoutId = constants.LOADOUTS.J15_YJ91,    num = 8 },
+            { loadoutId = constants.LOADOUTS.J15_LS6_500, num = 12 },
+            { loadoutId = constants.LOADOUTS.J15_PL15,    num = 12, missionName = "CAP/CSG" },
           }
         },
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.Z18F_SEA_EAGLE,
           platformName = "Z-18F Sea Eagle",
@@ -2270,7 +2286,7 @@ config.c.surface.lacm.csg = {
           }
         },
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.Z18J,
           platformName = "Z-18J",
@@ -2280,7 +2296,7 @@ config.c.surface.lacm.csg = {
           }
         },
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.J15D,
           platformName = "J-15D",
@@ -2293,13 +2309,14 @@ config.c.surface.lacm.csg = {
       loadouts = {
         { loadoutId = constants.LOADOUTS.J15_LS6_500, num = 24, }, -- LS-6-500 X 4
         { loadoutId = constants.LOADOUTS.J15_YJ91,    num = 16, }, -- YJ-91 X 4
+        { loadoutId = constants.LOADOUTS.J15_PL15,    num = 12, },
       }
     },
     type055 = {
       dbid = constants.PLATFORMS.TYPE_055,
       embarkedUnits = {
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.KA28,
           platformName = "Ka-28",
@@ -2314,7 +2331,7 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_054A,
       embarkedUnits = {
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.KA28,
           platformName = "Ka-28",
@@ -2329,7 +2346,7 @@ config.c.surface.lacm.csg = {
       dbid = constants.PLATFORMS.TYPE_901,
       embarkedUnits = {
         {
-          side = "China",
+          side = constants.SIDES.ENEMY,
           type = "Air",
           dbid = constants.PLATFORMS.Z18F_SEA_EAGLE,
           platformName = "Z-18F Sea Eagle",
@@ -4692,7 +4709,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.CHING_CHUANG_KANG_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.IDF,
         platformName = "IDF",
@@ -4711,7 +4728,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.CHIAYI_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK20,
         platformName = "F-16V Block 20",
@@ -4732,7 +4749,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.TAINAN_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.IDF,
         platformName = "IDF",
@@ -4751,7 +4768,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.MAGONG_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.IDF,
         platformName = "IDF",
@@ -4770,7 +4787,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.GUIREN_AAB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.AH1W,
         platformName = "AH-1W",
@@ -4789,7 +4806,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.PINGTUNG_NORTH_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.E2K,
         platformName = "E-2K",
@@ -4805,7 +4822,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.PINGTUNG_SOUTH_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.P3C,
         platformName = "P-3C",
@@ -4815,7 +4832,7 @@ config.t.air.landBased.deployedACs = {
         }
       },
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.C130HE,
         platformName = "C-130HE",
@@ -4831,7 +4848,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.TAITUNG_JHIHHANG_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK70,
         platformName = "F-16V Block 70",
@@ -4853,7 +4870,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.JIASHAN_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.MQ9B,
         platformName = "MQ-9B",
@@ -4863,7 +4880,7 @@ config.t.air.landBased.deployedACs = {
         }
       },
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.F16V_BLK20,
         platformName = "F-16V Block 20",
@@ -4884,7 +4901,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.HSINCHU_AB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.MIRAGE2000,
         platformName = "Mirage 2000",
@@ -4904,7 +4921,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.LONGTAN_AAB,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.AH64E,
         platformName = "AH-64E",
@@ -4923,7 +4940,7 @@ config.t.air.landBased.deployedACs = {
     baseGUID = constants.BASES.TAOYUAN_AIRPORT,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Air",
         dbid = constants.PLATFORMS.CHUNG_SHYANG_II,
         platformName = "Chung Shyang II",
@@ -4984,7 +5001,7 @@ config.t.surface.sag = {
         dbid = constants.PLATFORMS.KIDD,
         embarkedUnits = {
           {
-            side = "Taiwan",
+            side = constants.SIDES.PLAYER,
             type = "Air",
             dbid = constants.PLATFORMS.S70C,
             platformName = "S-70C",
@@ -4999,7 +5016,7 @@ config.t.surface.sag = {
         dbid = constants.PLATFORMS.KANG_DING,
         embarkedUnits = {
           {
-            side = "Taiwan",
+            side = constants.SIDES.PLAYER,
             type = "Air",
             dbid = constants.PLATFORMS.S70C,
             platformName = "S-70C",
@@ -5024,7 +5041,7 @@ config.t.surface.deployedShips = {
     baseGUID = constants.BASES.PORT_OF_KEELUNG,
     embarkedUnits = {
       {
-        side = "Taiwan",
+        side = constants.SIDES.PLAYER,
         type = "Ship",
         dbid = constants.PLATFORMS.TA_CHIANG,
         platformName = "Ta Chiang",

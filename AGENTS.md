@@ -12,21 +12,12 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 ```bash
 # Run all tests (from project root)
 busted --lua=luajit spec
-
-# Run specific test file
-busted --lua=luajit spec/modules/missileSystem_spec.lua
 ```
 
 ### Build and Deployment
 ```bash
 # Process Lua modules for deployment (removes requires, cleans modules)
 python3 tools/build_lua_scenario.py
-
-# Clean only (src -> slim)
-python3 tools/build_lua_scenario.py --clean-only
-
-# Merge only (slim -> main.lua)
-python3 tools/build_lua_scenario.py --merge-only
 ```
 
 ### Development Mode

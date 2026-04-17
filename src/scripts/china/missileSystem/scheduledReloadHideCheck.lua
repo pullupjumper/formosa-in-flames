@@ -10,10 +10,6 @@ if saveData == nil then
   return
 end
 
-for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
-  if saveData.c.ground[missileSystem] and saveData.c.ground[missileSystem].enabled then
-    MissileSystem.checkMissileSystemState(saveData.c.ground[missileSystem], true, constants.SIDES.ENEMY)
-  end
-end
+MissileSystem.checkMissileSystemState(saveData.c.ground, true, constants.SIDES.ENEMY)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")
