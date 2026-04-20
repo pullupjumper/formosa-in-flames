@@ -102,10 +102,7 @@ function Recon.launchWZ8(h6n, course)
     heading = WZ8_INITIAL_HEADING,
     speed = WZ8_INITIAL_SPEED
   })
-
-  if not wz8 then
-    return
-  end
+  if not wz8 then return end
 
   local updatedUnit = GameApi.ScenEdit_UpdateUnit({
     guid = wz8.guid,
@@ -115,16 +112,10 @@ function Recon.launchWZ8(h6n, course)
     arc_track = constants.SENSOR_ARCS
   })
 
-  if not updatedUnit then
-    return
-  end
-
+  if not updatedUnit then return end
+  GameApi.ScenEdit_SetUnit({ guid = wz8.guid, base = constants.BASES.LONGTIAN_AAB })
   local result = GameApi.ScenEdit_SetEMCON("Unit", wz8.guid, "Radar=Active")
-
-  if not result then
-    return
-  end
-
+  if not result then return end
   wz8.course = course
   h6n:RTB(true)
   return wz8
