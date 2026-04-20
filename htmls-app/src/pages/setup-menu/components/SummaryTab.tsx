@@ -26,10 +26,10 @@ function trimLeadingWaypoint(
 
 function normalizeExportPaths(paths: MovementPaths): MovementPaths {
   return {
-    FP: paths.FP.map((path) => ({
-      ...path,
-      waypoints: trimLeadingWaypoint(path.waypoints),
-    })),
+    // FP paths start at the shared gateway (not the vehicle's position);
+    // the gateway is an intermediate waypoint every shelter must pass through
+    // to stay clear of HA/RL, so keep the full waypoint list intact.
+    FP: paths.FP.map((path) => ({ ...path })),
     HA: {
       ...paths.HA,
       waypoints: trimLeadingWaypoint(paths.HA.waypoints),
@@ -42,6 +42,8 @@ function normalizeExportPaths(paths: MovementPaths): MovementPaths {
       ...paths.AHA,
       waypoints: trimLeadingWaypoint(paths.AHA.waypoints),
     },
+    // SHRL follows the same model as FP: gateway is a real waypoint, not origin.
+    SHRL: { ...paths.SHRL },
   };
 }
 

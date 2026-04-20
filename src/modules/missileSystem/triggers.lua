@@ -317,6 +317,28 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
   return false
 end
 
+---@param operationalArea SBJ__OperationalArea Operational area configuration
+---@param sideName string Side name for zone ownership
+---@return boolean # Whether zone was successfully created
+local function addBunkers(operationalArea, sideName)
+  if not operationalArea.shelterPoints then return false end
+
+  for idx, point in ipairs(operationalArea.shelterPoints) do
+    local addedUnit = GameApi.ScenEdit_AddUnit({
+      side = sideName,
+      unitname = "BUNKER/" .. operationalArea.name .. "/" .. tostring(idx),
+      dbid = constants.PLATFORMS.BUILDING,
+      type = constants.UNIT_TYPES.FACILITY,
+      latitude = point.latitude,
+      longitude = point.longitude
+    })
+
+    if not addedUnit then return false end
+  end
+
+  return true
+end
+
 ---Create position triggers for an operational area
 ---@param operationalArea SBJ__OperationalArea Operational area configuration
 ---@param positionTypes string[] Position types to create
@@ -363,7 +385,7 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
   local removedTriggerCount, triggerCleanupSuccessful, removedZoneCount, zoneCleanupSuccessful =
       cleanupExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
 
-  local totalCreated, totalFailed, maskCreated, maskFailed = 0, 0, 0, 0
+  local totalCreated, totalFailed, maskCreated, maskFailed, bunkersCreated, bunkersFailed = 0, 0, 0, 0, 0, 0
   local allFailMessages = {}
 
   for _, operationalArea in ipairs(operationalAreas) do
@@ -382,6 +404,14 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
       table.insert(allFailMessages,
         string.format("  [FAIL] MASK zone for %s", operationalArea.name))
     end
+
+    if addBunkers(operationalArea, sideName) then
+      bunkersCreated = bunkersCreated + 1
+    else
+      bunkersFailed = bunkersFailed + 1
+      table.insert(allFailMessages,
+        string.format("  [FAIL] BUNKER creation for %s", operationalArea.name))
+    end
   end
 
   Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
@@ -390,13 +420,14 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
   ))
 
   Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
-    "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created",
-    sideName, totalCreated, totalCreated + totalFailed, maskCreated, maskCreated + maskFailed
+    "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created, %d/%d bunkers created",
+    sideName, totalCreated, totalCreated + totalFailed, maskCreated, maskCreated + maskFailed, bunkersCreated,
+    bunkersCreated + bunkersFailed
   ))
 
   if #allFailMessages > 0 then
     Logger.error(constants.TAGS.MISSILE_SYSTEM ..
-      ": Trigger/zone creation failures:\n" .. table.concat(allFailMessages, "\n"))
+      ": Trigger/zone/bunker creation failures:\n" .. table.concat(allFailMessages, "\n"))
   end
 end
 

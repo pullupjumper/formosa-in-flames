@@ -23,10 +23,10 @@ local function extractPositionType(event)
   for _, trigger in ipairs(event.triggers) do
     local entersArea = trigger["UnitEntersArea"]
     if entersArea and entersArea.Description then
-      local positionType = string.match(entersArea.Description, "(FP)") or
-          string.match(entersArea.Description, "(AHA)") or
-          string.match(entersArea.Description, "(HA)") or
-          string.match(entersArea.Description, "(RL)")
+      local positionType = string.match(entersArea.Description, "Arrive in (FP) ") or
+          string.match(entersArea.Description, "Arrive in (AHA) ") or
+          string.match(entersArea.Description, "Arrive in (HA) ") or
+          string.match(entersArea.Description, "Arrive in (RL) ")
       if positionType then
         return positionType
       end
@@ -196,11 +196,9 @@ local function handleHideArea(systemCtx, unit, isAuto, behavior)
     return
   end
 
-  if behavior.hideOnEnterHA or Movement.isRepositioning(firingUnitCtx, isAuto) then
+  if behavior.hideOnEnterHA and not Ammo.isLowAmmo(unit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
     Movement.setStateToHide(firingUnitCtx, unit, isAuto)
-    if behavior.hideOnEnterHA then
-      Concealment.hideUnit(firingUnitCtx, unit)
-    end
+    Concealment.hideUnit(firingUnitCtx, unit)
   end
 end
 

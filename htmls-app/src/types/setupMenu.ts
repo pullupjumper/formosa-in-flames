@@ -121,6 +121,7 @@ export interface TacticalAreas {
   hideArea?: { latitude: number; longitude: number }[];
   reloadArea?: { latitude: number; longitude: number }[];
   firePoints?: { latitude: number; longitude: number }[][];
+  shelterPoints?: { latitude: number; longitude: number }[];
 }
 
 export interface MovementPaths {
@@ -128,6 +129,7 @@ export interface MovementPaths {
   HA: { waypoints: { latitude: number; longitude: number }[] };
   RL: { waypoints: { latitude: number; longitude: number }[] }[];
   AHA: { waypoints: { latitude: number; longitude: number }[] };
+  SHRL: { waypoints: { latitude: number; longitude: number }[] };
 }
 
 export interface DeployedMissileSystemData {

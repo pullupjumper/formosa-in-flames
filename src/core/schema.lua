@@ -792,6 +792,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field mask {area: string[]}
 ---@field name? string Area name (optional)
 ---@field uShapeVertices? CMO__Location[] U shape vertices (optional)
+---@field shelterPoints? CMO__Location[] Shelter points (optional)
+---@field SHRL? SBJ__Position[] SHRL Path (optional)
 
 ---Weapon status tracking for ammunition count
 ---@class SBJ__WeaponStatus: table
@@ -1384,6 +1386,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
 ---@field reloadArea? CMO__Location[] Reload area vertices (4 points) if internal squares configured
 ---@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured
+---@field shelterPoints? CMO__Location[] Shelter points
 
 ---Path waypoint for TEL movement routes
 ---@class SBJ__PathWaypoint: table
@@ -1416,6 +1419,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
 ---@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
 ---@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
+---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
 ---Setup menu configuration result containing user selections
 ---@class SBJ__SetupResult: table

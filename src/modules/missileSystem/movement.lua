@@ -46,14 +46,15 @@ end
 ---Command unit to move to reload point (RL)
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context
 ---@param unit CMO__Unit Unit group
+---@param positions? SBJ__Position[]
 ---@return boolean success
 ---@return string? errorMsg
-function Movement.moveToReloadPoint(unitCtx, unit)
+function Movement.moveToReloadPoint(unitCtx, unit, positions)
   unitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return Movement.moveUnitToPosition({
     unitName = unitCtx.name,
     battery = unit,
-    positions = unitCtx.operationalArea.RL,
+    positions = positions or unitCtx.operationalArea.RL,
     positionType = constants.POSITION_TYPES.RELOAD_POINT,
     areaName = unitCtx.operationalArea.name,
     wcs = constants.WCS.HOLD

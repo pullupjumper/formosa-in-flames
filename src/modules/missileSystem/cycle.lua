@@ -51,7 +51,7 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
 
   if resupplyUnit then
     Concealment.moveFromHideArea(resupplyUnitCtx, resupplyUnit)
-    Movement.moveToReloadPoint(resupplyUnitCtx, resupplyUnit)
+    Movement.moveToReloadPoint(resupplyUnitCtx, resupplyUnit, resupplyUnitCtx.operationalArea.SHRL)
   end
 
   Movement.moveToReloadPoint(firingUnitCtx, firingUnit)

@@ -19,8 +19,12 @@ import {
   calculateMovementPaths,
   calculateBearing,
   generateSquareVerticesPublic,
+  generateShelterPoints,
+  chooseFpGateway,
+  chooseShrlGateway,
   checkSquaresOverlap,
 } from '@/utils/tacticalAreaGenerator';
+import type { Coordinate } from '@/utils/tacticalAreaGenerator';
 
 // ============================================================================
 // AREA CONFIG
@@ -43,6 +47,12 @@ const AREA_CONFIG = {
   ahaPoint: {
     radius: 7,
     squareSize: 0.3,
+  },
+  shelter: {
+    count: 2,
+    marginToWall: 0.1,
+    marginToAreas: 0.1,
+    marginBetweenPoints: 0.2,
   },
 };
 
@@ -72,15 +82,143 @@ function createEmptyMovementPaths(): DeployedMissileSystemData['paths'] {
     HA: { waypoints: [] },
     RL: [],
     AHA: { waypoints: [] },
+    SHRL: { waypoints: [] },
   };
 }
 
+const SHELTER_PLAN_MAX_ATTEMPTS = 50;
+
+interface DeploymentContext {
+  centerLat: number;
+  centerLng: number;
+  openingAngle: number;
+}
+
+interface ShelterPlan {
+  shelterPoints: { latitude: number; longitude: number }[];
+  fpGateway: Coordinate | null;
+  shrlGateway: Coordinate | null;
+}
+
+function buildShelterPoints(
+  centerLat: number,
+  centerLon: number,
+  openingAngle: number,
+  hideArea?: { latitude: number; longitude: number }[],
+  reloadArea?: { latitude: number; longitude: number }[]
+): { latitude: number; longitude: number }[] {
+  const avoidAreas: { latitude: number; longitude: number }[][] = [];
+  if (hideArea && hideArea.length === 4) avoidAreas.push(hideArea);
+  if (reloadArea && reloadArea.length === 4) avoidAreas.push(reloadArea);
+
+  return generateShelterPoints({
+    centerLat,
+    centerLon,
+    areaWidth: AREA_CONFIG.width,
+    areaHeight: AREA_CONFIG.height,
+    openingAngle,
+    avoidAreas,
+    count: AREA_CONFIG.shelter.count,
+    marginToWall: AREA_CONFIG.shelter.marginToWall,
+    marginToAreas: AREA_CONFIG.shelter.marginToAreas,
+    marginBetweenPoints: AREA_CONFIG.shelter.marginBetweenPoints,
+  });
+}
+
+/**
+ * Generate shelter points that share BOTH the FP and SHRL gateways. Retries
+ * shelter placement until both gateways succeed or we hit the attempt cap.
+ */
+function buildShelterPlan(
+  centerLat: number,
+  centerLon: number,
+  openingAngle: number,
+  hideArea?: { latitude: number; longitude: number }[],
+  reloadArea?: { latitude: number; longitude: number }[]
+): ShelterPlan {
+  const hasValidAreas =
+    !!hideArea && hideArea.length === 4 && !!reloadArea && reloadArea.length === 4;
+
+  let lastShelters: { latitude: number; longitude: number }[] = [];
+
+  for (let attempt = 0; attempt < SHELTER_PLAN_MAX_ATTEMPTS; attempt++) {
+    const shelters = buildShelterPoints(centerLat, centerLon, openingAngle, hideArea, reloadArea);
+    lastShelters = shelters;
+    if (!hasValidAreas || shelters.length === 0) continue;
+
+    const fpGateway = chooseFpGateway({
+      uShapeCenterLat: centerLat,
+      uShapeCenterLon: centerLon,
+      openingAngle,
+      areaWidth: AREA_CONFIG.width,
+      areaHeight: AREA_CONFIG.height,
+      hideArea: hideArea!,
+      reloadArea: reloadArea!,
+      shelterPoints: shelters,
+      avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+    });
+    if (!fpGateway) continue;
+
+    const shrlGateway = chooseShrlGateway({
+      hideArea: hideArea!,
+      reloadArea: reloadArea!,
+      shelterPoints: shelters,
+      avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+    });
+    if (!shrlGateway) continue;
+
+    return { shelterPoints: shelters, fpGateway, shrlGateway };
+  }
+
+  return { shelterPoints: lastShelters, fpGateway: null, shrlGateway: null };
+}
+
+function resolveGateways(
+  tacticalAreas: DeployedMissileSystemData['tacticalAreas'],
+  context: DeploymentContext
+): { fpGateway: Coordinate | null; shrlGateway: Coordinate | null } {
+  if (
+    !tacticalAreas.hideArea ||
+    tacticalAreas.hideArea.length !== 4 ||
+    !tacticalAreas.reloadArea ||
+    tacticalAreas.reloadArea.length !== 4 ||
+    !tacticalAreas.shelterPoints ||
+    tacticalAreas.shelterPoints.length === 0
+  ) {
+    return { fpGateway: null, shrlGateway: null };
+  }
+
+  const fpGateway = chooseFpGateway({
+    uShapeCenterLat: context.centerLat,
+    uShapeCenterLon: context.centerLng,
+    openingAngle: context.openingAngle,
+    areaWidth: AREA_CONFIG.width,
+    areaHeight: AREA_CONFIG.height,
+    hideArea: tacticalAreas.hideArea,
+    reloadArea: tacticalAreas.reloadArea,
+    shelterPoints: tacticalAreas.shelterPoints,
+    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+  });
+
+  const shrlGateway = chooseShrlGateway({
+    hideArea: tacticalAreas.hideArea,
+    reloadArea: tacticalAreas.reloadArea,
+    shelterPoints: tacticalAreas.shelterPoints,
+    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+  });
+
+  return { fpGateway, shrlGateway };
+}
+
 function buildMovementPaths(
-  tacticalAreas: DeployedMissileSystemData['tacticalAreas']
+  tacticalAreas: DeployedMissileSystemData['tacticalAreas'],
+  context: DeploymentContext
 ): DeployedMissileSystemData['paths'] {
   if (!tacticalAreas.ammoArea || !tacticalAreas.hideArea || !tacticalAreas.reloadArea) {
     return createEmptyMovementPaths();
   }
+
+  const { fpGateway, shrlGateway } = resolveGateways(tacticalAreas, context);
 
   return calculateMovementPaths({
     ammoArea: tacticalAreas.ammoArea,
@@ -88,6 +226,8 @@ function buildMovementPaths(
     reloadArea: tacticalAreas.reloadArea,
     firePoints: tacticalAreas.firePoints,
     avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
+    fpGateway: fpGateway ?? undefined,
+    shrlGateway: shrlGateway ?? undefined,
   });
 }
 
@@ -240,31 +380,52 @@ export function MissileSystemsTab({
           },
         };
 
-        const result = generateUShapeVertices(areaConfig);
+        // Outer retry: if buildShelterPlan can't converge on both gateways with
+        // this HA/RL layout, regenerate the U-shape (which re-randomizes HA/RL/FP)
+        // and try again. Shelter inner retry is bounded separately.
+        const OUTER_MAX = 50;
+        for (let attempt = 0; attempt < OUTER_MAX; attempt++) {
+          const result = generateUShapeVertices(areaConfig);
 
-        // Check if U-shape is within Taiwan
-        if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
-          return null;
+          // Taiwan boundary is deterministic w.r.t. lat/lng/angle; no point retrying.
+          if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
+            return null;
+          }
+
+          const plan = buildShelterPlan(lat, lng, angle, result.hideArea, result.reloadArea);
+          if (!plan.fpGateway || !plan.shrlGateway) {
+            continue;
+          }
+
+          const tacticalAreas = {
+            uShapeVertices: result.uShapeVertices,
+            ammoArea: result.ammoArea,
+            hideArea: result.hideArea,
+            reloadArea: result.reloadArea,
+            firePoints: result.firePoints,
+            shelterPoints: plan.shelterPoints,
+          };
+
+          return {
+            unitName,
+            category,
+            center: { lat, lng },
+            openingAngle: angle,
+            ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
+            ...(ahaCenterOverride ? { ahaCenter: ahaCenterOverride } : {}),
+            tacticalAreas,
+            paths: buildMovementPaths(tacticalAreas, {
+              centerLat: lat,
+              centerLng: lng,
+              openingAngle: angle,
+            }),
+          };
         }
 
-        const tacticalAreas = {
-          uShapeVertices: result.uShapeVertices,
-          ammoArea: result.ammoArea,
-          hideArea: result.hideArea,
-          reloadArea: result.reloadArea,
-          firePoints: result.firePoints,
-        };
-
-        return {
-          unitName,
-          category,
-          center: { lat, lng },
-          openingAngle: angle,
-          ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-          ...(ahaCenterOverride ? { ahaCenter: ahaCenterOverride } : {}),
-          tacticalAreas,
-          paths: buildMovementPaths(tacticalAreas),
-        };
+        console.error(
+          `generateDeploymentData: failed to find both gateways after ${OUTER_MAX} outer retries`
+        );
+        return null;
       } catch (error) {
         console.error('Error generating tactical areas:', error);
         return null;
@@ -331,6 +492,7 @@ export function MissileSystemsTab({
         newTacticalAreas.uShapeVertices = regenerated.tacticalAreas.uShapeVertices;
         newTacticalAreas.hideArea = regenerated.tacticalAreas.hideArea;
         newTacticalAreas.reloadArea = regenerated.tacticalAreas.reloadArea;
+        newTacticalAreas.shelterPoints = regenerated.tacticalAreas.shelterPoints;
         extraFields.center = { lat, lng };
       } else {
         const bearingToCenter = calculateBearing(
@@ -399,10 +561,27 @@ export function MissileSystemsTab({
             }
             break;
         }
+
+        // Regenerate shelter points (with gateway validation) when HA/RL positions change
+        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
+          const plan = buildShelterPlan(
+            deployment.center.lat,
+            deployment.center.lng,
+            deployment.openingAngle,
+            newTacticalAreas.hideArea,
+            newTacticalAreas.reloadArea
+          );
+          newTacticalAreas.shelterPoints = plan.shelterPoints;
+        }
       }
 
       // Recalculate paths with updated areas
-      const paths = buildMovementPaths(newTacticalAreas);
+      const pathContext: DeploymentContext = {
+        centerLat: extraFields.center?.lat ?? deployment.center.lat,
+        centerLng: extraFields.center?.lng ?? deployment.center.lng,
+        openingAngle: deployment.openingAngle,
+      };
+      const paths = buildMovementPaths(newTacticalAreas, pathContext);
       const label = formatAreaLabel(relocatingArea);
 
       onDeploySystem(relocatingArea.unitKey, {
@@ -438,7 +617,11 @@ export function MissileSystemsTab({
         if (newData) {
           // Preserve existing fire points (like AHA)
           newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
-          newData.paths = buildMovementPaths(newData.tacticalAreas);
+          newData.paths = buildMovementPaths(newData.tacticalAreas, {
+            centerLat: deployment.center.lat,
+            centerLng: deployment.center.lng,
+            openingAngle: newAngle,
+          });
           onDeploySystem(unitKey, newData);
         }
       }
@@ -481,48 +664,26 @@ export function MissileSystemsTab({
 
       const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
 
-      let offsets: PreviewOffsets | null = previewOffsets[autoAngle] ?? null;
-      if (!offsets) {
-        offsets = generateOffsetsForAngle(autoAngle);
-      }
-      if (!offsets) {
-        setStatus('Warning: Failed to generate tactical area for this angle');
+      // Preview offsets pre-compute a specific HA/RL layout, but we need both
+      // FP and SHRL gateways to exist. Delegate to generateDeploymentData which
+      // has the outer retry loop that regenerates HA/RL when gateways fail.
+      const deployment = generateDeploymentData(
+        selectedUnit.name,
+        selectedUnit.category,
+        lat,
+        lng,
+        autoAngle
+      );
+      if (!deployment) {
+        setStatus(
+          shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)
+            ? 'Warning: Missile systems can only be deployed on Taiwan mainland'
+            : 'Warning: Failed to place tactical areas at this location'
+        );
         return;
       }
 
-      const translate = (o: OffsetVertex) => ({
-        latitude: lat + o.dLat,
-        longitude: lng + o.dLng,
-      });
-
-      const uShapeVertices = offsets.uShapeVertices.map(translate);
-      const ammoArea = offsets.ammoArea.map(translate);
-      const hideArea = offsets.hideArea.map(translate);
-      const reloadArea = offsets.reloadArea.map(translate);
-      const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
-
-      if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(uShapeVertices)) {
-        setStatus('Warning: Generated tactical area extends outside Taiwan boundary');
-        return;
-      }
-
-      const tacticalAreas: DeployedMissileSystemData['tacticalAreas'] = {
-        uShapeVertices,
-        ammoArea,
-        hideArea,
-        reloadArea,
-        firePoints,
-      };
-
-      onDeploySystem(selectedUnit.key, {
-        unitName: selectedUnit.name,
-        category: selectedUnit.category,
-        center: { lat, lng },
-        openingAngle: autoAngle,
-        ahaRadius: AREA_CONFIG.ahaPoint.radius,
-        tacticalAreas,
-        paths: buildMovementPaths(tacticalAreas),
-      });
+      onDeploySystem(selectedUnit.key, deployment);
 
       setStatus(
         `Done: ${selectedUnit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
@@ -543,7 +704,7 @@ export function MissileSystemsTab({
       previewOffsets,
       shouldValidateTaiwanBoundary,
       previewAngle,
-      generateOffsetsForAngle,
+      generateDeploymentData,
       onDeploySystem,
     ]
   );

@@ -14,16 +14,17 @@
 
 模組內將觸發流程拆成多個局部 handler：`handleFiringPoint`、`handleHideArea`、`handleReloadPoint`、`handleAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
 
-此外，`resolveBehavior` 允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`，玩家控制陣營則僅做狀態更新。
+此外，`resolveBehavior` 允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`（前提為彈藥充足），玩家控制陣營或低彈藥量單位則不做動作，以便接續前往 RL 補給。
 
 ---
 
 ## 主要機制
 
-1. 由 `extractPositionType(event)` 從 trigger description 解析 `FP/AHA/HA/RL`。
+1. 由 `extractPositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼。
 2. 非 FP 事件會先 `dropUnitContact`，降低非必要接觸資訊。
 3. 依陣地類型分派至對應 handler。
-4. RL/AHA 流程會先做 `Meeting` 判斷，成功才進入 `RELOAD` 計時。
+4. HA 流程僅在 `behavior.hideOnEnterHA` 啟用 **且** 機動發射車彈藥充足時，才會切換 `HIDE` 並執行 `hideUnit`；低彈單位保持原狀以便觸發後續補給流程。
+5. RL/AHA 流程會先做 `Meeting` 判斷，成功才進入 `RELOAD` 計時；RL 無會合時若 `behavior.hideResupplyOnRLNoMeeting` 啟用且對應機動發射車彈藥充足，會將彈藥車隱蔽。
 
 ```mermaid
 flowchart TD
@@ -32,6 +33,10 @@ flowchart TD
     B -->|HA| D[handleHideArea]
     B -->|RL| E[handleReloadPoint]
     B -->|AHA| F[handleAmmoHoldingArea]
+
+    D --> M{hideOnEnterHA<br/>且彈藥充足?}
+    M -->|Yes| N[setStateToHide + hideUnit]
+    M -->|No| O[不動作]
 
     E --> G{hasMetResupplyUnit}
     G -->|Yes| H[setReloadStartTime]

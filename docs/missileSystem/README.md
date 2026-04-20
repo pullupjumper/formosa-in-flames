@@ -38,7 +38,7 @@
 
 **HA 與 RL 的掩蔽判定差異**
 
-- 主要掩蔽觸發點是 `HA`：若 `hideOnEnterHA=true`，抵達 HA 會執行 `Concealment.hideUnit(...)`
+- 主要掩蔽觸發點是 `HA`：若 `hideOnEnterHA=true` **且機動發射車彈藥充足**，抵達 HA 才會執行 `Concealment.hideUnit(...)`；若已低於 `ammoThreshold` 則不自動掩蔽，以便接續前往 RL 補給
 - `RL` 不會直接讓機動發射車進建築掩蔽
 - 只有在 RL 未交會且 `hideResupplyOnRLNoMeeting=true` 時，才可能讓彈藥補給車回到掩蔽狀態
 
@@ -49,7 +49,7 @@
 | 面向 | 電腦控制陣營（`isAuto=true`） | 玩家控制陣營（`isAuto=false`） |
 |---|---|---|
 | 低彈量後自動啟動運補 | 會 | 不會（依玩家/外部流程） |
-| 抵達 HA 後自動掩蔽 | 會（可載入 MASK 建築） | 預設不自動 |
+| 抵達 HA 後自動掩蔽 | 彈藥充足才會（載入 MASK 建築）；低彈量則跳過以便繼續前往 RL 補給 | 預設不自動 |
 | RL 未交會時彈藥補給車處理 | 依機制決定是否掩蔽 | 預設不掩蔽 |
 | 再裝填流程完成後動作 | 自動回 FP/HA | 主要由手動決策延續 |
 
@@ -102,7 +102,7 @@ flowchart TB
 - 機動發射車低彈量時，會自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
 - 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 AHA 補給
 - 機動發射車裝填完畢後，防空飛彈車自動回 FP；TEL 類自動回 HA
-- 電腦控制陣營 `moveToPosition` 機制設定包含 `hideOnEnterHA=true`，抵達 HA 陣地則自動執行建築掩蔽
+- 電腦控制陣營 `moveToPosition` 機制設定包含 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
 - 電腦控制陣營亦可在 RL 未交會時，依 `hideResupplyOnRLNoMeeting=true` 讓彈藥補給車回到掩蔽狀態（不是機動發射車）
 
 ---

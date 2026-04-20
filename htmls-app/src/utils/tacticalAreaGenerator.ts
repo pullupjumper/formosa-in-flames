@@ -43,6 +43,12 @@ export interface PathConfig {
   reloadArea: Coordinate[];
   firePoints?: Coordinate[][];
   avoidanceMargin?: number;
+  /** Shared FP-path origin (e.g. result of chooseFpGateway). When provided,
+   *  FP path starts here and avoids [HA, RL]; otherwise legacy HA-origin + [AHA, RL]. */
+  fpGateway?: Coordinate;
+  /** Shared shelter→RL gateway (e.g. result of chooseShrlGateway). When provided,
+   *  SHRL path starts here and goes to RL center, avoiding HA only. */
+  shrlGateway?: Coordinate;
 }
 
 export interface GenerateResult {
@@ -58,6 +64,7 @@ export interface PathResult {
   HA: { waypoints: Coordinate[] };
   RL: { waypoints: Coordinate[] }[];
   AHA: { waypoints: Coordinate[] };
+  SHRL: { waypoints: Coordinate[] };
 }
 
 // ============================================================================
@@ -831,6 +838,318 @@ export function generateSquareVerticesPublic(
 }
 
 // ============================================================================
+// Shelter Points Generation
+// ============================================================================
+
+export interface ShelterPointsConfig {
+  centerLat: number;
+  centerLon: number;
+  areaWidth: number;
+  areaHeight: number;
+  openingAngle: number;
+  avoidAreas?: Coordinate[][];
+  count?: number;
+  marginToWall?: number;
+  marginToAreas?: number;
+  marginBetweenPoints?: number;
+  maxAttemptsPerPoint?: number;
+}
+
+function getSquareHalfDiagonal(vertices: Coordinate[]): number {
+  const center = calculateSquareCenter(vertices);
+  return calculateDistance(
+    center.latitude,
+    center.longitude,
+    vertices[0].latitude,
+    vertices[0].longitude
+  );
+}
+
+/**
+ * Generate random shelter coordinates inside the U-shape rectangle,
+ * avoiding the supplied tactical squares (typically HA and RL).
+ */
+export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[] {
+  const {
+    centerLat,
+    centerLon,
+    areaWidth,
+    areaHeight,
+    openingAngle,
+    avoidAreas = [],
+    count = 2,
+    marginToWall = 0.1,
+    marginToAreas = 0.1,
+    marginBetweenPoints = 0.2,
+    maxAttemptsPerPoint = 200,
+  } = config;
+
+  const maxOffsetX = areaWidth / 2 - marginToWall;
+  const maxOffsetY = areaHeight / 2 - marginToWall;
+  if (maxOffsetX <= 0 || maxOffsetY <= 0 || count <= 0) {
+    return [];
+  }
+
+  const avoidInfo = avoidAreas
+    .filter((area) => area.length === 4)
+    .map((area) => ({
+      center: calculateSquareCenter(area),
+      exclusionRadius: getSquareHalfDiagonal(area) + marginToAreas,
+    }));
+
+  const points: Coordinate[] = [];
+
+  for (let i = 0; i < count; i++) {
+    let placed = false;
+
+    for (let attempt = 0; attempt < maxAttemptsPerPoint && !placed; attempt++) {
+      const candidate = generateRandomSquareCenter(
+        centerLat,
+        centerLon,
+        maxOffsetX,
+        maxOffsetY,
+        openingAngle
+      );
+
+      const conflictsWithAreas = avoidInfo.some(
+        ({ center, exclusionRadius }) =>
+          calculateDistance(
+            candidate.latitude,
+            candidate.longitude,
+            center.latitude,
+            center.longitude
+          ) < exclusionRadius
+      );
+      if (conflictsWithAreas) continue;
+
+      const conflictsWithShelters = points.some(
+        (existing) =>
+          calculateDistance(
+            candidate.latitude,
+            candidate.longitude,
+            existing.latitude,
+            existing.longitude
+          ) < marginBetweenPoints
+      );
+      if (conflictsWithShelters) continue;
+
+      points.push(candidate);
+      placed = true;
+    }
+
+    if (!placed) {
+      console.error(
+        `Failed to place shelter point ${i + 1}/${count} after ${maxAttemptsPerPoint} attempts`
+      );
+    }
+  }
+
+  return points;
+}
+
+// ============================================================================
+// FP Gateway Selection
+// ============================================================================
+
+export interface GatewayConfig {
+  uShapeCenterLat: number;
+  uShapeCenterLon: number;
+  openingAngle: number;
+  areaWidth: number;
+  areaHeight: number;
+  hideArea: Coordinate[];
+  reloadArea: Coordinate[];
+  shelterPoints: Coordinate[];
+  avoidanceMargin?: number;
+  backOffsetRatios?: number[];
+  lateralOffsetRatios?: number[];
+}
+
+/**
+ * Pick a shared FP-path origin on the back side of the U-shape such that every
+ * shelter has line-of-sight to it without crossing HA or RL. Returns null when
+ * no candidate satisfies the constraints.
+ */
+export function chooseFpGateway(config: GatewayConfig): Coordinate | null {
+  const {
+    uShapeCenterLat,
+    uShapeCenterLon,
+    openingAngle,
+    areaWidth,
+    areaHeight,
+    hideArea,
+    reloadArea,
+    shelterPoints,
+    avoidanceMargin = 0.1,
+    backOffsetRatios = [0.95, 1.05, 0.8],
+    lateralOffsetRatios = [0, -0.4, 0.4, -0.6, 0.6],
+  } = config;
+
+  if (shelterPoints.length === 0) return null;
+
+  const halfHeight = areaHeight / 2;
+  const halfWidth = areaWidth / 2;
+  const backBearing = (openingAngle + 180) % 360;
+  const rightBearing = (openingAngle + 90) % 360;
+
+  const avoidSquares = [hideArea, reloadArea].filter((a) => a.length === 4);
+
+  const candidates: Coordinate[] = [];
+  for (const backRatio of backOffsetRatios) {
+    const back = getPointFromBearing(
+      uShapeCenterLat,
+      uShapeCenterLon,
+      backBearing,
+      halfHeight * backRatio
+    );
+    for (const latRatio of lateralOffsetRatios) {
+      if (latRatio === 0) {
+        candidates.push(back);
+        continue;
+      }
+      const bearing = latRatio > 0 ? rightBearing : (rightBearing + 180) % 360;
+      candidates.push(
+        getPointFromBearing(back.latitude, back.longitude, bearing, halfWidth * Math.abs(latRatio))
+      );
+    }
+  }
+
+  for (const candidate of candidates) {
+    const blockedByArea = avoidSquares.some((square) => {
+      const center = calculateSquareCenter(square);
+      return (
+        calculateDistance(
+          candidate.latitude,
+          candidate.longitude,
+          center.latitude,
+          center.longitude
+        ) <
+        getSquareHalfDiagonal(square) + avoidanceMargin
+      );
+    });
+    if (blockedByArea) continue;
+
+    const allVisible = shelterPoints.every((shelter) =>
+      avoidSquares.every(
+        (square) =>
+          !checkPathIntersectsSquare(
+            shelter.latitude,
+            shelter.longitude,
+            candidate.latitude,
+            candidate.longitude,
+            square,
+            avoidanceMargin
+          )
+      )
+    );
+    if (!allVisible) continue;
+
+    return candidate;
+  }
+
+  return null;
+}
+
+// ============================================================================
+// SHRL Gateway Selection (shelter → reload area)
+// ============================================================================
+
+export interface ShrlGatewayConfig {
+  hideArea: Coordinate[];
+  reloadArea: Coordinate[];
+  shelterPoints: Coordinate[];
+  avoidanceMargin?: number;
+  /** Offsets (nm) added to RL half-diagonal to form candidate rings. */
+  ringOffsets?: number[];
+  /** Angular step (degrees) between candidates on each ring. */
+  angularStepDegrees?: number;
+}
+
+/**
+ * Pick a shared shelter→reload gateway placed on a ring around RL such that
+ * (a) candidate is not inside HA, (b) every shelter reaches it without crossing
+ * HA, and (c) the candidate → reload-center line does not cross HA.
+ */
+export function chooseShrlGateway(config: ShrlGatewayConfig): Coordinate | null {
+  const {
+    hideArea,
+    reloadArea,
+    shelterPoints,
+    avoidanceMargin = 0.1,
+    ringOffsets = [0.1, 0.25, 0.4],
+    angularStepDegrees = 45,
+  } = config;
+
+  if (shelterPoints.length === 0 || hideArea.length !== 4 || reloadArea.length !== 4) {
+    return null;
+  }
+
+  const rlCenter = calculateSquareCenter(reloadArea);
+  const rlHalfDiag = getSquareHalfDiagonal(reloadArea);
+  const hideCenter = calculateSquareCenter(hideArea);
+  const hideHalfDiag = getSquareHalfDiagonal(hideArea);
+
+  const candidates: Coordinate[] = [];
+  for (const offset of ringOffsets) {
+    const radius = rlHalfDiag + offset;
+    for (let angle = 0; angle < 360; angle += angularStepDegrees) {
+      candidates.push(getPointFromBearing(rlCenter.latitude, rlCenter.longitude, angle, radius));
+    }
+  }
+
+  for (const candidate of candidates) {
+    const insideHide =
+      calculateDistance(
+        candidate.latitude,
+        candidate.longitude,
+        hideCenter.latitude,
+        hideCenter.longitude
+      ) <
+      hideHalfDiag + avoidanceMargin;
+    if (insideHide) continue;
+
+    const gatewayToRlBlocked = checkPathIntersectsSquare(
+      candidate.latitude,
+      candidate.longitude,
+      rlCenter.latitude,
+      rlCenter.longitude,
+      hideArea,
+      avoidanceMargin
+    );
+    if (gatewayToRlBlocked) continue;
+
+    // Every shelter → gateway line must clear both HA and RL. RL is the final
+    // destination but only the last leg (gateway → RL center) is allowed to
+    // enter it — earlier legs crossing RL would mean the vehicle passes through
+    // the reload area just to reach the gateway, which is semantically wrong.
+    const allShelterVisible = shelterPoints.every(
+      (shelter) =>
+        !checkPathIntersectsSquare(
+          shelter.latitude,
+          shelter.longitude,
+          candidate.latitude,
+          candidate.longitude,
+          hideArea,
+          avoidanceMargin
+        ) &&
+        !checkPathIntersectsSquare(
+          shelter.latitude,
+          shelter.longitude,
+          candidate.latitude,
+          candidate.longitude,
+          reloadArea,
+          avoidanceMargin
+        )
+    );
+    if (!allShelterVisible) continue;
+
+    return candidate;
+  }
+
+  return null;
+}
+
+// ============================================================================
 // Public API Functions
 // ============================================================================
 
@@ -923,6 +1242,7 @@ export function calculateMovementPaths(pathConfig: PathConfig): PathResult {
     HA: { waypoints: [] },
     RL: [],
     AHA: { waypoints: [] },
+    SHRL: { waypoints: [] },
   };
 
   const ammoCtr = calculateSquareCenter(pathConfig.ammoArea);
@@ -949,19 +1269,27 @@ export function calculateMovementPaths(pathConfig: PathConfig): PathResult {
     [pathConfig.hideArea]
   );
 
-  // FP: hide -> fire points, avoid ammo & reload
+  // FP: gateway (or hide center fallback) -> fire points.
+  // When fpGateway is supplied we assume shelter vehicles will prepend their own
+  // position, so the shared path must avoid HA and RL. Without a gateway we fall
+  // back to the legacy HA-origin behaviour.
   if (pathConfig.firePoints) {
+    const fpOrigin = pathConfig.fpGateway ?? hideCtr;
+    const fpAvoid = pathConfig.fpGateway
+      ? [pathConfig.hideArea, pathConfig.reloadArea]
+      : [pathConfig.ammoArea, pathConfig.reloadArea];
+
     for (let i = 0; i < pathConfig.firePoints.length; i++) {
       const firePoint = pathConfig.firePoints[i];
       const fpCtr = calculateSquareCenter(firePoint);
       paths.FP[i] = {
         waypoints: generatePathWithAvoidance(
-          hideCtr.latitude,
-          hideCtr.longitude,
+          fpOrigin.latitude,
+          fpOrigin.longitude,
           fpCtr.latitude,
           fpCtr.longitude,
           avoidanceMargin,
-          [pathConfig.ammoArea, pathConfig.reloadArea]
+          fpAvoid
         ),
       };
     }
@@ -983,6 +1311,20 @@ export function calculateMovementPaths(pathConfig: PathConfig): PathResult {
         ),
       };
     }
+  }
+
+  // SHRL: shelter-gateway -> reload, avoid HA only.
+  // As with FP, vehicles at individual shelters prepend their own position;
+  // the gateway must stay in the waypoint list so the approach stays HA-clear.
+  if (pathConfig.shrlGateway) {
+    paths.SHRL.waypoints = generatePathWithAvoidance(
+      pathConfig.shrlGateway.latitude,
+      pathConfig.shrlGateway.longitude,
+      reloadCtr.latitude,
+      reloadCtr.longitude,
+      avoidanceMargin,
+      [pathConfig.hideArea]
+    );
   }
 
   return paths;

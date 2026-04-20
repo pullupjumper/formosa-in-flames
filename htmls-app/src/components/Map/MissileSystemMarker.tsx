@@ -27,10 +27,12 @@ const COLORS = {
   RELOAD_AREA: '#4d96ff',
   FIRE_POINT: '#ff922b',
   WEAPON_RANGE: '#ff4444',
+  SHELTER: '#c084fc',
   PATH_HA: '#6bcb77',
   PATH_AHA: '#ffd93d',
   PATH_FP: '#ff922b',
   PATH_RL: '#4d96ff',
+  PATH_SHRL: '#c084fc',
 };
 
 const AREA_TYPE_COLOR: Record<AreaType, string> = {
@@ -48,6 +50,7 @@ const PATH_OPTIONS_HA = { color: COLORS.PATH_HA, weight: 2, opacity: 0.7, dashAr
 const PATH_OPTIONS_AHA = { color: COLORS.PATH_AHA, weight: 2, opacity: 0.7, dashArray: '5, 5' };
 const PATH_OPTIONS_FP = { color: COLORS.PATH_FP, weight: 2, opacity: 0.7, dashArray: '5, 5' };
 const PATH_OPTIONS_RL = { color: COLORS.PATH_RL, weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_SHRL = { color: COLORS.PATH_SHRL, weight: 2, opacity: 0.7, dashArray: '2, 6' };
 const PATH_OPTIONS_RANGE = {
   color: COLORS.WEAPON_RANGE,
   fillColor: COLORS.WEAPON_RANGE,
@@ -67,6 +70,12 @@ const PATH_OPTIONS_HIDE_CENTER = {
   fillColor: COLORS.HIDE_AREA,
   fillOpacity: 1,
   weight: 2,
+};
+const PATH_OPTIONS_SHELTER = {
+  color: '#fff',
+  fillColor: COLORS.SHELTER,
+  fillOpacity: 0.9,
+  weight: 1.5,
 };
 const PATH_OPTIONS_FALLBACK_RANGE = {
   color: '#ff4444',
@@ -362,6 +371,13 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
       ),
     [paths.RL]
   );
+  const shrlPathPositions = useMemo(
+    () =>
+      paths.SHRL?.waypoints && paths.SHRL.waypoints.length > 1
+        ? coordinatesToLatLng(paths.SHRL.waypoints)
+        : null,
+    [paths.SHRL]
+  );
 
   // Calculate hide area center for range circle
   const hideCenter = useMemo(
@@ -528,6 +544,21 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         </Polygon>
       ))}
 
+      {/* Shelter Points */}
+      {(tacticalAreas.shelterPoints ?? []).map((point, i) => (
+        <CircleMarker
+          key={`shelter-${i}`}
+          center={[point.latitude, point.longitude] as LatLngExpression}
+          radius={4}
+          interactive={false}
+          pathOptions={PATH_OPTIONS_SHELTER}
+        >
+          <Tooltip direction="top">
+            <strong>Shelter {i + 1}</strong>
+          </Tooltip>
+        </CircleMarker>
+      ))}
+
       {/* Movement Paths */}
       {haPathPositions && <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA} />}
       {ahaPathPositions && <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA} />}
@@ -542,6 +573,13 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
           positions && (
             <Polyline key={`path-rl-${i}`} positions={positions} pathOptions={PATH_OPTIONS_RL} />
           )
+      )}
+      {shrlPathPositions && (
+        <Polyline positions={shrlPathPositions} pathOptions={PATH_OPTIONS_SHRL}>
+          <Tooltip direction="top">
+            <strong>Shelter → Reload (SHRL)</strong>
+          </Tooltip>
+        </Polyline>
       )}
     </>
   );

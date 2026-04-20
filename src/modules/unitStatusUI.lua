@@ -51,7 +51,9 @@ local function transformData(missileSystem)
     FP = {},
     AHA = {},
     HA = {},
+    SHRL = {},
     uShapeVertices = missileSystem.tacticalAreas.uShapeVertices,
+    shelterPoints = missileSystem.tacticalAreas.shelterPoints,
     name = "#" .. Utils.randomTxt(3)
   }
 
@@ -81,7 +83,7 @@ local function transformData(missileSystem)
       presetThrottle = constants.THROTTLES.FLANK
     })
   end
-  table.remove(course, 1)
+  -- table.remove(course, 1)
   table.insert(operationalArea.RL, {
     course = course,
     area = missileSystem.tacticalAreas.reloadArea
@@ -111,6 +113,18 @@ local function transformData(missileSystem)
     })
   end
   table.insert(operationalArea.HA, { course = haCourse, area = missileSystem.tacticalAreas.hideArea })
+
+  local shrlCourse = {}
+  for _, waypoint in ipairs(missileSystem.paths.SHRL.waypoints) do
+    table.insert(shrlCourse, {
+      latitude = waypoint.latitude,
+      longitude = waypoint.longitude,
+      desiredSpeed = constants.SPEEDS.FAST,
+      presetThrottle = constants.THROTTLES.FLANK
+    })
+  end
+  table.insert(operationalArea.SHRL, { course = shrlCourse, area = missileSystem.tacticalAreas.reloadArea })
+
   return operationalArea
 end
 
