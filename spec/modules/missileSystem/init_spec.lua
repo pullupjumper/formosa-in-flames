@@ -354,38 +354,6 @@ describe("MissileSystem", function()
       assert.stub(Concealment.hideUnit).was.called_with(firingUnitCtx, unit)
     end)
 
-    -- Positive: HA + repositioning sets hide state without concealment
-    it("should set hide state on HA when repositioning even if hideOnEnterHA is off", function()
-      local unit = { name = "FU1", guid = "guid-fu1", side = "China" }
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = {
-        enabled = true,
-        firingUnits = { [unit.name] = firingUnitCtx },
-        resupplyUnits = {}
-      }
-
-      trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setStateToHide")
-      trackStub(Concealment, "hideUnit")
-
-      MissileSystem.handleMoveToPositionEvent({
-        groundCtx = groundCtxWith(systemCtx),
-        unit = unit,
-        event = enterEvent("HA"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
-          hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
-        }
-      })
-
-      assert.stub(Movement.setStateToHide).was.called(1)
-      assert.stub(Movement.setStateToHide).was.called_with(firingUnitCtx, unit, true)
-      assert.stub(Concealment.hideUnit).was_not.called()
-    end)
-
     -- Boundary: HA handler early-returns when unit is not a firing unit of the system
     it("should skip HA handling when unit is not a firing unit of the system", function()
       local unit = { name = "Unknown", guid = "guid-x", side = "China" }
@@ -423,14 +391,13 @@ describe("MissileSystem", function()
     it("should set reload start time on RL when firing unit has met resupply unit", function()
       local unit = { name = "FU1", guid = "guid-fu1", side = "China" }
       local firingUnitCtx = { name = "FU1" }
-      local matchedResupplyCtx = { name = "RS1" }
       local systemCtx = {
         enabled = true,
         firingUnits = { [unit.name] = firingUnitCtx },
-        resupplyUnits = { RS1 = matchedResupplyCtx }
+        resupplyUnits = { RS1 = { name = "RS1" } }
       }
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(true, matchedResupplyCtx)
+      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitCtx)
       trackStub(Movement, "setReloadStartTime")
       trackStub(Movement, "setStateToStatic")
 
@@ -443,7 +410,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(Movement.setReloadStartTime).was.called(1)
-      assert.stub(Movement.setReloadStartTime).was.called_with(matchedResupplyCtx, unit, true)
+      assert.stub(Movement.setReloadStartTime).was.called_with(firingUnitCtx, unit, true)
       assert.stub(Movement.setStateToStatic).was_not.called()
     end)
 

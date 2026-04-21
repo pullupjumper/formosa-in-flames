@@ -4,7 +4,7 @@ local Ammo = require("src.modules.missileSystem.ammo")
 
 local Meeting = {}
 
----Find the area where the unit is located
+---Find the area where the unit is located within RL areas
 ---@param unit CMO__Unit Unit object
 ---@param operationalArea SBJ__OperationalArea Position information table
 ---@return string[]|nil # Area reference points or nil
@@ -29,107 +29,100 @@ function Meeting.isValidStateForMeeting(state, isAuto)
   return state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING or state == constants.MISSILE_SYSTEM_STATE.RELOAD
 end
 
----Check if reload is required between a target and its counterpart
----@param targetCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Target unit context
----@param counterpartCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Counterpart unit context
----@param unit CMO__Unit Target unit for ammo check
----@param counterpart CMO__Unit Counterpart unit for ammo check
----@return boolean # Whether reload is required
-function Meeting.isReloadRequired(targetCtx, counterpartCtx, unit, counterpart)
-  local isFiringUnitCtx = targetCtx.weaponDBID ~= nil
-
-  if isFiringUnitCtx then
-    return Ammo.isLowAmmo(unit, targetCtx.ammoThreshold, targetCtx.weaponDBID) and counterpartCtx.wpnCurrent > 0
+---Resolve the firing/resupply context pair from either end's unit name
+---@param systemCtx SBJ__MissileSystemContext Missile system context
+---@param unitName string Name of the triggering unit (firing or resupply)
+---@return SBJ__FiringUnitContext|nil firingUnitCtx Firing unit context of the pair
+---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx Resupply unit context of the pair
+local function resolvePair(systemCtx, unitName)
+  local firingUnitCtx = systemCtx.firingUnits[unitName]
+  if firingUnitCtx then
+    return firingUnitCtx, systemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
   end
 
-  return Ammo.isLowAmmo(counterpart, counterpartCtx.ammoThreshold, counterpartCtx.weaponDBID) and
-      targetCtx.wpnCurrent > 0
-end
-
----Check if a unit has met with any counterpart in the same reload area
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context to check
----@param unitName string Unit name to match against unitCtx.name
----@param counterpartList table<string, SBJ__FiringUnitContext|SBJ__ResupplyUnitContext> Counterpart units to check
----@param unit CMO__Unit Unit object for area checking
----@param isAuto boolean Whether in automatic mode
----@return boolean hasMet Whether units have met
----@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil matchedUnitCtx The unit context that was matched
-function Meeting.checkMeetingInArea(unitCtx, unitName, counterpartList, unit, isAuto)
-  if unitCtx.name ~= unitName or not Meeting.isValidStateForMeeting(unitCtx.state, isAuto) then
-    return false, nil
-  end
-
-  local area = Meeting.findUnitArea(unit, unitCtx.operationalArea)
-  if not area then return false, nil end
-
-  for _, counterpartCtx in pairs(counterpartList) do
-    local counterpart = GameApi.ScenEdit_GetUnit(counterpartCtx.name, unit.side)
-    if counterpart and counterpart:inArea(area)
-        and Meeting.isReloadRequired(unitCtx, counterpartCtx, unit, counterpart) then
-      return true, unitCtx
+  local resupplyUnitCtx = systemCtx.resupplyUnits[unitName]
+  if resupplyUnitCtx then
+    local partner = resupplyUnitCtx.firingUnit
+    if type(partner) == "table" then
+      partner = partner[1]
     end
+    return systemCtx.firingUnits[partner], resupplyUnitCtx
   end
 
-  return false, nil
+  return nil, nil
 end
 
----Search for a meeting match between a unit list and counterpart list
----@param unitList table<string, SBJ__FiringUnitContext|SBJ__ResupplyUnitContext> Units to iterate
----@param unitName string Unit name to match
----@param counterpartList table<string, SBJ__FiringUnitContext|SBJ__ResupplyUnitContext> Counterpart units
----@param unit CMO__Unit Unit object for area checking
----@param isAuto boolean Whether in automatic mode
----@return boolean hasMet Whether units have met
----@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil matchedUnitCtx The matched context
-function Meeting.findMeetingMatch(unitList, unitName, counterpartList, unit, isAuto)
-  for _, unitCtx in pairs(unitList) do
-    local hasMet, matchedCtx = Meeting.checkMeetingInArea(unitCtx, unitName, counterpartList, unit, isAuto)
-    if hasMet then return true, matchedCtx end
+---Resolve the CMO unit for a context, reusing the triggering unit when names match
+---@param unitCtx SBJ__UnitBase Context with a name field
+---@param triggeringUnit CMO__Unit Unit that triggered the event
+---@return CMO__Unit|nil # CMO unit or nil if lookup fails
+local function resolveCmoUnit(unitCtx, triggeringUnit)
+  if unitCtx.name == triggeringUnit.name then
+    return triggeringUnit
   end
-  return false, nil
+  return GameApi.ScenEdit_GetUnit(unitCtx.name, triggeringUnit.side)
 end
 
----Check if firing unit has met with resupply units
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param unit CMO__Unit Unit to check
+---Check if firing unit and its paired resupply unit have met in a shared RL area
+---@param systemCtx SBJ__MissileSystemContext Missile system context
+---@param unit CMO__Unit Triggering unit (either firing or resupply)
 ---@param isAuto boolean Whether in automatic mode
----@return boolean hasMet Whether units have met
----@return SBJ__FiringUnitContext|SBJ__ResupplyUnitContext|nil context The matched context
+---@return boolean hasMet Whether the pair has met with reload required
+---@return SBJ__FiringUnitContext|nil firingUnitCtx Firing unit context targeted for reload
 function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
-  local isResupplyUnit = systemCtx.resupplyUnits[unit.name] ~= nil
-  local isFiringUnit = systemCtx.firingUnits[unit.name] ~= nil
-
-  if not isFiringUnit and not isResupplyUnit then
+  local firingUnitCtx, resupplyUnitCtx = resolvePair(systemCtx, unit.name)
+  if not firingUnitCtx or not resupplyUnitCtx then
     return false, nil
   end
 
-  if isResupplyUnit then
-    return Meeting.findMeetingMatch(systemCtx.resupplyUnits, unit.name, systemCtx.firingUnits, unit, isAuto)
+  local triggeringCtx = (unit.name == firingUnitCtx.name) and firingUnitCtx or resupplyUnitCtx
+  if not Meeting.isValidStateForMeeting(triggeringCtx.state, isAuto) then
+    return false, nil
   end
 
-  return Meeting.findMeetingMatch(systemCtx.firingUnits, unit.name, systemCtx.resupplyUnits, unit, isAuto)
+  local firingUnit = resolveCmoUnit(firingUnitCtx, unit)
+  local resupplyUnit = resolveCmoUnit(resupplyUnitCtx, unit)
+  if not firingUnit or not resupplyUnit then
+    return false, nil
+  end
+
+  if not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
+      or resupplyUnitCtx.wpnCurrent <= 0 then
+    return false, nil
+  end
+
+  local area = Meeting.findUnitArea(firingUnit, firingUnitCtx.operationalArea)
+  if not area or not resupplyUnit:inArea(area) then
+    return false, nil
+  end
+
+  return true, firingUnitCtx
 end
 
----Check if resupply unit has met with ammunition depot
----@param systemCtx SBJ__MissileSystemContext Weapon system context
+---Check if resupply unit has met with ammunition depot in a shared AHA
+---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Unit to check
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean hasMet Whether units have met
----@return SBJ__ResupplyUnitContext|nil resupplyUnit The matched resupply unit context
+---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx The matched resupply unit context
 function Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
-  if not systemCtx.resupplyUnits[unit.name] then
+  local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
+  if not resupplyUnitCtx or not Meeting.isValidStateForMeeting(resupplyUnitCtx.state, isAuto) then
     return false, nil
   end
 
-  for _, resupplyUnitCtx in pairs(systemCtx.resupplyUnits) do
-    if resupplyUnitCtx.name == unit.name and Meeting.isValidStateForMeeting(resupplyUnitCtx.state, isAuto) then
-      local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
+  if resupplyUnitCtx.wpnCurrent ~= 0 then
+    return false, nil
+  end
 
-      for _, pos in ipairs(resupplyUnitCtx.operationalArea.AHA) do
-        local isInSameArea = unit:inArea(pos.area) and (ammoDepot and ammoDepot:inArea(pos.area)) and
-            resupplyUnitCtx.wpnCurrent == 0
-        if isInSameArea then return true, resupplyUnitCtx end
-      end
+  local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.ammunition, unit.side)
+  if not ammoDepot then
+    return false, nil
+  end
+
+  for _, pos in ipairs(resupplyUnitCtx.operationalArea.AHA) do
+    if unit:inArea(pos.area) and ammoDepot:inArea(pos.area) then
+      return true, resupplyUnitCtx
     end
   end
 

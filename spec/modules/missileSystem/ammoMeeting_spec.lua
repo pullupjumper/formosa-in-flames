@@ -39,6 +39,7 @@ describe("MissileSystem Ammo And Meeting", function()
           state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
           wpnCurrent = 10,
           wpnDefault = 20,
+          firingUnit = "Firing Unit Alpha",
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -282,7 +283,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
       local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
       assert.is_true(hasMet)
-      assert.are.equal("Ammo Sec, Alpha", ctx.name)
+      assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
 
     -- Negative: returns false when units are in different areas

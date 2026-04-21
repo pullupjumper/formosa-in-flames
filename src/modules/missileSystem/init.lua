@@ -235,12 +235,15 @@ end
 ---@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
 local function handleReloadPoint(systemCtx, unit, isAuto, behavior)
-  local hasMet, context = Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
-  local firingUnitCtx = systemCtx.firingUnits[unit.name]
+  local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
 
-  if firingUnitCtx and hasMet and context then
-    Movement.setReloadStartTime(context, unit, isAuto)
-    return
+  if hasMet and firingUnitCtx then
+    local firingUnit = (unit.name == firingUnitCtx.name) and unit or
+        GameApi.ScenEdit_GetUnit(firingUnitCtx.name, unit.side)
+    if firingUnit then
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
+      return
+    end
   end
 
   handleReloadPointNoMeeting(systemCtx, unit, isAuto, behavior)
