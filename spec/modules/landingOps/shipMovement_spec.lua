@@ -1,5 +1,4 @@
 -- ShipMovement Unit Tests
----@diagnostic disable: undefined-field
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
@@ -8,8 +7,13 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("ShipMovement", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -17,7 +21,7 @@ describe("ShipMovement", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "error"))
   end)
@@ -154,9 +158,16 @@ describe("ShipMovement", function()
             },
             heading = { horizontal = 90, vertical = 0 },
             shipCounts = {
-              type075 = 2, type071 = 2, type076 = 1,
-              type072iii = 2, type072a = 2, type073a = 1,
-              type071InLSTArea = 1, ferry = 1, roro = 1, barge = 1,
+              type075 = 2,
+              type071 = 2,
+              type076 = 1,
+              type072iii = 2,
+              type072a = 2,
+              type073a = 1,
+              type071InLSTArea = 1,
+              ferry = 1,
+              roro = 1,
+              barge = 1,
             },
           },
         },
@@ -211,13 +222,6 @@ describe("ShipMovement", function()
   -- ============================================================================
 
   describe("moveToStagingArea", function()
-    local stubGetUnit
-
-    after_each(function()
-      if stubGetUnit then stubGetUnit:revert() end
-      stubGetUnit = nil
-    end)
-
     -- Positive: standard ship type movement
     it("should move a Type 075 ship to the first calculated location", function()
       local resultTable = makeResultTable()
@@ -230,7 +234,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -239,7 +243,7 @@ describe("ShipMovement", function()
       assert.is_true(result)
       assert.are.equal(targetLocation, unit.course[1])
       assert.are.equal(12, unit.manualSpeed)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: Type 071 normal movement within LPD area
@@ -254,7 +258,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -285,7 +289,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -307,7 +311,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -329,7 +333,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -351,7 +355,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -371,7 +375,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -394,7 +398,7 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -419,7 +423,7 @@ describe("ShipMovement", function()
       local filteredUnits = {}
       local saveData = makeSaveData()
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
@@ -444,7 +448,7 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.isTesting = true
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         if id == "DDG-001" then return destroyer end
         return nil
@@ -478,7 +482,7 @@ describe("ShipMovement", function()
       local behindPoint = makeLocation({ latitude = 24.5, longitude = 120.5 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(behindPoint))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         if id == "DDG-001" then return ddg1 end
         if id == "DDG-002" then return ddg2 end
@@ -512,7 +516,7 @@ describe("ShipMovement", function()
       local flankPoint = makeLocation({ latitude = 24.3, longitude = 120.3 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(flankPoint))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         if id == "FFG-001" then return frigate1 end
         if id == "FFG-002" then return frigate2 end
@@ -537,7 +541,7 @@ describe("ShipMovement", function()
       local filteredUnits = { { guid = "MISSING-001" } }
       local saveData = makeSaveData()
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -557,7 +561,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -572,7 +576,7 @@ describe("ShipMovement", function()
       local filteredUnits = {}
       local saveData = makeSaveData()
 
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
@@ -593,7 +597,7 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.isTesting = true
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         return nil
       end))
@@ -618,8 +622,8 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.isTesting = true
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(nil))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+      trackStub(stub(GameApi, "World_GetPointFromBearing").returns(nil))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         if id == "FFG-001" then return frigate end
         return nil
@@ -645,7 +649,7 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
@@ -659,7 +663,7 @@ describe("ShipMovement", function()
       local saveData = makeSaveData()
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
       local result = ShipMovement.moveToStagingArea(config, saveData, {}, operation)
 
@@ -678,7 +682,7 @@ describe("ShipMovement", function()
       saveData.c.amphibOps.isTesting = false
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]

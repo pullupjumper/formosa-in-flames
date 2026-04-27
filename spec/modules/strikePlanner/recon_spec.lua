@@ -1,5 +1,4 @@
 -- Recon Unit Tests
----@diagnostic disable: undefined-field
 local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
@@ -7,10 +6,17 @@ local Logger = require("src.utils.logger")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
+local BaseConfig = require("src.core.config")
 
 describe("Recon", function()
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -18,8 +24,8 @@ describe("Recon", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "error"))
+    logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -134,25 +140,25 @@ describe("Recon", function()
 
   ---Create a minimal config for getPlatformSpecialOperations / scheduleDynamicReconOperations
   ---@param overrides? table
-  ---@return table
+  ---@return SBJ__Config
   local function makeConfig(overrides)
-    local cfg = {
-      c = {
-        recon = {
-          reconStrikeMatrix = {
-            UAV = {
-              BZK005 = {
-                { name = "STRIKE/C2/1", type = "ground" },
-              },
-            },
-            satellite = {},
-          },
-        },
-        packageTemplates = {},
-        fireSupportTaskTemplates = {
-          STRIKE_C2_2 = { { name = "FST-C2-2" } },
+    local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
+    cfg.c.recon.reconStrikeMatrix = {
+      UAV = {
+        BZK005 = {
+          { name = "STRIKE/C2/1", type = "ground" },
         },
       },
+      satellite = {},
+    }
+    cfg.c.packageTemplates = {}
+    cfg.c.fireSupportTaskTemplates = {
+      STRIKE_C2_2 = { {
+        name = "FST-C2-2",
+        firingUnits = {},
+        missileSystem = '',
+        target = { list = {}, contactAge = 0, minTargetCount = 1 },
+      } },
     }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end
@@ -172,7 +178,7 @@ describe("Recon", function()
   ---@param pattern string Lua pattern to search for in the message
   ---@return boolean # Whether a matching call was found
   local function hasLogCall(logTag, pattern)
-    for _, call in ipairs(Logger.log.calls) do
+    for _, call in ipairs(logStub.calls) do
       if call.vals[1] == logTag and string.find(call.vals[2], pattern) then
         return true
       end
@@ -184,7 +190,7 @@ describe("Recon", function()
   ---@param pattern string Lua pattern to search for in the message
   ---@return boolean # Whether a matching call was found
   local function hasErrorCall(pattern)
-    for _, call in ipairs(Logger.error.calls) do
+    for _, call in ipairs(errorStub.calls) do
       if string.find(call.vals[1], pattern) then
         return true
       end
@@ -202,8 +208,10 @@ describe("Recon", function()
 
     before_each(function()
       h6n = makeUnit({
-        guid = "H6N-001", name = "H-6N #1",
-        latitude = 26.0, longitude = 119.0,
+        guid = "H6N-001",
+        name = "H-6N #1",
+        latitude = 26.0,
+        longitude = 119.0,
       })
     end)
 
@@ -211,20 +219,21 @@ describe("Recon", function()
     it("should create WZ-8, add sensor, set EMCON, and RTB the H-6N", function()
       local wz8 = makeUnit({ guid = "WZ8-001", name = "WZ-8" })
 
-      trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(wz8))
-      trackStub(stub(GameApi, "ScenEdit_UpdateUnit").returns(wz8))
-      trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
+      local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(wz8))
+      local updateUnitStub = trackStub(stub(GameApi, "ScenEdit_UpdateUnit").returns(wz8))
+      local setEMCONStub = trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
       local rtbSpy = spy.on(h6n, "RTB")
 
       local result = Recon.launchWZ8(h6n, wz8Course)
 
       assert.is_not_nil(result)
+      assert(result ~= nil)
       assert.are.equal("WZ8-001", result.guid)
       assert.are.same(wz8Course, result.course)
       assert.spy(rtbSpy).was.called_with(h6n, true)
 
       -- Verify AddUnit params
-      local addCall = GameApi.ScenEdit_AddUnit.calls[1].vals[1]
+      local addCall = addUnitStub.calls[1].vals[1]
       assert.are.equal("China", addCall.side)
       assert.are.equal(constants.PLATFORMS.WZ8, addCall.dbid)
       assert.are.equal(constants.LOADOUTS.WZ8_RECON, addCall.loadoutid)
@@ -232,13 +241,13 @@ describe("Recon", function()
       assert.are.equal(119.0, addCall.longitude)
 
       -- Verify UpdateUnit params
-      local updateCall = GameApi.ScenEdit_UpdateUnit.calls[1].vals[1]
+      local updateCall = updateUnitStub.calls[1].vals[1]
       assert.are.equal("WZ8-001", updateCall.guid)
       assert.are.equal("add_sensor", updateCall.mode)
       assert.are.equal(constants.SENSORS.WZ8_RADAR, updateCall.dbid)
 
       -- Verify EMCON call
-      assert.stub(GameApi.ScenEdit_SetEMCON).was.called_with("Unit", "WZ8-001", "Radar=Active")
+      assert.stub(setEMCONStub).was.called_with("Unit", "WZ8-001", "Radar=Active")
     end)
 
     -- Negative: AddUnit fails
@@ -429,8 +438,11 @@ describe("Recon", function()
 
     it("should update course when tracking target successfully", function()
       local entry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "AC-001",
-        isTracking = true, trackingTargetGUID = "CONTACT-001", speed = 300,
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-001",
+        speed = 300,
       })
       local ac = makeUnit({ guid = "AC-001", course = {} })
       local target = { guid = "CONTACT-001", latitude = 23.0, longitude = 119.0 }
@@ -454,8 +466,11 @@ describe("Recon", function()
 
     it("should finish mission when tracking target is lost", function()
       local entry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "AC-001",
-        isTracking = true, trackingTargetGUID = "CONTACT-001", speed = 300,
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-001",
+        speed = 300,
       })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
@@ -475,8 +490,11 @@ describe("Recon", function()
 
     it("should complete normally when isTracking set but no trackingTargetGUID", function()
       local entry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "AC-001",
-        isTracking = true, trackingTargetGUID = nil, speed = 300,
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        isTracking = true,
+        trackingTargetGUID = nil,
+        speed = 300,
       })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
@@ -496,8 +514,11 @@ describe("Recon", function()
 
     it("should finish mission via tracking failure when no speed configured", function()
       local entry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "AC-001",
-        isTracking = true, trackingTargetGUID = "CONTACT-001", speed = nil,
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-001",
+        speed = nil,
       })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
@@ -520,7 +541,8 @@ describe("Recon", function()
 
     it("should not execute finishReconMission twice for same entry", function()
       local entry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "AC-001",
+        hasLaunched = true,
+        unitGUID = "AC-001",
         isFinished = true, -- Already finished
       })
 
@@ -695,7 +717,7 @@ describe("Recon", function()
       Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(errorStub).was_not.called()
     end)
 
     it("should batch log [SKIP] via Logger.log when UAV is not ready for launch", function()
@@ -707,7 +729,7 @@ describe("Recon", function()
       Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
 
       assert.is_true(hasLogCall("recon", "%[SKIP%]"))
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(errorStub).was_not.called()
     end)
 
     it("should batch log [FAIL] via Logger.error when UAV destroyed before endTime", function()
@@ -734,7 +756,7 @@ describe("Recon", function()
       Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(errorStub).was_not.called()
     end)
 
     it("should not emit any recon log when all entries are already finished", function()
@@ -745,7 +767,7 @@ describe("Recon", function()
       Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
 
       assert.is_false(hasLogCall("recon", "."))
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(errorStub).was_not.called()
     end)
 
     -- ========================================================================
@@ -776,10 +798,15 @@ describe("Recon", function()
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.UAV.BZK005 = {
-        { name = "STRIKE/C2/1", type = "ground" },
+        { name = "STRIKE/C2/1",   type = "ground" },
         { name = "STRIKE/AB/E/1", type = "air" },
       }
-      cfg.c.fireSupportTaskTemplates.STRIKE_C2_1 = { { name = "FST-C2-1" } }
+      cfg.c.fireSupportTaskTemplates.STRIKE_C2_1 = { {
+        name = "FST-C2-1",
+        firingUnits = {},
+        missileSystem = "",
+        target = { contactAge = 0, minTargetCount = 1, list = {} },
+      } }
 
       local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
@@ -789,16 +816,18 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").invokes(function(schedule, name, opType)
+      ---@type fun(schedule: any, name: string, opType: string): boolean, table|nil, table|nil
+      local hasOperationMock = function(schedule, name, opType)
         -- Exact matches: not found (new)
-        if name == "STRIKE/C2/1" and opType == "ground" then return false end
-        if name == "STRIKE/AB/E/1" and opType == "air" then return false end
+        if name == "STRIKE/C2/1" and opType == "ground" then return false, nil, nil end
+        if name == "STRIKE/AB/E/1" and opType == "air" then return false, nil, nil end
         -- Prefix match: found existing for C2
         if name == "STRIKE/C2/" and opType == "ground" then
-          return true, { type = "ground", template = { name = "STRIKE/C2/1" } }
+          return true, { type = "ground", template = { name = "STRIKE/C2/1" } }, nil
         end
-        return false
-      end))
+        return false, nil, nil
+      end
+      trackStub(stub(DynamicOperationsUtils, "hasOperation").invokes(hasOperationMock))
       trackStub(stub(DynamicOperationsUtils, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "STRIKE/C2/2" } }, "FOUND_NEXT"
       ))
@@ -861,12 +890,18 @@ describe("Recon", function()
     -- Positive: assign closest available UAV to track target
     it("should assign closest available UAV from units list", function()
       local farUAV = makeUnit({
-        guid = "UAV-FAR", dbid = UAVDBID, condition = "Airborne",
-        latitude = 28.0, longitude = 122.0,
+        guid = "UAV-FAR",
+        dbid = UAVDBID,
+        condition = "Airborne",
+        latitude = 28.0,
+        longitude = 122.0,
       })
       local closeUAV = makeUnit({
-        guid = "UAV-CLOSE", dbid = UAVDBID, condition = "Airborne",
-        latitude = 23.5, longitude = 119.5,
+        guid = "UAV-CLOSE",
+        dbid = UAVDBID,
+        condition = "Airborne",
+        latitude = 23.5,
+        longitude = 119.5,
       })
       local queueEntry = makeUAVEntry({
         hasLaunched = true, unitGUID = "UAV-CLOSE",
@@ -879,7 +914,7 @@ describe("Recon", function()
       end))
       trackStub(stub(GameApi, "Tool_Range").invokes(function(pos)
         if pos.latitude == 28.0 then return 500 end -- farUAV
-        return 100 -- closeUAV
+        return 100                                  -- closeUAV
       end))
 
       local units = {
@@ -1001,21 +1036,6 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("initReconQueueEntries", function()
-    ---Shallow copy that copies each entry as a new table (simulates deepCopy for flat entries)
-    local function shallowCopyQueue(t)
-      local copy = {}
-      for i, v in ipairs(t) do
-        local entryCopy = {}
-        for k, val in pairs(v) do entryCopy[k] = val end
-        copy[i] = entryCopy
-      end
-      return copy
-    end
-
-    before_each(function()
-      trackStub(stub(Utils, "deepCopy").invokes(shallowCopyQueue))
-    end)
-
     -- Positive: initialize UAV entries
     it("should set hasLaunched and isFinished to false for UAV entries", function()
       local reconConfig = {
@@ -1123,10 +1143,10 @@ describe("Recon", function()
     it("should deep copy the config queue to avoid mutating the original", function()
       local reconConfig = { queue = { { type = "satellite", endTime = "2026-02-14 08:00:00" } } }
       local reconContext = {}
-
+      local deepCopySpy = trackStub(spy.on(Utils, "deepCopy"))
       Recon.initReconQueueEntries(reconConfig, reconContext)
 
-      assert.stub(Utils.deepCopy).was.called(1)
+      assert.spy(deepCopySpy).was.called()
       -- Original should not have isFinished field
       assert.is_nil(reconConfig.queue[1].isFinished)
     end)

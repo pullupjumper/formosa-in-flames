@@ -1,5 +1,4 @@
 -- LandingOps Init Unit Tests
----@diagnostic disable: undefined-field
 local LandingOps = require("src.modules.landingOps.init")
 local GameApi = require("src.utils.gameApi")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
@@ -11,8 +10,11 @@ local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 describe("LandingOps", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -148,11 +150,12 @@ describe("LandingOps", function()
     it("should launch ACV when ship is a valid ferry or LST in a valid zone", function()
       local ship = makeShip()
       local zone = makeZone()
+      local cfg = { operationalZones = { zone } }
       local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV").returns(2))
 
-      local result = LandingOps.launchACV({ operationalZones = { zone } }, ship)
+      local result = LandingOps.launchACV(cfg, ship)
 
       assert.is_true(result)
       assert.stub(stubIsFerry).was.called_with(ship)
@@ -170,10 +173,11 @@ describe("LandingOps", function()
     -- Negative: exits when ship type is not eligible
     it("should return false when ship is not a ferry or LST", function()
       local ship = makeShip()
+      local cfg = {}
       local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(false))
       local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone"))
 
-      local result = LandingOps.launchACV({}, ship)
+      local result = LandingOps.launchACV(cfg, ship)
 
       assert.is_false(result)
       assert.stub(stubIsFerry).was.called_with(ship)
@@ -189,12 +193,13 @@ describe("LandingOps", function()
         end,
       })
       local zone = makeZone()
+      local cfg = {}
       local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV").returns(0))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
 
-      local result = LandingOps.launchACV({}, ship)
+      local result = LandingOps.launchACV(cfg, ship)
 
       assert.is_true(result)
       assert.is_true(wasRTB)
@@ -227,11 +232,12 @@ describe("LandingOps", function()
           },
         },
       }
+      local cfg = {}
       local stubHasBridge = trackStub(stub(SecondWaveUnloading, "hasExtendedBridge").returns(false))
       local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(true))
       local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
 
-      local result = LandingOps.offloadVehicles({}, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
@@ -260,13 +266,14 @@ describe("LandingOps", function()
           },
         },
       }
+      local cfg = { operationalZones = { zone } }
       local stubHasBridge = trackStub(stub(SecondWaveUnloading, "hasExtendedBridge").returns(true))
       local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))
       local stubGetZone = trackStub(stub(SecondWaveUnloading, "getBargeROROZone").returns(zone))
       local stubOffload = trackStub(stub(SecondWaveUnloading, "offloadVehicles").returns(20))
 
-      local result = LandingOps.offloadVehicles({ operationalZones = { zone } }, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
 
       assert.is_true(result)
       assert.stub(stubHasBridge).was.called_with(saveData, ship)
@@ -292,8 +299,9 @@ describe("LandingOps", function()
           },
         },
       }
+      local cfg = {}
 
-      local result = LandingOps.offloadVehicles({}, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
@@ -318,19 +326,20 @@ describe("LandingOps", function()
           typed = constants.CONTACT_TYPES.AIR,
         }),
       }
+      local cfg = {
+        sag = {
+          ["SAG Alpha"] = {
+            area = { "RP-SAG-1", "RP-SAG-2" },
+          },
+        },
+      }
       local stubGetCount = trackStub(stub(Utils, "getCount").invokes(function(items)
         return #items
       end))
       local stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
-      local result = LandingOps.neutralizeAirlandingZone({
-        sag = {
-          ["SAG Alpha"] = {
-            area = { "RP-SAG-1", "RP-SAG-2" },
-          },
-        },
-      }, ship, contacts)
+      local result = LandingOps.neutralizeAirlandingZone(cfg, ship, contacts)
 
       assert.is_true(result)
       assert.stub(stubGetCount).was.called(2)
@@ -349,9 +358,11 @@ describe("LandingOps", function()
     -- Negative: returns false when the ship is not a valid Type 052D SAG unit
     it("should return false for ships outside the supported SAG destroyer context", function()
       local ship = makeShip({ dbid = constants.PLATFORMS.TYPE_054A })
+      local cfg = { sag = {} }
+
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
-      local result = LandingOps.neutralizeAirlandingZone({ sag = {} }, ship, { makeContact() })
+      local result = LandingOps.neutralizeAirlandingZone(cfg, ship, { makeContact() })
 
       assert.is_false(result)
       assert.stub(stubAttackContacts).was_not.called()
@@ -366,16 +377,17 @@ describe("LandingOps", function()
           inArea = function() return false end,
         }),
       }
-      local stubGetCount = trackStub(stub(Utils, "getCount").returns(0))
-      local stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
-
-      local result = LandingOps.neutralizeAirlandingZone({
+      local cfg = {
         sag = {
           ["SAG Alpha"] = {
             area = { "RP-SAG-1", "RP-SAG-2" },
           },
         },
-      }, ship, contacts)
+      }
+      local stubGetCount = trackStub(stub(Utils, "getCount").returns(0))
+      local stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
+
+      local result = LandingOps.neutralizeAirlandingZone(cfg, ship, contacts)
 
       assert.is_false(result)
       assert.stub(stubGetCount).was.called(1)

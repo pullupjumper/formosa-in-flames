@@ -1,5 +1,4 @@
 -- AmphibiousAssault Unit Tests
----@diagnostic disable: undefined-field
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
@@ -8,8 +7,13 @@ local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics"
 local constants = require("src.core.constants")
 
 describe("AmphibiousAssault", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -17,7 +21,7 @@ describe("AmphibiousAssault", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "error"))
   end)
@@ -183,7 +187,7 @@ describe("AmphibiousAssault", function()
       assert.are.equal(1000, zoneState.airlandingMissionStartTime)
       -- 3 missions (helo + boat + atkHelo), each calls GetMission once
       assert.stub(stubGetMission).was.called(3)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Positive: records current time into zoneState
@@ -251,7 +255,7 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_false(result)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Boundary: zone with no missions in any category
@@ -312,7 +316,7 @@ describe("AmphibiousAssault", function()
       assert.is_true(result)
       assert.are.same({ destination }, unit.course)
       assert.are.equal(zone.lstSettings.speed, unit.manualSpeed)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Positive: does not set course for RORO ships
@@ -392,7 +396,7 @@ describe("AmphibiousAssault", function()
 
       assert.is_true(result)
       assert.are.same(sagCourse, sagUnit.course)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Negative: returns false when World_GetPointFromBearing returns nil
@@ -626,7 +630,7 @@ describe("AmphibiousAssault", function()
       assert.are.equal(4, count)
       assert.stub(stubAddUnit).was.called(4)
       assert.stub(stubSetDoctrine).was.called(4)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Positive: launches only ZTD when no ZBD cargo available
@@ -771,7 +775,7 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZTD
@@ -798,7 +802,7 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Negative: returns nil when ScenEdit_AddUnit fails for ZBD
@@ -828,7 +832,7 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZBD
@@ -858,7 +862,7 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(Logger.log).was.called()
+      assert.stub(logStub).was.called()
     end)
 
     -- Boundary: both ZBD and ZTD delete zero cargo
@@ -950,7 +954,7 @@ describe("AmphibiousAssault", function()
       local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config, ship)
-
+      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("ZoneBravo", result.name)
     end)
@@ -967,7 +971,7 @@ describe("AmphibiousAssault", function()
       local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config, ship)
-
+      assert(result ~= nil)
       assert.are.equal("ZoneAlpha", result.name)
     end)
 

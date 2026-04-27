@@ -1,5 +1,4 @@
 -- MissileSystem Ammo And Meeting Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
@@ -9,7 +8,12 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("MissileSystem Ammo And Meeting", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---Track and register method stub for automatic cleanup.
+  ---@param obj table
+  ---@param method string
+  ---@return luassert.spy
   local function trackStub(obj, method)
     local s = stub(obj, method)
     table.insert(activeStubs, s)
@@ -254,6 +258,7 @@ describe("MissileSystem Ammo And Meeting", function()
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
       local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -282,6 +287,7 @@ describe("MissileSystem Ammo And Meeting", function()
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
       local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
+      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -437,6 +443,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
 
       local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
     end)

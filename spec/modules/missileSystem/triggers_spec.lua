@@ -1,5 +1,4 @@
 -- MissileSystem Triggers Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local Triggers = require("src.modules.missileSystem.triggers")
 local GameApi = require("src.utils.gameApi")
@@ -8,7 +7,12 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("MissileSystem Triggers", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---Track and register method stub for automatic cleanup.
+  ---@param obj table
+  ---@param method string
+  ---@return luassert.spy
   local function trackStub(obj, method)
     local s = stub(obj, method)
     table.insert(activeStubs, s)

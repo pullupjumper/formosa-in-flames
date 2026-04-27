@@ -1,5 +1,4 @@
 -- DynamicATOInsertion Unit Tests
----@diagnostic disable: undefined-field
 local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
@@ -7,10 +6,16 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local BaseConfig = require("src.core.config")
 
 describe("DynamicATOInsertion", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local warnStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -19,29 +24,6 @@ describe("DynamicATOInsertion", function()
   -- ============================================================================
   -- Shared Test Utilities
   -- ============================================================================
-
-  ---Shallow deep-copy mock that copies top-level fields and packages array
-  local function shallowDeepCopy(t)
-    local copy = {}
-    for k, v in pairs(t) do
-      if type(v) == "table" then
-        local inner = {}
-        for k2, v2 in pairs(v) do inner[k2] = v2 end
-        copy[k] = inner
-      else
-        copy[k] = v
-      end
-    end
-    if t.packages then
-      copy.packages = {}
-      for i, p in ipairs(t.packages) do
-        local pc = {}
-        for k2, v2 in pairs(p) do pc[k2] = v2 end
-        copy.packages[i] = pc
-      end
-    end
-    return copy
-  end
 
   -- ============================================================================
   -- Shared Mock Data Builders
@@ -72,12 +54,17 @@ describe("DynamicATOInsertion", function()
     }
   end
 
+  ---Create full typed config for DynamicATOInsertion tests
+  ---@return SBJ__Config
+  local function makeConfig()
+    return Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
+  end
+
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Utils, "deepCopy").invokes(shallowDeepCopy))
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "error"))
-    trackStub(stub(Logger, "warn"))
+    warnStub = trackStub(stub(Logger, "warn"))
   end)
 
   after_each(function()
@@ -104,7 +91,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
 
-    DynamicATOInsertion.process({}, saveData, {})
+    DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.are.equal(5000, saveData.c.dynamicOperations.lastEvaluationTime)
   end)
@@ -156,7 +143,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base Alpha",
+          guid = "BASE-1",
+          name = "Air Base Alpha",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } }
         }
       end
@@ -167,7 +155,7 @@ describe("DynamicATOInsertion", function()
     local stubRegister = trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(stubRegister).was.called(1)
@@ -217,7 +205,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -227,7 +216,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    DynamicATOInsertion.process({}, saveData, {})
+    DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
 
@@ -295,7 +284,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base Bravo",
+          guid = "BASE-1",
+          name = "Air Base Bravo",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
         }
       end
@@ -306,7 +296,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/AIRCRAFT/ANTISHIP/1/1"])
@@ -370,7 +360,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" or guid == "BASE-2" then
         return {
-          guid = guid, name = "Air Base",
+          guid = guid,
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } }
         }
       end
@@ -381,7 +372,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -395,7 +386,8 @@ describe("DynamicATOInsertion", function()
     local reconEntry1 = makeReconEntry()
     local reconEntry2 = makeReconEntry({ time = "2026-02-14 01:00:00", type = "aircraft" })
     local operation1 = {
-      type = "air", executed = false
+      type = "air",
+      executed = false
       -- No template => skipped
     }
     local operation2 = {
@@ -431,7 +423,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -441,7 +434,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     -- markOperationExecuted called for operation2 (the one with template)
@@ -501,7 +494,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" or guid == "BASE-2" then
         return {
-          guid = guid, name = "Air Base",
+          guid = guid,
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } }
         }
       end
@@ -519,7 +513,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -573,7 +567,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" or guid == "BASE-2" then
         return {
-          guid = guid, name = "Air Base",
+          guid = guid,
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -590,7 +585,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -605,8 +600,8 @@ describe("DynamicATOInsertion", function()
     local endTs = Utils.parseDatetimeToTimestamp(pkg.striker.endTime)
     local duration = endTs - startTs
     -- With tanker: duration ~7200 (TANKER_DURATION), not ~2400 (MISSION_DURATION)
-    assert.is_true(duration > 5000, "Duration should reflect TANKER_DURATION (~7200), got " .. duration)
-    assert.is_true(duration <= 7200, "Duration should not exceed TANKER_DURATION, got " .. duration)
+    assert.is_true(duration > 5000)
+    assert.is_true(duration <= 7200)
   end)
 
   -- Positive: recon entry delay handled
@@ -646,7 +641,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -657,7 +653,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(stubMarkExecuted).was.called(1)
@@ -670,7 +666,7 @@ describe("DynamicATOInsertion", function()
   -- Negative: dynamicOperations not configured
   it("should return false when dynamicOperations is not configured", function()
     local saveData = { c = {} }
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: dynamicOperations disabled
@@ -680,7 +676,7 @@ describe("DynamicATOInsertion", function()
         dynamicOperations = { enabled = false }
       }
     }
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: reconSchedule nil
@@ -692,7 +688,7 @@ describe("DynamicATOInsertion", function()
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: reconSchedule empty
@@ -704,7 +700,7 @@ describe("DynamicATOInsertion", function()
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: no air operations pending
@@ -720,7 +716,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     local stubFilterOps = trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({}))
 
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
     assert.stub(stubFilterOps).was.called(1)
     assert.are.equal("air", stubFilterOps.calls[1].vals[2])
   end)
@@ -751,7 +747,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    assert.is_false(DynamicATOInsertion.process({}, saveData, {}))
+    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
     assert.stub(stubMarkExecuted).was_not.called()
   end)
 
@@ -777,7 +773,7 @@ describe("DynamicATOInsertion", function()
     local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    DynamicATOInsertion.process({}, saveData, {})
+    DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.stub(stubGenName).was_not.called()
     -- MISSING_TEMPLATE reason skips markOperationExecuted
@@ -823,7 +819,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- No valid packages => no ATO wave inserted
     assert.is_false(result)
@@ -866,14 +862,15 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base Alpha",
+          guid = "BASE-1",
+          name = "Air Base Alpha",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
       return { dbid = 100, mission = nil }
     end))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -918,7 +915,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -929,7 +927,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.are.equal(1, #saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"].packages)
@@ -969,7 +967,7 @@ describe("DynamicATOInsertion", function()
     -- Only 2 targets, minTargetCount = 3
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1010,7 +1008,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -1021,7 +1020,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
   end)
@@ -1080,14 +1079,15 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } }
         }
       end
       return { dbid = 100, mission = nil }
     end))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- 4 available - 2 assigned = 2, but requires 3 => fail
     assert.is_false(result)
@@ -1148,7 +1148,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } }
         }
       end
@@ -1158,7 +1159,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- Launched waves not counted: 4 available - 0 assigned >= 3 required => pass
     assert.is_true(result)
@@ -1200,7 +1201,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } }
         }
       end
@@ -1210,7 +1212,7 @@ describe("DynamicATOInsertion", function()
       return nil
     end))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- Only 1 available (AC-1), needs 2 => fail
     assert.is_false(result)
@@ -1254,11 +1256,12 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
     -- Base exists but has no embarked aircraft
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
-      guid = "BASE-1", name = "Empty Air Base",
+      guid = "BASE-1",
+      name = "Empty Air Base",
       embarkedUnits = nil
     }))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1298,7 +1301,7 @@ describe("DynamicATOInsertion", function()
     -- Base not found
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1339,7 +1342,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
-          guid = "BASE-1", name = "Air Base",
+          guid = "BASE-1",
+          name = "Air Base",
           embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
         }
       end
@@ -1349,7 +1353,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
     trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- insertATOWave returns false when airTaskingOrder is nil
     assert.is_false(result)
@@ -1378,7 +1382,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- No valid packages (empty) => no wave inserted
     assert.is_false(result)
@@ -1416,7 +1420,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- No valid packages (target is nil, processTargets returns empty) => rejected
     assert.is_false(result)
@@ -1454,7 +1458,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- Fixed path with no objs => empty targets => insufficient
     assert.is_false(result)
@@ -1493,10 +1497,10 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process({}, saveData, {})
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
     -- Unknown filter => no targets found => package invalid => false
     assert.is_false(result)
-    assert.stub(Logger.warn).was.called(1)
+    assert.stub(warnStub).was.called(1)
   end)
 end)

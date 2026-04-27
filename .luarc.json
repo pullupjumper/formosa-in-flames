@@ -2,7 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.4",
   "format.enable": true,
-  "workspace.library": ["../common-definitions/CMO_1147/library", "types"],
+  "workspace.userThirdParty": ["/home/toda/.local/share/luals-addons"],
+  "workspace.library": [
+    "../common-definitions/CMO_1147/library",
+    "/home/toda/.local/share/luals-addons/busted/library",
+    "/home/toda/.local/share/luals-addons/luassert/library"
+  ],
   "diagnostics.globals": [
     "describe",
     "it",

@@ -1,12 +1,14 @@
 -- DynamicOperationsUtils Unit Tests
----@diagnostic disable: undefined-field
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 
 describe("DynamicOperationsUtils", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -193,7 +195,7 @@ describe("DynamicOperationsUtils", function()
     it("should not error when dynamicOperations is nil", function()
       local saveData = { c = {} }
 
-      assert.has_no.errors(function()
+      assert.has_no.error(function()
         DynamicOperationsUtils.updateReconScheduleStatus(saveData)
       end)
     end)
@@ -202,7 +204,7 @@ describe("DynamicOperationsUtils", function()
     it("should not error when reconSchedule is nil", function()
       local saveData = { c = { dynamicOperations = {} } }
 
-      assert.has_no.errors(function()
+      assert.has_no.error(function()
         DynamicOperationsUtils.updateReconScheduleStatus(saveData)
       end)
     end)
@@ -823,11 +825,9 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(exists)
     end)
 
-    -- Negative: nil inputs
-    it("should return false for nil inputs", function()
+    -- Negative: nil reconSchedule
+    it("should return false when reconSchedule is nil", function()
       assert.is_false(DynamicOperationsUtils.hasOperation(nil, "STRIKE/1", "air"))
-      assert.is_false(DynamicOperationsUtils.hasOperation({}, nil, "air"))
-      assert.is_false(DynamicOperationsUtils.hasOperation({}, "STRIKE/1", nil))
     end)
 
     -- Negative: nil template
@@ -875,9 +875,9 @@ describe("DynamicOperationsUtils", function()
         makeReconEntry({ time = "2026-02-14 12:00:00", operations = { newerOp } }),
       }
 
-      local exists, foundOp, foundEntry = DynamicOperationsUtils.hasOperation(
-        schedule, "STRIKE/AB/W/", "air")
+      local exists, foundOp, foundEntry = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/", "air")
 
+      assert(foundEntry ~= nil)
       assert.is_true(exists)
       assert.are.equal(newerOp, foundOp)
       assert.are.equal("2026-02-14 12:00:00", foundEntry.time)

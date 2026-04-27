@@ -1,5 +1,4 @@
 -- CommsJamming Unit Tests
----@diagnostic disable: undefined-field
 local CommsJamming = require("src.modules.ew.commsJamming")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
@@ -8,8 +7,11 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("CommsJamming", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s

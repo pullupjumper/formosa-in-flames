@@ -1,5 +1,4 @@
 -- SecondWaveUnloading Unit Tests
----@diagnostic disable: undefined-field
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
@@ -7,8 +6,13 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 
 describe("SecondWaveUnloading", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -16,7 +20,7 @@ describe("SecondWaveUnloading", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "error"))
   end)
@@ -226,7 +230,7 @@ describe("SecondWaveUnloading", function()
       assert.is_true(result)
       assert.are.same({ destination }, bargeUnit.course)
       assert.are.equal(zone.lstSettings.speed, bargeUnit.manualSpeed)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: registers barge in saveData with empty roros list
@@ -262,7 +266,7 @@ describe("SecondWaveUnloading", function()
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-001"])
       assert.are.equal("BARGE-001", saveData.c.amphibOps.barges["BARGE-001"].guid)
       assert.are.same({}, saveData.c.amphibOps.barges["BARGE-001"].roros)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: pairs RORO ships with barges in same zone
@@ -330,7 +334,7 @@ describe("SecondWaveUnloading", function()
       -- RORO course: first waypoint is approach, second is barge destination
       assert.are.same({ roroDest, bargeDest }, roroUnit.course)
       assert.are.equal(zone.lstSettings.speed, roroUnit.manualSpeed)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: skips units that cannot be resolved
@@ -345,7 +349,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_true(result)
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: skips barge when reference points unavailable
@@ -369,7 +373,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_true(result)
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: skips barge when spherical center calculation fails
@@ -398,7 +402,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: skips barge when Tool_Range returns nil
@@ -428,7 +432,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: skips barge when Tool_Bearing returns nil
@@ -459,7 +463,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: skips barge when World_GetPointFromBearing returns nil
@@ -491,7 +495,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: does not set RORO course when RORO destination calculation fails
@@ -551,7 +555,7 @@ describe("SecondWaveUnloading", function()
       assert.are.same({ "RORO-001" }, saveData.c.amphibOps.barges["BARGE-001"].roros)
       assert.are.same({}, roroUnit.course)
       assert.are.equal(0, roroUnit.manualSpeed)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Boundary: ignores non-Barge/non-RORO ships
@@ -573,7 +577,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Boundary: ignores barge not in zone's anchorage area
@@ -595,7 +599,7 @@ describe("SecondWaveUnloading", function()
       )
 
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Boundary: handles empty filteredUnits array
@@ -607,7 +611,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_true(result)
       assert.are.same({}, saveData.c.amphibOps.barges)
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Boundary: caller invokes once per zone; each call processes its own barges
@@ -661,7 +665,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-Z1"])
       assert.is_not_nil(saveData.c.amphibOps.barges["BARGE-Z2"])
-      assert.stub(Logger.log).was.called(2)
+      assert.stub(logStub).was.called(2)
     end)
   end)
 
@@ -693,7 +697,7 @@ describe("SecondWaveUnloading", function()
       assert.are.equal(2, result)
       assert.stub(deleteStub).was.called(2)
       assert.stub(stubAddUnit).was.called(2)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: uses "Ground unit" type when cargo item type is 2
@@ -727,7 +731,7 @@ describe("SecondWaveUnloading", function()
         dbid = 3001,
         unitname = "GroundUnit-1",
       })
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: uses "Facility" type when cargo item type is not 2
@@ -761,7 +765,7 @@ describe("SecondWaveUnloading", function()
         dbid = 3001,
         unitname = "Facility-1",
       })
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Positive: passes correct parameters to generateLocations
@@ -784,7 +788,7 @@ describe("SecondWaveUnloading", function()
         distance = 0.5,
         firstDistance = 0.3,
       })
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Negative: returns nil when ship is nil
@@ -796,7 +800,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_nil(result)
       assert.stub(stubGenerateLocations).was_not.called()
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: returns nil when ship is destroyed
@@ -808,7 +812,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_nil(result)
       assert.stub(stubGenerateLocations).was_not.called()
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: returns nil when ScenEdit_AddUnit fails mid-offload
@@ -830,7 +834,7 @@ describe("SecondWaveUnloading", function()
       local result = SecondWaveUnloading.offloadVehicles(params)
 
       assert.is_nil(result)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
 
     -- Boundary: limits cargo to params.num even when more cargo exists
@@ -847,7 +851,7 @@ describe("SecondWaveUnloading", function()
 
       assert.are.equal(1, result)
       assert.stub(stubAddUnit).was.called(1)
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(logStub).was.called(1)
     end)
   end)
 
@@ -877,7 +881,7 @@ describe("SecondWaveUnloading", function()
       local result = SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
 
       assert.is_true(result)
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Positive: returns false when bridge exists and is alive
@@ -985,7 +989,7 @@ describe("SecondWaveUnloading", function()
       stubToolRange.returns(0.5)
 
       local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
-
+      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("ZoneAlpha", result.name)
     end)
@@ -1093,6 +1097,7 @@ describe("SecondWaveUnloading", function()
 
       local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
 
+      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("Zone2", result.name)
     end)

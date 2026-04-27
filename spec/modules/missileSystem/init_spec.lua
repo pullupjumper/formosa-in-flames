@@ -1,5 +1,4 @@
 -- MissileSystem Init Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local MissileSystem = require("src.modules.missileSystem.init")
 local Movement = require("src.modules.missileSystem.movement")
@@ -12,8 +11,17 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("MissileSystem", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
 
+  ---Track and register method stub for automatic cleanup.
+  ---@param obj table
+  ---@param method string
+  ---@return luassert.spy
   local function trackStub(obj, method)
     local s = stub(obj, method)
     table.insert(activeStubs, s)
@@ -22,8 +30,8 @@ describe("MissileSystem", function()
 
   before_each(function()
     activeStubs = {}
-    table.insert(activeStubs, stub(Logger, "log"))
-    table.insert(activeStubs, stub(Logger, "error"))
+    logStub = trackStub(Logger, "log")
+    errorStub = trackStub(Logger, "error")
   end)
 
   after_each(function()
@@ -42,39 +50,41 @@ describe("MissileSystem", function()
     it("should forward arguments, log an error and return false when movement fails", function()
       local firingUnitCtx = { name = "FU1" }
       local firingUnit = { name = "FU1" }
-      trackStub(Movement, "moveToFiringPoint").returns(false, "boom")
+      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint").returns(false, "boom")
 
       local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_false(result)
-      assert.stub(Movement.moveToFiringPoint).was.called(1)
-      assert.stub(Movement.moveToFiringPoint).was.called_with(firingUnitCtx, firingUnit)
-      assert.stub(Logger.error).was.called(1)
-      assert.stub(Logger.error).was.called_with(constants.TAGS.MISSILE_SYSTEM .. ": [FAIL] boom")
+      assert.stub(moveToFiringPointStub).was.called(1)
+      assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
+      assert.stub(errorStub).was.called(1)
+      assert.stub(errorStub).was.called_with(constants.TAGS.MISSILE_SYSTEM .. ": [FAIL] boom")
     end)
 
     -- Positive: forwards arguments and returns true without logging
     it("should forward arguments and return true when delegated movement succeeds", function()
       local firingUnitCtx = { name = "FU1" }
       local firingUnit = { name = "FU1" }
-      trackStub(Movement, "moveToFiringPoint").returns(true)
+      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint").returns(true)
 
       local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_true(result)
-      assert.stub(Movement.moveToFiringPoint).was.called(1)
-      assert.stub(Movement.moveToFiringPoint).was.called_with(firingUnitCtx, firingUnit)
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(moveToFiringPointStub).was.called(1)
+      assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
+      assert.stub(errorStub).was_not.called()
     end)
 
     -- Boundary: failure without errorMsg should not log (avoid "[FAIL] nil")
     it("should not log when movement fails without an error message", function()
       trackStub(Movement, "moveToFiringPoint").returns(false)
+      local firingUnitCtx = { name = "FU1" }
+      local firingUnit = { name = "FU1" }
 
-      local result = MissileSystem.moveToFiringPoint({}, {})
+      local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_false(result)
-      assert.stub(Logger.error).was_not.called()
+      assert.stub(errorStub).was_not.called()
     end)
   end)
 
@@ -92,13 +102,13 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
       }
 
-      trackStub(Cycle, "process").returns({})
+      local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
       MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
 
-      assert.stub(Cycle.process).was.called(2)
-      assert.stub(Cycle.process).was.called_with(srbmCtx, true, "Taiwan")
-      assert.stub(Cycle.process).was.called_with(mrbmCtx, true, "Taiwan")
+      assert.stub(cycleProcessStub).was.called(2)
+      assert.stub(cycleProcessStub).was.called_with(srbmCtx, true, "Taiwan")
+      assert.stub(cycleProcessStub).was.called_with(mrbmCtx, true, "Taiwan")
     end)
 
     -- Positive: results from multiple systems are aggregated into one tagged log call
@@ -112,7 +122,7 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
       }
 
-      trackStub(Cycle, "process").invokes(function(systemCtx)
+      local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemCtx)
         if systemCtx.id == "srbm" then
           return { { tag = "OK", unitName = "SRBM1", action = "reload done" } }
         elseif systemCtx.id == "mrbm" then
@@ -123,11 +133,11 @@ describe("MissileSystem", function()
 
       MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
 
-      assert.stub(Cycle.process).was.called(2) -- MLRS disabled is skipped
-      assert.stub(Logger.log).was.called(1)
+      assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
+      assert.stub(logStub).was.called(1)
 
-      local tag = Logger.log.calls[1].vals[1]
-      local message = Logger.log.calls[1].vals[2]
+      local tag = logStub.calls[1].vals[1]
+      local message = logStub.calls[1].vals[2]
       assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
       assert.is_not_nil(string.find(message, "2 events", 1, true))
       assert.is_not_nil(string.find(message, "[OK]", 1, true))
@@ -148,13 +158,13 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
       }
 
-      trackStub(Cycle, "process").returns({})
+      local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
       MissileSystem.checkMissileSystemState(groundCtx, false, "Taiwan")
 
-      assert.stub(Cycle.process).was.called(1)
-      assert.stub(Cycle.process).was.called_with(srbmCtx, false, "Taiwan")
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(cycleProcessStub).was.called(1)
+      assert.stub(cycleProcessStub).was.called_with(srbmCtx, false, "Taiwan")
+      assert.stub(logStub).was_not.called()
     end)
   end)
 
@@ -194,7 +204,7 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setWCSToFree")
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -204,8 +214,8 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setWCSToFree).was.called(1)
-      assert.stub(Movement.setWCSToFree).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(setWCSToFreeStub).was.called(1)
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, true)
     end)
 
     -- Negative: FP + not repositioning keeps WCS untouched
@@ -218,7 +228,7 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(false)
-      trackStub(Movement, "setWCSToFree")
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -228,7 +238,7 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setWCSToFree).was_not.called()
+      assert.stub(setWCSToFreeStub).was_not.called()
     end)
 
     -- Boundary: FP path must never drop contacts
@@ -241,7 +251,7 @@ describe("MissileSystem", function()
         resupplyUnits = {}
       }
 
-      trackStub(contact, "DropContact")
+      local dropContactStub = trackStub(contact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
       MissileSystem.handleMoveToPositionEvent({
@@ -252,7 +262,7 @@ describe("MissileSystem", function()
         contacts = { contact }
       })
 
-      assert.stub(contact.DropContact).was_not.called()
+      assert.stub(dropContactStub).was_not.called()
     end)
 
     -- --- HA --------------------------------------------------------------
@@ -268,8 +278,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(false)
-      trackStub(Movement, "setStateToHide")
-      trackStub(Concealment, "hideUnit")
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -284,8 +294,8 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.setStateToHide).was_not.called()
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(setStateToHideStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- Boundary: HA path drops only matching contacts
@@ -300,8 +310,8 @@ describe("MissileSystem", function()
         resupplyUnits = {}
       }
 
-      trackStub(matchingContact, "DropContact")
-      trackStub(otherContact, "DropContact")
+      local matchingDropContactStub = trackStub(matchingContact, "DropContact")
+      local otherDropContactStub = trackStub(otherContact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
       MissileSystem.handleMoveToPositionEvent({
@@ -317,8 +327,8 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(matchingContact.DropContact).was.called(1)
-      assert.stub(otherContact.DropContact).was_not.called()
+      assert.stub(matchingDropContactStub).was.called(1)
+      assert.stub(otherDropContactStub).was_not.called()
     end)
 
     -- Positive: HA + hideOnEnterHA enables both state change and concealment
@@ -332,8 +342,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(false)
-      trackStub(Movement, "setStateToHide")
-      trackStub(Concealment, "hideUnit")
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -348,10 +358,10 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.setStateToHide).was.called(1)
-      assert.stub(Movement.setStateToHide).was.called_with(firingUnitCtx, unit, true)
-      assert.stub(Concealment.hideUnit).was.called(1)
-      assert.stub(Concealment.hideUnit).was.called_with(firingUnitCtx, unit)
+      assert.stub(setStateToHideStub).was.called(1)
+      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(hideUnitStub).was.called(1)
+      assert.stub(hideUnitStub).was.called_with(firingUnitCtx, unit)
     end)
 
     -- Boundary: HA handler early-returns when unit is not a firing unit of the system
@@ -363,9 +373,9 @@ describe("MissileSystem", function()
         resupplyUnits = {}
       }
 
-      trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setStateToHide")
-      trackStub(Concealment, "hideUnit")
+      local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -380,9 +390,9 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.isRepositioning).was_not.called()
-      assert.stub(Movement.setStateToHide).was_not.called()
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(isRepositioningStub).was_not.called()
+      assert.stub(setStateToHideStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- --- RL --------------------------------------------------------------
@@ -398,8 +408,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitCtx)
-      trackStub(Movement, "setReloadStartTime")
-      trackStub(Movement, "setStateToStatic")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -409,9 +419,9 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setReloadStartTime).was.called(1)
-      assert.stub(Movement.setReloadStartTime).was.called_with(firingUnitCtx, unit, true)
-      assert.stub(Movement.setStateToStatic).was_not.called()
+      assert.stub(setReloadStartTimeStub).was.called(1)
+      assert.stub(setReloadStartTimeStub).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(setStateToStaticStub).was_not.called()
     end)
 
     -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path
@@ -425,8 +435,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      trackStub(Movement, "setReloadStartTime")
-      trackStub(Movement, "setStateToStatic")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -436,9 +446,9 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setReloadStartTime).was_not.called()
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(Movement.setStateToStatic).was.called_with(systemCtx, unit, true)
+      assert.stub(setReloadStartTimeStub).was_not.called()
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
     end)
 
     -- Positive: RL no-meeting + hideResupplyOnRLNoMeeting + ammo sufficient hides resupply unit
@@ -454,10 +464,10 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      trackStub(Movement, "setStateToStatic")
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
-      trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Concealment, "hideUnit")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
+      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -472,14 +482,14 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(Movement.setStateToStatic).was.called_with(systemCtx, unit, true)
-      assert.stub(GameApi.ScenEdit_GetUnit).was.called(1)
-      assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("FU1", "China")
-      assert.stub(Ammo.isLowAmmo).was.called(1)
-      assert.stub(Ammo.isLowAmmo).was.called_with(firingUnit, 30, 123)
-      assert.stub(Concealment.hideUnit).was.called(1)
-      assert.stub(Concealment.hideUnit).was.called_with(resupplyUnitCtx, unit)
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(getUnitStub).was.called(1)
+      assert.stub(getUnitStub).was.called_with("FU1", "China")
+      assert.stub(isLowAmmoStub).was.called(1)
+      assert.stub(isLowAmmoStub).was.called_with(firingUnit, 30, 123)
+      assert.stub(hideUnitStub).was.called(1)
+      assert.stub(hideUnitStub).was.called_with(resupplyUnitCtx, unit)
     end)
 
     -- Negative: RL no-meeting + low ammo must not hide the resupply unit
@@ -494,10 +504,10 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      trackStub(Movement, "setStateToStatic")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
       trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
       trackStub(Ammo, "isLowAmmo").returns(true)
-      trackStub(Concealment, "hideUnit")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -512,8 +522,8 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- Boundary: ScenEdit_GetUnit returning nil short-circuits before ammo/hide checks
@@ -530,8 +540,8 @@ describe("MissileSystem", function()
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       trackStub(Movement, "setStateToStatic")
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-      trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Concealment, "hideUnit")
+      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -546,8 +556,8 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Ammo.isLowAmmo).was_not.called()
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(isLowAmmoStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- Boundary: firingUnitCtx lookup failure on RL no-meeting short-circuits before API call
@@ -561,10 +571,10 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      trackStub(Movement, "setStateToStatic")
-      trackStub(GameApi, "ScenEdit_GetUnit")
-      trackStub(Ammo, "isLowAmmo")
-      trackStub(Concealment, "hideUnit")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
+      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit")
+      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -579,10 +589,10 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(GameApi.ScenEdit_GetUnit).was_not.called()
-      assert.stub(Ammo.isLowAmmo).was_not.called()
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(getUnitStub).was_not.called()
+      assert.stub(isLowAmmoStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- --- AHA -------------------------------------------------------------
@@ -598,8 +608,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetAmmoDepot").returns(true, resupplyUnitCtx)
-      trackStub(Movement, "setReloadStartTime")
-      trackStub(Movement, "setStateToStatic")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -609,9 +619,9 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setReloadStartTime).was.called(1)
-      assert.stub(Movement.setReloadStartTime).was.called_with(resupplyUnitCtx, unit, true)
-      assert.stub(Movement.setStateToStatic).was_not.called()
+      assert.stub(setReloadStartTimeStub).was.called(1)
+      assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitCtx, unit, true)
+      assert.stub(setStateToStaticStub).was_not.called()
     end)
 
     -- Negative: AHA fallback resets state when meeting fails
@@ -625,8 +635,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
-      trackStub(Movement, "setReloadStartTime")
-      trackStub(Movement, "setStateToStatic")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -636,9 +646,9 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setReloadStartTime).was_not.called()
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(Movement.setStateToStatic).was.called_with(systemCtx, unit, true)
+      assert.stub(setReloadStartTimeStub).was_not.called()
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
     end)
 
     -- --- Boundaries -------------------------------------------------------
@@ -653,11 +663,11 @@ describe("MissileSystem", function()
         resupplyUnits = {}
       }
 
-      trackStub(contact, "DropContact")
-      trackStub(Movement, "setWCSToFree")
-      trackStub(Movement, "setStateToHide")
-      trackStub(Movement, "setReloadStartTime")
-      trackStub(Movement, "setStateToStatic")
+      local dropContactStub = trackStub(contact, "DropContact")
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -667,11 +677,11 @@ describe("MissileSystem", function()
         contacts = { contact }
       })
 
-      assert.stub(contact.DropContact).was_not.called()
-      assert.stub(Movement.setWCSToFree).was_not.called()
-      assert.stub(Movement.setStateToHide).was_not.called()
-      assert.stub(Movement.setReloadStartTime).was_not.called()
-      assert.stub(Movement.setStateToStatic).was_not.called()
+      assert.stub(dropContactStub).was_not.called()
+      assert.stub(setWCSToFreeStub).was_not.called()
+      assert.stub(setStateToHideStub).was_not.called()
+      assert.stub(setReloadStartTimeStub).was_not.called()
+      assert.stub(setStateToStaticStub).was_not.called()
     end)
 
     -- Boundary: descriptions outside the "Arrive in <TYPE> " format must not be matched
@@ -684,10 +694,10 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setWCSToFree")
-      trackStub(Movement, "setStateToHide")
-      trackStub(Movement, "setStateToStatic")
-      trackStub(Movement, "setReloadStartTime")
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
+      local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
 
       local bogus = {
         "(China) Leaving HA - 1 - AreaA",     -- wrong verb
@@ -706,10 +716,10 @@ describe("MissileSystem", function()
         })
       end
 
-      assert.stub(Movement.setWCSToFree).was_not.called()
-      assert.stub(Movement.setStateToHide).was_not.called()
-      assert.stub(Movement.setStateToStatic).was_not.called()
-      assert.stub(Movement.setReloadStartTime).was_not.called()
+      assert.stub(setWCSToFreeStub).was_not.called()
+      assert.stub(setStateToHideStub).was_not.called()
+      assert.stub(setStateToStaticStub).was_not.called()
+      assert.stub(setReloadStartTimeStub).was_not.called()
     end)
 
     -- Boundary: real position type is preferred when areaName contains position-like substrings
@@ -723,8 +733,8 @@ describe("MissileSystem", function()
       }
 
       trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setWCSToFree")
-      trackStub(Movement, "setStateToHide")
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
 
       -- areaName "HALLWAY-RL-FP" contains HA/RL/FP substrings; pos type must still be FP
       MissileSystem.handleMoveToPositionEvent({
@@ -735,9 +745,9 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.setWCSToFree).was.called(1)
-      assert.stub(Movement.setWCSToFree).was.called_with(firingUnitCtx, unit, true)
-      assert.stub(Movement.setStateToHide).was_not.called()
+      assert.stub(setWCSToFreeStub).was.called(1)
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(setStateToHideStub).was_not.called()
     end)
 
     -- Boundary: behavior=nil defaults to no-hide on RL no-meeting
@@ -752,10 +762,10 @@ describe("MissileSystem", function()
       }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      trackStub(Movement, "setStateToStatic")
-      trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
+      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
       trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Concealment, "hideUnit")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -766,10 +776,10 @@ describe("MissileSystem", function()
         behavior = nil
       })
 
-      assert.stub(Movement.setStateToStatic).was.called(1)
-      assert.stub(Movement.setStateToStatic).was.called_with(systemCtx, unit, true)
-      assert.stub(GameApi.ScenEdit_GetUnit).was_not.called()
-      assert.stub(Concealment.hideUnit).was_not.called()
+      assert.stub(setStateToStaticStub).was.called(1)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(getUnitStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- Boundary: disabled systems must be skipped before any delegate is invoked
@@ -781,8 +791,8 @@ describe("MissileSystem", function()
         resupplyUnits = {}
       }
 
-      trackStub(Movement, "isRepositioning").returns(true)
-      trackStub(Movement, "setWCSToFree")
+      local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
+      local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(disabledCtx),
@@ -792,8 +802,8 @@ describe("MissileSystem", function()
         contacts = nil
       })
 
-      assert.stub(Movement.isRepositioning).was_not.called()
-      assert.stub(Movement.setWCSToFree).was_not.called()
+      assert.stub(isRepositioningStub).was_not.called()
+      assert.stub(setWCSToFreeStub).was_not.called()
     end)
   end)
 end)

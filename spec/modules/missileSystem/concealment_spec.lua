@@ -1,5 +1,4 @@
 -- MissileSystem Concealment Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local Concealment = require("src.modules.missileSystem.concealment")
 local GameApi = require("src.utils.gameApi")
@@ -7,7 +6,12 @@ local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics"
 local Logger = require("src.utils.logger")
 
 describe("MissileSystem Concealment", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---Track and register method stub for automatic cleanup.
+  ---@param obj table
+  ---@param method string
+  ---@return luassert.spy
   local function trackStub(obj, method)
     local s = stub(obj, method)
     table.insert(activeStubs, s)
@@ -72,7 +76,7 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
       local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
-
+      assert(errorMsg ~= nil)
       assert.is_false(success)
       assert.is_truthy(errorMsg:match("No available building"))
     end)
@@ -90,7 +94,7 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
 
       local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
-
+      assert(errorMsg ~= nil)
       assert.is_false(success)
       assert.is_truthy(errorMsg:match("No available building"))
     end)

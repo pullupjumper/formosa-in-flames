@@ -1,5 +1,4 @@
 -- MissileSystem Cycle Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local Cycle = require("src.modules.missileSystem.cycle")
 local Concealment = require("src.modules.missileSystem.concealment")
@@ -9,7 +8,12 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("MissileSystem Cycle", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---Track and register method stub for automatic cleanup.
+  ---@param obj table
+  ---@param method string
+  ---@return luassert.spy
   local function trackStub(obj, method)
     local s = stub(obj, method)
     table.insert(activeStubs, s)

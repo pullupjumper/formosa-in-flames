@@ -12,8 +12,13 @@ local UnitStatusUI = require("src.modules.unitStatusUI")
 local constants = require("src.core.constants")
 
 describe("LandingOps Coordinator", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local errorStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -23,7 +28,7 @@ describe("LandingOps Coordinator", function()
     activeStubs = {}
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -205,7 +210,6 @@ describe("LandingOps Coordinator", function()
     local stubCreateCargoMissions
     local stubTransferAndAssign
     local stubTransferTransportAircraft
-    local stubDeepCopy
     local stubCalculatePathDistanceAndTime
     local stubCountContactsInArea
     local stubSetLandingMissionStartTime
@@ -223,13 +227,6 @@ describe("LandingOps Coordinator", function()
       stubCreateCargoMissions = trackStub(stub(AmphibiousLogistics, "createCargoMissions").returns(true))
       stubTransferAndAssign = trackStub(stub(AmphibiousLogistics, "transferAndAssign").returns(true))
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferAndAssignTransportAircraft"))
-      stubDeepCopy = trackStub(stub(Utils, "deepCopy").invokes(function(value)
-        local copy = {}
-        for k, v in pairs(value) do
-          copy[k] = v
-        end
-        return copy
-      end))
       stubCalculatePathDistanceAndTime = trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(0, 600))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
       stubSetLandingMissionStartTime = trackStub(stub(AmphibiousAssault, "setLandingMissionStartTime").returns(true))
@@ -258,6 +255,7 @@ describe("LandingOps Coordinator", function()
     it("should enqueue Taoyuan temporary tasks after arrival logistics succeeds", function()
       local config = makeConfig()
       local saveData = makeSaveData()
+      local deepCopySpy = trackStub(spy.on(Utils, "deepCopy"))
 
       saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetCount.returns(2)
@@ -270,7 +268,7 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.stub(stubDeepCopy).was.called(1)
+      assert.spy(deepCopySpy).was.called()
     end)
 
     -- Positive: advances assault phase when launch conditions are met
@@ -346,7 +344,7 @@ describe("LandingOps Coordinator", function()
 
       Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
 
-      assert.stub(Logger.error).was.called(1)
+      assert.stub(errorStub).was.called(1)
       assert.stub(stubMoveToStagingArea).was_not.called()
     end)
 

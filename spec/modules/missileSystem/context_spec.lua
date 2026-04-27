@@ -1,11 +1,11 @@
 -- MissileSystem Context Unit Tests
----@diagnostic disable: undefined-field
 local stub = require("luassert.stub")
 local Context = require("src.modules.missileSystem.context")
 local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
 
 describe("MissileSystem Context", function()
+  ---@type luassert.spy[]
   local activeStubs
 
   local function makeSystemCtx(overrides)

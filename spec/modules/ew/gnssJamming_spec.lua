@@ -1,5 +1,4 @@
 -- GnssJamming Unit Tests
----@diagnostic disable: undefined-field
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
@@ -8,8 +7,15 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("GnssJamming", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -17,8 +23,8 @@ describe("GnssJamming", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "error"))
+    logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -144,8 +150,9 @@ describe("GnssJamming", function()
   -- ============================================================================
 
   describe("jamming", function()
+    local cachedSideConfigStub
     before_each(function()
-      trackStub(stub(GameUtils, "getCachedSideConfig").returns({
+      cachedSideConfigStub = trackStub(stub(GameUtils, "getCachedSideConfig").returns({
         field = "t",
         enemySide = "China",
         displayName = "Taiwan",
@@ -164,7 +171,7 @@ describe("GnssJamming", function()
         local result = GnssJamming.jamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
-        assert.stub(Logger.error).was.called(1)
+        assert.stub(errorStub).was.called(1)
       end)
 
       -- Negative: returns false when weapon unit wrapper fails
@@ -175,7 +182,7 @@ describe("GnssJamming", function()
         local result = GnssJamming.jamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
-        assert.stub(Logger.error).was.called(1)
+        assert.stub(errorStub).was.called(1)
       end)
     end)
 
@@ -296,7 +303,7 @@ describe("GnssJamming", function()
         local result = GnssJamming.jamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
-        assert.stub(Logger.log).was.called(1)
+        assert.stub(logStub).was.called(1)
       end)
 
       -- Boundary: high-resistance weapon almost always resists
@@ -339,7 +346,7 @@ describe("GnssJamming", function()
         local result = GnssJamming.jamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
-        assert.stub(Logger.error).was.called(1)
+        assert.stub(errorStub).was.called(1)
       end)
     end)
 
@@ -350,12 +357,11 @@ describe("GnssJamming", function()
     describe("side configuration", function()
       -- Positive: works correctly with China side config
       it("should use correct side config field for China", function()
-        GameUtils.getCachedSideConfig:revert()
-        trackStub(stub(GameUtils, "getCachedSideConfig").returns({
+        cachedSideConfigStub.returns({
           field = "c",
           enemySide = "Taiwan",
           displayName = "China",
-        }))
+        })
 
         local weapon = makeWeaponUnit({ dbid = 1001 })
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns({ guid = weapon.guid }))
@@ -392,18 +398,18 @@ describe("GnssJamming", function()
       local sideObj = makeSideObj({ zone }, standardZone)
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
-      trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
-      trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
-      trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      local deleteReferencePointStub = trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
+      local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
+      local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
+      local unitEntersAreaEventStub = trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
 
       local count = GnssJamming.removeJammers(jammerDescriptors, "China")
 
       assert.are.equal(1, count)
-      assert.stub(GameApi.ScenEdit_DeleteReferencePoint).was.called(2)
-      assert.stub(GameApi.ScenEdit_RemoveZone).was.called(1)
-      assert.stub(GameApi.ScenEdit_DeleteUnit).was.called(1)
-      assert.stub(GameUtils.unitEntersAreaEvent).was.called(1)
+      assert.stub(deleteReferencePointStub).was.called(2)
+      assert.stub(removeZoneStub).was.called(1)
+      assert.stub(deleteUnitStub).was.called(1)
+      assert.stub(unitEntersAreaEventStub).was.called(1)
     end)
 
     -- Negative: returns 0 when VP_GetSide returns nil
@@ -493,20 +499,21 @@ describe("GnssJamming", function()
       local descriptor = makeDescriptor()
       local createdUnit = makeUnit({ guid = "NEW-JAMMER", name = "GNSS Jammer Alpha" })
 
-      trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(createdUnit))
-      trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
+      local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(createdUnit))
+      local setEMCONStub = trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
       trackStub(stub(GameUtils, "newArea").returns({ "RP-001", "RP-002" }))
-      trackStub(stub(GameApi, "ScenEdit_AddZone"))
+      local addZoneStub = trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
 
       local success, unit = GnssJamming.addGnssJammer(descriptor, "China")
 
+      assert(unit ~= nil)
       assert.is_true(success)
       assert.are.equal("NEW-JAMMER", unit.guid)
-      assert.stub(GameApi.ScenEdit_AddUnit).was.called(1)
+      assert.stub(addUnitStub).was.called(1)
       -- EMCON is set once in createJammingZone (consolidated from duplicate calls)
-      assert.stub(GameApi.ScenEdit_SetEMCON).was.called(1)
-      assert.stub(GameApi.ScenEdit_AddZone).was.called(1)
+      assert.stub(setEMCONStub).was.called(1)
+      assert.stub(addZoneStub).was.called(1)
     end)
 
     -- Positive: passes correct parameters to ScenEdit_AddUnit
@@ -515,7 +522,7 @@ describe("GnssJamming", function()
         point = { latitude = 26.0, longitude = 122.0 },
       })
 
-      trackStub(stub(GameApi, "ScenEdit_AddUnit").invokes(function(params)
+      local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").invokes(function(params)
         assert.are.equal("China", params.side)
         assert.are.equal("GNSS Jammer Alpha", params.unitname)
         assert.are.equal(constants.PLATFORMS.GPS_JAMMER, params.dbid)
@@ -531,7 +538,7 @@ describe("GnssJamming", function()
 
       GnssJamming.addGnssJammer(descriptor, "China")
 
-      assert.stub(GameApi.ScenEdit_AddUnit).was.called(1)
+      assert.stub(addUnitStub).was.called(1)
     end)
 
     -- Negative: returns false when unit creation fails
@@ -553,6 +560,7 @@ describe("GnssJamming", function()
 
       local success, unit = GnssJamming.addGnssJammer(makeDescriptor(), "China")
 
+      assert(unit ~= nil)
       assert.is_false(success)
       assert.are.equal("NEW-JAMMER", unit.guid)
     end)
@@ -578,7 +586,7 @@ describe("GnssJamming", function()
         bravo = makeDescriptor({ name = "Jammer B", zoneName = "Zone B" }),
       }
 
-      trackStub(stub(GameUtils, "tryAddUnit").invokes(function(name)
+      trackStub(stub(GameUtils, "tryAddUnit", function(name)
         return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
       end))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
@@ -598,7 +606,7 @@ describe("GnssJamming", function()
         bravo = makeDescriptor({ name = "Jammer B", zoneName = "Zone B" }),
       }
 
-      trackStub(stub(GameUtils, "tryAddUnit").invokes(function(name)
+      trackStub(stub(GameUtils, "tryAddUnit", function(name)
         if name == "Jammer A" then
           return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
         end
@@ -633,12 +641,12 @@ describe("GnssJamming", function()
 
     -- Boundary: empty descriptors returns 0
     it("should return 0 for empty descriptors table", function()
-      trackStub(stub(GameUtils, "tryAddUnit"))
+      local tryAddUnitStub = trackStub(stub(GameUtils, "tryAddUnit"))
 
       local count = GnssJamming.addGnssJammers({}, "China")
 
       assert.are.equal(0, count)
-      assert.stub(GameUtils.tryAddUnit).was_not.called()
+      assert.stub(tryAddUnitStub).was_not.called()
     end)
   end)
 
@@ -659,15 +667,15 @@ describe("GnssJamming", function()
       local sideObj = makeSideObj({ zone }, standardZone)
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
-      trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
-      trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
+      local deleteReferencePointStub = trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
+      local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
       trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
 
       local result = GnssJamming.removeJammingZoneByName(jammerDescriptors, "China", "alpha")
 
       assert.is_true(result)
-      assert.stub(GameApi.ScenEdit_DeleteReferencePoint).was.called(2)
-      assert.stub(GameApi.ScenEdit_RemoveZone).was.called(1)
+      assert.stub(deleteReferencePointStub).was.called(2)
+      assert.stub(removeZoneStub).was.called(1)
       -- Should NOT delete unit (isDeleted is not passed)
     end)
 
@@ -684,12 +692,12 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
       trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
       trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
-      trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
+      local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
 
       GnssJamming.removeJammingZoneByName({ alpha = descriptor }, "China", "alpha")
 
-      assert.stub(GameApi.ScenEdit_DeleteUnit).was_not.called()
+      assert.stub(deleteUnitStub).was_not.called()
     end)
 
     -- Negative: returns false when VP_GetSide returns nil

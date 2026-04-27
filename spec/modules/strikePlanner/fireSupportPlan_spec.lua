@@ -1,5 +1,4 @@
 -- FireSupportPlan Unit Tests
----@diagnostic disable: undefined-field
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
@@ -9,8 +8,13 @@ local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 describe("FireSupportPlan", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local logStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -18,7 +22,7 @@ describe("FireSupportPlan", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
   end)
 
   after_each(function()
@@ -475,9 +479,9 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(Logger.log).was.called(1)
-      assert.are.equal("ground", Logger.log.calls[1].vals[1])
-      local logMessage = Logger.log.calls[1].vals[2]
+      assert.stub(logStub).was.called(1)
+      assert.are.equal("ground", logStub.calls[1].vals[1])
+      local logMessage = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(logMessage, "%[STRIKE%]"))
       assert.is_truthy(string.find(logMessage, "FST%-ALPHA: fired 4"))
     end)
@@ -495,8 +499,8 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(Logger.log).was.called(1)
-      local logMessage = Logger.log.calls[1].vals[2]
+      assert.stub(logStub).was.called(1)
+      local logMessage = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(logMessage, "%[PENDING%]"))
       assert.is_truthy(string.find(logMessage, "Battery%-1"))
     end)
@@ -507,8 +511,8 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(Logger.log).was.called(1)
-      local logMessage = Logger.log.calls[1].vals[2]
+      assert.stub(logStub).was.called(1)
+      local logMessage = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(logMessage, "%[DONE%]"))
       assert.is_falsy(string.find(logMessage, "%[STRIKE%]"))
     end)
@@ -519,7 +523,7 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: no log when attack returns zero
@@ -532,7 +536,7 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(Logger.log).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
   end)
 end)

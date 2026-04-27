@@ -1,5 +1,4 @@
 -- Sigint Unit Tests
----@diagnostic disable: undefined-field
 local Sigint = require("src.modules.ew.sigint")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
@@ -8,8 +7,13 @@ local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
 describe("Sigint", function()
+  ---@type luassert.spy[]
   local activeStubs
-
+  ---@type luassert.spy
+  local warnStub
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -18,7 +22,7 @@ describe("Sigint", function()
   before_each(function()
     activeStubs = {}
     trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "warn"))
+    warnStub = trackStub(stub(Logger, "warn"))
   end)
 
   after_each(function()
@@ -163,24 +167,26 @@ describe("Sigint", function()
   describe("calculateDetectionProbability", function()
     -- Positive: returns 1.0 when distance is within threshold
     it("should return 1.0 when distance is within detection threshold", function()
-      local prob = Sigint.calculateDetectionProbability(30, { detectionThreshold = 60 })
+      local cfg = { detectionThreshold = 60 }
+      local prob = Sigint.calculateDetectionProbability(30, cfg)
       assert.are.equal(1.0, prob)
     end)
 
     -- Positive: returns 1.0 when distance equals threshold exactly
     it("should return 1.0 when distance equals detection threshold", function()
-      local prob = Sigint.calculateDetectionProbability(60, { detectionThreshold = 60 })
+      local cfg = { detectionThreshold = 60 }
+      local prob = Sigint.calculateDetectionProbability(60, cfg)
       assert.are.equal(1.0, prob)
     end)
 
     -- Positive: returns value between 0 and 1 for mid-range distance
     it("should return probability between 0 and 1 for mid-range distance", function()
-      local config = {
+      local cfg = {
         detectionThreshold = 60,
         maxDetectionRange = { 500, 500 },
         formulaConstants = { decayRate = -1 / 450, power = 0.8 },
       }
-      local prob = Sigint.calculateDetectionProbability(150, config)
+      local prob = Sigint.calculateDetectionProbability(150, cfg)
       assert.is_true(prob > 0 and prob < 1)
     end)
 
@@ -192,39 +198,40 @@ describe("Sigint", function()
 
     -- Negative: returns 0.0 when distance exceeds max detection range
     it("should return 0.0 when distance exceeds max detection range", function()
-      local config = {
+      local cfg = {
         detectionThreshold = 60,
         maxDetectionRange = { 100, 100 },
       }
-      local prob = Sigint.calculateDetectionProbability(200, config)
+      local prob = Sigint.calculateDetectionProbability(200, cfg)
       assert.are.equal(0.0, prob)
     end)
 
     -- Boundary: returns 0.0 when distance is at max range boundary
     it("should return 0.0 when distance equals max detection range", function()
-      local config = {
+      local cfg = {
         detectionThreshold = 60,
         maxDetectionRange = { 200, 200 },
       }
-      local prob = Sigint.calculateDetectionProbability(200, config)
+      local prob = Sigint.calculateDetectionProbability(200, cfg)
       assert.are.equal(0.0, prob)
     end)
 
     -- Boundary: returns value at distance 0
     it("should return 1.0 when distance is zero", function()
-      local prob = Sigint.calculateDetectionProbability(0, { detectionThreshold = 60 })
+      local cfg = { detectionThreshold = 60 }
+      local prob = Sigint.calculateDetectionProbability(0, cfg)
       assert.are.equal(1.0, prob)
     end)
 
     -- Positive: probability decreases as distance increases
     it("should decrease probability as distance increases", function()
-      local config = {
+      local cfg = {
         detectionThreshold = 60,
         maxDetectionRange = { 500, 500 },
         formulaConstants = { decayRate = -1 / 450, power = 0.8 },
       }
-      local probClose = Sigint.calculateDetectionProbability(100, config)
-      local probFar = Sigint.calculateDetectionProbability(250, config)
+      local probClose = Sigint.calculateDetectionProbability(100, cfg)
+      local probFar = Sigint.calculateDetectionProbability(250, cfg)
       assert.is_true(probClose > probFar)
     end)
   end)
@@ -234,12 +241,12 @@ describe("Sigint", function()
   -- ============================================================================
 
   describe("handleSigint", function()
-    local config
+    local cfg
     local sigintContext
     local sigintConfig
 
     before_each(function()
-      config = makeConfig()
+      cfg = makeConfig()
       sigintContext = makeSigintContext()
       sigintConfig = makeSigintConfig()
 
@@ -287,7 +294,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
       assert.is_true(results["C2-UNIT-001"].isDetected)
       assert.are.equal(25.01, results["C2-UNIT-001"].latitude)
       assert.are.equal(121.01, results["C2-UNIT-001"].longitude)
@@ -325,7 +332,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
       assert.is_true(results["BUNKER-001"].isDetected)
     end)
 
@@ -361,7 +368,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
       assert.is_true(results["C2F-001"].isDetected)
     end)
 
@@ -401,7 +408,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
       assert.is_true(results["TEL-001"].isDetected)
     end)
 
@@ -438,7 +445,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_false(results["TEL-002"].isDetected)
     end)
 
@@ -476,7 +483,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_false(results["TEL-003"].isDetected)
     end)
 
@@ -494,7 +501,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_nil(results["MISSING-001"])
     end)
 
@@ -524,7 +531,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_false(results["C2-UNIT-002"].isDetected)
     end)
 
@@ -561,7 +568,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["C2-REC-001"]
       assert.is_not_nil(transmission)
@@ -620,7 +627,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["C2-INC-001"]
       assert.are.equal(3, transmission.currentDetectionLevel)
@@ -677,7 +684,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["C2-AUTO-001"]
       assert.is_true(transmission.autodetectable)
@@ -737,7 +744,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       assert.stub(setUnitStub).was.called(2)
       assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-A", autodetectable = true })
@@ -789,7 +796,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["C2-DEC-001"]
       assert.are.equal(2, transmission.currentDetectionLevel)
@@ -840,7 +847,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["C2-RESET-001"]
       assert.is_false(transmission.autodetectable)
@@ -884,7 +891,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
     end)
@@ -922,7 +929,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_false(results["TEL-STOP-001"].isDetected)
     end)
 
@@ -965,7 +972,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, unitContexts)
       assert.is_false(results["TEL-NORL-001"].isDetected)
     end)
 
@@ -1005,7 +1012,7 @@ describe("Sigint", function()
       -- We need to test getSigint with showConfidence. Since getSigint is local,
       -- we test through handleSigint. The data parameter is nil in handleSigint,
       -- so showConfidence defaults to false. We verify the notification doesn't contain confidence.
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       assert.stub(barkStub).was.called()
     end)
@@ -1043,7 +1050,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["TAAOC-001"]
       assert.are.equal("C2", transmission.type)
@@ -1086,7 +1093,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(config, sigintContext, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintContext, "China", true, sigintConfig, unitContexts)
 
       local transmission = sigintContext.transmissions["MOB-TYPE-001"]
       assert.are.equal("mobile", transmission.type)
@@ -1096,7 +1103,7 @@ describe("Sigint", function()
     it("should return empty results when unitContexts is empty", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(21000)
 
-      local results = Sigint.collectSigint(config, sigintContext, "China", false, sigintConfig, {})
+      local results = Sigint.collectSigint(cfg, sigintContext, "China", false, sigintConfig, {})
       assert.are.same({}, results)
     end)
   end)
@@ -1264,7 +1271,7 @@ describe("Sigint", function()
 
       local count = Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
       assert.are.equal(0, count)
-      assert.stub(Logger.warn).was.called(1)
+      assert.stub(warnStub).was.called(1)
     end)
 
     -- Negative: should skip unit when ScenEdit_GetUnit returns nil

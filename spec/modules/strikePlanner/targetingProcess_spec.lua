@@ -1,15 +1,23 @@
 -- TargetingProcess Unit Tests
----@diagnostic disable: undefined-field
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+---@diagnostic disable-next-line: invisible
 local _internal = TargetingProcess._internal
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
+local Utils = require("src.utils.utils")
+local BaseConfig = require("src.core.config")
 
 describe("TargetingProcess", function()
+  ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local warnStub
 
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
+  ---@return luassert.spy
   local function trackStub(s)
     table.insert(activeStubs, s)
     return s
@@ -17,8 +25,8 @@ describe("TargetingProcess", function()
 
   before_each(function()
     activeStubs = {}
+    warnStub = trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "warn"))
   end)
 
   after_each(function()
@@ -146,17 +154,13 @@ describe("TargetingProcess", function()
 
   ---Create a config structure
   ---@param overrides? table
-  ---@return table
+  ---@return SBJ__Config
   local function makeConfig(overrides)
     overrides = overrides or {}
-    return {
-      c = {
-        sigint = {
-          maxRange = overrides.maxRange or 50,
-          maxCount = overrides.maxCount or 3,
-        },
-      },
-    }
+    local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
+    config.c.sigint.maxRange = overrides.maxRange or 50
+    config.c.sigint.maxCount = overrides.maxCount or 3
+    return config
   end
 
   -- ============================================================================
@@ -330,7 +334,7 @@ describe("TargetingProcess", function()
       TargetingProcess.scanTargets("China", scanConfig, saveData)
 
       assert.are.equal(0, #saveData.c.targetlist)
-      assert.stub(Logger.warn).was.called(1)
+      assert.stub(warnStub).was.called(1)
     end)
 
     -- Negative: airfield contact too far from base
@@ -1035,14 +1039,16 @@ describe("TargetingProcess", function()
 
   describe("triggerReconTracking", function()
     local mockFilteredUnits
+    local vpGetSideStub
+    local reconTrackTargetStub
 
     before_each(function()
       mockFilteredUnits = { { guid = "uav-001" } }
       local mockSide = {
         unitsBy = function() return mockFilteredUnits end,
       }
-      trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
-      trackStub(stub(Recon, "trackTarget").returns(true))
+      vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
+      reconTrackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
     end)
 
     -- Positive: triggers WZ-8 for findNavalTargets
@@ -1059,8 +1065,8 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
 
-      assert.stub(Recon.trackTarget).was.called(1)
-      assert.stub(Recon.trackTarget).was.called_with(
+      assert.stub(reconTrackTargetStub).was.called(1)
+      assert.stub(reconTrackTargetStub).was.called_with(
         opts.saveData.c.recon,
         mockFilteredUnits,
         constants.PLATFORMS.WZ8,
@@ -1083,8 +1089,8 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findRadioDirection", { "radio-001" })
 
-      assert.stub(Recon.trackTarget).was.called(1)
-      assert.stub(Recon.trackTarget).was.called_with(
+      assert.stub(reconTrackTargetStub).was.called(1)
+      assert.stub(reconTrackTargetStub).was.called_with(
         opts.saveData.c.recon,
         mockFilteredUnits,
         constants.PLATFORMS.BZK005,
@@ -1102,7 +1108,7 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findInfantry", { "inf-001" })
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
 
     -- Negative: saveData is nil
@@ -1115,13 +1121,12 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
 
     -- Negative: VP_GetSide returns nil
     it("should not call Recon.trackTarget when VP_GetSide returns nil", function()
-      GameApi.VP_GetSide:revert()
-      trackStub(stub(GameApi, "VP_GetSide").returns(nil))
+      vpGetSideStub.returns(nil)
 
       local opts = {
         contacts = { makeContact({ guid = "ship-001" }) },
@@ -1131,16 +1136,15 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
 
     -- Negative: no aircraft available
     it("should not call Recon.trackTarget when no aircraft available", function()
-      GameApi.VP_GetSide:revert()
       local mockSide = {
         unitsBy = function() return nil end,
       }
-      trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
+      vpGetSideStub.returns(mockSide)
 
       local opts = {
         contacts = { makeContact({ guid = "ship-001" }) },
@@ -1150,7 +1154,7 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
 
     -- Negative: target not found in contacts (findNavalTargets)
@@ -1163,7 +1167,7 @@ describe("TargetingProcess", function()
 
       _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-missing" })
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
   end)
 
@@ -1173,6 +1177,7 @@ describe("TargetingProcess", function()
 
   describe("processTargets recon integration", function()
     local mockFilteredUnits
+    local reconTrackTargetStub
 
     before_each(function()
       mockFilteredUnits = { { guid = "uav-001" } }
@@ -1180,7 +1185,7 @@ describe("TargetingProcess", function()
         unitsBy = function() return mockFilteredUnits end,
       }
       trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
-      trackStub(stub(Recon, "trackTarget").returns(true))
+      reconTrackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
     end)
 
     -- Positive: findNavalTargets triggers WZ-8 recon via processDynamicTargets
@@ -1202,8 +1207,8 @@ describe("TargetingProcess", function()
 
       TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
 
-      assert.stub(Recon.trackTarget).was.called(1)
-      local callArgs = Recon.trackTarget.calls[1]
+      assert.stub(reconTrackTargetStub).was.called(1)
+      local callArgs = reconTrackTargetStub.calls[1]
       assert.are.equal(constants.PLATFORMS.WZ8, callArgs.vals[3])
     end)
 
@@ -1237,8 +1242,8 @@ describe("TargetingProcess", function()
 
       TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
 
-      assert.stub(Recon.trackTarget).was.called(1)
-      local callArgs = Recon.trackTarget.calls[1]
+      assert.stub(reconTrackTargetStub).was.called(1)
+      local callArgs = reconTrackTargetStub.calls[1]
       assert.are.equal(constants.PLATFORMS.BZK005, callArgs.vals[3])
     end)
 
@@ -1260,7 +1265,7 @@ describe("TargetingProcess", function()
 
       TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
 
-      assert.stub(Recon.trackTarget).was_not.called()
+      assert.stub(reconTrackTargetStub).was_not.called()
     end)
   end)
 
@@ -1269,8 +1274,9 @@ describe("TargetingProcess", function()
   -- ============================================================================
 
   describe("evaluateTarget", function()
+    local getUnitStub
     before_each(function()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
+      getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
         embarkedUnits = { Aircraft = {} },
       }))
     end)
@@ -1305,10 +1311,9 @@ describe("TargetingProcess", function()
 
     -- Positive: helipad with embarked aircraft
     it("should return true for helipad with embarked aircraft", function()
-      GameApi.ScenEdit_GetUnit:revert()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({
+      getUnitStub.returns({
         embarkedUnits = { Aircraft = { "helo-001" } },
-      }))
+      })
 
       local target = makeContact({
         type_description = "Helipad",
@@ -1338,8 +1343,7 @@ describe("TargetingProcess", function()
 
     -- Negative: actual unit not found
     it("should return false when actual unit is not found", function()
-      GameApi.ScenEdit_GetUnit:revert()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      getUnitStub.returns(nil)
 
       local target = makeContact({
         type_description = "Runway (3000m)",
@@ -1644,7 +1648,8 @@ describe("TargetingProcess", function()
 
     -- Negative: nil targetConfig
     it("should return empty when targetConfig is nil", function()
-      local result = TargetingProcess.processTargets(makeConfig(), makeSaveData(), {}, nil, false)
+      local targetTemplate = {}
+      local result = TargetingProcess.processTargets(makeConfig(), makeSaveData(), {}, targetTemplate, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1724,7 +1729,7 @@ describe("TargetingProcess", function()
       local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
 
       assert.are.equal(0, #result)
-      assert.stub(Logger.warn).was.called(1)
+      assert.stub(warnStub).was.called(1)
     end)
 
     -- Negative: fixed target objs is nil
