@@ -493,6 +493,7 @@ constants.PLATFORMS = {
   CH_SSC_9 = 4399,   --CJ-10A
   HF3 = 3531,
   HF2E = 2587,
+  HF_BUNKER = 4728,
   LT2000 = 2251,
   HIMARS = 2446,
   BUILDING = 448,

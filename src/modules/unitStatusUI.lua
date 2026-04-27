@@ -265,6 +265,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local missileSystems = { ... }
+  ---@cast missileSystems SBJ__MissileSystemContext[]
   local rows = {}
 
   for _, missileSystem in pairs(missileSystems) do
@@ -272,14 +273,13 @@ local function createBatteryDataString(config, saveData, sideName, ...)
         saveData[field].ground[missileSystem].resupplyUnits
 
     if resupplyUnitCtxs then
-      for key, ctx in pairs(resupplyUnitCtxs) do
+      for key, _ in pairs(resupplyUnitCtxs) do
         rows[key] = {}
       end
     end
   end
 
   for _, missileSystem in pairs(missileSystems) do
-    ---@type SBJ__MissileSystemContext
     local missileSystemCtx = saveData[field].ground[missileSystem]
     local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 

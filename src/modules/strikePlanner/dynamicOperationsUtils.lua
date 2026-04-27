@@ -183,7 +183,7 @@ end
 
 ---Get operations from most recent reconnaissance entry classified by type and next reconnaissance time
 ---Uses current game time to find the most recent recon entry whose time has passed
----@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries (may not be in time order)
+---@param reconSchedule SBJ__ReconScheduleEntry[]|nil Array of reconnaissance schedule entries (may not be in time order)
 ---@return {air: SBJ__Operation[], ground: SBJ__Operation[], nextReconTime: string|nil, mostRecentTime: string|nil} # Operations classified by type, next recon time, and most recent entry time
 function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
   local result = {
@@ -314,14 +314,14 @@ end
 
 ---Check if an operation with specific template name and type exists in reconnaissance schedule
 ---Supports exact match and prefix search (templateName ending with "/")
----@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
+---@param reconSchedule SBJ__ReconScheduleEntry[]|nil Array of reconnaissance schedule entries
 ---@param templateName string Template name to search for (e.g., "STRIKE/AB/W/1" or "STRIKE/AB/W/" for prefix)
 ---@param operationType string Operation type ("air" or "ground")
 ---@return boolean exists Whether the operation exists in the schedule
 ---@return SBJ__Operation|nil operation The operation object if found, nil otherwise
 ---@return SBJ__ReconScheduleEntry|nil reconEntry The parent reconnaissance entry if found, nil otherwise
 function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operationType)
-  if not reconSchedule or not templateName or not operationType then
+  if not reconSchedule then
     return false, nil, nil
   end
 

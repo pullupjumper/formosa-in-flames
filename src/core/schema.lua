@@ -357,7 +357,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Side configuration for faction settings
 ---@class SBJ__SideConfig: table
----@field field string Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
+---@field field SBJ__TaiwanConfig|SBJ__ChinaConfig Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
 ---@field enemySide string Enemy side name
 ---@field displayName string Human-readable side name
 
@@ -817,7 +817,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ResupplyUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus, SBJ__WeaponStatus
 ---@field unitCount number Number of resupply vehicles in this unit
 ---@field ammunition string Associated ammunition unit name for this resupply unit
----@field firingUnit string|string[] Associated firing unit name for this resupply unit
+---@field firingUnit string Associated firing unit name for this resupply unit
 
 ---Firing unit descriptor with weapon configuration and status
 ---@class SBJ__FiringUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus

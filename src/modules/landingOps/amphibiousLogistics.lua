@@ -86,7 +86,7 @@ end
 
 ---Transfer cargo from source unit to destination unit
 ---Deletes matching cargo from source and creates matching quantity on destination
----@param fromUnit CMO__Unit Source unit (typically the mother ship)
+---@param fromUnit CMO__Unit|nil Source unit (typically the mother ship)
 ---@param toUnit CMO__Unit Destination unit (aircraft or boat to receive cargo)
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
 function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
@@ -108,7 +108,7 @@ end
 
 ---Delete specified cargo from a unit
 ---Returns the actual number of items deleted (may be less than requested)
----@param fromUnit CMO__Unit Unit to remove cargo from
+---@param fromUnit CMO__Unit|nil Unit to remove cargo from
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
 ---@return integer # Number of cargo items actually deleted
 function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)

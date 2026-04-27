@@ -287,7 +287,7 @@ config.c.gnssJamming.jammers = {
 config.c.ground = {}
 config.c.ground.mlrs = {}
 config.c.ground.mlrs.wpnDefault = 96
-config.c.ground.mlrs.ammoThreshold = 50
+config.c.ground.mlrs.ammoThreshold = 55
 config.c.ground.mlrs.contactAge = 30 * 60
 config.c.ground.mlrs.reloadTime = 30 * 60
 config.c.ground.mlrs.ammunitions = {
@@ -359,7 +359,7 @@ config.c.ground.mlrs.firingUnits = {
 
 config.c.ground.glcm = {}
 config.c.ground.glcm.wpnDefault = 120
-config.c.ground.glcm.ammoThreshold = 50
+config.c.ground.glcm.ammoThreshold = 55
 config.c.ground.glcm.contactAge = 30 * 60
 config.c.ground.glcm.reloadTime = 45 * 60
 config.c.ground.glcm.ammunitions = {
@@ -404,7 +404,7 @@ config.c.ground.glcm.firingUnits = {
 
 config.c.ground.srbm = {}
 config.c.ground.srbm.wpnDefault = 36
-config.c.ground.srbm.ammoThreshold = 35
+config.c.ground.srbm.ammoThreshold = 55
 config.c.ground.srbm.contactAge = 30 * 60
 config.c.ground.srbm.reloadTime = 5 * 60
 config.c.ground.srbm.ammunitions = {
@@ -594,7 +594,7 @@ config.c.ground.srbm.firingUnits = {
 
 config.c.ground.mrbm = {}
 config.c.ground.mrbm.wpnDefault = 24
-config.c.ground.mrbm.ammoThreshold = 35
+config.c.ground.mrbm.ammoThreshold = 55
 config.c.ground.mrbm.contactAge = 15 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
 config.c.ground.mrbm.ammunitions = {
@@ -639,7 +639,7 @@ config.c.ground.mrbm.firingUnits = {
 
 config.c.ground.ascm = {}
 config.c.ground.ascm.wpnDefault = 12
-config.c.ground.ascm.ammoThreshold = 35
+config.c.ground.ascm.ammoThreshold = 55
 config.c.ground.ascm.contactAge = 15 * 60
 config.c.ground.ascm.reloadTime = 5 * 60
 config.c.ground.ascm.ammunitions = {
@@ -684,7 +684,7 @@ config.c.ground.ascm.firingUnits = {
 
 config.c.ground.sam = {}
 config.c.ground.sam.wpnDefault = 16
-config.c.ground.sam.ammoThreshold = 35
+config.c.ground.sam.ammoThreshold = 55
 config.c.ground.sam.contactAge = 15 * 60
 config.c.ground.sam.reloadTime = 5 * 60
 config.c.ground.sam.ammunitions = {
