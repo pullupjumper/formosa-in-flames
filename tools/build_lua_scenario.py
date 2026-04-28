@@ -7,6 +7,7 @@ into a unified build system with dependency-aware ordering.
 """
 
 import argparse
+import fnmatch
 import os
 import re
 import shutil
@@ -1138,6 +1139,25 @@ def collect_all_lua_files(slim_dir: str, skip_schema: bool = True) -> Dict[str, 
     return files
 
 
+def should_exclude_file(rel_path: str, exclude_patterns: List[str]) -> bool:
+    """Return whether a relative file path should be excluded from merge."""
+    if not exclude_patterns:
+        return False
+
+    normalized_path = normalize_rel_path(rel_path)
+    return any(fnmatch.fnmatch(normalized_path, pattern) for pattern in exclude_patterns)
+
+
+def normalize_exclude_pattern(pattern: str) -> str:
+    """Normalize exclude pattern to merge-relative path style."""
+    normalized = normalize_rel_path(pattern).lstrip("./")
+    if normalized.startswith("src/"):
+        normalized = normalized[4:]
+    elif normalized.startswith("slim/"):
+        normalized = normalized[5:]
+    return normalized
+
+
 def build_dependency_graph(
     files: Dict[str, str], slim_dir: str, src_dir: str = "src"
 ) -> Dict[str, Set[str]]:
@@ -1253,7 +1273,11 @@ def sort_files_with_dependencies(
 
 
 def merge_lua_files(
-    slim_dir: str, output_file: str, src_dir: str = "src", skip_schema: bool = True
+    slim_dir: str,
+    output_file: str,
+    src_dir: str = "src",
+    skip_schema: bool = True,
+    exclude_patterns: List[str] | None = None,
 ) -> Tuple[bool, int]:
     """
     Merge all Lua files from slim directory in dependency order.
@@ -1273,6 +1297,27 @@ def merge_lua_files(
     # Collect all Lua files
     print("📁 Collecting Lua files...")
     files = collect_all_lua_files(slim_dir, skip_schema)
+
+    normalized_patterns = [
+        normalize_exclude_pattern(pattern) for pattern in (exclude_patterns or [])
+    ]
+    excluded_paths = [
+        rel_path
+        for rel_path in sorted(files.keys())
+        if should_exclude_file(rel_path, normalized_patterns)
+    ]
+    for rel_path in excluded_paths:
+        del files[rel_path]
+
+    if normalized_patterns:
+        print(
+            "🚫 Exclude patterns: "
+            + ", ".join(normalized_patterns)
+        )
+        print(f"🚫 Excluded files: {len(excluded_paths)}")
+        for rel_path in excluded_paths:
+            print(f"  - {rel_path}")
+
     print(f"Found {len(files)} Lua files")
 
     if not files:
@@ -1390,7 +1435,11 @@ def build_scenario(args) -> bool:
 
         print("\n" + "=" * 70)
         merge_success, merged_count = merge_lua_files(
-            slim_dir, output_file, src_dir, not args.include_schema
+            slim_dir,
+            output_file,
+            src_dir,
+            not args.include_schema,
+            args.exclude,
         )
 
         print("\n📊 Merging Results:")
@@ -1426,6 +1475,8 @@ Examples:
   python build_lua_scenario.py --clean-only       # Only clean files
   python build_lua_scenario.py --merge-only       # Only merge files
   python build_lua_scenario.py --output custom.lua # Custom output filename
+  python build_lua_scenario.py --exclude "modules/debug.lua"
+  python build_lua_scenario.py --exclude "modules/test/*.lua" --exclude "utils/tmp.lua"
         """,
     )
 
@@ -1463,6 +1514,15 @@ Examples:
         "--include-schema",
         action="store_true",
         help="Include schema.lua in merge (default: skip schema)",
+    )
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help=(
+            "Exclude Lua files from merge by relative path or glob pattern. "
+            "Example: --exclude 'modules/debug.lua' --exclude 'modules/test/*.lua'"
+        ),
     )
 
     args = parser.parse_args()

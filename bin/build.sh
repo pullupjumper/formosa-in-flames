@@ -4,18 +4,21 @@
 RUN_TEST=false
 SKIP_NPM=false
 SKIP_LUAMIN=false
+EXCLUDE_PATTERNS=()
 
 # 1. 處理參數
-while getopts "nlht" opt; do
+while getopts "nlhtx:" opt; do
   case $opt in
     t) RUN_TEST=true ;;
     n) SKIP_NPM=true ;;
     l) SKIP_LUAMIN=true ;;
+    x) EXCLUDE_PATTERNS+=("$OPTARG") ;;
     h)
-      echo "用法: ./build.sh [-n] [-l] [-h] [-t]"
+      echo "用法: ./build.sh [-n] [-l] [-h] [-t] [-x pattern]"
       echo "  -t  執行測試"
       echo "  -n  跳過 npm run build (不重新打包前端)"
       echo "  -l  跳過 luamin (不壓縮 Lua 程式碼)"
+      echo "  -x  排除要合併的 Lua 檔案（可重複指定，支援 glob）"
       echo "  -h  顯示此說明"
       exit 0
       ;;
@@ -56,7 +59,16 @@ fi
 
 # 步驟 2: Python (這個通常是核心，不建議跳過)
 echo "🐍 執行 Python 注入與合併..."
-if ! python3 tools/build_lua_scenario.py; then echo "❌ Python 失敗"; exit 1; fi
+PYTHON_ARGS=()
+for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+    PYTHON_ARGS+=(--exclude "$pattern")
+done
+
+if [ ${#EXCLUDE_PATTERNS[@]} -gt 0 ]; then
+    echo "🚫 排除 pattern: ${EXCLUDE_PATTERNS[*]}"
+fi
+
+if ! python3 tools/build_lua_scenario.py "${PYTHON_ARGS[@]}"; then echo "❌ Python 失敗"; exit 1; fi
 
 # 步驟 3: Luamin
 if [ "$SKIP_LUAMIN" = true ]; then
