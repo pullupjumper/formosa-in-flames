@@ -181,15 +181,12 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, f
 
     -- Process each firing unit until we've allocated enough ammo or tried all firing units
     while firingUnitIdx <= #firingUnits and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
-      local actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[firingUnitIdx].guid)
+      local actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[firingUnitIdx].name, sideName)
       local wpnDBID = weaponDBID or firingUnits[firingUnitIdx].weaponDBID
 
       if not actualUnit then
-        actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[firingUnitIdx].name, sideName)
-
-        if not actualUnit then
-          break
-        end
+        Logger.error("AttackContact: Unit not found with name: " .. tostring(firingUnits[firingUnitIdx].name))
+        break
       end
 
       -- Handle differently based on whether it's a group or individual unit
@@ -243,7 +240,7 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, f
 end
 
 ---Attack multiple contacts with weapon allocation from firing units
----@param opts SBJ__AttackParams Attack parameters
+---@param opts SBJ__AttackContactsOpts Attack parameters
 ---@return integer # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(opts)
   local result = { firingUnitIdx = 1, shooterIdx = 1, ammoAllocated = 0 }

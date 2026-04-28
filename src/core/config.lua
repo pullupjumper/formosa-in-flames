@@ -2488,8 +2488,8 @@ config.c.fireSupportTaskTemplates = {
       name = "RADAR",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
@@ -2507,8 +2507,8 @@ config.c.fireSupportTaskTemplates = {
       name = "RUNWAY",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
@@ -2534,7 +2534,7 @@ config.c.fireSupportTaskTemplates = {
       name = "PORT",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
@@ -2556,7 +2556,7 @@ config.c.fireSupportTaskTemplates = {
       name = "SHELTER",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
@@ -2579,8 +2579,8 @@ config.c.fireSupportTaskTemplates = {
       name = "RADAR",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "614th Bde, PLARF", guid = "X58F5H-0HN1LQGRV8HNQ", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde, PLARF", guid = "X58F5H-0HN1G2DEBC7O8", weaponDBID = constants.WEAPONS.DF15B }
+        { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
+        { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
       },
       target = {
         list = {},
@@ -2598,8 +2598,8 @@ config.c.fireSupportTaskTemplates = {
       name = "RUNWAY",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "636th Bde, PLARF", guid = "IC8B0X-0HN822OHANPB3", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde, PLARF", guid = "IC8B0X-0HN822OHANRHI", weaponDBID = constants.WEAPONS.DF16A }
+        { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
+        { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
       },
       target = {
         list = {},
@@ -2630,7 +2630,7 @@ config.c.fireSupportTaskTemplates = {
       name = "PORT",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "615th Bde, PLARF", guid = "X58F5H-0HN1G2IFLNKG9", weaponDBID = constants.WEAPONS.DF11A }
+        { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
       },
       target = {
         list = {},
@@ -2654,7 +2654,7 @@ config.c.fireSupportTaskTemplates = {
       name = "SHELTER",
       missileSystem = "SRBM",
       firingUnits = {
-        { name = "616th Bde, PLARF", guid = "X58F5H-0HN1G2IFLF6QE", weaponDBID = constants.WEAPONS.DF15C }
+        { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
       },
       target = {
         list = {},
@@ -2681,7 +2681,7 @@ config.c.fireSupportTaskTemplates = {
       name = "ANTISHIP",
       missileSystem = "MRBM",
       firingUnits = {
-        { name = "624th Bde, PLARF", guid = "IC8B0X-0HNCOR6HG2JE1", weaponDBID = constants.WEAPONS.DF21D }
+        { name = "624th Bde, PLARF", weaponDBID = constants.WEAPONS.DF21D }
       },
       target = {
         list = {},
@@ -2699,7 +2699,7 @@ config.c.fireSupportTaskTemplates = {
       name = "ANTISHIP",
       missileSystem = "ASCM",
       firingUnits = {
-        { name = "1st Pili Reg", guid = "NONE", weaponDBID = constants.WEAPONS.YJ12 }
+        { name = "1st Pili Reg", weaponDBID = constants.WEAPONS.YJ12 }
       },
       target = {
         list = {},
@@ -2717,7 +2717,7 @@ config.c.fireSupportTaskTemplates = {
       name = "PINGTAN",
       missileSystem = "MLRS",
       firingUnits = {
-        { name = "1st Bn, 1st Rockets Arty Bde", guid = "IC8B0X-0HND05GGU36EN", weaponDBID = constants.WEAPONS.FD280 }
+        { name = "1st Bn, 1st Rockets Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
       },
       target = {
         list = {},
@@ -2733,7 +2733,7 @@ config.c.fireSupportTaskTemplates = {
       name = "CHINCHEW",
       missileSystem = "MLRS",
       firingUnits = {
-        { name = "6th Bn, 73rd Arty Bde", guid = "IC8B0X-0HNBRRE2PRQAL", weaponDBID = constants.WEAPONS.FD280 }
+        { name = "6th Bn, 73rd Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
       },
       target = {
         list = {},
@@ -2751,7 +2751,7 @@ config.c.fireSupportTaskTemplates = {
       name = "HELIPAD",
       missileSystem = "GLCM",
       firingUnits = {
-        { name = "635th Bde, PLARF", guid = "6Z8LM5-0HMN97ERAUODK", weaponDBID = constants.WEAPONS.CJ10A }
+        { name = "635th Bde, PLARF", weaponDBID = constants.WEAPONS.CJ10A }
       },
       target = {
         list = {},

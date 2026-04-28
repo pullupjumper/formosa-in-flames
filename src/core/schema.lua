@@ -1008,7 +1008,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Firing unit definition for fire support operations
 ---@class SBJ__FiringUnit: table
 ---@field name string Firing unit name
----@field guid string Firing unit GUID
 ---@field weaponDBID number Firing unit weapon database ID
 
 ---Fire Support Task template extending task with firing units
@@ -1037,7 +1036,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportTasks SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes
----@class SBJ__AttackParams: table
+---@class SBJ__AttackContactsOpts: table
 ---@field contacts table<integer, string> A table of contact GUIDs to attack
 ---@field qty integer The number of salvos to launch
 ---@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
