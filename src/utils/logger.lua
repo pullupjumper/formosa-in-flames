@@ -22,21 +22,20 @@ local function printBox(side, ...)
   end
 
   -- Calculate border width
-  local width = 70
+  -- local width = 70
 
   -- Build top and bottom border: continuous -
-  local border = string.rep("-", width)
+  -- local border = string.rep(" ", width)
 
   -- Build middle lines
   local middleLines = {}
   for _, str in ipairs(strings) do
-    -- Build middle line: | space string
-    local middle = "| " .. str
+    local middle = "  " .. str
     table.insert(middleLines, middle)
   end
 
   -- Combine into a single string
-  local boxString = border .. "\n" .. table.concat(middleLines, "\n") .. "\n" .. border
+  local boxString = "\n" .. table.concat(middleLines, "\n")
 
   -- Output all at once
   ScenEdit_SpecialMessage(side, boxString)

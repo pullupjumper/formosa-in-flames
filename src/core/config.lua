@@ -107,7 +107,7 @@ config.readytime = 5 * 60
 
 config.c.triggers = {
   amphibiousOps = { startTime = "2027-06-09 02:40:00" },
-  -- amphibiousOps = { startTime = "2027-06-09 1:00:00" },
+  -- amphibiousOps = { startTime = "2027-06-09 2:15:00" },
   launchLACM = { startTime = "2027-06-09 06:00:00" },
   launchSLCM = { startTime = "2027-06-09 06:30:00" },
   -- launchSLCM = { startTime = "2027-06-09 01:00:00" },
