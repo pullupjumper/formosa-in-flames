@@ -925,19 +925,20 @@ config.c.recon.template = {
 }
 config.c.recon.reconStrikeMatrix = {
   UAV = {
-    BZK005 = {
+    [constants.PLATFORMS.BZK005] = {
       { name = "STRIKE/C2/1", type = "ground", }
     },
-    GJ11 = {
+    [constants.PLATFORMS.GJ11] = {
       { name = "CAS/N/1",     type = "air", },
       { name = "STRIKE/C2/1", type = "ground", }
     },
-    H6N = {
-      { name = "ANTISHIP/1",       type = "ground" },
-      { name = "ANTISHIP/NORTH/1", type = "ground" },
-      { name = "ASUW/N/1",         type = "air" },
-      { name = "STRIKE/AB/E/1",    type = "air" },
-      { name = "STRIKE/AB/W/1",    type = "air" }
+    [constants.PLATFORMS.H6N] = {
+      { name = "ANTISHIP/1",              type = "ground" },
+      { name = "ANTISHIP/NORTH/1",        type = "ground" },
+      { name = "ASUW/N/1",                type = "air" },
+      { name = "STRIKE/AB/E/1",           type = "air" },
+      { name = "STRIKE/AB/W/1",           type = "air" },
+      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
     },
   },
   satellite = {
@@ -969,25 +970,30 @@ config.c.recon.queue = {
   },
   {
     type = "satellite",
+    platformKey = "EOS",
     endTime = "2027-06-09 01:00:00",
     -- endTime = "2027-06-09 04:40:00",
   },
   {
     type = "SIGINT",
+    platformKey = "ELINT",
     endTime = "2027-06-09 01:30:00"
   },
   {
     type = "satellite",
+    platformKey = "EOS",
     -- endTime = "2027-06-09 01:00:00",
     endTime = "2027-06-09 05:44:00",
   },
   {
     type = "satellite",
+    platformKey = "EOS",
     -- endTime = "2027-06-09 01:30:00",
     endTime = "2027-06-09 08:04:00",
   },
   {
     type = "satellite",
+    platformKey = "EOS",
     endTime = "2027-06-09 11:25:00",
   },
 }
@@ -1427,6 +1433,7 @@ config.c.air.landBased.deployedACs = {
 
 config.c.amphibOps = {}
 config.c.amphibOps.periodOfTime = 5 * 60
+config.c.amphibOps.fireSupportHoldThreshold = 80 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.c.amphibOps.cargoList = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11

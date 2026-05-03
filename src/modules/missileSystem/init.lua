@@ -81,6 +81,14 @@ function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
   return Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
 end
 
+---Calculate ammunition inventory across firing/resupply/ammo for a missile system
+---@param systemCtx SBJ__MissileSystemContext Missile system runtime context
+---@param sideName string Side name used to resolve firing units in game state
+---@return SBJ__AmmoInventoryReport # Inventory report with subtotals and percentages
+function MissileSystem.getAmmoInventory(systemCtx, sideName)
+  return Ammo.getInventory(systemCtx, sideName)
+end
+
 ---Check status of all missile systems and trigger corresponding actions
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
 ---@param isAuto boolean Whether in automatic mode

@@ -6,9 +6,18 @@ local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics"
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local UnitStatusUI = require("src.modules.unitStatusUI")
+local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 local Coordinator = {}
+
+---Phases considered "fleet has arrived at staging waters" for fire support gate
+---@type table<string, true>
+local ARRIVED_PHASES = {
+  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]     = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE] = true,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]           = true,
+}
 
 ---Find an operation descriptor by zone name
 ---@param operations SBJ__AmphibiousOperationDescriptor[] Operation descriptors to search
@@ -146,6 +155,55 @@ function Coordinator.process(config, saveData, contacts, currentTime, filteredSh
   end
 
   processCargoRetransfer(config, saveData, currentTime, filteredShips)
+  Coordinator.evaluateFireSupportGate(config, saveData)
+end
+
+---Check whether all configured operational zones have reached staging waters
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
+local function allZonesArrived(config, saveData)
+  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+    local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+    if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
+      return false
+    end
+  end
+  return true
+end
+
+---Update fireSupportOnHold flag based on SRBM ammo level and fleet arrival status.
+---Hold engages when ammo drops below threshold while at least one zone has not yet arrived;
+---hold releases unconditionally once every zone reaches WAITING_ASSAULT or later (phase machine
+---is monotonic, so the release latches naturally).
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+function Coordinator.evaluateFireSupportGate(config, saveData)
+  local amphib = saveData.c.amphibOps
+  local arrived = allZonesArrived(config, saveData)
+
+  if amphib.fireSupportOnHold and arrived then
+    amphib.fireSupportOnHold = false
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, "[RESUME] Fire support resumed: all zones at staging waters")
+    return
+  end
+
+  if amphib.fireSupportOnHold or arrived then
+    return
+  end
+
+  local srbmCtx = saveData.c.ground and saveData.c.ground.srbm
+  if not srbmCtx then return end
+
+  local report = MissileSystem.getAmmoInventory(srbmCtx, constants.SIDES.ENEMY)
+  if report.total.percentage < config.c.amphibOps.fireSupportHoldThreshold then
+    amphib.fireSupportOnHold = true
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
+      "[HOLD] Fire support held: SRBM total %d%% < %d%% (firing %d%% / resupply %d%% / depot %d%%)",
+      report.total.percentage,
+      config.c.amphibOps.fireSupportHoldThreshold,
+      report.firing.percentage, report.resupply.percentage, report.ammo.percentage))
+  end
 end
 
 return Coordinator

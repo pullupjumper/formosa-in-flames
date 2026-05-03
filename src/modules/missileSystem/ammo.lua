@@ -98,4 +98,81 @@ function Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
   return (totalCurrent / totalMax * 100) <= percentage
 end
 
+---Compute usage percentage rounded to integer; returns 0 when max is 0 to avoid divide-by-zero
+---@param current number Current ammunition count
+---@param max number Maximum ammunition count
+---@return integer # Percentage in 0-100 range, rounded to nearest integer
+local function calcPercentage(current, max)
+  if max == 0 then return 0 end
+  return math.floor(current / max * 100 + 0.5)
+end
+
+---Sum ammunition across all firing units of a missile system by querying live game state
+---@param firingUnits table<string, SBJ__FiringUnitContext> Firing unit contexts keyed by name
+---@param sideName string Side name for ScenEdit_GetUnit lookup
+---@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
+local function sumFiringUnits(firingUnits, sideName)
+  local subtotal = { current = 0, max = 0, percentage = 0 }
+
+  for _, firingCtx in pairs(firingUnits) do
+    local firingUnit = GameApi.ScenEdit_GetUnit(firingCtx.name, sideName)
+    if firingUnit then
+      local weaponDBIDs = Shared.normalizeWeaponDBIDs(firingCtx.weaponDBID)
+      local units = Shared.getGroupUnits(firingUnit)
+      for _, guid in ipairs(units) do
+        local unit = GameApi.ScenEdit_GetUnit(guid)
+        if unit then
+          for _, dbid in ipairs(weaponDBIDs) do
+            local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
+            subtotal.current = subtotal.current + wpnInfo.availableWeapons
+            subtotal.max = subtotal.max + wpnInfo.maxWeapons
+          end
+        end
+      end
+    end
+  end
+
+  subtotal.percentage = calcPercentage(subtotal.current, subtotal.max)
+  return subtotal
+end
+
+---Sum ammunition across context-tracked units (resupply trucks or ammo depots)
+---@param contexts table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext> Contexts with wpnCurrent/wpnDefault
+---@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
+local function sumContextUnits(contexts)
+  local subtotal = { current = 0, max = 0, percentage = 0 }
+
+  for _, ctx in pairs(contexts) do
+    subtotal.current = subtotal.current + ctx.wpnCurrent
+    subtotal.max = subtotal.max + ctx.wpnDefault
+  end
+
+  subtotal.percentage = calcPercentage(subtotal.current, subtotal.max)
+  return subtotal
+end
+
+---Calculate ammunition inventory across firing units, resupply units, and ammo depots
+---@param systemCtx SBJ__MissileSystemContext Missile system runtime context
+---@param sideName string Side name used to resolve firing units in game state
+---@return SBJ__AmmoInventoryReport # Inventory report with subtotals and percentages
+function Ammo.getInventory(systemCtx, sideName)
+  local firing = sumFiringUnits(systemCtx.firingUnits, sideName)
+  local resupply = sumContextUnits(systemCtx.resupplyUnits)
+  local ammo = sumContextUnits(systemCtx.ammunitions)
+
+  local total = {
+    current = firing.current + resupply.current + ammo.current,
+    max = firing.max + resupply.max + ammo.max,
+    percentage = 0,
+  }
+  total.percentage = calcPercentage(total.current, total.max)
+
+  return {
+    firing = firing,
+    resupply = resupply,
+    ammo = ammo,
+    total = total,
+  }
+end
+
 return Ammo

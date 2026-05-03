@@ -364,4 +364,126 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubRetransferCargos).was.called(1)
     end)
   end)
+
+  -- ============================================================================
+  -- evaluateFireSupportGate
+  -- ============================================================================
+
+  describe("evaluateFireSupportGate", function()
+    local MissileSystem = require("src.modules.missileSystem.init")
+
+    ---@param totalPercentage number
+    ---@return SBJ__AmmoInventoryReport
+    local function makeReport(totalPercentage)
+      return {
+        firing   = { current = 0, max = 0, percentage = 0 },
+        resupply = { current = 0, max = 0, percentage = 0 },
+        ammo     = { current = 0, max = 0, percentage = 0 },
+        total    = { current = 0, max = 0, percentage = totalPercentage },
+      }
+    end
+
+    ---@param overrides? table
+    local function makeGateConfig(overrides)
+      local cfg = makeConfig()
+      cfg.c.amphibOps.fireSupportHoldThreshold = 50
+      if overrides then
+        for k, v in pairs(overrides) do cfg.c.amphibOps[k] = v end
+      end
+      return cfg
+    end
+
+    ---@param overrides? table
+    local function makeGateSaveData(overrides)
+      local sd = makeSaveData()
+      sd.c.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
+      if overrides then
+        for k, v in pairs(overrides) do sd.c.amphibOps[k] = v end
+      end
+      return sd
+    end
+
+    -- Positive: HOLD activates when ammo low and at least one zone has not arrived
+    it("should set fireSupportOnHold true when ammo below threshold and zones not all arrived", function()
+      local cfg = makeGateConfig()
+      local sd = makeGateSaveData()
+      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
+
+      Coordinator.evaluateFireSupportGate(cfg, sd)
+
+      assert.is_true(sd.c.amphibOps.fireSupportOnHold)
+    end)
+
+    -- Negative: HOLD does not activate when ammo above threshold
+    it("should not set fireSupportOnHold when ammo at or above threshold", function()
+      local cfg = makeGateConfig()
+      local sd = makeGateSaveData()
+      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(50)))
+
+      Coordinator.evaluateFireSupportGate(cfg, sd)
+
+      assert.is_not_true(sd.c.amphibOps.fireSupportOnHold)
+    end)
+
+    -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
+    it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
+      local cfg = makeGateConfig()
+      cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+      local sd = makeGateSaveData()
+      sd.c.amphibOps.fireSupportOnHold = true
+      sd.c.amphibOps.zoneStates = {
+        Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
+        Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE }),
+      }
+
+      Coordinator.evaluateFireSupportGate(cfg, sd)
+
+      assert.is_false(sd.c.amphibOps.fireSupportOnHold)
+    end)
+
+    -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
+    it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
+      local cfg = makeGateConfig()
+      cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+      local sd = makeGateSaveData()
+      sd.c.amphibOps.fireSupportOnHold = true
+      sd.c.amphibOps.zoneStates = {
+        Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
+        Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
+      }
+      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
+
+      Coordinator.evaluateFireSupportGate(cfg, sd)
+
+      assert.is_true(sd.c.amphibOps.fireSupportOnHold)
+    end)
+
+    -- Boundary: gate must not query SRBM ammo while already on hold (saves a game-state read)
+    it("should not call getAmmoInventory when already on hold", function()
+      local cfg = makeGateConfig()
+      local sd = makeGateSaveData()
+      sd.c.amphibOps.fireSupportOnHold = true
+      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
+
+      Coordinator.evaluateFireSupportGate(cfg, sd)
+
+      assert.stub(invStub).was_not.called()
+    end)
+
+    -- Boundary: defensive guard when SRBM context is absent (e.g., partial saveData)
+    it("should not error when ground.srbm context is missing", function()
+      local cfg = makeGateConfig()
+      local sd = makeGateSaveData()
+      sd.c.ground = nil
+      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+
+      assert.has_no.errors(function()
+        Coordinator.evaluateFireSupportGate(cfg, sd)
+      end)
+      assert.is_not_true(sd.c.amphibOps.fireSupportOnHold)
+    end)
+  end)
 end)

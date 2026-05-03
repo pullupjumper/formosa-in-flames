@@ -30,7 +30,7 @@ end
 
 if saveData.c.recon.enabled then
   StrikePlanner.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule,
-    saveData.c.surface.lacm)
+    saveData.c.surface.lacm, saveData.c.amphibOps.fireSupportOnHold == true)
 end
 
 if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then

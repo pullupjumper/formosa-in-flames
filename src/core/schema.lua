@@ -196,7 +196,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconConfig: table
 ---@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
 ---@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
----@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings indexed by platform type
+---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<integer|string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings; UAV inner key is platform DBID (integer), satellite/SIGINT inner key is semantic platform name (string)
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
@@ -567,6 +567,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
 ---@field calculationResult table<string, SBJ__OperationZoneCalculationResult> Operation zone calculation results indexed by zone name
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
+---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
 ---ACV deployment parameters for launching air cushion vehicles
 ---Temporary parameter pack used for ACV deployment functions
@@ -715,6 +716,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodOfTime number Check interval in seconds
+---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRASTRUCTURE/*) are held until all zones reach staging waters
 ---@field cargoList table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field cargoListForTransfer table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartime table<string, number[]> Mission start times by type (seconds)
@@ -852,6 +854,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
 ---@field test? table Test data structure (optional)
+
+---Ammunition subtotal with current/max counts and usage percentage
+---@class SBJ__AmmoSubtotal: table
+---@field current number Current ammunition count
+---@field max number Maximum ammunition count
+---@field percentage integer Usage percentage (current/max * 100), rounded to nearest integer; 0 when max is 0
+
+---Ammunition inventory report aggregating firing/resupply/ammo subtotals and overall total
+---@class SBJ__AmmoInventoryReport: table
+---@field firing SBJ__AmmoSubtotal Firing units total (queried from live game state)
+---@field resupply SBJ__AmmoSubtotal Resupply units total (sum of context wpnCurrent/wpnDefault)
+---@field ammo SBJ__AmmoSubtotal Ammunition depots total (sum of context wpnCurrent/wpnDefault)
+---@field total SBJ__AmmoSubtotal Combined total across firing + resupply + ammo
 
 ---Ground force context data structure
 ---Manages all ground-based weapon systems and fire support operations
@@ -1084,7 +1099,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Satellite reconnaissance queue entry template
 ---Simplified configuration for satellite reconnaissance requiring only timing information
 ---@class SBJ__ReconQueueEntryTemplateSatellite: SBJ__ReconQueueEntryBase
--- No additional fields beyond base - satellites only need type and endTime
+---@field platformKey string Semantic platform key (e.g. "EOS", "ELINT") used to index reconStrikeMatrix
 
 ---Union type for all reconnaissance entry templates
 ---@alias SBJ__ReconQueueEntryTemplate SBJ__ReconQueueEntryTemplateUAV|SBJ__ReconQueueEntryTemplateSatellite
@@ -1115,7 +1130,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field type "air"|"ground" Strike mission type
 
 ---Reconnaissance platform type
----@alias SBJ__ReconPlatformType "UAV"|"satellite"
+---@alias SBJ__ReconPlatformType "UAV"|"satellite"|"SIGINT"
 
 
 -- ============================================================================

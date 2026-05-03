@@ -126,17 +126,14 @@ end
 -- ============================================================================
 
 ---Find matching strike mappings for a reconnaissance queue entry from the strike matrix
----@param strikeMatrix table<string, SBJ__ReconStrikeMapping[]> Strike matrix keyed by platform name
+---UAV entries are looked up by unitDBID (integer); satellite/SIGINT entries by platformKey (string).
+---@param strikeMatrix table<integer|string, SBJ__ReconStrikeMapping[]> Strike matrix for the entry's platform type
 ---@param entry SBJ__ReconQueueEntry Queue entry to find mappings for
 ---@return SBJ__ReconStrikeMapping[]|nil # Matching strike mappings or nil if not found
 local function findStrikeMappingsForEntry(strikeMatrix, entry)
-  for platformName, strikeMappings in pairs(strikeMatrix) do
-    local dbid = constants.PLATFORMS[platformName]
-    if entry.unitDBID == dbid then
-      return strikeMappings
-    end
-  end
-  return nil
+  local key = entry.unitDBID or entry.platformKey
+  if not key then return nil end
+  return strikeMatrix[key]
 end
 
 ---Build a single operation from a strike mapping configuration
@@ -200,9 +197,10 @@ end
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
 ---@return SBJ__Operation[] operations Array of special operations to add
 ---@return string[] logEntries Array of log entry strings for batched output
-local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
   local operations = {}
   local logEntries = {}
   local strikeMatrix = config.c.recon.reconStrikeMatrix[entry.type]
@@ -215,27 +213,35 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
 
   local strikeMappings = findStrikeMappingsForEntry(strikeMatrix, entry)
   if not strikeMappings then
+    table.insert(logEntries, string.format("  [SKIP] No strike mappings for %s key=%s",
+      tostring(entry.type), tostring(entry.unitDBID or entry.platformKey)))
     return operations, logEntries
   end
 
   for _, strikeMapping in ipairs(strikeMappings) do
-    local skipMapping = false
+    -- Gate: SRBM mappings (STRIKE/INFRASTRUCTURE/*) skipped while fire support is on hold
+    if fireSupportOnHold and strikeMapping.name:find("^STRIKE/INFRASTRUCTURE/") then
+      table.insert(logEntries, string.format(
+        "  [HOLD] %s skipped: fire support on hold", strikeMapping.name))
+    else
+      local skipMapping = false
 
-    if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
-      local newOp, logEntry = buildOperationFromMapping(strikeMapping, config, LACMContext)
-      table.insert(logEntries, "  " .. logEntry)
-      if newOp then
-        table.insert(operations, newOp)
-      else
-        skipMapping = true
+      if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
+        local newOp, logEntry = buildOperationFromMapping(strikeMapping, config, LACMContext)
+        table.insert(logEntries, "  " .. logEntry)
+        if newOp then
+          table.insert(operations, newOp)
+        else
+          skipMapping = true
+        end
       end
-    end
 
-    if not skipMapping then
-      local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, reconSchedule, config)
-      if nextOp then
-        table.insert(operations, nextOp)
-        table.insert(logEntries, "  " .. nextLog)
+      if not skipMapping then
+        local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, reconSchedule, config)
+        if nextOp then
+          table.insert(operations, nextOp)
+          table.insert(logEntries, "  " .. nextLog)
+        end
       end
     end
   end
@@ -249,14 +255,16 @@ end
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
-local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
+local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
   local reconResult = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
 
   -- Generate next wave operations
   local operations = {}
 
   -- Add platform-specific operations
-  local specialOps, logEntries = getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext)
+  local specialOps, logEntries = getPlatformSpecialOperations(
+    config, reconSchedule, entry, LACMContext, fireSupportOnHold)
   for _, op in ipairs(specialOps) do
     table.insert(operations, op)
   end
@@ -360,9 +368,10 @@ end
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param LACMContext SBJ__LACMContext LACM context data
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@param success boolean Mission success status
 ---@return string # Mission result from MISSION_RESULT
-local function finishReconMission(config, reconSchedule, entry, LACMContext, success)
+local function finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
   -- Prevent double execution
   if entry.isFinished then
     return MISSION_RESULT.ALREADY_FINISHED
@@ -372,7 +381,7 @@ local function finishReconMission(config, reconSchedule, entry, LACMContext, suc
 
   if success then
     -- Mission successful: intelligence data is complete, schedule next wave operations
-    scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext)
+    scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
     return MISSION_RESULT.SUCCESS
   else
     -- Mission failed: intelligence data is incomplete, skip scheduling
@@ -412,9 +421,10 @@ end
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntryUAV UAV queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag ([OK], [SKIP], [FAIL]) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processUAVEntry(config, reconSchedule, entry, LACMContext)
+local function processUAVEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
     local status, message = handleReconLaunch(entry)
@@ -439,7 +449,7 @@ local function processUAVEntry(config, reconSchedule, entry, LACMContext)
   -- Phase 2a: UAV destroyed or missing
   if not actualUnit then
     local success, message = handleUAVDestroyed(entry, isEndTimeReached)
-    finishReconMission(config, reconSchedule, entry, LACMContext, success)
+    finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
     local tag = success and "[OK]" or "[FAIL]"
     return tag, message
   end
@@ -464,12 +474,12 @@ local function processUAVEntry(config, reconSchedule, entry, LACMContext)
 
   if trackStatus then
     -- Tracking failed but recon completed successfully
-    finishReconMission(config, reconSchedule, entry, LACMContext, true)
+    finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
     return "[FAIL]", string.format("Tracking failed for %s, mission completed", actualUnit.name)
   end
 
   -- Normal reconnaissance completion
-  finishReconMission(config, reconSchedule, entry, LACMContext, true)
+  finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
   return "[OK]", message
 end
 
@@ -478,9 +488,10 @@ end
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Satellite queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag ([OK], [SKIP]) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processSatelliteEntry(config, reconSchedule, entry, LACMContext)
+local function processSatelliteEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
   if entry.isFinished then
     return nil, nil
   end
@@ -491,7 +502,7 @@ local function processSatelliteEntry(config, reconSchedule, entry, LACMContext)
     return "[SKIP]", string.format("Satellite waiting for endTime %s", entry.endTime)
   end
 
-  finishReconMission(config, reconSchedule, entry, LACMContext, true)
+  finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
   return "[OK]", string.format("Satellite mission completed at %s", entry.endTime)
 end
 
@@ -572,7 +583,8 @@ end
 ---@param reconContext SBJ__ReconContext Reconnaissance context
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule containing assigned missions
 ---@param LACMContext SBJ__LACMContext LACM context data
-function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext)
+---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
+function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)
   local infoLines = {}
   local errorLines = {}
 
@@ -580,9 +592,9 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
     local tag, message
 
     if entry.type == ENTRY_TYPE.UAV then
-      tag, message = processUAVEntry(config, reconSchedule, entry, LACMContext)
+      tag, message = processUAVEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
     elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
-      tag, message = processSatelliteEntry(config, reconSchedule, entry, LACMContext)
+      tag, message = processSatelliteEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
     end
 
     if tag and message then

@@ -188,6 +188,129 @@ describe("MissileSystem Ammo And Meeting", function()
   end)
 
   -- ============================================================================
+  -- getInventory
+  -- ============================================================================
+
+  describe("getInventory", function()
+    -- Boundary: empty system returns zero subtotals and zero percentages
+    it("should return zeros when system has no firing/resupply/ammo entries", function()
+      local systemCtx = {
+        firingUnits = {},
+        resupplyUnits = {},
+        ammunitions = {},
+      }
+
+      local report = Ammo.getInventory(systemCtx, "Taiwan")
+
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.resupply)
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.ammo)
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.total)
+    end)
+
+    -- Positive: aggregates subtotals from firing/resupply/ammo and computes overall total
+    it("should aggregate subtotals across firing units, resupply units, and depots", function()
+      local systemCtx = {
+        firingUnits = {
+          ["FU-Alpha"] = { name = "FU-Alpha", weaponDBID = 1234 },
+        },
+        resupplyUnits = {
+          ["RU-Alpha"] = { name = "RU-Alpha", wpnCurrent = 6, wpnDefault = 10 },
+          ["RU-Bravo"] = { name = "RU-Bravo", wpnCurrent = 4, wpnDefault = 10 },
+        },
+        ammunitions = {
+          ["Depot-1"] = { name = "Depot-1", wpnCurrent = 50, wpnDefault = 100 },
+        },
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
+        if nameOrGuid == "FU-Alpha" then return { guid = "FU-Alpha" } end
+        return { guid = nameOrGuid }
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 8, maxWeapons = 20 })
+
+      local report = Ammo.getInventory(systemCtx, "Taiwan")
+
+      assert.are.same({ current = 8, max = 20, percentage = 40 }, report.firing)
+      assert.are.same({ current = 10, max = 20, percentage = 50 }, report.resupply)
+      assert.are.same({ current = 50, max = 100, percentage = 50 }, report.ammo)
+      assert.are.equal(68, report.total.current)
+      assert.are.equal(140, report.total.max)
+      assert.are.equal(49, report.total.percentage)
+    end)
+
+    -- Boundary: missing firing unit (game lookup returns nil) does not break aggregation
+    it("should skip firing units that cannot be resolved in game state", function()
+      local systemCtx = {
+        firingUnits = {
+          ["FU-Ghost"] = { name = "FU-Ghost", weaponDBID = 1234 },
+        },
+        resupplyUnits = {
+          ["RU-Alpha"] = { name = "RU-Alpha", wpnCurrent = 5, wpnDefault = 10 },
+        },
+        ammunitions = {},
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 99, maxWeapons = 99 })
+
+      local report = Ammo.getInventory(systemCtx, "Taiwan")
+
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
+      assert.are.same({ current = 5, max = 10, percentage = 50 }, report.resupply)
+      assert.are.equal(5, report.total.current)
+      assert.are.equal(10, report.total.max)
+      assert.are.equal(50, report.total.percentage)
+    end)
+
+    -- Boundary: percentage stays at 0 when max is 0 (no divide-by-zero)
+    it("should return percentage 0 when subtotal max is zero", function()
+      local systemCtx = {
+        firingUnits = {},
+        resupplyUnits = {
+          ["RU-Empty"] = { name = "RU-Empty", wpnCurrent = 0, wpnDefault = 0 },
+        },
+        ammunitions = {},
+      }
+
+      local report = Ammo.getInventory(systemCtx, "Taiwan")
+
+      assert.are.equal(0, report.resupply.percentage)
+      assert.are.equal(0, report.total.percentage)
+    end)
+
+    -- Positive: aggregates ammo across multiple weapon DBIDs and group units for firing
+    it("should expand groups and multi-weaponDBID for firing units", function()
+      local systemCtx = {
+        firingUnits = {
+          ["FU-Group"] = { name = "FU-Group", weaponDBID = { 1111, 2222 } },
+        },
+        resupplyUnits = {},
+        ammunitions = {},
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
+        if nameOrGuid == "FU-Group" then
+          return { guid = "FU-Group", group = { unitlist = { "U1", "U2" } } }
+        end
+        if nameOrGuid == "U1" then return { guid = "U1" } end
+        if nameOrGuid == "U2" then return { guid = "U2" } end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").invokes(function(unit, dbid)
+        if unit.guid == "U1" and dbid == 1111 then return { availableWeapons = 3, maxWeapons = 10 } end
+        if unit.guid == "U1" and dbid == 2222 then return { availableWeapons = 2, maxWeapons = 10 } end
+        if unit.guid == "U2" and dbid == 1111 then return { availableWeapons = 4, maxWeapons = 10 } end
+        if unit.guid == "U2" and dbid == 2222 then return { availableWeapons = 1, maxWeapons = 10 } end
+        return { availableWeapons = 0, maxWeapons = 0 }
+      end)
+
+      local report = Ammo.getInventory(systemCtx, "Taiwan")
+
+      assert.are.equal(10, report.firing.current)
+      assert.are.equal(40, report.firing.max)
+      assert.are.equal(25, report.firing.percentage)
+    end)
+  end)
+
+  -- ============================================================================
   -- hasMetResupplyUnit
   -- ============================================================================
 
