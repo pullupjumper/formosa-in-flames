@@ -216,7 +216,8 @@ end
 ---@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
 local function handleReloadPointNoMeeting(systemCtx, unit, isAuto, behavior)
-  Movement.setStateToStatic(systemCtx, unit, isAuto)
+  -- Pass false instead of isAuto so a firing unit drifting through RL during repositioning is not halted.
+  Movement.setStateToStatic(systemCtx, unit, false)
   if not behavior.hideResupplyOnRLNoMeeting then
     return
   end

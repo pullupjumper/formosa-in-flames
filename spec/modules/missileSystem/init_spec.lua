@@ -424,7 +424,9 @@ describe("MissileSystem", function()
       assert.stub(setStateToStaticStub).was_not.called()
     end)
 
-    -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path
+    -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path.
+    -- isAuto is intentionally NOT forwarded: setStateToStatic is always called with false
+    -- so a firing unit that drifts through RL during repositioning does not halt mid-move.
     it("should fall back to no-meeting path on RL when firing unit exists but no meeting", function()
       local unit = { name = "FU1", guid = "guid-fu1", side = "China" }
       local firingUnitCtx = { name = "FU1" }
@@ -448,7 +450,7 @@ describe("MissileSystem", function()
 
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
     end)
 
     -- Positive: RL no-meeting + hideResupplyOnRLNoMeeting + ammo sufficient hides resupply unit
@@ -483,7 +485,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
       assert.stub(getUnitStub).was.called(1)
       assert.stub(getUnitStub).was.called_with("FU1", "China")
       assert.stub(isLowAmmoStub).was.called(1)
@@ -777,7 +779,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
       assert.stub(getUnitStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)
