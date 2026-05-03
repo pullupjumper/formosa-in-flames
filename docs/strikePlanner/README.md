@@ -168,7 +168,8 @@ saveData.c.recon
     │   ├── takeoffTime / endTime
     │   ├── hasLaunched / isFinished / unitGUID
     │   └── isTracking / trackingTargetGUID
-    └── Satellite Entry
+    └── Satellite / SIGINT Entry
+        ├── platformKey: string  -- 語意平台鍵（如 EOS、ELINT）對應 reconStrikeMatrix 索引
         ├── endTime
         └── isFinished
 ```
@@ -221,7 +222,7 @@ flowchart BT
 | 設定路徑 | 用途 |
 |---|---|
 | `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間（影響偵察 UAV 排程） |
-| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（平台 → 作戰模板） |
+| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
 | `config.c.packageTemplates` | 空中打擊包模板（依名稱索引） |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板（依名稱索引） |
 | `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |

@@ -28,6 +28,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
+| [coordinator](coordinator.md) | `coordinator.lua` | 主流程編排、各 zone 階段推進、火力支援暫停閘門 |
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至錨泊區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
@@ -43,6 +44,11 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 flowchart TB
     subgraph 觸發器["landingCheck.lua（每 5 分鐘）"]
         TRIGGER[定時觸發]
+    end
+
+    subgraph 編排層["coordinator.lua"]
+        COORD["Coordinator.process()"]
+        GATE["Coordinator.evaluateFireSupportGate()"]
     end
 
     subgraph 階段一["艦隊移動"]
@@ -67,15 +73,20 @@ flowchart TB
         SW_OFFLOAD["secondWaveUnloading<br>.offloadVehicles()"]
     end
 
-    TRIGGER --> SM
+    TRIGGER --> COORD
+    COORD --> SM
     CALC --> SM
     SM --> AL_GET
     AL_GET --> AL_CREATE --> AL_TRANSFER
     AL_TRANSFER --> AA_TIME --> AA_COURSE
     AA_COURSE --> AA_ACV
     AA_COURSE --> SW_START --> SW_OFFLOAD
+    COORD --> GATE
+    GATE -.->|fireSupportOnHold| RECON["strikePlanner/recon<br>跳過 STRIKE/INFRASTRUCTURE/*"]
 
     style TRIGGER fill:#137cbd
+    style COORD fill:#137cbd
+    style GATE fill:#a854a8
     style SM fill:#0f9960
     style AL_GET fill:#d9822b
     style AA_TIME fill:#c23030
@@ -105,6 +116,7 @@ stateDiagram-v2
 saveData.c.amphibOps
 ├── startTime: string                    -- 作戰開始時間
 ├── isTesting: boolean                   -- 測試模式（瞬間移動）
+├── fireSupportOnHold?: boolean          -- 火力支援暫停旗標（coordinator 維護）
 ├── zoneStates: table<string, SBJ__ZoneState>
 │   └── [zoneName]                       -- 以區域名稱索引（Taoyuan / Sishu / Penghu）
 │       ├── phase: string                -- 當前階段（constants.AMPHIBIOUS_PHASES 值）
@@ -141,15 +153,19 @@ flowchart BT
 
     subgraph 功能模組
         ASSIGN["assignMission"]
+        MISSILE["missileSystem"]
+        UI["unitStatusUI"]
     end
 
     subgraph Landing Operations
+        COORD["coordinator"]
         SM["shipMovement"]
         AL["amphibiousLogistics"]
         AA["amphibiousAssault"]
         SW["secondWaveUnloading"]
     end
 
+    COORD --> SM & AL & AA & SW & MISSILE & UI & UTILS & GAMEUTILS & CONSTANTS & LOGGER
     SM --> UTILS & GAMEAPI & GAMEUTILS & CONSTANTS & LOGGER
     AL --> GAMEAPI & ASSIGN & CONSTANTS & LOGGER
     AA --> GAMEAPI & GAMEUTILS & AL & CONSTANTS & LOGGER
@@ -165,6 +181,7 @@ flowchart BT
 | 設定路徑 | 用途 |
 |---|---|
 | `config.c.amphibOps.periodOfTime` | 突擊等待超時時間（秒） |
+| `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且各 zone 尚未到位即啟動火力支援暫停閘門 |
 | `config.c.amphibOps.cargoList` | 各艦型貨物清單（依艦型索引） |
 | `config.c.amphibOps.cargoListForTransfer` | 轉移用貨物清單（依作戰群組索引） |
 | `config.c.amphibOps.missionStartime` | 各載具類型任務延遲時間 |

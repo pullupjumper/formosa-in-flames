@@ -37,10 +37,11 @@ stateDiagram-v2
 
 ## 支援的偵察類型
 
-| 類型 | 處理函數 | 完成條件 |
-|---|---|---|
-| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） |
-| satellite | `processSatelliteEntry` | endTime 到達即完成 |
+| 類型 | 處理函數 | 完成條件 | reconStrikeMatrix 索引鍵 |
+|---|---|---|---|
+| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） | `entry.unitDBID`（整數平台 DBID） |
+| satellite | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `EOS`） |
+| SIGINT | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `ELINT`） |
 
 ### UAV 處理階段
 
@@ -72,7 +73,7 @@ stateDiagram-v2
 ```mermaid
 flowchart TD
     RECON_OK["偵察成功完成"]
-    MATRIX["查詢 reconStrikeMatrix<br>依平台 DBID 匹配"]
+    MATRIX["查詢 reconStrikeMatrix<br>UAV 依 unitDBID（整數）<br>satellite/SIGINT 依 platformKey（字串）"]
     LOOP["遍歷所有 strikeMappings"]
     CHECK{"作戰已存在於<br>reconSchedule?"}
     NEW["建立新作戰<br>buildOperationFromMapping"]
@@ -91,6 +92,8 @@ flowchart TD
 ### 特殊規則
 
 - `STRIKE/AB/E/1`（LACM 打擊）：僅在 `LACMContext.enabled` 時生成
+- `STRIKE/INFRASTRUCTURE/*`（SRBM 重點打擊）：當 `fireSupportOnHold = true` 時整批跳過並輸出 `[HOLD]` 日誌；該旗標由 [landingOps/coordinator](../landingOps/coordinator.md) 依 SRBM 彈藥水平與各 zone 到位狀況維護
+- 矩陣未命中：`findStrikeMappingsForEntry` 找不到對應映射時輸出 `[SKIP] No strike mappings for <type> key=<key>` 日誌
 - 下一波生成：呼叫 `DynamicOperationsUtils.generateNextOperation` 遞增模板編號
 
 ---
@@ -112,7 +115,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `handleReconQueue(config, reconContext, reconSchedule, LACMContext)` | 處理偵察佇列，管理完整 UAV/衛星生命週期 |
+| `handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)` | 處理偵察佇列，管理完整 UAV/衛星/SIGINT 生命週期；`fireSupportOnHold=true` 時跳過 `STRIKE/INFRASTRUCTURE/*` 映射 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8 偵察無人機 |
 | `trackTarget(reconContext, units, UAVDBID, target)` | 指派 UAV 追蹤特定目標 |
 | `initReconQueueEntries(reconConfig, reconContext)` | 初始化偵察佇列項目 |
