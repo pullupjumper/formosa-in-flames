@@ -122,8 +122,199 @@ function Recon.launchWZ8(h6n, course)
 end
 
 -- ============================================================================
+-- Airbase Attrition
+-- ============================================================================
+
+---Calculate aggregated aircraft attrition across multiple configured airbases
+---Aircraft count as combat-capable iff both they and their home base are alive (airborne included); destroyed base zeroes the wing.
+---@param deployments SBJ__AirbaseDeploymentDescriptor[] Airbase deployment descriptors
+---@param baseNames string[] Airbase names to query (empty array yields a zero summary)
+---@param side? string Side name to enumerate aircraft from (default: constants.SIDES.ENEMY)
+---@return SBJ__AirbaseAttritionSummary # Per-base details and overall attrition summary
+function Recon.calculateAirbaseAttrition(deployments, baseNames, side)
+  side = side or constants.SIDES.ENEMY
+
+  -- Phase 1: Build lookup tables.
+  -- descriptorByName: translate user-supplied baseName -> descriptor.
+  -- baseAcc: GUID-keyed accumulator for aircraft attribution (stable identity).
+  local descriptorByName = {}
+  for _, descriptor in ipairs(deployments) do
+    if descriptor.name then
+      descriptorByName[descriptor.name] = descriptor
+    end
+  end
+
+  ---@type SBJ__AirbaseAttritionSummary
+  local summary = {
+    queriedBaseNames = Utils.deepCopy(baseNames),
+    expectedTotal = 0,
+    currentTotal = 0,
+    lossTotal = 0,
+    attritionPct = 0,
+    bases = {},
+    missingBases = {}
+  }
+
+  ---@type table<string, table>
+  local baseAcc = {}
+  -- Preserve query order so summary.bases output is deterministic.
+  local orderedGUIDs = {}
+
+  for _, baseName in ipairs(baseNames) do
+    local descriptor = descriptorByName[baseName]
+    if not descriptor or not descriptor.baseGUID then
+      table.insert(summary.missingBases, baseName)
+    else
+      local expectedByDBID = {}
+      local expectedTotal = 0
+
+      for _, group in ipairs(descriptor.embarkedUnits or {}) do
+        local groupExpected = 0
+        for _, loadout in ipairs(group.loadouts or {}) do
+          groupExpected = groupExpected + (loadout.num or 0)
+        end
+
+        if group.dbid and groupExpected > 0 then
+          expectedByDBID[group.dbid] = (expectedByDBID[group.dbid] or 0) + groupExpected
+          expectedTotal = expectedTotal + groupExpected
+        end
+      end
+
+      baseAcc[descriptor.baseGUID] = {
+        baseName = baseName,
+        baseGUID = descriptor.baseGUID,
+        expectedByDBID = expectedByDBID,
+        expectedTotal = expectedTotal,
+        actualByDBID = {},
+        currentTotal = 0,
+        isDestroyed = false
+      }
+      table.insert(orderedGUIDs, descriptor.baseGUID)
+    end
+  end
+
+  -- Phase 2: Detect destroyed airbases.
+  -- A destroyed base means the wing is combat-incapable (no ground crew/runway/refuel),
+  -- so currentTotal stays at 0 even if some of its aircraft are still airborne.
+  for _, baseGUID in ipairs(orderedGUIDs) do
+    local base = baseAcc[baseGUID]
+    local baseUnit = GameApi.ScenEdit_GetUnit(baseGUID)
+    if not baseUnit then
+      base.isDestroyed = true
+    end
+  end
+
+  -- Phase 3: Enumerate side-wide aircraft and attribute by aircraft.base.guid.
+  -- This counts both grounded and airborne aircraft as long as their home base is alive.
+  local sideObj = GameApi.VP_GetSide({ side = side })
+  if sideObj then
+    local aircraftList = sideObj:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or {}
+    for _, entry in ipairs(aircraftList) do
+      local aircraft = GameApi.ScenEdit_GetUnit(entry.guid)
+      if aircraft and aircraft.dbid and aircraft.base and aircraft.base.guid then
+        local base = baseAcc[aircraft.base.guid]
+        if base and not base.isDestroyed and base.expectedByDBID[aircraft.dbid] then
+          base.actualByDBID[aircraft.dbid] = (base.actualByDBID[aircraft.dbid] or 0) + 1
+          base.currentTotal = base.currentTotal + 1
+        end
+      end
+    end
+  end
+
+  -- Phase 4: Per-base settlement and aggregate.
+  for _, baseGUID in ipairs(orderedGUIDs) do
+    local base = baseAcc[baseGUID]
+    local lossTotal = math.max(base.expectedTotal - base.currentTotal, 0)
+    local attritionPct = 0
+    if base.expectedTotal > 0 then
+      attritionPct = (lossTotal / base.expectedTotal) * 100
+    end
+
+    local details = {}
+    for dbid, expected in pairs(base.expectedByDBID) do
+      local current = base.actualByDBID[dbid] or 0
+      table.insert(details, {
+        dbid = dbid,
+        expected = expected,
+        current = current,
+        loss = math.max(expected - current, 0)
+      })
+    end
+    table.sort(details, function(a, b) return a.dbid < b.dbid end)
+
+    table.insert(summary.bases, {
+      baseName = base.baseName,
+      baseGUID = base.baseGUID,
+      expectedTotal = base.expectedTotal,
+      currentTotal = base.currentTotal,
+      lossTotal = lossTotal,
+      attritionPct = attritionPct,
+      isDestroyed = base.isDestroyed,
+      details = details
+    })
+
+    summary.expectedTotal = summary.expectedTotal + base.expectedTotal
+    summary.currentTotal = summary.currentTotal + base.currentTotal
+    summary.lossTotal = summary.lossTotal + lossTotal
+  end
+
+  if summary.expectedTotal > 0 then
+    summary.attritionPct = (summary.lossTotal / summary.expectedTotal) * 100
+  end
+
+  return summary
+end
+
+-- ============================================================================
 -- Dynamic Operations Scheduling
 -- ============================================================================
+
+---Decide whether frontline strike packages should be redirected to rear bases with AAR
+---Sticky: mutates reconContext.frontlineRedirected on first trigger; skips recompute thereafter and defers logging to caller.
+---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (mutated when redirect triggers)
+---@return boolean isRedirected Whether redirect is active after this evaluation
+---@return string|nil activationMessage Non-nil only on the tick redirect just activated; caller should log it
+local function shouldRedirectFrontlineStrike(config, reconContext)
+  if reconContext.frontlineRedirected then
+    return true, nil
+  end
+
+  local cfg = config.c.recon.frontlineRedirect
+  if not cfg or not cfg.enabled then
+    return false, nil
+  end
+
+  local summary = Recon.calculateAirbaseAttrition(
+    config.c.air.landBased.deployedACs, cfg.frontlineBaseNames)
+
+  if summary.attritionPct >= cfg.attritionThresholdPct then
+    reconContext.frontlineRedirected = true
+    return true, string.format(
+      "Frontline strike redirect ACTIVATED: attrition=%.1f%% (threshold=%.1f%%, expected=%d, current=%d)",
+      summary.attritionPct, cfg.attritionThresholdPct, summary.expectedTotal, summary.currentTotal)
+  end
+
+  return false, nil
+end
+
+---Apply mapping name rewrites for frontline redirect
+---Returns a deep-copied list to avoid mutating the shared reconStrikeMatrix in config.
+---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list (not mutated)
+---@param rules SBJ__StrikeMappingRewriteRule[] Rewrite rules
+---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
+local function rewriteStrikeMappings(strikeMappings, rules)
+  local result = Utils.deepCopy(strikeMappings)
+  for _, m in ipairs(result) do
+    for _, rule in ipairs(rules) do
+      if m.type == rule.type and m.name:sub(1, #rule.fromPrefix) == rule.fromPrefix then
+        m.name = rule.toPrefix .. m.name:sub(#rule.fromPrefix + 1)
+        break
+      end
+    end
+  end
+  return result
+end
 
 ---Find matching strike mappings for a reconnaissance queue entry from the strike matrix
 ---UAV entries are looked up by unitDBID (integer); satellite/SIGINT entries by platformKey (string).
@@ -194,13 +385,14 @@ end
 ---Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
 ---Each UAV platform triggers different specialized operations based on successful reconnaissance
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
 ---@return SBJ__Operation[] operations Array of special operations to add
 ---@return string[] logEntries Array of log entry strings for batched output
-local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function getPlatformSpecialOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   local operations = {}
   local logEntries = {}
   local strikeMatrix = config.c.recon.reconStrikeMatrix[entry.type]
@@ -216,6 +408,14 @@ local function getPlatformSpecialOperations(config, reconSchedule, entry, LACMCo
     table.insert(logEntries, string.format("  [SKIP] No strike mappings for %s key=%s",
       tostring(entry.type), tostring(entry.unitDBID or entry.platformKey)))
     return operations, logEntries
+  end
+
+  -- Apply frontline redirect if sticky flag is set (set by handleReconQueue tick or earlier scheduling pass)
+  if reconContext.frontlineRedirected
+      and config.c.recon.frontlineRedirect
+      and config.c.recon.frontlineRedirect.mappings then
+    strikeMappings = rewriteStrikeMappings(
+      strikeMappings, config.c.recon.frontlineRedirect.mappings)
   end
 
   for _, strikeMapping in ipairs(strikeMappings) do
@@ -252,11 +452,12 @@ end
 ---Schedule dynamic operations for next wave based on completed reconnaissance
 ---Only called when UAV completes successfully (reached endTime with complete intelligence)
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
-local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   local reconResult = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
 
   -- Generate next wave operations
@@ -264,7 +465,7 @@ local function scheduleDynamicReconOperations(config, reconSchedule, entry, LACM
 
   -- Add platform-specific operations
   local specialOps, logEntries = getPlatformSpecialOperations(
-    config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+    config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   for _, op in ipairs(specialOps) do
     table.insert(operations, op)
   end
@@ -365,13 +566,14 @@ end
 
 ---Finish reconnaissance mission and conditionally schedule next operations
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@param success boolean Mission success status
 ---@return string # Mission result from MISSION_RESULT
-local function finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+local function finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
   -- Prevent double execution
   if entry.isFinished then
     return MISSION_RESULT.ALREADY_FINISHED
@@ -381,7 +583,7 @@ local function finishReconMission(config, reconSchedule, entry, LACMContext, fir
 
   if success then
     -- Mission successful: intelligence data is complete, schedule next wave operations
-    scheduleDynamicReconOperations(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+    scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
     return MISSION_RESULT.SUCCESS
   else
     -- Mission failed: intelligence data is incomplete, skip scheduling
@@ -418,13 +620,14 @@ end
 
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntryUAV UAV queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag ([OK], [SKIP], [FAIL]) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processUAVEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
     local status, message = handleReconLaunch(entry)
@@ -449,7 +652,7 @@ local function processUAVEntry(config, reconSchedule, entry, LACMContext, fireSu
   -- Phase 2a: UAV destroyed or missing
   if not actualUnit then
     local success, message = handleUAVDestroyed(entry, isEndTimeReached)
-    finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+    finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
     local tag = success and "[OK]" or "[FAIL]"
     return tag, message
   end
@@ -474,24 +677,25 @@ local function processUAVEntry(config, reconSchedule, entry, LACMContext, fireSu
 
   if trackStatus then
     -- Tracking failed but recon completed successfully
-    finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+    finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
     return "[FAIL]", string.format("Tracking failed for %s, mission completed", actualUnit.name)
   end
 
   -- Normal reconnaissance completion
-  finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
   return "[OK]", message
 end
 
 ---Process a single satellite reconnaissance queue entry
 ---@param config SBJ__Config Configuration data
+---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
 ---@param entry SBJ__ReconQueueEntry Satellite queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag ([OK], [SKIP]) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processSatelliteEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function processSatelliteEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   if entry.isFinished then
     return nil, nil
   end
@@ -502,7 +706,7 @@ local function processSatelliteEntry(config, reconSchedule, entry, LACMContext, 
     return "[SKIP]", string.format("Satellite waiting for endTime %s", entry.endTime)
   end
 
-  finishReconMission(config, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
   return "[OK]", string.format("Satellite mission completed at %s", entry.endTime)
 end
 
@@ -585,6 +789,14 @@ end
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
 function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)
+  -- Proactively evaluate frontline-redirect sticky flag once per tick so the rewrite
+  -- becomes effective on the next recon completion even if the queue is otherwise quiet.
+  -- Activation log is captured here (instead of inside the helper) so handleReconQueue owns all log emission.
+  local _, activationMessage = shouldRedirectFrontlineStrike(config, reconContext)
+  if activationMessage then
+    Logger.log(constants.TAGS.RECON, activationMessage)
+  end
+
   local infoLines = {}
   local errorLines = {}
 
@@ -592,9 +804,9 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
     local tag, message
 
     if entry.type == ENTRY_TYPE.UAV then
-      tag, message = processUAVEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+      tag, message = processUAVEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
     elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
-      tag, message = processSatelliteEntry(config, reconSchedule, entry, LACMContext, fireSupportOnHold)
+      tag, message = processSatelliteEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
     end
 
     if tag and message then

@@ -162,6 +162,7 @@ saveData.c.dynamicOperations
 ```
 saveData.c.recon
 ├── enabled: boolean
+├── frontlineRedirected: boolean   -- sticky；前線打擊包改用 AAR 編組後恆為 true
 └── queue: SBJ__ReconQueueEntry[]
     ├── UAV Entry
     │   ├── baseGUID / unitDBID / course / unitCount / speed
@@ -223,6 +224,7 @@ flowchart BT
 |---|---|
 | `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間（影響偵察 UAV 排程） |
 | `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
+| `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
 | `config.c.packageTemplates` | 空中打擊包模板（依名稱索引） |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板（依名稱索引） |
 | `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |

@@ -133,6 +133,7 @@ saveData.c.ground.sam.firingUnits = {}
 saveData.c.recon = {}
 saveData.c.recon.enabled = true
 saveData.c.recon.queue = {}
+saveData.c.recon.frontlineRedirected = false
 
 -- ============================================================================
 -- Fire Support Plan (China)

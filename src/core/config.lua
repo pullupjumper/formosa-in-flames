@@ -953,6 +953,19 @@ config.c.recon.reconStrikeMatrix = {
     ELINT = { { name = "STRIKE/C2/1", type = "ground", } }
   }
 }
+config.c.recon.frontlineRedirect = {
+  enabled = true,
+  attritionThresholdPct = 50,
+  frontlineBaseNames = {
+    "Shantou Waisha AB (PLAAF)",
+    "Huian AAB",
+    "Zhangzhou-Longxi AB (PLAAF)",
+    "Zhangpu AAB",
+  },
+  mappings = {
+    { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+  },
+}
 config.c.recon.queue = {
   {
     type = "UAV",

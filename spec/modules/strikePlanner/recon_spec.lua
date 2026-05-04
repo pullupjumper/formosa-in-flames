@@ -135,9 +135,14 @@ describe("Recon", function()
 
   ---Create a minimal reconContext
   ---@param queue? table[]
+  ---@param overrides? table
   ---@return table
-  local function makeReconContext(queue)
-    return { queue = queue or {} }
+  local function makeReconContext(queue, overrides)
+    local ctx = { queue = queue or {}, frontlineRedirected = false }
+    if overrides then
+      for k, v in pairs(overrides) do ctx[k] = v end
+    end
+    return ctx
   end
 
   ---Create a minimal config for getPlatformSpecialOperations / scheduleDynamicReconOperations
@@ -152,6 +157,14 @@ describe("Recon", function()
         },
       },
       satellite = {},
+    }
+    cfg.c.recon.frontlineRedirect = {
+      enabled = false,
+      attritionThresholdPct = 50,
+      frontlineBaseNames = {},
+      mappings = {
+        { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+      },
     }
     cfg.c.packageTemplates = {}
     cfg.c.fireSupportTaskTemplates = {
@@ -1308,6 +1321,420 @@ describe("Recon", function()
       assert.spy(deepCopySpy).was.called()
       -- Original should not have isFinished field
       assert.is_nil(reconConfig.queue[1].isFinished)
+    end)
+  end)
+
+  -- ============================================================================
+  -- calculateAirbaseAttrition
+  -- ============================================================================
+
+  describe("calculateAirbaseAttrition", function()
+    ---Build a side mock whose `unitsBy` returns the given aircraft GUID list.
+    ---@param aircraftGuids string[]
+    local function makeSideMock(aircraftGuids)
+      local list = {}
+      for _, guid in ipairs(aircraftGuids) do
+        table.insert(list, { guid = guid })
+      end
+      return { unitsBy = function(_, _) return list end }
+    end
+
+    ---Stub GameApi.ScenEdit_GetUnit with a GUID -> unit map. Unmapped GUIDs return nil
+    ---(simulating destroyed/non-existent units).
+    ---@param map table<string, table|nil>
+    local function stubGetUnit(map)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        return map[guid]
+      end))
+    end
+
+    it("should aggregate attrition across multiple bases", function()
+      -- Base A: planned 4 (3+1), 3 alive (1 destroyed). Base B: planned 2, 1 alive (1 destroyed).
+      -- Total planned 6, alive 4, loss 2 (33.33%).
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 3 }, { num = 1 } } } }
+        },
+        {
+          name = "Base B",
+          baseGUID = "BASE-B",
+          embarkedUnits = { { dbid = 2001, loadouts = { { num = 2 } } } }
+        }
+      }
+
+      stubGetUnit({
+        ["BASE-A"] = { guid = "BASE-A" },
+        ["BASE-B"] = { guid = "BASE-B" },
+        -- Only 3 of 4 Base A aircraft alive
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A2"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A3"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        -- Only 1 of 2 Base B aircraft alive
+        ["B1"] = { dbid = 2001, base = { guid = "BASE-B" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1", "A2", "A3", "B1" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A", "Base B" })
+      assert.are.equal(2, #result.bases)
+      assert.are.equal(6, result.expectedTotal)
+      assert.are.equal(4, result.currentTotal)
+      assert.are.equal(2, result.lossTotal)
+      assert.are.equal((2 / 6) * 100, result.attritionPct)
+      assert.are.equal(0, #result.missingBases)
+      assert.is_false(result.bases[1].isDestroyed)
+      assert.is_false(result.bases[2].isDestroyed)
+    end)
+
+    it("should collect missing bases and still return summary", function()
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 2 } } } }
+        }
+      }
+
+      stubGetUnit({
+        ["BASE-A"] = { guid = "BASE-A" },
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A", "Base Z" })
+      assert.are.equal(1, #result.bases)
+      assert.are.equal(1, #result.missingBases)
+      assert.are.equal("Base Z", result.missingBases[1])
+      assert.are.equal(2, result.expectedTotal)
+      assert.are.equal(1, result.currentTotal)
+      assert.are.equal(1, result.lossTotal)
+    end)
+
+    -- ---------------------------------------------------------------------------
+    -- New semantics: combat power = aircraft + ground crew
+    -- ---------------------------------------------------------------------------
+
+    it("should count airborne aircraft as still combat-capable", function()
+      -- Aircraft are airborne but their home base is alive => still counted as combat-capable.
+      -- Regression guard for the original implementation that only checked baseUnit.embarkedUnits.Aircraft
+      -- (which excludes airborne aircraft and would falsely report 100% attrition).
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 4 } } } }
+        }
+      }
+
+      stubGetUnit({
+        ["BASE-A"] = { guid = "BASE-A" }, -- base alive
+        -- All 4 aircraft alive but airborne (still attributed via aircraft.base.guid)
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A2"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A3"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A4"] = { dbid = 1001, base = { guid = "BASE-A" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1", "A2", "A3", "A4" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A" })
+      assert.are.equal(4, result.expectedTotal)
+      assert.are.equal(4, result.currentTotal)
+      assert.are.equal(0, result.lossTotal)
+      assert.are.equal(0, result.attritionPct)
+      assert.is_false(result.bases[1].isDestroyed)
+    end)
+
+    it("should treat destroyed airbase as total wing loss", function()
+      -- Base A is destroyed (ScenEdit_GetUnit returns nil). Even if all aircraft are airborne
+      -- and technically alive, the wing loses combat capability (no ground crew/refuel/runway).
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 4 } } } }
+        }
+      }
+
+      stubGetUnit({
+        -- BASE-A intentionally absent => destroyed
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A2"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A3"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        ["A4"] = { dbid = 1001, base = { guid = "BASE-A" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1", "A2", "A3", "A4" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A" })
+      assert.are.equal(1, #result.bases)
+      assert.is_true(result.bases[1].isDestroyed)
+      assert.are.equal(4, result.expectedTotal)
+      assert.are.equal(0, result.currentTotal)
+      assert.are.equal(4, result.lossTotal)
+      assert.are.equal(100, result.attritionPct)
+    end)
+
+    it("should attribute aircraft to current base.guid (cross-base RTB)", function()
+      -- A2 originally belonged to Base A but RTB'd to Base B (its base.guid is BASE-B now).
+      -- Total accounting must remain consistent: A loses 1, B gains 1 above its expected.
+      -- Since the surplus aircraft at B is the same DBID expected by B, it is counted up to
+      -- B's expected ceiling (lossTotal cannot go negative).
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 2 } } } }
+        },
+        {
+          name = "Base B",
+          baseGUID = "BASE-B",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 2 } } } }
+        }
+      }
+
+      stubGetUnit({
+        ["BASE-A"] = { guid = "BASE-A" },
+        ["BASE-B"] = { guid = "BASE-B" },
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } }, -- still at A
+        ["A2"] = { dbid = 1001, base = { guid = "BASE-B" } }, -- RTB'd to B
+        ["B1"] = { dbid = 1001, base = { guid = "BASE-B" } },
+        ["B2"] = { dbid = 1001, base = { guid = "BASE-B" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1", "A2", "B1", "B2" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A", "Base B" })
+      -- Base A: only A1 attributed -> 1/2, lossTotal = 1
+      assert.are.equal(1, result.bases[1].currentTotal)
+      assert.are.equal(1, result.bases[1].lossTotal)
+      -- Base B: A2 + B1 + B2 attributed -> currentTotal = 3 (above expected 2), lossTotal clamped to 0
+      assert.are.equal(3, result.bases[2].currentTotal)
+      assert.are.equal(0, result.bases[2].lossTotal)
+    end)
+
+    it("should ignore aircraft of unrelated DBID", function()
+      -- An aircraft with a DBID not in the base's plan (e.g. an unplanned reinforcement squadron)
+      -- is intentionally ignored to keep "planned vs actual" semantics.
+      local deployments = {
+        {
+          name = "Base A",
+          baseGUID = "BASE-A",
+          embarkedUnits = { { dbid = 1001, loadouts = { { num = 2 } } } }
+        }
+      }
+
+      stubGetUnit({
+        ["BASE-A"] = { guid = "BASE-A" },
+        ["A1"] = { dbid = 1001, base = { guid = "BASE-A" } },
+        -- A2 is an unplanned DBID at the same base
+        ["A2"] = { dbid = 9999, base = { guid = "BASE-A" } }
+      })
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ "A1", "A2" })))
+
+      local result = Recon.calculateAirbaseAttrition(deployments, { "Base A" })
+      assert.are.equal(2, result.expectedTotal)
+      assert.are.equal(1, result.currentTotal) -- A2 ignored
+      assert.are.equal(1, result.lossTotal)
+    end)
+  end)
+
+  -- ============================================================================
+  -- Frontline redirect (sticky-flag driven STRIKE/AB/W -> STRIKE/AB/W/AAR rewrite)
+  -- ============================================================================
+
+  describe("Frontline redirect", function()
+    ---Build a side mock whose `unitsBy` returns the given aircraft GUID list (mirrors dynamicATOInsertion_spec).
+    ---@param aircraftGuids string[]
+    local function makeSideMock(aircraftGuids)
+      local list = {}
+      for _, guid in ipairs(aircraftGuids) do
+        table.insert(list, { guid = guid })
+      end
+      return { unitsBy = function(_, _) return list end }
+    end
+
+    ---Build config preloaded with deployedACs for one frontline base and the AAR/non-AAR templates.
+    ---@param redirectOverrides? table Overrides merged into cfg.c.recon.frontlineRedirect
+    local function makeRedirectConfig(redirectOverrides)
+      local cfg = makeConfig()
+      cfg.c.recon.reconStrikeMatrix.satellite = {
+        EOS = { { name = "STRIKE/AB/W/1", type = "air" } },
+      }
+      cfg.c.packageTemplates.STRIKE_AB_W_1 = {
+        { name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      cfg.c.packageTemplates.STRIKE_AB_W_AAR_1 = {
+        { name = "PKG-AB-W-AAR-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      cfg.c.air.landBased.deployedACs = {
+        {
+          name = "Frontline Base",
+          baseGUID = "BASE-FRONT",
+          embarkedUnits = { { side = "", type = "", name = "", platformName = "", dbid = 1001, loadouts = { { num = 4, loadoutId = 1 } } } }
+        }
+      }
+      cfg.c.recon.frontlineRedirect = {
+        enabled = true,
+        attritionThresholdPct = 50,
+        frontlineBaseNames = { "Frontline Base" },
+        mappings = {
+          { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+        },
+      }
+      if redirectOverrides then
+        for k, v in pairs(redirectOverrides) do
+          cfg.c.recon.frontlineRedirect[k] = v
+        end
+      end
+      return cfg
+    end
+
+    ---Stub the recon-finalisation helpers so the satellite entry actually flows into scheduling.
+    local function stubRecurringHelpers()
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+        air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
+      }))
+      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
+    end
+
+    ---Stub attrition with `aliveCount` aircraft alive out of the planned 4.
+    ---@param aliveCount integer How many of A1..A4 are alive (0 = base destroyed of all aircraft)
+    local function stubAttrition(aliveCount)
+      local unitMap = { ["BASE-FRONT"] = { guid = "BASE-FRONT" } }
+      local guids = {}
+      for i = 1, aliveCount do
+        local g = "A" .. i
+        unitMap[g] = { dbid = 1001, base = { guid = "BASE-FRONT" } }
+        table.insert(guids, g)
+      end
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return unitMap[guid] end))
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock(guids)))
+    end
+
+    -- Negative: redirect disabled => mapping name stays original even at 100% attrition
+    it("should not rewrite mapping when frontlineRedirect.enabled is false", function()
+      local cfg = makeRedirectConfig({ enabled = false })
+      stubRecurringHelpers()
+      stubAttrition(0) -- 100% attrition, but disabled means it's never queried
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local reconContext = makeReconContext({ entry })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(entry.isFinished)
+      assert.are.equal(1, #reconSchedule)
+      assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
+      assert.is_false(reconContext.frontlineRedirected)
+    end)
+
+    -- Negative: attrition under threshold => no rewrite, flag stays false
+    it("should keep mapping when attrition is below threshold", function()
+      local cfg = makeRedirectConfig()
+      stubRecurringHelpers()
+      stubAttrition(4) -- 0% attrition
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local reconContext = makeReconContext({ entry })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(entry.isFinished)
+      assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
+      assert.is_false(reconContext.frontlineRedirected)
+    end)
+
+    -- Positive: attrition >= threshold flips the sticky flag and rewrites mapping
+    it("should rewrite mapping and set sticky flag when attrition reaches threshold", function()
+      local cfg = makeRedirectConfig({ attritionThresholdPct = 50 })
+      stubRecurringHelpers()
+      stubAttrition(0) -- 100% attrition
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local reconContext = makeReconContext({ entry })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(reconContext.frontlineRedirected)
+      assert.are.equal(1, #reconSchedule)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+      -- ACTIVATED log emitted exactly once
+      local activatedLogged = false
+      for _, call in ipairs(logStub.calls) do
+        if call.refs[2] and call.refs[2]:find("Frontline strike redirect ACTIVATED") then
+          activatedLogged = true
+        end
+      end
+      assert.is_true(activatedLogged)
+    end)
+
+    -- Positive: when sticky flag is already true, attrition is NOT recomputed
+    it("should skip attrition recompute when sticky flag is already true", function()
+      local cfg = makeRedirectConfig()
+      stubRecurringHelpers()
+      -- VP_GetSide is intentionally NOT stubbed; if the early-return path failed the test would
+      -- error attempting the underlying API. ScenEdit_GetUnit is also unstubbed for the same reason.
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(reconContext.frontlineRedirected)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+    end)
+
+    -- Positive: once triggered, redirect persists even if attrition recovers
+    it("should remain redirected after activation even if attrition drops", function()
+      local cfg = makeRedirectConfig()
+      stubRecurringHelpers()
+      stubAttrition(4) -- 0% attrition (below threshold)
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      -- Pre-set the flag to simulate it was triggered earlier
+      local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(reconContext.frontlineRedirected)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+    end)
+
+    -- Boundary: only mappings matching fromPrefix are rewritten; unrelated mappings untouched
+    it("should rewrite only mappings matching fromPrefix and leave others unchanged", function()
+      local cfg = makeRedirectConfig()
+      cfg.c.recon.reconStrikeMatrix.satellite = {
+        EOS = {
+          { name = "STRIKE/AB/W/1", type = "air" },
+          { name = "STRIKE/AB/E/1", type = "air" },
+        },
+      }
+      cfg.c.packageTemplates.STRIKE_AB_E_1 = {
+        { name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      stubRecurringHelpers()
+      stubAttrition(0) -- 100% attrition triggers redirect
+
+      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local reconContext = makeReconContext({ entry })
+      local reconSchedule = {}
+
+      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+
+      assert.is_true(reconContext.frontlineRedirected)
+      assert.are.equal(2, #reconSchedule[1].operations)
+      local names = {
+        reconSchedule[1].operations[1].template.name,
+        reconSchedule[1].operations[2].template.name,
+      }
+      table.sort(names)
+      assert.are.equal("STRIKE/AB/E/1", names[1])
+      assert.are.equal("STRIKE/AB/W/AAR/1", names[2])
     end)
   end)
 end)

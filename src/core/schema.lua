@@ -192,11 +192,26 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
 ---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
 
+---Strike mapping rewrite rule used by frontline redirect
+---@class SBJ__StrikeMappingRewriteRule: table
+---@field fromPrefix string Prefix that identifies the original mapping family (e.g. "STRIKE/AB/W/")
+---@field toPrefix string Prefix substituted into the rewritten mapping name (e.g. "STRIKE/AB/W/AAR/")
+---@field type "air"|"ground" Strike mission type the rule applies to
+
+---Frontline strike redirect configuration
+---Switches strike mappings from frontline bases to rear bases with AAR support
+---@class SBJ__FrontlineRedirectConfig: table
+---@field enabled boolean Whether the redirect mechanism is active
+---@field attritionThresholdPct number Aggregated attrition percentage that triggers redirect (0-100)
+---@field frontlineBaseNames string[] Frontline airbase names (must match config.c.air.landBased.deployedACs[].name)
+---@field mappings SBJ__StrikeMappingRewriteRule[] Strike mapping rewrites applied once redirect is active
+
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
 ---@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
 ---@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
 ---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<integer|string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings; UAV inner key is platform DBID (integer), satellite/SIGINT inner key is semantic platform name (string)
+---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
@@ -478,6 +493,34 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
 ---@field latitude? number Airbase latitude coordinate (optional)
 ---@field longitude? number Airbase longitude coordinate (optional)
+
+---Per-DBID attrition detail for an airbase
+---@class SBJ__AirbaseAttritionDetail: table
+---@field dbid number Aircraft DBID
+---@field expected integer Planned aircraft count
+---@field current integer Current aircraft count
+---@field loss integer Attrition count (expected - current)
+
+---Per-airbase attrition summary
+---@class SBJ__AirbaseAttritionBaseSummary: table
+---@field baseName string Queried base name
+---@field baseGUID string|nil Base GUID in deployment descriptor
+---@field expectedTotal integer Planned aircraft total
+---@field currentTotal integer Current aircraft total
+---@field lossTotal integer Attrition total
+---@field attritionPct number Attrition percentage (0-100)
+---@field isDestroyed boolean Whether the airbase unit has been destroyed (entire wing loses combat capability)
+---@field details SBJ__AirbaseAttritionDetail[] DBID-level attrition details
+
+---Aggregated attrition summary for multiple airbases
+---@class SBJ__AirbaseAttritionSummary: table
+---@field queriedBaseNames string[] Queried base names
+---@field expectedTotal integer Planned aircraft total across all found bases
+---@field currentTotal integer Current aircraft total across all found bases
+---@field lossTotal integer Attrition total across all found bases
+---@field attritionPct number Aggregated attrition percentage (0-100)
+---@field bases SBJ__AirbaseAttritionBaseSummary[] Per-airbase summaries
+---@field missingBases string[] Queried base names not found in deployment descriptors
 
 -- ============================================================================
 -- Naval Operations
@@ -1122,6 +1165,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconContext: table
 ---@field enabled boolean Whether reconnaissance system is activated
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
+---@field frontlineRedirected boolean Sticky flag set true once frontline strike redirect activates; never cleared
 
 ---Reconnaissance-Strike mapping entry
 ---Defines strike mission to execute after reconnaissance platform detects target
