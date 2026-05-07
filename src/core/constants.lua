@@ -2432,9 +2432,9 @@ constants.COURSES = {
     { latitude = "N 25.14.02", longitude = "E 121.21.47", desiredAltitude = 30480, desiredSpeed = 3300 },
   },
   H6N = {
-    { latitude = "31.4291627579406", longitude = "116.708479118499", desiredAltitude = 13716, desiredSpeed = 450 },
-    { latitude = "N 29.47.52",       longitude = "E 119.19.47",      desiredAltitude = 13716, desiredSpeed = 450 },
-    { latitude = "N 25.57.34",       longitude = "E 121.32.45",      desiredAltitude = 13716, desiredSpeed = 550 },
+    { latitude = 31.4291627579406, longitude = 116.708479118499, desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 29.47.52",     longitude = "E 119.19.47",    desiredAltitude = 13716, desiredSpeed = 450 },
+    { latitude = "N 25.57.34",     longitude = "E 121.32.45",    desiredAltitude = 13716, desiredSpeed = 550 },
   },
   BZK005_1 = {
     { longitude = 119.651011005704, latitude = 25.6118001826929, desiredSpeed = 115 },
