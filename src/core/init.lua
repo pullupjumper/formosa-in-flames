@@ -32,6 +32,7 @@ local function initEventActions()
     "scripts\\china\\csgEnterArea.lua",
     "scripts\\china\\launchWZ8.lua",
     "scripts\\china\\scheduledStrikePlanner.lua",
+    "scripts\\china\\aircraftAirborne.lua",
     "scripts\\score\\destroyUnits.lua",
     "scripts\\score\\successfulLanding.lua",
     "scripts\\score\\taiwaneseAssetIsDestroy.lua",
