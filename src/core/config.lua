@@ -961,6 +961,7 @@ config.c.recon.frontlineRedirect = {
     "Huian AAB",
     "Zhangzhou-Longxi AB (PLAAF)",
     "Zhangpu AAB",
+    "Longtian AAB"
   },
   mappings = {
     { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
