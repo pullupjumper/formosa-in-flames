@@ -212,6 +212,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
 ---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<integer|string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings; UAV inner key is platform DBID (integer), satellite/SIGINT inner key is semantic platform name (string)
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
+---@field isTesting boolean Whether system is in test mode
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
@@ -606,7 +607,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
 ---@field startTime string Operation start time
----@field isTesting boolean Whether in testing mode
 ---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
 ---@field calculationResult table<string, SBJ__OperationZoneCalculationResult> Operation zone calculation results indexed by zone name
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
@@ -768,6 +768,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@field sag table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
+---@field isTesting boolean Whether the system is in testing mode
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table

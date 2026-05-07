@@ -1011,6 +1011,7 @@ config.c.recon.queue = {
     endTime = "2027-06-09 11:25:00",
   },
 }
+config.c.recon.isTesting = true
 
 
 -- ============================================================================
@@ -1446,6 +1447,7 @@ config.c.air.landBased.deployedACs = {
 -- ============================================================================
 
 config.c.amphibOps = {}
+config.c.amphibOps.isTesting = true
 config.c.amphibOps.periodOfTime = 5 * 60
 config.c.amphibOps.fireSupportHoldThreshold = 80 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.c.amphibOps.cargoList = {

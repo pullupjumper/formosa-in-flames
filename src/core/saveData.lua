@@ -161,7 +161,6 @@ saveData.c.air.airTaskingOrder = {}
 
 saveData.c.amphibOps = {}
 saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
-saveData.c.amphibOps.isTesting = true
 saveData.c.amphibOps.zoneStates = {
   Taoyuan = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
   Sishu   = { phase = constants.AMPHIBIOUS_PHASES.MOVING },

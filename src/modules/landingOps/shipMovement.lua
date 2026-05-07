@@ -340,7 +340,7 @@ end
 function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)
   local formationSettings = amphibOpsConfig.formationSettings
   local calculationResult = saveData.c.amphibOps.calculationResult
-  local isTesting = saveData.c.amphibOps.isTesting
+  local isTesting = amphibOpsConfig.isTesting
   local logEntries = {}
   local movedCount = 0
 
