@@ -394,13 +394,12 @@ describe("ShipMovement", function()
       })
       local filteredUnits = { { guid = "SHIP-001" } }
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
       saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = makeAmphibOpsConfig({ isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
@@ -445,8 +444,6 @@ describe("ShipMovement", function()
       })
       local filteredUnits = {}
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
-
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
@@ -454,7 +451,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
@@ -477,8 +474,6 @@ describe("ShipMovement", function()
       })
       local filteredUnits = {}
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
-
       local behindPoint = makeLocation({ latitude = 24.5, longitude = 120.5 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(behindPoint))
@@ -489,7 +484,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
@@ -511,8 +506,6 @@ describe("ShipMovement", function()
       })
       local filteredUnits = {}
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
-
       local flankPoint = makeLocation({ latitude = 24.3, longitude = 120.3 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(flankPoint))
@@ -523,7 +516,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
