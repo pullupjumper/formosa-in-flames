@@ -153,7 +153,7 @@ describe("Recon", function()
     cfg.c.recon.reconStrikeMatrix = {
       UAV = {
         [constants.PLATFORMS.BZK005] = {
-          { name = "STRIKE/C2/1", type = "ground" },
+          { name = "STRIKE/C2/N/1", type = "ground" },
         },
       },
       satellite = {},
@@ -814,9 +814,9 @@ describe("Recon", function()
     it("should resolve satellite mappings by platformKey", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/C2/1", type = "ground" } },
+        EOS = { { name = "STRIKE/C2/N/1", type = "ground" } },
       }
-      cfg.c.fireSupportTaskTemplates.STRIKE_C2_1 = { {
+      cfg.c.fireSupportTaskTemplates.STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
         missileSystem = "",
@@ -834,14 +834,14 @@ describe("Recon", function()
 
       assert.is_true(entry.isFinished)
       assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/C2/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
     end)
 
     -- Negative: matrix exists but key (DBID/platformKey) absent emits a SKIP log line and schedules nothing
     it("should log SKIP when no mappings match the entry's lookup key", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/C2/1", type = "ground" } },
+        EOS = { { name = "STRIKE/C2/N/1", type = "ground" } },
       }
       -- platformKey "UNKNOWN" is not in the matrix
       local entry = makeSatelliteEntry({ platformKey = "UNKNOWN" })
@@ -862,9 +862,9 @@ describe("Recon", function()
     it("should resolve SIGINT mappings by platformKey", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.SIGINT = {
-        ELINT = { { name = "STRIKE/C2/1", type = "ground" } },
+        ELINT = { { name = "STRIKE/C2/N/1", type = "ground" } },
       }
-      cfg.c.fireSupportTaskTemplates.STRIKE_C2_1 = { {
+      cfg.c.fireSupportTaskTemplates.STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
         missileSystem = "",
@@ -887,10 +887,10 @@ describe("Recon", function()
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
-        { name = "STRIKE/C2/1",   type = "ground" },
+        { name = "STRIKE/C2/N/1", type = "ground" },
         { name = "STRIKE/AB/E/1", type = "air" },
       }
-      cfg.c.fireSupportTaskTemplates.STRIKE_C2_1 = { {
+      cfg.c.fireSupportTaskTemplates.STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
         missileSystem = "",
@@ -908,17 +908,17 @@ describe("Recon", function()
       ---@type fun(schedule: any, name: string, opType: string): boolean, table|nil, table|nil
       local hasOperationMock = function(schedule, name, opType)
         -- Exact matches: not found (new)
-        if name == "STRIKE/C2/1" and opType == "ground" then return false, nil, nil end
+        if name == "STRIKE/C2/N/1" and opType == "ground" then return false, nil, nil end
         if name == "STRIKE/AB/E/1" and opType == "air" then return false, nil, nil end
         -- Prefix match: found existing for C2
-        if name == "STRIKE/C2/" and opType == "ground" then
-          return true, { type = "ground", template = { name = "STRIKE/C2/1" } }, nil
+        if name == "STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", template = { name = "STRIKE/C2/N/1" } }, nil
         end
         return false, nil, nil
       end
       trackStub(stub(DynamicOperationsUtils, "hasOperation").invokes(hasOperationMock))
       trackStub(stub(DynamicOperationsUtils, "generateNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "STRIKE/C2/2" } }, "FOUND_NEXT"
+        { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
       local reconContext = makeReconContext({ entry })
@@ -994,7 +994,7 @@ describe("Recon", function()
     it("should not gate non-INFRASTRUCTURE mappings even when fireSupportOnHold is true", function()
       local cfg = makeConfig()
       cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
-        { name = "STRIKE/C2/1", type = "ground" },
+        { name = "STRIKE/C2/N/1", type = "ground" },
       }
 
       local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
@@ -1012,7 +1012,7 @@ describe("Recon", function()
 
       assert.is_true(entry.isFinished)
       assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/C2/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
     end)
   end)
 

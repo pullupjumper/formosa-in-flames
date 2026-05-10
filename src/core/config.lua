@@ -927,15 +927,15 @@ config.c.recon.template = {
 config.c.recon.reconStrikeMatrix = {
   UAV = {
     [constants.PLATFORMS.BZK005] = {
-      { name = "STRIKE/C2/1", type = "ground", }
+      { name = "STRIKE/C2/N/1", type = "ground", }
     },
     [constants.PLATFORMS.GJ11] = {
-      { name = "CAS/N/1",     type = "air", },
-      { name = "STRIKE/C2/1", type = "ground", }
+      { name = "CAS/N/1",       type = "air", },
+      { name = "STRIKE/C2/N/1", type = "ground", },
     },
     [constants.PLATFORMS.H6N] = {
-      { name = "ANTISHIP/1",              type = "ground" },
-      { name = "ANTISHIP/NORTH/1",        type = "ground" },
+      { name = "ANTISHIP/E/1",            type = "ground" },
+      { name = "ANTISHIP/N/1",            type = "ground" },
       { name = "ASUW/N/1",                type = "air" },
       { name = "STRIKE/AB/E/1",           type = "air" },
       { name = "STRIKE/AB/W/1",           type = "air" },
@@ -951,7 +951,10 @@ config.c.recon.reconStrikeMatrix = {
     }
   },
   SIGINT = {
-    ELINT = { { name = "STRIKE/C2/1", type = "ground", } }
+    ELINT = {
+      { name = "STRIKE/C2/N/1", type = "ground" },
+      { name = "STRIKE/C2/C/1", type = "ground" }
+    }
   }
 }
 config.c.recon.frontlineRedirect = {
@@ -2700,7 +2703,7 @@ config.c.fireSupportTaskTemplates = {
       },
     },
   },
-  ANTISHIP_1 = {
+  ANTISHIP_E_1 = {
     {
       name = "ANTISHIP",
       missileSystem = "MRBM",
@@ -2718,7 +2721,7 @@ config.c.fireSupportTaskTemplates = {
       },
     }
   },
-  ANTISHIP_NORTH_1 = {
+  ANTISHIP_N_1 = {
     {
       name = "ANTISHIP",
       missileSystem = "ASCM",
@@ -2736,7 +2739,7 @@ config.c.fireSupportTaskTemplates = {
       },
     }
   },
-  STRIKE_C2_1 = {
+  STRIKE_C2_N_1 = {
     {
       name = "PINGTAN",
       missileSystem = "MLRS",
@@ -2753,6 +2756,8 @@ config.c.fireSupportTaskTemplates = {
         ammoPerTarget = 8
       },
     },
+  },
+  STRIKE_C2_C_1 = {
     {
       name = "CHINCHEW",
       missileSystem = "MLRS",
