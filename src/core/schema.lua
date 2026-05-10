@@ -213,6 +213,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<integer|string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings; UAV inner key is platform DBID (integer), satellite/SIGINT inner key is semantic platform name (string)
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
+---@field observationWindowSec number Ground operation observation window in seconds (window starts at recon trigger time; ground operations re-evaluate targets every tick within this window before being marked executed)
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table

@@ -403,6 +403,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "infantry-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -418,6 +419,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "infantry-002",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -454,6 +456,36 @@ describe("TargetingProcess", function()
 
       assert.are.equal(0, #result)
     end)
+
+    -- Negative: contact age exceeds threshold
+    it("should not return infantry contacts older than contactAge", function()
+      local contact = makeContact({
+        guid = "infantry-004",
+        typed = 8,
+        lastDetections = { { age = 500 } },
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+
+      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: missing lastDetections
+    it("should not return infantry contacts without lastDetections", function()
+      local contact = makeContact({
+        guid = "infantry-005",
+        typed = 8,
+        lastDetections = nil,
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+
+      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
   end)
 
   -- ============================================================================
@@ -467,6 +499,7 @@ describe("TargetingProcess", function()
         guid = "p3c-001",
         typed = 0,
         emissions = { { sensor_dbid = constants.SENSORS.P3C_SEAVUE } },
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -483,6 +516,7 @@ describe("TargetingProcess", function()
         guid = "e2k-001",
         typed = 0,
         emissions = { { sensor_dbid = constants.SENSORS.E2K_APS145 } },
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -547,6 +581,38 @@ describe("TargetingProcess", function()
         inArea = function() return false end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
+
+      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: contact age exceeds threshold
+    it("should not return airborne contacts older than contactAge", function()
+      local contact = makeContact({
+        guid = "p3c-old-001",
+        typed = 0,
+        emissions = { { sensor_dbid = constants.SENSORS.P3C_SEAVUE } },
+        lastDetections = { { age = 500 } },
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+
+      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: missing lastDetections
+    it("should not return airborne contacts without lastDetections", function()
+      local contact = makeContact({
+        guid = "p3c-nodetect-001",
+        typed = 0,
+        emissions = { { sensor_dbid = constants.SENSORS.P3C_SEAVUE } },
+        lastDetections = nil,
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
       local result = _internal.findAirborne({ contacts = { contact }, task = task })
 
@@ -702,6 +768,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -717,6 +784,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-002",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -753,6 +821,21 @@ describe("TargetingProcess", function()
 
       assert.are.equal(0, #result)
     end)
+
+    -- Negative: contact age exceeds threshold
+    it("should not return mobile contacts older than contactAge", function()
+      local contact = makeContact({
+        guid = "mobile-004",
+        typed = 8,
+        lastDetections = { { age = 500 } },
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+
+      local result = _internal.findMobileTargets({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
   end)
 
   -- ============================================================================
@@ -765,6 +848,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "rocc-001",
         type_description = "ROCC Command",
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -780,6 +864,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "taaoc-001",
         type_description = "TAAOC Center",
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -812,6 +897,36 @@ describe("TargetingProcess", function()
         inArea = function() return false end,
       })
       local task = makeTask({ areas = { { "area-1" } } })
+
+      local result = _internal.findC2({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: contact age exceeds threshold
+    it("should not return C2 contacts older than contactAge", function()
+      local contact = makeContact({
+        guid = "rocc-old-001",
+        type_description = "ROCC Command",
+        lastDetections = { { age = 500 } },
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+
+      local result = _internal.findC2({ contacts = { contact }, task = task })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: missing lastDetections
+    it("should not return C2 contacts without lastDetections", function()
+      local contact = makeContact({
+        guid = "rocc-nodetect-001",
+        type_description = "ROCC Command",
+        lastDetections = nil,
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
       local result = _internal.findC2({ contacts = { contact }, task = task })
 
@@ -908,6 +1023,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-radio-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
@@ -971,6 +1087,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-radio-003",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
@@ -1004,6 +1121,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-radio-004",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
@@ -1014,6 +1132,40 @@ describe("TargetingProcess", function()
             latitude = 25.0,
             longitude = 121.0,
             currentDetectionLevel = 2,
+            type = "fixed",
+          },
+        },
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
+      trackStub(stub(GameApi, "Tool_Range").returns(10))
+
+      local result = _internal.findRadioDirection({
+        contacts = { contact },
+        task = task,
+        config = config,
+        saveData = saveData,
+      })
+
+      assert.are.equal(0, #result)
+    end)
+
+    -- Negative: contact age exceeds threshold (mobile branch filtered by findGroundTargets)
+    it("should not return mobile targets older than contactAge", function()
+      local contact = makeContact({
+        guid = "mobile-radio-old-001",
+        typed = 8,
+        lastDetections = { { age = 500 } },
+        inArea = function() return true end,
+      })
+      local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
+      local config = makeConfig({ maxRange = 50, maxCount = 3 })
+      local saveData = makeSaveData({
+        transmissions = {
+          ["tm-old-001"] = {
+            latitude = 25.0,
+            longitude = 121.0,
+            currentDetectionLevel = 5,
             type = "fixed",
           },
         },
@@ -1217,6 +1369,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "mobile-integ-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local config = makeConfig({ maxRange = 50, maxCount = 3 })
@@ -1598,6 +1751,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({
         guid = "infantry-proc-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local config = makeConfig()
@@ -1692,12 +1846,14 @@ describe("TargetingProcess", function()
       local infantryContact = makeContact({
         guid = "infantry-dyn-002",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local c2Contact = makeContact({
         guid = "c2-dyn-001",
         type_description = "ROCC Station",
         typed = 4,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
       local config = makeConfig()

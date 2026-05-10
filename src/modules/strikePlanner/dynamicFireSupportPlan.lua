@@ -403,14 +403,28 @@ local function createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets
   return insertMatrix(saveData, newMatrix), nil, statusSummary
 end
 
----Check whether recon trigger time is reached for processing
+---Observation window state for a ground operation in the recon schedule
+local OBSERVATION_STATE = {
+  PRE_TRIGGER = "pre_trigger",
+  IN_WINDOW   = "in_window",
+  EXPIRED     = "expired",
+}
+
+---Evaluate observation window state for a ground operation
+---Window starts at reconEntry.time + reconEntry.delay and lasts windowSec seconds.
 ---@param currentTime integer Current scenario time in unix timestamp
 ---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry
----@return boolean # True when current time is at or past trigger time
-local function isReconTriggered(currentTime, reconEntry)
-  local reconTime = Utils.parseDatetimeToTimestamp(reconEntry.time)
-  local triggerTime = reconTime + reconEntry.delay
-  return currentTime >= triggerTime
+---@param windowSec number Observation window duration in seconds
+---@return string # Observation state from OBSERVATION_STATE
+local function evaluateObservationWindow(currentTime, reconEntry, windowSec)
+  local triggerTime = Utils.parseDatetimeToTimestamp(reconEntry.time) + reconEntry.delay
+  if currentTime < triggerTime then
+    return OBSERVATION_STATE.PRE_TRIGGER
+  end
+  if currentTime > triggerTime + windowSec then
+    return OBSERVATION_STATE.EXPIRED
+  end
+  return OBSERVATION_STATE.IN_WINDOW
 end
 
 ---Process reconnaissance schedule entry, get FSEM template and execute evaluation
@@ -442,7 +456,11 @@ end
 -- ============================================================================
 
 ---Main execution function, process reconnaissance schedule and dynamically create FSEM
----Entry point for dynamic Fire Support Plan system, validates configuration and processes ground operations
+---Ground operations stay in the recon schedule across ticks while inside their observation
+---window; they are only marked executed when (a) the FSEM is successfully inserted, (b) the
+---template is missing (fatal), (c) the window has expired (timeout), or (d) an unknown failure
+---reason is returned. INSUFFICIENT_TARGETS / NO_AVAILABLE_FIRING_UNITS keep the operation
+---pending so contacts can accumulate or firing units can free up over subsequent ticks.
 ---@param config SBJ__Config Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
@@ -454,6 +472,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
 
   -- In this scenario runtime, ScenEdit_CurrentTime is guaranteed to return a valid unix timestamp.
   local currentTime = GameApi.ScenEdit_CurrentTime()
+  local windowSec = config.c.recon.observationWindowSec
   local hasExecutedAny = false
 
   local groundOperations = DynamicOperationsUtils.filterOperationsByType(
@@ -469,26 +488,66 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   for _, item in ipairs(groundOperations) do
     local reconEntry = item.reconEntry
     local operation = item.operation
+    local operationName = (operation.template and operation.template.name) or "unknown"
+    local windowState = evaluateObservationWindow(currentTime, reconEntry, windowSec)
 
-    if isReconTriggered(currentTime, reconEntry) then
-      local operationName = (operation.template and operation.template.name) or "unknown"
-      local success, reason, statusSummary = processGroundOperation(config, saveData, contacts, reconEntry, operation)
-      -- Ground dynamic FSP is considered "executed" once recon result is consumed, regardless of insertion success.
-      DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
-
-      if success then
-        hasExecutedAny = true
-      end
-
+    if windowState == OBSERVATION_STATE.EXPIRED then
+      DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
       table.insert(processedResults, {
         operationName = operationName,
         reconTime = reconEntry.time,
         reconType = reconEntry.type,
-        success = success,
-        reason = reason,
-        statusSummary = statusSummary
+        outcome = "TIMEOUT",
       })
+    elseif windowState == OBSERVATION_STATE.IN_WINDOW then
+      local success, reason, statusSummary = processGroundOperation(
+        config, saveData, contacts, reconEntry, operation
+      )
+
+      if success then
+        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
+        hasExecutedAny = true
+        table.insert(processedResults, {
+          operationName = operationName,
+          reconTime = reconEntry.time,
+          reconType = reconEntry.type,
+          outcome = "OK",
+          statusSummary = statusSummary,
+        })
+      elseif reason == "MISSING_TEMPLATE" then
+        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
+        table.insert(processedResults, {
+          operationName = operationName,
+          reconTime = reconEntry.time,
+          reconType = reconEntry.type,
+          outcome = "MISSING_TEMPLATE",
+        })
+      elseif reason == "INSUFFICIENT_TARGETS" or reason == "NO_AVAILABLE_FIRING_UNITS" then
+        -- Stay in observation window; do NOT mark executed. Re-emit [WAIT] each tick so
+        -- operators can track how long the operation has been observing and which gate
+        -- (targets vs firing units) is currently blocking.
+        table.insert(processedResults, {
+          operationName = operationName,
+          reconTime = reconEntry.time,
+          reconType = reconEntry.type,
+          outcome = "WAIT",
+          reason = reason,
+          statusSummary = statusSummary,
+        })
+      else
+        -- Unknown failure reason; mark executed to avoid infinite retry.
+        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
+        table.insert(processedResults, {
+          operationName = operationName,
+          reconTime = reconEntry.time,
+          reconType = reconEntry.type,
+          outcome = "FAIL",
+          reason = reason,
+          statusSummary = statusSummary,
+        })
+      end
     end
+    -- PRE_TRIGGER: silent skip, identical to legacy behavior before observation window.
   end
 
   if #processedResults > 0 then
@@ -496,13 +555,16 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
     local errorLines = {}
 
     for _, r in ipairs(processedResults) do
-      if r.success then
+      if r.outcome == "OK" then
         table.insert(infoLines, string.format("  [OK] %s (%s, %s) | firing units: %s",
           r.operationName, r.reconTime, r.reconType, r.statusSummary or "none"))
-      elseif r.reason == "INSUFFICIENT_TARGETS" then
-        table.insert(infoLines, string.format("  [SKIP] %s (%s, %s) | insufficient targets",
+      elseif r.outcome == "WAIT" then
+        table.insert(infoLines, string.format("  [WAIT] %s (%s, %s) | %s | firing units: %s",
+          r.operationName, r.reconTime, r.reconType, r.reason or "unknown", r.statusSummary or "none"))
+      elseif r.outcome == "TIMEOUT" then
+        table.insert(infoLines, string.format("  [TIMEOUT] %s (%s, %s) | observation window expired",
           r.operationName, r.reconTime, r.reconType))
-      elseif r.reason == "MISSING_TEMPLATE" then
+      elseif r.outcome == "MISSING_TEMPLATE" then
         table.insert(errorLines, string.format("  [ERROR] %s (%s, %s) | missing FSEM template",
           r.operationName, r.reconTime, r.reconType))
       else

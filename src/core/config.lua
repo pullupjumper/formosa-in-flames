@@ -595,7 +595,7 @@ config.c.ground.srbm.firingUnits = {
 config.c.ground.mrbm = {}
 config.c.ground.mrbm.wpnDefault = 24
 config.c.ground.mrbm.ammoThreshold = 55
-config.c.ground.mrbm.contactAge = 15 * 60
+config.c.ground.mrbm.contactAge = 30 * 60
 config.c.ground.mrbm.reloadTime = 5 * 60
 config.c.ground.mrbm.ammunitions = {
   ["Ammo Revetment, 624th Bde, PLARF"] = {
@@ -640,7 +640,7 @@ config.c.ground.mrbm.firingUnits = {
 config.c.ground.ascm = {}
 config.c.ground.ascm.wpnDefault = 12
 config.c.ground.ascm.ammoThreshold = 55
-config.c.ground.ascm.contactAge = 15 * 60
+config.c.ground.ascm.contactAge = 30 * 60
 config.c.ground.ascm.reloadTime = 5 * 60
 config.c.ground.ascm.ammunitions = {
   ["Ammo Revetment, 1st Pili Reg"] = {
@@ -867,6 +867,7 @@ config.c.ground.sam.firingUnits = {
 -- ============================================================================
 
 config.c.recon = {}
+config.c.recon.observationWindowSec = 30 * 60
 config.c.recon.template = {
   BZK005_RECON_1 = {
     type = "UAV",
@@ -1449,7 +1450,7 @@ config.c.air.landBased.deployedACs = {
 config.c.amphibOps = {}
 config.c.amphibOps.isTesting = true
 config.c.amphibOps.periodOfTime = 5 * 60
-config.c.amphibOps.fireSupportHoldThreshold = 80 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
+config.c.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.c.amphibOps.cargoList = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11

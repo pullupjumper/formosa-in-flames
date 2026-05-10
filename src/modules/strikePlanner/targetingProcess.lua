@@ -278,16 +278,18 @@ local function filterContactsInAreas(contacts, areas, predicate)
 end
 
 ---Find ground targets (infantry or mobile vehicles) within specified areas
----Marks matched contacts with hostile posture
+---Marks matched contacts with hostile posture; filters out contacts older than contactAge
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of ground unit GUIDs found in target areas
 local function findGroundTargets(opts)
+  local contactAge = opts.task.target.contactAge
   return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
     if contact.typed ~= constants.CONTACT_TYPES.FACILITY_MOBILE then
       return false
     end
     contact.posture = "H"
-    return true
+    return contact.lastDetections ~= nil
+        and contact.lastDetections[1].age <= contactAge
   end)
 end
 
@@ -295,12 +297,15 @@ end
 ---@param opts SBJ__FilterParams Filter parameters with contacts, task, and config
 ---@return string[] # Array of airborne early warning aircraft GUIDs
 local function findAirborne(opts)
+  local contactAge = opts.task.target.contactAge
   return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
     if not contact.emissions or not contact.emissions[1] then
       return false
     end
     return AEW_SENSOR_DBIDS[contact.emissions[1].sensor_dbid] ~= nil
         and contact.typed == constants.CONTACT_TYPES.AIR
+        and contact.lastDetections ~= nil
+        and contact.lastDetections[1].age <= contactAge
   end)
 end
 
@@ -321,11 +326,15 @@ local function analyzeEmissions(opts)
 end
 
 ---Find Command and Control (C2) facilities
----Identifies ROCC and TAAOC command centers within target areas
+---Identifies ROCC and TAAOC command centers within target areas, filtered by contactAge
 ---@param opts SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
 local function findC2(opts)
+  local contactAge = opts.task.target.contactAge
   return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+    if not contact.lastDetections or contact.lastDetections[1].age > contactAge then
+      return false
+    end
     for _, pattern in ipairs(C2_PATTERNS) do
       if string.find(contact.type_description, pattern) then
         return true

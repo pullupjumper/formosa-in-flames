@@ -205,7 +205,7 @@ describe("DynamicFireSupportPlan", function()
 
       assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
       assert.stub(markOperationExecutedStub).was.called(1)
-      assert.is_true(markOperationExecutedStub.calls[1].vals[3])
+      assert.is_false(markOperationExecutedStub.calls[1].vals[3])
     end)
 
     -- ============================================================================
@@ -273,7 +273,7 @@ describe("DynamicFireSupportPlan", function()
       -- ============================================================================
 
       -- Negative: insufficient targets
-      it("should return false when targets are insufficient for all tasks", function()
+      it("should return false and keep operation pending when targets are insufficient", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
         local saveData = makeSaveData({ reconSchedule = { reconEntry } })
@@ -283,7 +283,8 @@ describe("DynamicFireSupportPlan", function()
         }))
 
         assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
-        assert.stub(markOperationExecutedStub).was.called(1)
+        -- Observation window: insufficient targets keeps operation in schedule for retry
+        assert.stub(markOperationExecutedStub).was_not.called()
       end)
 
       -- ============================================================================
@@ -586,19 +587,20 @@ describe("DynamicFireSupportPlan", function()
         local result = DynamicFireSupportPlan.execute(makeConfig(), saveData, {})
         assert.is_true(result)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
-        assert.stub(markOperationExecutedStub).was.called(2)
+        -- operation1 (success) marks executed; operation2 (insufficient targets) stays pending
+        assert.stub(markOperationExecutedStub).was.called(1)
       end)
 
       -- ============================================================================
       -- Consolidated Log Output
       -- ============================================================================
 
-      -- Positive: info log for successful and skipped operations
-      it("should output single info log for successful and skipped operations without error log", function()
+      -- Positive: info log for successful and waiting operations
+      it("should output single info log mixing OK and WAIT outcomes without error log", function()
         local reconEntry1 = makeReconEntry()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
-        local operation2 = makeOperation({ templateName = "SKIP-OP/1", minTargetCount = 10 })
+        local operation2 = makeOperation({ templateName = "WAIT-OP/1", minTargetCount = 10 })
         local saveData = makeSaveData({ reconSchedule = { reconEntry1, reconEntry2 } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
@@ -614,7 +616,7 @@ describe("DynamicFireSupportPlan", function()
         assert.stub(errorStub).was_not.called()
         local logMessage = logStub.calls[1].vals[2]
         assert.truthy(logMessage:find("%[OK%]"))
-        assert.truthy(logMessage:find("%[SKIP%]"))
+        assert.truthy(logMessage:find("%[WAIT%]"))
         assert.truthy(logMessage:find("2 items"))
       end)
 
@@ -643,6 +645,154 @@ describe("DynamicFireSupportPlan", function()
         local errorMessage = errorStub.calls[1].vals[1]
         assert.truthy(errorMessage:find("%[ERROR%]"))
         assert.truthy(errorMessage:find("1 items"))
+      end)
+    end)
+
+    -- ============================================================================
+    -- Observation Window
+    -- ============================================================================
+
+    describe("observation window", function()
+      -- Negative: pre-trigger (current time before reconEntry trigger time)
+      it("should silently skip operations before observation window opens", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(500))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
+        assert.stub(markOperationExecutedStub).was_not.called()
+        assert.stub(logStub).was_not.called()
+      end)
+
+      -- Negative: window expired (current time past trigger + windowSec)
+      it("should mark operation executed=false and emit [TIMEOUT] log when window expires", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        local config = makeConfig()
+        local triggerTime = 1000
+        local pastDeadline = triggerTime + config.c.recon.observationWindowSec + 1
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(pastDeadline))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(triggerTime))
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        assert.is_false(DynamicFireSupportPlan.execute(config, saveData, {}))
+        assert.stub(markOperationExecutedStub).was.called(1)
+        assert.is_false(markOperationExecutedStub.calls[1].vals[3])
+        assert.stub(logStub).was.called(1)
+        local logMessage = logStub.calls[1].vals[2]
+        assert.truthy(logMessage:find("%[TIMEOUT%]"))
+      end)
+
+      -- Negative: insufficient targets keeps operation pending (no markExecuted)
+      it("should keep operation pending when targets are insufficient inside window", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({ minTargetCount = 5 })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        trackStub(stub(TargetingProcess, "processTargets").returns({}))
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
+        assert.stub(markOperationExecutedStub).was_not.called()
+      end)
+
+      -- Negative: no firing units available keeps operation pending
+      it("should keep operation pending when no firing units are available inside window", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
+          },
+          reconSchedule = { reconEntry }
+        })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
+        assert.stub(markOperationExecutedStub).was_not.called()
+      end)
+
+      -- Positive: WAIT log emitted every tick the operation is still observing
+      it("should emit [WAIT] log every tick while operation is observing", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({ minTargetCount = 5 })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        trackStub(stub(TargetingProcess, "processTargets").returns({}))
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        DynamicFireSupportPlan.execute(makeConfig(), saveData, {})
+        DynamicFireSupportPlan.execute(makeConfig(), saveData, {})
+        DynamicFireSupportPlan.execute(makeConfig(), saveData, {})
+
+        assert.stub(logStub).was.called(3)
+        for i = 1, 3 do
+          assert.truthy(logStub.calls[i].vals[2]:find("%[WAIT%]"))
+        end
+      end)
+
+      -- Positive: targets accumulating mid-window leads to FSEM insertion
+      it("should insert FSEM when targets accumulate to satisfy minTargetCount mid-window", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({ minTargetCount = 2 })
+        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+        local processTargetsStub = trackStub(stub(TargetingProcess, "processTargets").returns({}))
+
+        trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+          { reconEntry = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+        trackStub(stub(DynamicOperationsUtils, "generateUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
+        trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+        markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+        -- Tick 1: insufficient targets, stays pending
+        assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
+        assert.stub(markOperationExecutedStub).was_not.called()
+
+        -- Tick 2: targets accumulated, FSEM inserted
+        processTargetsStub:revert()
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
+
+        assert.is_true(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
+        assert.stub(markOperationExecutedStub).was.called(1)
+        assert.is_true(markOperationExecutedStub.calls[1].vals[3])
+        assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
       end)
     end)
   end)

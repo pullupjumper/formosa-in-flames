@@ -851,9 +851,9 @@ describe("DynamicOperationsUtils", function()
 
     -- Positive: prefix search finds highest number
     it("should find highest number with prefix search", function()
-      local op1 = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
-      local op3 = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/3" } })
-      local op2 = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/2" } })
+      local op1 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/1" } })
+      local op3 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/3" } })
+      local op2 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
 
       local schedule = {
         makeReconEntry({ operations = { op1, op3, op2 } })
@@ -867,8 +867,8 @@ describe("DynamicOperationsUtils", function()
 
     -- Positive: prefix search picks latest time on same number
     it("should pick latest time when prefix search finds same max number", function()
-      local olderOp = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/2" } })
-      local newerOp = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/2" } })
+      local olderOp = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
+      local newerOp = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
 
       local schedule = {
         makeReconEntry({ time = "2026-02-14 06:00:00", operations = { olderOp } }),
@@ -883,6 +883,50 @@ describe("DynamicOperationsUtils", function()
       assert.are.equal("2026-02-14 12:00:00", foundEntry.time)
     end)
 
+    -- Negative: prefix search skips operations that are not yet executed
+    it("should skip unexecuted operations in prefix search", function()
+      local pendingOp = makeOperation({
+        executed = false, type = "air", template = { name = "STRIKE/AB/W/3" },
+      })
+      local schedule = { makeReconEntry({ operations = { pendingOp } }) }
+
+      local exists, foundOp = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/", "air")
+
+      assert.is_false(exists)
+      assert.is_nil(foundOp)
+    end)
+
+    -- Positive: prefix search picks the highest *executed* number, ignoring unexecuted ones
+    it("should ignore unexecuted higher-numbered ops and pick highest executed", function()
+      local executedOp1 = makeOperation({
+        executed = true, type = "air", template = { name = "STRIKE/AB/W/1" },
+      })
+      local pendingOp3 = makeOperation({
+        executed = false, type = "air", template = { name = "STRIKE/AB/W/3" },
+      })
+      local schedule = { makeReconEntry({ operations = { executedOp1, pendingOp3 } }) }
+
+      local exists, foundOp = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/", "air")
+
+      assert.is_true(exists)
+      assert.are.equal(executedOp1, foundOp)
+    end)
+
+    -- Positive: exact match is NOT affected by executed gate (still finds unexecuted ops)
+    it("should still find unexecuted operations via exact match", function()
+      local pendingOp = makeOperation({
+        executed = false, type = "ground", template = { name = "STRIKE/INFRASTRUCTURE/1" },
+      })
+      local schedule = { makeReconEntry({ operations = { pendingOp } }) }
+
+      local exists, foundOp = DynamicOperationsUtils.hasOperation(
+        schedule, "STRIKE/INFRASTRUCTURE/1", "ground"
+      )
+
+      assert.is_true(exists)
+      assert.are.equal(pendingOp, foundOp)
+    end)
+
     -- Negative: prefix search no matches
     it("should return false for prefix search with no matches", function()
       local op = makeOperation({ type = "air", template = { name = "SEAD/1" } })
@@ -895,7 +939,7 @@ describe("DynamicOperationsUtils", function()
 
     -- Negative: prefix search ignores non-numeric suffix
     it("should ignore non-numeric suffix in prefix search", function()
-      local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/abc" } })
+      local op = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/abc" } })
       local schedule = { makeReconEntry({ operations = { op } }) }
 
       local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/", "air")
@@ -905,7 +949,7 @@ describe("DynamicOperationsUtils", function()
 
     -- Negative: prefix search filters by type
     it("should filter by type in prefix search", function()
-      local groundOp = makeOperation({ type = "ground", template = { name = "STRIKE/AB/W/5" } })
+      local groundOp = makeOperation({ executed = true, type = "ground", template = { name = "STRIKE/AB/W/5" } })
       local schedule = { makeReconEntry({ operations = { groundOp } }) }
 
       local exists = DynamicOperationsUtils.hasOperation(schedule, "STRIKE/AB/W/", "air")

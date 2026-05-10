@@ -272,6 +272,9 @@ local function findExactMatch(reconSchedule, templateName, operationType)
 end
 
 ---Find prefix match operation with highest number suffix (latest time as tiebreaker)
+---Only consumed operations (executed == true) are eligible as prefix bases; unconsumed
+---ones (e.g. ground operations still inside their observation window) are skipped to
+---prevent generateNextOperation from producing /N+1 before the prior wave is settled.
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule entries
 ---@param prefix string Template name prefix ending with "/"
 ---@param operationType string Operation type to match
@@ -283,6 +286,9 @@ local function findPrefixMatch(reconSchedule, prefix, operationType)
   local maxNumber, maxTime = -1, -1
 
   forEachOperation(reconSchedule, function(operation, reconEntry)
+    if not operation.executed then
+      return
+    end
     if operation.type ~= operationType or not operation.template or not operation.template.name then
       return
     end
