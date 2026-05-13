@@ -41,7 +41,16 @@
 - 群組路徑：`processUnitGroup(...)` 使用 `group.unitlist[shooterIdx]` 指向本次射手，成功後依群組末端決定是否切到下一 firing unit。
 - 單機路徑：`processSingleUnit(...)` 直接對當前單機計算一次發射量並嘗試攻擊。
 
-### 4) 輪轉與防呆
+### 4) 不確定區目標的 BOL 發射
+
+`processUnitGroup` 與 `processSingleUnit` 在實際呼叫 `ScenEdit_AttackContact` 前會檢查 `contact.areaofuncertainty`：
+
+- 若有不確定區（`#contact.areaofuncertainty > 0`），改用 `"BOL"` 目標字串並帶入 `contact.latitude` / `contact.longitude`，讓武器以 BOL 模式發射至最後已知座標
+- 否則使用 `contact.guid` 直接鎖定目標
+
+兩條分支在其餘參數（`mode`、`qty`、`mount`、`weapon`）保持一致。
+
+### 5) 輪轉與防呆
 
 - `attackContact` 以 `maxAttempts = 50` 限制迴圈，避免異常配置造成長時間循環。
 - 每次循環更新 `firingUnitIdx` 與 `shooterIdx`，可在多波次/多目標下平均使用發射資源。
@@ -61,7 +70,9 @@ flowchart TD
     GROUP["processUnitGroup()"]
     SINGLE["processSingleUnit()"]
     CAN["canUnitFire()"]
-    FIRE["ScenEdit_AttackContact(...)"]
+    UNCERTAIN{"contact.areaofuncertainty<br>有資料?"}
+    BOL["ScenEdit_AttackContact(guid, 'BOL', lat/lon, ...)"]
+    FIRE["ScenEdit_AttackContact(guid, contact.guid, ...)"]
     NEXT["更新 firingUnitIdx / shooterIdx"]
     DONE["回傳 ammoAllocated 與索引狀態"]
     SUM["累加 totalAmmoAllocated"]
@@ -76,8 +87,11 @@ flowchart TD
     CHECK_GROUP -->|No| SINGLE
     GROUP --> CAN
     SINGLE --> CAN
-    CAN -->|可發射| FIRE
+    CAN -->|可發射| UNCERTAIN
     CAN -->|不可發射| NEXT
+    UNCERTAIN -->|是| BOL
+    UNCERTAIN -->|否| FIRE
+    BOL --> NEXT
     FIRE --> NEXT
     NEXT --> LOOP_UNIT
     LOOP_UNIT --> DONE

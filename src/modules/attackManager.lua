@@ -103,13 +103,25 @@ local function processUnitGroup(firingUnit, contact, totalAmmoRequested, ammoAlr
     -- Determine how many weapons to allocate for this attack
     local ammoNeeded = totalAmmoRequested - ammoAlreadyAllocated
     local ammoToAllocate = math.min(ammoNeeded, weaponInfo.availableWeapons)
+    local success = false
 
-    -- Attack the contact
-    local success = GameApi.ScenEdit_AttackContact(
-      guid,
-      contact.guid,
-      { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
-    )
+    if contact.areaofuncertainty and #contact.areaofuncertainty > 0 then
+      success = GameApi.ScenEdit_AttackContact(guid, "BOL", {
+        mode = "1",
+        qty = ammoToAllocate,
+        latitude = contact.latitude,
+        longitude = contact.longitude,
+        mount = weaponInfo.mountDBID,
+        weapon = weaponDBID
+      })
+    else
+      success = GameApi.ScenEdit_AttackContact(guid, contact.guid, {
+        mode = "1",
+        qty = ammoToAllocate,
+        mount = weaponInfo.mountDBID,
+        weapon = weaponDBID
+      })
+    end
 
     if success then
       ammoAllocated = ammoToAllocate
@@ -139,13 +151,25 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
   if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
     -- Determine how many weapons to allocate for this attack
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
+    local success = false
 
-    -- Attack the contact
-    local success = GameApi.ScenEdit_AttackContact(
-      unit.guid,
-      contact.guid,
-      { mode = "1", qty = ammoToAllocate, mount = weaponInfo.mountDBID, weapon = weaponDBID }
-    )
+    if contact.areaofuncertainty and #contact.areaofuncertainty > 0 then
+      success = GameApi.ScenEdit_AttackContact(unit.guid, "BOL", {
+        mode = "1",
+        qty = ammoToAllocate,
+        latitude = contact.latitude,
+        longitude = contact.longitude,
+        mount = weaponInfo.mountDBID,
+        weapon = weaponDBID
+      })
+    else
+      success = GameApi.ScenEdit_AttackContact(unit.guid, contact.guid, {
+        mode = "1",
+        qty = ammoToAllocate,
+        mount = weaponInfo.mountDBID,
+        weapon = weaponDBID
+      })
+    end
 
     if success then
       return { ammoAllocated = ammoToAllocate }
