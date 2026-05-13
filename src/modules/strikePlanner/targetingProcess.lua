@@ -27,6 +27,7 @@ local SAM_SENSOR_DBIDS = {
   [constants.SENSORS.TK2_CS_MPG25] = true,
   [constants.SENSORS.PAC3_MPQ65] = true,
   [constants.SENSORS.TC2_CS_MPQ90] = true,
+  [constants.SENSORS.TPS_43F] = true,
 }
 
 ---Airborne early warning sensor DBID lookup (P-3C SEAVUE, E-2K APS-145)

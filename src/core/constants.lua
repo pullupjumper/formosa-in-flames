@@ -517,6 +517,7 @@ constants.SENSORS = {
   GPS_JAMMER = 2539,
   TC2_CS_MPQ90 = 6381,
   WZ8_RADAR = 4576,
+  TPS_43F = 3450,
 }
 
 constants.LOADOUTS = {
