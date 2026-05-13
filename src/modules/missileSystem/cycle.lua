@@ -42,7 +42,29 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
     return
   end
 
-  if not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
+  local isLowAmmo = Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
+
+  -- A unit only needs to redeploy if it was just fired (FSP) or its ammo dropped low
+  if not firingUnitCtx.stowStartTime and not isLowAmmo then
+    return
+  end
+
+  -- Begin the stow countdown the first cycle we detect a redeploy trigger
+  if not firingUnitCtx.stowStartTime then
+    firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
+    return
+  end
+
+  -- Wait until the stow window has fully elapsed before moving
+  local elapsedTime = GameApi.ScenEdit_CurrentTime() - firingUnitCtx.stowStartTime
+  if elapsedTime < systemCtx.stowTime then
+    return
+  end
+
+  -- Stow complete: sufficient ammo → hide area; low → reload point
+  if not isLowAmmo then
+    Movement.moveToHideArea(firingUnitCtx, firingUnit)
+    firingUnitCtx.stowStartTime = nil
     return
   end
 
@@ -55,6 +77,7 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
   end
 
   Movement.moveToReloadPoint(firingUnitCtx, firingUnit)
+  firingUnitCtx.stowStartTime = nil
 end
 
 ---Complete firing unit reload when conditions are met

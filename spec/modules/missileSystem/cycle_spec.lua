@@ -236,15 +236,17 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(0, #results)
     end)
 
-    -- Positive: moves firing unit to reload point when low ammo in auto mode
-    it("should move firing unit to reload point when low ammo in auto mode", function()
+    -- Positive: moves firing unit to reload point when stow elapsed and low ammo in auto mode
+    it("should move firing unit to reload point when stow elapsed and low ammo in auto mode", function()
       local systemCtx = makeSystemCtx({
         reloadTime = 60,
+        stowTime = 10,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
+            stowStartTime = 1000,
             resupplyUnit = "Ammo Sec, Alpha",
             weaponDBID = 1234,
             ammoThreshold = 60,
@@ -271,6 +273,7 @@ describe("MissileSystem Cycle", function()
         group = { unitlist = { "F1" } }
       }
 
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
         if guidOrName == "Firing Unit Alpha" then return firingUnit end
         if guidOrName == "F1" then return firingUnit end
@@ -282,8 +285,175 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemCtx, true, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-        systemCtx.firingUnits["Firing Unit Alpha"].state)
+      local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
+      assert.is_nil(firingCtx.stowStartTime)
+    end)
+
+    -- Positive: starts stow countdown without moving when low ammo first detected in auto mode
+    it("should start stow countdown without moving when low ammo first detected in auto mode", function()
+      local systemCtx = makeSystemCtx({
+        reloadTime = 60,
+        stowTime = 10,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            reloadStartTime = nil,
+            stowStartTime = nil,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { course = { { latitude = 25.0, longitude = 121.0 } }, area = { "RP-001" } } }
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            wpnCurrent = 10,
+            wpnDefault = 20
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } }
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
+      trackStub(GameApi, "ScenEdit_SetUnit")
+
+      Cycle.process(systemCtx, true, "Taiwan")
+
+      local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
+      assert.are.equal(2000, firingCtx.stowStartTime)
+    end)
+
+    -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode
+    it("should move firing unit to hide area when stow elapsed and ammo sufficient in auto mode", function()
+      local hideCourse = {
+        { latitude = "N 25.10.00", longitude = "E 121.10.00" }
+      }
+      local systemCtx = makeSystemCtx({
+        reloadTime = 60,
+        stowTime = 10,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            reloadStartTime = nil,
+            stowStartTime = 1000,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1",
+              HA = { { course = hideCourse, area = { "HA-001" } } }
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            wpnCurrent = 20,
+            wpnDefault = 20
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } }
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
+      local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
+      trackStub(math, "random").returns(1)
+
+      Cycle.process(systemCtx, true, "Taiwan")
+
+      local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
+      assert.is_nil(firingCtx.stowStartTime)
+      assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
+    end)
+
+    -- Negative: does not move firing unit while stow countdown is still in progress
+    it("should not move firing unit while stow countdown still in progress", function()
+      local systemCtx = makeSystemCtx({
+        reloadTime = 60,
+        stowTime = 300,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            reloadStartTime = nil,
+            stowStartTime = 1000,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { course = { { latitude = 25.0, longitude = 121.0 } }, area = { "RP-001" } } },
+              HA = { { course = { { latitude = 25.1, longitude = 121.1 } }, area = { "HA-001" } } }
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            wpnCurrent = 20,
+            wpnDefault = 20
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } }
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
+      local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
+
+      Cycle.process(systemCtx, true, "Taiwan")
+
+      local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
+      assert.are.equal(1000, firingCtx.stowStartTime)
+      assert.stub(stubSetUnit).was_not.called()
     end)
 
     -- Positive: moves non-SAM firing unit to hide area after reload in auto mode

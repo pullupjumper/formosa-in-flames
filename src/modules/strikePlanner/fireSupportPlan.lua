@@ -89,9 +89,10 @@ end
 
 ---Execute all Fire Support Tasks within a FSEM
 ---Launches attacks when start time reached and minimum target count met, marks tasks as finished
+---@param saveData SBJ__SaveData Saved game state
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
 ---@return string[] # Strike result descriptions per task
-local function executeFireSupportTasks(matrix)
+local function executeFireSupportTasks(saveData, matrix)
   local strikeResults = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
@@ -104,6 +105,16 @@ local function executeFireSupportTasks(matrix)
       })
 
       if result > 0 then
+        if task.missileSystem ~= "SAM" then
+          for _, firingUnit in ipairs(task.firingUnits) do
+            local firingUnitContext = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
+
+            if firingUnitContext and not firingUnitContext.stowStartTime then
+              firingUnitContext.stowStartTime = GameApi.ScenEdit_CurrentTime()
+            end
+          end
+        end
+
         task.isFinished = true
         table.insert(strikeResults, string.format("%s: fired %d", task.name, result))
       end
@@ -195,7 +206,7 @@ function FireSupportPlan.strike(saveData)
 
       local strikeResults = {}
       if allInPosition then
-        strikeResults = executeFireSupportTasks(matrix)
+        strikeResults = executeFireSupportTasks(saveData, matrix)
       end
 
       if isMatrixFinished(matrix) then

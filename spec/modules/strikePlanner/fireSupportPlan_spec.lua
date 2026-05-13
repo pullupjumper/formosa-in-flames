@@ -12,6 +12,8 @@ describe("FireSupportPlan", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local currentTimeStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -23,6 +25,7 @@ describe("FireSupportPlan", function()
   before_each(function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
+    currentTimeStub = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(0))
   end)
 
   after_each(function()
@@ -361,6 +364,108 @@ describe("FireSupportPlan", function()
       FireSupportPlan.strike(saveData)
 
       assert.stub(stubAttack).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- Stow Window Trigger
+  -- ============================================================================
+
+  describe("stow window trigger", function()
+    -- Positive: non-SAM strike stamps stowStartTime on firing units
+    it("should set stowStartTime on firing units after non-SAM strike succeeds", function()
+      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      currentTimeStub.returns(5000)
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+      trackStub(stub(AttackManager, "attackContacts").returns(4))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.are.equal(5000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+    end)
+
+    -- Negative: SAM strike does not stamp stowStartTime
+    it("should not set stowStartTime when missile system is SAM", function()
+      local saveData = makeSaveData({
+        missileSystem = "SAM",
+        firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC
+      })
+      saveData.c.ground.sam = {
+        firingUnits = {
+          ["Battery-1"] = {
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            ammoThreshold = 40,
+            weaponDBID = 3104
+          }
+        }
+      }
+      currentTimeStub.returns(5000)
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+      trackStub(stub(AttackManager, "attackContacts").returns(4))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.is_nil(saveData.c.ground.sam.firingUnits["Battery-1"].stowStartTime)
+    end)
+
+    -- Negative: zero-result strike leaves stowStartTime untouched
+    it("should not set stowStartTime when attackContacts returns 0", function()
+      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      currentTimeStub.returns(5000)
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+      trackStub(stub(AttackManager, "attackContacts").returns(0))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.is_nil(saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+    end)
+
+    -- Boundary: existing stowStartTime is preserved
+    it("should not overwrite existing stowStartTime when strike succeeds", function()
+      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime = 1000
+      currentTimeStub.returns(5000)
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+      trackStub(stub(AttackManager, "attackContacts").returns(4))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.are.equal(1000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+    end)
+
+    -- Boundary: every firing unit in a multi-unit task gets stowStartTime
+    it("should set stowStartTime on every firing unit in a multi-unit task", function()
+      local saveData = makeSaveData({
+        firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
+        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+      })
+      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+        state = constants.MISSILE_SYSTEM_STATE.STATIC,
+        ammoThreshold = 40,
+        weaponDBID = 3104
+      }
+      currentTimeStub.returns(7777)
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "Battery-1" then return { guid = "U1", name = "Battery-1" } end
+        if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
+        return nil
+      end))
+      trackStub(stub(AttackManager, "attackContacts").returns(4))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-2"].stowStartTime)
     end)
   end)
 

@@ -20,10 +20,11 @@
 
 **彈藥循環流程**
 
-當機動發射車彈量低於門檻時，模組會啟動補給流程：
+當機動發射車彈量低於門檻或剛在 FSP 射擊完時，模組會啟動補給流程：
 
-- 機動發射車前往 RL（Reload Point，再裝填陣地）
-- 彈藥補給車與機動發射車在 RL 交會後進入再裝填計時
+- 進入 `stowTime` 等待視窗，模擬射擊／撤收時間，期間不立即機動
+- stow 結束後若仍低於 `ammoThreshold`，機動發射車前往 RL（Reload Point，再裝填陣地）；若彈量已充足（FSP 收車情境），則直接回 HA
+- 彈藥補給車從 MASK 建築拉出後與機動發射車在 RL 交會，進入再裝填計時
 - 彈藥補給車彈量耗盡時，再前往 AHA（Ammo Holding Area，彈藥集結陣地）與彈藥儲備點交會
 - 轉運完成後彈藥補給車回 RL 待命
 
@@ -99,7 +100,8 @@ flowchart TB
 電腦控制陣營的補給流程不只依賴`UnitEntersArea`事件觸發更新狀態，而是由定時檢查主動驅動：
 
 - `scheduledReloadHideCheck.lua` 週期呼叫 `checkMissileSystemState(saveData.c.ground, true, constants.SIDES.ENEMY)`
-- 機動發射車低彈量時，會自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
+- 機動發射車低彈量或剛完成 FSP 射擊時，先進入 `stowTime` 等待視窗（由 `firingUnitContext.stowStartTime` 記錄起點），倒數結束才實際機動，避免射擊後立即撤收
+- stow 結束時若彈量已充足（典型 FSP 收車情境），直接回 HA；若仍低彈量，則自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
 - 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 AHA 補給
 - 機動發射車裝填完畢後，防空飛彈車自動回 FP；TEL 類自動回 HA
 - 電腦控制陣營 `moveToPosition` 機制設定包含 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
@@ -144,6 +146,7 @@ flowchart TB
 |---|---|
 | `config.*.ground.<system>.ammoThreshold` | 再裝填啟動門檻 |
 | `config.*.ground.<system>.reloadTime` | 再裝填所需時間 |
+| `config.*.ground.<system>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
 | `config.*.ground.<system>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
 | `config.*.ground.<system>.ammunitions[*].wpnDefault` | 彈藥儲備點初始庫存 |
 | `operationalArea` 的 FP/HA/RL/AHA 陣地位置 | 補給路徑與交會條件 |
@@ -173,6 +176,7 @@ flowchart TB
 |---|---|
 | `scheduledReloadHideCheck.lua` | 提供定時檢查，驅動再裝填、機動流程 |
 | `moveToPosition.lua` | 機動車組進入陣地後，立即更新對應狀態與武器管制 |
+| `strikePlanner/fireSupportPlan.lua` | FSP 射擊後寫入 `firingUnitContext.stowStartTime`，觸發 stow 等待視窗 |
 | `addMissileSystems.lua` | 創建飛彈系統單位與 context，常用於測試/重部署 |
 | `destroyUnits.lua` / `taiwaneseAssetIsDestroy.lua` | 彈藥車與彈藥庫戰損同步反映到庫存與後續火力支援能力 |
 | `unitStatusUI.lua` | 將狀態與作戰區域可視化，利於除錯與調校 |

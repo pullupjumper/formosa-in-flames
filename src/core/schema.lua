@@ -178,6 +178,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammoThreshold number Ammunition threshold for resupply
 ---@field contactAge? number Contact valid age in seconds (optional)
 ---@field reloadTime number Reload time in seconds
+---@field stowTime number Stow time in seconds
 ---@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
 ---@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
@@ -888,6 +889,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Extends resupply unit context with weapon system configuration
 ---@class SBJ__FiringUnitContext: SBJ__FiringUnitDescriptor
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
+---@field stowStartTime number|nil Stowing start timestamp, nil if not currently stowing
 
 ---Missile system runtime context data structure
 ---Contains the missile system name, runtime status, and all system components
@@ -895,6 +897,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string Missile system identifier
 ---@field enabled boolean Whether the weapon system is currently active
 ---@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
+---@field stowTime number Stow time for all firing units in this system (seconds)
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions

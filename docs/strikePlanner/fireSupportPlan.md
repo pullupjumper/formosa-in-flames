@@ -38,12 +38,13 @@ flowchart TD
     ACTIVE{FSEM 已啟動<br>且未完成?}
     DEPLOY["部署發射單元<br>processActiveMatrix"]
     CHECK_UNIT{發射單元<br>HIDE 狀態?}
-    MOVE["moveToFiringPoint"]
+    MOVE["moveFromHideArea<br>+ moveToFiringPoint"]
     READY{所有單元<br>已就位?}
     EXECUTE["executeFireSupportTasks"]
     CHECK_TIME{startTime<br>到達?}
     CHECK_TARGET{目標數<br>>= minTargetCount?}
     ATTACK["AttackManager<br>.attackContacts()"]
+    STOW["非 SAM 任務：<br>寫入 stowStartTime"]
     DONE{所有 FST<br>完成?}
     FINISH["FSEM 完成"]
 
@@ -61,7 +62,8 @@ flowchart TD
     CHECK_TIME -->|是| CHECK_TARGET
     CHECK_TARGET -->|否| START
     CHECK_TARGET -->|是| ATTACK
-    ATTACK --> DONE
+    ATTACK --> STOW
+    STOW --> DONE
     DONE -->|否| START
     DONE -->|是| FINISH
 ```
@@ -73,7 +75,7 @@ flowchart TD
 1. 檢查 `startTime` 是否到達
 2. 對每個 `firingUnit` 透過 `saveData` 取得其 `FiringUnitContext`
 3. 確認狀態為 `HIDE` 且彈量充足（`MissileSystem.isLowAmmo`）
-4. 呼叫 `MissileSystem.moveToFiringPoint` 驅動移動
+4. 呼叫 `MissileSystem.moveFromHideArea` 把單元從 MASK 建築卸載，再呼叫 `MissileSystem.moveToFiringPoint` 驅動移動
 5. 確認狀態轉為 `STATIC`（已就位）
 
 ### 打擊階段
@@ -84,6 +86,7 @@ flowchart TD
 2. 確認目標數 >= `minTargetCount`
 3. 呼叫 `AttackManager.attackContacts` 執行打擊
 4. 成功後標記 `task.isFinished = true`
+5. 若 `task.missileSystem ~= "SAM"`，把每個發射單元的 `firingUnitContext.stowStartTime` 設為當前時間（若尚未設定），交由 `missileSystem.cycle` 接手 stow 等待視窗與後續撤收
 
 ---
 
@@ -92,7 +95,9 @@ flowchart TD
 | 呼叫 | 用途 |
 |---|---|
 | `MissileSystem.isLowAmmo(group, threshold, weaponDBID)` | 確認發射單元彈量是否充足 |
+| `MissileSystem.moveFromHideArea(firingUnitCtx, actualUnit)` | 把發射單元從 MASK 建築卸載 |
 | `MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)` | 驅動發射單元從 HIDE → FP |
+| 寫入 `firingUnitContext.stowStartTime`（非 SAM） | 打擊完成後啟動 `missileSystem.cycle` 的 stow 倒數，銜接後續撤收／補給 |
 
 發射單元的狀態轉換（HIDE → REPOSITIONING → STATIC）由 missileSystem 模組的狀態機管理。詳見 [missileSystem 文件](../missileSystem.md)。
 
