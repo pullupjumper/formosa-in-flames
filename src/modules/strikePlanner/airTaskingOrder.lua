@@ -8,9 +8,7 @@ local constants = require("src.core.constants")
 local AirTaskingOrder = {}
 
 local ADVANCE_SECONDS = 300
-local LOADOUT_ROLES = { "striker", "escort", "wildWeasel", "jammer" }
-local ALL_ROLES = { "tanker", "striker", "escort", "wildWeasel", "jammer" }
-local ASSIGN_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
+local LOADOUT_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
 
 -- ============================================================================
 -- Loadout Timing
@@ -75,7 +73,7 @@ end
 ---@param missionRole SBJ__MissionDeploymentDescriptor Role deployment descriptor
 ---@param timeToReady number Time to ready in seconds
 local function setLoadoutForRole(missionRole, timeToReady)
-  local loadoutID = missionRole.loadoutId
+  local loadoutID = missionRole.loadoutID
   local unitCount = missionRole.unitCount
   local targetUnitDBID = missionRole.unitDBID
 
@@ -119,7 +117,7 @@ local function initiateLoadoutForPackage(packageData)
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local missionRole = packageData[role]
 
-    if missionRole and missionRole.loadoutId then
+    if missionRole and missionRole.loadoutID then
       setLoadoutForRole(missionRole, timeToReady)
     end
   end
@@ -225,7 +223,7 @@ end
 local function assignUnits(packageData)
   local strikerAssigned = false
 
-  for _, role in ipairs(ASSIGN_ROLES) do
+  for _, role in ipairs(LOADOUT_ROLES) do
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local missionRole = packageData[role]
 
@@ -265,11 +263,7 @@ local function scheduleReconUAV(config, saveData, packageData)
   end
 
   if not packageData.reconUAV.takeoffTime then
-    local distance, flightTime = GameUtils.calculatePathDistanceAndTime(
-      packageData.reconUAV.course,
-      packageData.reconUAV.speed
-    )
-
+    local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
     local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
         flightTime
     local endTime = takeoffTime + flightTime
@@ -315,7 +309,7 @@ end
 ---@param packageData SBJ__Package Package data
 ---@return boolean # True if all critical missions created successfully
 local function createAllMissions(packageData)
-  for _, role in ipairs(ALL_ROLES) do
+  for _, role in ipairs(LOADOUT_ROLES) do
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local missionRole = packageData[role]
 

@@ -1503,4 +1503,397 @@ describe("DynamicATOInsertion", function()
     assert.is_false(result)
     assert.stub(warnStub).was.called(1)
   end)
+
+  -- ============================================================================
+  -- Multi-Base Fallback (baseGUIDCandidates)
+  -- ============================================================================
+
+  -- Positive: primary base insufficient, fallback candidate satisfies the role
+  it("should fallback to baseGUIDCandidates when primary base is insufficient", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1 has only 2 aircraft (insufficient for 4); BASE-2 has 4 aircraft (sufficient)
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", name = "Base Alpha", embarkedUnits = { Aircraft = { "AC-1", "AC-2" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", name = "Base Bravo", embarkedUnits = { Aircraft = { "AC-3", "AC-4", "AC-5", "AC-6" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/1"]
+    assert.is_table(wave)
+    assert.are.equal(1, #wave.packages)
+    -- Resolved baseGUID must be a single string pointing at BASE-2
+    assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
+  end)
+
+  -- Negative: every candidate (primary and fallback) lacks sufficient aircraft
+  it("should fail when all baseGUIDCandidates lack sufficient aircraft", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/2",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2", "BASE-3" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- All three bases only have 1-2 aircraft, none reaches the required 4
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-2", "AC-3" } } }
+      elseif guid == "BASE-3" then
+        return { guid = "BASE-3", embarkedUnits = { Aircraft = { "AC-4", "AC-5" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_false(result)
+  end)
+
+  -- Positive: each role resolves its base independently within the same package
+  it("should resolve each role's base independently within a package", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/3",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            escort = {
+              baseGUID = "BASE-1",
+              unitCount = 2,
+              unitDBID = 100,
+              weaponDBID = 300
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1: 2 aircraft (enough for escort=2, not for striker=4); BASE-2: 4 aircraft (striker fallback)
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1", "AC-2" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-3", "AC-4", "AC-5", "AC-6" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/3"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/3"]
+    assert.is_table(wave)
+    assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-1", wave.packages[1].escort.baseGUID)
+  end)
+
+  -- Positive: second package in same wave falls back because first package consumed primary
+  it("should deduct same-wave bookings so later packages fallback to candidates", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/4",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "TAOYUAN", subTypes = { "Runway" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          },
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1 has exactly 4 aircraft (one package's worth); BASE-2 has 4 (the second package's fallback)
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3", "AC-4" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-5", "AC-6", "AC-7", "AC-8" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/4"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/4"]
+    assert.is_table(wave)
+    assert.are.equal(2, #wave.packages)
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-2", wave.packages[2].striker.baseGUID)
+  end)
+
+  -- Positive: tanker role also resolves baseGUIDCandidates
+  it("should fallback tanker to baseGUIDCandidates when primary lacks tankers", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/TANKER",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            tanker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 2,
+              unitDBID = 102
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1: 1 striker (dbid 100) + 1 tanker (dbid 102) -> tanker insufficient (need 2)
+    -- BASE-2: 2 tankers (dbid 102) -> tanker fallback satisfied
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-S1", "AC-T1" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-T2", "AC-T3" } } }
+      end
+      if guid == "AC-S1" then return { dbid = 100, mission = nil } end
+      return { dbid = 102, mission = nil }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/TANKER"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/TANKER"]
+    assert.is_table(wave)
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-2", wave.packages[1].tanker.baseGUID)
+  end)
+
+  -- Positive: jammer role also resolves baseGUIDCandidates
+  it("should fallback jammer to baseGUIDCandidates when primary lacks jammers", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/FALLBACK/JAMMER",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            jammer = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 2,
+              unitDBID = 103
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1: 1 striker + 1 jammer -> jammer insufficient (need 2)
+    -- BASE-2: 2 jammers -> jammer fallback satisfied
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-S1", "AC-J1" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-J2", "AC-J3" } } }
+      end
+      if guid == "AC-S1" then return { dbid = 100, mission = nil } end
+      return { dbid = 103, mission = nil }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/JAMMER"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/JAMMER"]
+    assert.is_table(wave)
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-2", wave.packages[1].jammer.baseGUID)
+  end)
 end)

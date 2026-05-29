@@ -793,12 +793,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Mission deployment descriptor for air operations
 ---Complete mission deployment configuration including base, units, weapons, and timing
 ---@class SBJ__MissionDeploymentDescriptor: table
----@field baseGUID string The GUID of the base to use for the mission
+---@field baseGUID string The GUID of the base to use for the mission (resolved after validation)
+---@field baseGUIDCandidates? string[] Optional fallback bases tried in order when the primary base lacks aircraft of unitDBID; validator narrows to a single resolved baseGUID before persisting
 ---@field missionCreationParams SBJ__MissionCreationParams The parameters for the mission
 ---@field unitCount integer The number of units to assign to the mission
 ---@field weaponDBID number The weapon DBID to use for the mission
 ---@field unitDBID number The unit DBID to use for the mission
----@field loadoutId? number The loadout ID to filter by, 0 for any loadout (optional)
+---@field loadoutID? number The loadout ID to filter by, 0 for any loadout (optional)
 ---@field startTime? string The start time of the mission
 ---@field endTime? string The end time of the mission (optional)
 ---@field timeOnStation? string The time on station (optional)

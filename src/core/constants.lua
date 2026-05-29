@@ -364,6 +364,8 @@ constants.BASES = {
   RUGAO_AB               = "X58F5H-0HN201E9DHM1C", -- Rugao AB
   XIAHGTANG_AB           = "6Z8LM5-0HMIJ7B89707I", -- Xiahgtang AB (PLAAF)
   JIAXING_AB             = "6Z8LM5-0HMITKFQH25Q8", -- Jiaxing AB (PLAAF)
+  LEIYANG_AB             = "L13OAU-0HNLMA3VCAO2N", -- Leiyang AB (PLAAF)
+  LUSHAN_AB              = "6Z8LM5-0HMJOC068SJPI", -- Jiujiang Lushan AB (PLAAF)
   -- Taiwan Bases
   CHING_CHUANG_KANG_AB   = "6Z8LM5-0HMIHS2L949R0", -- Ching Chuang Kang AB (Taiwan)
   CHIAYI_AB              = "6Z8LM5-0HMIJ3QGCHSUB", -- Chiayi AB (Taiwan)
@@ -2549,7 +2551,7 @@ constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 constants.TIME_FORMATS = "!yyyy-MM-dd HH:mm:ss"
 constants.MOUNT_DESCRIPTORS = {
   CUSTOMED_TK3 = { { dbid = 1630, mountCount = 1 }, { dbid = 45, mountCount = 6 } },
-  HF2E = { { dbid = 2782, mountCount = 2 } },
+  HF2E = { { dbid = 2782, mountCount = 4 } },
   CSS5_MOD5 = { { dbid = 1858, mountCount = 4 } },
   CSS11_MOD1 = { { dbid = 4274, mountCount = 4 } },
   CSS6_MOD3 = { { dbid = 1882, mountCount = 6 } },

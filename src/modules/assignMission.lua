@@ -117,7 +117,7 @@ end
 ---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
 ---@param missionName string The name of the mission to assign units to
 ---@param isEscort boolean Whether the mission is an escort mission
----@return table<integer, string>|nil # A list of assigned units
+---@return string[]|nil # A list of assigned units
 function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, weaponDBID, unitDBID, missionName, isEscort)
   local airbase = GameApi.ScenEdit_GetUnit(fromUnit)
 

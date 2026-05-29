@@ -2,128 +2,144 @@
 
 > 原始碼：`src/modules/strikePlanner/airTaskingOrder.lua`
 
-**職責**：執行預排的 ATO，管理打擊包（Package）的掛彈、任務建立、目標指派與單元派遣
+**職責**：執行已啟動的 ATO Wave，負責打擊包掛彈、CMO 任務建立、目標指派、單元派遣與打擊後偵察排程。
 
 ---
 
 ## 概述
 
-airTaskingOrder 負責 Kill Chain 的 Engage 階段。遍歷 `saveData.c.air.airTaskingOrder` 中所有已啟動的 Wave，依序處理各 Package 的掛彈準備、任務建立、目標指派與單元派遣。每個 tick 最多發射一個 Package（避免系統過載）。
+`airTaskingOrder` 是 Strike Planner 的空中打擊執行層，處理 `saveData.c.air.airTaskingOrder` 內所有 `isActivated == true` 且尚未完成的 Wave。模組不負責產生 Wave；靜態資料可由初始化流程寫入，動態資料則由 [dynamicATOInsertion](dynamicATOInsertion.md) 插入。
+
+每次呼叫 `airStrike()` 時，模組會依序檢查各 Package 的生命週期狀態。若時間到達掛彈窗口，先對基地內符合 `unitDBID` 的飛機設定 `loadoutID`；掛彈完成且最早出發角色達到出擊窗口後，才建立任務、排程偵察 UAV、指派目標與派遣飛機。
+
+為避免單次 tick 大量改動 CMO 狀態，`processWave()` 每次最多成功發射一個 Package。Wave 內所有 Package 都標記 `hasLaunched` 後，Wave 才會標記為完成。
 
 ---
 
-## ATO 資料層級
+## 主要機制
 
-```
-ATO (airTaskingOrder)
-└── Wave（波次）
-    ├── isActivated: 是否啟動
-    ├── hasLaunched: 是否已完成
-    └── Package[]（打擊包）
-        ├── loadoutStatus: 掛彈狀態
-        ├── hasLaunched: 是否已發射
-        ├── target: 目標清單
-        ├── striker: 打擊機
-        ├── escort: 護航機
-        ├── wildWeasel: 防空壓制機（SEAD）
-        ├── jammer: 電戰機
-        └── tanker: 空中加油機
-```
-
----
-
-## Package 生命週期
+### Package 生命週期
 
 ```mermaid
-sequenceDiagram
-    participant SCHEDULER as 定時排程器
-    participant ATO as AirTaskingOrder
-    participant LOADOUT as 掛彈系統
-    participant MISSION as 任務系統
-    participant ASSIGN as 單元派遣
+flowchart TD
+    START["airStrike(config, saveData)"]
+    WAVE["掃描已啟動且未完成的 Wave"]
+    PKG["處理第一個未發射 Package"]
+    LOADOUT_TIME{"達到掛彈開始時間?"}
+    INIT_LOADOUT["initiateLoadoutForPackage<br>設定各角色 loadout"]
+    LOADOUT_READY{"掛彈完成?"}
+    TAKEOFF_TIME{"最早角色達到出擊窗口?"}
+    MISSIONS["createAllMissions<br>建立 striker/support 任務"]
+    RECON["scheduleReconUAV<br>插入 saveData.c.recon.queue"]
+    TARGETS{"assignTargetsToMission 成功?"}
+    UNITS{"assignUnits 成功?"}
+    LAUNCHED["package.hasLaunched = true"]
+    DONE{"Wave 全部 Package 完成?"}
 
-    SCHEDULER->>ATO: airStrike()
+    START --> WAVE --> PKG --> LOADOUT_TIME
+    LOADOUT_TIME -->|否| START
+    LOADOUT_TIME -->|是且尚未啟動| INIT_LOADOUT --> START
+    LOADOUT_TIME -->|已啟動| LOADOUT_READY
+    LOADOUT_READY -->|否| START
+    LOADOUT_READY -->|是| TAKEOFF_TIME
+    TAKEOFF_TIME -->|否| START
+    TAKEOFF_TIME -->|是| MISSIONS --> RECON --> TARGETS
+    TARGETS -->|否| START
+    TARGETS -->|是| UNITS
+    UNITS -->|否| START
+    UNITS -->|是| LAUNCHED --> DONE
+```
 
-    Note over ATO: 計算掛彈開始時間
+### 掛彈時序
 
-    ATO->>LOADOUT: initiateLoadoutForPackage()
-    Note over LOADOUT: 對各角色設定 LoadoutID<br>記錄 expectedReadyTime
+`LOADOUT_ROLES` 固定為 `striker`、`escort`、`wildWeasel`、`jammer`、`tanker`。掛彈開始時間由所有角色中最早的 `startTime` 減去 `packageData.timeToReady` 得出；若未指定 `timeToReady`，執行層預設使用 9 分鐘。
 
-    loop 每 5 分鐘檢查
-        SCHEDULER->>ATO: airStrike()
-        ATO->>LOADOUT: isLoadoutReady()?
-    end
+`isTimeToStartLoadout()` 會以 `ADVANCE_SECONDS = 300` 秒作為提前檢查量。到點後 `setLoadoutForRole()` 會讀取角色基地 `baseGUID` 的 `embarkedUnits.Aircraft`，挑選 DBID 符合 `unitDBID` 的飛機，呼叫 `GameApi.ScenEdit_SetLoadout()` 設定 `LoadoutID` 與 `TimeToReady_Minutes`。
 
-    Note over ATO: 掛彈完成、出擊時間到達
+### 任務建立與派遣
 
-    ATO->>MISSION: createAllMissions()
-    Note over MISSION: 建立 striker/escort/<br>wildWeasel/jammer/tanker 任務
+`createMission()` 以 `constants.SIDES.ENEMY` 建立任務，並使用角色的 `missionCreationParams` 和 `emcon`。若任務含 `endTime`，模組會設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`TakeOffTime`、`endtime`，必要時設定 `TimeOnTargetStation`；strike 任務會額外關閉 `automatic_evasion`。
 
-    ATO->>ATO: scheduleReconUAV()
-    Note over ATO: 排程打擊後偵察 UAV
+任務建立成功後，`assignTargetsToMission()` 會確認目標數達到 `target.minTargetCount`，再將 `target.list` 指派給 striker 任務。`assignUnits()` 依 `LOADOUT_ROLES` 派遣各角色，透過 `AssignMission.assignEmbarkedUnitToStrikeMission()` 從基地派出指定數量飛機；非 `striker`、非 `tanker` 的支援任務會建立空 flight plan。
 
-    ATO->>ASSIGN: assignTargetsToMission()
-    ATO->>ASSIGN: assignUnits()
-    Note over ASSIGN: 依序指派各角色單元至對應任務
+### 偵察 UAV 排程
+
+若 Package 帶有 `reconUAV`，任務建立後會排入 `saveData.c.recon.queue`。當 `reconUAV.takeoffTime` 未預先設定時，模組以 striker 任務結束時間、`config.c.ground.srbm.reloadTime` 與 UAV 航程飛行時間推算：
+
+```text
+takeoffTime = striker.endTime + config.c.ground.srbm.reloadTime - flightTime
+endTime = takeoffTime + flightTime
+```
+
+插入 queue 前會 deep copy 設定，並重設 `hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`。
+
+---
+
+## saveData 結構
+
+```text
+saveData.c
+├── air
+│   └── airTaskingOrder: table<string, SBJ__Wave>
+│       └── Wave
+│           ├── name
+│           ├── isActivated
+│           ├── hasLaunched
+│           └── packages: SBJ__Package[]
+│               ├── hasLaunched
+│               ├── timeToReady
+│               ├── loadoutStatus
+│               │   ├── isLoadoutInitiated
+│               │   ├── loadoutInitiatedTime
+│               │   ├── expectedReadyTime
+│               │   └── loadoutStartTime
+│               ├── striker / escort / wildWeasel / jammer / tanker
+│               ├── reconUAV?
+│               └── target
+│                   ├── list: string[]
+│                   └── minTargetCount
+└── recon
+    └── queue: SBJ__ReconQueueEntry[]
 ```
 
 ---
 
-## 任務角色
+## Public API
 
-| 角色 | 任務類型 | 說明 |
-|---|---|---|
-| `striker` | strike | 主攻打擊機，攜帶對地/對海武器 |
-| `escort` | patrol | 護航戰鬥機，提供空優掩護 |
-| `wildWeasel` | strike | 防空壓制（SEAD），摧毀敵方防空系統 |
-| `jammer` | patrol | 電戰機，提供電磁干擾 |
-| `tanker` | support | 空中加油機，延伸作戰半徑 |
-
-角色處理順序：
-- **掛彈**：`striker → escort → wildWeasel → jammer`
-- **任務建立**：`tanker → striker → escort → wildWeasel → jammer`
-- **單元指派**：`striker → escort → wildWeasel → jammer → tanker`
+| 函數 | 參數 | 回傳 | 說明 |
+|---|---|---|---|
+| `AirTaskingOrder.airStrike(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派與單元派遣流程。 |
 
 ---
 
-## 掛彈時序
+## 相依模組
 
-掛彈開始時間的計算邏輯：
-
-1. 找出所有角色中最早的 `startTime`
-2. 減去 `timeToReady`（預設 9 分鐘）得到掛彈開始時間
-3. 提前 `ADVANCE_SECONDS`（5 分鐘）開始檢查是否該啟動掛彈
-
-```
-掛彈開始時間 = min(各角色 startTime) - timeToReady
-檢查提前量 = ADVANCE_SECONDS (300秒)
-```
-
----
-
-## 偵察 UAV 排程
-
-若 Package 配置了 `reconUAV`，在任務建立後會自動計算偵察 UAV 的起飛時間：
-
-```
-起飛時間 = striker.endTime + SRBM 再裝填時間 - 飛行時間
-```
-
-計算完成後將 UAV 項目插入 `saveData.c.recon.queue`。
-
----
-
-## 公開 API
-
-| 函數 | 說明 |
+| 模組 | 用途 |
 |---|---|
-| `airStrike(config, saveData)` | 主入口：遍歷所有 ATO 波次，依序處理各打擊包 |
+| `src.utils.utils` | 時間字串轉 timestamp、deep copy。 |
+| `src.utils.gameApi` | 包裝 CMO API：讀取單元、建立/查詢任務、設定掛載、指派目標、設定 doctrine。 |
+| `src.utils.gameUtils` | 時間判斷、任務建立、路徑距離與飛行時間計算。 |
+| `src.utils.logger` | 批次輸出 ATO 執行資訊與錯誤。 |
+| `src.modules.assignMission` | 從基地派遣 embarked aircraft 至任務。 |
+| `src.core.constants` | 使用 `SIDES.ENEMY`、`TAGS.AIR`、`TIME_FORMATS`。 |
+
+---
+
+## 設定與常數參考
+
+| 類型 | 路徑 | 用途 |
+|---|---|---|
+| `config` | `config.c.ground.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
+| `constants` | `constants.SIDES.ENEMY` | 建立與查詢 China side 任務。 |
+| `constants` | `constants.TAGS.AIR` | ATO 成功/待處理資訊的 log tag。 |
+| `constants` | `constants.TIME_FORMATS` | CMO 任務時間欄位附加格式。 |
 
 ---
 
 ## 相關模組
 
-- [dynamicATOInsertion](dynamicATOInsertion.md) — 動態生成新的 ATO Wave 插入 `airTaskingOrder`
-- [recon](recon.md) — 管理排程後的偵察 UAV
-- `assignMission` — 單元指派至任務
+- [dynamicATOInsertion](dynamicATOInsertion.md) — 產生並插入動態 ATO Wave。
+- [dynamicOperationsUtils](dynamicOperationsUtils.md) — 動態作戰命名與登記，由插入層使用。
+- [targetingProcess](targetingProcess.md) — 由插入層先產生 `target.list`，本模組只負責指派。
+- [recon](recon.md) — 執行被排入 `saveData.c.recon.queue` 的偵察任務。
 - [系統架構](README.md)

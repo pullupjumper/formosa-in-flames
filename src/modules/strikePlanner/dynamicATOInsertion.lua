@@ -17,12 +17,13 @@ local TIME_CONSTANTS = {
   ELAPSED_TIME = 30 * 60,
   MAX_SPEED = 470,
   MIN_SPEED = 430,
+  TANKER_SPEED = 250,
   MAX_DISTANCE = 450,
   MAX_FLIGHT_TIME = 60 * 60
 }
 
 local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "tanker" }
-local SUPPORT_ROLES = { "escort", "wildWeasel", "jammer" }
+local SUPPORT_ROLES = { "escort", "wildWeasel", "jammer", "tanker" }
 
 -- ============================================================================
 -- Target Processing
@@ -85,32 +86,50 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   return availableCount
 end
 
----Validate aircraft availability for a specific role
----Checks if base has sufficient aircraft after accounting for existing assignments
----@param roleData SBJ__MissionDeploymentDescriptor Role configuration containing baseGUID, unitCount, and unitDBID
+---Validate aircraft availability for a role, resolving baseGUID via fallback candidates
+---Iterates roleData.baseGUID then roleData.baseGUIDCandidates in order; picks the first base with
+---enough unassigned aircraft of unitDBID. On success: rewrites roleData.baseGUID to the chosen GUID
+---(downstream sees a single string) and increments assignedAircraft so later packages in the same
+---wave deduct correctly.
+---@param roleData SBJ__MissionDeploymentDescriptor Role configuration; mutated in place on success
 ---@param roleName string Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex integer Package index for error messages
----@param assignedAircraft table<string, integer> Map of base GUID to currently assigned aircraft count
----@return boolean success true if sufficient aircraft available
----@return string|nil errorMessage Error message if validation fails, nil on success
+---@param assignedAircraft table<string, integer> Map of base GUID to currently assigned aircraft count; mutated on success
+---@return boolean success true if a base with sufficient aircraft was found
+---@return string|nil errorMessage Error message listing all attempted bases on failure, nil on success
 local function validateAircraftRole(roleData, roleName, packageIndex, assignedAircraft)
   if not roleData then
     return true, nil
   end
 
-  local baseGUID = roleData.baseGUID
   local requiredCount = roleData.unitCount or 0
-  local assignedCount = assignedAircraft[baseGUID] or 0
   local requiredUnitDBID = roleData.unitDBID
 
-  local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
-  if availableCount - assignedCount < requiredCount then
-    return false, "Package " .. packageIndex .. " insufficient " .. roleName .. " aircraft at base " ..
-        (baseGUID or "unknown") .. " (available: " .. availableCount ..
-        ", assigned: " .. assignedCount .. ", required: " .. requiredCount .. ")"
+  local candidates = { roleData.baseGUID }
+  if roleData.baseGUIDCandidates then
+    for _, guid in ipairs(roleData.baseGUIDCandidates) do
+      table.insert(candidates, guid)
+    end
   end
 
-  return true, nil
+  local attempts = {}
+  for _, baseGUID in ipairs(candidates) do
+    local assignedCount = assignedAircraft[baseGUID] or 0
+    local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
+    if availableCount - assignedCount >= requiredCount then
+      roleData.baseGUID = baseGUID
+      assignedAircraft[baseGUID] = assignedCount + requiredCount
+      return true, nil
+    end
+
+    table.insert(attempts, string.format("%s (available=%d, assigned=%d)",
+      baseGUID or "unknown", availableCount, assignedCount))
+  end
+
+  return false, string.format(
+    "Package %d insufficient %s aircraft (required: %d); tried [%s]",
+    packageIndex, roleName, requiredCount, table.concat(attempts, "; ")
+  )
 end
 
 ---Check if individual package has sufficient targets and resources
@@ -139,7 +158,9 @@ local function validateIndividualPackage(packageData, packageTargets, packageInd
   local roles = {
     { data = packageData.striker,    name = "striker" },
     { data = packageData.escort,     name = "escort" },
-    { data = packageData.wildWeasel, name = "SEAD" }
+    { data = packageData.wildWeasel, name = "SEAD" },
+    { data = packageData.jammer,     name = "jammer" },
+    { data = packageData.tanker,     name = "tanker" }
   }
 
   for _, role in ipairs(roles) do
@@ -197,19 +218,24 @@ end
 -- Flight Time Calculation
 -- ============================================================================
 
----Get patrol zone reference point coordinates from package escort configuration
----@param packageData SBJ__PackageTemplate Package configuration containing escort patrol zone
----@return CMO__Location|nil # Patrol zone point coordinates or nil if unavailable
-local function getPatrolZonePoint(packageData)
-  local patrolZone = packageData.escort and packageData.escort.missionCreationParams and
-      packageData.escort.missionCreationParams.opts and
-      packageData.escort.missionCreationParams.opts.patrolZone
-
-  if not patrolZone or #patrolZone == 0 then
+---Get the operational reference point for a role's mission zone
+---Reads patrolZone first (patrol-type missions), falls back to zone (support-type missions like jammer/tanker)
+---@param packageData SBJ__PackageTemplate Package configuration containing role mission parameters
+---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
+---@return CMO__Location|nil # Zone reference point coordinates or nil if unavailable
+local function getPatrolZonePoint(packageData, role)
+  local missionRole = packageData[role]
+  local opts = missionRole and missionRole.missionCreationParams and missionRole.missionCreationParams.opts
+  if not opts then
     return nil
   end
 
-  local point = GameApi.ScenEdit_GetReferencePoint({ side = constants.SIDES.ENEMY, name = patrolZone[1] })
+  local zone = opts.patrolZone or opts.zone
+  if not zone or #zone == 0 then
+    return nil
+  end
+
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = constants.SIDES.ENEMY, name = zone[1] })
   if not point then
     return nil
   end
@@ -219,69 +245,72 @@ end
 
 ---Calculate flight time in seconds from distance in nautical miles
 ---@param distance number Distance in nautical miles
+---@param role? string Role name; "tanker" uses tanker cruise speed, others use fighter speed
 ---@return integer # Flight time in seconds, rounded up
-local function calculateFlightTimeFromDistance(distance)
-  local speed = TIME_CONSTANTS.MAX_SPEED
-  if distance >= TIME_CONSTANTS.MAX_DISTANCE then
+local function calculateFlightTimeFromDistance(distance, role)
+  local speed
+  if role == "tanker" then
+    speed = TIME_CONSTANTS.TANKER_SPEED
+  elseif distance >= TIME_CONSTANTS.MAX_DISTANCE then
     speed = TIME_CONSTANTS.MIN_SPEED
+  else
+    speed = TIME_CONSTANTS.MAX_SPEED
   end
   return math.ceil((distance / speed) * 3600)
 end
 
----Calculate advance time for a specific role based on distance to patrol zone
----@param packageData SBJ__PackageTemplate Package configuration containing role data and patrol zone
+---Compute flight time from a role's base to its operational zone
+---@param packageData SBJ__PackageTemplate Package configuration containing role data
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
----@return integer # Flight time in seconds for the role to reach patrol zone
-local function calculateRoleAdvanceTime(packageData, role)
+---@return integer|nil # Flight time in seconds, or nil if role/base/zone/distance unavailable
+local function computeRoleFlightTime(packageData, role)
   ---@type SBJ__MissionDeploymentDescriptor|nil
   local missionRole = packageData[role]
   if not missionRole or not missionRole.baseGUID then
-    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+    return nil
   end
 
-  local targetPoint = getPatrolZonePoint(packageData)
+  local targetPoint = getPatrolZonePoint(packageData, role)
   if not targetPoint then
-    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+    return nil
   end
 
   local distance = GameApi.Tool_Range(missionRole.baseGUID, targetPoint)
   if not distance or distance <= 0 then
-    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
+    return nil
   end
 
-  return calculateFlightTimeFromDistance(distance)
+  return calculateFlightTimeFromDistance(distance, role)
+end
+
+---Calculate advance time for a specific role based on distance to its operational zone
+---@param packageData SBJ__PackageTemplate Package configuration containing role data and patrol zone
+---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
+---@return integer # Flight time in seconds, or ESCORT_ADVANCE_TIME as fallback
+local function calculateRoleAdvanceTime(packageData, role)
+  return computeRoleFlightTime(packageData, role) or TIME_CONSTANTS.ESCORT_ADVANCE_TIME
 end
 
 
----Calculate support advance time based on furthest base distance
----Finds the furthest support base from patrol zone and calculates required advance time
+---Calculate support advance time as the longest support role flight time
+---Each role uses its own zone and speed (tanker uses zone + 250kt, others use patrolZone + fighter speed)
 ---@param packageData SBJ__PackageTemplate Package configuration containing all support roles
----@return integer # Flight time in seconds for furthest support base to reach patrol zone
+---@return integer # Longest flight time in seconds, or ESCORT_ADVANCE_TIME if no role is computable
 local function calculateSupportAdvanceTime(packageData)
-  local targetPoint = getPatrolZonePoint(packageData)
-  if not targetPoint then
-    return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
-  end
-
-  local maxDistance = 0
-  local furthestRole = nil
+  local maxFlightTime = 0
 
   for _, role in ipairs(SUPPORT_ROLES) do
-    local missionRole = packageData[role]
-    if missionRole and missionRole.baseGUID then
-      local distance = GameApi.Tool_Range(missionRole.baseGUID, targetPoint)
-      if distance and distance > maxDistance then
-        maxDistance = distance
-        furthestRole = role
-      end
+    local flightTime = computeRoleFlightTime(packageData, role)
+    if flightTime and flightTime > maxFlightTime then
+      maxFlightTime = flightTime
     end
   end
 
-  if not furthestRole or maxDistance <= 0 then
+  if maxFlightTime == 0 then
     return TIME_CONSTANTS.ESCORT_ADVANCE_TIME
   end
 
-  return calculateFlightTimeFromDistance(maxDistance)
+  return maxFlightTime
 end
 
 ---Calculate striker flight time to target accounting for weapon range
@@ -399,18 +428,17 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   end
 
   -- Set support role timing
-  local supportRoles = { "escort", "wildWeasel", "jammer", "tanker" }
-  for _, role in ipairs(supportRoles) do
+  for _, role in ipairs(SUPPORT_ROLES) do
     local missionRole = packageData[role]
 
     if missionRole then
       if not missionRole.startTime or not missionRole.endTime then
         local roleTiming = calculateRoleTiming(role, packageData)
 
-        if role ~= "tanker" then
-          missionRole.startTime = missionRole.startTime or roleTiming.startTime
-        end
-
+        -- if role ~= "tanker" then
+        --   missionRole.startTime = missionRole.startTime or roleTiming.startTime
+        -- end
+        missionRole.startTime = missionRole.startTime or roleTiming.startTime
         missionRole.endTime = missionRole.endTime or roleTiming.endTime
 
         if roleTiming.timeOnStation then

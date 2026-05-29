@@ -50,7 +50,7 @@ describe("AirTaskingOrder", function()
       unitCount = overrides.unitCount or 2,
       weaponDBID = overrides.weaponDBID or 3000,
       unitDBID = overrides.unitDBID or 100,
-      loadoutId = overrides.loadoutId,
+      loadoutID = overrides.loadoutID,
       startTime = overrides.startTime or "2026-02-14 06:00:00",
       endTime = overrides.endTime or "2026-02-14 08:00:00",
       timeOnStation = overrides.timeOnStation,
@@ -289,7 +289,7 @@ describe("AirTaskingOrder", function()
     it("should set loadout for matching aircraft and update status", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100,
         unitCount = 2
       })
@@ -325,10 +325,10 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
-    -- Negative: no loadoutId
-    it("should skip roles without loadoutId", function()
+    -- Negative: no loadoutID
+    it("should skip roles without loadoutID", function()
       local striker = makeRole({ missionName = "STRIKE-PKG-1" })
-      -- loadoutId is nil by default
+      -- loadoutID is nil by default
       local pkg = makePackage({
         striker = striker,
         loadoutStatus = { isLoadoutInitiated = false }
@@ -347,7 +347,7 @@ describe("AirTaskingOrder", function()
 
     -- Negative: no unitDBID
     it("should skip roles without unitDBID", function()
-      local striker = makeRole({ missionName = "STRIKE-PKG-1", loadoutId = 5001 })
+      local striker = makeRole({ missionName = "STRIKE-PKG-1", loadoutID = 5001 })
       striker.unitDBID = nil
       local pkg = makePackage({
         striker = striker,
@@ -370,7 +370,7 @@ describe("AirTaskingOrder", function()
     it("should only set loadout for aircraft matching target unitDBID", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100,
         unitCount = 2
       })
@@ -409,7 +409,7 @@ describe("AirTaskingOrder", function()
     it("should not exceed unitCount when setting loadouts", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100,
         unitCount = 1
       })
@@ -444,7 +444,7 @@ describe("AirTaskingOrder", function()
     it("should set loadouts for multiple roles in same package", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100,
         unitCount = 1,
         baseGUID = "BASE-1"
@@ -452,7 +452,7 @@ describe("AirTaskingOrder", function()
       local escort = makeRole({
         missionName = "ESCORT-1",
         missionType = "patrol",
-        loadoutId = 6001,
+        loadoutID = 6001,
         unitDBID = 200,
         unitCount = 1,
         baseGUID = "BASE-2"
@@ -491,7 +491,7 @@ describe("AirTaskingOrder", function()
     it("should handle base not found gracefully", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100
       })
       local pkg = makePackage({
@@ -517,7 +517,7 @@ describe("AirTaskingOrder", function()
     it("should handle base with empty aircraft list", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100
       })
       local pkg = makePackage({
@@ -545,7 +545,7 @@ describe("AirTaskingOrder", function()
     it("should continue processing when SetLoadout fails for individual aircraft", function()
       local striker = makeRole({
         missionName = "STRIKE-PKG-1",
-        loadoutId = 5001,
+        loadoutID = 5001,
         unitDBID = 100,
         unitCount = 2
       })

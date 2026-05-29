@@ -6,10 +6,19 @@
 
 ## 概述
 
-Strike Planner 是中國陣營的聯合打擊規劃系統，模擬從偵察到打擊的完整 Kill Chain。系統分為兩大執行路徑：
+Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到打擊的完整 Kill Chain。系統分為兩大執行路徑：
 
 - **靜態計畫**：預先排定的 ATO（空中任務令）與 FSP（火力支援計畫），按時間表依序執行
 - **動態計畫**：基於偵察情報與戰損評估（BDA），即時生成新的打擊任務
+
+### 系統能力
+
+- 偵察資產生命週期管理：UAV、衛星、SIGINT 偵察項目可排入 `saveData.c.recon.queue`
+- 動態作戰排程：偵察完成後建立 `reconSchedule`，同時掛載 air/ground operations
+- 空中打擊生成：依 `SBJ__WaveTemplate` 評估目標、檢查飛機可用性、產生 ATO Wave
+- 空中打擊執行：管理 Package 掛彈、任務建立、目標指派、飛機派遣與打擊後偵察
+- 火力支援生成與執行：建立 FSEM，協調 TEL/發射單元移動、射擊與再補給
+- 目標掃描與 BDA：維護 `saveData.c.targetlist`，並依任務波次過濾已摧毀或已評估目標
 
 ### F2T2EA Kill Chain 對應
 
@@ -26,14 +35,28 @@ Strike Planner 是中國陣營的聯合打擊規劃系統，模擬從偵察到�
 
 ## 模組一覽
 
+### 模組角色對照
+
+| 角色 | 模組 | 說明 |
+|---|---|---|
+| 目標資料來源 | [targetingProcess](targetingProcess.md) | 建立與查詢目標清單，供空中與地面打擊使用。 |
+| 偵察排程者 | [recon](recon.md) | 將偵察結果轉為後續 air/ground operations。 |
+| 動態空中生成者 | [dynamicATOInsertion](dynamicATOInsertion.md) | 驗證目標與機隊資源後插入 ATO Wave。 |
+| 靜態/動態 ATO 執行者 | [airTaskingOrder](airTaskingOrder.md) | 執行所有已啟動 Wave，不區分來源。 |
+| 動態地面生成者 | [dynamicFireSupportPlan](dynamicFireSupportPlan.md) | 驗證目標與發射單元後插入 FSEM。 |
+| 靜態/動態 FSP 執行者 | [fireSupportPlan](fireSupportPlan.md) | 執行所有已啟動 FSEM，不區分來源。 |
+| 共用狀態工具 | [dynamicOperationsUtils](dynamicOperationsUtils.md) | 管理 recon schedule 狀態、命名與 generated operation 登記。 |
+
+### 模組摘要
+
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
 | [targetingProcess](targetingProcess.md) | `targetingProcess.lua` | 目標掃描、分類、動態篩選與 BDA 評估 |
 | [recon](recon.md) | `recon.lua` | UAV/衛星偵察生命週期管理與動態作戰排程 |
-| [airTaskingOrder](airTaskingOrder.md) | `airTaskingOrder.lua` | 靜態 ATO 執行（掛彈、任務建立、單元派遣） |
-| [fireSupportPlan](fireSupportPlan.md) | `fireSupportPlan.lua` | 靜態 FSP 執行（發射單元部署與打擊） |
+| [airTaskingOrder](airTaskingOrder.md) | `airTaskingOrder.lua` | ATO 執行（掛彈、任務建立、目標指派、單元派遣） |
+| [fireSupportPlan](fireSupportPlan.md) | `fireSupportPlan.lua` | FSP 執行（發射單元部署與打擊） |
 | [dynamicFireSupportPlan](dynamicFireSupportPlan.md) | `dynamicFireSupportPlan.lua` | 動態 FSEM 生成（偵察驅動） |
-| [dynamicATOInsertion](dynamicATOInsertion.md) | `dynamicATOInsertion.lua` | 動態 ATO Wave 生成（偵察驅動） |
+| [dynamicATOInsertion](dynamicATOInsertion.md) | `dynamicATOInsertion.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
 | [dynamicOperationsUtils](dynamicOperationsUtils.md) | `dynamicOperationsUtils.lua` | 動態作戰共用工具（排程、命名、狀態追蹤） |
 
 ---
@@ -208,7 +231,7 @@ flowchart BT
     ATO --> UTILS & GAMEAPI & GAMEUTILS & ASSIGN
     FSP --> GAMEAPI & GAMEUTILS & ATTACK & MISSILE & CONSTANTS
     DFSP --> TP & DOU & GAMEAPI & UTILS & MISSILE & CONSTANTS
-    DATO --> TP & DOU & GAMEAPI & GAMEUTILS & UTILS
+    DATO --> TP & DOU & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
     RECON --> DOU & GAMEAPI & GAMEUTILS & UTILS & CONSTANTS
     TP --> GAMEAPI & UTILS & RECON & CONSTANTS
     DOU --> UTILS & GAMEAPI
@@ -222,21 +245,28 @@ flowchart BT
 
 | 設定路徑 | 用途 |
 |---|---|
-| `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間（影響偵察 UAV 排程） |
+| `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
 | `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
 | `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
-| `config.c.packageTemplates` | 空中打擊包模板（依名稱索引） |
+| `config.c.packageTemplates` | 空中打擊包模板；`recon` 建立 air operation template，`dynamicATOInsertion` 轉為 Wave |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板（依名稱索引） |
 | `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |
 | `config.c.sigint.maxCount` | SIGINT 偵測次數門檻 |
 | `config.targetScanning` | 目標掃描配置（距離門檻、機場/港口清單、模式匹配） |
+| `config.readytime` | 多數空中打擊 template 的 `timeToReady` 來源，進入 Package 後由 ATO 掛彈流程使用 |
 
 ### constants.lua（不可變常數）
 
 | 常數路徑 | 用途 |
 |---|---|
+| `constants.SIDES.ENEMY` | Strike Planner 對 CMO 任務、reference point、contacts 的 China side 名稱 |
+| `constants.TAGS.AIR` | ATO 執行層資訊 log tag |
+| `constants.TAGS.DYNAMIC_OPERATIONS` | 動態 ATO/FSP 與偵察排程 log tag |
+| `constants.TIME_FORMATS` | ATO 建立任務時附加到 CMO 時間欄位的格式字串 |
 | `constants.PLATFORMS.WZ8` | WZ-8 偵察無人機 DBID |
 | `constants.PLATFORMS.BZK005` | BZK-005 偵察 UAV DBID |
+| `constants.PLATFORMS.GJ11` | GJ-11 偵察/打擊 mapping 的 UAV platform DBID |
+| `constants.PLATFORMS.H6N` | H-6N 偵察/打擊 mapping 與 WZ-8 發射載台 DBID |
 | `constants.LOADOUTS.WZ8_RECON` | WZ-8 偵察掛載 ID |
 | `constants.SENSORS.WZ8_RADAR` | WZ-8 雷達感測器 DBID |
 | `constants.SENSORS.*` | 各型 SAM/AEW 雷達感測器 DBID |
@@ -251,7 +281,7 @@ flowchart BT
 | `src/scripts/china/scheduledStrikePlanner.lua` | 主排程腳本（每 5 分鐘觸發） |
 | `src/modules/attackManager.lua` | 打擊執行（發射武器） |
 | `src/modules/assignMission.lua` | 任務指派（飛機分配） |
-| `src/modules/missileSystem/init.lua` | TEL 飛彈系統入口模組（發射單元狀態機聚合），詳見 [missileSystem 文件](../missileSystem.md) |
+| `src/modules/missileSystem/init.lua` | TEL 飛彈系統入口模組（發射單元狀態機聚合），詳見 [missileSystem 文件](../missileSystem/README.md) |
 | `src/core/schema.lua` | 型別定義 |
 | `src/core/config.lua` | 運行期配置 |
 | `src/core/constants.lua` | 不可變常數 |
