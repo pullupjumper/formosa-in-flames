@@ -203,6 +203,16 @@ config.c.iads.c2Deployments = {
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_MEIZHOU, },
     name = "Meizhou"
   },
+  {
+    position = { latitude = "N 31.06.11", longitude = "E 121.03.35" },
+    areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANGHAI, },
+    name = "Shanghai"
+  },
+  {
+    position = { latitude = "N 27.05.38", longitude = "E 119.55.05" },
+    areas = { constants.AREAS.MILITARY_SUB_DISTRICT_NINGDE, },
+    name = "Ningde"
+  },
 }
 
 
@@ -706,9 +716,21 @@ config.c.ground.sam.ammunitions = {
     wpnCurrent = config.c.ground.sam.wpnDefault * 2,
     wpnDefault = config.c.ground.sam.wpnDefault * 2,
   },
+  ["Ammo Revetment, 94774 Unit, PLAAF"] = {
+    guid = "",
+    name = "Ammo Revetment, 94774 Unit, PLAAF",
+    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+  },
   ["Ammo Revetment, 94777 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94777 Unit, PLAAF",
+    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+  },
+  ["Ammo Revetment, 94807 Unit, PLAAF"] = {
+    guid = "",
+    name = "Ammo Revetment, 94807 Unit, PLAAF",
     wpnCurrent = config.c.ground.sam.wpnDefault * 2,
     wpnDefault = config.c.ground.sam.wpnDefault * 2,
   },
@@ -754,6 +776,17 @@ config.c.ground.sam.resupplyUnits = {
     ammunition = "Ammo Revetment, 94759 Unit, PLAAF",
     firingUnit = "94759 Unit, PLAAF"
   },
+  ["Ammo Sec, 94774 Unit, PLAAF"] = {
+    guid = "",
+    name = "Ammo Sec, 94774 Unit, PLAAF",
+    wpnCurrent = config.c.ground.sam.wpnDefault,
+    wpnDefault = config.c.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.WEP,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 94774 Unit, PLAAF",
+    firingUnit = "94774 Unit, PLAAF"
+  },
   ["Ammo Sec, 94777 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94777 Unit, PLAAF",
@@ -764,6 +797,17 @@ config.c.ground.sam.resupplyUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     ammunition = "Ammo Revetment, 94777 Unit, PLAAF",
     firingUnit = "94777 Unit, PLAAF"
+  },
+  ["Ammo Sec, 94807 Unit, PLAAF"] = {
+    guid = "",
+    name = "Ammo Sec, 94807 Unit, PLAAF",
+    wpnCurrent = config.c.ground.sam.wpnDefault,
+    wpnDefault = config.c.ground.sam.wpnDefault,
+    unitCount = 1,
+    operationalArea = constants.OPERATIONAL_AREAS.IDC,
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    ammunition = "Ammo Revetment, 94807 Unit, PLAAF",
+    firingUnit = "94807 Unit, PLAAF"
   },
   ["Ammo Sec, 94908 Unit, PLAAF"] = {
     guid = "",
@@ -822,6 +866,17 @@ config.c.ground.sam.firingUnits = {
     resupplyUnit = "Ammo Sec, 94759 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
+  ["94774 Unit, PLAAF"] = {
+    guid = "",
+    name = "94774 Unit, PLAAF",
+    msg = "Radio source, Bty",
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.WEP,
+    weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
+    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 94774 Unit, PLAAF",
+    dbid = constants.PLATFORMS.S300,
+  },
   ["94777 Unit, PLAAF"] = {
     guid = "",
     name = "94777 Unit, PLAAF",
@@ -831,6 +886,17 @@ config.c.ground.sam.firingUnits = {
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.c.ground.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94777 Unit, PLAAF",
+    dbid = constants.PLATFORMS.S300,
+  },
+  ["94807 Unit, PLAAF"] = {
+    guid = "",
+    name = "94807 Unit, PLAAF",
+    msg = "Radio source, Bty",
+    state = constants.MISSILE_SYSTEM_STATE.STATIC,
+    operationalArea = constants.OPERATIONAL_AREAS.IDC,
+    weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
+    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    resupplyUnit = "Ammo Sec, 94807 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
   ["94908 Unit, PLAAF"] = {

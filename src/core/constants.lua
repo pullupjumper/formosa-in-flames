@@ -177,6 +177,8 @@ constants.AREAS = {
   MILITARY_SUB_DISTRICT_SHANTOU = { "RP-156589", "RP-156590", "RP-156591", "RP-156592", },
   MILITARY_SUB_DISTRICT_SHANWEI = { "RP-156593", "RP-156594", "RP-156595", "RP-156596", },
   MILITARY_SUB_DISTRICT_MEIZHOU = { "RP-85130", "RP-85131", "RP-85132", "RP-85133", },
+  MILITARY_SUB_DISTRICT_SHANGHAI = { "RP-207445", "RP-207446", "RP-207447", "RP-207448" },
+  MILITARY_SUB_DISTRICT_NINGDE = { "RP-207449", "RP-207450", "RP-207451", "RP-207452" },
   RELOAD_POINT_PINGTAN = { "RP-114443", "RP-114444", "RP-114445", "RP-114446" },
 
   -- China
@@ -210,6 +212,12 @@ constants.AREAS = {
   FIRE_POINT_HUZ_2 = { "RP-199606", "RP-199607", "RP-199608", "RP-199609" },
   AMMO_HOLDING_AREA_HUZ = { "RP-199614", "RP-199615", "RP-199616", "RP-199617" },
   MASK_HUZ = { "RP-199618", "RP-199619", "RP-199620", "RP-199621" },
+  RELOAD_POINT_IDC = { "RP-207875", "RP-207876", "RP-207877", "RP-207878" },
+  HIDE_AREA_IDC = { "RP-207887", "RP-207888", "RP-207889", "RP-207890" },
+  FIRE_POINT_IDC_1 = { "RP-207879", "RP-207880", "RP-207881", "RP-207882" },
+  FIRE_POINT_IDC_2 = { "RP-207883", "RP-207884", "RP-207885", "RP-207886" },
+  AMMO_HOLDING_AREA_IDC = { "RP-207891", "RP-207892", "RP-207893", "RP-207894" },
+  MASK_IDC = { "RP-207895", "RP-207896", "RP-207897", "RP-207898" },
   RELOAD_POINT_IDP = { "RP-199624", "RP-199625", "RP-199626", "RP-199627" },
   HIDE_AREA_IDP = { "RP-199636", "RP-199637", "RP-199638", "RP-199639" },
   FIRE_POINT_IDP_1 = { "RP-199628", "RP-199629", "RP-199630", "RP-199631" },
@@ -264,6 +272,12 @@ constants.AREAS = {
   FIRE_POINT_URF_2 = { "RP-199400", "RP-199401", "RP-199402", "RP-199403" },
   AMMO_HOLDING_AREA_URF = { "RP-199408", "RP-199409", "RP-199410", "RP-199411" },
   MASK_URF = { "RP-199412", "RP-199413", "RP-199414", "RP-199415" },
+  RELOAD_POINT_WEP = { "RP-207849", "RP-207850", "RP-207851", "RP-207852" },
+  HIDE_AREA_WEP = { "RP-207861", "RP-207862", "RP-207863", "RP-207864" },
+  FIRE_POINT_WEP_1 = { "RP-207853", "RP-207854", "RP-207855", "RP-207856" },
+  FIRE_POINT_WEP_2 = { "RP-207857", "RP-207858", "RP-207859", "RP-207860" },
+  AMMO_HOLDING_AREA_WEP = { "RP-207865", "RP-207866", "RP-207867", "RP-207868" },
+  MASK_WEP = { "RP-207869", "RP-207870", "RP-207871", "RP-207872" },
   RELOAD_POINT_XZL = { "RP-200604", "RP-200605", "RP-200606", "RP-200607" },
   HIDE_AREA_XZL = { "RP-200616", "RP-200617", "RP-200618", "RP-200619" },
   FIRE_POINT_XZL_1 = { "RP-200608", "RP-200609", "RP-200610", "RP-200611" },
@@ -901,6 +915,50 @@ constants.OPERATIONAL_AREAS = {
     } },
     mask = { area = constants.AREAS.MASK_HUZ },
   },
+  IDC = {
+    RL = { {
+      course = {
+        { latitude = 26.963341334336, longitude = 120.05387306213, },
+      },
+      area = constants.AREAS.RELOAD_POINT_IDC
+    } },
+    HA = { {
+      course = {
+        { latitude = 26.95107699435, longitude = 120.05413946666, },
+      },
+      area = constants.AREAS.HIDE_AREA_IDC
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 26.956558578063, longitude = 120.04047372816, },
+          { latitude = 26.952117270712, longitude = 120.07404327393, },
+        },
+        area = constants.AREAS.FIRE_POINT_IDC_1
+      },
+      {
+        course = {
+          { latitude = 26.956558578063, longitude = 120.04047372816, },
+          { latitude = 26.96391090858,  longitude = 120.07249832153, },
+        },
+        area = constants.AREAS.FIRE_POINT_IDC_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 26.976042584813, longitude = 120.06271362305, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_IDC
+    } },
+    SHRL = { {
+      course = {
+        { latitude = 26.966184552986, longitude = 120.05706316254, },
+        { latitude = 26.963341334336, longitude = 120.05387306213, },
+      },
+      area = constants.AREAS.RELOAD_POINT_IDC
+    } },
+    mask = { area = constants.AREAS.MASK_IDC },
+  },
   IDP = {
     RL = { {
       course = {
@@ -1304,6 +1362,50 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_URF
     } },
     mask = { area = constants.AREAS.MASK_URF },
+  },
+  WEP = {
+    RL = { {
+      course = {
+        { latitude = 30.913357938696, longitude = 121.53191682793, },
+      },
+      area = constants.AREAS.RELOAD_POINT_WEP
+    } },
+    HA = { {
+      course = {
+        { latitude = 30.905650755673, longitude = 121.51634359714, },
+      },
+      area = constants.AREAS.HIDE_AREA_WEP
+    } },
+    FP = {
+      {
+        course = {
+          { latitude = 30.907283648657, longitude = 121.53635297836, },
+          { latitude = 30.868712982924, longitude = 121.62380218506, },
+        },
+        area = constants.AREAS.FIRE_POINT_WEP_1
+      },
+      {
+        course = {
+          { latitude = 30.907283648657, longitude = 121.53635297836, },
+          { latitude = 30.856621901178, longitude = 121.56075016724, },
+        },
+        area = constants.AREAS.FIRE_POINT_WEP_2
+      },
+    },
+    AHA = { {
+      course = {
+        { latitude = 30.963876737844, longitude = 121.42639160156, },
+      },
+      area = constants.AREAS.AMMO_HOLDING_AREA_WEP
+    } },
+    SHRL = { {
+      course = {
+        { latitude = 30.910514628578, longitude = 121.53523077331, },
+        { latitude = 30.913357938696, longitude = 121.53191682793, },
+      },
+      area = constants.AREAS.RELOAD_POINT_WEP
+    } },
+    mask = { area = constants.AREAS.MASK_WEP },
   },
   XZL = {
     RL = { {
