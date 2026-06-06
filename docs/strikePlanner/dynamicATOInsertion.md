@@ -10,7 +10,7 @@
 
 `dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO 任務或派遣飛機，而是從 `saveData.c.dynamicOperations.reconSchedule` 取出尚未執行的 `air` operation，評估目標與機隊資源後，產生 `SBJ__Wave` 寫入 `saveData.c.air.airTaskingOrder`。
 
-模組的核心工作分為三段：第一段用 [targetingProcess](targetingProcess.md) 依 template 取得可打擊目標；第二段檢查各角色基地是否還有未派任務且 DBID 符合的飛機，並支援 `baseGUIDCandidates` fallback；第三段依飛行距離、支援角色到位時間與 `strikeInterval` 產生每個 Package 的 `startTime`、`endTime` 與 `loadoutStatus`。
+模組的核心工作分為三段：第一段用 [targetingProcess](targetingProcess.md) 依 template 取得可打擊目標；第二段檢查各角色基地是否還有未派任務且 DBID 符合的飛機，支援 `baseGUIDCandidates` 跨基地 fallback，並以「半戰力門檻」在飛機不足全額時仍允許以半數出擊；第三段依飛行距離、支援角色到位時間與 `strikeInterval` 產生每個 Package 的 `startTime`、`endTime` 與 `loadoutStatus`。
 
 成功插入 Wave 後，模組會透過 [dynamicOperationsUtils](dynamicOperationsUtils.md) 登記 generated operation，避免後續 tick 產生同名 Wave。無有效 Package 時會將 operation 標記為已處理但不插入 Wave；缺少 template 則保留未執行狀態並輸出錯誤。
 
@@ -25,6 +25,7 @@ flowchart TD
     ENTRY["process(config, saveData, contacts)"]
     ENABLED{"dynamicOperations enabled?"}
     FILTER["filterOperationsByType(reconSchedule, air)"]
+    LOOP{"還有未處理的 air operation?"}
     TRIGGER{"reconEntry time + delay 到達?"}
     TEMPLATE{"operation.template 存在?"}
     VALIDATE["processATOTemplateWithValidation<br>目標處理 + 資源驗證"]
@@ -35,26 +36,40 @@ flowchart TD
     INSERT["insertWave<br>寫入 saveData.c.air.airTaskingOrder"]
     REGISTER["registerGeneratedOperation(air, wave.name)"]
     MARK["markOperationExecuted(reconEntry, operation, true)"]
+    LOG_ERROR["MISSING_TEMPLATE<br>不標記 executed"]
+    NEXT["此 operation 處理完畢"]
+    END_FALSE["return false"]
+    END_RESULT["return hasExecutedAny"]
 
     ENTRY --> ENABLED
-    ENABLED -->|否| END_FALSE["return false"]
-    ENABLED -->|是| FILTER --> TRIGGER
-    TRIGGER -->|否| END_FALSE
+    ENABLED -->|否| END_FALSE
+    ENABLED -->|是| FILTER --> LOOP
+    LOOP -->|否| END_RESULT
+    LOOP -->|是| TRIGGER
+    TRIGGER -->|否| NEXT
     TRIGGER -->|是| TEMPLATE
-    TEMPLATE -->|否| LOG_ERROR["MISSING_TEMPLATE<br>不標記 executed"]
+    TEMPLATE -->|否| LOG_ERROR --> NEXT
     TEMPLATE -->|是| VALIDATE --> HAS_PACKAGE
     HAS_PACKAGE -->|否| MARK
     HAS_PACKAGE -->|是| COPY --> NAME --> BUILD --> INSERT --> REGISTER --> MARK
+    MARK --> NEXT
+    NEXT --> LOOP
 ```
 
 ### 目標與機隊驗證
 
 `processATOTemplateWithValidation()` 會 deep copy Wave template 的 packages，避免直接修改 config 或 recon schedule 中的原始 template。每個 Package 先呼叫 `TargetingProcess.processTargets()` 產生 `target.list`，再以 `validateIndividualPackage()` 驗證目標數與各角色飛機數。
 
-機隊驗證涵蓋 `striker`、`escort`、`wildWeasel`、`jammer`、`tanker`。`validateAircraftRole()` 會依序嘗試 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates`；一旦某基地可用數量足夠，就把 `roleData.baseGUID` 改寫為實際選定基地，並更新 `assignedAircraft`，讓同一輪 validation 中後續 Package 扣除已保留的飛機。
+機隊驗證依 `PACKAGE_ROLES`（`striker`、`escort`、`wildWeasel`、`jammer`、`tanker`）逐一檢查。`validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選清單依序嘗試；一旦某基地的可用餘額達到「半戰力門檻」，就把 `roleData.baseGUID` 改寫為實際選定基地（下游因此只會看到單一字串），並把預訂量累加進 `assignedAircraft`，讓同一輪 validation 中後續 Package 扣除已保留的飛機。
+
+可用餘額不足全額時仍允許以半數兵力出擊，門檻為 `requiredCount / 2`（不取整，例如 `requiredCount = 3` 時門檻為 1.5，可用 1 架會被拒絕）。預訂量則視餘額是否達全額而定：
 
 ```text
-可用餘額 = getBaseAircraftCapacity(baseGUID, unitDBID) - assignedAircraft[baseGUID]
+可用餘額 free = getBaseAircraftCapacity(baseGUID, unitDBID) - assignedAircraft[baseGUID]
+
+接受條件： free >= requiredCount / 2
+預訂量：   free >= requiredCount → 預訂 requiredCount（全額）
+           否則                 → 預訂 free（保留該基地剩餘全部）
 
 getBaseAircraftCapacity:
   base.embarkedUnits.Aircraft
@@ -62,7 +77,9 @@ getBaseAircraftCapacity:
       └── aircraft.mission == "" or nil
 ```
 
-`collectAssignedAircraft()` 另會掃描既有 `saveData.c.air.airTaskingOrder`，統計已啟動、未發射 Wave 中各 Package 已佔用的 role `unitCount`，避免動態插入重複分配同一批飛機。
+即使以半戰力獲准，`roleData.unitCount` 仍維持 template 原值（不會被改寫成實際可用數），由下游 ATO 執行層依基地實有飛機派遣。
+
+`collectAssignedAircraft()` 另會掃描既有 `saveData.c.air.airTaskingOrder`，統計已啟動、未發射 Wave 中各 Package（同樣涵蓋 `PACKAGE_ROLES`，含 `jammer`）已佔用的 role `unitCount`，避免動態插入重複分配同一批飛機。
 
 ### 飛行時間與任務時序
 
@@ -78,16 +95,18 @@ getBaseAircraftCapacity:
 
 ```text
 第一包 strikerStart =
-  currentTime + (package.timeToReady or 5) + supportAdvanceTime - 遠距修正
+  currentTime + supportAdvanceTime - 遠距修正 + (package.timeToReady or 5 分鐘)
 
 後續包 strikerStart =
   previousPackage.striker.startTime + strikeInterval
 
 supportStart =
-  strikerStart - roleAdvanceTime + 61 + (package.timeToReady or 5) + 遠距修正
+  strikerStart - (tanker 用 maxSupportAdvanceTime；其餘角色用各自 roleAdvanceTime)
+              + 遠距修正 + (package.timeToReady or 5 分鐘)
 
 supportEnd =
   supportStart + maxSupportAdvanceTime + strikerFlightTime + 10 分鐘
+              (tanker 再扣 ELAPSED_TIME 30 分鐘)
 ```
 
 `calculateStrikerFlightTime()` 會用 striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程，估算飛到武器釋放點的時間；若資料不足或距離無效，使用 `MISSION_DURATION` 作為 fallback。

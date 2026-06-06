@@ -29,25 +29,32 @@ flowchart TD
     INIT_LOADOUT["initiateLoadoutForPackage<br>設定各角色 loadout"]
     LOADOUT_READY{"掛彈完成?"}
     TAKEOFF_TIME{"最早角色達到出擊窗口?"}
-    MISSIONS["createAllMissions<br>建立 striker/support 任務"]
+    MISSIONS{"createAllMissions 成功?"}
     RECON["scheduleReconUAV<br>插入 saveData.c.recon.queue"]
     TARGETS{"assignTargetsToMission 成功?"}
     UNITS{"assignUnits 成功?"}
     LAUNCHED["package.hasLaunched = true"]
     DONE{"Wave 全部 Package 完成?"}
+    WAVE_DONE["waveData.hasLaunched = true"]
+    WAIT["本輪到此為止<br>等下次 tick 再處理"]
 
     START --> WAVE --> PKG --> LOADOUT_TIME
-    LOADOUT_TIME -->|否| START
-    LOADOUT_TIME -->|是且尚未啟動| INIT_LOADOUT --> START
+    LOADOUT_TIME -->|是且尚未啟動| INIT_LOADOUT --> WAIT
     LOADOUT_TIME -->|已啟動| LOADOUT_READY
-    LOADOUT_READY -->|否| START
     LOADOUT_READY -->|是| TAKEOFF_TIME
-    TAKEOFF_TIME -->|否| START
-    TAKEOFF_TIME -->|是| MISSIONS --> RECON --> TARGETS
-    TARGETS -->|否| START
+    TAKEOFF_TIME -->|是| MISSIONS
+    MISSIONS -->|是| RECON --> TARGETS
     TARGETS -->|是| UNITS
-    UNITS -->|否| START
     UNITS -->|是| LAUNCHED --> DONE
+    DONE -->|是| WAVE_DONE
+    LOADOUT_TIME -->|否| WAIT
+    LOADOUT_READY -->|否| WAIT
+    TAKEOFF_TIME -->|否| WAIT
+    MISSIONS -->|否| WAIT
+    TARGETS -->|否| WAIT
+    UNITS -->|否| WAIT
+    DONE -->|否| WAIT
+    WAIT --> START
 ```
 
 ### 掛彈時序

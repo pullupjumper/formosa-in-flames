@@ -22,8 +22,10 @@ local TIME_CONSTANTS = {
   MAX_FLIGHT_TIME = 60 * 60
 }
 
-local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "tanker" }
+local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
 local SUPPORT_ROLES = { "escort", "wildWeasel", "jammer", "tanker" }
+local ALL_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker", "reconUAV" }
+
 
 -- ============================================================================
 -- Target Processing
@@ -116,9 +118,10 @@ local function validateAircraftRole(roleData, roleName, packageIndex, assignedAi
   for _, baseGUID in ipairs(candidates) do
     local assignedCount = assignedAircraft[baseGUID] or 0
     local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
-    if availableCount - assignedCount >= requiredCount then
+    if availableCount - assignedCount >= requiredCount / 2 then
       roleData.baseGUID = baseGUID
-      assignedAircraft[baseGUID] = assignedCount + requiredCount
+      assignedAircraft[baseGUID] = assignedCount +
+          (availableCount - assignedCount >= requiredCount and requiredCount or availableCount - assignedCount)
       return true, nil
     end
 
@@ -154,17 +157,8 @@ local function validateIndividualPackage(packageData, packageTargets, packageInd
         targetCount .. " < " .. minTargetCount .. ")"
   end
 
-  -- Check aircraft availability for all roles
-  local roles = {
-    { data = packageData.striker,    name = "striker" },
-    { data = packageData.escort,     name = "escort" },
-    { data = packageData.wildWeasel, name = "SEAD" },
-    { data = packageData.jammer,     name = "jammer" },
-    { data = packageData.tanker,     name = "tanker" }
-  }
-
-  for _, role in ipairs(roles) do
-    local isValid, errorMessage = validateAircraftRole(role.data, role.name, packageIndex, assignedAircraft)
+  for _, role in ipairs(PACKAGE_ROLES) do
+    local isValid, errorMessage = validateAircraftRole(packageData[role], role, packageIndex, assignedAircraft)
     if not isValid then
       return false, errorMessage
     end
@@ -172,7 +166,6 @@ local function validateIndividualPackage(packageData, packageTargets, packageInd
 
   return true, "Package " .. packageIndex .. " validated successfully"
 end
-
 
 
 ---Process ATO template with integrated validation - single pass through packages
@@ -357,10 +350,9 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
         advanceTime = calculateSupportAdvanceTime(packageData)
       end
 
-      timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S",
-        GameApi.ScenEdit_CurrentTime() + (packageData.timeToReady or 5) + advanceTime -
-        (advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
-      ) --[[@as string]]
+      local delayTime = advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
+      local startTime = GameApi.ScenEdit_CurrentTime() + advanceTime - delayTime + (packageData.timeToReady or (5 * 60))
+      timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
     else
       if previousPackage and previousPackage.striker.startTime then
         local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
@@ -375,7 +367,8 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   -- Calculate striker end time
   local strikerStartTime = Utils.parseDatetimeToTimestamp(timing.strikerStart)
   local missionDuration = packageData.tanker and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
-  timing.strikerEnd = os.date("%Y-%m-%d %H:%M:%S", strikerStartTime + missionDuration) --[[@as string]]
+  local endTime = strikerStartTime + missionDuration
+  timing.strikerEnd = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
   return timing
 end
 
@@ -392,19 +385,15 @@ local function calculateRoleTiming(role, packageData)
   -- Calculate start time based on role
   local advanceTime = calculateRoleAdvanceTime(packageData, role)
   local maxAdvanceTime = calculateSupportAdvanceTime(packageData)
-
-  timing.startTime = os.date(
-    "%Y-%m-%d %H:%M:%S",
-    strikerTimestamp - advanceTime + 61 + (packageData.timeToReady or 5) +
-    (maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0)
-  ) --[[@as string]]
-  local startTimestamp = Utils.parseDatetimeToTimestamp(timing.startTime)
+  -- Setting delay time based on max advance time and role
+  local delayTime = maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
+  local startTime = strikerTimestamp - (role == "tanker" and maxAdvanceTime or advanceTime) + delayTime +
+      (packageData.timeToReady or (5 * 60))
+  timing.startTime = os.date("%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
-
-  timing.endTime = os.date("%Y-%m-%d %H:%M:%S",
-    (role == "tanker") and (startTimestamp + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTimestamp + duration
-  )
+  local endTime = role == "tanker" and (startTime + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTime + duration
+  timing.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime)
   return timing
 end
 
@@ -431,27 +420,27 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   for _, role in ipairs(SUPPORT_ROLES) do
     local missionRole = packageData[role]
 
-    if missionRole then
-      if not missionRole.startTime or not missionRole.endTime then
-        local roleTiming = calculateRoleTiming(role, packageData)
+    if not missionRole then
+      goto continue
+    end
 
-        -- if role ~= "tanker" then
-        --   missionRole.startTime = missionRole.startTime or roleTiming.startTime
-        -- end
-        missionRole.startTime = missionRole.startTime or roleTiming.startTime
-        missionRole.endTime = missionRole.endTime or roleTiming.endTime
+    if not missionRole.startTime or not missionRole.endTime then
+      local roleTiming = calculateRoleTiming(role, packageData)
+      missionRole.startTime = missionRole.startTime or roleTiming.startTime
+      missionRole.endTime = missionRole.endTime or roleTiming.endTime
 
-        if roleTiming.timeOnStation then
-          missionRole.timeOnStation = roleTiming.timeOnStation
-        end
+      if roleTiming.timeOnStation then
+        missionRole.timeOnStation = roleTiming.timeOnStation
       end
     end
+
+    ::continue::
   end
 
   -- Create package structure
   ---@type SBJ__Package
   return {
-    timeToReady = packageData.timeToReady or 5,
+    timeToReady = packageData.timeToReady or (5 * 60),
     loadoutStatus = {
       isLoadoutInitiated = false,
       loadoutInitiatedTime = nil,
@@ -489,7 +478,6 @@ local function buildATOWave(waveTemplate, waveName)
   }
 
   local previousPackage = nil
-  local allRoles = { "striker", "escort", "wildWeasel", "jammer", "tanker", "reconUAV" }
 
   for packageIndex, packageData in ipairs(waveTemplate.packages) do
     local newPackage = createPackageWithTiming(
@@ -502,7 +490,7 @@ local function buildATOWave(waveTemplate, waveName)
 
     -- Log each role's startTime and endTime
     local timingLines = {}
-    for _, role in ipairs(allRoles) do
+    for _, role in ipairs(ALL_ROLES) do
       local roleData = newPackage[role]
       if roleData then
         table.insert(timingLines, string.format("    %s: start=%s, end=%s",

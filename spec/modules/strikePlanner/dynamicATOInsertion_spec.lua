@@ -858,13 +858,13 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- Base has only 2 aircraft but package requires 4
+    -- Base has only 1 aircraft; package requires 4 (below the half-strength threshold of 2)
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
           guid = "BASE-1",
           name = "Air Base Alpha",
-          embarkedUnits = { Aircraft = { "AC-1", "AC-2" } }
+          embarkedUnits = { Aircraft = { "AC-1" } }
         }
       end
       return { dbid = 100, mission = nil }
@@ -1041,7 +1041,7 @@ describe("DynamicATOInsertion", function()
         strikeInterval = 0,
         packages = {
           {
-            striker = { baseGUID = "BASE-1", unitCount = 3, unitDBID = 100, weaponDBID = 200 },
+            striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
               contactAge = 300,
@@ -1054,14 +1054,14 @@ describe("DynamicATOInsertion", function()
 
     local saveData = makeSaveData({ reconEntry }, {
       airTaskingOrder = {
-        -- Existing wave with 2 aircraft already assigned from BASE-1
+        -- Existing wave with 3 aircraft already assigned from BASE-1
         ["EXISTING-WAVE"] = {
           isActivated = true,
           hasLaunched = false,
           packages = {
             {
               hasLaunched = false,
-              striker = { baseGUID = "BASE-1", unitCount = 2 }
+              striker = { baseGUID = "BASE-1", unitCount = 3 }
             }
           }
         }
@@ -1075,7 +1075,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- Base has 4 aircraft total available, 2 already assigned, needs 3 more => 4-2=2 < 3
+    -- Base has 4 aircraft total available, 3 already assigned, needs 4 => 4-3=1 < half-strength threshold (2)
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -1089,7 +1089,7 @@ describe("DynamicATOInsertion", function()
 
     local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
-    -- 4 available - 2 assigned = 2, but requires 3 => fail
+    -- 4 available - 3 assigned = 1, below half-strength threshold (2) => fail
     assert.is_false(result)
   end)
 
@@ -1177,7 +1177,7 @@ describe("DynamicATOInsertion", function()
         strikeInterval = 0,
         packages = {
           {
-            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
               contactAge = 300,
@@ -1197,7 +1197,7 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- Base has 3 aircraft: AC-1 free, AC-2 on mission, AC-3 wrong DBID
+    -- Base has 3 aircraft: AC-1 free, AC-2 on mission, AC-3 wrong DBID => only 1 available
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return {
@@ -1214,7 +1214,7 @@ describe("DynamicATOInsertion", function()
 
     local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
 
-    -- Only 1 available (AC-1), needs 2 => fail
+    -- Only 1 available (AC-1), requires 4 => 1 < half-strength threshold (2) => fail
     assert.is_false(result)
   end)
 
@@ -1546,10 +1546,10 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- BASE-1 has only 2 aircraft (insufficient for 4); BASE-2 has 4 aircraft (sufficient)
+    -- BASE-1 has 1 aircraft (below half-strength threshold of 2); BASE-2 has 4 (full strength)
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
-        return { guid = "BASE-1", name = "Base Alpha", embarkedUnits = { Aircraft = { "AC-1", "AC-2" } } }
+        return { guid = "BASE-1", name = "Base Alpha", embarkedUnits = { Aircraft = { "AC-1" } } }
       elseif guid == "BASE-2" then
         return { guid = "BASE-2", name = "Base Bravo", embarkedUnits = { Aircraft = { "AC-3", "AC-4", "AC-5", "AC-6" } } }
       end
@@ -1607,14 +1607,14 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- All three bases only have 1-2 aircraft, none reaches the required 4
+    -- All three bases have 1 aircraft, none reaches the half-strength threshold of 2
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1" } } }
       elseif guid == "BASE-2" then
-        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-2", "AC-3" } } }
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-2" } } }
       elseif guid == "BASE-3" then
-        return { guid = "BASE-3", embarkedUnits = { Aircraft = { "AC-4", "AC-5" } } }
+        return { guid = "BASE-3", embarkedUnits = { Aircraft = { "AC-3" } } }
       end
       return { dbid = 100, mission = nil }
     end))
@@ -1646,7 +1646,7 @@ describe("DynamicATOInsertion", function()
             escort = {
               baseGUID = "BASE-1",
               unitCount = 2,
-              unitDBID = 100,
+              unitDBID = 101,
               weaponDBID = 300
             },
             target = {
@@ -1668,13 +1668,15 @@ describe("DynamicATOInsertion", function()
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    -- BASE-1: 2 aircraft (enough for escort=2, not for striker=4); BASE-2: 4 aircraft (striker fallback)
+    -- striker(dbid100, need4, half-threshold=2): BASE-1 has 1 (reject) -> falls back to BASE-2 (4)
+    -- escort(dbid101, need2, half-threshold=1): BASE-1 has 2 -> resolves on BASE-1
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
-        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1", "AC-2" } } }
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "S1", "E1", "E2" } } }
       elseif guid == "BASE-2" then
-        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-3", "AC-4", "AC-5", "AC-6" } } }
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "S2", "S3", "S4", "S5" } } }
       end
+      if guid == "E1" or guid == "E2" then return { dbid = 101, mission = nil } end
       return { dbid = 100, mission = nil }
     end))
     trackStub(stub(GameApi, "Tool_Range").returns(200))
@@ -1895,5 +1897,186 @@ describe("DynamicATOInsertion", function()
     assert.is_table(wave)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-2", wave.packages[1].jammer.baseGUID)
+  end)
+
+  -- ============================================================================
+  -- Partial Package (half-strength dispatch)
+  -- ============================================================================
+
+  -- Positive: accept and dispatch at half strength when no base can fill the full count
+  it("should dispatch at half strength when only half the required aircraft exist", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/PARTIAL/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1 has exactly 2 of dbid 100 = half of the required 4 -> accepted at half strength
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", name = "Air Base", embarkedUnits = { Aircraft = { "AC-1", "AC-2" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/1"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/1"]
+    assert.is_table(wave)
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    -- Current behavior: unitCount is NOT rewritten, so it stays at the requested 4
+    assert.are.equal(4, wave.packages[1].striker.unitCount)
+  end)
+
+  -- Boundary: available strictly below the fractional half-strength threshold is rejected
+  it("should reject when available aircraft are below the fractional half-strength threshold", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/PARTIAL/2",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 3, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- required=3 -> threshold is 1.5; 1 available is below it (would wrongly pass if the threshold were floored to 1)
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", name = "Air Base", embarkedUnits = { Aircraft = { "AC-1" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_false(result)
+    assert.stub(stubGenName).was_not.called()
+  end)
+
+  -- Positive: a package accepted at half strength still reserves its base, forcing the next package to fall back
+  it("should reserve a half-strength base so a later package falls back to candidates", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/PARTIAL/3",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "TAOYUAN", subTypes = { "Runway" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          },
+          {
+            striker = {
+              baseGUID = "BASE-1",
+              baseGUIDCandidates = { "BASE-2" },
+              unitCount = 4,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
+    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+      { reconEntry = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    -- BASE-1 has 3 (>= half of 4, < full): package 1 is accepted at half strength and reserves BASE-1
+    -- BASE-2 has 4 (full strength) so package 2 falls back there
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = "BASE-1", embarkedUnits = { Aircraft = { "AC-1", "AC-2", "AC-3" } } }
+      elseif guid == "BASE-2" then
+        return { guid = "BASE-2", embarkedUnits = { Aircraft = { "AC-4", "AC-5", "AC-6", "AC-7" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/3"))
+    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
+    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+
+    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/3"]
+    assert.is_table(wave)
+    assert.are.equal(2, #wave.packages)
+    -- Package 1 reserved BASE-1 at half strength; package 2 must fall back to BASE-2
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-2", wave.packages[2].striker.baseGUID)
   end)
 end)
