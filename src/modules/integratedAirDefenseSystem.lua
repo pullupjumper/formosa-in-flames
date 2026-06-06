@@ -5,6 +5,39 @@ local constants = require("src.core.constants")
 
 local IntegratedAirDefenseSystem = {}
 
+local PLA_RADAR_DBIDS = {
+  [constants.PLATFORMS.JY26] = true,
+  [constants.PLATFORMS.YLC2] = true,
+  [constants.PLATFORMS.YLC8B] = true,
+  [constants.PLATFORMS.SLC7] = true,
+  [constants.PLATFORMS.OTH_SW] = true,
+}
+
+local PLA_SAM_DBIDS = {
+  [constants.PLATFORMS.S300] = true,
+  [constants.PLATFORMS.S400] = true,
+  [constants.PLATFORMS.HQ12] = true,
+  [constants.PLATFORMS.HQ22] = true,
+}
+
+local TAIWAN_SAM_DBIDS = {
+  [constants.PLATFORMS.CUSTOMED_TK3] = true,
+  [constants.PLATFORMS.CUSTOMED_SAM] = true,
+  [constants.PLATFORMS.PAC3] = true,
+}
+
+local TAIWAN_MRAD_DBIDS = {
+  [constants.PLATFORMS.TC2] = true,
+  [constants.PLATFORMS.SKY_GUARD] = true,
+}
+
+local TAIWAN_RADAR_DBIDS = {
+  [constants.PLATFORMS.FPS117] = true,
+  [constants.PLATFORMS.TPS43F] = true,
+  [constants.PLATFORMS.HR3000] = true,
+  [constants.PLATFORMS.GE592] = true,
+}
+
 ---Disable units under C2 node by setting them out of communications
 ---@param c2Context SBJ__C2Context The C2 context containing the units to disable
 ---@param type string Unit type to disable ('radar' or 'sam')
@@ -24,6 +57,41 @@ local function disableUnitsUnderC2Node(c2Context, type)
       ::continue::
     end
   end
+end
+
+---Returns whether the given DBID corresponds to a SAM unit
+---@param dbid number The DBID to check
+---@return boolean Whether the DBID corresponds to a SAM unit
+function IntegratedAirDefenseSystem.isPLASAM(dbid)
+  return PLA_SAM_DBIDS[dbid]
+end
+
+---Returns whether the given DBID corresponds to a radar unit
+---@param dbid number The DBID to check
+---@return boolean Whether the DBID corresponds to a radar unit
+function IntegratedAirDefenseSystem.isPLARadar(dbid)
+  return PLA_RADAR_DBIDS[dbid]
+end
+
+---Returns whether the given DBID corresponds to a MRADS unit
+---@param dbid number The DBID to check
+---@return boolean Whether the DBID corresponds to a MRADS unit
+function IntegratedAirDefenseSystem.isMRADS(dbid)
+  return TAIWAN_MRAD_DBIDS[dbid]
+end
+
+---Returns whether the given DBID corresponds to a radar unit
+---@param dbid number The DBID to check
+---@return boolean Whether the DBID corresponds to a radar unit
+function IntegratedAirDefenseSystem.isRadar(dbid)
+  return TAIWAN_RADAR_DBIDS[dbid]
+end
+
+---Returns whether the given DBID corresponds to a SAM unit
+---@param dbid number The DBID to check
+---@return boolean Whether the DBID corresponds to a SAM unit
+function IntegratedAirDefenseSystem.isSAM(dbid)
+  return TAIWAN_SAM_DBIDS[dbid]
 end
 
 ---Process command and control disruption when C2 node is destroyed
@@ -88,7 +156,7 @@ function IntegratedAirDefenseSystem.activateNearestRadar(config, sideUnits, dest
     end
 
     local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
-    if (actualUnit.dbid == constants.PLATFORMS.JY26 or actualUnit.dbid == constants.PLATFORMS.YLC8B) then
+    if IntegratedAirDefenseSystem.isPLARadar(actualUnit.dbid) then
       if distance < temp.distance then
         temp.unit = actualUnit
         temp.distance = distance
@@ -108,10 +176,7 @@ function IntegratedAirDefenseSystem.activateNearestRadar(config, sideUnits, dest
       end
 
       local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
-      if actualUnit.dbid == constants.PLATFORMS.HQ22 or
-          actualUnit.dbid == constants.PLATFORMS.S300 or
-          actualUnit.dbid == constants.PLATFORMS.S400 or
-          actualUnit.dbid == constants.PLATFORMS.HQ12 then
+      if IntegratedAirDefenseSystem.isPLASAM(actualUnit.dbid) then
         if distance < temp.distance then
           temp.unit = actualUnit
           temp.distance = distance
@@ -207,11 +272,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
       for _, area in ipairs(c2Ctx.areas) do
         if actualUnit and actualUnit:inArea(area) then
           -- SAM systems
-          if (actualUnit.dbid == constants.PLATFORMS.HQ22 or
-                actualUnit.dbid == constants.PLATFORMS.S300 or
-                actualUnit.dbid == constants.PLATFORMS.S400 or
-                actualUnit.dbid == constants.PLATFORMS.HQ12) and
-              not string.find(actualUnit.name, "DECOY") then
+          if IntegratedAirDefenseSystem.isPLASAM(actualUnit.dbid) and not string.find(actualUnit.name, "DECOY") then
             iadsContext.c2[c2GUID].sam[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -224,7 +285,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
           end
 
           -- Radar systems
-          if actualUnit.dbid == constants.PLATFORMS.JY26 or actualUnit.dbid == constants.PLATFORMS.YLC8B then
+          if IntegratedAirDefenseSystem.isPLARadar(actualUnit.dbid) then
             iadsContext.c2[c2GUID].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
@@ -281,7 +342,7 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
-          if actualUnit.dbid == constants.PLATFORMS.CUSTOMED_SAM or actualUnit.dbid == constants.PLATFORMS.PAC3 then
+          if IntegratedAirDefenseSystem.isSAM(actualUnit.dbid) then
             if not iadsContext.rocc[c2.guid] then
               initC2Context(iadsContext.rocc, descriptor, c2.guid, "rocc")
             end
@@ -297,10 +358,7 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
             }
           end
 
-          if actualUnit.dbid == constants.PLATFORMS.FPS117 or
-              actualUnit.dbid == constants.PLATFORMS.TPS43F or
-              actualUnit.dbid == constants.PLATFORMS.HR3000 or
-              actualUnit.dbid == constants.PLATFORMS.GE592 then
+          if IntegratedAirDefenseSystem.isRadar(actualUnit.dbid) then
             if not iadsContext.rocc[c2.guid] then
               initC2Context(iadsContext.rocc, descriptor, c2.guid, "rocc")
             end
@@ -324,7 +382,7 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
-          if actualUnit.dbid == constants.PLATFORMS.TC2 or actualUnit.dbid == constants.PLATFORMS.SKY_GUARD then
+          if IntegratedAirDefenseSystem.isMRADS(actualUnit.dbid) then
             if not iadsContext.taaoc[c2.guid] then
               initC2Context(iadsContext.taaoc, descriptor, c2.guid, "taaoc")
             end

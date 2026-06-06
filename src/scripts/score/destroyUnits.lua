@@ -105,10 +105,7 @@ if unit then
         (score + config.s.destroyingAmmo),
         "You have destroyed a " .. text
       )
-    elseif unit.dbid == constants.PLATFORMS.HQ22 or
-        unit.dbid == constants.PLATFORMS.S300 or
-        unit.dbid == constants.PLATFORMS.S400 or
-        unit.dbid == constants.PLATFORMS.HQ12 then
+    elseif IntegratedAirDefenseSystem.isPLASAM(unit.dbid) then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.c.iads.c2, "sam", unit)
       IntegratedAirDefenseSystem.activateNearestRadar(config, filteredUnits, unit)
     elseif unit.dbid == constants.PLATFORMS.JY26 or unit.dbid == constants.PLATFORMS.YLC8B then

@@ -31,16 +31,11 @@ if unit then
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
       MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       Logger.log(constants.TAGS.SCORE, "An " .. text .. " has been destoryed.")
-    elseif unit.dbid == constants.PLATFORMS.FPS117 or
-        unit.dbid == constants.PLATFORMS.TPS43F or
-        unit.dbid == constants.PLATFORMS.HR3000 or
-        unit.dbid == constants.PLATFORMS.GE592 then
+    elseif IntegratedAirDefenseSystem.isRadar(unit.dbid) then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "radar", unit)
-    elseif unit.dbid == constants.PLATFORMS.CUSTOMED_TK3 or
-        unit.dbid == constants.PLATFORMS.PAC3 or
-        unit.dbid == constants.PLATFORMS.CUSTOMED_SAM then
+    elseif IntegratedAirDefenseSystem.isSAM(unit.dbid) then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "sam", unit)
-    elseif unit.dbid == constants.PLATFORMS.TC2 or unit.dbid == constants.PLATFORMS.SKY_GUARD then
+    elseif IntegratedAirDefenseSystem.isMRADS(unit.dbid) then
       IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.taaoc, "sam", unit)
     elseif unit.dbid == constants.PLATFORMS.C2 or unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
       IntegratedAirDefenseSystem.processC2Disruption(saveData.t.iads, unit)
