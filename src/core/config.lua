@@ -95,7 +95,6 @@ config.targetScanning = {
     }
   }
 }
-
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5
 config.readytime = 5 * 60
@@ -122,11 +121,9 @@ config.c.sigint = {}
 config.c.sigint.maxCount = 6
 -- config.c.sigint.maxCount = 1
 config.c.sigint.maxRange = 2.5
-
 -- Detection parameters
 config.c.sigint.detectionThreshold = 60
 config.c.sigint.maxDetectionRange = { 300, 340 }
-
 -- Detection formula constants
 config.c.sigint.formulaConstants = {
   decayRate = -1 / 450,
@@ -139,7 +136,6 @@ config.c.sigint.formulaConstants = {
   distancePower = 2.25,
   distanceDivisor = 10 ^ 2.4
 }
-
 -- Default display configuration for map notifications
 config.c.sigint.defaultDisplay = {
   r = 255,
@@ -148,7 +144,6 @@ config.c.sigint.defaultDisplay = {
   lifeTime = 4,
   fontSize = 16
 }
-
 -- Area and performance parameters
 config.c.sigint.minPolygonPoints = 3
 config.c.sigint.detectionSkipProbability = 0.3
@@ -364,6 +359,7 @@ config.c.ground.mlrs.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- GLCM (China)
 -- ============================================================================
@@ -409,6 +405,7 @@ config.c.ground.glcm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9,
   },
 }
+
 
 -- ============================================================================
 -- SRBM (China)
@@ -601,6 +598,7 @@ config.c.ground.srbm.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- MRBM (China)
 -- ============================================================================
@@ -647,6 +645,7 @@ config.c.ground.mrbm.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- ASCM (China)
 -- ============================================================================
@@ -692,6 +691,7 @@ config.c.ground.ascm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.YJ12,
   },
 }
+
 
 -- ============================================================================
 -- SAM (China)
@@ -934,6 +934,7 @@ config.c.ground.sam.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- Reconnaissance (China)
 -- ============================================================================
@@ -1016,7 +1017,7 @@ config.c.recon.reconStrikeMatrix = {
   },
   satellite = {
     EOS = {
-      { name = "STRIKE/AB/W/AAR/3",       type = "air" },
+      { name = "STRIKE/AB/W/AAR/1",       type = "air" },
       { name = "STRIKE/AB/E/1",           type = "air" },
       { name = "STRIKE/HELIPAD/1",        type = "ground" },
       { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
@@ -1150,16 +1151,16 @@ config.c.air.landBased.deployedACs = {
     name = "Zhangpu AAB",
     baseGUID = constants.BASES.ZHANGPU_AAB,
     embarkedUnits = {
-      {
-        side = constants.SIDES.ENEMY,
-        type = "Air",
-        dbid = constants.PLATFORMS.SU30,
-        platformName = "Su-30",
-        name = "804th Air Bde",
-        loadouts = {
-          { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 },
-        }
-      },
+      -- {
+      --   side = constants.SIDES.ENEMY,
+      --   type = "Air",
+      --   dbid = constants.PLATFORMS.SU30,
+      --   platformName = "Su-30",
+      --   name = "54th Air Bde",
+      --   loadouts = {
+      --     { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 },
+      --   }
+      -- },
       {
         side = constants.SIDES.ENEMY,
         type = "Air",
@@ -1193,8 +1194,8 @@ config.c.air.landBased.deployedACs = {
 
     },
     loadouts = {
-      { name = "KAB-1500 Strike",    loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
-      { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM,    num = 4 },
+      -- { name = "KAB-1500 Strike",    loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
+      { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM, num = 4 },
     }
   },
   {
@@ -1206,7 +1207,7 @@ config.c.air.landBased.deployedACs = {
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
-        name = "804th Air Bde",
+        name = "54th Air Bde",
         loadouts = {
           { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 24 },
         }
@@ -1216,7 +1217,7 @@ config.c.air.landBased.deployedACs = {
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
-        name = "40th Air Bde",
+        name = "83rd Air Bde",
         loadouts = {
           { name = "PL-15 AAM", loadoutId = constants.LOADOUTS.J16_PL15, num = 12, missionName = "CAP/W/2" },
         }
@@ -1225,7 +1226,7 @@ config.c.air.landBased.deployedACs = {
     loadouts = {
       { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,    num = 24 }, --YJ-91 X 2
       { name = "PL-15 AAM",       loadoutId = constants.LOADOUTS.J16_PL15,     num = 12 },
-      { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 12 }, --KAB-1500 X 2
+      { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 24 }, --KAB-1500 X 2
     }
   },
   {
@@ -1237,7 +1238,7 @@ config.c.air.landBased.deployedACs = {
         type = "Air",
         dbid = constants.PLATFORMS.J16,
         platformName = "J-16",
-        name = "40th Air Bde",
+        name = "83rd Air Bde",
         loadouts = {
           { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
         }
@@ -1279,15 +1280,15 @@ config.c.air.landBased.deployedACs = {
         type = "Air",
         dbid = constants.PLATFORMS.SU30,
         platformName = "Su-30",
-        name = "804th Air Bde",
+        name = "54th Air Bde",
         loadouts = {
-          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 16 },
         }
       }
     },
     loadouts = {
-      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,    num = 8 }, --YJ-91 X 2
-      { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 8 }, --KAB-1500 X 2
+      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,    num = 16 }, --YJ-91 X 2
+      { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 16 }, --KAB-1500 X 2
     }
   },
   {
@@ -1313,16 +1314,16 @@ config.c.air.landBased.deployedACs = {
     name = "Shuimen AAB (PLAAF)",
     baseGUID = constants.BASES.SHUIMEN_AAB,
     embarkedUnits = {
-      {
-        side = constants.SIDES.ENEMY,
-        type = "Air",
-        dbid = constants.PLATFORMS.SU30,
-        platformName = "Su-30",
-        name = "804th Air Bde",
-        loadouts = {
-          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
-        }
-      },
+      -- {
+      --   side = constants.SIDES.ENEMY,
+      --   type = "Air",
+      --   dbid = constants.PLATFORMS.SU30,
+      --   platformName = "Su-30",
+      --   name = "54th Air Bde",
+      --   loadouts = {
+      --     { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 8 },
+      --   }
+      -- },
       {
         side = constants.SIDES.ENEMY,
         type = "Air",
@@ -1350,7 +1351,7 @@ config.c.air.landBased.deployedACs = {
         platformName = "HY-6U Badger",
         name = "23rd Air Reg",
         loadouts = {
-          { name = "Aerial Refueling", loadoutId = constants.LOADOUTS.HY6U_AAR, num = 8, },
+          { name = "Aerial Refueling", loadoutId = constants.LOADOUTS.HY6U_AAR, num = 24, },
         }
       },
       {
@@ -1365,7 +1366,7 @@ config.c.air.landBased.deployedACs = {
       },
     },
     loadouts = {
-      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,     num = 8 }, --YJ-91 X 2
+      -- { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,     num = 8 }, --YJ-91 X 2
       { name = "YJ-83 Anti-Ship", loadoutId = constants.LOADOUTS.J16_YJ83,      num = 8 }, --YJ-83 X 2
       { name = "CS-BBC-5 Strike", loadoutId = constants.LOADOUTS.J10C_CS_BBC_5, num = 8 }, --CS-BBC-5 X 2
     }
@@ -1435,35 +1436,15 @@ config.c.air.landBased.deployedACs = {
         platformName = "Su-30",
         name = "94th Air Bde",
         loadouts = {
-          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 12 },
+          { name = "YJ-91 ARM", loadoutId = constants.LOADOUTS.SU30_YJ91, num = 36 },
         }
       }
     },
     loadouts = {
-      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,    num = 12 }, --YJ-91 X 4
+      { name = "YJ-91 ARM",       loadoutId = constants.LOADOUTS.SU30_YJ91,    num = 36 }, --YJ-91 X 4
       { name = "KAB-1500 Strike", loadoutId = constants.LOADOUTS.SU30_KAB1500, num = 36 }, --KAB-1500 X 2
     }
   },
-  -- {
-  --   name = "Rugao AB (PLAAF)",
-  --   baseGUID = constants.BASES.RUGAO_AB,
-  --   embarkedUnits = {
-  --     {
-  --       side = constants.SIDES.ENEMY,
-  --       type = "Air",
-  --       dbid = constants.PLATFORMS.J16,
-  --       name = "7th Air Bde",
-  --       loadouts = {
-  --         { loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
-  --         { loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 },
-  --       }
-  --     }
-  --   },
-  --   loadouts = {
-  --     { loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 4
-  --     { loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 }, --YJ-91 X 4
-  --   }
-  -- },
   {
     name = "Nanchang Xiangtang AB (PLAAF)",
     baseGUID = constants.BASES.XIAHGTANG_AB,
@@ -1483,24 +1464,6 @@ config.c.air.landBased.deployedACs = {
       { name = "Electronic Warfare", loadoutId = constants.LOADOUTS.J16D_OECM, num = 8 },
     }
   },
-  -- {
-  --   name = "Wuyishan AB",
-  --   baseGUID = constants.BASES.WUYISHAN_AB,
-  --   embarkedUnits = {
-  --     {
-  --       side = constants.SIDES.ENEMY,
-  --       type = "Air",
-  --       dbid = constants.PLATFORMS.J20,
-  --       name = "41st Air Bde",
-  --       loadouts = {
-  --         { loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
-  --       }
-  --     }
-  --   },
-  --   loadouts = {
-  --     { loadoutId = constants.LOADOUTS.J20_PL15, num = 12 }, --PL-15 X 4
-  --   }
-  -- },
   {
     name = "Jiaxing AB (PLAAF)",
     baseGUID = constants.BASES.JIAXING_AB,
@@ -1512,13 +1475,13 @@ config.c.air.landBased.deployedACs = {
         platformName = "J-16",
         name = "78th Air Bde",
         loadouts = {
-          { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
+          { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 36 },
         }
       }
     },
     loadouts = {
-      { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 4
-      { name = "YJ-91 ARM",     loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 }, --YJ-91 X 2
+      { name = "AKD-88 Strike", loadoutId = constants.LOADOUTS.J16_AKD88, num = 36 }, --AKD-88 X 4
+      { name = "YJ-91 ARM",     loadoutId = constants.LOADOUTS.J16_YJ91,  num = 36 }, --YJ-91 X 2
     }
   },
   {
@@ -1532,7 +1495,7 @@ config.c.air.landBased.deployedACs = {
         platformName = "HY-6U Badger",
         name = "23rd Air Reg",
         loadouts = {
-          { name = "Aerial Refueling", loadoutId = constants.LOADOUTS.HY6U_AAR, num = 8, },
+          { name = "Aerial Refueling", loadoutId = constants.LOADOUTS.HY6U_AAR, num = 24, },
         }
       }
     },
@@ -1553,6 +1516,44 @@ config.c.air.landBased.deployedACs = {
       }
     },
   },
+  -- {
+  --   name = "Wuyishan AB",
+  --   baseGUID = constants.BASES.WUYISHAN_AB,
+  --   embarkedUnits = {
+  --     {
+  --       side = constants.SIDES.ENEMY,
+  --       type = "Air",
+  --       dbid = constants.PLATFORMS.J20,
+  --       name = "41st Air Bde",
+  --       loadouts = {
+  --         { loadoutId = constants.LOADOUTS.J20_PL15, num = 12 },
+  --       }
+  --     }
+  --   },
+  --   loadouts = {
+  --     { loadoutId = constants.LOADOUTS.J20_PL15, num = 12 }, --PL-15 X 4
+  --   }
+  -- },
+  -- {
+  --   name = "Rugao AB (PLAAF)",
+  --   baseGUID = constants.BASES.RUGAO_AB,
+  --   embarkedUnits = {
+  --     {
+  --       side = constants.SIDES.ENEMY,
+  --       type = "Air",
+  --       dbid = constants.PLATFORMS.J16,
+  --       name = "7th Air Bde",
+  --       loadouts = {
+  --         { loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 },
+  --         { loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 },
+  --       }
+  --     }
+  --   },
+  --   loadouts = {
+  --     { loadoutId = constants.LOADOUTS.J16_AKD88, num = 12 }, --AKD-88 X 4
+  --     { loadoutId = constants.LOADOUTS.J16_YJ91,  num = 12 }, --YJ-91 X 4
+  --   }
+  -- },
 }
 
 
@@ -3228,7 +3229,7 @@ config.c.packageTemplates = {
     {
       timeToReady = config.readytime,
       striker = {
-        baseGUID = constants.BASES.ZHANGPU_AAB,
+        baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
         unitDBID = constants.PLATFORMS.SU30,
         unitCount = 12,
@@ -3470,263 +3471,264 @@ config.c.packageTemplates = {
     },
   },
   STRIKE_AB_W_AAR_1 = {
-    -- {
-    --   timeToReady = config.readytime,
-    --   striker = {
-    --     baseGUID = constants.BASES.JIAXING_AB,
-    --     weaponDBID = constants.WEAPONS.AKD88,
-    --     unitDBID = constants.PLATFORMS.J16,
-    --     unitCount = 12,
-    --     loadoutID = constants.LOADOUTS.J16_AKD88,
-    --     startTime = nil,
-    --     missionCreationParams = {
-    --       name = "STRIKE/AB/N/1",
-    --       type = "strike",
-    --       opts = {
-    --         type = "land",
-    --         -- TankerUsage = 1,
-    --         -- TankerMissionList = { "AAR/E" },
-    --         -- FuelQtyToStartLookingForTanker_airborne = 85,
-    --         -- MaxReceiversInQueuePerTanker_airborne = 1,
-    --         -- LaunchMissionWithoutTankersInPlace = true,
-    --         -- TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   escort = {
-    --     baseGUID = constants.BASES.WUHU_AB,
-    --     weaponDBID = constants.WEAPONS.PL15,
-    --     unitDBID = constants.PLATFORMS.J20,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J20_PL15,
-    --     missionCreationParams = {
-    --       name = "SWEEP/AB/N/1",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "aaw",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   wildWeasel = {
-    --     baseGUID = constants.BASES.TAIZHOU_AB,
-    --     weaponDBID = constants.WEAPONS.YJ91_ARM,
-    --     unitDBID = constants.PLATFORMS.SU30,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.SU30_YJ91,
-    --     missionCreationParams = {
-    --       name = "SEAD/AB/N/1",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "sead",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   jammer = {
-    --     baseGUID = constants.BASES.XIAHGTANG_AB,
-    --     unitDBID = constants.PLATFORMS.J16D,
-    --     weaponDBID = 0,
-    --     unitCount = 1,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "JAMMING/AB/N/1",
-    --       type = "support",
-    --       opts = {
-    --         zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   tanker = {
-    --     baseGUID = constants.BASES.SHUIMEN_AAB,
-    --     unitDBID = constants.PLATFORMS.HY6U_BADGER,
-    --     weaponDBID = 0,
-    --     unitCount = 8,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "AAR/E",
-    --       type = "support",
-    --       opts = {
-    --         OneThirdRule = false,
-    --         FlightSize = 2,
-    --         zone = constants.AREAS.AAR_PATROL_2
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Passive"
-    --   },
-    --   reconUAV = nil,
-    --   target = {
-    --     list = {},
-    --     objs = {
-    --       { baseName = "Hsinchu AB", subTypes = { "Shelter", "Helipad", "Ammo Bunker" } }
-    --     },
-    --     areas = { constants.AREAS.AREA_OF_OPS_NORTH },
-    --     filterNames = {},
-    --     contactAge = 60 * 60,
-    --     minTargetCount = 1
-    --   },
-    -- },
-    -- {
-    --   timeToReady = config.readytime,
-    --   striker = {
-    --     baseGUID = constants.BASES.JIAXING_AB,
-    --     weaponDBID = constants.WEAPONS.AKD88,
-    --     unitDBID = constants.PLATFORMS.J16,
-    --     unitCount = 12,
-    --     loadoutID = constants.LOADOUTS.J16_AKD88,
-    --     startTime = nil,
-    --     missionCreationParams = {
-    --       name = "STRIKE/AB/C/1",
-    --       type = "strike",
-    --       opts = {
-    --         type = "land",
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   escort = {
-    --     baseGUID = constants.BASES.WUHU_AB,
-    --     weaponDBID = constants.WEAPONS.PL15,
-    --     unitDBID = constants.PLATFORMS.J20,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J20_PL15,
-    --     missionCreationParams = {
-    --       name = "SWEEP/AB/C/1",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "aaw",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   wildWeasel = {
-    --     baseGUID = constants.BASES.TAIZHOU_AB,
-    --     weaponDBID = constants.WEAPONS.YJ91_ARM,
-    --     unitDBID = constants.PLATFORMS.SU30,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.SU30_YJ91,
-    --     missionCreationParams = {
-    --       name = "SEAD/AB/C/1",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "sead",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 60
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   jammer = {
-    --     baseGUID = constants.BASES.XIAHGTANG_AB,
-    --     unitDBID = constants.PLATFORMS.J16D,
-    --     weaponDBID = 0,
-    --     unitCount = 1,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "JAMMING/AB/C/1",
-    --       type = "support",
-    --       opts = {
-    --         zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 70
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   tanker = {
-    --     baseGUID = constants.BASES.SHUIMEN_AAB,
-    --     baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
-    --     unitDBID = constants.PLATFORMS.HY6U_BADGER,
-    --     weaponDBID = 0,
-    --     unitCount = 8,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "AAR/C",
-    --       type = "support",
-    --       opts = {
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         zone = constants.AREAS.AAR_PATROL
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Passive"
-    --   },
-    --   reconUAV = nil,
-    --   target = {
-    --     list = {},
-    --     objs = {
-    --       { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Ammo Bunker" } },
-    --       { baseName = "Chiayi AB",            subTypes = { "Shelter", "Ammo Bunker" } }
-    --     },
-    --     areas = { constants.AREAS.AREA_OF_OPS_CENTER },
-    --     filterNames = {},
-    --     contactAge = 60 * 60,
-    --     minTargetCount = 1
-    --   },
-    -- },
+    {
+      timeToReady = config.readytime,
+      striker = {
+        baseGUID = constants.BASES.JIAXING_AB,
+        weaponDBID = constants.WEAPONS.AKD88,
+        unitDBID = constants.PLATFORMS.J16,
+        unitCount = 12,
+        loadoutID = constants.LOADOUTS.J16_AKD88,
+        startTime = nil,
+        missionCreationParams = {
+          name = "STRIKE/AB/N/1",
+          type = "strike",
+          opts = {
+            type = "land",
+            -- TankerUsage = 1,
+            -- TankerMissionList = { "AAR/E" },
+            -- FuelQtyToStartLookingForTanker_airborne = 85,
+            -- MaxReceiversInQueuePerTanker_airborne = 1,
+            -- LaunchMissionWithoutTankersInPlace = true,
+            -- TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      escort = {
+        baseGUID = constants.BASES.WUHU_AB,
+        weaponDBID = constants.WEAPONS.PL15,
+        unitDBID = constants.PLATFORMS.J20,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J20_PL15,
+        missionCreationParams = {
+          name = "SWEEP/AB/N/1",
+          type = "patrol",
+          opts = {
+            type = "aaw",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      wildWeasel = {
+        baseGUID = constants.BASES.TAIZHOU_AB,
+        weaponDBID = constants.WEAPONS.YJ91_ARM,
+        unitDBID = constants.PLATFORMS.SU30,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.SU30_YJ91,
+        missionCreationParams = {
+          name = "SEAD/AB/N/1",
+          type = "patrol",
+          opts = {
+            type = "sead",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      jammer = {
+        baseGUID = constants.BASES.XIAHGTANG_AB,
+        unitDBID = constants.PLATFORMS.J16D,
+        weaponDBID = 0,
+        unitCount = 1,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "JAMMING/AB/N/1",
+          type = "support",
+          opts = {
+            zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      tanker = {
+        baseGUID = constants.BASES.SHUIMEN_AAB,
+        baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
+        unitDBID = constants.PLATFORMS.HY6U_BADGER,
+        weaponDBID = 0,
+        unitCount = 8,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "AAR/E",
+          type = "support",
+          opts = {
+            OneThirdRule = false,
+            FlightSize = 2,
+            zone = constants.AREAS.AAR_PATROL_2
+          }
+        },
+        emcon = "Radar=Passive;OECM=Passive"
+      },
+      reconUAV = nil,
+      target = {
+        list = {},
+        objs = {
+          { baseName = "Hsinchu AB", subTypes = { "Shelter", "Helipad", "Ammo Bunker" } }
+        },
+        areas = { constants.AREAS.AREA_OF_OPS_NORTH },
+        filterNames = {},
+        contactAge = 60 * 60,
+        minTargetCount = 1
+      },
+    },
+    {
+      timeToReady = config.readytime,
+      striker = {
+        baseGUID = constants.BASES.JIAXING_AB,
+        weaponDBID = constants.WEAPONS.AKD88,
+        unitDBID = constants.PLATFORMS.J16,
+        unitCount = 12,
+        loadoutID = constants.LOADOUTS.J16_AKD88,
+        startTime = nil,
+        missionCreationParams = {
+          name = "STRIKE/AB/C/1",
+          type = "strike",
+          opts = {
+            type = "land",
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      escort = {
+        baseGUID = constants.BASES.WUHU_AB,
+        weaponDBID = constants.WEAPONS.PL15,
+        unitDBID = constants.PLATFORMS.J20,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J20_PL15,
+        missionCreationParams = {
+          name = "SWEEP/AB/C/1",
+          type = "patrol",
+          opts = {
+            type = "aaw",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      wildWeasel = {
+        baseGUID = constants.BASES.TAIZHOU_AB,
+        weaponDBID = constants.WEAPONS.YJ91_ARM,
+        unitDBID = constants.PLATFORMS.SU30,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.SU30_YJ91,
+        missionCreationParams = {
+          name = "SEAD/AB/C/1",
+          type = "patrol",
+          opts = {
+            type = "sead",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 60
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      jammer = {
+        baseGUID = constants.BASES.XIAHGTANG_AB,
+        unitDBID = constants.PLATFORMS.J16D,
+        weaponDBID = 0,
+        unitCount = 1,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "JAMMING/AB/C/1",
+          type = "support",
+          opts = {
+            zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 70
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      tanker = {
+        baseGUID = constants.BASES.SHUIMEN_AAB,
+        baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
+        unitDBID = constants.PLATFORMS.HY6U_BADGER,
+        weaponDBID = 0,
+        unitCount = 8,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "AAR/C",
+          type = "support",
+          opts = {
+            OneThirdRule = false,
+            FlightSize = 4,
+            zone = constants.AREAS.AAR_PATROL
+          }
+        },
+        emcon = "Radar=Passive;OECM=Passive"
+      },
+      reconUAV = nil,
+      target = {
+        list = {},
+        objs = {
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Shelter", "Ammo Bunker" } },
+          { baseName = "Chiayi AB",            subTypes = { "Shelter", "Ammo Bunker" } }
+        },
+        areas = { constants.AREAS.AREA_OF_OPS_CENTER },
+        filterNames = {},
+        contactAge = 60 * 60,
+        minTargetCount = 1
+      },
+    },
     {
       timeToReady = config.readytime,
       striker = {
@@ -3858,264 +3860,264 @@ config.c.packageTemplates = {
     }
   },
   STRIKE_AB_W_AAR_3 = {
-    -- {
-    --   timeToReady = config.readytime,
-    --   striker = {
-    --     baseGUID = constants.BASES.TAIZHOU_AB,
-    --     weaponDBID = constants.WEAPONS.KAB1500,
-    --     unitDBID = constants.PLATFORMS.SU30,
-    --     unitCount = 12,
-    --     loadoutID = constants.LOADOUTS.SU30_KAB1500,
-    --     startTime = nil,
-    --     missionCreationParams = {
-    --       name = "STRIKE/AB/N/3",
-    --       type = "strike",
-    --       opts = {
-    --         type = "land",
-    --         -- TankerUsage = 1,
-    --         -- TankerMissionList = { "AAR/E" },
-    --         -- FuelQtyToStartLookingForTanker_airborne = 85,
-    --         -- MaxReceiversInQueuePerTanker_airborne = 1,
-    --         -- LaunchMissionWithoutTankersInPlace = true,
-    --         -- TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   escort = {
-    --     baseGUID = constants.BASES.WUHU_AB,
-    --     weaponDBID = constants.WEAPONS.PL15,
-    --     unitDBID = constants.PLATFORMS.J20,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J20_PL15,
-    --     missionCreationParams = {
-    --       name = "SWEEP/AB/N/3",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "aaw",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   wildWeasel = {
-    --     baseGUID = constants.BASES.JIAXING_AB,
-    --     weaponDBID = constants.WEAPONS.YJ91_ASM,
-    --     unitDBID = constants.PLATFORMS.J16,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J16_YJ91,
-    --     missionCreationParams = {
-    --       name = "SEAD/AB/N/3",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "sead",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   jammer = {
-    --     baseGUID = constants.BASES.XIAHGTANG_AB,
-    --     unitDBID = constants.PLATFORMS.J16D,
-    --     weaponDBID = 0,
-    --     unitCount = 1,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "JAMMING/AB/N/3",
-    --       type = "support",
-    --       opts = {
-    --         zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/E" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   tanker = {
-    --     baseGUID = constants.BASES.SHUIMEN_AAB,
-    --     baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
-    --     unitDBID = constants.PLATFORMS.HY6U_BADGER,
-    --     weaponDBID = 0,
-    --     unitCount = 8,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "AAR/E",
-    --       type = "support",
-    --       opts = {
-    --         OneThirdRule = false,
-    --         FlightSize = 2,
-    --         zone = constants.AREAS.AAR_PATROL_2
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Passive"
-    --   },
-    --   reconUAV = nil,
-    --   target = {
-    --     list = {},
-    --     objs = {
-    --       { baseName = "Hsinchu AB", subTypes = { "Ammo Bunker" } }
-    --     },
-    --     areas = { constants.AREAS.AREA_OF_OPS_NORTH },
-    --     filterNames = {},
-    --     contactAge = 60 * 60,
-    --     minTargetCount = 1
-    --   },
-    -- },
-    -- {
-    --   timeToReady = config.readytime,
-    --   striker = {
-    --     baseGUID = constants.BASES.TAIZHOU_AB,
-    --     weaponDBID = constants.WEAPONS.KAB1500,
-    --     unitDBID = constants.PLATFORMS.SU30,
-    --     unitCount = 12,
-    --     loadoutID = constants.LOADOUTS.SU30_KAB1500,
-    --     startTime = nil,
-    --     missionCreationParams = {
-    --       name = "STRIKE/AB/C/3",
-    --       type = "strike",
-    --       opts = {
-    --         type = "land",
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   escort = {
-    --     baseGUID = constants.BASES.WUHU_AB,
-    --     weaponDBID = constants.WEAPONS.PL15,
-    --     unitDBID = constants.PLATFORMS.J20,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J20_PL15,
-    --     missionCreationParams = {
-    --       name = "SWEEP/AB/C/3",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "aaw",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 50
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   wildWeasel = {
-    --     baseGUID = constants.BASES.JIAXING_AB,
-    --     weaponDBID = constants.WEAPONS.YJ91_ASM,
-    --     unitDBID = constants.PLATFORMS.J16,
-    --     unitCount = 4,
-    --     loadoutID = constants.LOADOUTS.J16_YJ91,
-    --     missionCreationParams = {
-    --       name = "SEAD/AB/C/3",
-    --       type = "patrol",
-    --       opts = {
-    --         type = "sead",
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         CheckOPAREA = false,
-    --         CheckWWR = false,
-    --         prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-    --         patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 60
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   jammer = {
-    --     baseGUID = constants.BASES.XIAHGTANG_AB,
-    --     unitDBID = constants.PLATFORMS.J16D,
-    --     weaponDBID = 0,
-    --     unitCount = 1,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "JAMMING/AB/C/3",
-    --       type = "support",
-    --       opts = {
-    --         zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
-    --         TankerUsage = 1,
-    --         TankerMissionList = { "AAR/C" },
-    --         FuelQtyToStartLookingForTanker_airborne = 85,
-    --         MaxReceiversInQueuePerTanker_airborne = 1,
-    --         LaunchMissionWithoutTankersInPlace = true,
-    --         TankerMaxDistance_airborne = 70
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Active"
-    --   },
-    --   tanker = {
-    --     baseGUID = constants.BASES.SHUIMEN_AAB,
-    --     baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
-    --     unitDBID = constants.PLATFORMS.HY6U_BADGER,
-    --     weaponDBID = 0,
-    --     unitCount = 8,
-    --     loadoutID = nil,
-    --     missionCreationParams = {
-    --       name = "AAR/C",
-    --       type = "support",
-    --       opts = {
-    --         OneThirdRule = false,
-    --         FlightSize = 4,
-    --         zone = constants.AREAS.AAR_PATROL
-    --       }
-    --     },
-    --     emcon = "Radar=Passive;OECM=Passive"
-    --   },
-    --   reconUAV = nil,
-    --   target = {
-    --     list = {},
-    --     objs = {
-    --       { baseName = "Ching Chuang Kang AB", subTypes = { "Ammo Bunker" } },
-    --       { baseName = "Chiayi AB",            subTypes = { "Ammo Bunker" } }
-    --     },
-    --     areas = { constants.AREAS.AREA_OF_OPS_CENTER },
-    --     filterNames = {},
-    --     contactAge = 60 * 60,
-    --     minTargetCount = 1
-    --   },
-    -- },
+    {
+      timeToReady = config.readytime,
+      striker = {
+        baseGUID = constants.BASES.TAIZHOU_AB,
+        weaponDBID = constants.WEAPONS.KAB1500,
+        unitDBID = constants.PLATFORMS.SU30,
+        unitCount = 12,
+        loadoutID = constants.LOADOUTS.SU30_KAB1500,
+        startTime = nil,
+        missionCreationParams = {
+          name = "STRIKE/AB/N/3",
+          type = "strike",
+          opts = {
+            type = "land",
+            -- TankerUsage = 1,
+            -- TankerMissionList = { "AAR/E" },
+            -- FuelQtyToStartLookingForTanker_airborne = 85,
+            -- MaxReceiversInQueuePerTanker_airborne = 1,
+            -- LaunchMissionWithoutTankersInPlace = true,
+            -- TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      escort = {
+        baseGUID = constants.BASES.WUHU_AB,
+        weaponDBID = constants.WEAPONS.PL15,
+        unitDBID = constants.PLATFORMS.J20,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J20_PL15,
+        missionCreationParams = {
+          name = "SWEEP/AB/N/3",
+          type = "patrol",
+          opts = {
+            type = "aaw",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      wildWeasel = {
+        baseGUID = constants.BASES.JIAXING_AB,
+        weaponDBID = constants.WEAPONS.YJ91_ASM,
+        unitDBID = constants.PLATFORMS.J16,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J16_YJ91,
+        missionCreationParams = {
+          name = "SEAD/AB/N/3",
+          type = "patrol",
+          opts = {
+            type = "sead",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      jammer = {
+        baseGUID = constants.BASES.XIAHGTANG_AB,
+        unitDBID = constants.PLATFORMS.J16D,
+        weaponDBID = 0,
+        unitCount = 1,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "JAMMING/AB/N/3",
+          type = "support",
+          opts = {
+            zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/E" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      tanker = {
+        baseGUID = constants.BASES.SHUIMEN_AAB,
+        baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
+        unitDBID = constants.PLATFORMS.HY6U_BADGER,
+        weaponDBID = 0,
+        unitCount = 8,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "AAR/E",
+          type = "support",
+          opts = {
+            OneThirdRule = false,
+            FlightSize = 2,
+            zone = constants.AREAS.AAR_PATROL_2
+          }
+        },
+        emcon = "Radar=Passive;OECM=Passive"
+      },
+      reconUAV = nil,
+      target = {
+        list = {},
+        objs = {
+          { baseName = "Hsinchu AB", subTypes = { "Ammo Bunker" } }
+        },
+        areas = { constants.AREAS.AREA_OF_OPS_NORTH },
+        filterNames = {},
+        contactAge = 60 * 60,
+        minTargetCount = 1
+      },
+    },
+    {
+      timeToReady = config.readytime,
+      striker = {
+        baseGUID = constants.BASES.TAIZHOU_AB,
+        weaponDBID = constants.WEAPONS.KAB1500,
+        unitDBID = constants.PLATFORMS.SU30,
+        unitCount = 12,
+        loadoutID = constants.LOADOUTS.SU30_KAB1500,
+        startTime = nil,
+        missionCreationParams = {
+          name = "STRIKE/AB/C/3",
+          type = "strike",
+          opts = {
+            type = "land",
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      escort = {
+        baseGUID = constants.BASES.WUHU_AB,
+        weaponDBID = constants.WEAPONS.PL15,
+        unitDBID = constants.PLATFORMS.J20,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J20_PL15,
+        missionCreationParams = {
+          name = "SWEEP/AB/C/3",
+          type = "patrol",
+          opts = {
+            type = "aaw",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 50
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      wildWeasel = {
+        baseGUID = constants.BASES.JIAXING_AB,
+        weaponDBID = constants.WEAPONS.YJ91_ASM,
+        unitDBID = constants.PLATFORMS.J16,
+        unitCount = 4,
+        loadoutID = constants.LOADOUTS.J16_YJ91,
+        missionCreationParams = {
+          name = "SEAD/AB/C/3",
+          type = "patrol",
+          opts = {
+            type = "sead",
+            OneThirdRule = false,
+            FlightSize = 4,
+            CheckOPAREA = false,
+            CheckWWR = false,
+            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 60
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      jammer = {
+        baseGUID = constants.BASES.XIAHGTANG_AB,
+        unitDBID = constants.PLATFORMS.J16D,
+        weaponDBID = 0,
+        unitCount = 1,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "JAMMING/AB/C/3",
+          type = "support",
+          opts = {
+            zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C" },
+            FuelQtyToStartLookingForTanker_airborne = 85,
+            MaxReceiversInQueuePerTanker_airborne = 1,
+            LaunchMissionWithoutTankersInPlace = true,
+            TankerMaxDistance_airborne = 70
+          }
+        },
+        emcon = "Radar=Passive;OECM=Active"
+      },
+      tanker = {
+        baseGUID = constants.BASES.SHUIMEN_AAB,
+        baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
+        unitDBID = constants.PLATFORMS.HY6U_BADGER,
+        weaponDBID = 0,
+        unitCount = 8,
+        loadoutID = nil,
+        missionCreationParams = {
+          name = "AAR/C",
+          type = "support",
+          opts = {
+            OneThirdRule = false,
+            FlightSize = 4,
+            zone = constants.AREAS.AAR_PATROL
+          }
+        },
+        emcon = "Radar=Passive;OECM=Passive"
+      },
+      reconUAV = nil,
+      target = {
+        list = {},
+        objs = {
+          { baseName = "Ching Chuang Kang AB", subTypes = { "Ammo Bunker" } },
+          { baseName = "Chiayi AB",            subTypes = { "Ammo Bunker" } }
+        },
+        areas = { constants.AREAS.AREA_OF_OPS_CENTER },
+        filterNames = {},
+        contactAge = 60 * 60,
+        minTargetCount = 1
+      },
+    },
     {
       timeToReady = config.readytime,
       striker = {
@@ -4482,7 +4484,7 @@ config.c.packageTemplates = {
       },
       escort = nil,
       wildWeasel = {
-        baseGUID = constants.BASES.SHUIMEN_AAB,
+        baseGUID = constants.BASES.LONGTIAN_AAB,
         weaponDBID = constants.WEAPONS.YJ91_ARM,
         unitDBID = constants.PLATFORMS.SU30,
         unitCount = 8,
@@ -4623,6 +4625,7 @@ config.t.ground.mlrs.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- SRBM (Taiwan)
 -- ============================================================================
@@ -4741,6 +4744,7 @@ config.t.ground.glcm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
   },
 }
+
 
 -- ============================================================================
 -- ASCM (Taiwan)
@@ -4926,6 +4930,7 @@ config.t.ground.ascm.firingUnits = {
     dbid = constants.PLATFORMS.HF3,
   },
 }
+
 
 -- ============================================================================
 -- SAM (Taiwan)
@@ -5354,6 +5359,7 @@ config.t.ground.sam.firingUnits = {
   },
 }
 
+
 -- ============================================================================
 -- IADS (Taiwan)
 -- ============================================================================
@@ -5760,17 +5766,13 @@ config.t.surface.deployedShips = {
 config.u.sigint = {}
 config.u.sigint.maxCount = config.c.sigint.maxCount
 config.u.sigint.maxRange = config.c.sigint.maxRange
-
 -- Detection parameters (shared with China)
 config.u.sigint.detectionThreshold = config.c.sigint.detectionThreshold
 config.u.sigint.maxDetectionRange = config.c.sigint.maxDetectionRange
-
 -- Detection formula constants (shared with China)
 config.u.sigint.formulaConstants = config.c.sigint.formulaConstants
-
 -- Default display configuration (shared with China)
 config.u.sigint.defaultDisplay = config.c.sigint.defaultDisplay
-
 -- Area and performance parameters (shared with China)
 config.u.sigint.minPolygonPoints = config.c.sigint.minPolygonPoints
 config.u.sigint.detectionSkipProbability = config.c.sigint.detectionSkipProbability
