@@ -60,37 +60,40 @@
 
 ## 補給流程總覽（電腦控制 / 玩家控制）
 
+**電腦控制陣營（`isAuto=true`）**
+
 ```mermaid
 flowchart TB
-    subgraph CN[電腦控制陣營（isAuto=true）]
-        CN_TICK[scheduledReloadHideCheck定時檢查] --> CN_LOW{低彈量?}
-        CN_LOW -->|Yes| CN_MOVE[自動調度機動發射車與彈藥補給車前往 RL]
-        CN_LOW -->|No| CN_KEEP[維持當前部署]
+    CN_TICK[scheduledReloadHideCheck定時檢查] --> CN_LOW{低彈量?}
+    CN_LOW -->|Yes| CN_MOVE[自動調度機動發射車與彈藥補給車前往 RL]
+    CN_LOW -->|No| CN_KEEP[維持當前部署]
 
-        CN_MOVE --> CN_RL{RL 交會成功?}
-        CN_RL -->|Yes| CN_RELOAD[開始 reload 計時並完成再裝填]
-        CN_RL -->|No| CN_FAIL[回 STATIC；僅彈藥補給車可依設定回掩蔽]
+    CN_MOVE --> CN_RL{RL 交會成功?}
+    CN_RL -->|Yes| CN_RELOAD[開始 reload 計時並完成再裝填]
+    CN_RL -->|No| CN_FAIL[回 STATIC；僅彈藥補給車可依設定回掩蔽]
 
-        CN_RELOAD --> CN_BRANCH{飛彈系統類型}
-        CN_BRANCH -->|SAM| CN_FP[自動回 FP]
-        CN_BRANCH -->|TEL 類| CN_HA[自動回 HA]
-        CN_HA --> CN_MASK[進入 MASK 建築掩蔽]
+    CN_RELOAD --> CN_BRANCH{飛彈系統類型}
+    CN_BRANCH -->|SAM| CN_FP[自動回 FP]
+    CN_BRANCH -->|TEL 類| CN_HA[自動回 HA]
+    CN_HA --> CN_MASK[進入 MASK 建築掩蔽]
 
-        CN_RELOAD --> CN_RU0{彈藥補給車彈量=0?}
-        CN_RU0 -->|Yes| CN_AHA[自動前往 AHA]
-        CN_RU0 -->|No| CN_RLREADY[彈藥補給車回 RL 待命]
-        CN_AHA --> CN_AHAMEET{AHA 交會成功?}
-        CN_AHAMEET -->|Yes| CN_TRANSFER[彈藥儲備點轉運完成]
-        CN_TRANSFER --> CN_RLREADY
-    end
+    CN_RELOAD --> CN_RU0{彈藥補給車彈量=0?}
+    CN_RU0 -->|Yes| CN_AHA[自動前往 AHA]
+    CN_RU0 -->|No| CN_RLREADY[彈藥補給車回 RL 待命]
+    CN_AHA --> CN_AHAMEET{AHA 交會成功?}
+    CN_AHAMEET -->|Yes| CN_TRANSFER[彈藥儲備點轉運完成]
+    CN_TRANSFER --> CN_RLREADY
+```
 
-    subgraph TW[玩家控制陣營（isAuto=false）]
-        TW_CTRL[玩家或外部流程下達移動] --> TW_RL[機動車組進入 RL/AHA 陣地]
-        TW_RL --> TW_MEET{交會成功?}
-        TW_MEET -->|Yes| TW_RELOAD[開始 reload 計時並完成再裝填]
-        TW_MEET -->|No| TW_WAIT[維持待命 / 重新部署]
-        TW_RELOAD --> TW_NEXT[後續移動與掩蔽由玩家決定]
-    end
+**玩家控制陣營（`isAuto=false`）**
+
+```mermaid
+flowchart TB
+    TW_CTRL[玩家或外部流程下達移動] --> TW_RL[機動車組進入 RL/AHA 陣地]
+    TW_RL --> TW_MEET{交會成功?}
+    TW_MEET -->|Yes| TW_RELOAD[開始 reload 計時並完成再裝填]
+    TW_MEET -->|No| TW_WAIT[維持待命 / 重新部署]
+    TW_RELOAD --> TW_NEXT[後續移動與掩蔽由玩家決定]
 ```
 
 ---
