@@ -78,8 +78,13 @@ if [ "$SKIP_LUAMIN" = true ]; then
 else
     echo "🗜️  執行 Luamin 壓縮..."
     if command -v luamin >/dev/null 2>&1; then
-        luamin -f slim/main.lua > slim/_main.lua
-        echo "✅ 壓縮完成"
+        # 用管線餵入內容：luamin 的 -f 模式在 stdin 非 TTY 時（CI、編輯器 task）會誤判參數而失敗
+        if cat slim/main.lua | luamin -c > slim/_main.lua; then
+            echo "✅ 壓縮完成"
+        else
+            echo "⚠️  luamin 壓縮失敗，改用未壓縮版本"
+            cp slim/main.lua slim/_main.lua
+        fi
     else
         echo "⚠️  找不到 luamin，直接複製檔案"
         cp slim/main.lua slim/_main.lua
