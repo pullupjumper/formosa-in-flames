@@ -41,7 +41,6 @@ local function handleTaoyuanTemporarySetup(config, saveData, zone, currentTime)
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-
   local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
   ---@cast entry SBJ__ReconQueueEntry
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)

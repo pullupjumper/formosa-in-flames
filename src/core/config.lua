@@ -943,6 +943,7 @@ config.c.recon = {}
 config.c.recon.observationWindowSec = 30 * 60
 config.c.recon.template = {
   BZK005_RECON_1 = {
+    templateId = "BZK005_RECON_1",
     type = "UAV",
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.BZK005,
@@ -952,6 +953,7 @@ config.c.recon.template = {
     isTracking = false
   },
   BZK005_RECON_2 = {
+    templateId = "BZK005_RECON_2",
     type = "UAV",
     baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
     unitDBID = constants.PLATFORMS.BZK005,
@@ -961,6 +963,7 @@ config.c.recon.template = {
     isTracking = false
   },
   WZ8_RECON_ISLAND = {
+    templateId = "WZ8_RECON_ISLAND",
     type = "UAV",
     baseGUID = constants.BASES.LIUAN_AB,
     unitDBID = constants.PLATFORMS.H6N,
@@ -970,6 +973,7 @@ config.c.recon.template = {
     isTracking = true
   },
   WZ7_RECON_1 = {
+    templateId = "WZ7_RECON_1",
     type = "UAV",
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.WZ7,
@@ -979,6 +983,7 @@ config.c.recon.template = {
     isTracking = false
   },
   TB001_RECON_1 = {
+    templateId = "TB001_RECON_1",
     type = "UAV",
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.TB001,
@@ -988,6 +993,7 @@ config.c.recon.template = {
     isTracking = false
   },
   GJ11_RECON = {
+    templateId = "GJ11_RECON",
     type = "UAV",
     baseGUID = "Type 076",
     unitDBID = constants.PLATFORMS.GJ11,
@@ -1045,20 +1051,20 @@ config.c.recon.frontlineRedirect = {
   },
 }
 config.c.recon.queue = {
-  {
-    type = "UAV",
-    baseGUID = constants.BASES.LIUAN_AB,
-    unitDBID = constants.PLATFORMS.H6N,
-    unitGUID = nil,
-    course = constants.COURSES.H6N,
-    unitCount = 1,
-    -- takeoffTime = "2027-06-09 01:20:00",
-    takeoffTime = "2027-06-09 01:00:00",
-    endTime = "2027-06-09 02:00:00",
-    isFinished = false,
-    trackingTargetGUID = nil,
-    speed = 450
-  },
+  -- {
+  --   type = "UAV",
+  --   baseGUID = constants.BASES.LIUAN_AB,
+  --   unitDBID = constants.PLATFORMS.H6N,
+  --   unitGUID = nil,
+  --   course = constants.COURSES.H6N,
+  --   unitCount = 1,
+  --   -- takeoffTime = "2027-06-09 01:20:00",
+  --   takeoffTime = "2027-06-09 01:00:00",
+  --   endTime = "2027-06-09 02:00:00",
+  --   isFinished = false,
+  --   trackingTargetGUID = nil,
+  --   speed = 450
+  -- },
   {
     type = "satellite",
     platformKey = "EOS",

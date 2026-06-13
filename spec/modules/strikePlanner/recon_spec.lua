@@ -1014,6 +1014,55 @@ describe("Recon", function()
       assert.are.equal(1, #reconSchedule)
       assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
     end)
+
+    -- Bug 3 regression: an identical next wave that is already pending must be deduplicated,
+    -- not scheduled again, or the same /N+1 would double the strike package.
+    it("should not schedule a duplicate next wave when an identical one is already pending", function()
+      local cfg = makeConfig()
+      cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
+        { name = "STRIKE/C2/N/1", type = "ground" },
+      }
+
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local ac = makeUnit({ guid = "AC-001", course = {} })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+        air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
+      }))
+      -- /1 exact match already exists; prefix match resolves to the executed /1 base
+      trackStub(stub(DynamicOperationsUtils, "hasOperation").invokes(function(_, name, opType)
+        if name == "STRIKE/C2/N/1" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }, nil
+        end
+        if name == "STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }, nil
+        end
+        return false, nil, nil
+      end))
+      trackStub(stub(DynamicOperationsUtils, "generateNextOperation").returns(
+        { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
+      ))
+
+      -- Pre-seed a pending /2 as an earlier recon completion would have left it.
+      -- hasPendingOperation (real, unstubbed) must detect it and skip re-scheduling.
+      table.insert(reconSchedule, {
+        time = "2026-02-14 07:00:00",
+        type = "UAV",
+        delay = 0,
+        executed = false,
+        operations = { { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } } },
+      })
+
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule, LACMContext, false)
+
+      assert.is_true(entry.isFinished)
+      -- No new schedule entry: /1 already exists, /2 was deduped -> still just the pre-seeded entry
+      assert.are.equal(1, #reconSchedule)
+      assert.are.equal(1, #reconSchedule[1].operations)
+      assert.are.equal("STRIKE/C2/N/2", reconSchedule[1].operations[1].template.name)
+    end)
   end)
 
   -- ============================================================================
@@ -1735,6 +1784,351 @@ describe("Recon", function()
       table.sort(names)
       assert.are.equal("STRIKE/AB/E/1", names[1])
       assert.are.equal("STRIKE/AB/W/AAR/1", names[2])
+    end)
+  end)
+
+  -- ============================================================================
+  -- insertEntry (UAV insertion into satellite reconnaissance gaps)
+  -- ============================================================================
+
+  describe("insertEntry", function()
+    -- Fixed timeline (all timestamps are abstract numbers mapped from datetime strings,
+    -- keeping tests timezone-independent):
+    --   most recent pass end = 4000, current = 5000, next pass end = 8000
+    local CURRENT_TIMESTAMP = 5000
+    local TIMESTAMPS = {
+      ["2026-02-14 03:00:00"] = 3000, -- old UAV takeoff (outside window)
+      ["2026-02-14 03:30:00"] = 3500, -- old UAV end (outside window)
+      ["2026-02-14 04:00:00"] = 4000, -- most recent satellite pass end
+      ["2026-02-14 05:30:00"] = 5500, -- in-window UAV takeoff
+      ["2026-02-14 07:00:00"] = 7000, -- in-window UAV end
+      ["2026-02-14 08:00:00"] = 8000, -- next satellite pass end
+    }
+
+    ---Create a UAV queue entry template (no runtime fields)
+    ---@param overrides? table
+    ---@return table
+    local function makeUAVTemplate(overrides)
+      local template = {
+        templateId = "TEST_RECON_1",
+        type = "UAV",
+        baseGUID = "BASE-001",
+        unitDBID = constants.PLATFORMS.BZK005,
+        course = { { latitude = 24.5, longitude = 120.5 } },
+        unitCount = 1,
+        speed = 200,
+      }
+      if overrides then
+        for k, v in pairs(overrides) do template[k] = v end
+      end
+      return template
+    end
+
+    ---Stub time helpers so insertEntry sees the fixed timeline above
+    ---@param flightTime number Flight time (seconds) returned for the template course
+    local function stubTimeline(flightTime)
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(CURRENT_TIMESTAMP))
+      trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(100, flightTime))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(datetimeStr)
+        local timestamp = TIMESTAMPS[datetimeStr]
+        if not timestamp then
+          error("No test timestamp mapping for: " .. tostring(datetimeStr))
+        end
+        return timestamp
+      end))
+    end
+
+    -- Positive: gap exists and the UAV lands by the next satellite pass
+    it("should insert UAV entry when flight ends by the next pass", function()
+      stubTimeline(2500) -- UAV end = 7500 <= next pass end 8000
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+      local template = makeUAVTemplate()
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are.equal(3, #reconContext.queue)
+      local inserted = reconContext.queue[3]
+      assert.are.equal("UAV", inserted.type)
+      assert.is_false(inserted.hasLaunched)
+      assert.is_false(inserted.isFinished)
+      assert.is_nil(inserted.trackingTargetGUID)
+      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", CURRENT_TIMESTAMP), inserted.takeoffTime)
+      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", CURRENT_TIMESTAMP + 2500), inserted.endTime)
+    end)
+
+    -- Positive: inserted entry is a deep copy; the template stays untouched
+    it("should not mutate the entry template on insertion", function()
+      stubTimeline(2500)
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+      local template = makeUAVTemplate()
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are_not.equal(template, reconContext.queue[3])
+      assert.is_nil(template.hasLaunched)
+      assert.is_nil(template.takeoffTime)
+      assert.is_nil(template.endTime)
+    end)
+
+    -- Negative: no upcoming entry in queue (all passes already ended)
+    it("should return false when no upcoming entry exists", function()
+      stubTimeline(3500)
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate())
+
+      assert.is_false(result)
+      assert.are.equal(1, #reconContext.queue)
+    end)
+
+    -- Negative: UAV flight would finish after the next pass ends (lands too late to fit the gap)
+    it("should return false when flight ends after next pass endTime", function()
+      stubTimeline(3500) -- UAV end = 8500 > next pass end 8000
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate())
+
+      assert.is_false(result)
+      assert.are.equal(2, #reconContext.queue)
+    end)
+
+    -- Negative: an unfinished same-template UAV already covers the window
+    it("should return false when an unfinished UAV already covers the window", function()
+      stubTimeline(3500)
+      local template = makeUAVTemplate()
+      local blockingUAV = makeUAVEntry({
+        templateId = template.templateId, -- matching is by templateId, not course content
+        takeoffTime = "2026-02-14 05:30:00",
+        endTime = "2026-02-14 08:00:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        blockingUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_false(result)
+      assert.are.equal(3, #reconContext.queue)
+    end)
+
+    -- Negative: a previously inserted deep copy (different course table) still blocks re-insertion
+    it("should return false when re-inserting the same template consecutively", function()
+      stubTimeline(3500)
+      local template = makeUAVTemplate()
+      local previousCopy = Utils.deepCopy(template)
+      previousCopy.takeoffTime = "2026-02-14 05:30:00"
+      previousCopy.endTime = "2026-02-14 08:00:00"
+      previousCopy.hasLaunched = false
+      previousCopy.isFinished = false
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        previousCopy,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_false(result)
+      assert.are.equal(3, #reconContext.queue)
+    end)
+
+    -- Boundary: a finished same-template UAV in the window does not block insertion
+    it("should insert when the same-template UAV in window is already finished", function()
+      stubTimeline(2500)
+      local template = makeUAVTemplate()
+      local finishedUAV = makeUAVEntry({
+        templateId = template.templateId,
+        takeoffTime = "2026-02-14 05:30:00",
+        endTime = "2026-02-14 08:00:00",
+        isFinished = true,
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        finishedUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are.equal(4, #reconContext.queue)
+    end)
+
+    -- Boundary: a same-template UAV whose flight ended before the window does not block
+    it("should insert when the same-template UAV flew before the window", function()
+      stubTimeline(2500)
+      local template = makeUAVTemplate()
+      local oldUAV = makeUAVEntry({
+        templateId = template.templateId,
+        takeoffTime = "2026-02-14 03:00:00",
+        endTime = "2026-02-14 03:30:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        oldUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are.equal(4, #reconContext.queue)
+    end)
+
+    -- Boundary: a different-template UAV in the window does not block, even with identical course
+    it("should insert when the in-window UAV belongs to a different template", function()
+      stubTimeline(2500)
+      local template = makeUAVTemplate()
+      local otherTemplateUAV = makeUAVEntry({
+        templateId = "OTHER_RECON_1",
+        course = template.course, -- identical course must not cause a match
+        takeoffTime = "2026-02-14 05:30:00",
+        endTime = "2026-02-14 08:00:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        otherTemplateUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are.equal(4, #reconContext.queue)
+    end)
+
+    -- Boundary: a legacy UAV entry without templateId never blocks insertion
+    it("should insert when the in-window UAV has no templateId", function()
+      stubTimeline(2500)
+      local legacyUAV = makeUAVEntry({
+        takeoffTime = "2026-02-14 05:30:00",
+        endTime = "2026-02-14 08:00:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        legacyUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate())
+
+      assert.is_true(result)
+      assert.are.equal(4, #reconContext.queue)
+    end)
+
+    -- Boundary: flight end exactly equals next pass endTime still counts as covering the gap
+    it("should insert when flight end exactly equals next pass endTime", function()
+      stubTimeline(3000) -- UAV end = 8000 == next pass end 8000
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate())
+
+      assert.is_true(result)
+      assert.are.equal(3, #reconContext.queue)
+    end)
+
+    -- Boundary: no past pass yet (window start unbounded) still detects covering UAV
+    it("should return false when UAV covers window with no past pass", function()
+      stubTimeline(3500)
+      local template = makeUAVTemplate()
+      local coveringUAV = makeUAVEntry({
+        templateId = template.templateId,
+        takeoffTime = "2026-02-14 03:00:00",
+        endTime = "2026-02-14 07:00:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        coveringUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_false(result)
+      assert.are.equal(2, #reconContext.queue)
+    end)
+
+    -- Boundary: empty queue has no next pass to anchor the window
+    it("should return false for an empty queue", function()
+      stubTimeline(3500)
+      local reconContext = makeReconContext({})
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate())
+
+      assert.is_false(result)
+      assert.are.equal(0, #reconContext.queue)
+    end)
+
+    -- Bug 2 regression: a previously inserted UAV must NOT anchor the gap window.
+    -- Satellites end at 4000/8000/12000; an already-inserted UAV ends at 8500. With the
+    -- satellite-only boundary the next pass is 12000, so the flight (end 8600 <= 12000) is
+    -- correctly admitted. If the UAV (8500) were wrongly picked as the boundary, the check
+    -- 8600 <= 8500 would fail and insertion would be skipped.
+    it("should insert using the satellite boundary, ignoring a previously inserted UAV", function()
+      local TS = {
+        ["2026-02-14 04:00:00"] = 4000,  -- satellite pass already ended
+        ["2026-02-14 05:00:00"] = 5000,  -- inserted UAV takeoff
+        ["2026-02-14 08:00:00"] = 8000,  -- most recent satellite pass end
+        ["2026-02-14 08:30:00"] = 8500,  -- inserted UAV end (before next satellite)
+        ["2026-02-14 12:00:00"] = 12000, -- next satellite pass end
+      }
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(8100))
+      trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(100, 500)) -- end = 8600
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(datetimeStr)
+        local timestamp = TS[datetimeStr]
+        if not timestamp then
+          error("No test timestamp mapping for: " .. tostring(datetimeStr))
+        end
+        return timestamp
+      end))
+
+      local template = makeUAVTemplate()
+      local insertedUAV = makeUAVEntry({
+        templateId = template.templateId,
+        takeoffTime = "2026-02-14 05:00:00",
+        endTime = "2026-02-14 08:30:00",
+      })
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+        makeSatelliteEntry({ endTime = "2026-02-14 12:00:00" }),
+        insertedUAV,
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, template)
+
+      assert.is_true(result)
+      assert.are.equal(5, #reconContext.queue)
     end)
   end)
 end)

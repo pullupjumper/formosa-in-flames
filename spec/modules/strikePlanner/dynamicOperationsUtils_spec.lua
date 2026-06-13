@@ -326,6 +326,73 @@ describe("DynamicOperationsUtils", function()
   end)
 
   -- ============================================================================
+  -- hasPendingOperation
+  -- ============================================================================
+
+  describe("hasPendingOperation", function()
+    -- Positive: a matching unexecuted operation exists
+    it("should return true when a matching unexecuted operation exists", function()
+      local schedule = {
+        makeReconEntry({ operations = { makeOperation({ template = { name = "STRIKE/C2/N/2" } }) } }),
+      }
+
+      assert.is_true(DynamicOperationsUtils.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+    end)
+
+    -- Negative: the matching operation is already executed
+    it("should return false when the matching operation is already executed", function()
+      local schedule = {
+        makeReconEntry({
+          operations = { makeOperation({ executed = true, template = { name = "STRIKE/C2/N/2" } }) }
+        }),
+      }
+
+      assert.is_false(DynamicOperationsUtils.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+    end)
+
+    -- Negative: the operation type differs
+    it("should return false when the operation type differs", function()
+      local schedule = {
+        makeReconEntry({
+          operations = { makeOperation({ type = "ground", template = { name = "STRIKE/C2/N/2" } }) }
+        }),
+      }
+
+      assert.is_false(DynamicOperationsUtils.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+    end)
+
+    -- Negative: no operation name matches
+    it("should return false when no operation name matches", function()
+      local schedule = {
+        makeReconEntry({ operations = { makeOperation({ template = { name = "STRIKE/C2/N/1" } }) } }),
+      }
+
+      assert.is_false(DynamicOperationsUtils.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+    end)
+
+    -- Positive: executed prior wave + pending next wave across separate schedule entries
+    -- (mirrors the duplicate-wave bug: /1 executed, /2 pending in a later entry)
+    it("should find a pending operation across multiple schedule entries", function()
+      local schedule = {
+        makeReconEntry({
+          executed = true,
+          operations = { makeOperation({ type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }) }
+        }),
+        makeReconEntry({
+          operations = { makeOperation({ type = "ground", template = { name = "STRIKE/C2/N/2" } }) }
+        }),
+      }
+
+      assert.is_true(DynamicOperationsUtils.hasPendingOperation(schedule, "STRIKE/C2/N/2", "ground"))
+    end)
+
+    -- Boundary: empty schedule
+    it("should return false for an empty schedule", function()
+      assert.is_false(DynamicOperationsUtils.hasPendingOperation({}, "STRIKE/C2/N/2", "air"))
+    end)
+  end)
+
+  -- ============================================================================
   -- markOperationExecuted
   -- ============================================================================
 

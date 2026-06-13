@@ -83,6 +83,15 @@ flowchart TD
 3. 若找到 → 使用新模板（`FOUND_NEXT`）
 4. 若未找到 → 重用當前模板（`REUSED_CURRENT`）
 
+### 回傳狀態
+
+| 狀態 | 觸發條件 | 回傳的作戰 |
+|---|---|---|
+| `FOUND_NEXT` | config 中存在 `/N+1` 對應模板 | 套用新模板、`name` 為 `/N+1` |
+| `REUSED_CURRENT` | 找不到 `/N+1` 模板 | 重用當前模板與名稱（深拷貝來源作戰的模板內容） |
+| `PARSE_ERROR` | 模板名稱結尾不是 `/數字`，無法解析編號 | 原作戰的深拷貝 |
+| `UNKNOWN_TYPE` | `operation.type` 不在 `TYPE_CONFIG`（非 `air`/`ground`） | 原作戰的深拷貝 |
+
 ### 類型配置對照
 
 | 作戰類型 | config 模板表 | 模板鍵名 | 預設間隔 |
@@ -98,8 +107,19 @@ flowchart TD
 
 | 模式 | 範例 | 說明 |
 |---|---|---|
-| 精確匹配 | `"STRIKE/AB/W/1"` | 完全匹配模板名稱 |
-| 前綴匹配 | `"STRIKE/AB/W/"` | 尾碼 `/` 表示前綴搜尋，回傳編號最大者（時間為 tiebreaker） |
+| 精確匹配 | `"STRIKE/AB/W/1"` | 完全匹配模板名稱（`findExactMatch`） |
+| 前綴匹配 | `"STRIKE/AB/W/"` | 尾碼 `/` 表示前綴搜尋，回傳編號最大者（時間為 tiebreaker）（`findPrefixMatch`） |
+
+> 前綴匹配只採計**已執行**（`operation.executed == true`）的作戰當基底。仍在觀測窗內、尚未執行的作戰會被略過，以免 `generateNextOperation` 在前一波還沒落定時就先產出 `/N+1`。
+
+---
+
+## 待執行作戰檢查（hasPendingOperation）
+
+`hasPendingOperation(reconSchedule, templateName, operationType)` 走訪整個排程，判斷是否已有一筆**精確同名**且**尚未執行**（`operation.executed == false`）的作戰。
+
+- 用途：[recon](recon.md) 在排下一波作戰前先呼叫此函數；若同名 `/N+1` 已在排程中待執行，就跳過新增，避免同一波被重複排入而使打擊包翻倍。
+- 與 `hasOperation` 的差異：`hasOperation` 不分執行狀態（且支援前綴），`hasPendingOperation` 只看「尚未執行」的精確同名項目。
 
 ---
 
@@ -126,7 +146,8 @@ flowchart TD
 | `generateUniqueGroundOperationName(operationType, reconType, saveData)` | 生成唯一地面作戰名稱 |
 | `registerGeneratedOperation(operationType, operationName, saveData)` | 登記已生成的作戰名稱 |
 | `getLastExecutedOperationsAndNextTime(reconSchedule)` | 取得最近執行的作戰與下次偵察時間 |
-| `hasOperation(reconSchedule, templateName, operationType)` | 搜尋特定作戰是否存在 |
+| `hasOperation(reconSchedule, templateName, operationType)` | 搜尋特定作戰是否存在（精確或前綴） |
+| `hasPendingOperation(reconSchedule, templateName, operationType)` | 檢查是否已有同名且尚未執行的作戰待排，用於防止重複排入下一波 |
 | `generateNextOperation(operation, config)` | 遞增編號生成下一波作戰 |
 
 ---

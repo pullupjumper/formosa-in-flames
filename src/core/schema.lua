@@ -1137,6 +1137,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---UAV reconnaissance queue entry template
 ---Complete configuration for UAV reconnaissance missions including launch and flight parameters
 ---@class SBJ__ReconQueueEntryTemplateUAV: SBJ__ReconQueueEntryBase
+---@field templateId string Unique template identifier matching its key in config.c.recon.template; used to detect duplicate queue entries
 ---@field baseGUID string Base GUID where UAV is stationed
 ---@field unitDBID number UAV platform database ID
 ---@field course CMO__Waypoint[] Waypoints for reconnaissance route

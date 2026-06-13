@@ -377,8 +377,16 @@ local function tryGenerateNextOperation(strikeMapping, reconSchedule, config)
   end
 
   local nextOperation, status = DynamicOperationsUtils.generateNextOperation(operation, config)
-  local logEntry = string.format("[NEXT] %s -> %s (%s)",
-    operation.template.name, nextOperation.template.name, status)
+
+  -- Skip if an equivalent next wave is already scheduled but not yet executed; otherwise the same
+  -- /N+1 would be queued again from a later recon completion and double the strike package.
+  -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.
+  if status == "FOUND_NEXT"
+      and DynamicOperationsUtils.hasPendingOperation(reconSchedule, nextOperation.template.name, strikeMapping.type) then
+    return nil, string.format("[SKIP] %s already pending", nextOperation.template.name)
+  end
+
+  local logEntry = string.format("[NEXT] %s -> %s (%s)", operation.template.name, nextOperation.template.name, status)
   return nextOperation, logEntry
 end
 
@@ -879,6 +887,102 @@ function Recon.initReconQueueEntries(reconConfig, reconContext)
   end
 
   reconContext.queue = entries
+end
+
+---Locate the queue entries bracketing current time by endTime
+---Scans the reconnaissance queue for the entry whose endTime most recently passed and the next upcoming one.
+---@param reconContext SBJ__ReconContext Reconnaissance context containing the queue
+---@return SBJ__ReconQueueEntry|nil mostRecentEntry Entry with the latest endTime at or before current time
+---@return SBJ__ReconQueueEntry|nil nextEntry Entry with the earliest endTime after current time
+local function findMatchingSatelliteEntry(reconContext)
+  local currentTimestamp = GameApi.ScenEdit_CurrentTime()
+  local mostRecentEntry = nil
+  local mostRecentTimestamp = -1
+  local nextEntry = nil
+  local nextTimestamp = math.huge
+
+  for _, element in ipairs(reconContext.queue) do
+    -- Only satellite passes anchor the gap window. Dynamically inserted UAVs (and SIGINT
+    -- entries) must be excluded, or a prior UAV would skew the boundary and let duplicates in.
+    if element.type == ENTRY_TYPE.SATELLITE then
+      ---@type integer
+      local elementTimestamp = Utils.parseDatetimeToTimestamp(element.endTime)
+
+      if elementTimestamp <= currentTimestamp and elementTimestamp > mostRecentTimestamp then
+        mostRecentEntry = element
+        mostRecentTimestamp = elementTimestamp
+      elseif elementTimestamp > currentTimestamp and elementTimestamp < nextTimestamp then
+        nextEntry = element
+        nextTimestamp = elementTimestamp
+      end
+    end
+  end
+
+  return mostRecentEntry, nextEntry
+end
+
+---Find an unfinished UAV entry from the same template already covering the time window
+---The window spans (mostRecentEntry.endTime, nextEntry.endTime]; both takeoffTime and endTime must fall within it.
+---@param reconContext SBJ__ReconContext Reconnaissance context containing the queue
+---@param entryTemplate SBJ__ReconQueueEntryTemplateUAV UAV entry template whose templateId is matched against
+---@param mostRecentEntry SBJ__ReconQueueEntry|nil Entry bounding the window start (nil treats start as unbounded)
+---@param nextEntry SBJ__ReconQueueEntry Entry bounding the window end
+---@return SBJ__ReconQueueEntry|nil entry Matching UAV entry or nil if none covers the window
+local function findMatchingUAVEntry(reconContext, entryTemplate, mostRecentEntry, nextEntry)
+  for _, entry in ipairs(reconContext.queue) do
+    if not entry.isFinished and entry.type == ENTRY_TYPE.UAV
+        and entryTemplate.templateId ~= nil and entry.templateId == entryTemplate.templateId then
+      local takeoffTimestamp = Utils.parseDatetimeToTimestamp(entry.takeoffTime)
+      local endTimestamp = Utils.parseDatetimeToTimestamp(entry.endTime)
+      local mostRecentTimestamp = mostRecentEntry and Utils.parseDatetimeToTimestamp(mostRecentEntry.endTime) or -1
+      local nextTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
+
+      if takeoffTimestamp > mostRecentTimestamp and
+          takeoffTimestamp <= nextTimestamp and
+          endTimestamp > mostRecentTimestamp and
+          endTimestamp <= nextTimestamp then
+        return entry
+      end
+    end
+  end
+
+  return nil
+end
+
+---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
+---Skips insertion when a matching UAV already exists, or when the flight would end after the next scheduled endTime.
+---@param reconContext SBJ__ReconContext Reconnaissance context (queue mutated on success)
+---@param entryTemplate SBJ__ReconQueueEntryTemplateUAV UAV entry template to instantiate
+---@return boolean # True if a new entry was inserted into the queue
+function Recon.insertEntry(reconContext, entryTemplate)
+  local entry = Utils.deepCopy(entryTemplate)
+  ---@cast entry SBJ__ReconQueueEntry
+  local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
+  local currentTimestamp = GameApi.ScenEdit_CurrentTime()
+  local endTime = currentTimestamp + flightTime
+  local mostRecentEntry, nextEntry = findMatchingSatelliteEntry(reconContext)
+
+  if not nextEntry then
+    return false
+  end
+
+  local matchingUAVEntry = findMatchingUAVEntry(reconContext, entryTemplate, mostRecentEntry, nextEntry)
+
+  if not matchingUAVEntry then
+    local nextEntryTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
+
+    if endTime <= nextEntryTimestamp then
+      entry.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", currentTimestamp) --[[@as string]]
+      entry.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+      entry.hasLaunched = false
+      entry.isFinished = false
+      entry.trackingTargetGUID = nil
+      table.insert(reconContext.queue, entry)
+      return true
+    end
+  end
+
+  return false
 end
 
 return Recon

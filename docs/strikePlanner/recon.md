@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/strikePlanner/recon.lua`
 
-**職責**：UAV 發射、飛行監控、任務完成判定、動態作戰排程、目標追蹤、機場戰損總和、前線打擊包重導向
+**職責**：UAV 發射、飛行監控、任務完成判定、動態作戰排程、目標追蹤、衛星間隙 UAV 動態插入、機場戰損總和、前線打擊包重導向
 
 ---
 
@@ -20,22 +20,28 @@ recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期
 ## 偵察佇列生命週期
 
 ```mermaid
-stateDiagram-v2
-    [*] --> 待發射: initReconQueueEntries
+flowchart TD
+    START(["initReconQueueEntries"])
+    PENDING["待發射"]
+    LAUNCHED["已發射"]
+    LAUNCH_FAIL["發射失敗"]
+    FLYING["飛行中"]
+    TRACKING["追蹤模式"]
+    DONE_OK["任務完成"]
+    DONE_FAIL["任務失敗"]
+    FINISH(["結束"])
 
-    待發射 --> 已發射: takeoffTime 到達且發射成功
-    待發射 --> 發射失敗: 基地無可用單元
-
-    已發射 --> 飛行中: UAV 在空中飛行航線
-    飛行中 --> 追蹤模式: isTracking=true 且 endTime 到達
-    飛行中 --> 任務完成: 航線完成且 endTime 到達
-    飛行中 --> 任務失敗: UAV 在 endTime 前被擊落
-
-    追蹤模式 --> 追蹤模式: 持續更新航向至目標
-    追蹤模式 --> 任務完成: 追蹤目標遺失但偵察成功
-
-    任務完成 --> [*]: 排程動態作戰
-    任務失敗 --> [*]: 不排程
+    START --> PENDING
+    PENDING -->|"takeoffTime 到達且發射成功"| LAUNCHED
+    PENDING -->|"基地無可用單元"| LAUNCH_FAIL
+    LAUNCHED -->|"UAV 在空中飛行航線"| FLYING
+    FLYING -->|"isTracking=true 且 endTime 到達"| TRACKING
+    FLYING -->|"航線完成且 endTime 到達"| DONE_OK
+    FLYING -->|"UAV 在 endTime 前被擊落"| DONE_FAIL
+    TRACKING -->|"持續更新航向至目標"| TRACKING
+    TRACKING -->|"追蹤目標遺失但偵察成功"| DONE_OK
+    DONE_OK -->|"排程動態作戰"| FINISH
+    DONE_FAIL -->|"不排程"| FINISH
 ```
 
 ---
@@ -105,6 +111,7 @@ flowchart TD
 - `STRIKE/INFRASTRUCTURE/*`（SRBM 重點打擊）：當 `fireSupportOnHold = true` 時整批跳過並輸出 `[HOLD]` 日誌；該旗標由 [landingOps/coordinator](../landingOps/coordinator.md) 依 SRBM 彈藥水平與各區域到位狀況維護
 - 矩陣未命中：`findStrikeMappingsForEntry` 找不到對應映射時輸出 `[SKIP] No strike mappings for <type> key=<key>` 日誌
 - 下一波生成：呼叫 `DynamicOperationsUtils.generateNextOperation` 遞增模板編號
+- 下一波重複檢查（`tryGenerateNextOperation`）：當回傳狀態為 `FOUND_NEXT` 且 `DynamicOperationsUtils.hasPendingOperation` 顯示同名 `/N+1` 已在 `reconSchedule` 中待執行時，整筆跳過並輸出 `[SKIP] <name> already pending`。否則同一個 `/N+1` 會在稍後另一次偵察完成時被再次排入，導致打擊包翻倍。`REUSED_CURRENT`（無下一波模板、重用已執行的 `/N`）則刻意保留，不套用這道檢查
 - 命名互不衝突：`STRIKE/AB/W/N` 與 `STRIKE/AB/W/AAR/N` 在 `findPrefixMatch` 不會互相誤匹配（後者的 `AAR/N` 無法轉成數字），所以重導向前後產生的下一波作戰各走各的序列，不會混到一起
 
 ---
@@ -129,7 +136,7 @@ flowchart TD
 ### 處理階段
 
 ```mermaid
-flowchart LR
+flowchart TD
     PHASE1["階段 1<br>建立 descriptorByName 與<br>baseAcc 累加器"]
     PHASE2["階段 2<br>檢查每個基地單元<br>標記 isDestroyed"]
     PHASE3["階段 3<br>列舉 side 全側飛機<br>依 aircraft.base.guid 歸屬"]
@@ -162,16 +169,17 @@ SBJ__AirbaseAttritionSummary
 當前線基地的整體戰損達到門檻時，把 `STRIKE/AB/W/*` 系列改寫為 `STRIKE/AB/W/AAR/*`，使後續打擊改由內陸基地出擊並搭配加油機（`AAR/E`）。
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> 未觸發: frontlineRedirected = false
+flowchart TD
+    START(["frontlineRedirected = false"])
+    INACTIVE["未觸發"]
+    ACTIVE["已觸發"]
+    FINISH(["結束"])
 
-    未觸發 --> 未觸發: tick：attrition < threshold
-    未觸發 --> 已觸發: tick：attrition ≥ threshold<br>寫入 sticky、輸出 ACTIVATED log
-
-    已觸發 --> 已觸發: tick：早退跳過重算
-
-    已觸發 --> [*]: 情境結束（不會回退）
+    START --> INACTIVE
+    INACTIVE -->|"tick：attrition < threshold"| INACTIVE
+    INACTIVE -->|"tick：attrition ≥ threshold<br>寫入 sticky、輸出 ACTIVATED log"| ACTIVE
+    ACTIVE -->|"tick：提早返回、跳過重算"| ACTIVE
+    ACTIVE -->|"情境結束（不會回退）"| FINISH
 ```
 
 ### 觸發時機
@@ -182,7 +190,7 @@ stateDiagram-v2
 
 ### Sticky 行為
 
-- 一旦 `reconContext.frontlineRedirected = true`，`shouldRedirectFrontlineStrike` 走早退路徑，**不**重新呼叫 `calculateAirbaseAttrition`，避免每個 tick 都重新枚舉全 side 的單元
+- 一旦 `reconContext.frontlineRedirected = true`，`shouldRedirectFrontlineStrike` 走提早返回路徑，**不**重新呼叫 `calculateAirbaseAttrition`，避免每個 tick 都重新枚舉全 side 的單元
 - 即使 attrition 後續回升（理論上不太可能），也不會回退到前線——符合「裝備一旦被打掉就不該回頭」的語意
 
 ### 改寫規則
@@ -218,6 +226,55 @@ stateDiagram-v2
 
 ---
 
+## 衛星間隙 UAV 動態插入（insertEntry）
+
+`Recon.insertEntry(reconContext, entryTemplate)` 從 UAV 模板動態建立一筆偵察 entry，用來填補兩次衛星過境之間的偵察空窗。只有當該空窗尚未被同模板的 UAV 覆蓋、且 UAV 的整段飛行能在下一次衛星過境前結束時，才會插入；否則回傳 `false` 不動佇列。
+
+### 空窗界定
+
+空窗以**衛星過境**為錨點（`findMatchingSatelliteEntry` 只看 `type == satellite` 的 entry）：
+
+- `mostRecentEntry`：`endTime` 落在當前時間之前、且最接近現在的衛星 entry（窗口起點，可為 `nil` 代表起點不設限）
+- `nextEntry`：`endTime` 落在當前時間之後、且最接近現在的衛星 entry（窗口終點）
+
+> 動態插入的 UAV 與 SIGINT entry **不**參與錨點計算。否則先前插入的 UAV 會把邊界往後推，讓重複的 UAV 通過重複檢查再次插入。
+
+### 重複檢查與時間窗
+
+`findMatchingUAVEntry` 在窗口 `(mostRecentEntry.endTime, nextEntry.endTime]` 內，尋找同 `templateId` 且尚未完成（`isFinished == false`）的 UAV entry；其 `takeoffTime` 與 `endTime` 都必須落在窗口內才算覆蓋。
+
+```mermaid
+flowchart TD
+    START["insertEntry(reconContext, entryTemplate)"]
+    CALC["深拷貝模板<br>由 course/speed 推算 flightTime、endTime"]
+    ANCHOR["findMatchingSatelliteEntry<br>取得 mostRecentEntry / nextEntry"]
+    HASNEXT{"nextEntry 存在?"}
+    MATCH["findMatchingUAVEntry<br>窗口內找同 templateId 未完成 UAV"]
+    EXIST{"已有覆蓋的 UAV?"}
+    FIT{"endTime ≤ nextEntry.endTime?"}
+    INSERT["寫入 takeoffTime/endTime（UTC 字串）<br>重置 hasLaunched/isFinished/trackingTargetGUID<br>table.insert 進 queue → 回傳 true"]
+    SKIP["回傳 false"]
+
+    START --> CALC --> ANCHOR --> HASNEXT
+    HASNEXT -->|否| SKIP
+    HASNEXT -->|是| MATCH --> EXIST
+    EXIST -->|是| SKIP
+    EXIST -->|否| FIT
+    FIT -->|否（飛行會超過下次過境）| SKIP
+    FIT -->|是| INSERT
+```
+
+### 插入後寫入的欄位
+
+插入成功時，會把推算出的時間與旗標寫回 entry：
+
+- `takeoffTime` = 當前時間、`endTime` = 當前時間 + `flightTime`（皆以 `os.date("!...")` 轉成 UTC 字串）
+- `hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`
+
+> `entryTemplate.templateId` 必須與 `config.c.recon.template.*` 中對應模板一致；`findMatchingUAVEntry` 以 `templateId` 作為判斷是否重複的依據，`templateId == nil` 的模板無法用來比對是否重複。
+
+---
+
 ## 公開 API
 
 | 函數 | 說明 |
@@ -225,6 +282,7 @@ stateDiagram-v2
 | `handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；`fireSupportOnHold=true` 時跳過 `STRIKE/INFRASTRUCTURE/*` 映射 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8 偵察無人機 |
 | `trackTarget(reconContext, units, UAVDBID, target)` | 指派 UAV 追蹤特定目標 |
+| `insertEntry(reconContext, entryTemplate)` | 在兩次衛星過境的空窗中動態插入一筆 UAV 偵察 entry；同模板已覆蓋或飛行會超過下次過境時回傳 `false` 不插入 |
 | `initReconQueueEntries(reconConfig, reconContext)` | 初始化偵察佇列項目（不重置 `frontlineRedirected`） |
 | `calculateAirbaseAttrition(deployments, baseNames, side?)` | 彙整多個基地的駐機戰損，回傳每個基地與整體的 `SBJ__AirbaseAttritionSummary`；side 預設 `constants.SIDES.ENEMY` |
 
@@ -236,7 +294,7 @@ stateDiagram-v2
 |---|---|
 | `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
 | `config.c.recon.queue` | 偵察佇列模板（被 `initReconQueueEntries` 深拷貝至 saveData） |
-| `config.c.recon.template` | 偵察 entry 模板字典（如 `BZK005_RECON_1`） |
+| `config.c.recon.template` | 偵察 entry 模板字典（如 `BZK005_RECON_1`）；每筆含 `templateId`，`insertEntry` 動態插入時用它判斷該模板是否已重複 |
 | `config.c.recon.frontlineRedirect.enabled` | 是否啟用前線重導向機制 |
 | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 整體戰損達到此百分比即觸發改寫（0–100） |
 | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 監測的前線基地名稱清單（須與 `config.c.air.landBased.deployedACs[].name` 完全相符） |

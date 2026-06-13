@@ -337,6 +337,26 @@ function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operat
   return findExactMatch(reconSchedule, templateName, operationType)
 end
 
+---Check whether an unexecuted operation with the given template name and type already exists
+---Used to prevent scheduling a duplicate next wave while a prior one is still pending.
+---@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
+---@param templateName string Exact template name to match (e.g. "STRIKE/C2/N/2")
+---@param operationType string Operation type to match ("air" or "ground")
+---@return boolean # True if a matching unexecuted operation is already scheduled
+function DynamicOperationsUtils.hasPendingOperation(reconSchedule, templateName, operationType)
+  local found = false
+  forEachOperation(reconSchedule, function(operation)
+    if found then return end
+    if not operation.executed and
+        operation.type == operationType and
+        operation.template and
+        operation.template.name == templateName then
+      found = true
+    end
+  end)
+  return found
+end
+
 -- ============================================================================
 -- Next Operation Generation
 -- ============================================================================
