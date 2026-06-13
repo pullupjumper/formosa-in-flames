@@ -284,7 +284,6 @@ local function calculateRoleAdvanceTime(packageData, role)
   return computeRoleFlightTime(packageData, role) or TIME_CONSTANTS.ESCORT_ADVANCE_TIME
 end
 
-
 ---Calculate support advance time as the longest support role flight time
 ---Each role uses its own zone and speed (tanker uses zone + 250kt, others use patrolZone + fighter speed)
 ---@param packageData SBJ__PackageTemplate Package configuration containing all support roles
@@ -352,11 +351,11 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
 
       local delayTime = advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
       local startTime = GameApi.ScenEdit_CurrentTime() + advanceTime - delayTime + (packageData.timeToReady or (5 * 60))
-      timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
+      timing.strikerStart = os.date("!%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
     else
       if previousPackage and previousPackage.striker.startTime then
         local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
-        timing.strikerStart = os.date("%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval) --[[@as string]]
+        timing.strikerStart = os.date("!%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval) --[[@as string]]
       end
     end
   else
@@ -368,7 +367,7 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   local strikerStartTime = Utils.parseDatetimeToTimestamp(timing.strikerStart)
   local missionDuration = packageData.tanker and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
   local endTime = strikerStartTime + missionDuration
-  timing.strikerEnd = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+  timing.strikerEnd = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
   return timing
 end
 
@@ -389,7 +388,7 @@ local function calculateRoleTiming(role, packageData)
   local delayTime = maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
   local startTime = strikerTimestamp - (role == "tanker" and maxAdvanceTime or advanceTime) + delayTime +
       (packageData.timeToReady or (5 * 60))
-  timing.startTime = os.date("%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
+  timing.startTime = os.date("!%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
   local endTime = role == "tanker" and (startTime + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTime + duration
