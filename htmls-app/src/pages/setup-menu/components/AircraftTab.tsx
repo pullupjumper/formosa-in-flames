@@ -234,7 +234,7 @@ function LoadoutControl({ name, subtitle, quantity, onDecrease, onIncrease }: Lo
           className="flex h-6 w-6 items-center justify-center rounded-sm border border-dark-border bg-dark-hover font-bold hover:border-accent-blue hover:bg-accent-blue"
           onClick={onDecrease}
         >
-          −
+          -
         </button>
         <div className="min-w-5 text-center text-xs font-semibold">{quantity}</div>
         <button
