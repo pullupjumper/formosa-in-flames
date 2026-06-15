@@ -91,7 +91,7 @@ end
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 function Recon.launchWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
-    side = "China",
+    side = constants.SIDES.ENEMY,
     type = "Aircraft",
     name = "WZ-8",
     dbid = constants.PLATFORMS.WZ8,
