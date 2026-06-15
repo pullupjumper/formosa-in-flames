@@ -21,6 +21,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
   base: './',
   root: pageRoot,
+  // Emit ASCII-only JS: non-ASCII glyphs (°, ✓, —) become \uXXXX escapes.
+  // CMO injects these files as Lua strings into an embedded browser that decodes
+  // bytes as the system ANSI code page (CP950), not UTF-8, so any raw non-ASCII
+  // byte is mangled. ASCII escapes survive that path; the JS engine restores the
+  // real glyph at runtime.
+  esbuild: { charset: 'ascii' },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
