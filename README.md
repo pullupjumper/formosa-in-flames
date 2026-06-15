@@ -2,7 +2,7 @@
 
 A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait conflict, written in Lua. The project models large-scale multi-faction operations — **China (PLA)**, **Taiwan (ROC)**, and **United States** — with fully scripted air operations, electronic warfare, amphibious assault, ballistic/cruise missile employment, and integrated air defense.
 
-## Highlights
+## Features
 
 - **Modular, event-driven architecture** orchestrated from `src/core/init.lua`.
 - **Strike Planner** — Air Tasking Order (ATO), dynamic ATO insertion, fire support plans, recon, and targeting pipelines.
@@ -47,15 +47,24 @@ A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait confl
 
 ## Build & Deploy
 
-Bundle Lua modules into a CMO-loadable scenario (flattens `require`s and cleans modules):
+`bin/build.sh` runs the full deployment chain end-to-end:
+
+```bash
+bash bin/build.sh         # UI build → Lua inject/merge → minify
+bash bin/build.sh -t      # run busted tests first
+bash bin/build.sh -n      # skip the htmls-app (npm) build
+bash bin/build.sh -l      # skip luamin minification
+```
+
+Steps: **(1)** optional tests → **(2)** `npm run build` in `htmls-app/` (single-file HTMLs to `src/htmls/`) → **(3)** `tools/build_lua_scenario.py` flattens `require`s, cleans modules, and embeds the built HTML into `unitStatusUI.lua` → **(4)** `luamin` minifies.
+
+To run only the Lua bundling step (assumes `src/htmls/` is already built):
 
 ```bash
 python3 tools/build_lua_scenario.py
-# or
-bash bin/build.sh
 ```
 
-Processed output lands under `slim/` and can be injected into the CMO scenario.
+Output lands in `slim/` — `main.lua` (readable) and `_main.lua` (minified); paste the chosen one into the CMO scenario's Lua editor.
 
 ## Testing
 
@@ -64,15 +73,6 @@ busted --lua=luajit spec
 ```
 
 Tests live under `spec/modules/` mirroring `src/modules/`.
-
-## Development Mode
-
-Enable development features (console logging, debug paths):
-
-```lua
--- src/core/config.lua
-config.isDevMode = true
-```
 
 ## Architectural Conventions
 
@@ -119,33 +119,39 @@ Scripts in `src/scripts/{faction}/{feature}/` are bound to CMO events:
 | Unit Damaged           | Damage reactions                                       |
 | Unit Base Status       | Base state transitions                                 |
 
-## htmls-app (React UI)
+## htmls-app (In-Game UI)
 
-React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet. Each page has its own `main.tsx` entry and is bundled into a single HTML file via `vite-plugin-singlefile` for CMO's embedded browser.
+`htmls-app/` is **not a standalone website** — it is the React source for the scenario's **custom in-game UI panels**. Each page is bundled into a single self-contained HTML file, embedded into the Lua scenario, and rendered inside CMO through its `UI_CallAdvancedHTMLDialog` browser dialog. Panels are triggered by **Special Actions** registered in `src/core/init.lua`.
+
+**Stack:** React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet.
+
+### Panels
+
+Each page lives in `src/pages/<page>/` with its own `index.html` + `main.tsx` entry and builds to `src/htmls/<page>.html`:
+
+| Page            | In-game role                                                                   | Data injected at runtime |
+| --------------- | ----------------------------------------------------------------------------- | ------------------------ |
+| `setup-menu`    | Pre-game deployment menu — aircraft / jammers / missile systems / summary tabs | `__INJECT_JAMMERS__`, `__INJECT_AIRBASES__`, `__INJECT_MISSILE_SYSTEMS__`, `__INJECT_SIDE_NAME__` |
+| `unit-status`   | Live status dashboard — signals, launchers, C2, base weapons, landing units   | `__INJECT_SIGNALS__`, `__INJECT_LAUNCHERS__`, `__INJECT_C2__`, `__INJECT_BASE_WEAPONS__`, `__INJECT_LANDING_UNITS__` |
+| `emcon-setting` | EMCON / weapon-control-status configuration                                   | — |
+
+### Build → Embed → Render pipeline
+
+1. **Build** — `npm run build` (`scripts/build.js`) builds each page in turn (`BUILD_PAGE=<page> vite build`), inlining all JS/CSS via `vite-plugin-singlefile`, and emits `src/htmls/<page>.html`.
+2. **Embed** — `tools/build_lua_scenario.py` reads `src/htmls/*.html`, inlines any remaining local JS, strips JS comments (to avoid Lua parse conflicts), and embeds each HTML as the return value of a template function in `src/modules/unitStatusUI.lua` (`getSetupMenuTemplate`, `getHTMLTemplate`, `getWCSSettingTemplate`).
+3. **Render** — at runtime `unitStatusUI.lua` substitutes the `__INJECT_*__` placeholders with live game JSON, then calls `GameApi.UI_CallAdvancedHTMLDialog(...)` to show the panel inside CMO.
+
+> The full chain is orchestrated by `bin/build.sh` (UI build → Lua inject/merge → minify). If you run `tools/build_lua_scenario.py` on its own, rebuild `htmls-app` first — the bundler embeds whatever currently sits in `src/htmls/`.
+
+### Development
 
 ```bash
 cd htmls-app
 npm install
-npm run dev       # development server
-npm run build     # emits single-file HTMLs to ../src/htmls/
+npm run dev       # live dev server
+npm run build     # emit single-file HTMLs to ../src/htmls/
 npm run lint
 npm run format
 ```
 
-CMO injects JSON through `window.__INJECT_*__` globals; components fall back to mock data in `src/data/` during development.
-
-See `htmls-app/README.md` for UI-specific details.
-
-## Documentation
-
-Per-module architecture docs (Mermaid diagrams, tables, data structures):
-
-- [`docs/strikePlanner/`](docs/strikePlanner/README.md) — ATO, dynamic ATO insertion, fire support, recon, targeting
-- [`docs/ew/`](docs/ew/README.md) — GNSS jamming, comms jamming, SIGINT
-- [`docs/landingOps/`](docs/landingOps/README.md) — amphibious assault, logistics, ship movement, unloading
-- [`docs/missileSystem/`](docs/missileSystem/README.md) — TEL concealment, deployment, movement, triggers, ammo
-
-Additional guidance:
-
-- [`CLAUDE.md`](CLAUDE.md) — working conventions for Claude Code
-- [`AGENTS.md`](AGENTS.md) — agent-facing notes
+In `dev` the `window.__INJECT_*__` globals are absent, so each page falls back to mock data in `src/data/` — letting you iterate on the UI outside CMO.
