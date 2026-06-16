@@ -98,6 +98,18 @@ def ensure_directory(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
+def clear_directory_contents(path: str) -> None:
+    """Remove all children while keeping the directory itself."""
+    ensure_directory(path)
+
+    for entry_name in os.listdir(path):
+        entry_path = os.path.join(path, entry_name)
+        if os.path.isdir(entry_path) and not os.path.islink(entry_path):
+            shutil.rmtree(entry_path)
+        else:
+            os.unlink(entry_path)
+
+
 def collapse_extra_blank_lines(content: str) -> str:
     """Collapse runs of blank lines to at most two lines."""
     return re.sub(r"\n\s*\n\s*\n", "\n\n", content)
@@ -1410,10 +1422,10 @@ def build_scenario(args) -> bool:
             print(f"❌ Error: Source directory '{src_dir}' does not exist")
             return False
 
-        # Remove existing slim directory if doing full build
+        # Keep slim_dir itself so IDE file watchers do not lose the directory.
         if args.build and os.path.exists(slim_dir):
-            print(f"🗑️ Removing existing slim directory: {slim_dir}")
-            shutil.rmtree(slim_dir)
+            print(f"🗑️ Clearing existing slim directory contents: {slim_dir}")
+            clear_directory_contents(slim_dir)
 
         processed_count, error_count = clean_lua_files(src_dir, slim_dir)
 
