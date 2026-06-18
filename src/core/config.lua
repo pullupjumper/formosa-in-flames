@@ -1023,7 +1023,7 @@ config.c.recon.reconStrikeMatrix = {
   },
   satellite = {
     EOS = {
-      { name = "STRIKE/AB/W/AAR/1",       type = "air" },
+      { name = "STRIKE/AB/W/1",           type = "air" },
       { name = "STRIKE/AB/E/1",           type = "air" },
       { name = "STRIKE/HELIPAD/1",        type = "ground" },
       { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
