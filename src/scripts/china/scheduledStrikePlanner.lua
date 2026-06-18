@@ -29,8 +29,17 @@ if saveData.c.dynamicOperations.enabled then
 end
 
 if saveData.c.recon.enabled then
-  StrikePlanner.handleReconQueue(config, saveData.c.recon, saveData.c.dynamicOperations.reconSchedule,
-    saveData.c.surface.lacm, saveData.c.amphibOps.fireSupportOnHold == true)
+  StrikePlanner.handleReconQueue(
+    config,
+    saveData.c.recon,
+    saveData.c.dynamicOperations.reconSchedule,
+    saveData.c.surface.lacm,
+    saveData.c.amphibOps.fireSupportOnHold == true
+  )
+
+  if math.random() > 0.5 then
+    StrikePlanner.insertEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)
+  end
 end
 
 if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
