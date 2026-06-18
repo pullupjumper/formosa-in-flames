@@ -13,6 +13,8 @@ import './leaflet-dark.css';
 
 // Taiwan center coordinates
 const TAIWAN_CENTER: LatLngExpression = [23.8, 121.0];
+// Fujian coast — China side deployment area, across the strait from Taiwan
+const FUJIAN_COAST_CENTER: LatLngExpression = [25.3, 119.2];
 const DEFAULT_ZOOM = 8;
 
 interface BaseMapProps {
@@ -21,6 +23,7 @@ interface BaseMapProps {
   onMouseMove?: (lat: number, lng: number) => void;
   cursorStyle?: string;
   className?: string;
+  sideName?: string;
 }
 
 export function BaseMap({
@@ -29,16 +32,19 @@ export function BaseMap({
   onMouseMove,
   cursorStyle,
   className = '',
+  sideName,
 }: BaseMapProps) {
+  // China side plans its deployment from the Fujian coast; everyone else starts on Taiwan
+  const center = sideName === 'China' ? FUJIAN_COAST_CENTER : TAIWAN_CENTER;
   return (
     <MapContainer
-      center={TAIWAN_CENTER}
-      zoom={DEFAULT_ZOOM}
+      center={center}
+      zoom={sideName === 'China' ? 5 : DEFAULT_ZOOM}
       className={`h-full w-full ${className}`}
       style={{ background: '#10161a' }}
     >
       <LayersControl position="topright">
-        <LayersControl.BaseLayer checked name="Dark">
+        <LayersControl.BaseLayer name="Dark">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
@@ -49,6 +55,13 @@ export function BaseMap({
           <TileLayer
             attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={18}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer checked name="Satellite">
+          <TileLayer
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             maxZoom={18}
           />
         </LayersControl.BaseLayer>
@@ -215,4 +228,4 @@ function CoordinateSearch() {
   );
 }
 
-export { TAIWAN_CENTER, DEFAULT_ZOOM };
+export { TAIWAN_CENTER, FUJIAN_COAST_CENTER, DEFAULT_ZOOM };

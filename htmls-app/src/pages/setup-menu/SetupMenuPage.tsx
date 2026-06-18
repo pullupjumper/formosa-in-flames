@@ -157,6 +157,7 @@ function SetupMenuPage() {
             onSpendBudget={spendBudget}
             onRefundBudget={refundBudget}
             onUpdateAirbase={updateAirbase}
+            sideName={sideName}
           />
         )}
         {activeTab === 'jammers' && (
@@ -165,6 +166,7 @@ function SetupMenuPage() {
             airbases={airbases}
             deployedJammers={deployedJammers}
             shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
+            sideName={sideName}
             onDeployJammer={(index, lat, lng) => {
               setDeployedJammers((prev) => new Map(prev).set(index, { lat, lng }));
             }}
@@ -183,6 +185,7 @@ function SetupMenuPage() {
             airbases={airbases}
             deployedSystems={deployedMissileSystems}
             shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
+            sideName={sideName}
             onDeploySystem={(key, data) => {
               setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
             }}

@@ -10,6 +10,7 @@ interface JammersTabProps {
   airbases: Airbase[];
   deployedJammers: Map<number, { lat: number; lng: number }>;
   shouldValidateTaiwanBoundary: boolean;
+  sideName: string;
   onDeployJammer: (index: number, lat: number, lng: number) => void;
   onUndeployJammer: (index: number) => void;
 }
@@ -19,6 +20,7 @@ export function JammersTab({
   airbases,
   deployedJammers,
   shouldValidateTaiwanBoundary,
+  sideName,
   onDeployJammer,
   onUndeployJammer,
 }: JammersTabProps) {
@@ -146,6 +148,7 @@ export function JammersTab({
           onMapClick={handleMapClick}
           onMouseMove={isInteractive ? handleMouseMove : undefined}
           cursorStyle={isInteractive ? 'crosshair' : undefined}
+          sideName={sideName}
         >
           <AirbaseMarkers airbases={airbases} />
           <DeployedJammers

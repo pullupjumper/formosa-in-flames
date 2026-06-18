@@ -308,6 +308,7 @@ interface MissileSystemsTabProps {
   airbases: Airbase[];
   deployedSystems: Map<string, DeployedMissileSystemData>;
   shouldValidateTaiwanBoundary: boolean;
+  sideName: string;
   onDeploySystem: (key: string, data: DeployedMissileSystemData) => void;
   onUndeploySystem: (key: string) => void;
 }
@@ -317,6 +318,7 @@ export function MissileSystemsTab({
   airbases,
   deployedSystems,
   shouldValidateTaiwanBoundary,
+  sideName,
   onDeploySystem,
   onUndeploySystem,
 }: MissileSystemsTabProps) {
@@ -935,6 +937,7 @@ export function MissileSystemsTab({
           onMapClick={handleMapClick}
           onMouseMove={isInteractive ? handleMouseMove : undefined}
           cursorStyle={isInteractive ? 'crosshair' : undefined}
+          sideName={sideName}
         >
           <AirbaseMarkers airbases={airbases} />
           <DeployedMissileSystems

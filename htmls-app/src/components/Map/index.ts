@@ -1,4 +1,4 @@
-export { BaseMap, TAIWAN_CENTER, DEFAULT_ZOOM } from './BaseMap';
+export { BaseMap, TAIWAN_CENTER, FUJIAN_COAST_CENTER, DEFAULT_ZOOM } from './BaseMap';
 export { AirbaseMarker, AirbaseMarkers } from './AirbaseMarker';
 export { JammerMarker, DeployedJammers, JammerRelocatePreview } from './JammerMarker';
 export {

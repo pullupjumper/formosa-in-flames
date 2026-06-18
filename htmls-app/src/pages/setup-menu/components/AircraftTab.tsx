@@ -9,6 +9,7 @@ interface AircraftTabProps {
   onSpendBudget: (amount?: number) => boolean;
   onRefundBudget: (amount?: number) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
+  sideName: string;
 }
 
 export function AircraftTab({
@@ -17,6 +18,7 @@ export function AircraftTab({
   onSpendBudget,
   onRefundBudget,
   onUpdateAirbase,
+  sideName,
 }: AircraftTabProps) {
   const [selectedBaseIndex, setSelectedBaseIndex] = useState<number | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
@@ -36,7 +38,7 @@ export function AircraftTab({
     <div className="flex h-full">
       {/* Map Container */}
       <div className="flex-1">
-        <BaseMap onMapClick={handleMapClick}>
+        <BaseMap onMapClick={handleMapClick} sideName={sideName}>
           <AirbaseMarkers airbases={airbases} onAirbaseClick={handleAirbaseClick} />
         </BaseMap>
       </div>
