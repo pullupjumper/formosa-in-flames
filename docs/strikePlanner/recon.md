@@ -228,7 +228,9 @@ flowchart TD
 
 ## 衛星間隙 UAV 動態插入（insertEntry）
 
-`Recon.insertEntry(reconContext, entryTemplate)` 從 UAV 模板動態建立一筆偵察 entry，用來填補兩次衛星過境之間的偵察空窗。只有當該空窗尚未被同模板的 UAV 覆蓋、且 UAV 的整段飛行能在下一次衛星過境前結束時，才會插入；否則回傳 `false` 不動佇列。
+`Recon.insertEntry(reconContext, entryTemplate, startTime?)` 從 UAV 模板動態建立一筆偵察 entry，用來填補兩次衛星過境之間的偵察空窗。只有當該空窗尚未被同模板的 UAV 覆蓋、且 UAV 的整段飛行能在下一次衛星過境前結束時，才會插入並回傳**該筆插入的 entry**；否則回傳 `nil`、不動佇列。
+
+`startTime` 為選填的起算時間字串（datetime）：省略時以 `GameApi.ScenEdit_CurrentTime()` 的當前時間為錨點；提供時改以該時點起算 `takeoffTime` 與 `endTime`，讓呼叫端能把這筆偵察錨定在未來某個時點，而非一律從現在起飛。注意起點往後挪會推遲 `endTime`，原本剛好能塞進空窗的飛行可能因此被拒。
 
 ### 空窗界定
 
@@ -245,15 +247,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START["insertEntry(reconContext, entryTemplate)"]
-    CALC["深拷貝模板<br>由 course/speed 推算 flightTime、endTime"]
+    START["insertEntry(reconContext, entryTemplate, startTime?)"]
+    CALC["深拷貝模板<br>flightTime 由 course/speed 推算<br>起點 = startTime（無則當前時間）<br>endTime = 起點 + flightTime"]
     ANCHOR["findMatchingSatelliteEntry<br>取得 mostRecentEntry / nextEntry"]
     HASNEXT{"nextEntry 存在?"}
     MATCH["findMatchingUAVEntry<br>窗口內找同 templateId 未完成 UAV"]
     EXIST{"已有覆蓋的 UAV?"}
     FIT{"endTime ≤ nextEntry.endTime?"}
-    INSERT["寫入 takeoffTime/endTime（UTC 字串）<br>重置 hasLaunched/isFinished/trackingTargetGUID<br>table.insert 進 queue → 回傳 true"]
-    SKIP["回傳 false"]
+    INSERT["寫入 takeoffTime/endTime（UTC 字串）<br>重置 hasLaunched/isFinished/trackingTargetGUID<br>table.insert 進 queue → 回傳 entry"]
+    SKIP["回傳 nil"]
 
     START --> CALC --> ANCHOR --> HASNEXT
     HASNEXT -->|否| SKIP
@@ -266,9 +268,9 @@ flowchart TD
 
 ### 插入後寫入的欄位
 
-插入成功時，會把推算出的時間與旗標寫回 entry：
+插入成功時，會把推算出的時間與旗標寫回 entry，並把這筆 entry 回傳給呼叫端：
 
-- `takeoffTime` = 當前時間、`endTime` = 當前時間 + `flightTime`（皆以 `os.date("!...")` 轉成 UTC 字串）
+- `takeoffTime` = 起點時間、`endTime` = 起點時間 + `flightTime`（起點為 `startTime`，省略時為當前時間；皆以 `os.date("!...")` 轉成 UTC 字串）
 - `hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`
 
 > `entryTemplate.templateId` 必須與 `config.c.recon.template.*` 中對應模板一致；`findMatchingUAVEntry` 以 `templateId` 作為判斷是否重複的依據，`templateId == nil` 的模板無法用來比對是否重複。
@@ -282,7 +284,7 @@ flowchart TD
 | `handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；`fireSupportOnHold=true` 時跳過 `STRIKE/INFRASTRUCTURE/*` 映射 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8 偵察無人機 |
 | `trackTarget(reconContext, units, UAVDBID, target)` | 指派 UAV 追蹤特定目標 |
-| `insertEntry(reconContext, entryTemplate)` | 在兩次衛星過境的空窗中動態插入一筆 UAV 偵察 entry；同模板已覆蓋或飛行會超過下次過境時回傳 `false` 不插入 |
+| `insertEntry(reconContext, entryTemplate, startTime?)` | 在兩次衛星過境的空窗中動態插入一筆 UAV 偵察 entry，成功時回傳該筆 entry；同模板已覆蓋或飛行會超過下次過境時回傳 `nil` 不插入。`startTime` 省略時以當前時間為起算錨點 |
 | `initReconQueueEntries(reconConfig, reconContext)` | 初始化偵察佇列項目（不重置 `frontlineRedirected`） |
 | `calculateAirbaseAttrition(deployments, baseNames, side?)` | 彙整多個基地的駐機戰損，回傳每個基地與整體的 `SBJ__AirbaseAttritionSummary`；side 預設 `constants.SIDES.ENEMY` |
 
@@ -305,7 +307,7 @@ flowchart TD
 | `saveData.c.recon.frontlineRedirected` | sticky 旗標；觸發後恆為 `true`，存檔保留 |
 | `constants.PLATFORMS.WZ8` / `constants.LOADOUTS.WZ8_RECON` / `constants.SENSORS.WZ8_RADAR` | 發射 WZ-8 時用到的平台、掛載、感測器 DBID |
 | `constants.BASES.LONGTIAN_AAB` | WZ-8 預設歸屬基地 |
-| `constants.SIDES.ENEMY` | `calculateAirbaseAttrition` 預設的 side 名稱 |
+| `constants.SIDES.ENEMY` | China side 名稱；`launchWZ8` 建立 WZ-8 時的所屬 side，亦為 `calculateAirbaseAttrition` 預設 side |
 | `constants.UNIT_TYPES.AIRCRAFT` | 列舉某 side 飛機時所用的單元類型 |
 | `constants.TAGS.RECON` / `constants.TAGS.DYNAMIC_OPERATIONS` | log tag |
 

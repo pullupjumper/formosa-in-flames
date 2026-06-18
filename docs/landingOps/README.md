@@ -82,7 +82,8 @@ flowchart TB
     AA_COURSE --> AA_ACV
     AA_COURSE --> SW_START --> SW_OFFLOAD
     COORD --> GATE
-    GATE -.->|fireSupportOnHold| RECON["strikePlanner/recon<br>跳過 STRIKE/INFRASTRUCTURE/*"]
+    COORD -.->|Taoyuan：Recon.insertEntry 排 GJ-11| RECON["strikePlanner/recon"]
+    GATE -.->|fireSupportOnHold：跳過 STRIKE/INFRASTRUCTURE/*| RECON
 
     style TRIGGER fill:#137cbd
     style COORD fill:#137cbd
@@ -155,6 +156,7 @@ flowchart BT
         ASSIGN["assignMission"]
         MISSILE["missileSystem"]
         UI["unitStatusUI"]
+        RECON["strikePlanner/recon"]
     end
 
     subgraph Landing Operations
@@ -165,7 +167,7 @@ flowchart BT
         SW["secondWaveUnloading"]
     end
 
-    COORD --> SM & AL & AA & SW & MISSILE & UI & UTILS & GAMEUTILS & CONSTANTS & LOGGER
+    COORD --> SM & AL & AA & SW & MISSILE & UI & RECON & UTILS & GAMEUTILS & CONSTANTS & LOGGER
     SM --> UTILS & GAMEAPI & GAMEUTILS & CONSTANTS & LOGGER
     AL --> GAMEAPI & ASSIGN & CONSTANTS & LOGGER
     AA --> GAMEAPI & GAMEUTILS & AL & CONSTANTS & LOGGER

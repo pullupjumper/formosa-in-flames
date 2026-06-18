@@ -1031,31 +1031,71 @@ describe("AirTaskingOrder", function()
     -- Positive: schedule recon UAV with calculated takeoff time
     it("should add reconUAV to recon queue and calculate takeoff time", function()
       local reconUAV = {
-        course = { { lat = 25.0, lon = 121.0 }, { lat = 24.0, lon = 120.0 } },
+        course = { { latitude = 25.0, longitude = 121.0 }, { latitude = 24.0, longitude = 120.0 } },
         speed = 400,
         takeoffTime = nil
       }
-      local pkg = makePackage({ reconUAV = reconUAV })
-      local saveData = makeSaveData({ packages = { pkg } })
-      local config = { c = { ground = { srbm = { reloadTime = 1800 } } } }
-
+      local pkg = makePackage({
+        reconUAV = reconUAV,
+        striker = {
+          startTime = "1970-01-03 08:03:20", endTime = "1970-01-03 11:03:20", missionCreationParams = { name = "" }
+        },
+      })
+      local saveData = makeSaveData({
+        packages = { pkg },
+        reconContext = {
+          queue = {
+            {
+              type = "satellite",
+              platformKey = "EOS",
+              endTime = "1970-01-03 15:03:20",
+            },
+          }
+        }
+      })
+      local config = { c = { ground = { srbm = { reloadTime = 300 } } } }
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+      -- trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
-      trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(500, 3600))
+      -- trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(500, 500))
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
 
       AirTaskingOrder.airStrike(config, saveData)
 
       assert.is_true(pkg.hasLaunched)
-      assert.are.equal(1, #saveData.c.recon.queue)
+      assert.are.equal(2, #saveData.c.recon.queue)
 
-      local entry = saveData.c.recon.queue[1]
+      local entry = saveData.c.recon.queue[2]
       assert.is_false(entry.hasLaunched)
       assert.is_false(entry.isFinished)
       assert.is_nil(entry.trackingTargetGUID)
       -- takeoffTime should have been calculated
-      assert.is_string(reconUAV.takeoffTime)
-      assert.is_string(reconUAV.endTime)
+      assert.is_string(entry.takeoffTime)
+      assert.is_string(entry.endTime)
+    end)
+
+    -- Negative: insertEntry finds no satellite gap, so nothing is queued but the package still launches
+    it("should launch without queueing a recon UAV when no satellite gap exists", function()
+      local reconUAV = {
+        course = { { latitude = 25.0, longitude = 121.0 }, { latitude = 24.0, longitude = 120.0 } },
+        speed = 400,
+        takeoffTime = nil
+      }
+      local pkg = makePackage({ reconUAV = reconUAV })
+      -- Default recon queue has no satellite pass, so insertEntry has no window to anchor.
+      local saveData = makeSaveData({ packages = { pkg } })
+      local config = { c = { ground = { srbm = { reloadTime = 300 } } } }
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+      trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(500, 500))
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+      stubMissionAndAssignment()
+
+      AirTaskingOrder.airStrike(config, saveData)
+
+      assert.is_true(pkg.hasLaunched)
+      assert.are.equal(0, #saveData.c.recon.queue)
     end)
 
     -- Negative: takeoffTime already calculated
@@ -1078,6 +1118,8 @@ describe("AirTaskingOrder", function()
 
       assert.stub(stubCalcPath).was_not.called()
       assert.are.equal("2026-02-14 07:00:00", reconUAV.takeoffTime)
+      -- An already-scheduled reconUAV is not re-inserted into the queue
+      assert.are.equal(0, #saveData.c.recon.queue)
     end)
   end)
 

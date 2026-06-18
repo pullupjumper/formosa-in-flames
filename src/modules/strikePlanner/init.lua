@@ -14,6 +14,15 @@ function StrikePlanner.initReconQueueEntries(reconConfig, reconContext)
   Recon.initReconQueueEntries(reconConfig, reconContext)
 end
 
+---Insert a new entry into the reconnaissance queue
+---@param reconContext SBJ__ReconContext Reconnaissance runtime context
+---@param entryTemplate SBJ__ReconQueueEntryTemplateUAV The template for the entry to insert
+---@param startTime string|nil The start time of the entry to insert
+---@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
+function StrikePlanner.insertEntry(reconContext, entryTemplate, startTime)
+  return Recon.insertEntry(reconContext, entryTemplate, startTime)
+end
+
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__Waypoint[] The reconnaissance course for WZ-8

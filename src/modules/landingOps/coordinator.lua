@@ -7,6 +7,7 @@ local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local UnitStatusUI = require("src.modules.unitStatusUI")
 local MissileSystem = require("src.modules.missileSystem.init")
+local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
 
 local Coordinator = {}
@@ -41,16 +42,7 @@ local function handleTaoyuanTemporarySetup(config, saveData, zone, currentTime)
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
-  ---@cast entry SBJ__ReconQueueEntry
-  local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
-  local endTime = currentTime + flightTime
-  entry.takeoffTime = os.date("%Y-%m-%d %H:%M:%S", currentTime) --[[@as string]]
-  entry.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
-  entry.hasLaunched = false
-  entry.isFinished = false
-  entry.trackingTargetGUID = nil
-  table.insert(saveData.c.recon.queue, entry)
+  Recon.insertEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases

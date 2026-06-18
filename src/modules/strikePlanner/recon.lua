@@ -419,18 +419,16 @@ local function getPlatformSpecialOperations(config, reconContext, reconSchedule,
   end
 
   -- Apply frontline redirect if sticky flag is set (set by handleReconQueue tick or earlier scheduling pass)
-  if reconContext.frontlineRedirected
-      and config.c.recon.frontlineRedirect
-      and config.c.recon.frontlineRedirect.mappings then
-    strikeMappings = rewriteStrikeMappings(
-      strikeMappings, config.c.recon.frontlineRedirect.mappings)
+  if reconContext.frontlineRedirected and
+      config.c.recon.frontlineRedirect and
+      config.c.recon.frontlineRedirect.mappings then
+    strikeMappings = rewriteStrikeMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
   end
 
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Gate: SRBM mappings (STRIKE/INFRASTRUCTURE/*) skipped while fire support is on hold
     if fireSupportOnHold and strikeMapping.name:find("^STRIKE/INFRASTRUCTURE/") then
-      table.insert(logEntries, string.format(
-        "  [HOLD] %s skipped: fire support on hold", strikeMapping.name))
+      table.insert(logEntries, string.format("  [HOLD] %s skipped: fire support on hold", strikeMapping.name))
     else
       local skipMapping = false
 
@@ -953,17 +951,18 @@ end
 ---Skips insertion when a matching UAV already exists, or when the flight would end after the next scheduled endTime.
 ---@param reconContext SBJ__ReconContext Reconnaissance context (queue mutated on success)
 ---@param entryTemplate SBJ__ReconQueueEntryTemplateUAV UAV entry template to instantiate
----@return boolean # True if a new entry was inserted into the queue
-function Recon.insertEntry(reconContext, entryTemplate)
+---@param startTime string|nil Timestamp or datetime string for the start time of the entry
+---@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
+function Recon.insertEntry(reconContext, entryTemplate, startTime)
   local entry = Utils.deepCopy(entryTemplate)
   ---@cast entry SBJ__ReconQueueEntry
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
-  local currentTimestamp = GameApi.ScenEdit_CurrentTime()
-  local endTime = currentTimestamp + flightTime
+  local startTimestamp = startTime and Utils.parseDatetimeToTimestamp(startTime) or GameApi.ScenEdit_CurrentTime()
+  local endTime = startTimestamp + flightTime
   local mostRecentEntry, nextEntry = findMatchingSatelliteEntry(reconContext)
 
   if not nextEntry then
-    return false
+    return nil
   end
 
   local matchingUAVEntry = findMatchingUAVEntry(reconContext, entryTemplate, mostRecentEntry, nextEntry)
@@ -972,17 +971,17 @@ function Recon.insertEntry(reconContext, entryTemplate)
     local nextEntryTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
 
     if endTime <= nextEntryTimestamp then
-      entry.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", currentTimestamp) --[[@as string]]
+      entry.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", startTimestamp) --[[@as string]]
       entry.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
       entry.hasLaunched = false
       entry.isFinished = false
       entry.trackingTargetGUID = nil
       table.insert(reconContext.queue, entry)
-      return true
+      return entry
     end
   end
 
-  return false
+  return nil
 end
 
 return Recon

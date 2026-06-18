@@ -10,6 +10,7 @@ local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local UnitStatusUI = require("src.modules.unitStatusUI")
 local constants = require("src.core.constants")
+local GameApi = require("src.utils.gameApi")
 
 describe("LandingOps Coordinator", function()
   ---@type luassert.spy[]
@@ -139,7 +140,13 @@ describe("LandingOps Coordinator", function()
           },
         },
         recon = {
-          queue = {},
+          queue = {
+            {
+              type = "satellite",
+              platformKey = "EOS",
+              endTime = "1970-01-03 15:03:20",
+            },
+          },
         },
       },
     }
@@ -259,16 +266,54 @@ describe("LandingOps Coordinator", function()
 
       saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetCount.returns(2)
-
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
       Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
       assert.are.equal(1000, saveData.c.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
-      assert.are.equal(1, #saveData.c.recon.queue)
+      assert.are.equal(2, #saveData.c.recon.queue)
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
       assert.spy(deepCopySpy).was.called()
+    end)
+
+    -- Negative: non-Taoyuan zones skip transport-aircraft transfer and recon insertion
+    it("should not run Taoyuan temporary setup for a non-Taoyuan zone", function()
+      local config = makeConfig()
+      config.c.amphibOps.operationalZones = { makeZone({ name = "Tainan" }) }
+      config.c.amphibOps.operations = { makeOperation({ name = "Tainan" }) }
+      local saveData = makeSaveData()
+      saveData.c.amphibOps.zoneStates = {
+        Tainan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
+      }
+      stubGetCount.returns(2)
+
+      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Tainan.phase)
+      assert.stub(stubTransferTransportAircraft).was_not.called()
+      -- Only the pre-existing satellite remains; no recon UAV inserted
+      assert.are.equal(1, #saveData.c.recon.queue)
+    end)
+
+    -- Boundary: Taoyuan arrives but the recon queue has no satellite gap, so no UAV is queued
+    it("should advance Taoyuan without queueing a recon UAV when no satellite gap exists", function()
+      local config = makeConfig()
+      local saveData = makeSaveData()
+      -- Drop the satellite pass so Recon.insertEntry has no window to anchor.
+      saveData.c.recon.queue = {}
+
+      saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
+      stubGetCount.returns(2)
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+
+      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubTransferTransportAircraft).was.called(1)
+      assert.are.equal(0, #saveData.c.recon.queue)
     end)
 
     -- Positive: advances assault phase when launch conditions are met

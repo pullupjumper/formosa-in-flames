@@ -30,7 +30,7 @@ flowchart TD
     LOADOUT_READY{"掛彈完成?"}
     TAKEOFF_TIME{"最早角色達到出擊窗口?"}
     MISSIONS{"createAllMissions 成功?"}
-    RECON["scheduleReconUAV<br>插入 saveData.c.recon.queue"]
+    RECON["scheduleReconUAV<br>委派 Recon.insertEntry<br>（衛星空窗未占用才插入）"]
     TARGETS{"assignTargetsToMission 成功?"}
     UNITS{"assignUnits 成功?"}
     LAUNCHED["package.hasLaunched = true"]
@@ -71,14 +71,19 @@ flowchart TD
 
 ### 偵察 UAV 排程
 
-若 Package 帶有 `reconUAV`，任務建立後會排入 `saveData.c.recon.queue`。當 `reconUAV.takeoffTime` 未預先設定時，模組以 striker 任務結束時間、`config.c.ground.srbm.reloadTime` 與 UAV 航程飛行時間推算：
+若 Package 帶有 `reconUAV`，任務建立後 `scheduleReconUAV()` 會安排一架打擊後偵察 UAV。當 `reconUAV.takeoffTime` 尚未預先設定時，模組以 striker 任務結束時間、`config.c.ground.srbm.reloadTime` 與 UAV 航程飛行時間推算起飛時間：
 
 ```text
 takeoffTime = striker.endTime + config.c.ground.srbm.reloadTime - flightTime
-endTime = takeoffTime + flightTime
 ```
 
-插入 queue 前會 deep copy 設定，並重設 `hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`。
+接著把這個起飛時間當作 `startTime`，委派給 [`Recon.insertEntry(saveData.c.recon, reconUAV, takeoffTime)`](recon.md)。實際的空窗檢查、deep copy、欄位重設（`hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`）、`endTime = takeoffTime + flightTime` 計算與寫入佇列，全部由 `insertEntry` 完成；`scheduleReconUAV()` 只負責推算起飛時間並回傳 `insertEntry` 給出的 entry（或 `nil`）。
+
+偵察排程是**有條件且不阻塞**打擊流程的：
+
+- 偵察佇列中沒有可錨定的衛星空窗，或同 `templateId` 的 UAV 已覆蓋該空窗時，`Recon.insertEntry` 回傳 `nil`，Package 仍照常發射，只是不排這架偵察。
+- `reconUAV.takeoffTime` 若已預先設定，`scheduleReconUAV()` 直接回傳 `nil`，不重算也不重複插入。
+- 唯有實際插入成功時，發射摘要才會附帶 `recon UAV at <takeoffTime>` 字樣。
 
 ---
 
@@ -128,6 +133,7 @@ saveData.c
 | `src.utils.gameUtils` | 時間判斷、任務建立、路徑距離與飛行時間計算。 |
 | `src.utils.logger` | 批次輸出 ATO 執行資訊與錯誤。 |
 | `src.modules.assignMission` | 從基地派遣 embarked aircraft 至任務。 |
+| `src.modules.strikePlanner.recon` | 透過 `Recon.insertEntry` 將打擊後偵察 UAV 排入偵察佇列（受衛星空窗與同模板重複檢查 gate）。 |
 | `src.core.constants` | 使用 `SIDES.ENEMY`、`TAGS.AIR`、`TIME_FORMATS`。 |
 
 ---
@@ -148,5 +154,5 @@ saveData.c
 - [dynamicATOInsertion](dynamicATOInsertion.md) — 產生並插入動態 ATO Wave。
 - [dynamicOperationsUtils](dynamicOperationsUtils.md) — 動態作戰命名與登記，由插入層使用。
 - [targetingProcess](targetingProcess.md) — 由插入層先產生 `target.list`，本模組只負責指派。
-- [recon](recon.md) — 執行被排入 `saveData.c.recon.queue` 的偵察任務。
+- [recon](recon.md) — 本模組呼叫 `Recon.insertEntry` 排入打擊後偵察 UAV；偵察佇列中的任務則由 recon 執行。
 - [系統架構](README.md)

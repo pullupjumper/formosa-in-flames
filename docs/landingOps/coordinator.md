@@ -64,8 +64,9 @@ stateDiagram-v2
 `handleTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
 
 1. 對運輸機隊執行貨物轉移與任務指派（`AmphibiousLogistics.transferAndAssignTransportAircraft`）
-2. 從 `config.c.recon.template.GJ11_RECON` 深拷貝範本，計算航線飛行時間
-3. 設定 `takeoffTime`/`endTime`，插入 `saveData.c.recon.queue` 啟動 GJ-11 偵察任務
+2. 委派 [`Recon.insertEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)`](../strikePlanner/recon.md) 排入一架 GJ-11 偵察任務
+
+由於未傳入 `startTime`，`insertEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
 
 ---
 
@@ -150,7 +151,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 | `saveData.c.amphibOps.zoneStates[zoneName].amphibiousAssaultStartTime` | 進入 `WAITING_ASSAULT` |
 | `saveData.c.amphibOps.zoneStates[zoneName].airlandingMissionStartTime` | `setLandingMissionStartTime` 與重轉運後 |
 | `saveData.c.amphibOps.fireSupportOnHold` | 閘門 HOLD / RESUME |
-| `saveData.c.recon.queue` | Taoyuan 特例插入 GJ-11 偵察項目 |
+| `saveData.c.recon.queue` | Taoyuan 特例經 `Recon.insertEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
 
 ---
 
@@ -172,5 +173,5 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 - [amphibiousAssault](amphibiousAssault.md) — Phase 3：突擊
 - [secondWaveUnloading](secondWaveUnloading.md) — Phase 4：第二波卸載
 - [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供火力閘門所需的庫存報告
-- [strikePlanner/recon](../strikePlanner/recon.md) — 讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRASTRUCTURE/*`
+- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例呼叫 `Recon.insertEntry` 排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRASTRUCTURE/*`
 - [系統架構](README.md)

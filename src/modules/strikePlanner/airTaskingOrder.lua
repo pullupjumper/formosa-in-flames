@@ -3,6 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local AssignMission = require("src.modules.assignMission")
+local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
 
 local AirTaskingOrder = {}
@@ -257,6 +258,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param packageData SBJ__Package Package data with optional reconUAV
+---@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
 local function scheduleReconUAV(config, saveData, packageData)
   if not packageData.reconUAV then
     return
@@ -266,16 +268,11 @@ local function scheduleReconUAV(config, saveData, packageData)
     local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
     local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
         flightTime
-    local endTime = takeoffTime + flightTime
-    packageData.reconUAV.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime) --[[@as string]]
-    packageData.reconUAV.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+    local takeoffTimeStr = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime) --[[@as string]]
+    return Recon.insertEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
   end
 
-  local copyReconUAV = Utils.deepCopy(packageData.reconUAV) --[[@as SBJ__ReconQueueEntry]]
-  copyReconUAV.hasLaunched = false
-  copyReconUAV.isFinished = false
-  copyReconUAV.trackingTargetGUID = nil
-  table.insert(saveData.c.recon.queue, copyReconUAV)
+  return nil
 end
 
 -- ============================================================================
@@ -359,14 +356,13 @@ local function processPackage(config, saveData, packageData)
     return false, "striker mission creation failed", "ERROR"
   end
 
-  scheduleReconUAV(config, saveData, packageData)
+  local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
 
   if not assignTargetsToMission(packageData) then
     local targetList = packageData.target.list
     if #targetList < packageData.target.minTargetCount then
-      return false,
-          string.format("insufficient targets (%d/%d required)", #targetList, packageData.target.minTargetCount),
-          "PENDING"
+      return false, string.format("insufficient targets (%d/%d required)",
+        #targetList, packageData.target.minTargetCount), "PENDING"
     end
     return false, nil
   end
@@ -377,8 +373,8 @@ local function processPackage(config, saveData, packageData)
 
   -- Build launch summary
   local details = { #packageData.target.list .. " targets" }
-  if packageData.reconUAV then
-    table.insert(details, "recon UAV at " .. packageData.reconUAV.takeoffTime)
+  if reconUAVEntry then
+    table.insert(details, "recon UAV at " .. reconUAVEntry.takeoffTime)
   end
   return true, "launched (" .. table.concat(details, ", ") .. ")", "LAUNCH"
 end

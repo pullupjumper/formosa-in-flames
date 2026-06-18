@@ -1850,7 +1850,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(3, #reconContext.queue)
       local inserted = reconContext.queue[3]
       assert.are.equal("UAV", inserted.type)
@@ -1873,15 +1873,49 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are_not.equal(template, reconContext.queue[3])
       assert.is_nil(template.hasLaunched)
       assert.is_nil(template.takeoffTime)
       assert.is_nil(template.endTime)
     end)
 
+    -- Positive: an explicit startTime anchors the flight window instead of current time
+    it("should anchor takeoff and end times to the provided startTime", function()
+      -- current=5000 is ignored; startTime=5500, flight 2000 => end 7500 <= next pass 8000
+      stubTimeline(2000)
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate(), "2026-02-14 05:30:00")
+
+      assert.is_not_nil(result)
+      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", 5500), result.takeoffTime)
+      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", 7500), result.endTime)
+    end)
+
+    -- Negative: startTime delays the flight past the next pass (would have fit from current time)
+    it("should return nil when startTime pushes the flight end past the next pass", function()
+      -- from current=5000 the same flight (3000) lands exactly at 8000 and fits;
+      -- anchored at startTime=5500 it ends at 8500 > 8000 and must be rejected.
+      stubTimeline(3000)
+      local queue = {
+        makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
+        makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
+      }
+      local reconContext = makeReconContext(queue)
+
+      local result = Recon.insertEntry(reconContext, makeUAVTemplate(), "2026-02-14 05:30:00")
+
+      assert.is_nil(result)
+      assert.are.equal(2, #reconContext.queue)
+    end)
+
     -- Negative: no upcoming entry in queue (all passes already ended)
-    it("should return false when no upcoming entry exists", function()
+    it("should return nil when no upcoming entry exists", function()
       stubTimeline(3500)
       local queue = {
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
@@ -1890,12 +1924,12 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, makeUAVTemplate())
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(1, #reconContext.queue)
     end)
 
     -- Negative: UAV flight would finish after the next pass ends (lands too late to fit the gap)
-    it("should return false when flight ends after next pass endTime", function()
+    it("should return nil when flight ends after next pass endTime", function()
       stubTimeline(3500) -- UAV end = 8500 > next pass end 8000
       local queue = {
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
@@ -1905,12 +1939,12 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, makeUAVTemplate())
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(2, #reconContext.queue)
     end)
 
     -- Negative: an unfinished same-template UAV already covers the window
-    it("should return false when an unfinished UAV already covers the window", function()
+    it("should return nil when an unfinished UAV already covers the window", function()
       stubTimeline(3500)
       local template = makeUAVTemplate()
       local blockingUAV = makeUAVEntry({
@@ -1927,12 +1961,12 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(3, #reconContext.queue)
     end)
 
     -- Negative: a previously inserted deep copy (different course table) still blocks re-insertion
-    it("should return false when re-inserting the same template consecutively", function()
+    it("should return nil when re-inserting the same template consecutively", function()
       stubTimeline(3500)
       local template = makeUAVTemplate()
       local previousCopy = Utils.deepCopy(template)
@@ -1949,7 +1983,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(3, #reconContext.queue)
     end)
 
@@ -1972,7 +2006,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(4, #reconContext.queue)
     end)
 
@@ -1994,7 +2028,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(4, #reconContext.queue)
     end)
 
@@ -2017,7 +2051,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(4, #reconContext.queue)
     end)
 
@@ -2037,7 +2071,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, makeUAVTemplate())
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(4, #reconContext.queue)
     end)
 
@@ -2052,12 +2086,12 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, makeUAVTemplate())
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(3, #reconContext.queue)
     end)
 
     -- Boundary: no past pass yet (window start unbounded) still detects covering UAV
-    it("should return false when UAV covers window with no past pass", function()
+    it("should return nil when UAV covers window with no past pass", function()
       stubTimeline(3500)
       local template = makeUAVTemplate()
       local coveringUAV = makeUAVEntry({
@@ -2073,18 +2107,18 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(2, #reconContext.queue)
     end)
 
     -- Boundary: empty queue has no next pass to anchor the window
-    it("should return false for an empty queue", function()
+    it("should return nil for an empty queue", function()
       stubTimeline(3500)
       local reconContext = makeReconContext({})
 
       local result = Recon.insertEntry(reconContext, makeUAVTemplate())
 
-      assert.is_false(result)
+      assert.is_nil(result)
       assert.are.equal(0, #reconContext.queue)
     end)
 
@@ -2127,7 +2161,7 @@ describe("Recon", function()
 
       local result = Recon.insertEntry(reconContext, template)
 
-      assert.is_true(result)
+      assert.is_not_nil(result)
       assert.are.equal(5, #reconContext.queue)
     end)
   end)
