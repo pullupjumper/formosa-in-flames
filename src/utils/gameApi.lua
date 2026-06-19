@@ -687,21 +687,22 @@ end
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]
+    if type(targetFunc) ~= "function" then return nil end
 
-    if type(targetFunc) == "function" then
-      return function(...)
-        local result, err = Utils.safeCall("GameApi." .. key, targetFunc, ...)
-
-        if err then
-          Logger.error(err)
-          return nil
-        end
-
-        return result
+    local label = "GameApi." .. key
+    local wrapper = function(...)
+      local result, err = Utils.safeCall(label, targetFunc, ...)
+      if err then
+        Logger.error(err)
+        return nil
       end
+      return result
     end
 
-    return nil
+    -- No __newindex on GameApi, so this plain assignment is a raw write that
+    -- caches the wrapper; later lookups hit it directly and skip __index.
+    t[key] = wrapper
+    return wrapper
   end
 })
 
