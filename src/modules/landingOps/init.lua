@@ -6,6 +6,7 @@ local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading"
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
+local Logger = require("src.utils.logger")
 
 local LandingOps = {}
 
@@ -23,7 +24,11 @@ end
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
 function LandingOps.process(config, saveData, contacts, currentTime, filteredShips)
+  local start_time = os.clock()
+
   Coordinator.process(config, saveData, contacts, currentTime, filteredShips)
+  local end_time = os.clock()
+  Logger.log(constants.TAGS.SHIP_MOVEMENT, string.format("spent: %.4f sec", end_time - start_time))
 end
 
 ---Launch amphibious combat vehicles for a ship when it is in a valid zone
