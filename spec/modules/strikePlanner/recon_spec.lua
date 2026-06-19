@@ -152,7 +152,7 @@ describe("Recon", function()
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
     cfg.c.recon.reconStrikeMatrix = {
       UAV = {
-        [constants.PLATFORMS.BZK005] = {
+        BZK005_RECON_1 = {
           { name = "STRIKE/C2/N/1", type = "ground" },
         },
       },
@@ -654,7 +654,7 @@ describe("Recon", function()
     -- ========================================================================
 
     it("should schedule new operations when mission completes with matching strike matrix", function()
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -677,11 +677,11 @@ describe("Recon", function()
 
     it("should skip STRIKE/AB/E/1 when LACM is not enabled", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
+      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
         { name = "STRIKE/AB/E/1", type = "air" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -886,7 +886,7 @@ describe("Recon", function()
 
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
+      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
         { name = "STRIKE/C2/N/1", type = "ground" },
         { name = "STRIKE/AB/E/1", type = "air" },
       }
@@ -897,7 +897,7 @@ describe("Recon", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -993,11 +993,11 @@ describe("Recon", function()
     -- Negative: non-INFRASTRUCTURE mappings unaffected by fireSupportOnHold
     it("should not gate non-INFRASTRUCTURE mappings even when fireSupportOnHold is true", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
+      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
         { name = "STRIKE/C2/N/1", type = "ground" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -1019,11 +1019,11 @@ describe("Recon", function()
     -- not scheduled again, or the same /N+1 would double the strike package.
     it("should not schedule a duplicate next wave when an identical one is already pending", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV[constants.PLATFORMS.BZK005] = {
+      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
         { name = "STRIKE/C2/N/1", type = "ground" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))

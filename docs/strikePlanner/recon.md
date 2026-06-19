@@ -50,7 +50,7 @@ flowchart TD
 
 | 類型 | 處理函數 | 完成條件 | reconStrikeMatrix 索引鍵 |
 |---|---|---|---|
-| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） | `entry.unitDBID`（整數平台 DBID） |
+| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） | `entry.templateId`（字串，對應 `config.c.recon.template` 的鍵） |
 | satellite | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `EOS`） |
 | SIGINT | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `ELINT`） |
 
@@ -84,7 +84,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     RECON_OK["偵察成功完成"]
-    MATRIX["查詢 reconStrikeMatrix<br>UAV 依 unitDBID（整數）<br>satellite/SIGINT 依 platformKey（字串）"]
+    MATRIX["查詢 reconStrikeMatrix<br>UAV 依 templateId（字串）<br>satellite/SIGINT 依 platformKey（字串）"]
     REDIRECT{"reconContext<br>.frontlineRedirected?"}
     REWRITE["改寫符合 fromPrefix 的<br>mapping.name → toPrefix<br>rewriteStrikeMappings"]
     LOOP["遍歷所有 strikeMappings"]
@@ -294,7 +294,7 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
+| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依 `templateId`、satellite/SIGINT 依 `platformKey` 索引；皆為字串） |
 | `config.c.recon.queue` | 偵察佇列模板（被 `initReconQueueEntries` 深拷貝至 saveData） |
 | `config.c.recon.template` | 偵察 entry 模板字典（如 `BZK005_RECON_1`）；每筆含 `templateId`，`insertEntry` 動態插入時用它判斷該模板是否已重複 |
 | `config.c.recon.frontlineRedirect.enabled` | 是否啟用前線重導向機制 |

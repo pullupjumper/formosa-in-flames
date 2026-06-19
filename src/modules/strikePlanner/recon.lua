@@ -317,12 +317,12 @@ local function rewriteStrikeMappings(strikeMappings, rules)
 end
 
 ---Find matching strike mappings for a reconnaissance queue entry from the strike matrix
----UAV entries are looked up by unitDBID (integer); satellite/SIGINT entries by platformKey (string).
----@param strikeMatrix table<integer|string, SBJ__ReconStrikeMapping[]> Strike matrix for the entry's platform type
+---UAV entries are looked up by templateId (string); satellite/SIGINT entries by platformKey (string).
+---@param strikeMatrix table<string, SBJ__ReconStrikeMapping[]> Strike matrix for the entry's platform type
 ---@param entry SBJ__ReconQueueEntry Queue entry to find mappings for
 ---@return SBJ__ReconStrikeMapping[]|nil # Matching strike mappings or nil if not found
 local function findStrikeMappingsForEntry(strikeMatrix, entry)
-  local key = entry.unitDBID or entry.platformKey
+  local key = entry.templateId or entry.platformKey
   if not key then return nil end
   return strikeMatrix[key]
 end
@@ -414,7 +414,7 @@ local function getPlatformSpecialOperations(config, reconContext, reconSchedule,
   local strikeMappings = findStrikeMappingsForEntry(strikeMatrix, entry)
   if not strikeMappings then
     table.insert(logEntries, string.format("  [SKIP] No strike mappings for %s key=%s",
-      tostring(entry.type), tostring(entry.unitDBID or entry.platformKey)))
+      tostring(entry.type), tostring(entry.templateId or entry.platformKey)))
     return operations, logEntries
   end
 

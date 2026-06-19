@@ -1004,15 +1004,17 @@ config.c.recon.template = {
   }
 }
 config.c.recon.reconStrikeMatrix = {
+  -- UAV inner key is templateId (a config.c.recon.template key), not a platform DBID.
+  -- Templates absent here (BZK005_RECON_2, WZ7_RECON_1, TB001_RECON_1) trigger no strike.
   UAV = {
-    [constants.PLATFORMS.BZK005] = {
+    BZK005_RECON_1 = {
       { name = "STRIKE/C2/N/1", type = "ground", }
     },
-    [constants.PLATFORMS.GJ11] = {
+    GJ11_RECON = {
       { name = "CAS/N/1",       type = "air", },
       { name = "STRIKE/C2/N/1", type = "ground", },
     },
-    [constants.PLATFORMS.H6N] = {
+    WZ8_RECON_ISLAND = {
       { name = "ANTISHIP/E/1",            type = "ground" },
       { name = "ANTISHIP/N/1",            type = "ground" },
       { name = "ASUW/N/1",                type = "air" },
