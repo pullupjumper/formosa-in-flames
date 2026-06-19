@@ -116,7 +116,7 @@ local function processBarge(unit, zone, saveData)
   unit.course = { destination }
   unit.manualSpeed = zone.lstSettings.speed
   saveData.c.amphibOps.barges[unit.guid] = { guid = unit.guid, roros = {} }
-  return "OK", string.format("%s → course set", unit.guid), destination
+  return "OK", string.format("%s -> course set", unit.guid), destination
 end
 
 ---Pair a RORO ship with a barge for logistics chain
@@ -136,7 +136,7 @@ local function pairROROWithBarge(roroEntry, bargeEntry, saveData)
 
   roroEntry.unit.course = course
   roroEntry.unit.manualSpeed = roroEntry.zone.lstSettings.speed
-  return "OK", string.format("RORO %s → paired with %s", roroEntry.unit.guid, bargeEntry.unit.guid)
+  return "OK", string.format("RORO %s -> paired with %s", roroEntry.unit.guid, bargeEntry.unit.guid)
 end
 
 -- ============================================================================

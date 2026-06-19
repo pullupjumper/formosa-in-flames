@@ -410,7 +410,7 @@ describe("CommsJamming", function()
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-        -- math.random(5, 10) → 5; outofcomms(2) <= 5 → increment
+        -- math.random(5, 10) -> 5; outofcomms(2) <= 5 -> increment
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
@@ -432,7 +432,7 @@ describe("CommsJamming", function()
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-        -- math.random(5, 10) → 5; outofcomms(12) > 5 → recovery
+        -- math.random(5, 10) -> 5; outofcomms(12) > 5 -> recovery
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
@@ -518,7 +518,7 @@ describe("CommsJamming", function()
         end))
         trackStub(stub(GameApi, "Tool_Range").returns(20))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-        -- math.random() → 0.1, so threshold = 0.05; effectiveness at 20nm ≈ 0.89 > 0.05
+        -- math.random() -> 0.1, so threshold = 0.05; effectiveness at 20nm ≈ 0.89 > 0.05
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
@@ -545,7 +545,7 @@ describe("CommsJamming", function()
           if guid == "SAM-001" then return makeUnit({ guid = "SAM-001" }) end
           return nil
         end))
-        -- distance=100, range=50 → 100^1.9/50^1.8 > 1 → effectiveness is nil
+        -- distance=100, range=50 -> 100^1.9/50^1.8 > 1 -> effectiveness is nil
         trackStub(stub(GameApi, "Tool_Range").returns(100))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
@@ -636,7 +636,7 @@ describe("CommsJamming", function()
 
       -- Positive: transitions to cooldown when jamming time is exceeded
       it("should transition unit to cooldown when jamming time is exceeded", function()
-        -- outofcomms=15 >= jammingTime(min=5) → cooldown branch
+        -- outofcomms=15 >= jammingTime(min=5) -> cooldown branch
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 15 })
         local saveData = makeSaveData({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
@@ -666,7 +666,7 @@ describe("CommsJamming", function()
 
       -- Positive: increments counter during cooldown period (negative outofcomms)
       it("should increment counter during cooldown period", function()
-        -- outofcomms=-3 < 0 → cooldown recovery branch
+        -- outofcomms=-3 < 0 -> cooldown recovery branch
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = -3 })
         local saveData = makeSaveData({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
@@ -712,7 +712,7 @@ describe("CommsJamming", function()
         end))
         trackStub(stub(GameApi, "Tool_Range").returns(20))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-        -- Recovery: math.random(5,10)→5, outofcomms(3) <= 5 → increment (recovery period)
+        -- Recovery: math.random(5,10)->5, outofcomms(3) <= 5 -> increment (recovery period)
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
@@ -743,7 +743,7 @@ describe("CommsJamming", function()
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
           if guid == "J-001" then
-            -- heading=0, bearing will be 5 → orientation=5 < 12
+            -- heading=0, bearing will be 5 -> orientation=5 < 12
             return makeUnit({ guid = "J-001", condition = "Airborne", jammer = true, heading = 0 })
           end
           if guid == "SAM-001" then return makeUnit({ guid = "SAM-001" }) end
@@ -776,14 +776,14 @@ describe("CommsJamming", function()
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
           if guid == "J-001" then
-            -- heading=0, bearing will be 90 → orientation=90 > 12
+            -- heading=0, bearing will be 90 -> orientation=90 > 12
             return makeUnit({ guid = "J-001", condition = "Airborne", jammer = true, heading = 0 })
           end
           if guid == "SAM-001" then return makeUnit({ guid = "SAM-001" }) end
           return nil
         end))
         trackStub(stub(GameApi, "Tool_Range").returns(20))
-        -- bearing from jammer to target = 90 → orientation = |90 - 0| = 90 > 12
+        -- bearing from jammer to target = 90 -> orientation = |90 - 0| = 90 > 12
         trackStub(stub(GameApi, "Tool_Bearing").returns(90))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
@@ -828,8 +828,8 @@ describe("CommsJamming", function()
       -- Boundary: mode switch uses correct strategy
       it("should use omnidirectional strategy by default and directional when configured", function()
         -- Same setup: distance=20, bearing=90 (misaligned for directional)
-        -- Omnidirectional mode: effectiveness ≈ 0.89 > threshold → JAMMED
-        -- Directional mode: orientation=90 > 12 → RESISTED
+        -- Omnidirectional mode: effectiveness ≈ 0.89 > threshold -> JAMMED
+        -- Directional mode: orientation=90 > 12 -> RESISTED
         local samCtxOmni = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
         local saveDataOmni = makeSaveData({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
@@ -855,7 +855,7 @@ describe("CommsJamming", function()
         CommsJamming.handleCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), saveDataOmni)
         assert.is_true(samCtxOmni.isOutOfComms)
 
-        -- Directional with same setup: bearing misaligned → should NOT jam
+        -- Directional with same setup: bearing misaligned -> should NOT jam
         local samCtxDir = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
         local saveDataDir = makeSaveData({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
@@ -890,8 +890,8 @@ describe("CommsJamming", function()
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        -- getCommsLevel: initialComms(-20), no jammers/AEW/ROCC → commModifier = -20
-        -- commsLevel = commsBase(40) + (-20) = 20 < threshold(30) → RTB
+        -- getCommsLevel: initialComms(-20), no jammers/AEW/ROCC -> commModifier = -20
+        -- commsLevel = commsBase(40) + (-20) = 20 < threshold(30) -> RTB
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(20, aircraftCtx.commsLevel)
@@ -921,7 +921,7 @@ describe("CommsJamming", function()
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        -- commsLevel = 100 + (-20) = 80 > 30 → no RTB
+        -- commsLevel = 100 + (-20) = 80 > 30 -> no RTB
         CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(80, aircraftCtx.commsLevel)
@@ -987,7 +987,7 @@ describe("CommsJamming", function()
           end
           return nil
         end))
-        -- AEW at 50nm → "close" category (< 100)
+        -- AEW at 50nm -> "close" category (< 100)
         trackStub(stub(GameApi, "Tool_Range").returns(50))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         -- math.random(min, max) returns min; variance.close.min = -1
@@ -1022,7 +1022,7 @@ describe("CommsJamming", function()
           end
           return nil
         end))
-        -- ROCC at 50nm → "close" category (< 100)
+        -- ROCC at 50nm -> "close" category (< 100)
         trackStub(stub(GameApi, "Tool_Range").returns(50))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))

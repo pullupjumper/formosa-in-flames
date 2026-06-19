@@ -61,7 +61,7 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
     return
   end
 
-  -- Stow complete: sufficient ammo → hide area; low → reload point
+  -- Stow complete: sufficient ammo -> hide area; low -> reload point
   if not isLowAmmo then
     Movement.moveToHideArea(firingUnitCtx, firingUnit)
     firingUnitCtx.stowStartTime = nil

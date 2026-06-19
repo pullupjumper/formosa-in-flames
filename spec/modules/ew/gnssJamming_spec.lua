@@ -294,7 +294,7 @@ describe("GnssJamming", function()
         local weapon = makeWeaponUnit({ dbid = 1001 })
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns({ guid = weapon.guid }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(weapon))
-        -- jamChance(20) <= jammingResistance(30) → resist
+        -- jamChance(20) <= jammingResistance(30) -> resist
         trackStub(stub(math, "random").invokes(function(a, b)
           if a == 100 and b == nil then return 20 end
           return 0
@@ -311,7 +311,7 @@ describe("GnssJamming", function()
         local weapon = makeWeaponUnit({ dbid = 1002 }) -- jammingResistance = 80
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns({ guid = weapon.guid }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(weapon))
-        -- jamChance(75) <= jammingResistance(80) → resist
+        -- jamChance(75) <= jammingResistance(80) -> resist
         trackStub(stub(math, "random").invokes(function(a, b)
           if a == 100 and b == nil then return 75 end
           return 0

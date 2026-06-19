@@ -133,7 +133,7 @@ local function moveShipToNextLocation(unit, resultEntry, speed, isTesting)
   end
   moveShip(unit, location, speed, isTesting)
   resultEntry.locationIndex = index + 1
-  return "OK", string.format("%s → location #%d", unit.name, index)
+  return "OK", string.format("%s -> location #%d", unit.name, index)
 end
 
 ---Handle Type 071 movement with overflow to LST area
@@ -159,7 +159,7 @@ local function moveType071(unit, result, speed, isTesting)
   moveShip(unit, location, speed, isTesting)
   entry.locationIndex = index + 1
   local area = index > len and "LST" or "LPD"
-  return "OK", string.format("%s → %sArea #%d", unit.name, area, index)
+  return "OK", string.format("%s -> %sArea #%d", unit.name, area, index)
 end
 
 ---Match ship by DBID or name and move to next location

@@ -80,7 +80,7 @@ local function setMissionStartTime(mission, currentTime)
   end
 
   m.starttime = startTime .. constants.TIME_FORMATS
-  return "OK", string.format("%s → %s", mission.name, startTime)
+  return "OK", string.format("%s -> %s", mission.name, startTime)
 end
 
 ---Set start times for all missions in a single zone
@@ -186,7 +186,7 @@ local function setCourseForLST(unit, zone)
     unit.course = { destination }
     unit.manualSpeed = zone.lstSettings.speed
     return "OK",
-        string.format("%s → bearing %d, speed %d", unit.name, zone.lstSettings.course.bearing, zone.lstSettings.speed)
+        string.format("%s -> bearing %d, speed %d", unit.name, zone.lstSettings.course.bearing, zone.lstSettings.speed)
   end
 
   return "SKIP", string.format("%s is non-LST (auxiliary)", unit.name)
@@ -204,7 +204,7 @@ local function setCourseForSAG(descriptor)
   end
 
   unit.course = descriptor.to.amphibiousVehicleStagingArea
-  return "OK", string.format("SAG %s → staging area", descriptor.groupName)
+  return "OK", string.format("SAG %s -> staging area", descriptor.groupName)
 end
 
 -- ============================================================================

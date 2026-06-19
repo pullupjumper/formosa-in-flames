@@ -61,7 +61,7 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
     isdst = false,
   }
 
-  -- Calculate timestamp: we want it to be UTC → so first use os.time(utcTable) as local time
+  -- Calculate timestamp: we want it to be UTC -> so first use os.time(utcTable) as local time
   -- Then add back offset to get the real UTC timestamp
   local localTimestamp = os.time(utcTable)
   local date = os.date("!*t")

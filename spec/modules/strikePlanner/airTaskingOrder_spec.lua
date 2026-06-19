@@ -576,7 +576,7 @@ describe("AirTaskingOrder", function()
 
       AirTaskingOrder.airStrike(makeConfig(), saveData)
 
-      -- All 3 aircraft attempted (first fails, second/third succeed → 2 processed = unitCount)
+      -- All 3 aircraft attempted (first fails, second/third succeed -> 2 processed = unitCount)
       assert.stub(stubSetLoadout).was.called(3)
       assert.is_true(pkg.loadoutStatus.isLoadoutInitiated)
     end)
@@ -670,7 +670,7 @@ describe("AirTaskingOrder", function()
 
       AirTaskingOrder.airStrike(makeConfig(), saveData)
 
-      -- findEarliestRole returns nil → processPackage returns false
+      -- findEarliestRole returns nil -> processPackage returns false
       assert.is_false(pkg.hasLaunched)
     end)
 
@@ -1189,9 +1189,9 @@ describe("AirTaskingOrder", function()
 
     -- Positive: fallthrough to next package
     it("should try next package if first one fails", function()
-      -- pkg1: 0 targets, minTargetCount = 2 → fails
+      -- pkg1: 0 targets, minTargetCount = 2 -> fails
       local pkg1 = makePackage({ targetList = {}, minTargetCount = 2 })
-      -- pkg2: enough targets → succeeds
+      -- pkg2: enough targets -> succeeds
       local pkg2 = makePackage({
         striker = makeRole({ missionName = "STRIKE-PKG-2" }),
         targetList = { "TGT-1", "TGT-2" },

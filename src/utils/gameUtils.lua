@@ -472,7 +472,7 @@ end
 
 ---Extract unit type from unit name and convert to subordinate echelon
 ---Searches through comma-separated parts sequentially until unit type is found
----Converts to subordinate echelon: Bde→Bn, Bn→Coy, Coy/Sqn→Plt
+---Converts to subordinate echelon: Bde->Bn, Bn->Coy, Coy/Sqn->Plt
 ---@param unitName string Unit name
 ---@return string|nil # Converted unit type (Bn/Coy/Plt), or nil if not found
 function GameUtils.extractUnitType(unitName)
