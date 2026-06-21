@@ -8,7 +8,7 @@
 
 ## 概述
 
-`dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO 任務或派遣飛機，而是從 `saveData.c.dynamicOperations.reconSchedule` 取出尚未執行的 `air` operation，評估目標與機隊資源後，產生 `SBJ__Wave` 寫入 `saveData.c.air.airTaskingOrder`。
+`dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO 任務或派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 取出尚未執行的 `air` operation，評估目標與機隊資源後，產生 `SBJ__Wave` 寫入 `saveData.c.air.airTaskingOrder`。
 
 模組的核心工作分為三段：第一段用 [targetingProcess](targetingProcess.md) 依 template 取得可打擊目標；第二段檢查各角色基地是否還有未派任務且 DBID 符合的飛機，支援 `baseGUIDCandidates` 跨基地 fallback，並以「半戰力門檻」在飛機不足全額時仍允許以半數出擊；第三段依飛行距離、支援角色到位時間與 `strikeInterval` 產生每個 Package 的 `startTime`、`endTime` 與 `loadoutStatus`。
 
@@ -24,7 +24,7 @@
 flowchart TD
     ENTRY["process(config, saveData, contacts)"]
     ENABLED{"dynamicOperations enabled?"}
-    FILTER["filterOperationsByType(reconSchedule, air)"]
+    FILTER["filterOperationsByType(reconTriggeredOperations, air)"]
     LOOP{"還有未處理的 air operation?"}
     TRIGGER{"reconEntry time + delay 到達?"}
     TEMPLATE{"operation.template 存在?"}
@@ -58,7 +58,7 @@ flowchart TD
 
 ### 目標與機隊驗證
 
-`processATOTemplateWithValidation()` 會 deep copy Wave template 的 packages，避免直接修改 config 或 recon schedule 中的原始 template。每個 Package 先呼叫 `TargetingProcess.processTargets()` 產生 `target.list`，再以 `validateIndividualPackage()` 驗證目標數與各角色飛機數。
+`processATOTemplateWithValidation()` 會 deep copy Wave template 的 packages，避免直接修改 config 或 recon-triggered operation batch 中的原始 template。每個 Package 先呼叫 `TargetingProcess.processTargets()` 產生 `target.list`，再以 `validateIndividualPackage()` 驗證目標數與各角色飛機數。
 
 機隊驗證依 `PACKAGE_ROLES`（`striker`、`escort`、`wildWeasel`、`jammer`、`tanker`）逐一檢查。`validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選清單依序嘗試；一旦某基地的可用餘額達到「半戰力門檻」，就把 `roleData.baseGUID` 改寫為實際選定基地（下游因此只會看到單一字串），並把預訂量累加進 `assignedAircraft`，讓同一輪 validation 中後續 Package 扣除已保留的飛機。
 
@@ -122,8 +122,8 @@ saveData.c
 │   ├── lastEvaluationTime
 │   ├── generatedOperations
 │   │   └── air: table<string, boolean>
-│   └── reconSchedule: SBJ__ReconScheduleEntry[]
-│       └── ReconScheduleEntry
+│   └── reconTriggeredOperations: SBJ__ReconTriggeredOperationBatch[]
+│       └── ReconTriggeredOperationBatch
 │           ├── time
 │           ├── type
 │           ├── delay
@@ -173,7 +173,7 @@ saveData.c
 | 類型 | 路徑 | 用途 |
 |---|---|---|
 | `config` | `config.c.packageTemplates` | 由 recon 模組建立 operation template；本模組接收其中的 `SBJ__WaveTemplate`。 |
-| `saveData` | `saveData.c.dynamicOperations.reconSchedule` | 動態空中作戰的觸發來源。 |
+| `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperations` | 動態空中作戰的觸發來源。 |
 | `saveData` | `saveData.c.air.airTaskingOrder` | 動態 Wave 插入位置，也是既有任務佔用量掃描來源。 |
 | `constants` | `constants.SIDES.ENEMY` | 讀取 China side reference point。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 動態 ATO timing 與處理結果 log tag。 |
@@ -184,6 +184,6 @@ saveData.c
 
 - [airTaskingOrder](airTaskingOrder.md) — 執行本模組插入的 ATO Wave。
 - [targetingProcess](targetingProcess.md) — 動態目標評估與 BDA 過濾。
-- [dynamicOperationsUtils](dynamicOperationsUtils.md) — recon schedule 狀態、命名與 generated operation 追蹤。
+- [dynamicOperationsUtils](dynamicOperationsUtils.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
 - [recon](recon.md) — 依偵察結果建立 air operation template。
 - [系統架構](README.md)

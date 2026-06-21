@@ -72,7 +72,7 @@ describe("DynamicOperationsUtils", function()
         air = { airTaskingOrder = overrides.airTaskingOrder or {} },
         ground = { fireSupportPlan = overrides.fireSupportPlan or {} },
         dynamicOperations = {
-          reconSchedule = overrides.reconSchedule or {},
+          reconTriggeredOperations = overrides.reconTriggeredOperations or {},
           generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
         }
       }
@@ -80,10 +80,10 @@ describe("DynamicOperationsUtils", function()
   end
 
   -- ============================================================================
-  -- checkReconEntryCompleted
+  -- checkOperationBatchCompleted
   -- ============================================================================
 
-  describe("checkReconEntryCompleted", function()
+  describe("checkOperationBatchCompleted", function()
     -- Positive: all operations executed
     it("should return true and set executed when all operations are executed", function()
       local entry = makeReconEntry({
@@ -93,7 +93,7 @@ describe("DynamicOperationsUtils", function()
         }
       })
 
-      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
+      local result = DynamicOperationsUtils.checkOperationBatchCompleted(entry)
 
       assert.is_true(result)
       assert.is_true(entry.executed)
@@ -108,7 +108,7 @@ describe("DynamicOperationsUtils", function()
         }
       })
 
-      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
+      local result = DynamicOperationsUtils.checkOperationBatchCompleted(entry)
 
       assert.is_false(result)
       assert.is_false(entry.executed)
@@ -120,7 +120,7 @@ describe("DynamicOperationsUtils", function()
         operations = { makeOperation({ executed = false }) }
       })
 
-      assert.is_false(DynamicOperationsUtils.checkReconEntryCompleted(entry))
+      assert.is_false(DynamicOperationsUtils.checkOperationBatchCompleted(entry))
     end)
 
     -- Boundary: nil operations
@@ -128,7 +128,7 @@ describe("DynamicOperationsUtils", function()
       local entry = makeReconEntry()
       entry.operations = nil
 
-      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
+      local result = DynamicOperationsUtils.checkOperationBatchCompleted(entry)
 
       assert.is_true(result)
     end)
@@ -137,7 +137,7 @@ describe("DynamicOperationsUtils", function()
     it("should return true when operations is empty table", function()
       local entry = makeReconEntry({ operations = {} })
 
-      local result = DynamicOperationsUtils.checkReconEntryCompleted(entry)
+      local result = DynamicOperationsUtils.checkOperationBatchCompleted(entry)
 
       assert.is_true(result)
       assert.is_true(entry.executed)
@@ -145,18 +145,18 @@ describe("DynamicOperationsUtils", function()
   end)
 
   -- ============================================================================
-  -- updateReconScheduleStatus
+  -- updateReconTriggeredOperationStatus
   -- ============================================================================
 
-  describe("updateReconScheduleStatus", function()
+  describe("updateReconTriggeredOperationStatus", function()
     -- Positive: marks completed entries
-    it("should mark completed entries via checkReconEntryCompleted", function()
+    it("should mark completed entries via checkOperationBatchCompleted", function()
       local entry = makeReconEntry({
         operations = { makeOperation({ executed = true }) }
       })
-      local saveData = makeSaveData({ reconSchedule = { entry } })
+      local saveData = makeSaveData({ reconTriggeredOperations = { entry } })
 
-      DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+      DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
 
       assert.is_true(entry.executed)
     end)
@@ -167,9 +167,9 @@ describe("DynamicOperationsUtils", function()
         executed = true,
         operations = { makeOperation({ executed = false }) }
       })
-      local saveData = makeSaveData({ reconSchedule = { entry } })
+      local saveData = makeSaveData({ reconTriggeredOperations = { entry } })
 
-      DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+      DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
 
       -- Should remain true because already executed entries are skipped
       assert.is_true(entry.executed)
@@ -183,9 +183,9 @@ describe("DynamicOperationsUtils", function()
       local entry2 = makeReconEntry({
         operations = { makeOperation({ executed = false }) }
       })
-      local saveData = makeSaveData({ reconSchedule = { entry1, entry2 } })
+      local saveData = makeSaveData({ reconTriggeredOperations = { entry1, entry2 } })
 
-      DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+      DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
 
       assert.is_true(entry1.executed)
       assert.is_false(entry2.executed)
@@ -196,16 +196,16 @@ describe("DynamicOperationsUtils", function()
       local saveData = { c = {} }
 
       assert.has_no.error(function()
-        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+        DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
       end)
     end)
 
-    -- Boundary: nil reconSchedule
-    it("should not error when reconSchedule is nil", function()
+    -- Boundary: nil reconTriggeredOperations
+    it("should not error when reconTriggeredOperations is nil", function()
       local saveData = { c = { dynamicOperations = {} } }
 
       assert.has_no.error(function()
-        DynamicOperationsUtils.updateReconScheduleStatus(saveData)
+        DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
       end)
     end)
   end)
@@ -251,7 +251,7 @@ describe("DynamicOperationsUtils", function()
       local result = DynamicOperationsUtils.filterOperationsByType(schedule, "air")
 
       assert.are.equal(1, #result)
-      assert.are.equal(entry, result[1].reconEntry)
+      assert.are.equal(entry, result[1].operationBatch)
     end)
 
     -- Positive: collects across multiple entries
@@ -687,7 +687,7 @@ describe("DynamicOperationsUtils", function()
 
       local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
 
-      assert.are.equal("2026-02-14 12:00:00", result.nextReconTime)
+      assert.are.equal("2026-02-14 12:00:00", result.nextOperationBatchTime)
       assert.are.equal("2026-02-14 06:00:00", result.mostRecentTime)
     end)
 
@@ -723,7 +723,7 @@ describe("DynamicOperationsUtils", function()
 
       local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
 
-      assert.are.equal("2026-02-14 14:00:00", result.nextReconTime)
+      assert.are.equal("2026-02-14 14:00:00", result.nextOperationBatchTime)
       assert.are.equal("2026-02-14 06:00:00", result.mostRecentTime)
     end)
 
@@ -735,7 +735,7 @@ describe("DynamicOperationsUtils", function()
 
       assert.are.equal(0, #result.air)
       assert.are.equal(0, #result.ground)
-      assert.is_nil(result.nextReconTime)
+      assert.is_nil(result.nextOperationBatchTime)
       assert.is_nil(result.mostRecentTime)
     end)
 
@@ -747,7 +747,7 @@ describe("DynamicOperationsUtils", function()
 
       assert.are.equal(0, #result.air)
       assert.are.equal(0, #result.ground)
-      assert.is_nil(result.nextReconTime)
+      assert.is_nil(result.nextOperationBatchTime)
       assert.is_nil(result.mostRecentTime)
     end)
 
@@ -778,7 +778,7 @@ describe("DynamicOperationsUtils", function()
 
       assert.are.equal(0, #result.air)
       assert.are.equal(0, #result.ground)
-      assert.are.equal("2026-02-14 12:00:00", result.nextReconTime)
+      assert.are.equal("2026-02-14 12:00:00", result.nextOperationBatchTime)
       assert.is_nil(result.mostRecentTime)
     end)
 
@@ -794,7 +794,7 @@ describe("DynamicOperationsUtils", function()
 
       local result = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(schedule)
 
-      assert.is_nil(result.nextReconTime)
+      assert.is_nil(result.nextOperationBatchTime)
       assert.are.equal("2026-02-14 08:00:00", result.mostRecentTime)
     end)
 
@@ -892,8 +892,8 @@ describe("DynamicOperationsUtils", function()
       assert.is_false(exists)
     end)
 
-    -- Negative: nil reconSchedule
-    it("should return false when reconSchedule is nil", function()
+    -- Negative: nil operation batches
+    it("should return false when operation batches are nil", function()
       assert.is_false(DynamicOperationsUtils.hasOperation(nil, "STRIKE/1", "air"))
     end)
 

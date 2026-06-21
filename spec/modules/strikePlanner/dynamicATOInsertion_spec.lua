@@ -39,7 +39,7 @@ describe("DynamicATOInsertion", function()
   end
 
   ---Create full saveData structure for tests
-  local function makeSaveData(reconSchedule, opts)
+  local function makeSaveData(reconTriggeredOperations, opts)
     opts = opts or {}
     return {
       c = {
@@ -47,7 +47,7 @@ describe("DynamicATOInsertion", function()
         targetlist = opts.targetlist or {},
         dynamicOperations = {
           enabled = true,
-          reconSchedule = reconSchedule,
+          reconTriggeredOperations = reconTriggeredOperations,
           generatedOperations = opts.generatedOperations or { air = {}, ground = {} }
         }
       }
@@ -84,7 +84,7 @@ describe("DynamicATOInsertion", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconSchedule = {}
+          reconTriggeredOperations = {}
         }
       }
     }
@@ -134,7 +134,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -198,7 +198,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -276,7 +276,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "SHIP-1", "SHIP-2" }))
@@ -346,7 +346,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Package 1 (TAOYUAN) gets 3 targets, Package 2 (HSINCHU) gets 1 target (needs 10)
@@ -415,8 +415,8 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry1, operation = operation1 },
-      { reconEntry = reconEntry2, operation = operation2 }
+      { operationBatch = reconEntry1, operation = operation1 },
+      { operationBatch = reconEntry2, operation = operation2 }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -485,7 +485,7 @@ describe("DynamicATOInsertion", function()
       return baseTimestamp
     end))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -560,7 +560,7 @@ describe("DynamicATOInsertion", function()
       return baseTimestamp
     end))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -633,7 +633,7 @@ describe("DynamicATOInsertion", function()
     -- parseDatetimeToTimestamp returns 1000, plus delay 500 = 1500
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     -- isAfterStartTime(1500) with current time 2000 => true
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -679,11 +679,11 @@ describe("DynamicATOInsertion", function()
     assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
-  -- Negative: reconSchedule nil
-  it("should return false when reconSchedule is nil", function()
+  -- Negative: reconTriggeredOperations nil
+  it("should return false when reconTriggeredOperations is nil", function()
     local saveData = {
       c = {
-        dynamicOperations = { enabled = true, reconSchedule = nil }
+        dynamicOperations = { enabled = true, reconTriggeredOperations = nil }
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
@@ -691,11 +691,11 @@ describe("DynamicATOInsertion", function()
     assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
   end)
 
-  -- Negative: reconSchedule empty
-  it("should return false when reconSchedule is empty", function()
+  -- Negative: reconTriggeredOperations empty
+  it("should return false when reconTriggeredOperations is empty", function()
     local saveData = {
       c = {
-        dynamicOperations = { enabled = true, reconSchedule = {} }
+        dynamicOperations = { enabled = true, reconTriggeredOperations = {} }
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
@@ -709,7 +709,7 @@ describe("DynamicATOInsertion", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconSchedule = { { time = "2026-02-14 00:00:00", operations = {} } }
+          reconTriggeredOperations = { { time = "2026-02-14 00:00:00", operations = {} } }
         }
       }
     }
@@ -733,7 +733,7 @@ describe("DynamicATOInsertion", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         }
       }
     }
@@ -742,7 +742,7 @@ describe("DynamicATOInsertion", function()
     -- parseDatetimeToTimestamp returns 50, plus delay 600 = 650 > 100 (current time from isAfterStartTime)
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
     local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
@@ -759,7 +759,7 @@ describe("DynamicATOInsertion", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         }
       }
     }
@@ -767,7 +767,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
@@ -812,7 +812,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Returns only 1 target but minTargetCount = 5
@@ -854,7 +854,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -907,7 +907,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Exactly 3 targets = exactly minTargetCount
@@ -961,7 +961,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Only 2 targets, minTargetCount = 3
@@ -1000,7 +1000,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Only 1 target, no minTargetCount => defaults to 1 => pass
@@ -1071,7 +1071,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1140,7 +1140,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1193,7 +1193,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1250,7 +1250,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1294,7 +1294,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1335,7 +1335,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1378,7 +1378,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
@@ -1416,7 +1416,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
@@ -1454,7 +1454,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
@@ -1493,7 +1493,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
@@ -1542,7 +1542,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1603,7 +1603,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1664,7 +1664,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1742,7 +1742,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1803,7 +1803,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1868,7 +1868,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1931,7 +1931,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -1984,7 +1984,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
@@ -2051,7 +2051,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-      { reconEntry = reconEntry, operation = operation }
+      { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))

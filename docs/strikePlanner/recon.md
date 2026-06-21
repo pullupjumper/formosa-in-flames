@@ -8,7 +8,7 @@
 
 ## 概述
 
-recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會依照 `reconObjectiveId` 查詢 `strikeMappingsByReconObjective`，自動排程後續打擊作戰至 `reconSchedule`。
+recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會依照 `reconObjectiveId` 查詢 `strikeMappingsByReconObjective`，自動排程後續打擊作戰至 `reconTriggeredOperations`。
 
 除了偵察生命週期外，模組也負責兩項與打擊規劃緊密相關的副功能：
 
@@ -88,10 +88,10 @@ flowchart TD
     REDIRECT{"reconContext<br>.frontlineRedirected?"}
     REWRITE["改寫符合 fromPrefix 的<br>mapping.name → toPrefix<br>rewriteStrikeMappings"]
     LOOP["遍歷所有 strikeMappings"]
-    CHECK{"作戰已存在於<br>reconSchedule?"}
+    CHECK{"作戰已存在於<br>reconTriggeredOperations?"}
     NEW["建立新作戰<br>buildOperationFromMapping"]
     NEXT["生成下一波<br>tryGenerateNextOperation"]
-    INSERT["插入 reconSchedule<br>新增 ReconScheduleEntry"]
+    INSERT["插入 reconTriggeredOperations<br>新增 ReconTriggeredOperationBatch"]
 
     RECON_OK --> MATRIX
     MATRIX --> REDIRECT
@@ -111,7 +111,7 @@ flowchart TD
 - `STRIKE/INFRASTRUCTURE/*`（SRBM 重點打擊）：當 `fireSupportOnHold = true` 時整批跳過並輸出 `[HOLD]` 日誌；該旗標由 [landingOps/coordinator](../landingOps/coordinator.md) 依 SRBM 彈藥水平與各區域到位狀況維護
 - 映射未命中：`findStrikeMappingsForReconObjective` 找不到對應映射時輸出 `reason=strike_mapping_not_found` 日誌
 - 下一波生成：呼叫 `DynamicOperationsUtils.generateNextOperation` 遞增模板編號
-- 下一波重複檢查（`tryGenerateNextOperation`）：當回傳狀態為 `FOUND_NEXT` 且 `DynamicOperationsUtils.hasPendingOperation` 顯示同名 `/N+1` 已在 `reconSchedule` 中待執行時，整筆跳過並輸出 `[SKIP] <name> already pending`。否則同一個 `/N+1` 會在稍後另一次偵察完成時被再次排入，導致打擊包翻倍。`REUSED_CURRENT`（無下一波模板、重用已執行的 `/N`）則刻意保留，不套用這道檢查
+- 下一波重複檢查（`tryGenerateNextOperation`）：當回傳狀態為 `FOUND_NEXT` 且 `DynamicOperationsUtils.hasPendingOperation` 顯示同名 `/N+1` 已在 `reconTriggeredOperations` 中待執行時，整筆跳過並輸出 `[SKIP] <name> already pending`。否則同一個 `/N+1` 會在稍後另一次偵察完成時被再次排入，導致打擊包翻倍。`REUSED_CURRENT`（無下一波模板、重用已執行的 `/N`）則刻意保留，不套用這道檢查
 - 命名互不衝突：`STRIKE/AB/W/N` 與 `STRIKE/AB/W/AAR/N` 在 `findPrefixMatch` 不會互相誤匹配（後者的 `AAR/N` 無法轉成數字），所以重導向前後產生的下一波作戰各走各的序列，不會混到一起
 
 ---
@@ -281,7 +281,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；`fireSupportOnHold=true` 時跳過 `STRIKE/INFRASTRUCTURE/*` 映射 |
+| `handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；`fireSupportOnHold=true` 時跳過 `STRIKE/INFRASTRUCTURE/*` 映射 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8 偵察無人機 |
 | `trackTarget(reconContext, units, UAVDBID, target)` | 指派 UAV 追蹤特定目標 |
 | `insertEntry(reconContext, entryTemplate, startTime?)` | 在兩次衛星過境的空窗中動態插入一筆 UAV 偵察 entry，成功時回傳該筆 entry；同模板已覆蓋或飛行會超過下次過境時回傳 `nil` 不插入。`startTime` 省略時以當前時間為起算錨點 |
@@ -316,7 +316,7 @@ flowchart TD
 ## 相關模組
 
 - [dynamicOperationsUtils](dynamicOperationsUtils.md) — 作戰搜尋（前綴/精確）、名稱生成、下一波生成
-- [dynamicATOInsertion](dynamicATOInsertion.md) — 從 reconSchedule 取出 air operations 並插入 ATO
-- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 從 reconSchedule 取出 ground operations 並插入 FSEM
+- [dynamicATOInsertion](dynamicATOInsertion.md) — 從 reconTriggeredOperations 取出 air operations 並插入 ATO
+- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 從 reconTriggeredOperations 取出 ground operations 並插入 FSEM
 - [targetingProcess](targetingProcess.md) — 呼叫 `trackTarget` 進行偵察追蹤觸發
 - [系統架構](README.md)

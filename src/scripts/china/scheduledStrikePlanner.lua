@@ -32,7 +32,7 @@ if saveData.c.recon.enabled then
   StrikePlanner.handleReconQueue(
     config,
     saveData.c.recon,
-    saveData.c.dynamicOperations.reconSchedule,
+    saveData.c.dynamicOperations.reconTriggeredOperations,
     saveData.c.surface.lacm,
     saveData.c.amphibOps.fireSupportOnHold == true
   )

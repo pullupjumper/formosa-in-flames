@@ -521,16 +521,16 @@ end
 ---Build and insert ATO wave into saveData
 ---@param saveData SBJ__SaveData Persistent save data to insert wave into
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@param reconType string Reconnaissance type identifier used for wave naming
+---@param operationBatchType string Reconnaissance type identifier used for wave naming
 ---@return boolean success True if wave was successfully inserted, false on failure
 ---@return string|nil waveName Generated wave name when available
 ---@return string[] timingLogEntries Package timing log entries
-local function insertATOWave(saveData, waveTemplate, reconType)
+local function insertATOWave(saveData, waveTemplate, operationBatchType)
   if not saveData.c.air.airTaskingOrder then
     return false, nil, {}
   end
 
-  local waveName = DynamicOperationsUtils.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
+  local waveName = DynamicOperationsUtils.generateUniqueAirOperationName(waveTemplate.name, operationBatchType, saveData)
   local wave, timingLogEntries = buildATOWave(waveTemplate, waveName)
   return insertWave(saveData, wave), waveName, timingLogEntries
 end
@@ -540,7 +540,7 @@ end
 -- ============================================================================
 
 ---Check whether recon trigger time is reached for processing
----@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry
+---@param reconEntry SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
 ---@return boolean # True when current time is at or past trigger time
 local function isReconTriggered(reconEntry)
   local scheduledTimestamp = Utils.parseDatetimeToTimestamp(reconEntry.time)
@@ -561,7 +561,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry triggering this operation
+---@param reconEntry SBJ__ReconTriggeredOperationBatch Operation batch triggering this operation
 ---@param operation SBJ__Operation Air operation containing wave template
 ---@return boolean success True if ATO wave was successfully created and inserted
 ---@return string|nil reason Failure reason when success is false
@@ -614,12 +614,12 @@ function DynamicATOInsertion.process(config, saveData, contacts)
 
   saveData.c.dynamicOperations.lastEvaluationTime = GameApi.ScenEdit_CurrentTime()
 
-  local reconSchedule = saveData.c.dynamicOperations.reconSchedule
-  if not reconSchedule or #reconSchedule == 0 then
+  local reconTriggeredOperations = saveData.c.dynamicOperations.reconTriggeredOperations
+  if not reconTriggeredOperations or #reconTriggeredOperations == 0 then
     return false
   end
 
-  local airOperations = DynamicOperationsUtils.filterOperationsByType(reconSchedule, "air")
+  local airOperations = DynamicOperationsUtils.filterOperationsByType(reconTriggeredOperations, "air")
   if #airOperations == 0 then
     return false
   end
@@ -628,15 +628,16 @@ function DynamicATOInsertion.process(config, saveData, contacts)
   local processedResults = {}
 
   for _, item in ipairs(airOperations) do
-    local reconEntry = item.reconEntry
+    local operationBatch = item.operationBatch
     local operation = item.operation
 
-    if isReconTriggered(reconEntry) then
+    if isReconTriggered(operationBatch) then
       local operationName = (operation.template and operation.template.name) or "unknown"
-      local success, reason, statusSummary, details = processAirOperation(config, saveData, contacts, reconEntry, operation)
+      local success, reason, statusSummary, details = processAirOperation(config, saveData, contacts, operationBatch,
+        operation)
 
       if reason ~= "MISSING_TEMPLATE" then
-        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
+        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, true)
       end
 
       if success then
@@ -645,8 +646,8 @@ function DynamicATOInsertion.process(config, saveData, contacts)
 
       table.insert(processedResults, {
         operationName = operationName,
-        reconTime = reconEntry.time,
-        reconType = reconEntry.type,
+        operationBatchTime = operationBatch.time,
+        operationBatchType = operationBatch.type,
         success = success,
         reason = reason,
         statusSummary = statusSummary,
@@ -664,31 +665,31 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     for _, r in ipairs(processedResults) do
       if r.success then
         table.insert(infoLines, LogFormat.entry("OK", string.format(
-          "operation=%s reconTime=%q reconType=%s wave=%s %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s wave=%s %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           LogFormat.value(r.waveName),
           r.statusSummary or "status=none")))
       elseif r.reason == "NO_VALID_PACKAGES" then
         table.insert(infoLines, LogFormat.entry("SKIP", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=no_valid_packages %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=no_valid_packages %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           r.statusSummary or "status=none")))
       elseif r.reason == "MISSING_TEMPLATE" then
         table.insert(errorLines, LogFormat.entry("ERROR", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=missing_wave_template",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=missing_wave_template",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType))))
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType))))
       else
         table.insert(errorLines, LogFormat.entry("FAIL", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=%s %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=%s %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           formatReason(r.reason),
           r.statusSummary or "status=none")))
       end

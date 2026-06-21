@@ -85,7 +85,7 @@ describe("DynamicFireSupportPlan", function()
         },
         dynamicOperations = {
           enabled = true,
-          reconSchedule = overrides.reconSchedule or {},
+          reconTriggeredOperations = overrides.reconTriggeredOperations or {},
           generatedOperations = { ground = {}, air = {} }
         }
       }
@@ -146,7 +146,7 @@ describe("DynamicFireSupportPlan", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconSchedule = {}
+            reconTriggeredOperations = {}
           }
         }
       }
@@ -167,7 +167,7 @@ describe("DynamicFireSupportPlan", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconSchedule = { reconEntry }
+            reconTriggeredOperations = { reconEntry }
           }
         }
       }
@@ -175,7 +175,7 @@ describe("DynamicFireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
       trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-        { reconEntry = reconEntry, operation = operation }
+        { operationBatch = reconEntry, operation = operation }
       }))
       markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -191,7 +191,7 @@ describe("DynamicFireSupportPlan", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconSchedule = { reconEntry }
+            reconTriggeredOperations = { reconEntry }
           }
         }
       }
@@ -199,7 +199,7 @@ describe("DynamicFireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(100))
       trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-        { reconEntry = reconEntry, operation = operation }
+        { operationBatch = reconEntry, operation = operation }
       }))
       markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -230,10 +230,10 @@ describe("DynamicFireSupportPlan", function()
       it("should create and insert FSEM when targets and firing units are available", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -252,10 +252,10 @@ describe("DynamicFireSupportPlan", function()
       it("should set FSEM fields correctly with isActivated true and strikeInterval 0", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -276,10 +276,10 @@ describe("DynamicFireSupportPlan", function()
       it("should return false and keep operation pending when targets are insufficient", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
 
         assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
@@ -295,10 +295,10 @@ describe("DynamicFireSupportPlan", function()
       it("should not create FSEM when firing unit name is missing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ firingUnits = { {} } })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
 
         assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
@@ -319,11 +319,11 @@ describe("DynamicFireSupportPlan", function()
               }
             }
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
 
         assert.is_false(DynamicFireSupportPlan.execute(makeConfig(), saveData, {}))
@@ -334,10 +334,10 @@ describe("DynamicFireSupportPlan", function()
       it("should not create FSEM when firing unit is not found in game", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
@@ -351,11 +351,11 @@ describe("DynamicFireSupportPlan", function()
         local operation = makeOperation()
         local saveData = makeSaveData({
           srbmFiringUnits = {},
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
 
@@ -371,11 +371,11 @@ describe("DynamicFireSupportPlan", function()
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
 
@@ -387,10 +387,10 @@ describe("DynamicFireSupportPlan", function()
       it("should not create FSEM when firing unit has low ammunition", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(true))
@@ -420,11 +420,11 @@ describe("DynamicFireSupportPlan", function()
               }
             }
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -454,11 +454,11 @@ describe("DynamicFireSupportPlan", function()
             ["Battery-2"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }),
             ["Battery-3"] = makeBatteryContext()
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
           return { guid = "U-" .. name, name = name }
@@ -494,10 +494,10 @@ describe("DynamicFireSupportPlan", function()
             }
           }
         })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -535,11 +535,11 @@ describe("DynamicFireSupportPlan", function()
             ["Battery-1"] = makeBatteryContext(),
             ["Battery-2"] = makeBatteryContext()
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
           return { guid = "U-" .. name, name = name }
@@ -572,12 +572,12 @@ describe("DynamicFireSupportPlan", function()
             ["Battery-1"] = makeBatteryContext(),
             ["Battery-2"] = makeBatteryContext()
           },
-          reconSchedule = { reconEntry1, reconEntry2 }
+          reconTriggeredOperations = { reconEntry1, reconEntry2 }
         })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry1, operation = operation1 },
-          { reconEntry = reconEntry2, operation = operation2 }
+          { operationBatch = reconEntry1, operation = operation1 },
+          { operationBatch = reconEntry2, operation = operation2 }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
           return { guid = "U-" .. name, name = name }
@@ -601,11 +601,11 @@ describe("DynamicFireSupportPlan", function()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
         local operation2 = makeOperation({ templateName = "WAIT-OP/1", minTargetCount = 10 })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry1, reconEntry2 } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry1, reconEntry2 } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry1, operation = operation1 },
-          { reconEntry = reconEntry2, operation = operation2 }
+          { operationBatch = reconEntry1, operation = operation1 },
+          { operationBatch = reconEntry2, operation = operation2 }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -627,11 +627,11 @@ describe("DynamicFireSupportPlan", function()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
         local operation2 = { type = "ground", executed = false }
-        local saveData = makeSaveData({ reconSchedule = { reconEntry1, reconEntry2 } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry1, reconEntry2 } })
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry1, operation = operation1 },
-          { reconEntry = reconEntry2, operation = operation2 }
+          { operationBatch = reconEntry1, operation = operation1 },
+          { operationBatch = reconEntry2, operation = operation2 }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
@@ -658,12 +658,12 @@ describe("DynamicFireSupportPlan", function()
       it("should silently skip operations before observation window opens", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(500))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -676,7 +676,7 @@ describe("DynamicFireSupportPlan", function()
       it("should mark operation executed=false and emit warning log when window expires", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         local config = makeConfig()
         local triggerTime = 1000
@@ -685,7 +685,7 @@ describe("DynamicFireSupportPlan", function()
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(pastDeadline))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(triggerTime))
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -702,13 +702,13 @@ describe("DynamicFireSupportPlan", function()
       it("should keep operation pending when targets are insufficient inside window", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         trackStub(stub(TargetingProcess, "processTargets").returns({}))
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -724,14 +724,14 @@ describe("DynamicFireSupportPlan", function()
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
           },
-          reconSchedule = { reconEntry }
+          reconTriggeredOperations = { reconEntry }
         })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         markOperationExecutedStub = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
@@ -744,13 +744,13 @@ describe("DynamicFireSupportPlan", function()
       it("should emit [SKIP] log every tick while operation is observing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         trackStub(stub(TargetingProcess, "processTargets").returns({}))
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
 
@@ -769,14 +769,14 @@ describe("DynamicFireSupportPlan", function()
       it("should insert FSEM when targets accumulate to satisfy minTargetCount mid-window", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 2 })
-        local saveData = makeSaveData({ reconSchedule = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         local processTargetsStub = trackStub(stub(TargetingProcess, "processTargets").returns({}))
 
         trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
-          { reconEntry = reconEntry, operation = operation }
+          { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))

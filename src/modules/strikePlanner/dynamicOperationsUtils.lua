@@ -22,14 +22,14 @@ local TYPE_CONFIG = {
 -- Internal Helpers
 -- ============================================================================
 
----Iterate all operations across reconnaissance schedule entries with their parent entry
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule entries
----@param callback fun(operation: SBJ__Operation, reconEntry: SBJ__ReconScheduleEntry) Called for each operation
-local function forEachOperation(reconSchedule, callback)
-  for _, reconEntry in ipairs(reconSchedule) do
-    if reconEntry.operations then
-      for _, operation in ipairs(reconEntry.operations) do
-        callback(operation, reconEntry)
+---Iterate all operations across reconnaissance-triggered operation batches
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param callback fun(operation: SBJ__Operation, operationBatch: SBJ__ReconTriggeredOperationBatch) Called for each operation
+local function forEachOperation(operationBatches, callback)
+  for _, operationBatch in ipairs(operationBatches) do
+    if operationBatch.operations then
+      for _, operation in ipairs(operationBatch.operations) do
+        callback(operation, operationBatch)
       end
     end
   end
@@ -63,13 +63,13 @@ local function generateUniqueOperationName(operationType, reconType, registry, e
 end
 
 -- ============================================================================
--- Recon Entry Status
+-- Operation Batch Status
 -- ============================================================================
 
----Check if all operations in a reconnaissance entry are completed
----@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry with operations array
+---Check if all operations in a reconnaissance-triggered batch are completed
+---@param reconEntry SBJ__ReconTriggeredOperationBatch Operation batch with operations array
 ---@return boolean # Whether all operations are completed
-function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
+function DynamicOperationsUtils.checkOperationBatchCompleted(reconEntry)
   if not reconEntry.operations then
     return true
   end
@@ -84,16 +84,16 @@ function DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
   return true
 end
 
----Update completion status for all reconnaissance schedule entries
+---Update completion status for all reconnaissance-triggered operation batches
 ---@param saveData SBJ__SaveData Game save data
-function DynamicOperationsUtils.updateReconScheduleStatus(saveData)
-  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconSchedule then
+function DynamicOperationsUtils.updateReconTriggeredOperationStatus(saveData)
+  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconTriggeredOperations then
     return
   end
 
-  for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconSchedule) do
+  for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconTriggeredOperations) do
     if not reconEntry.executed then
-      DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
+      DynamicOperationsUtils.checkOperationBatchCompleted(reconEntry)
     end
   end
 end
@@ -102,19 +102,19 @@ end
 -- Operation Filtering
 -- ============================================================================
 
----Filter operations by type from reconnaissance schedule
----@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
+---Filter operations by type from reconnaissance-triggered operation batches
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param operationType string Operation type to filter ("air" or "ground")
----@return table<number, {reconEntry: SBJ__ReconScheduleEntry, operation: SBJ__Operation}> # Array of matching operations with their parent entries
-function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationType)
+---@return table<number, {operationBatch: SBJ__ReconTriggeredOperationBatch, operation: SBJ__Operation}> # Array of matching operations with their parent batches
+function DynamicOperationsUtils.filterOperationsByType(operationBatches, operationType)
   local filteredOperations = {}
 
-  for _, reconEntry in ipairs(reconSchedule) do
-    if not reconEntry.executed and reconEntry.operations then
-      for _, operation in ipairs(reconEntry.operations) do
+  for _, operationBatch in ipairs(operationBatches) do
+    if not operationBatch.executed and operationBatch.operations then
+      for _, operation in ipairs(operationBatch.operations) do
         if operation.type == operationType and not operation.executed then
           table.insert(filteredOperations, {
-            reconEntry = reconEntry,
+            operationBatch = operationBatch,
             operation = operation
           })
         end
@@ -125,15 +125,15 @@ function DynamicOperationsUtils.filterOperationsByType(reconSchedule, operationT
   return filteredOperations
 end
 
----Mark operation as executed and update parent reconnaissance entry status
----@param reconEntry SBJ__ReconScheduleEntry Parent reconnaissance entry
+---Mark operation as executed and update parent operation batch status
+---@param reconEntry SBJ__ReconTriggeredOperationBatch Parent operation batch
 ---@param operation SBJ__Operation Operation that was executed
 ---@param success boolean Whether the operation was successful
 function DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, success)
   operation.executed = true
   operation.executionResult = success
 
-  DynamicOperationsUtils.checkReconEntryCompleted(reconEntry)
+  DynamicOperationsUtils.checkOperationBatchCompleted(reconEntry)
 end
 
 -- ============================================================================
@@ -178,22 +178,22 @@ function DynamicOperationsUtils.registerGeneratedOperation(operationType, operat
 end
 
 -- ============================================================================
--- Recon Schedule Query
+-- Recon-Triggered Operation Query
 -- ============================================================================
 
----Get operations from most recent reconnaissance entry classified by type and next reconnaissance time
----Uses current game time to find the most recent recon entry whose time has passed
----@param reconSchedule SBJ__ReconScheduleEntry[]|nil Array of reconnaissance schedule entries (may not be in time order)
----@return {air: SBJ__Operation[], ground: SBJ__Operation[], nextReconTime: string|nil, mostRecentTime: string|nil} # Operations classified by type, next recon time, and most recent entry time
-function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
+---Get operations from most recent reconnaissance-triggered batch classified by type
+---Uses current game time to find the most recent batch whose time has passed.
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[]|nil Operation batches triggered by reconnaissance
+---@return {air: SBJ__Operation[], ground: SBJ__Operation[], nextOperationBatchTime: string|nil, mostRecentTime: string|nil} # Operations classified by type, next recon time, and most recent entry time
+function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(operationBatches)
   local result = {
     air = {},
     ground = {},
-    nextReconTime = nil,
+    nextOperationBatchTime = nil,
     mostRecentTime = nil
   }
 
-  if not reconSchedule or #reconSchedule == 0 then
+  if not operationBatches or #operationBatches == 0 then
     return result
   end
 
@@ -203,28 +203,28 @@ function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedu
   end
 
   -- Single pass: find most recent past entry and earliest future entry
-  local mostRecentEntry = nil
+  local mostRecentBatch = nil
   local mostRecentTimestamp = -1
-  local nextEntry = nil
+  local nextBatch = nil
   local nextTimestamp = math.huge
 
-  for _, reconEntry in ipairs(reconSchedule) do
-    local entryTimestamp = Utils.parseDatetimeToTimestamp(reconEntry.time)
+  for _, operationBatch in ipairs(operationBatches) do
+    local timestamp = Utils.parseDatetimeToTimestamp(operationBatch.time)
 
-    if entryTimestamp <= currentTimestamp and entryTimestamp > mostRecentTimestamp then
-      mostRecentEntry = reconEntry
-      mostRecentTimestamp = entryTimestamp
-    elseif entryTimestamp > currentTimestamp and entryTimestamp < nextTimestamp then
-      nextEntry = reconEntry
-      nextTimestamp = entryTimestamp
+    if timestamp <= currentTimestamp and timestamp > mostRecentTimestamp then
+      mostRecentBatch = operationBatch
+      mostRecentTimestamp = timestamp
+    elseif timestamp > currentTimestamp and timestamp < nextTimestamp then
+      nextBatch = operationBatch
+      nextTimestamp = timestamp
     end
   end
 
   -- Extract and classify operations from most recent entry
-  if mostRecentEntry then
-    result.mostRecentTime = mostRecentEntry.time
-    if mostRecentEntry.operations then
-      for _, operation in ipairs(mostRecentEntry.operations) do
+  if mostRecentBatch then
+    result.mostRecentTime = mostRecentBatch.time
+    if mostRecentBatch.operations then
+      for _, operation in ipairs(mostRecentBatch.operations) do
         if operation.type == "air" then
           table.insert(result.air, operation)
         elseif operation.type == "ground" then
@@ -234,8 +234,8 @@ function DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedu
     end
   end
 
-  if nextEntry then
-    result.nextReconTime = nextEntry.time
+  if nextBatch then
+    result.nextOperationBatchTime = nextBatch.time
   end
 
   return result
@@ -246,16 +246,16 @@ end
 -- ============================================================================
 
 ---Find exact match operation by template name and type
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule entries
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param templateName string Exact template name to match
 ---@param operationType string Operation type to match
 ---@return boolean exists Whether the operation was found
 ---@return SBJ__Operation|nil operation Found operation
----@return SBJ__ReconScheduleEntry|nil reconEntry Parent entry
-local function findExactMatch(reconSchedule, templateName, operationType)
+---@return SBJ__ReconTriggeredOperationBatch|nil reconEntry Parent batch
+local function findExactMatch(operationBatches, templateName, operationType)
   local foundOp, foundEntry
 
-  forEachOperation(reconSchedule, function(operation, reconEntry)
+  forEachOperation(operationBatches, function(operation, reconEntry)
     if foundOp then return end
     if operation.type == operationType
         and operation.template
@@ -275,17 +275,17 @@ end
 ---Only consumed operations (executed == true) are eligible as prefix bases; unconsumed
 ---ones (e.g. ground operations still inside their observation window) are skipped to
 ---prevent generateNextOperation from producing /N+1 before the prior wave is settled.
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule entries
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param prefix string Template name prefix ending with "/"
 ---@param operationType string Operation type to match
 ---@return boolean exists Whether a matching operation was found
 ---@return SBJ__Operation|nil operation Best matching operation
----@return SBJ__ReconScheduleEntry|nil reconEntry Parent entry
-local function findPrefixMatch(reconSchedule, prefix, operationType)
+---@return SBJ__ReconTriggeredOperationBatch|nil reconEntry Parent batch
+local function findPrefixMatch(operationBatches, prefix, operationType)
   local bestOp, bestEntry
   local maxNumber, maxTime = -1, -1
 
-  forEachOperation(reconSchedule, function(operation, reconEntry)
+  forEachOperation(operationBatches, function(operation, reconEntry)
     if not operation.executed then
       return
     end
@@ -318,34 +318,34 @@ local function findPrefixMatch(reconSchedule, prefix, operationType)
   return false, nil, nil
 end
 
----Check if an operation with specific template name and type exists in reconnaissance schedule
+---Check if an operation with specific template name and type exists in triggered batches
 ---Supports exact match and prefix search (templateName ending with "/")
----@param reconSchedule SBJ__ReconScheduleEntry[]|nil Array of reconnaissance schedule entries
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[]|nil Operation batches triggered by reconnaissance
 ---@param templateName string Template name to search for (e.g., "STRIKE/AB/W/1" or "STRIKE/AB/W/" for prefix)
 ---@param operationType string Operation type ("air" or "ground")
 ---@return boolean exists Whether the operation exists in the schedule
 ---@return SBJ__Operation|nil operation The operation object if found, nil otherwise
----@return SBJ__ReconScheduleEntry|nil reconEntry The parent reconnaissance entry if found, nil otherwise
-function DynamicOperationsUtils.hasOperation(reconSchedule, templateName, operationType)
-  if not reconSchedule then
+---@return SBJ__ReconTriggeredOperationBatch|nil reconEntry The parent batch if found, nil otherwise
+function DynamicOperationsUtils.hasOperation(operationBatches, templateName, operationType)
+  if not operationBatches then
     return false, nil, nil
   end
 
   if templateName:sub(-1) == "/" then
-    return findPrefixMatch(reconSchedule, templateName, operationType)
+    return findPrefixMatch(operationBatches, templateName, operationType)
   end
-  return findExactMatch(reconSchedule, templateName, operationType)
+  return findExactMatch(operationBatches, templateName, operationType)
 end
 
 ---Check whether an unexecuted operation with the given template name and type already exists
 ---Used to prevent scheduling a duplicate next wave while a prior one is still pending.
----@param reconSchedule SBJ__ReconScheduleEntry[] Array of reconnaissance schedule entries
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param templateName string Exact template name to match (e.g. "STRIKE/C2/N/2")
 ---@param operationType string Operation type to match ("air" or "ground")
 ---@return boolean # True if a matching unexecuted operation is already scheduled
-function DynamicOperationsUtils.hasPendingOperation(reconSchedule, templateName, operationType)
+function DynamicOperationsUtils.hasPendingOperation(operationBatches, templateName, operationType)
   local found = false
-  forEachOperation(reconSchedule, function(operation)
+  forEachOperation(operationBatches, function(operation)
     if found then return end
     if not operation.executed and
         operation.type == operationType and

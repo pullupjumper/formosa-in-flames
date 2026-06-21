@@ -300,11 +300,11 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("handleReconQueue", function()
-    local config, reconSchedule, LACMContext
+    local config, reconTriggeredOperations, LACMContext
 
     before_each(function()
       config = makeConfig()
-      reconSchedule = {}
+      reconTriggeredOperations = {}
       LACMContext = makeLACMContext()
     end)
 
@@ -326,7 +326,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.hasLaunched)
       assert.are.equal("AC-001", entry.unitGUID)
@@ -338,7 +338,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(entry.hasLaunched)
       assert.is_nil(entry.unitGUID)
@@ -352,7 +352,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- Should proceed to phase 2, not re-launch
       assert.is_true(entry.hasLaunched)
@@ -370,7 +370,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(entry.isFinished)
     end)
@@ -383,7 +383,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(entry.isFinished)
     end)
@@ -400,11 +400,11 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
       -- No dynamic operations scheduled (mission failed)
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
     end)
 
     it("should mark mission as successful when UAV destroyed after endTime", function()
@@ -418,7 +418,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -439,7 +439,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -464,7 +464,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- Should update course to target position
       assert.are.equal(1, #ac.course)
@@ -495,7 +495,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -518,7 +518,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- Tracking failed => settleReconMission called with success=true
       assert.is_true(entry.isFinished)
@@ -542,7 +542,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -559,11 +559,11 @@ describe("Recon", function()
       })
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- isFinished should remain true, no additional scheduling
       assert.is_true(entry.isFinished)
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
     end)
 
     -- ========================================================================
@@ -579,7 +579,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -590,7 +590,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(entry.isFinished)
     end)
@@ -601,10 +601,10 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- Should not schedule duplicate operations
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
     end)
 
     it("should finish SIGINT mission when endTime reached", function()
@@ -616,7 +616,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
     end)
@@ -640,7 +640,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ uavEntry, satEntry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(uavEntry.hasLaunched)
       assert.is_true(satEntry.isFinished)
@@ -670,11 +670,11 @@ describe("Recon", function()
       ))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
       -- Should have scheduled operations (STRIKE/C2/1 new + STRIKE/C2/2 next)
-      assert.is_true(#reconSchedule > 0)
+      assert.is_true(#reconTriggeredOperations > 0)
     end)
 
     it("should skip STRIKE/AB/E/1 when LACM is not enabled", function()
@@ -699,7 +699,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       -- LACM not enabled => STRIKE/AB/E/1 skipped => no operations
       assert.is_true(entry.isFinished)
@@ -712,10 +712,10 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
     end)
 
     -- ========================================================================
@@ -736,7 +736,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
       assert.stub(errorStub).was_not.called()
@@ -748,7 +748,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(hasLogCall("recon", "%[SKIP%]"))
       assert.stub(errorStub).was_not.called()
@@ -761,7 +761,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(hasErrorCall("%[FAIL%]"))
     end)
@@ -775,7 +775,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
       assert.stub(errorStub).was_not.called()
@@ -786,7 +786,7 @@ describe("Recon", function()
       local entry2 = makeSatelliteEntry({ isFinished = true })
 
       local reconContext = makeReconContext({ entry1, entry2 })
-      Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_false(hasLogCall("recon", "."))
       assert.stub(errorStub).was_not.called()
@@ -814,11 +814,11 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
       -- No operations scheduled (objective mapping table is missing)
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
     end)
 
     -- Positive: satellite entry resolves mappings via reconObjectiveId
@@ -840,11 +840,11 @@ describe("Recon", function()
       }))
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal("STRIKE/C2/N/1", reconTriggeredOperations[1].operations[1].template.name)
     end)
 
     -- Negative: objective mapping table exists but the entry objective has no mapping.
@@ -858,10 +858,10 @@ describe("Recon", function()
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(0, #reconSchedule)
+      assert.are.equal(0, #reconTriggeredOperations)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
         "%[SKIP%].*type=satellite objective=UNKNOWN_OBJECTIVE reason=strike_mapping_not_found"))
     end)
@@ -885,10 +885,10 @@ describe("Recon", function()
       }))
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
+      assert.are.equal(1, #reconTriggeredOperations)
     end)
 
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
@@ -934,13 +934,13 @@ describe("Recon", function()
       ))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
       -- Should have scheduled operations: STRIKE/C2/1 (new) + STRIKE/C2/2 (next)
       -- STRIKE/AB/E/1 skipped due to LACM not enabled
-      assert.are.equal(1, #reconSchedule)
-      local scheduledEntry = reconSchedule[1]
+      assert.are.equal(1, #reconTriggeredOperations)
+      local scheduledEntry = reconTriggeredOperations[1]
       assert.are.equal(2, #scheduledEntry.operations)
     end)
 
@@ -960,14 +960,14 @@ describe("Recon", function()
       }))
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule,
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations,
         makeLACMContext(true), true)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
+      assert.are.equal(1, #reconTriggeredOperations)
       -- INFRASTRUCTURE skipped, AB/W kept
-      assert.are.equal(1, #reconSchedule[1].operations)
-      assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations[1].operations)
+      assert.are.equal("STRIKE/AB/W/1", reconTriggeredOperations[1].operations[1].template.name)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
         "%[HOLD%].*operation=STRIKE/INFRASTRUCTURE/1.*reason=fire_support_on_hold"))
     end)
@@ -991,12 +991,12 @@ describe("Recon", function()
       }))
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule,
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations,
         makeLACMContext(false), false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/INFRASTRUCTURE/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal("STRIKE/INFRASTRUCTURE/1", reconTriggeredOperations[1].operations[1].template.name)
     end)
 
     -- Negative: non-INFRASTRUCTURE mappings unaffected by fireSupportOnHold
@@ -1021,12 +1021,12 @@ describe("Recon", function()
       }))
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule,
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations,
         makeLACMContext(false), true)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal("STRIKE/C2/N/1", reconTriggeredOperations[1].operations[1].template.name)
     end)
 
     -- Bug 3 regression: an identical next wave that is already pending must be deduplicated,
@@ -1066,7 +1066,7 @@ describe("Recon", function()
 
       -- Pre-seed a pending /2 as an earlier recon completion would have left it.
       -- hasPendingOperation (real, unstubbed) must detect it and skip re-scheduling.
-      table.insert(reconSchedule, {
+      table.insert(reconTriggeredOperations, {
         time = "2026-02-14 07:00:00",
         type = "UAV",
         delay = 0,
@@ -1074,13 +1074,13 @@ describe("Recon", function()
         operations = { { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } } },
       })
 
-      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconSchedule, LACMContext, false)
+      Recon.handleReconQueue(cfg, makeReconContext({ entry }), reconTriggeredOperations, LACMContext, false)
 
       assert.is_true(entry.isFinished)
       -- No new schedule entry: /1 already exists, /2 was deduped -> still just the pre-seeded entry
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal(1, #reconSchedule[1].operations)
-      assert.are.equal("STRIKE/C2/N/2", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal(1, #reconTriggeredOperations[1].operations)
+      assert.are.equal("STRIKE/C2/N/2", reconTriggeredOperations[1].operations[1].template.name)
     end)
   end)
 
@@ -1686,13 +1686,13 @@ describe("Recon", function()
 
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal("STRIKE/AB/W/1", reconTriggeredOperations[1].operations[1].template.name)
       assert.is_false(reconContext.frontlineRedirected)
     end)
 
@@ -1704,12 +1704,12 @@ describe("Recon", function()
 
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(entry.isFinished)
-      assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal("STRIKE/AB/W/1", reconTriggeredOperations[1].operations[1].template.name)
       assert.is_false(reconContext.frontlineRedirected)
     end)
 
@@ -1721,13 +1721,13 @@ describe("Recon", function()
 
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(reconContext.frontlineRedirected)
-      assert.are.equal(1, #reconSchedule)
-      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal(1, #reconTriggeredOperations)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconTriggeredOperations[1].operations[1].template.name)
       -- ACTIVATED log emitted exactly once
       local activatedLogged = false
       for _, call in ipairs(logStub.calls) do
@@ -1747,12 +1747,12 @@ describe("Recon", function()
 
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(reconContext.frontlineRedirected)
-      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconTriggeredOperations[1].operations[1].template.name)
     end)
 
     -- Positive: once triggered, redirect persists even if attrition recovers
@@ -1764,12 +1764,12 @@ describe("Recon", function()
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       -- Pre-set the flag to simulate it was triggered earlier
       local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(reconContext.frontlineRedirected)
-      assert.are.equal("STRIKE/AB/W/AAR/1", reconSchedule[1].operations[1].template.name)
+      assert.are.equal("STRIKE/AB/W/AAR/1", reconTriggeredOperations[1].operations[1].template.name)
     end)
 
     -- Boundary: only mappings matching fromPrefix are rewritten; unrelated mappings untouched
@@ -1787,15 +1787,15 @@ describe("Recon", function()
 
       local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
-      local reconSchedule = {}
+      local reconTriggeredOperations = {}
 
-      Recon.handleReconQueue(cfg, reconContext, reconSchedule, makeLACMContext(true), false)
+      Recon.handleReconQueue(cfg, reconContext, reconTriggeredOperations, makeLACMContext(true), false)
 
       assert.is_true(reconContext.frontlineRedirected)
-      assert.are.equal(2, #reconSchedule[1].operations)
+      assert.are.equal(2, #reconTriggeredOperations[1].operations)
       local names = {
-        reconSchedule[1].operations[1].template.name,
-        reconSchedule[1].operations[2].template.name,
+        reconTriggeredOperations[1].operations[1].template.name,
+        reconTriggeredOperations[1].operations[2].template.name,
       }
       table.sort(names)
       assert.are.equal("STRIKE/AB/E/1", names[1])

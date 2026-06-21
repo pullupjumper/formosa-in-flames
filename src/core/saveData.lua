@@ -346,6 +346,6 @@ saveData.c.dynamicOperations.generatedOperations = {
   air = {},   -- Track generated air operations
   ground = {} -- Track generated ground operations
 }
-saveData.c.dynamicOperations.reconSchedule = {}
+saveData.c.dynamicOperations.reconTriggeredOperations = {}
 
 return saveData

@@ -34,11 +34,11 @@ end
 ---Handle reconnaissance queue processing and dynamic scheduling
 ---@param config SBJ__Config Global configuration table
 ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
----@param reconSchedule SBJ__ReconScheduleEntry[] Dynamic operations schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Dynamic operation batches triggered by reconnaissance
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
-function StrikePlanner.handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)
-  Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)
+function StrikePlanner.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
+  Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
 end
 
 ---Track target with active reconnaissance assets

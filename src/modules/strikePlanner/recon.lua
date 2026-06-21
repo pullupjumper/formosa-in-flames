@@ -371,17 +371,17 @@ end
 
 ---Try to generate a next operation from an existing prefix-matched operation
 ---@param strikeMapping SBJ__ReconStrikeMapping Strike mapping with template name
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param config SBJ__Config Configuration data
 ---@return SBJ__Operation|nil nextOperation Generated next operation or nil
 ---@return string|nil logEntry Log entry describing the result
-local function tryGenerateNextOperation(strikeMapping, reconSchedule, config)
+local function tryGenerateNextOperation(strikeMapping, reconTriggeredOperations, config)
   local baseName = strikeMapping.name:match("^(.+/)%d+$")
   if not baseName then
     return nil, nil
   end
 
-  local existing, operation = DynamicOperationsUtils.hasOperation(reconSchedule, baseName, strikeMapping.type)
+  local existing, operation = DynamicOperationsUtils.hasOperation(reconTriggeredOperations, baseName, strikeMapping.type)
   if not existing or not operation then
     return nil, nil
   end
@@ -392,7 +392,8 @@ local function tryGenerateNextOperation(strikeMapping, reconSchedule, config)
   -- /N+1 would be queued again from a later recon completion and double the strike package.
   -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.
   if status == "FOUND_NEXT"
-      and DynamicOperationsUtils.hasPendingOperation(reconSchedule, nextOperation.template.name, strikeMapping.type) then
+      and DynamicOperationsUtils.hasPendingOperation(reconTriggeredOperations, nextOperation.template.name,
+        strikeMapping.type) then
     return nil, LogFormat.entry("SKIP", string.format("operation=%s type=%s reason=already_pending",
       LogFormat.value(nextOperation.template.name),
       LogFormat.value(strikeMapping.type)
@@ -413,13 +414,13 @@ end
 ---Each objective maps to zero or more air/ground operations.
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
 ---@return SBJ__Operation[] operations Array of special operations to add
 ---@return string[] logEntries Array of log entry strings for batched output
-local function buildOperationsForReconObjective(config, reconContext, reconSchedule, entry, LACMContext,
+local function buildOperationsForReconObjective(config, reconContext, reconTriggeredOperations, entry, LACMContext,
                                                 fireSupportOnHold)
   local operations = {}
   local logEntries = {}
@@ -467,7 +468,7 @@ local function buildOperationsForReconObjective(config, reconContext, reconSched
     else
       local skipMapping = false
 
-      if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
+      if not DynamicOperationsUtils.hasOperation(reconTriggeredOperations, strikeMapping.name, strikeMapping.type) then
         local newOp, logEntry = buildOperationFromMapping(strikeMapping, config, LACMContext)
         table.insert(logEntries, logEntry)
         if newOp then
@@ -478,7 +479,7 @@ local function buildOperationsForReconObjective(config, reconContext, reconSched
       end
 
       if not skipMapping then
-        local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, reconSchedule, config)
+        local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, reconTriggeredOperations, config)
         if nextOp then
           table.insert(operations, nextOp)
           table.insert(logEntries, nextLog)
@@ -496,28 +497,29 @@ end
 ---Only called when UAV completes successfully (reached endTime with complete intelligence)
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
-local function scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
-  local reconResult = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconSchedule)
+local function scheduleDynamicReconOperations(config, reconContext, reconTriggeredOperations, entry, LACMContext,
+                                              fireSupportOnHold)
+  local reconResult = DynamicOperationsUtils.getLastExecutedOperationsAndNextTime(reconTriggeredOperations)
 
   -- Generate next wave operations
   local operations = {}
 
   -- Add operations unlocked by the completed reconnaissance objective.
   local reconTriggeredOps, logEntries = buildOperationsForReconObjective(
-    config, reconContext, reconSchedule,
+    config, reconContext, reconTriggeredOperations,
     entry, LACMContext, fireSupportOnHold
   )
   for _, op in ipairs(reconTriggeredOps) do
     table.insert(operations, op)
   end
 
-  -- Add to reconnaissance schedule if there are operations
+  -- Add to reconnaissance-triggered operation batches if there are operations
   if #operations > 0 then
-    table.insert(reconSchedule, {
+    table.insert(reconTriggeredOperations, {
       time = entry.endTime,
       type = entry.type,
       delay = 0,
@@ -530,9 +532,9 @@ local function scheduleDynamicReconOperations(config, reconContext, reconSchedul
   local infoLines = {}
 
   table.insert(infoLines, LogFormat.entry("OK", string.format(
-    "state=context mostRecentTime=%q nextReconTime=%q airOps=%d groundOps=%d",
+    "state=context mostRecentTime=%q nextOperationBatchTime=%q airOps=%d groundOps=%d",
     tostring(reconResult.mostRecentTime or "none"),
-    tostring(reconResult.nextReconTime or "none"),
+    tostring(reconResult.nextOperationBatchTime or "none"),
     #reconResult.air,
     #reconResult.ground)
   ))
@@ -624,13 +626,14 @@ end
 ---Settle reconnaissance mission and conditionally schedule next operations
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@param success boolean Mission success status
 ---@return string # Mission result from MISSION_RESULT
-local function settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+local function settleReconMission(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold,
+                                  success)
   -- Prevent double execution
   if entry.isFinished then
     return MISSION_RESULT.ALREADY_FINISHED
@@ -640,7 +643,7 @@ local function settleReconMission(config, reconContext, reconSchedule, entry, LA
 
   if success then
     -- Mission successful: intelligence data is complete, schedule next wave operations
-    scheduleDynamicReconOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+    scheduleDynamicReconOperations(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold)
     return MISSION_RESULT.SUCCESS
   else
     -- Mission failed: intelligence data is incomplete, skip scheduling
@@ -686,13 +689,13 @@ end
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param entry SBJ__ReconQueueEntryUAV UAV queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag (OK/SKIP/FAIL) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function processUAVEntry(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
     local status, message = handleReconLaunch(entry)
@@ -717,7 +720,7 @@ local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMC
   -- Phase 2a: UAV destroyed or missing
   if not actualUnit then
     local success, message = handleUAVDestroyed(entry, isEndTimeReached)
-    settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+    settleReconMission(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold, success)
     local tag = success and "OK" or "FAIL"
     return tag, message
   end
@@ -743,26 +746,27 @@ local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMC
 
   if postCourseAction == POST_COURSE_ACTION.TRACKING_FAILED then
     -- Tracking failed but recon completed successfully
-    settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+    settleReconMission(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold, true)
     return "FAIL", string.format("unit=%q reason=tracking_failed missionStatus=completed",
       LogFormat.readable(actualUnit.name))
   end
 
   -- Normal reconnaissance completion
-  settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  settleReconMission(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold, true)
   return "OK", message
 end
 
 ---Process a single satellite reconnaissance queue entry
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param entry SBJ__ReconQueueEntry Satellite queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@return string|nil tag Semantic log tag (OK/SKIP) or nil if no logging needed
 ---@return string|nil message Human-readable log message
-local function processSatelliteEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function processSatelliteEntry(config, reconContext, reconTriggeredOperations, entry, LACMContext,
+                                     fireSupportOnHold)
   if entry.isFinished then
     return nil, nil
   end
@@ -774,7 +778,7 @@ local function processSatelliteEntry(config, reconContext, reconSchedule, entry,
       LogFormat.value(entry.type), entry.endTime)
   end
 
-  settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  settleReconMission(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold, true)
   return "OK", string.format("type=%s action=complete_mission endTime=%q",
     LogFormat.value(entry.type), entry.endTime)
 end
@@ -854,10 +858,10 @@ end
 ---Success requires UAV to complete course and reach endTime; failure if destroyed before endTime
 ---@param config SBJ__Config Configuration data for platform DBIDs
 ---@param reconContext SBJ__ReconContext Reconnaissance context
----@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule containing assigned missions
+---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
-function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, fireSupportOnHold)
+function Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
   -- Proactively evaluate frontline-redirect sticky flag once per tick so the rewrite
   -- becomes effective on the next recon completion even if the queue is otherwise quiet.
   -- Activation log is captured here (instead of inside the helper) so handleReconQueue owns all log emission.
@@ -873,9 +877,11 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
     local tag, message
 
     if entry.type == ENTRY_TYPE.UAV then
-      tag, message = processUAVEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+      tag, message = processUAVEntry(config, reconContext, reconTriggeredOperations, entry, LACMContext,
+        fireSupportOnHold)
     elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
-      tag, message = processSatelliteEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+      tag, message = processSatelliteEntry(config, reconContext, reconTriggeredOperations, entry, LACMContext,
+        fireSupportOnHold)
     end
 
     if tag and message then

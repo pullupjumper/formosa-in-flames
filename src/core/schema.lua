@@ -1218,10 +1218,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether dynamic operations system is enabled
 ---@field lastEvaluationTime? number Last evaluation timestamp (Unix time)
 ---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
----@field reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance-driven operation schedule
+---@field reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
 
----Reconnaissance schedule entry for intelligence gathering operations
----@class SBJ__ReconScheduleEntry: table
+---Operation batch triggered by completed reconnaissance
+---@class SBJ__ReconTriggeredOperationBatch: table
 ---@field time string Reconnaissance time in format "2027-06-09 14:30:00"
 ---@field type string Reconnaissance type: "satellite", "aircraft", or "UAV"
 ---@field delay number Delay trigger time (seconds)

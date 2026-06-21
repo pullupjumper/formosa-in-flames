@@ -8,7 +8,7 @@
 
 ## 概述
 
-dynamicFireSupportPlan 負責 Kill Chain 的 Target → Engage 階段（動態地面打擊）。模組監聽 `saveData.c.dynamicOperations.reconSchedule` 中的 ground 類型作戰，每次由 `scheduledStrikePlanner.lua` 觸發時逐項評估其觀察窗狀態，並依結果決定是否生成 FSEM、是否標記作戰已執行、或是讓作戰留在排程內等待下一個 tick。
+dynamicFireSupportPlan 負責 Kill Chain 的 Target → Engage 階段（動態地面打擊）。模組監聽 `saveData.c.dynamicOperations.reconTriggeredOperations` 中的 ground 類型作戰，每次由 `scheduledStrikePlanner.lua` 觸發時逐項評估其觀察窗狀態，並依結果決定是否生成 FSEM、是否標記作戰已執行、或是讓作戰留在批次內等待下一個 tick。
 
 模組的核心設計是 **觀察窗（Observation Window）機制**：偵察觸發時間到達後，作戰並不立即被消耗；它會在 `config.c.recon.observationWindowSec` 期間內持續嘗試達成生成條件（足夠的有效目標、可用的發射單元）。這讓偵察累積接觸與發射單元釋放的時間差能被吸收，避免因瞬時資源短缺造成整波打擊浪費。
 
@@ -168,7 +168,7 @@ info 與 error 各自合併成單一多行日誌訊息，以 `Ground operations 
 
 | 函數 | 說明 |
 |---|---|
-| `execute(config, saveData, contacts)` | 主入口：對 `reconSchedule` 中的 ground 作戰逐項評估觀察窗、嘗試生成 FSEM。若任一作戰成功生成回傳 `true`，否則 `false`。模組關閉、無 ground 作戰時短路回傳 `false` |
+| `execute(config, saveData, contacts)` | 主入口：對 `reconTriggeredOperations` 中的 ground 作戰逐項評估觀察窗、嘗試生成 FSEM。若任一作戰成功生成回傳 `true`，否則 `false`。模組關閉、無 ground 作戰時短路回傳 `false` |
 
 呼叫者：`src/modules/strikePlanner/init.lua` 的 `executeDynamicFireSupportPlan` → `src/scripts/china/scheduledStrikePlanner.lua`（每 5 分鐘 tick）
 

@@ -16,8 +16,8 @@ dynamicOperationsUtils 是 [dynamicFireSupportPlan](dynamicFireSupportPlan.md)�
 
 ```mermaid
 flowchart TD
-    SCHED["reconSchedule[]"]
-    ENTRY["ReconScheduleEntry"]
+    SCHED["reconTriggeredOperations[]"]
+    ENTRY["ReconTriggeredOperationBatch"]
     OP["Operation"]
 
     SCHED --> ENTRY
@@ -37,14 +37,14 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `markOperationExecuted(reconEntry, operation, success)` | 標記單一作戰已執行，並自動檢查父項目完成狀態 |
-| `checkReconEntryCompleted(reconEntry)` | 檢查 Entry 的所有 Operations 是否都已完成 |
-| `updateReconScheduleStatus(saveData)` | 批次更新所有排程項目的完成狀態 |
+| `checkOperationBatchCompleted(reconEntry)` | 檢查作戰批次的所有 Operations 是否都已完成 |
+| `updateReconTriggeredOperationStatus(saveData)` | 批次更新所有偵察觸發作戰批次的完成狀態 |
 
 ---
 
 ## 作戰篩選
 
-`filterOperationsByType` 從 `reconSchedule` 中篩選符合條件的作戰：
+`filterOperationsByType` 從 `reconTriggeredOperations` 中篩選符合條件的作戰：
 
 - 篩選條件：`reconEntry.executed == false` 且 `operation.type == operationType` 且 `operation.executed == false`
 - 回傳：`{reconEntry, operation}` 配對陣列
@@ -116,7 +116,7 @@ flowchart TD
 
 ## 待執行作戰檢查（hasPendingOperation）
 
-`hasPendingOperation(reconSchedule, templateName, operationType)` 走訪整個排程，判斷是否已有一筆**精確同名**且**尚未執行**（`operation.executed == false`）的作戰。
+`hasPendingOperation(reconTriggeredOperations, templateName, operationType)` 走訪整個作戰批次，判斷是否已有一筆**精確同名**且**尚未執行**（`operation.executed == false`）的作戰。
 
 - 用途：[recon](recon.md) 在排下一波作戰前先呼叫此函數；若同名 `/N+1` 已在排程中待執行，就跳過新增，避免同一波被重複排入而使打擊包翻倍。
 - 與 `hasOperation` 的差異：`hasOperation` 不分執行狀態（且支援前綴），`hasPendingOperation` 只看「尚未執行」的精確同名項目。
@@ -138,16 +138,16 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `checkReconEntryCompleted(reconEntry)` | 檢查偵察項目所有作戰是否完成 |
-| `updateReconScheduleStatus(saveData)` | 更新所有偵察排程項目完成狀態 |
-| `filterOperationsByType(reconSchedule, operationType)` | 依類型篩選未執行的作戰 |
+| `checkOperationBatchCompleted(reconEntry)` | 檢查作戰批次所有作戰是否完成 |
+| `updateReconTriggeredOperationStatus(saveData)` | 更新所有偵察觸發作戰批次完成狀態 |
+| `filterOperationsByType(reconTriggeredOperations, operationType)` | 依類型篩選未執行的作戰 |
 | `markOperationExecuted(reconEntry, operation, success)` | 標記作戰已執行 |
 | `generateUniqueAirOperationName(operationType, reconType, saveData)` | 生成唯一空中作戰名稱 |
 | `generateUniqueGroundOperationName(operationType, reconType, saveData)` | 生成唯一地面作戰名稱 |
 | `registerGeneratedOperation(operationType, operationName, saveData)` | 登記已生成的作戰名稱 |
-| `getLastExecutedOperationsAndNextTime(reconSchedule)` | 取得最近執行的作戰與下次偵察時間 |
-| `hasOperation(reconSchedule, templateName, operationType)` | 搜尋特定作戰是否存在（精確或前綴） |
-| `hasPendingOperation(reconSchedule, templateName, operationType)` | 檢查是否已有同名且尚未執行的作戰待排，用於防止重複排入下一波 |
+| `getLastExecutedOperationsAndNextTime(reconTriggeredOperations)` | 取得最近執行的作戰與下次偵察時間 |
+| `hasOperation(reconTriggeredOperations, templateName, operationType)` | 搜尋特定作戰是否存在（精確或前綴） |
+| `hasPendingOperation(reconTriggeredOperations, templateName, operationType)` | 檢查是否已有同名且尚未執行的作戰待排，用於防止重複排入下一波 |
 | `generateNextOperation(operation, config)` | 遞增編號生成下一波作戰 |
 
 ---

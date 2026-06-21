@@ -384,12 +384,12 @@ end
 
 ---Generate matrix name from template and reconnaissance type
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template used for name source
----@param reconType string Reconnaissance type identifier
+---@param operationBatchType string Reconnaissance type identifier
 ---@param saveData SBJ__SaveData Persistent save data for uniqueness check
 ---@return string # Generated unique matrix name
-local function buildMatrixName(matrixTemplate, reconType, saveData)
+local function buildMatrixName(matrixTemplate, operationBatchType, saveData)
   return DynamicOperationsUtils.generateUniqueGroundOperationName(
-    matrixTemplate.name:match("([^/]+)") or matrixTemplate.name, reconType, saveData
+    matrixTemplate.name:match("([^/]+)") or matrixTemplate.name, operationBatchType, saveData
   )
 end
 
@@ -398,13 +398,13 @@ end
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param evaluatedTargets table<string, string[]> Map of FST name to evaluated target GUID arrays
----@param reconType string Reconnaissance type identifier used for FSEM naming
+---@param operationBatchType string Reconnaissance type identifier used for FSEM naming
 ---@return boolean success true if FSEM was successfully created and inserted
 ---@return string|nil reason Failure reason when success is false
 ---@return string statusSummary Firing unit status summary
-local function createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets, reconType)
+local function createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets, operationBatchType)
   local matrixStartTime = GameApi.ScenEdit_CurrentTime()
-  local matrixName = buildMatrixName(matrixTemplate, reconType, saveData)
+  local matrixName = buildMatrixName(matrixTemplate, operationBatchType, saveData)
   local fireSupportTasks, statusCounter, buildFailureCount = buildExecutableTasks(
     saveData, matrixTemplate, evaluatedTargets, matrixStartTime
   )
@@ -421,7 +421,7 @@ local function createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets
   return insertMatrix(saveData, newMatrix), nil, statusSummary
 end
 
----Observation window state for a ground operation in the recon schedule
+---Observation window state for a ground operation in a recon-triggered batch
 local OBSERVATION_STATE = {
   PRE_TRIGGER = "pre_trigger",
   IN_WINDOW   = "in_window",
@@ -429,13 +429,13 @@ local OBSERVATION_STATE = {
 }
 
 ---Evaluate observation window state for a ground operation
----Window starts at reconEntry.time + reconEntry.delay and lasts windowSec seconds.
+---Window starts at operationBatch.time + operationBatch.delay and lasts windowSec seconds.
 ---@param currentTime integer Current scenario time in unix timestamp
----@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
 ---@param windowSec number Observation window duration in seconds
 ---@return string # Observation state from OBSERVATION_STATE
-local function evaluateObservationWindow(currentTime, reconEntry, windowSec)
-  local triggerTime = Utils.parseDatetimeToTimestamp(reconEntry.time) + reconEntry.delay
+local function evaluateObservationWindow(currentTime, operationBatch, windowSec)
+  local triggerTime = Utils.parseDatetimeToTimestamp(operationBatch.time) + operationBatch.delay
   if currentTime < triggerTime then
     return OBSERVATION_STATE.PRE_TRIGGER
   end
@@ -445,17 +445,17 @@ local function evaluateObservationWindow(currentTime, reconEntry, windowSec)
   return OBSERVATION_STATE.IN_WINDOW
 end
 
----Process reconnaissance schedule entry, get FSEM template and execute evaluation
+---Process operation batch entry, get FSEM template and execute evaluation
 ---Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry triggering this operation
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch triggering this operation
 ---@param operation SBJ__Operation Ground operation containing FSEM template
 ---@return boolean success True if FSEM was successfully created from reconnaissance results
 ---@return string|nil reason Failure reason when success is false
 ---@return string|nil statusSummary Firing unit status summary if available
-local function processGroundOperation(config, saveData, contacts, reconEntry, operation)
+local function processGroundOperation(config, saveData, contacts, operationBatch, operation)
   if not operation.template or not operation.template.fireSupportTasks then
     return false, "MISSING_TEMPLATE", nil
   end
@@ -466,15 +466,15 @@ local function processGroundOperation(config, saveData, contacts, reconEntry, op
     return false, "INSUFFICIENT_TARGETS", nil
   end
 
-  return createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets, reconEntry.type)
+  return createFSEMFromTemplate(saveData, matrixTemplate, evaluatedTargets, operationBatch.type)
 end
 
 -- ============================================================================
 -- Public API
 -- ============================================================================
 
----Main execution function, process reconnaissance schedule and dynamically create FSEM
----Ground operations stay in the recon schedule across ticks while inside their observation
+---Main execution function, process recon-triggered operations and dynamically create FSEM
+---Ground operations stay in the operation batches across ticks while inside their observation
 ---window; they are only marked executed when (a) the FSEM is successfully inserted, (b) the
 ---template is missing (fatal), (c) the window has expired (timeout), or (d) an unknown failure
 ---reason is returned. INSUFFICIENT_TARGETS / NO_AVAILABLE_FIRING_UNITS keep the operation
@@ -494,7 +494,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   local hasExecutedAny = false
 
   local groundOperations = DynamicOperationsUtils.filterOperationsByType(
-    saveData.c.dynamicOperations.reconSchedule, "ground"
+    saveData.c.dynamicOperations.reconTriggeredOperations, "ground"
   )
 
   if #groundOperations == 0 then
@@ -504,40 +504,40 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   local processedResults = {}
 
   for _, item in ipairs(groundOperations) do
-    local reconEntry = item.reconEntry
+    local operationBatch = item.operationBatch
     local operation = item.operation
     local operationName = (operation.template and operation.template.name) or "unknown"
-    local windowState = evaluateObservationWindow(currentTime, reconEntry, windowSec)
+    local windowState = evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
     if windowState == OBSERVATION_STATE.EXPIRED then
-      DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
+      DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
       table.insert(processedResults, {
         operationName = operationName,
-        reconTime = reconEntry.time,
-        reconType = reconEntry.type,
+        operationBatchTime = operationBatch.time,
+        operationBatchType = operationBatch.type,
         outcome = "TIMEOUT",
       })
     elseif windowState == OBSERVATION_STATE.IN_WINDOW then
       local success, reason, statusSummary = processGroundOperation(
-        config, saveData, contacts, reconEntry, operation
+        config, saveData, contacts, operationBatch, operation
       )
 
       if success then
-        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, true)
+        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, true)
         hasExecutedAny = true
         table.insert(processedResults, {
           operationName = operationName,
-          reconTime = reconEntry.time,
-          reconType = reconEntry.type,
+          operationBatchTime = operationBatch.time,
+          operationBatchType = operationBatch.type,
           outcome = "OK",
           statusSummary = statusSummary,
         })
       elseif reason == "MISSING_TEMPLATE" then
-        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
+        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
         table.insert(processedResults, {
           operationName = operationName,
-          reconTime = reconEntry.time,
-          reconType = reconEntry.type,
+          operationBatchTime = operationBatch.time,
+          operationBatchType = operationBatch.type,
           outcome = "MISSING_TEMPLATE",
         })
       elseif reason == "INSUFFICIENT_TARGETS" or reason == "NO_AVAILABLE_FIRING_UNITS" then
@@ -546,19 +546,19 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
         -- (targets vs firing units) is currently blocking.
         table.insert(processedResults, {
           operationName = operationName,
-          reconTime = reconEntry.time,
-          reconType = reconEntry.type,
+          operationBatchTime = operationBatch.time,
+          operationBatchType = operationBatch.type,
           outcome = "WAIT",
           reason = reason,
           statusSummary = statusSummary,
         })
       else
         -- Unknown failure reason; mark executed to avoid infinite retry.
-        DynamicOperationsUtils.markOperationExecuted(reconEntry, operation, false)
+        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
         table.insert(processedResults, {
           operationName = operationName,
-          reconTime = reconEntry.time,
-          reconType = reconEntry.type,
+          operationBatchTime = operationBatch.time,
+          operationBatchType = operationBatch.type,
           outcome = "FAIL",
           reason = reason,
           statusSummary = statusSummary,
@@ -575,37 +575,37 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
     for _, r in ipairs(processedResults) do
       if r.outcome == "OK" then
         table.insert(infoLines, LogFormat.entry("OK", string.format(
-          "operation=%s reconTime=%q reconType=%s %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           r.statusSummary or "firingUnits=none")))
       elseif r.outcome == "WAIT" then
         table.insert(infoLines, LogFormat.entry("SKIP", string.format(
-          "operation=%s reconTime=%q reconType=%s state=observing reason=%s %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s state=observing reason=%s %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           formatReason(r.reason),
           r.statusSummary or "firingUnits=none")))
       elseif r.outcome == "TIMEOUT" then
         table.insert(infoLines, LogFormat.entry("WARN", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=observation_window_expired",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=observation_window_expired",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType))))
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType))))
       elseif r.outcome == "MISSING_TEMPLATE" then
         table.insert(errorLines, LogFormat.entry("ERROR", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=missing_fsem_template",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=missing_fsem_template",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType))))
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType))))
       else
         table.insert(errorLines, LogFormat.entry("FAIL", string.format(
-          "operation=%s reconTime=%q reconType=%s reason=%s %s",
+          "operation=%s operationBatchTime=%q operationBatchType=%s reason=%s %s",
           LogFormat.value(r.operationName),
-          r.reconTime,
-          LogFormat.value(r.reconType),
+          r.operationBatchTime,
+          LogFormat.value(r.operationBatchType),
           formatReason(r.reason),
           r.statusSummary or "firingUnits=none")))
       end
