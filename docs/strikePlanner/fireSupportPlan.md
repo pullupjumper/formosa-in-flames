@@ -99,7 +99,7 @@ flowchart TD
 | `MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)` | 驅動發射單元從 HIDE → FP |
 | 寫入 `firingUnitContext.stowStartTime`（非 SAM） | 打擊完成後啟動 `missileSystem.cycle` 的 stow 倒數，銜接後續撤收／補給 |
 
-發射單元的狀態轉換（HIDE → REPOSITIONING → STATIC）由 missileSystem 模組的狀態機管理。詳見 [missileSystem 文件](../missileSystem.md)。
+發射單元的狀態轉換（HIDE → REPOSITIONING → STATIC）由 missileSystem 模組的狀態機管理。詳見 [missileSystem 文件](../missileSystem/README.md)。
 
 ---
 
@@ -114,6 +114,6 @@ flowchart TD
 ## 相關模組
 
 - [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 動態生成新的 FSEM 插入 `fireSupportPlan`
-- [missileSystem](../missileSystem.md) — 發射單元狀態機與移動控制
+- [missileSystem](../missileSystem/README.md) — 發射單元狀態機與移動控制
 - `attackManager` — 實際發射武器
 - [系統架構](README.md)

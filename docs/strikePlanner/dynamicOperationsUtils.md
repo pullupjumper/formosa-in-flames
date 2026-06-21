@@ -8,7 +8,7 @@
 
 ## 概述
 
-dynamicOperationsUtils 是 [dynamicFireSupportPlan](dynamicFireSupportPlan.md)、[dynamicATOInsertion](dynamicATOInsertion.md) 與 [recon](recon.md) 三者共用的工具模組。負責偵察排程的狀態管理、動態作戰命名、作戰搜尋與下一波自動生成。
+dynamicOperationsUtils 是 [dynamicFireSupportPlan](dynamicFireSupportPlan.md)、[dynamicATOInsertion](dynamicATOInsertion.md) 與 [reconOperationScheduler](reconOperationScheduler.md) 共用的工具模組。負責偵察排程的狀態管理、動態作戰命名、作戰搜尋與下一波自動生成。
 
 ---
 
@@ -118,7 +118,7 @@ flowchart TD
 
 `hasPendingOperation(reconTriggeredOperations, templateName, operationType)` 走訪整個作戰批次，判斷是否已有一筆**精確同名**且**尚未執行**（`operation.executed == false`）的作戰。
 
-- 用途：[recon](recon.md) 在排下一波作戰前先呼叫此函數；若同名 `/N+1` 已在排程中待執行，就跳過新增，避免同一波被重複排入而使打擊包翻倍。
+- 用途：[reconOperationScheduler](reconOperationScheduler.md) 在排下一波作戰前先呼叫此函數；若同名 `/N+1` 已在排程中待執行，就跳過新增，避免同一波被重複排入而使打擊包翻倍。
 - 與 `hasOperation` 的差異：`hasOperation` 不分執行狀態（且支援前綴），`hasPendingOperation` 只看「尚未執行」的精確同名項目。
 
 ---
@@ -130,7 +130,7 @@ flowchart TD
 - **最近已過時間的 Entry**：回傳其 air/ground Operations 分類
 - **最早未來時間的 Entry**：回傳 `nextReconTime`
 
-供 [recon](recon.md) 模組排程動態作戰時參考。
+供 [reconOperationScheduler](reconOperationScheduler.md) 排程動態作戰時參考。
 
 ---
 
@@ -156,5 +156,5 @@ flowchart TD
 
 - [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 使用篩選、命名、登記功能
 - [dynamicATOInsertion](dynamicATOInsertion.md) — 使用篩選、命名、登記功能
-- [recon](recon.md) — 使用搜尋、下一波生成、排程查詢功能
+- [reconOperationScheduler](reconOperationScheduler.md) — 使用搜尋、下一波生成、排程查詢功能
 - [系統架構](README.md)

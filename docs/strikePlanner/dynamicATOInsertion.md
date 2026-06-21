@@ -172,7 +172,7 @@ saveData.c
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.packageTemplates` | 由 recon 模組建立 operation template；本模組接收其中的 `SBJ__WaveTemplate`。 |
+| `config` | `config.c.packageTemplates` | 由 `reconOperationScheduler` 建立 operation template；本模組接收其中的 `SBJ__WaveTemplate`。 |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperations` | 動態空中作戰的觸發來源。 |
 | `saveData` | `saveData.c.air.airTaskingOrder` | 動態 Wave 插入位置，也是既有任務佔用量掃描來源。 |
 | `constants` | `constants.SIDES.ENEMY` | 讀取 China side reference point。 |
@@ -185,5 +185,5 @@ saveData.c
 - [airTaskingOrder](airTaskingOrder.md) — 執行本模組插入的 ATO Wave。
 - [targetingProcess](targetingProcess.md) — 動態目標評估與 BDA 過濾。
 - [dynamicOperationsUtils](dynamicOperationsUtils.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
-- [recon](recon.md) — 依偵察結果建立 air operation template。
+- [reconOperationScheduler](reconOperationScheduler.md) — 依偵察結果建立 air operation template。
 - [系統架構](README.md)
