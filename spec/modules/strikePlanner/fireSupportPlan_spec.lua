@@ -587,8 +587,9 @@ describe("FireSupportPlan", function()
       assert.stub(logStub).was.called(1)
       assert.are.equal("ground", logStub.calls[1].vals[1])
       local logMessage = logStub.calls[1].vals[2]
-      assert.is_truthy(string.find(logMessage, "%[STRIKE%]"))
-      assert.is_truthy(string.find(logMessage, "FST%-ALPHA: fired 4"))
+      assert.is_truthy(string.find(logMessage, "%[OK%]"))
+      assert.is_truthy(string.find(logMessage, "action=strike"))
+      assert.is_truthy(string.find(logMessage, "task=FST%-ALPHA fired=4"))
     end)
 
     -- Positive: pending units logged
@@ -606,8 +607,10 @@ describe("FireSupportPlan", function()
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
-      assert.is_truthy(string.find(logMessage, "%[PENDING%]"))
-      assert.is_truthy(string.find(logMessage, "Battery%-1"))
+      assert.is_truthy(string.find(logMessage, "%[SKIP%]"))
+      assert.is_truthy(string.find(logMessage, "reason=firing_units_not_in_position"))
+      assert.is_truthy(string.find(logMessage, "task=FST%-ALPHA"))
+      assert.is_truthy(string.find(logMessage, 'units="Battery%-1"'))
     end)
 
     -- Positive: completion logged without strike info
@@ -618,8 +621,9 @@ describe("FireSupportPlan", function()
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
-      assert.is_truthy(string.find(logMessage, "%[DONE%]"))
-      assert.is_falsy(string.find(logMessage, "%[STRIKE%]"))
+      assert.is_truthy(string.find(logMessage, "%[OK%]"))
+      assert.is_truthy(string.find(logMessage, "state=finished"))
+      assert.is_falsy(string.find(logMessage, "action=strike"))
     end)
 
     -- Negative: no log on empty plan

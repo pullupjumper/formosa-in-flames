@@ -731,24 +731,6 @@ describe("AirTaskingOrder", function()
       assert.are.equal("STRIKE-PKG-1", stubCreate.calls[1].vals[2])
     end)
 
-    -- Negative: mission already exists
-    it("should not create mission when it already exists", function()
-      local pkg = makePackage()
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-      trackStub(stub(GameApi, "ScenEdit_GetMission").returns({ name = "STRIKE-PKG-1" }))
-      local stubCreate = trackStub(stub(GameUtils, "createMission"))
-      trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
-      trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
-      trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      assert.stub(stubCreate).was_not.called()
-    end)
-
     -- Positive: mission properties assignment
     it("should set mission properties on newly created strike mission", function()
       local striker = makeRole({
@@ -1047,7 +1029,7 @@ describe("AirTaskingOrder", function()
           queue = {
             {
               type = "satellite",
-              platformKey = "EOS",
+              reconObjectiveId = "FIXED_SITE_TARGETING",
               endTime = "1970-01-03 15:03:20",
             },
           }

@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
@@ -27,13 +28,13 @@ local DETECTION_STATUS = {
 }
 
 local SIGINT_RESULT_TAGS = {
-  [DETECTION_STATUS.DETECTED]     = "[OK]",
-  [DETECTION_STATUS.NOT_EMITTING] = "[SKIP]",
-  [DETECTION_STATUS.SKIPPED]      = "[SKIP]",
-  [DETECTION_STATUS.NOT_FOUND]    = "[FAIL]",
-  [DETECTION_STATUS.AUTO_ENABLED] = "[OK]",
-  [DETECTION_STATUS.DECAYED]      = "[OK]",
-  [DETECTION_STATUS.NO_CHANGE]    = "[OK]",
+  [DETECTION_STATUS.DETECTED]     = "OK",
+  [DETECTION_STATUS.NOT_EMITTING] = "SKIP",
+  [DETECTION_STATUS.SKIPPED]      = "SKIP",
+  [DETECTION_STATUS.NOT_FOUND]    = "FAIL",
+  [DETECTION_STATUS.AUTO_ENABLED] = "OK",
+  [DETECTION_STATUS.DECAYED]      = "OK",
+  [DETECTION_STATUS.NO_CHANGE]    = "OK",
 }
 
 
@@ -396,15 +397,15 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       -- Resolve actual unit
       local actualUnit = resolveUnit(unitCtx, enemySide)
       if not actualUnit then
-        table.insert(reportEntries,
-          "  " .. SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND] .. " " .. ctxName .. " (not found)")
+        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND],
+          string.format("unit=%q reason=unit_not_found", ctxName)))
         goto continue
       end
 
       -- Skip some units randomly for performance
       if math.random() <= detectionSkipProbability then
-        table.insert(reportEntries,
-          "  " .. SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED] .. " " .. ctxName .. " (random skip)")
+        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED],
+          string.format("unit=%q reason=random_skip", ctxName)))
         goto continue
       end
 
@@ -421,31 +422,27 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       if result.isDetected then
         totalDetected = totalDetected + 1
         local status = updateTransmissionData(sigintContext, unitCtx, result, actualUnit)
-        table.insert(reportEntries, "  " .. SIGINT_RESULT_TAGS[status] .. " " .. ctxName .. " (detected)")
+        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[status],
+          string.format("unit=%q result=%s", ctxName, status)))
 
         if isShown then
           showDetectionNotification(result, unitCtx.msg, sigintConfig)
         end
       else
         local status = handleUndetected(sigintContext, actualUnit)
-        table.insert(reportEntries,
-          "  " .. SIGINT_RESULT_TAGS[status] .. " " .. ctxName .. " (" .. (emissionReason or "unknown") .. ")")
+        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[status],
+          string.format("unit=%q result=%s reason=%q", ctxName, status, emissionReason or "unknown")))
       end
 
       ::continue::
     end
   end
 
-  -- Build single batch log report
-  local reportLines = {
-    string.format("SIGINT: %d/%d units processed, %d detections",
-      totalProcessed, totalUnits, totalDetected)
-  }
-  for _, entry in ipairs(reportEntries) do
-    table.insert(reportLines, entry)
-  end
-
-  Logger.log(constants.TAGS.SIGINT, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.SIGINT, LogFormat.summary(
+    "side",
+    sideName,
+    string.format("Collect SIGINT processed=%d units=%d detections=%d", totalProcessed, totalUnits, totalDetected),
+    reportEntries))
   return results
 end
 
@@ -459,7 +456,7 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
-    Logger.warn(string.format("No aircraft units found for side '%s'", sideName))
+    Logger.warn(LogFormat.event("side", sideName, "WARN", "reason=no_aircraft_units"))
     return 0
   end
 
@@ -481,8 +478,8 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
     end
   end
 
-  Logger.log(constants.TAGS.SIGINT,
-    string.format("Initialized %d reconnaissance aircraft for %s SIGINT operations", initializedCount, sideName))
+  Logger.log(constants.TAGS.SIGINT, LogFormat.event(
+    "side", sideName, "OK", string.format("action=init_recon_aircraft count=%d", initializedCount)))
   return initializedCount
 end
 

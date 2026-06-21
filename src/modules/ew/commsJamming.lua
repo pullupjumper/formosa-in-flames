@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
 local CommsJamming = {}
@@ -36,11 +37,11 @@ local EW_PLATFORM_DBIDS = {
 }
 
 local COMMS_RESULT_TAGS = {
-  [COMMS_JAMMING_RESULT.JAMMED]   = "[OK]",
-  [COMMS_JAMMING_RESULT.RESISTED] = "[RESIST]",
-  [COMMS_JAMMING_RESULT.COOLDOWN] = "[CD]",
-  [COMMS_JAMMING_RESULT.RECOVERY] = "[RCV]",
-  [COMMS_JAMMING_RESULT.SKIPPED]  = "[SKIP]",
+  [COMMS_JAMMING_RESULT.JAMMED]   = "OK",
+  [COMMS_JAMMING_RESULT.RESISTED] = "SKIP",
+  [COMMS_JAMMING_RESULT.COOLDOWN] = "SKIP",
+  [COMMS_JAMMING_RESULT.RECOVERY] = "OK",
+  [COMMS_JAMMING_RESULT.SKIPPED]  = "SKIP",
 }
 
 local omnidirectionalJammingWithDistance
@@ -413,15 +414,15 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
       end
 
       local result = jammingFn(commsJammingConfig, entry, jammer)
-      table.insert(entries,
-        "    " .. COMMS_RESULT_TAGS[result] .. " " .. entry.unitCtx.name .. " (" .. math.floor(entry.distance) .. "nm)")
+      table.insert(entries, LogFormat.entry(COMMS_RESULT_TAGS[result], string.format(
+        "jammer=%q target=%q distanceNm=%d result=%s",
+        jammer.name, entry.unitCtx.name, math.floor(entry.distance), result)))
       count = count + 1
     end
 
     totalJammedUnits = totalJammedUnits + count
     totalAttempts = totalAttempts + count
     if #entries > 0 then
-      table.insert(reportLines, "  " .. jammer.name .. ":")
       for _, e in ipairs(entries) do
         table.insert(reportLines, e)
       end
@@ -453,8 +454,9 @@ local function processAircraftComms(commsJammingConfig, saveData)
       if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
         GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
         aircraftRTB = aircraftRTB + 1
-        table.insert(reportLines, "    [RTB] " .. actualAircraft.name ..
-          " (level: " .. aircraftCtx.commsLevel .. " < " .. aircraftCtx.commsThreshold .. ")")
+        table.insert(reportLines, LogFormat.entry("FAIL", string.format(
+          "aircraft=%q action=rtb commsLevel=%d threshold=%d",
+          actualAircraft.name, aircraftCtx.commsLevel, aircraftCtx.commsThreshold)))
       end
     end
   end
@@ -479,26 +481,23 @@ function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   local totalAttempts, totalJammed, jammingLines = processJammingCycle(commsJammingConfig, jammers, unitCtxs)
   local aircraftProcessed, aircraftRTB, rtbLines = processAircraftComms(commsJammingConfig, saveData)
 
-  local reportLines = {
-    string.format("CommsJamming: %d jammers, %d targets, %d aircraft",
-      #jammers, targetCount, aircraftProcessed)
-  }
+  local reportLines = {}
 
   for _, line in ipairs(jammingLines) do
     table.insert(reportLines, line)
   end
 
-  if #rtbLines > 0 then
-    table.insert(reportLines, "  Aircraft:")
-    for _, line in ipairs(rtbLines) do
-      table.insert(reportLines, line)
-    end
+  for _, line in ipairs(rtbLines) do
+    table.insert(reportLines, line)
   end
 
-  table.insert(reportLines, string.format("  Summary: %d/%d jamming processed, %d/%d aircraft RTB",
-    totalJammed, totalAttempts, aircraftRTB, aircraftProcessed))
-
-  Logger.log(constants.TAGS.COMMS_JAMMING, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.COMMS_JAMMING, LogFormat.summary(
+    "scope",
+    "commsJamming",
+    string.format(
+      "Handle comms jamming jammers=%d targets=%d aircraft=%d attempts=%d processed=%d rtb=%d",
+      #jammers, targetCount, aircraftProcessed, totalAttempts, totalJammed, aircraftRTB),
+    reportLines))
 end
 
 ---Initialize communications jammer contexts for the specified side

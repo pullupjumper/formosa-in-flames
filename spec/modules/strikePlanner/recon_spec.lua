@@ -107,7 +107,7 @@ describe("Recon", function()
   local function makeSatelliteEntry(overrides)
     local entry = {
       type = "satellite",
-      platformKey = "EOS",
+      reconObjectiveId = "FIXED_SITE_TARGETING",
       endTime = "2026-02-14 08:00:00",
       isFinished = false,
     }
@@ -123,7 +123,7 @@ describe("Recon", function()
   local function makeSIGINTEntry(overrides)
     local entry = {
       type = "SIGINT",
-      platformKey = "ELINT",
+      reconObjectiveId = "C2_EMITTER_TARGETING",
       endTime = "2026-02-14 08:00:00",
       isFinished = false,
     }
@@ -145,18 +145,15 @@ describe("Recon", function()
     return ctx
   end
 
-  ---Create a minimal config for getPlatformSpecialOperations / scheduleDynamicReconOperations
+  ---Create a minimal config for buildOperationsForReconObjective / scheduleDynamicReconOperations
   ---@param overrides? table
   ---@return SBJ__Config
   local function makeConfig(overrides)
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    cfg.c.recon.reconStrikeMatrix = {
-      UAV = {
-        BZK005_RECON_1 = {
-          { name = "STRIKE/C2/N/1", type = "ground" },
-        },
+    cfg.c.recon.strikeMappingsByReconObjective = {
+      C2_NORTH_TARGETING = {
+        { name = "STRIKE/C2/N/1", type = "ground" },
       },
-      satellite = {},
     }
     cfg.c.recon.frontlineRedirect = {
       enabled = false,
@@ -523,7 +520,7 @@ describe("Recon", function()
       local reconContext = makeReconContext({ entry })
       Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext, false)
 
-      -- Tracking failed => finishReconMission called with success=true
+      -- Tracking failed => settleReconMission called with success=true
       assert.is_true(entry.isFinished)
     end)
 
@@ -554,7 +551,7 @@ describe("Recon", function()
     -- Double execution prevention
     -- ========================================================================
 
-    it("should not execute finishReconMission twice for same entry", function()
+    it("should not execute settleReconMission twice for same entry", function()
       local entry = makeUAVEntry({
         hasLaunched = true,
         unitGUID = "AC-001",
@@ -653,8 +650,13 @@ describe("Recon", function()
     -- Dynamic operations scheduling on mission completion
     -- ========================================================================
 
-    it("should schedule new operations when mission completes with matching strike matrix", function()
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
+    it("should schedule new operations when mission completes with matching strike mappings", function()
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        templateId = "BZK005_RECON_1",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -677,11 +679,16 @@ describe("Recon", function()
 
     it("should skip STRIKE/AB/E/1 when LACM is not enabled", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
+      cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
         { name = "STRIKE/AB/E/1", type = "air" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        templateId = "BZK005_RECON_1",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -786,14 +793,18 @@ describe("Recon", function()
     end)
 
     -- ========================================================================
-    -- Dynamic operations scheduling (indirect getPlatformSpecialOperations)
+    -- Dynamic operations scheduling (indirect buildOperationsForReconObjective)
     -- ========================================================================
 
-    it("should handle missing reconStrikeMatrix for entry platform type", function()
+    it("should handle missing strikeMappingsByReconObjective config", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV = nil
+      cfg.c.recon.strikeMappingsByReconObjective = nil
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001" })
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -806,16 +817,15 @@ describe("Recon", function()
       Recon.handleReconQueue(cfg, reconContext, reconSchedule, LACMContext, false)
 
       assert.is_true(entry.isFinished)
-      -- No operations scheduled (no strike matrix for UAV type)
+      -- No operations scheduled (objective mapping table is missing)
       assert.are.equal(0, #reconSchedule)
     end)
 
-    -- Positive: satellite entry resolves mappings via platformKey (string-keyed lookup)
-    it("should resolve satellite mappings by platformKey", function()
+    -- Positive: satellite entry resolves mappings via reconObjectiveId
+    it("should resolve satellite mappings by reconObjectiveId", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/C2/N/1", type = "ground" } },
-      }
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+          { { name = "STRIKE/C2/N/1", type = "ground" } }
       cfg.c.fireSupportTaskTemplates.STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
@@ -823,7 +833,7 @@ describe("Recon", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
@@ -837,14 +847,12 @@ describe("Recon", function()
       assert.are.equal("STRIKE/C2/N/1", reconSchedule[1].operations[1].template.name)
     end)
 
-    -- Negative: matrix exists but key (DBID/platformKey) absent emits a SKIP log line and schedules nothing
-    it("should log SKIP when no mappings match the entry's lookup key", function()
+    -- Negative: objective mapping table exists but the entry objective has no mapping.
+    it("should log SKIP when no mappings match the entry's recon objective", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/C2/N/1", type = "ground" } },
-      }
-      -- platformKey "UNKNOWN" is not in the matrix
-      local entry = makeSatelliteEntry({ platformKey = "UNKNOWN" })
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+          { { name = "STRIKE/C2/N/1", type = "ground" } }
+      local entry = makeSatelliteEntry({ reconObjectiveId = "UNKNOWN_OBJECTIVE" })
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
@@ -855,15 +863,14 @@ describe("Recon", function()
       assert.is_true(entry.isFinished)
       assert.are.equal(0, #reconSchedule)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
-        "%[SKIP%] No strike mappings for satellite key=UNKNOWN"))
+        "%[SKIP%].*type=satellite objective=UNKNOWN_OBJECTIVE reason=strike_mapping_not_found"))
     end)
 
-    -- Positive: SIGINT entry resolves mappings via platformKey (string-keyed lookup)
-    it("should resolve SIGINT mappings by platformKey", function()
+    -- Positive: SIGINT entry resolves mappings via reconObjectiveId
+    it("should resolve SIGINT mappings by reconObjectiveId", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.SIGINT = {
-        ELINT = { { name = "STRIKE/C2/N/1", type = "ground" } },
-      }
+      cfg.c.recon.strikeMappingsByReconObjective.C2_EMITTER_TARGETING =
+          { { name = "STRIKE/C2/N/1", type = "ground" } }
       cfg.c.fireSupportTaskTemplates.STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
@@ -871,7 +878,7 @@ describe("Recon", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
 
-      local entry = makeSIGINTEntry({ platformKey = "ELINT" })
+      local entry = makeSIGINTEntry({ reconObjectiveId = "C2_EMITTER_TARGETING" })
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
@@ -886,7 +893,7 @@ describe("Recon", function()
 
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
+      cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
         { name = "STRIKE/C2/N/1", type = "ground" },
         { name = "STRIKE/AB/E/1", type = "air" },
       }
@@ -897,7 +904,12 @@ describe("Recon", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        templateId = "BZK005_RECON_1",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -935,15 +947,13 @@ describe("Recon", function()
     -- Negative: STRIKE/INFRASTRUCTURE/* mappings skipped when fireSupportOnHold=true
     it("should skip STRIKE/INFRASTRUCTURE/* mappings when fireSupportOnHold is true", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = {
-          { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
-          { name = "STRIKE/AB/W/1",           type = "air" },
-        },
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+        { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+        { name = "STRIKE/AB/W/1",           type = "air" },
       }
       cfg.c.packageTemplates.STRIKE_AB_W_1 = { { name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } } }
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
@@ -959,15 +969,14 @@ describe("Recon", function()
       assert.are.equal(1, #reconSchedule[1].operations)
       assert.are.equal("STRIKE/AB/W/1", reconSchedule[1].operations[1].template.name)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
-        "%[HOLD%] STRIKE/INFRASTRUCTURE/1 skipped"))
+        "%[HOLD%].*operation=STRIKE/INFRASTRUCTURE/1.*reason=fire_support_on_hold"))
     end)
 
     -- Positive: STRIKE/INFRASTRUCTURE/* mappings inserted normally when hold is off
     it("should insert STRIKE/INFRASTRUCTURE/* mappings when fireSupportOnHold is false", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" } },
-      }
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+          { { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" } }
       cfg.c.fireSupportTaskTemplates.STRIKE_INFRASTRUCTURE_1 = { {
         name = "FST-INFRA-1",
         firingUnits = {},
@@ -975,7 +984,7 @@ describe("Recon", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
@@ -993,11 +1002,16 @@ describe("Recon", function()
     -- Negative: non-INFRASTRUCTURE mappings unaffected by fireSupportOnHold
     it("should not gate non-INFRASTRUCTURE mappings even when fireSupportOnHold is true", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
+      cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
         { name = "STRIKE/C2/N/1", type = "ground" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        templateId = "BZK005_RECON_1",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -1019,11 +1033,16 @@ describe("Recon", function()
     -- not scheduled again, or the same /N+1 would double the strike package.
     it("should not schedule a duplicate next wave when an identical one is already pending", function()
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.UAV.BZK005_RECON_1 = {
+      cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
         { name = "STRIKE/C2/N/1", type = "ground" },
       }
 
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "AC-001", templateId = "BZK005_RECON_1" })
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "AC-001",
+        templateId = "BZK005_RECON_1",
+        reconObjectiveId = "C2_NORTH_TARGETING",
+      })
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
@@ -1605,9 +1624,8 @@ describe("Recon", function()
     ---@param redirectOverrides? table Overrides merged into cfg.c.recon.frontlineRedirect
     local function makeRedirectConfig(redirectOverrides)
       local cfg = makeConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = { { name = "STRIKE/AB/W/1", type = "air" } },
-      }
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+          { { name = "STRIKE/AB/W/1", type = "air" } }
       cfg.c.packageTemplates.STRIKE_AB_W_1 = {
         { name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
@@ -1666,7 +1684,7 @@ describe("Recon", function()
       stubRecurringHelpers()
       stubAttrition(0) -- 100% attrition, but disabled means it's never queried
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
       local reconSchedule = {}
 
@@ -1684,7 +1702,7 @@ describe("Recon", function()
       stubRecurringHelpers()
       stubAttrition(4) -- 0% attrition
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
       local reconSchedule = {}
 
@@ -1701,7 +1719,7 @@ describe("Recon", function()
       stubRecurringHelpers()
       stubAttrition(0) -- 100% attrition
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
       local reconSchedule = {}
 
@@ -1713,7 +1731,7 @@ describe("Recon", function()
       -- ACTIVATED log emitted exactly once
       local activatedLogged = false
       for _, call in ipairs(logStub.calls) do
-        if call.refs[2] and call.refs[2]:find("Frontline strike redirect ACTIVATED") then
+        if call.refs[2] and call.refs[2]:find("reason=attrition_threshold_reached") then
           activatedLogged = true
         end
       end
@@ -1727,7 +1745,7 @@ describe("Recon", function()
       -- VP_GetSide is intentionally NOT stubbed; if the early-return path failed the test would
       -- error attempting the underlying API. ScenEdit_GetUnit is also unstubbed for the same reason.
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
       local reconSchedule = {}
 
@@ -1743,7 +1761,7 @@ describe("Recon", function()
       stubRecurringHelpers()
       stubAttrition(4) -- 0% attrition (below threshold)
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       -- Pre-set the flag to simulate it was triggered earlier
       local reconContext = makeReconContext({ entry }, { frontlineRedirected = true })
       local reconSchedule = {}
@@ -1757,11 +1775,9 @@ describe("Recon", function()
     -- Boundary: only mappings matching fromPrefix are rewritten; unrelated mappings untouched
     it("should rewrite only mappings matching fromPrefix and leave others unchanged", function()
       local cfg = makeRedirectConfig()
-      cfg.c.recon.reconStrikeMatrix.satellite = {
-        EOS = {
-          { name = "STRIKE/AB/W/1", type = "air" },
-          { name = "STRIKE/AB/E/1", type = "air" },
-        },
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+        { name = "STRIKE/AB/W/1", type = "air" },
+        { name = "STRIKE/AB/E/1", type = "air" },
       }
       cfg.c.packageTemplates.STRIKE_AB_E_1 = {
         { name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
@@ -1769,7 +1785,7 @@ describe("Recon", function()
       stubRecurringHelpers()
       stubAttrition(0) -- 100% attrition triggers redirect
 
-      local entry = makeSatelliteEntry({ platformKey = "EOS" })
+      local entry = makeSatelliteEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       local reconContext = makeReconContext({ entry })
       local reconSchedule = {}
 

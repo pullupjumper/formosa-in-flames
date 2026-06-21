@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 
@@ -250,7 +251,8 @@ end
 
 ---Add a unit-enters-area trigger to the specified event
 ---@param opts SBJ__AddTriggerOpts Trigger creation options
----@return boolean # Whether trigger was successfully added
+---@return boolean success Whether trigger was successfully added
+---@return string? reason Failure reason if trigger creation failed
 local function addTriggerToEvent(opts)
   local triggerName = string.format("(%s) Arrive in %s - %d - %s", opts.sideName, opts.positionType, opts.index,
     opts.operationalArea.name)
@@ -264,7 +266,7 @@ local function addTriggerToEvent(opts)
     local eventName = string.format("(%s) Arrive in %s", opts.sideName, opts.positionType)
     zone.areacolor = getOperationalAreaColor(opts.positionType)
     opts.position.area = GameUtils.convertToRPArray(zone)
-    GameApi.ScenEdit_SetTrigger({
+    local triggerResult = GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
       Mode = "add",
       type = "UnitEntersArea",
@@ -272,11 +274,24 @@ local function addTriggerToEvent(opts)
       Area = opts.position.area,
       ExitArea = false
     })
-    GameApi.ScenEdit_SetEventTrigger(eventName, { mode = "add", name = triggerName })
-    return true
+    local eventTriggerResult = GameApi.ScenEdit_SetEventTrigger(eventName, { mode = "add", name = triggerName })
+
+    if triggerResult and eventTriggerResult then
+      return true, nil
+    end
+
+    if not triggerResult and not eventTriggerResult then
+      return false, "set_trigger_and_event_trigger_failed"
+    end
+
+    if not triggerResult then
+      return false, "set_trigger_failed"
+    end
+
+    return false, "set_event_trigger_failed"
   end
 
-  return false
+  return false, "add_zone_failed"
 end
 
 ---Clean up existing zones and event triggers for missile system
@@ -354,19 +369,25 @@ local function createPositionTriggers(operationalArea, positionTypes, enemySide,
   for _, positionType in ipairs(positionTypes) do
     for index, position in ipairs(operationalArea[positionType]) do
       ---@cast position SBJ__Position
-      if addTriggerToEvent({
+      local success, reason = addTriggerToEvent({
             positionType = positionType,
             position = position,
             index = index,
             operationalArea = operationalArea,
             enemySide = enemySide,
             sideName = sideName
-          }) then
+          })
+      if success then
         created = created + 1
       else
         failed = failed + 1
-        table.insert(failMessages, string.format("  [FAIL] Trigger %s-%d in %s",
-          positionType, index, operationalArea.name))
+        table.insert(failMessages, LogFormat.entry("FAIL", string.format(
+          "area=%q kind=trigger position=%s index=%d reason=%s",
+          LogFormat.readable(operationalArea.name),
+          LogFormat.value(positionType),
+          index,
+          LogFormat.value(reason or "add_trigger_failed")
+        )))
       end
     end
   end
@@ -386,48 +407,87 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
       cleanupExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
 
   local totalCreated, totalFailed, maskCreated, maskFailed, bunkersCreated, bunkersFailed = 0, 0, 0, 0, 0, 0
-  local allFailMessages = {}
+  local initLogEntries = {}
 
   for _, operationalArea in ipairs(operationalAreas) do
     local created, failed, failMessages = createPositionTriggers(
       operationalArea, positionTypes, sideCfg.enemySide, sideName)
     totalCreated = totalCreated + created
     totalFailed = totalFailed + failed
+    table.insert(initLogEntries, LogFormat.entry(failed > 0 and "FAIL" or "OK", string.format(
+      "area=%q kind=trigger created=%d expected=%d",
+      LogFormat.readable(operationalArea.name),
+      created,
+      created + failed
+    )))
     for _, msg in ipairs(failMessages) do
-      table.insert(allFailMessages, msg)
+      table.insert(initLogEntries, msg)
     end
 
     if addCustomEnvironmentZone(operationalArea, sideName) then
       maskCreated = maskCreated + 1
+      table.insert(initLogEntries, LogFormat.entry("OK", string.format(
+        "area=%q kind=mask created=1 expected=1",
+        LogFormat.readable(operationalArea.name)
+      )))
     else
       maskFailed = maskFailed + 1
-      table.insert(allFailMessages,
-        string.format("  [FAIL] MASK zone for %s", operationalArea.name))
+      table.insert(initLogEntries, LogFormat.entry("FAIL", string.format(
+        "area=%q kind=mask created=0 expected=1 reason=add_zone_failed",
+        LogFormat.readable(operationalArea.name)
+      )))
     end
 
     if addBunkers(operationalArea, sideName) then
       bunkersCreated = bunkersCreated + 1
+      table.insert(initLogEntries, LogFormat.entry("OK", string.format(
+        "area=%q kind=bunker created=1 expected=1",
+        LogFormat.readable(operationalArea.name)
+      )))
     else
       bunkersFailed = bunkersFailed + 1
-      table.insert(allFailMessages,
-        string.format("  [FAIL] BUNKER creation for %s", operationalArea.name))
+      table.insert(initLogEntries, LogFormat.entry("FAIL", string.format(
+        "area=%q kind=bunker created=0 expected=1 reason=add_bunker_failed",
+        LogFormat.readable(operationalArea.name)
+      )))
     end
   end
 
-  Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
-    "Cleanup for %s missile system: removed %d triggers (allSuccessful: %s), removed %d zones (allSuccessful: %s)",
-    sideName, removedTriggerCount, tostring(triggerCleanupSuccessful), removedZoneCount, tostring(zoneCleanupSuccessful)
-  ))
+  local cleanupLogEntries = {
+    LogFormat.entry(triggerCleanupSuccessful and "OK" or "FAIL", string.format(
+      "kind=trigger removed=%d reason=%s",
+      removedTriggerCount,
+      triggerCleanupSuccessful and "none" or "cleanup_incomplete"
+    )),
+    LogFormat.entry(zoneCleanupSuccessful and "OK" or "FAIL", string.format(
+      "kind=zone removed=%d reason=%s",
+      removedZoneCount,
+      zoneCleanupSuccessful and "none" or "cleanup_incomplete"
+    ))
+  }
+  local cleanupSummary = LogFormat.summary("side", sideName, "Cleanup missile system triggers/zones", cleanupLogEntries)
+  if triggerCleanupSuccessful and zoneCleanupSuccessful then
+    Logger.log(constants.TAGS.MISSILE_SYSTEM, cleanupSummary)
+  else
+    Logger.error(cleanupSummary)
+  end
 
-  Logger.log(constants.TAGS.MISSILE_SYSTEM, string.format(
-    "Initialized %s missile system: %d/%d triggers created, %d/%d mask zones created, %d/%d bunkers created",
-    sideName, totalCreated, totalCreated + totalFailed, maskCreated, maskCreated + maskFailed, bunkersCreated,
-    bunkersCreated + bunkersFailed
-  ))
+  if #initLogEntries > 0 then
+    local initSummary = LogFormat.summary("side", sideName, string.format(
+      "Initialize missile system triggers=%d/%d masks=%d/%d bunkers=%d/%d",
+      totalCreated,
+      totalCreated + totalFailed,
+      maskCreated,
+      maskCreated + maskFailed,
+      bunkersCreated,
+      bunkersCreated + bunkersFailed
+    ), initLogEntries)
 
-  if #allFailMessages > 0 then
-    Logger.error(constants.TAGS.MISSILE_SYSTEM ..
-      ": Trigger/zone/bunker creation failures:\n" .. table.concat(allFailMessages, "\n"))
+    if totalFailed == 0 and maskFailed == 0 and bunkersFailed == 0 then
+      Logger.log(constants.TAGS.MISSILE_SYSTEM, initSummary)
+    else
+      Logger.error(initSummary)
+    end
   end
 end
 

@@ -336,11 +336,67 @@ describe("MissileSystem Cycle", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      local results = Cycle.process(systemCtx, true, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
       assert.are.equal(2000, firingCtx.stowStartTime)
+      assert.are.equal(1, #results)
+      assert.are.equal("Stow countdown started", results[1].action)
+      assert.are.equal("startedAt=2000", results[1].detail)
+    end)
+
+    -- Negative: returns a failure result when movement command cannot be built
+    it("should return failure result when hide movement has no available HA", function()
+      local systemCtx = makeSystemCtx({
+        reloadTime = 60,
+        stowTime = 10,
+        firingUnits = {
+          ["Firing Unit Alpha"] = {
+            name = "Firing Unit Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            reloadStartTime = nil,
+            stowStartTime = 1000,
+            resupplyUnit = "Ammo Sec, Alpha",
+            weaponDBID = 1234,
+            ammoThreshold = 60,
+            operationalArea = {
+              name = "OPAREA-1"
+            }
+          }
+        },
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            wpnCurrent = 20,
+            wpnDefault = 20
+          }
+        }
+      })
+
+      local firingUnit = {
+        guid = "F1",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "F1" } }
+      }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" then return firingUnit end
+        if guidOrName == "F1" then return firingUnit end
+        return nil
+      end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
+
+      local results = Cycle.process(systemCtx, true, "Taiwan")
+
+      assert.are.equal(1, #results)
+      assert.are.equal("FAIL", results[1].tag)
+      assert.are.equal("Move to hide area", results[1].action)
+      assert.are.equal("command_failed", results[1].reason)
+      assert.is_not_nil(string.find(results[1].detail, "No HA defined", 1, true))
     end)
 
     -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode

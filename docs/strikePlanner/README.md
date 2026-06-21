@@ -193,7 +193,7 @@ saveData.c.recon
     │   ├── hasLaunched / isFinished / unitGUID
     │   └── isTracking / trackingTargetGUID
     └── Satellite / SIGINT Entry
-        ├── platformKey: string  -- 語意平台鍵（如 EOS、ELINT）對應 reconStrikeMatrix 索引
+        ├── reconObjectiveId: string  -- 情蒐目標 ID，對應 strikeMappingsByReconObjective 索引
         ├── endTime
         └── isFinished
 ```
@@ -246,7 +246,7 @@ flowchart BT
 | 設定路徑 | 用途 |
 |---|---|
 | `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
-| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依平台 DBID、satellite/SIGINT 依 platformKey 索引） |
+| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
 | `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
 | `config.c.packageTemplates` | 空中打擊包模板；`recon` 建立 air operation template，`dynamicATOInsertion` 轉為 Wave |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板（依名稱索引） |

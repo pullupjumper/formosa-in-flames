@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
 
@@ -118,22 +119,48 @@ end
 -- Ship Type Movement
 -- ============================================================================
 
+---Get pre-calculated movement result for an operation
+---@param calculationResult table<string, SBJ__OperationZoneCalculationResult>|nil Calculation result lookup
+---@param operationName string Operation name
+---@return table<string, SBJ__ShipCalculationResult>|nil result Operation movement result
+---@return string|nil msg Error message when result is missing
+local function getOperationResult(calculationResult, operationName)
+  if not calculationResult then
+    return nil, "reason=calculation_result_missing"
+  end
+
+  local operationResult = calculationResult[operationName]
+  if not operationResult or not operationResult.result then
+    return nil, "reason=calculation_result_missing"
+  end
+
+  return operationResult.result
+end
+
 ---Move ship to next pre-calculated location and increment index
 ---@param unit CMO__Unit Ship unit
----@param resultEntry SBJ__ShipCalculationResult Calculation result entry
+---@param resultEntry SBJ__ShipCalculationResult|nil Calculation result entry
+---@param resultKey string Result key used for destination lookup
 ---@param speed number Ship speed in knots
 ---@param isTesting boolean Testing mode flag
 ---@return string tag Result tag (OK/SKIP)
 ---@return string msg Description
-local function moveShipToNextLocation(unit, resultEntry, speed, isTesting)
+local function moveShipToNextLocation(unit, resultEntry, resultKey, speed, isTesting)
+  if not resultEntry or not resultEntry.locations or not resultEntry.locationIndex then
+    return "FAIL", string.format("ship=%s dbid=%s dest=%s reason=calculation_entry_missing",
+      unit.name, tostring(unit.dbid), resultKey)
+  end
+
   local index = resultEntry.locationIndex
   local location = resultEntry.locations[index]
   if not location then
-    return "SKIP", string.format("%s no location at index %d", unit.name, index)
+    return "SKIP", string.format("ship=%s dbid=%s dest=%s index=%d reason=no_location",
+      unit.name, tostring(unit.dbid), resultKey, index)
   end
   moveShip(unit, location, speed, isTesting)
   resultEntry.locationIndex = index + 1
-  return "OK", string.format("%s -> location #%d", unit.name, index)
+  return "OK", string.format("ship=%s dbid=%s dest=%s index=%d",
+    unit.name, tostring(unit.dbid), resultKey, index)
 end
 
 ---Handle Type 071 movement with overflow to LST area
@@ -145,21 +172,29 @@ end
 ---@return string msg Description
 local function moveType071(unit, result, speed, isTesting)
   local entry = result.type071
+  local lstEntry = result.type071InLSTArea
+  if not entry or not entry.locations or not entry.locationIndex or not lstEntry or not lstEntry.locations then
+    return "FAIL", string.format("ship=%s dbid=%s dest=type071 reason=calculation_entry_missing",
+      unit.name, tostring(unit.dbid))
+  end
+
   local index = entry.locationIndex
   local len = #entry.locations
   local location
   if index > len then
-    location = result.type071InLSTArea.locations[index - len]
+    location = lstEntry.locations[index - len]
   else
     location = entry.locations[index]
   end
   if not location then
-    return "SKIP", string.format("%s no 071 location at index %d", unit.name, index)
+    return "SKIP", string.format("ship=%s dbid=%s dest=type071 index=%d reason=no_location",
+      unit.name, tostring(unit.dbid), index)
   end
   moveShip(unit, location, speed, isTesting)
   entry.locationIndex = index + 1
   local area = index > len and "LST" or "LPD"
-  return "OK", string.format("%s -> %sArea #%d", unit.name, area, index)
+  return "OK", string.format("ship=%s dbid=%s dest=type071 area=%s index=%d",
+    unit.name, tostring(unit.dbid), area, index)
 end
 
 ---Match ship by DBID or name and move to next location
@@ -175,16 +210,16 @@ local function matchAndMoveShip(unit, result, speed, isTesting)
       if entry.key == "type071" then
         return moveType071(unit, result, speed, isTesting)
       end
-      return moveShipToNextLocation(unit, result[entry.key], speed, isTesting)
+      return moveShipToNextLocation(unit, result[entry.key], entry.key, speed, isTesting)
     end
   end
 
   local nameKey = NAME_TO_KEY[unit.name]
   if nameKey then
-    return moveShipToNextLocation(unit, result[nameKey], speed, isTesting)
+    return moveShipToNextLocation(unit, result[nameKey], nameKey, speed, isTesting)
   end
 
-  return "SKIP", string.format("%s (DBID:%d) unmatched", unit.name, unit.dbid)
+  return "SKIP", string.format("ship=%s dbid=%s reason=unmatched", unit.name, tostring(unit.dbid))
 end
 
 -- ============================================================================
@@ -195,56 +230,89 @@ end
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
+---@return string tag Result tag
+---@return string msg Description
 local function handleSAG(descriptor, isTesting)
+  local anchorageArea = descriptor.to and descriptor.to.anchorageArea
+  if not anchorageArea or #anchorageArea == 0 then
+    return "FAIL", string.format("sag=%s reason=anchorage_area_missing", descriptor.groupName)
+  end
+
+  local anchoragePoint = anchorageArea[#anchorageArea]
+  if not anchoragePoint or not anchoragePoint.latitude or not anchoragePoint.longitude then
+    return "FAIL", string.format("sag=%s reason=anchorage_point_missing", descriptor.groupName)
+  end
+
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
-  if not unit then return end
-  unit.course = descriptor.to.anchorageArea
+  if not unit then
+    return "FAIL", string.format("sag=%s reason=sag_group_not_found", descriptor.groupName)
+  end
 
-  if isTesting then
-    local count = #descriptor.to.anchorageArea
-    local type052d, type054a = 0, 0
+  unit.course = anchorageArea
 
-    for _, guid in ipairs(unit.group.unitlist) do
-      local ship = GameApi.ScenEdit_GetUnit(guid)
+  if not isTesting then
+    return "OK", string.format("sag=%s action=course_set", descriptor.groupName)
+  end
 
-      if ship then
-        if ship.dbid == constants.PLATFORMS.TYPE_052D then
-          if type052d == 0 then
-            setShipPosition(
-              ship,
-              descriptor.to.anchorageArea[count].latitude,
-              descriptor.to.anchorageArea[count].longitude,
-              descriptor.to.heading
-            )
-          else
-            local point = getNextPosition(
-              descriptor.to.anchorageArea[count].latitude,
-              descriptor.to.anchorageArea[count].longitude,
-              descriptor.to.heading - 180,
-              SAG_FORMATION.TRAIL_DISTANCE
-            )
-            if point then
-              setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
-            end
-          end
+  if not unit.group or not unit.group.unitlist then
+    return "FAIL", string.format("sag=%s reason=sag_unitlist_missing", descriptor.groupName)
+  end
 
-          type052d = type052d + 1
-        elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
-          local angle = (type054a == 0) and SAG_FORMATION.PORT_ANGLE or SAG_FORMATION.STARBOARD_ANGLE
-          local point = getNextPosition(
-            descriptor.to.anchorageArea[count].latitude,
-            descriptor.to.anchorageArea[count].longitude,
-            descriptor.to.heading - angle,
-            SAG_FORMATION.FLANK_DISTANCE
-          )
-          if point then
-            setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
-          end
-          type054a = type054a + 1
+  local type052d, type054a = 0, 0
+  local positioned, skipped = 0, 0
+
+  for _, guid in ipairs(unit.group.unitlist) do
+    local ship = GameApi.ScenEdit_GetUnit(guid)
+
+    if not ship then
+      skipped = skipped + 1
+    elseif ship.dbid == constants.PLATFORMS.TYPE_052D then
+      if type052d == 0 then
+        setShipPosition(
+          ship,
+          anchoragePoint.latitude,
+          anchoragePoint.longitude,
+          descriptor.to.heading
+        )
+        positioned = positioned + 1
+      else
+        local point = getNextPosition(
+          anchoragePoint.latitude,
+          anchoragePoint.longitude,
+          descriptor.to.heading - 180,
+          SAG_FORMATION.TRAIL_DISTANCE
+        )
+        if point then
+          setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
+          positioned = positioned + 1
+        else
+          skipped = skipped + 1
         end
       end
+
+      type052d = type052d + 1
+    elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
+      local angle = (type054a == 0) and SAG_FORMATION.PORT_ANGLE or SAG_FORMATION.STARBOARD_ANGLE
+      local point = getNextPosition(
+        anchoragePoint.latitude,
+        anchoragePoint.longitude,
+        descriptor.to.heading - angle,
+        SAG_FORMATION.FLANK_DISTANCE
+      )
+      if point then
+        setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
+        positioned = positioned + 1
+      else
+        skipped = skipped + 1
+      end
+      type054a = type054a + 1
+    else
+      skipped = skipped + 1
     end
   end
+
+  return "OK", string.format("sag=%s action=course_set positioned=%d skipped=%d",
+    descriptor.groupName, positioned, skipped)
 end
 
 -- ============================================================================
@@ -263,26 +331,59 @@ local function initOperationResult(operationName, calculationResult)
   calculationResult[operationName] = { name = operationName, result = result }
 end
 
+---Get a required reference point for a ship row
+---@param area SBJ__OperationAreaDescriptor Area configuration
+---@param key string Starting point key
+---@return CMO__Location|nil point Reference point
+---@return string|nil msg Error message when point is missing
+local function getStartingReferencePoint(area, key)
+  local startingPointArea = area.startingPoints and area.startingPoints[key]
+  if not startingPointArea then
+    return nil, string.format("point=%s reason=starting_point_area_missing", key)
+  end
+
+  local points = GameApi.ScenEdit_GetReferencePoints({
+    side = constants.SIDES.ENEMY, area = startingPointArea
+  })
+
+  if not points or not points[1] then
+    return nil, string.format("point=%s reason=reference_point_missing", key)
+  end
+
+  return points[1]
+end
+
 ---Calculate starting points for all ship types from two reference points
 ---@param area SBJ__OperationAreaDescriptor Area configuration with startingPoints, heading
 ---@param formationSettings SBJ__AmphibiousFormationSettings Formation distance settings
----@return table<string, CMO__Location> # Mapping of key to starting location
+---@return table<string, CMO__Location>|nil startingPoints Mapping of key to starting location
+---@return string|nil msg Error message when calculation fails
 local function calculateStartingPoints(area, formationSettings)
   local startingPoints = {}
-  startingPoints.type075 = GameApi.ScenEdit_GetReferencePoints({
-    side = constants.SIDES.ENEMY, area = area.startingPoints.type075
-  })[1]
-  startingPoints.type071 = GameApi.ScenEdit_GetReferencePoints({
-    side = constants.SIDES.ENEMY, area = area.startingPoints.type071
-  })[1]
+  local msg
+
+  startingPoints.type075, msg = getStartingReferencePoint(area, "type075")
+  if not startingPoints.type075 then return nil, msg end
+
+  startingPoints.type071, msg = getStartingReferencePoint(area, "type071")
+  if not startingPoints.type071 then return nil, msg end
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
+    local fromPoint = startingPoints[row.from]
+    if not fromPoint then
+      return nil, string.format("point=%s from=%s reason=source_point_missing", row.key, row.from)
+    end
+
     startingPoints[row.key] = GameApi.World_GetPointFromBearing({
-      latitude = startingPoints[row.from].latitude,
-      longitude = startingPoints[row.from].longitude,
+      latitude = fromPoint.latitude,
+      longitude = fromPoint.longitude,
       bearing = area.heading.vertical,
       distance = formationSettings[row.distanceKey],
     })
+
+    if not startingPoints[row.key] then
+      return nil, string.format("point=%s from=%s reason=derived_point_failed", row.key, row.from)
+    end
   end
 
   return startingPoints
@@ -311,12 +412,19 @@ end
 ---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Calculation result where calculated positions will be stored
+---@return boolean # True if all destination positions were calculated
 function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
   local formationSettings = amphibOpsConfig.formationSettings
   for _, operation in ipairs(amphibOpsConfig.operations) do
-    for _, area in ipairs(operation.to.areas) do
+    for areaIndex, area in ipairs(operation.to.areas) do
       initOperationResult(operation.name, calculationResult)
-      local startingPoints = calculateStartingPoints(area, formationSettings)
+      local startingPoints, msg = calculateStartingPoints(area, formationSettings)
+      if not startingPoints then
+        Logger.error(LogFormat.event("operation", operation.name, "ERROR",
+          string.format("areaIndex=%d %s", areaIndex, msg or "reason=starting_point_calculation_failed")))
+        return false
+      end
+
       generateAllShipLocations(
         calculationResult[operation.name].result,
         startingPoints, area,
@@ -324,6 +432,8 @@ function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
       )
     end
   end
+
+  return true
 end
 
 -- ============================================================================
@@ -339,19 +449,24 @@ end
 ---@return boolean # True when all movement orders have been issued
 function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)
   local formationSettings = amphibOpsConfig.formationSettings
-  local calculationResult = saveData.c.amphibOps.calculationResult
+  local calculationResult = saveData and saveData.c and saveData.c.amphibOps and saveData.c.amphibOps.calculationResult
   local isTesting = amphibOpsConfig.isTesting
   local logEntries = {}
-  local movedCount = 0
+  local hasFailure = false
+  local result, msg = getOperationResult(calculationResult, operation.name)
+
+  if not result then
+    Logger.error(LogFormat.event("operation", operation.name, "ERROR", msg or "reason=calculation_result_missing"))
+    return false
+  end
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit then
       if unit:inArea(operation.from.stagingArea) then
-        local result = calculationResult[operation.name].result
         local tag, msg = matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting)
-        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
-        if tag == "OK" then movedCount = movedCount + 1 end
+        table.insert(logEntries, LogFormat.entry(tag, msg))
+        if tag == "FAIL" then hasFailure = true end
       end
     end
   end
@@ -359,18 +474,21 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   for _, sagName in ipairs(operation.sagNames) do
     local descriptor = amphibOpsConfig.sag[sagName]
     if descriptor then
-      handleSAG(descriptor, isTesting)
+      local tag, sagMsg = handleSAG(descriptor, isTesting)
+      table.insert(logEntries, LogFormat.entry(tag, sagMsg))
+      if tag == "FAIL" then hasFailure = true end
+    else
+      table.insert(logEntries, LogFormat.entry("SKIP",
+        string.format("sag=%s reason=sag_descriptor_not_found", sagName)))
     end
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.SHIP_MOVEMENT, string.format(
-      "[%s] Move to staging area: %d ships moved\n%s",
-      operation.name, movedCount, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.SHIP_MOVEMENT,
+      LogFormat.summary("operation", operation.name, "Move to staging area", logEntries))
   end
 
-  return true
+  return not hasFailure
 end
 
 return ShipMovement

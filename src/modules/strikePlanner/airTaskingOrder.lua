@@ -2,6 +2,7 @@ local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
 local AssignMission = require("src.modules.assignMission")
 local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
@@ -157,35 +158,33 @@ end
 local function createMission(packageData, role)
   ---@type SBJ__MissionDeploymentDescriptor
   local missionRole = packageData[role]
-  local mission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, missionRole.missionCreationParams.name)
+  -- local mission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, missionRole.missionCreationParams.name)
 
-  if not mission then
-    mission = GameUtils.createMission(
-      constants.SIDES.ENEMY,
-      missionRole.missionCreationParams.name,
-      missionRole.missionCreationParams.type,
-      missionRole.missionCreationParams.opts,
-      missionRole.emcon
-    )
+  local mission = GameUtils.createMission(
+    constants.SIDES.ENEMY,
+    missionRole.missionCreationParams.name,
+    missionRole.missionCreationParams.type,
+    missionRole.missionCreationParams.opts,
+    missionRole.emcon
+  )
 
-    if mission and missionRole.endTime then
-      mission.OnDeactivateDelete = true
-      mission.OnDeactivateRTB = true
+  if mission and missionRole.endTime then
+    mission.OnDeactivateDelete = true
+    mission.OnDeactivateRTB = true
 
-      if missionRole.startTime then
-        mission.TakeOffTime = missionRole.startTime .. constants.TIME_FORMATS
-      end
+    if missionRole.startTime then
+      mission.TakeOffTime = missionRole.startTime .. constants.TIME_FORMATS
+    end
 
-      mission.endtime = missionRole.endTime .. constants.TIME_FORMATS
+    mission.endtime = missionRole.endTime .. constants.TIME_FORMATS
 
-      if missionRole.timeOnStation then
-        mission.TimeOnTargetStation = missionRole.timeOnStation .. constants.TIME_FORMATS
-      end
+    if missionRole.timeOnStation then
+      mission.TimeOnTargetStation = missionRole.timeOnStation .. constants.TIME_FORMATS
+    end
 
-      if missionRole.missionCreationParams.type == "strike" then
-        GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.ENEMY, mission = mission.name },
-          { automatic_evasion = false })
-      end
+    if missionRole.missionCreationParams.type == "strike" then
+      GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.ENEMY, mission = mission.name },
+        { automatic_evasion = false })
     end
   end
 
@@ -329,7 +328,7 @@ end
 ---@param packageData SBJ__Package The strike package data to process
 ---@return boolean launched Whether package was successfully launched
 ---@return string|nil status Log message (nil = nothing to log)
----@return string|nil tag Status tag for log formatting (e.g. "LAUNCH", "LOADOUT", "ERROR")
+---@return string|nil tag Status tag for log formatting (OK/SKIP/FAIL/ERROR)
 local function processPackage(config, saveData, packageData)
   ensureLoadoutStartTime(packageData)
 
@@ -340,7 +339,7 @@ local function processPackage(config, saveData, packageData)
   if not packageData.loadoutStatus.isLoadoutInitiated then
     initiateLoadoutForPackage(packageData)
     local readyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", packageData.loadoutStatus.expectedReadyTime)
-    return false, "loadout initiated, ready at " .. readyTimeStr, "LOADOUT"
+    return false, string.format("action=initiate_loadout readyTime=%q", readyTimeStr), "OK"
   end
 
   if not isLoadoutReady(packageData) then
@@ -353,7 +352,7 @@ local function processPackage(config, saveData, packageData)
   end
 
   if not createAllMissions(packageData) then
-    return false, "striker mission creation failed", "ERROR"
+    return false, "reason=striker_mission_creation_failed", "ERROR"
   end
 
   local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
@@ -361,22 +360,21 @@ local function processPackage(config, saveData, packageData)
   if not assignTargetsToMission(packageData) then
     local targetList = packageData.target.list
     if #targetList < packageData.target.minTargetCount then
-      return false, string.format("insufficient targets (%d/%d required)",
-        #targetList, packageData.target.minTargetCount), "PENDING"
+      return false, string.format("reason=insufficient_targets targets=%d required=%d",
+        #targetList, packageData.target.minTargetCount), "SKIP"
     end
     return false, nil
   end
 
   if not assignUnits(packageData) then
-    return false, "failed to assign striker units", "ERROR"
+    return false, "reason=striker_assignment_failed", "ERROR"
   end
 
-  -- Build launch summary
-  local details = { #packageData.target.list .. " targets" }
+  local details = { string.format("targets=%d", #packageData.target.list) }
   if reconUAVEntry then
-    table.insert(details, "recon UAV at " .. reconUAVEntry.takeoffTime)
+    table.insert(details, string.format("reconUavTakeoff=%q", reconUAVEntry.takeoffTime))
   end
-  return true, "launched (" .. table.concat(details, ", ") .. ")", "LAUNCH"
+  return true, "action=launch " .. table.concat(details, " "), "OK"
 end
 
 -- ============================================================================
@@ -413,7 +411,8 @@ local function processWave(config, saveData, waveData)
       end
 
       if status then
-        local msg = string.format("%s | %s", packageData.striker.missionCreationParams.name, status)
+        local msg = string.format("mission=%s %s",
+          LogFormat.value(packageData.striker.missionCreationParams.name), status)
         table.insert(logEntries, { msg = msg, tag = tag })
       end
 
@@ -443,8 +442,8 @@ function AirTaskingOrder.airStrike(config, saveData)
       local logEntries = processWave(config, saveData, waveData)
 
       for _, entry in ipairs(logEntries) do
-        local line = string.format("  [%s] %s", entry.tag, entry.msg)
-        if entry.tag == "ERROR" then
+        local line = LogFormat.entry(entry.tag, entry.msg)
+        if entry.tag == "ERROR" or entry.tag == "FAIL" then
           table.insert(errorLines, line)
         else
           table.insert(infoLines, line)
@@ -458,13 +457,13 @@ function AirTaskingOrder.airStrike(config, saveData)
   end
 
   if #infoLines > 0 then
-    Logger.log(constants.TAGS.AIR, string.format(
-      "Air tasking order: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+    Logger.log(constants.TAGS.AIR, LogFormat.summary(
+      "scope", "airTaskingOrder", "Execute packages", infoLines))
   end
 
   if #errorLines > 0 then
-    Logger.error(string.format(
-      "Air tasking order errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
+    Logger.error(LogFormat.summary(
+      "scope", "airTaskingOrder", "Execute packages", errorLines))
   end
 end
 

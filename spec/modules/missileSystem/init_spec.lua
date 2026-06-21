@@ -17,6 +17,8 @@ describe("MissileSystem", function()
   local logStub
   ---@type luassert.spy
   local errorStub
+  ---@type luassert.spy
+  local warnStub
 
   ---Track and register method stub for automatic cleanup.
   ---@param obj table
@@ -32,6 +34,7 @@ describe("MissileSystem", function()
     activeStubs = {}
     logStub = trackStub(Logger, "log")
     errorStub = trackStub(Logger, "error")
+    warnStub = trackStub(Logger, "warn")
   end)
 
   after_each(function()
@@ -58,7 +61,8 @@ describe("MissileSystem", function()
       assert.stub(moveToFiringPointStub).was.called(1)
       assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
       assert.stub(errorStub).was.called(1)
-      assert.stub(errorStub).was.called_with(constants.TAGS.MISSILE_SYSTEM .. ": [FAIL] boom")
+      assert.stub(errorStub).was.called_with(
+        "[module=missileSystem] [FAIL] action=move_to_firing_point unit=\"FU1\" reason=movement_failed detail=\"boom\"")
     end)
 
     -- Positive: forwards arguments and returns true without logging
@@ -139,15 +143,40 @@ describe("MissileSystem", function()
       local tag = logStub.calls[1].vals[1]
       local message = logStub.calls[1].vals[2]
       assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
-      assert.is_not_nil(string.find(message, "2 events", 1, true))
+      assert.is_not_nil(string.find(message, "total=2", 1, true))
       assert.is_not_nil(string.find(message, "[OK]", 1, true))
       assert.is_not_nil(string.find(message, constants.MISSILE_SYSTEM_TYPES.SRBM, 1, true))
-      assert.is_not_nil(string.find(message, "reload done", 1, true))
+      assert.is_not_nil(string.find(message, "reload_done", 1, true))
       assert.is_not_nil(string.find(message, "SRBM1", 1, true))
       assert.is_not_nil(string.find(message, "[WARN]", 1, true))
       assert.is_not_nil(string.find(message, constants.MISSILE_SYSTEM_TYPES.MRBM, 1, true))
-      assert.is_not_nil(string.find(message, "low ammo", 1, true))
+      assert.is_not_nil(string.find(message, "low_ammo", 1, true))
       assert.is_not_nil(string.find(message, "MRBM1", 1, true))
+    end)
+
+    -- Negative: failures are logged through Logger.error so they are not hidden by verbose settings
+    it("should log reload cycle failures through Logger.error", function()
+      local srbmCtx = { enabled = true, id = "srbm" }
+      local groundCtx = {
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+      }
+
+      trackStub(Cycle, "process").returns({
+        {
+          tag = "FAIL",
+          unitName = "SRBM1",
+          action = "Move to hide area",
+          reason = "No HA defined"
+        }
+      })
+
+      MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
+
+      assert.stub(logStub).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      local message = errorStub.calls[1].vals[1]
+      assert.is_not_nil(string.find(message, "[FAIL]", 1, true))
+      assert.is_not_nil(string.find(message, "reason=no_ha_defined", 1, true))
     end)
 
     -- Negative: skips disabled systems and does not log when no events occurred
@@ -165,6 +194,40 @@ describe("MissileSystem", function()
       assert.stub(cycleProcessStub).was.called(1)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, false, "Taiwan")
       assert.stub(logStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- handleSupplyAssetDestruction
+  -- ============================================================================
+
+  describe("handleSupplyAssetDestruction", function()
+    -- Positive: logs ammunition delta when a tracked ammo depot is destroyed
+    it("should log ammunition delta when supply asset destruction is processed", function()
+      local systemCtx = {
+        name = "srbm",
+        resupplyUnits = {},
+        ammunitions = {
+          ["Ammo Depot Alpha"] = {
+            name = "Ammo Depot Alpha",
+            wpnCurrent = 100
+          }
+        }
+      }
+      local unit = { name = "Ammo Depot Alpha" }
+
+      local result, detail = MissileSystem.handleSupplyAssetDestruction(unit, systemCtx)
+
+      assert.is_true(result)
+      assert.are.equal("ammo_depot", detail.role)
+      assert.stub(logStub).was.called(1)
+
+      local tag = logStub.calls[1].vals[1]
+      local message = logStub.calls[1].vals[2]
+      assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
+      assert.is_not_nil(string.find(message, "[system=srbm]", 1, true))
+      assert.is_not_nil(string.find(message, "role=ammo_depot", 1, true))
+      assert.is_not_nil(string.find(message, "delta=-100", 1, true))
     end)
   end)
 
@@ -216,6 +279,14 @@ describe("MissileSystem", function()
 
       assert.stub(setWCSToFreeStub).was.called(1)
       assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(logStub).was.called(1)
+
+      local tag = logStub.calls[1].vals[1]
+      local message = logStub.calls[1].vals[2]
+      assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
+      assert.is_not_nil(string.find(message, "action=firing_ready", 1, true))
+      assert.is_not_nil(string.find(message, "position=FP", 1, true))
+      assert.is_not_nil(string.find(message, "state=STATIC", 1, true))
     end)
 
     -- Negative: FP + not repositioning keeps WCS untouched
@@ -239,6 +310,8 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setWCSToFreeStub).was_not.called()
+      assert.stub(logStub).was_not.called()
+      assert.stub(warnStub).was_not.called()
     end)
 
     -- Boundary: FP path must never drop contacts
@@ -296,6 +369,7 @@ describe("MissileSystem", function()
 
       assert.stub(setStateToHideStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Boundary: HA path drops only matching contacts
@@ -343,7 +417,7 @@ describe("MissileSystem", function()
 
       trackStub(Movement, "isRepositioning").returns(false)
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
+      local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -362,6 +436,48 @@ describe("MissileSystem", function()
       assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
       assert.stub(hideUnitStub).was.called(1)
       assert.stub(hideUnitStub).was.called_with(firingUnitCtx, unit)
+      assert.stub(logStub).was.called(1)
+
+      local message = logStub.calls[1].vals[2]
+      assert.is_not_nil(string.find(message, "action=concealed", 1, true))
+      assert.is_not_nil(string.find(message, "position=HA", 1, true))
+      assert.is_not_nil(string.find(message, "state=HIDE", 1, true))
+    end)
+
+    -- Negative: HA hide failure is reported as a functional warning
+    it("should log warning when HA concealment fails", function()
+      local unit = { name = "FU1", guid = "guid-fu1", side = "China" }
+      local firingUnitCtx = { name = "FU1" }
+      local systemCtx = {
+        enabled = true,
+        firingUnits = { [unit.name] = firingUnitCtx },
+        resupplyUnits = {}
+      }
+
+      trackStub(Movement, "isRepositioning").returns(false)
+      trackStub(Movement, "setStateToHide")
+      trackStub(Concealment, "hideUnit").returns(false, "No buildings found in mask area")
+
+      MissileSystem.handleMoveToPositionEvent({
+        groundCtx = groundCtxWith(systemCtx),
+        unit = unit,
+        event = enterEvent("HA"),
+        isAuto = true,
+        contacts = nil,
+        behavior = {
+          hideOnEnterHA = true,
+          hideResupplyOnRLNoMeeting = false,
+          firingUnitLookupSide = unit.side
+        }
+      })
+
+      assert.stub(logStub).was_not.called()
+      assert.stub(warnStub).was.called(1)
+
+      local message = warnStub.calls[1].vals[1]
+      assert.is_not_nil(string.find(message, "action=concealment_failed", 1, true))
+      assert.is_not_nil(string.find(message, "reason=hide_failed", 1, true))
+      assert.is_not_nil(string.find(message, "detail=\"No buildings found in mask area\"", 1, true))
     end)
 
     -- Boundary: HA handler early-returns when unit is not a firing unit of the system
@@ -422,6 +538,12 @@ describe("MissileSystem", function()
       assert.stub(setReloadStartTimeStub).was.called(1)
       assert.stub(setReloadStartTimeStub).was.called_with(firingUnitCtx, unit, true)
       assert.stub(setStateToStaticStub).was_not.called()
+      assert.stub(logStub).was.called(1)
+
+      local message = logStub.calls[1].vals[2]
+      assert.is_not_nil(string.find(message, "action=reload_started", 1, true))
+      assert.is_not_nil(string.find(message, "position=RL", 1, true))
+      assert.is_not_nil(string.find(message, "triggerUnit=\"FU1\"", 1, true))
     end)
 
     -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path.
@@ -451,6 +573,7 @@ describe("MissileSystem", function()
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
       assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Positive: RL no-meeting + hideResupplyOnRLNoMeeting + ammo sufficient hides resupply unit
@@ -469,7 +592,7 @@ describe("MissileSystem", function()
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
       local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
+      local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -492,6 +615,12 @@ describe("MissileSystem", function()
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 30, 123)
       assert.stub(hideUnitStub).was.called(1)
       assert.stub(hideUnitStub).was.called_with(resupplyUnitCtx, unit)
+      assert.stub(logStub).was.called(1)
+
+      local message = logStub.calls[1].vals[2]
+      assert.is_not_nil(string.find(message, "action=resupply_concealed", 1, true))
+      assert.is_not_nil(string.find(message, "position=RL", 1, true))
+      assert.is_not_nil(string.find(message, "pairedFiringUnit=\"FU1\"", 1, true))
     end)
 
     -- Negative: RL no-meeting + low ammo must not hide the resupply unit
@@ -526,6 +655,7 @@ describe("MissileSystem", function()
 
       assert.stub(setStateToStaticStub).was.called(1)
       assert.stub(hideUnitStub).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Boundary: ScenEdit_GetUnit returning nil short-circuits before ammo/hide checks
@@ -624,6 +754,12 @@ describe("MissileSystem", function()
       assert.stub(setReloadStartTimeStub).was.called(1)
       assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitCtx, unit, true)
       assert.stub(setStateToStaticStub).was_not.called()
+      assert.stub(logStub).was.called(1)
+
+      local message = logStub.calls[1].vals[2]
+      assert.is_not_nil(string.find(message, "action=transload_started", 1, true))
+      assert.is_not_nil(string.find(message, "position=AHA", 1, true))
+      assert.is_not_nil(string.find(message, "state=RELOAD", 1, true))
     end)
 
     -- Negative: AHA fallback resets state when meeting fails
@@ -651,6 +787,7 @@ describe("MissileSystem", function()
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
       assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, true)
+      assert.stub(logStub).was_not.called()
     end)
 
     -- --- Boundaries -------------------------------------------------------

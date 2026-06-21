@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
 
@@ -211,7 +212,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
 
   if not contacts then
-    Logger.warn(string.format("Failed to get %s contacts", sideName))
+    Logger.warn(LogFormat.event("side", sideName, "WARN", "reason=contacts_unavailable"))
     saveData.c.targetlist = {}
     return
   end
@@ -254,7 +255,8 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   end
 
   saveData.c.targetlist = targetlist
-  Logger.log(constants.TAGS.TARGETING_PROCESS, string.format("Scanned %d targets for %s", #targetlist, sideName))
+  Logger.log(constants.TAGS.TARGETING_PROCESS, LogFormat.event(
+    "side", sideName, "OK", string.format("action=scan_targets contacts=%d targets=%d", #contacts, #targetlist)))
 end
 
 -- ============================================================================
@@ -603,7 +605,7 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
         Utils.insertList(strikeTargets, targets)
       end
     else
-      Logger.warn(string.format("Unknown target filtering function: %s", filterName))
+      Logger.warn(LogFormat.event("filter", filterName, "WARN", "reason=unknown_target_filter"))
     end
   end
 

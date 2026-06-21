@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
 local GnssJamming = {}
@@ -19,15 +20,32 @@ local GNSS_JAMMING_RESULT = {
 }
 
 local GNSS_RESULT_TAGS = {
-  [GNSS_JAMMING_RESULT.JAMMED]     = "[OK]",
-  [GNSS_JAMMING_RESULT.RESISTED]   = "[SKIP]",
-  [GNSS_JAMMING_RESULT.NO_COURSE]  = "[FAIL]",
-  [GNSS_JAMMING_RESULT.NOT_GUIDED] = "[SKIP]",
-  [GNSS_JAMMING_RESULT.NO_WEAPON]  = "[ERROR]",
+  [GNSS_JAMMING_RESULT.JAMMED]     = "OK",
+  [GNSS_JAMMING_RESULT.RESISTED]   = "SKIP",
+  [GNSS_JAMMING_RESULT.NO_COURSE]  = "FAIL",
+  [GNSS_JAMMING_RESULT.NOT_GUIDED] = "SKIP",
+  [GNSS_JAMMING_RESULT.NO_WEAPON]  = "ERROR",
 }
 
 
 local TARGET_TYPE_WEAPON = 6
+
+
+---Format GNSS jamming result as key=value fields
+---@param status string GNSS jamming result enum value
+---@param message string Result message or weapon name
+---@return string # Formatted log message
+local function formatGnssResult(status, message)
+  if status == GNSS_JAMMING_RESULT.NO_WEAPON then
+    return "result=no_weapon reason=no_weapon_unit_found"
+  end
+
+  if status == GNSS_JAMMING_RESULT.NO_COURSE then
+    return string.format("result=no_course weapon=%q reason=no_course_data", message)
+  end
+
+  return string.format("result=%s weapon=%q", status, message)
+end
 
 
 -- ============================================================================
@@ -135,7 +153,7 @@ local function attemptJamming(gnssGuidedWeapons)
   end
 
   if not weaponUnit.course then
-    return GNSS_JAMMING_RESULT.NO_COURSE, weaponUnit.name .. " has no course data"
+    return GNSS_JAMMING_RESULT.NO_COURSE, weaponUnit.name
   end
 
   local count = #weaponUnit.course
@@ -244,13 +262,15 @@ function GnssJamming.jamming(config, sideName)
   local gnssGuidedWeapons = config[side].gnssJamming.gnssGuidedWeapons
 
   local status, message = attemptJamming(gnssGuidedWeapons)
+  local tag = GNSS_RESULT_TAGS[status] or "OK"
+  local formattedMessage = formatGnssResult(status, message)
 
   if status == GNSS_JAMMING_RESULT.NO_WEAPON or status == GNSS_JAMMING_RESULT.NO_COURSE then
-    Logger.error(constants.TAGS.GNSS_JAMMING .. ": " .. GNSS_RESULT_TAGS[status] .. " " .. message)
+    Logger.error(LogFormat.event("scope", constants.TAGS.GNSS_JAMMING, tag, formattedMessage))
     return false
   end
 
-  Logger.log(constants.TAGS.GNSS_JAMMING, GNSS_RESULT_TAGS[status] .. " " .. message)
+  Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.event("side", sideName, tag, formattedMessage))
   return status == GNSS_JAMMING_RESULT.JAMMED
 end
 
@@ -273,15 +293,18 @@ function GnssJamming.addGnssJammer(descriptor, sideName)
   })
 
   if not unit then
-    Logger.log(constants.TAGS.GNSS_JAMMING, "[FAIL] " .. descriptor.name .. " (unit creation failed)")
+    Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.event(
+      "jammer", descriptor.name, "FAIL", string.format("side=%s reason=unit_creation_failed", sideName)))
     return false, nil
   end
 
   local point = { latitude = descriptor.point.latitude, longitude = descriptor.point.longitude }
   local success = createJammingZone(unit, descriptor, point, sideName, enemySideName)
 
-  local tag = success and "[OK]" or "[FAIL]"
-  Logger.log(constants.TAGS.GNSS_JAMMING, string.format("addGnssJammer: %s %s (%s)", tag, descriptor.name, sideName))
+  local tag = success and "OK" or "FAIL"
+  local reason = success and "result=created" or "reason=zone_creation_failed"
+  Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.event(
+    "jammer", descriptor.name, tag, string.format("side=%s zone=%q %s", sideName, descriptor.zoneName, reason)))
 
   return success, unit
 end
@@ -307,23 +330,25 @@ function GnssJamming.addGnssJammers(jammerDescriptors, sideName)
     )
 
     if not unit or not point then
-      table.insert(reportLines, "  [FAIL] " .. descriptor.name .. " (unit creation failed)")
+      table.insert(reportLines, LogFormat.entry("FAIL", string.format(
+        "jammer=%q zone=%q reason=unit_creation_failed", descriptor.name, descriptor.zoneName)))
       goto continue
     end
 
     if createJammingZone(unit, descriptor, point, sideName, enemySideName) then
       successCount = successCount + 1
-      table.insert(reportLines, "  [OK] " .. descriptor.name)
+      table.insert(reportLines, LogFormat.entry("OK", string.format(
+        "jammer=%q zone=%q", descriptor.name, descriptor.zoneName)))
     else
-      table.insert(reportLines, "  [FAIL] " .. descriptor.name .. " (zone creation failed)")
+      table.insert(reportLines, LogFormat.entry("FAIL", string.format(
+        "jammer=%q zone=%q reason=zone_creation_failed", descriptor.name, descriptor.zoneName)))
     end
 
     ::continue::
   end
 
-  table.insert(reportLines, 1,
-    string.format("addGnssJammers: %d created for %s", successCount, sideName))
-  Logger.log(constants.TAGS.GNSS_JAMMING, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.GNSS_JAMMING,
+    LogFormat.summary("side", sideName, string.format("Add GNSS jammers created=%d", successCount), reportLines))
 
   return successCount
 end
@@ -345,17 +370,18 @@ function GnssJamming.removeJammers(jammerDescriptors, sideName)
         if cleanupZoneResources(sideObj, zone, sideName, descriptor.zoneName) then
           deleteJammerUnit(descriptor.name, sideName)
           removedCount = removedCount + 1
-          table.insert(reportLines, "  [OK] " .. descriptor.zoneName)
+          table.insert(reportLines, LogFormat.entry("OK", string.format(
+            "jammer=%q zone=%q", descriptor.name, descriptor.zoneName)))
         else
-          table.insert(reportLines, "  [FAIL] " .. descriptor.zoneName .. " (zone not found)")
+          table.insert(reportLines, LogFormat.entry("FAIL", string.format(
+            "jammer=%q zone=%q reason=zone_not_found", descriptor.name, descriptor.zoneName)))
         end
       end
     end
   end
 
-  table.insert(reportLines, 1,
-    string.format("removeJammers: %d removed for %s", removedCount, sideName))
-  Logger.log(constants.TAGS.GNSS_JAMMING, table.concat(reportLines, "\n"))
+  Logger.log(constants.TAGS.GNSS_JAMMING,
+    LogFormat.summary("side", sideName, string.format("Remove GNSS jammers removed=%d", removedCount), reportLines))
 
   return removedCount
 end
@@ -377,9 +403,10 @@ function GnssJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
     if zone.description == descriptor.zoneName then
       local success = cleanupZoneResources(sideObj, zone, sideName, descriptor.zoneName)
 
-      local tag = success and "[OK]" or "[FAIL]"
-      Logger.log(constants.TAGS.GNSS_JAMMING,
-        string.format("removeZoneByName: %s %s (%s)", tag, descriptor.zoneName, sideName))
+      local tag = success and "OK" or "FAIL"
+      local reason = success and "result=removed" or "reason=zone_cleanup_failed"
+      Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.event(
+        "zone", descriptor.zoneName, tag, string.format("side=%s jammer=%q %s", sideName, descriptor.name, reason)))
 
       return success
     end

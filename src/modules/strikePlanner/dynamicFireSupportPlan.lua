@@ -2,6 +2,7 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local constants = require("src.core.constants")
@@ -16,6 +17,23 @@ local FIRING_UNIT_STATUS = {
   BAD_STATE = "bad_state",
   LOW_AMMO = "low_ammo"
 }
+
+local FIRING_UNIT_STATUS_LOG_FIELD = {
+  [FIRING_UNIT_STATUS.AVAILABLE] = "firingAvailable",
+  [FIRING_UNIT_STATUS.MISSING_NAME] = "firingMissingName",
+  [FIRING_UNIT_STATUS.ASSIGNED] = "firingAssigned",
+  [FIRING_UNIT_STATUS.UNIT_NOT_FOUND] = "firingUnitNotFound",
+  [FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND] = "firingContextNotFound",
+  [FIRING_UNIT_STATUS.BAD_STATE] = "firingBadState",
+  [FIRING_UNIT_STATUS.LOW_AMMO] = "firingLowAmmo",
+}
+
+---Convert an internal reason code to a log-safe snake_case value
+---@param reason? string Internal reason code
+---@return string # Log-safe reason value
+local function formatReason(reason)
+  return LogFormat.value(string.lower(reason or "unknown"))
+end
 
 -- ============================================================================
 -- Firing Unit Status
@@ -44,9 +62,9 @@ local function countStatus(statusCounter, status)
   end
 end
 
----Format status counter into a human-readable summary string
+---Format status counter into top-level key=value fields
 ---@param statusCounter table<string, number> Status counter table
----@return string # Printable status summary string
+---@return string # Printable status summary fields
 local function formatStatusCounter(statusCounter)
   local statusOrder = {
     FIRING_UNIT_STATUS.AVAILABLE,
@@ -62,15 +80,15 @@ local function formatStatusCounter(statusCounter)
   for _, status in ipairs(statusOrder) do
     local count = statusCounter[status] or 0
     if count > 0 then
-      table.insert(fragments, status .. "=" .. count)
+      table.insert(fragments, FIRING_UNIT_STATUS_LOG_FIELD[status] .. "=" .. count)
     end
   end
 
   if #fragments == 0 then
-    return "none"
+    return "firingUnits=none"
   end
 
-  return table.concat(fragments, ", ")
+  return table.concat(fragments, " ")
 end
 
 -- ============================================================================
@@ -434,7 +452,7 @@ end
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param reconEntry SBJ__ReconScheduleEntry Reconnaissance schedule entry triggering this operation
 ---@param operation SBJ__Operation Ground operation containing FSEM template
----@return boolean success true if FSEM was successfully created from reconnaissance results
+---@return boolean success True if FSEM was successfully created from reconnaissance results
 ---@return string|nil reason Failure reason when success is false
 ---@return string|nil statusSummary Firing unit status summary if available
 local function processGroundOperation(config, saveData, contacts, reconEntry, operation)
@@ -523,7 +541,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
           outcome = "MISSING_TEMPLATE",
         })
       elseif reason == "INSUFFICIENT_TARGETS" or reason == "NO_AVAILABLE_FIRING_UNITS" then
-        -- Stay in observation window; do NOT mark executed. Re-emit [WAIT] each tick so
+        -- Stay in observation window; do NOT mark executed. Re-emit a SKIP entry each tick so
         -- operators can track how long the operation has been observing and which gate
         -- (targets vs firing units) is currently blocking.
         table.insert(processedResults, {
@@ -556,31 +574,50 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
 
     for _, r in ipairs(processedResults) do
       if r.outcome == "OK" then
-        table.insert(infoLines, string.format("  [OK] %s (%s, %s) | firing units: %s",
-          r.operationName, r.reconTime, r.reconType, r.statusSummary or "none"))
+        table.insert(infoLines, LogFormat.entry("OK", string.format(
+          "operation=%s reconTime=%q reconType=%s %s",
+          LogFormat.value(r.operationName),
+          r.reconTime,
+          LogFormat.value(r.reconType),
+          r.statusSummary or "firingUnits=none")))
       elseif r.outcome == "WAIT" then
-        table.insert(infoLines, string.format("  [WAIT] %s (%s, %s) | %s | firing units: %s",
-          r.operationName, r.reconTime, r.reconType, r.reason or "unknown", r.statusSummary or "none"))
+        table.insert(infoLines, LogFormat.entry("SKIP", string.format(
+          "operation=%s reconTime=%q reconType=%s state=observing reason=%s %s",
+          LogFormat.value(r.operationName),
+          r.reconTime,
+          LogFormat.value(r.reconType),
+          formatReason(r.reason),
+          r.statusSummary or "firingUnits=none")))
       elseif r.outcome == "TIMEOUT" then
-        table.insert(infoLines, string.format("  [TIMEOUT] %s (%s, %s) | observation window expired",
-          r.operationName, r.reconTime, r.reconType))
+        table.insert(infoLines, LogFormat.entry("WARN", string.format(
+          "operation=%s reconTime=%q reconType=%s reason=observation_window_expired",
+          LogFormat.value(r.operationName),
+          r.reconTime,
+          LogFormat.value(r.reconType))))
       elseif r.outcome == "MISSING_TEMPLATE" then
-        table.insert(errorLines, string.format("  [ERROR] %s (%s, %s) | missing FSEM template",
-          r.operationName, r.reconTime, r.reconType))
+        table.insert(errorLines, LogFormat.entry("ERROR", string.format(
+          "operation=%s reconTime=%q reconType=%s reason=missing_fsem_template",
+          LogFormat.value(r.operationName),
+          r.reconTime,
+          LogFormat.value(r.reconType))))
       else
-        table.insert(errorLines, string.format("  [FAIL] %s (%s, %s) | %s | firing units: %s",
-          r.operationName, r.reconTime, r.reconType, r.reason or "UNKNOWN", r.statusSummary or "none"))
+        table.insert(errorLines, LogFormat.entry("FAIL", string.format(
+          "operation=%s reconTime=%q reconType=%s reason=%s %s",
+          LogFormat.value(r.operationName),
+          r.reconTime,
+          LogFormat.value(r.reconType),
+          formatReason(r.reason),
+          r.statusSummary or "firingUnits=none")))
       end
     end
 
     if #infoLines > 0 then
-      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, string.format(
-        "Ground operations processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
+        "scope", "dynamicGroundOperations", "Process operations", infoLines))
     end
 
     if #errorLines > 0 then
-      Logger.error(string.format(
-        "Ground operations errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
+      Logger.error(LogFormat.summary("scope", "dynamicGroundOperations", "Process operations", errorLines))
     end
   end
 

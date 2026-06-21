@@ -143,7 +143,7 @@ describe("LandingOps Coordinator", function()
           queue = {
             {
               type = "satellite",
-              platformKey = "EOS",
+              reconObjectiveId = "FIXED_SITE_TARGETING",
               endTime = "1970-01-03 15:03:20",
             },
           },

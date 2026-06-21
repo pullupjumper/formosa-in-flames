@@ -211,7 +211,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconConfig: table
 ---@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
 ---@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
----@field reconStrikeMatrix table<SBJ__ReconPlatformType, table<string, SBJ__ReconStrikeMapping[]>> Reconnaissance-strike mappings; UAV inner key is templateId (a config.c.recon.template key), satellite/SIGINT inner key is semantic platform name (string)
+---@field strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
 ---@field observationWindowSec number Ground operation observation window in seconds (window starts at recon trigger time; ground operations re-evaluate targets every tick within this window before being marked executed)
@@ -965,11 +965,23 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field contacts CMO__Contact[]|nil Current side contacts used for drop-contact handling
 ---@field behavior SBJ__MoveToPositionBehavior|nil Optional behavior switches for side-specific differences
 
+---Structured result from a missile-system UnitEntersArea functional action
+---@class SBJ__PositionEventResult: table
+---@field tag string Result tag (e.g. "OK")
+---@field system string Missile system name
+---@field unitName string Unit name
+---@field positionType string Position type token
+---@field action string Functional action
+---@field reason string? Reason for non-OK outcomes
+---@field detail string? Additional key=value detail fields
+
 ---Structured result from a reload cycle action
 ---@class SBJ__ReloadCycleResult: table
 ---@field tag string Result tag (e.g. "OK")
 ---@field unitName string Unit name
 ---@field action string Action description
+---@field reason string? Reason for non-OK outcomes
+---@field detail string? Additional key=value detail fields
 
 ---Options for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerOpts: table
@@ -979,6 +991,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field operationalArea SBJ__OperationalArea Operational area configuration
 ---@field enemySide string Enemy side name for target filter
 ---@field sideName string Owner side name
+
+---Structured result from missile-system supply asset destruction handling
+---@class SBJ__SupplyAssetDestructionResult: table
+---@field tag string Result tag (e.g. "OK")
+---@field system string Missile system name
+---@field unitName string Destroyed unit name
+---@field contextName string Context unit name whose ammunition changed
+---@field role string Supply asset role
+---@field ammoBefore number Ammunition count before adjustment
+---@field ammoAfter number Ammunition count after adjustment
+---@field delta number Ammunition delta applied
 
 
 -- ============================================================================
@@ -1131,7 +1154,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Base reconnaissance queue entry template with shared fields
 ---@class SBJ__ReconQueueEntryBase: table
----@field type string Reconnaissance type: "UAV"|"satellite"
+---@field type string Reconnaissance type: "UAV"|"satellite"|"SIGINT"
+---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings; omit for recon that does not trigger strikes
 ---@field endTime? string Scheduled end time in format "YYYY-MM-DD HH:MM:SS" (optional)
 
 ---UAV reconnaissance queue entry template
@@ -1147,9 +1171,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isTracking? boolean Whether to track this reconnaissance mission (optional)
 
 ---Satellite reconnaissance queue entry template
----Simplified configuration for satellite reconnaissance requiring only timing information
+---Simplified configuration for satellite/SIGINT reconnaissance requiring timing and objective information
 ---@class SBJ__ReconQueueEntryTemplateSatellite: SBJ__ReconQueueEntryBase
----@field platformKey string Semantic platform key (e.g. "EOS", "ELINT") used to index reconStrikeMatrix
 
 ---Union type for all reconnaissance entry templates
 ---@alias SBJ__ReconQueueEntryTemplate SBJ__ReconQueueEntryTemplateUAV|SBJ__ReconQueueEntryTemplateSatellite
@@ -1179,10 +1202,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconStrikeMapping: table
 ---@field name string Strike mission name
 ---@field type "air"|"ground" Strike mission type
-
----Reconnaissance platform type
----@alias SBJ__ReconPlatformType "UAV"|"satellite"|"SIGINT"
-
 
 -- ============================================================================
 -- Dynamic Operations (ATO/FSEM)

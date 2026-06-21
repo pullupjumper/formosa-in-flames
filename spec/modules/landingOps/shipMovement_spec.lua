@@ -11,6 +11,8 @@ describe("ShipMovement", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -23,7 +25,7 @@ describe("ShipMovement", function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -564,7 +566,7 @@ describe("ShipMovement", function()
     end)
 
     -- Negative: SAG group unit not found
-    it("should skip SAG group when group unit is not found", function()
+    it("should fail and log SAG group when group unit is not found", function()
       local sagDesc = makeSAGDescriptor()
       local filteredUnits = {}
       local saveData = makeSaveData()
@@ -575,7 +577,92 @@ describe("ShipMovement", function()
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
-      assert.is_true(result)
+      assert.is_false(result)
+      assert.stub(logStub).was.called(1)
+      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=sag_group_not_found"))
+    end)
+
+    -- Negative: missing calculation result should fail before issuing movement orders
+    it("should fail and log when operation calculation result is missing", function()
+      local unit = makeUnit({
+        dbid = constants.PLATFORMS.TYPE_075,
+        inArea = function() return true end,
+      })
+      local filteredUnits = { { guid = "SHIP-001" } }
+      local saveData = makeSaveData()
+      saveData.c.amphibOps.calculationResult = {}
+
+      local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+
+      local config = makeAmphibOpsConfig()
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+
+      assert.is_false(result)
+      assert.stub(stubGetUnit).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_result_missing"))
+    end)
+
+    -- Negative: malformed ship calculation entry should fail without crashing
+    it("should fail and log when a ship calculation entry is missing", function()
+      local resultTable = makeResultTable()
+      resultTable.type075 = nil
+      local unit = makeUnit({
+        dbid = constants.PLATFORMS.TYPE_075,
+        inArea = function() return true end,
+      })
+      local filteredUnits = { { guid = "SHIP-001" } }
+      local saveData = makeSaveData()
+      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
+
+      local config = makeAmphibOpsConfig()
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+
+      assert.is_false(result)
+      assert.stub(logStub).was.called(1)
+      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=calculation_entry_missing"))
+    end)
+
+    -- Negative: SAG testing mode requires a group unit list
+    it("should fail and log when SAG unitlist is missing in testing mode", function()
+      local sagDesc = makeSAGDescriptor()
+      local sagUnit = makeUnit({
+        guid = "SAG-001",
+        group = nil,
+      })
+      local filteredUnits = {}
+      local saveData = makeSaveData()
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
+
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+
+      assert.is_false(result)
+      assert.stub(logStub).was.called(1)
+      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=sag_unitlist_missing"))
+    end)
+
+    -- Negative: SAG anchorage area is required
+    it("should fail and log when SAG anchorage area is missing", function()
+      local sagDesc = makeSAGDescriptor({ to = { heading = 180 } })
+      local filteredUnits = {}
+      local saveData = makeSaveData()
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit"))
+
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+
+      assert.is_false(result)
+      assert.stub(logStub).was.called(1)
+      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=anchorage_area_missing"))
     end)
 
     -- Negative: SAG individual ship not found in testing mode
@@ -587,7 +674,6 @@ describe("ShipMovement", function()
       })
       local filteredUnits = {}
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -595,11 +681,13 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
+      assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
+      assert.truthy(string.find(logStub.calls[1].vals[2], "skipped=1"))
     end)
 
     -- Negative: SAG getNextPosition returns nil
@@ -612,7 +700,6 @@ describe("ShipMovement", function()
       })
       local filteredUnits = {}
       local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = true
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "World_GetPointFromBearing").returns(nil))
@@ -622,11 +709,13 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
+      assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
+      assert.truthy(string.find(logStub.calls[1].vals[2], "skipped=1"))
     end)
 
     -- Boundary: isTesting false should not call ScenEdit_SetUnit for normal ships
@@ -896,6 +985,43 @@ describe("ShipMovement", function()
         assert.are.equal(0.5, params.distance)
         assert.are.equal(90, params.bearing)
       end
+    end)
+
+    -- Negative: missing starting reference point should fail and log
+    it("should fail and log when a starting reference point is missing", function()
+      stubGetRPs.invokes(function(rpTable)
+        if rpTable.area and rpTable.area[1] == "RP-075-1" then return {} end
+        return { makeLocation() }
+      end)
+      stubGetPoint.returns(makeLocation())
+      stubGenerateLocations.returns({})
+      stubInsertList.invokes(function(list) return list end)
+
+      local calculationResult = {}
+      local config = makeAmphibOpsConfig()
+      local result = ShipMovement.calculateDestination(config, calculationResult)
+
+      assert.is_false(result)
+      assert.stub(stubGenerateLocations).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=reference_point_missing"))
+    end)
+
+    -- Negative: derived starting point calculation should fail and log
+    it("should fail and log when a derived starting point cannot be calculated", function()
+      stubGetRPs.returns({ makeLocation() })
+      stubGetPoint.returns(nil)
+      stubGenerateLocations.returns({})
+      stubInsertList.invokes(function(list) return list end)
+
+      local calculationResult = {}
+      local config = makeAmphibOpsConfig()
+      local result = ShipMovement.calculateDestination(config, calculationResult)
+
+      assert.is_false(result)
+      assert.stub(stubGenerateLocations).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=derived_point_failed"))
     end)
 
     -- Boundary: area with zero ships of a type

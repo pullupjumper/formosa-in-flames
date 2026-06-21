@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local LogFormat = require("src.utils.logFormat")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
@@ -28,7 +29,8 @@ function LandingOps.process(config, saveData, contacts, currentTime, filteredShi
 
   Coordinator.process(config, saveData, contacts, currentTime, filteredShips)
   local end_time = os.clock()
-  Logger.log(constants.TAGS.SHIP_MOVEMENT, string.format("spent: %.4f sec", end_time - start_time))
+  Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.event(
+    "scope", "landingOpsProcess", "OK", string.format("elapsedSec=%.4f", end_time - start_time)))
 end
 
 ---Launch amphibious combat vehicles for a ship when it is in a valid zone

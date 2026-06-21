@@ -109,10 +109,14 @@ describe("MissileSystem Context", function()
     it("should set wpnCurrent to 0 when ammo depot with ammo is destroyed", function()
       local unit = { name = "Ammo Depot Alpha" }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
+      assert.are.equal("ammo_depot", detail.role)
+      assert.are.equal(100, detail.ammoBefore)
+      assert.are.equal(0, detail.ammoAfter)
+      assert.are.equal(-100, detail.delta)
     end)
 
     -- Positive: reduces resupply ammo proportionally on destruction
@@ -122,10 +126,15 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Alpha" }
       }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
+      assert.are.equal("resupply_unit", detail.role)
+      assert.are.equal("Resupply Group Alpha", detail.contextName)
+      assert.are.equal(20, detail.ammoBefore)
+      assert.are.equal(15, detail.ammoAfter)
+      assert.are.equal(-5, detail.delta)
     end)
 
     -- Boundary: clamps resupply ammo at zero
@@ -148,9 +157,10 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Empty" }
       }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_false(result)
+      assert.is_nil(detail)
       assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Empty"].wpnCurrent)
     end)
 

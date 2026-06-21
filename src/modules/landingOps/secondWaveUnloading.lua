@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
 
@@ -110,13 +111,13 @@ local function processBarge(unit, zone, saveData)
   local destination = createCourseForBarge(zone, unit)
 
   if not destination then
-    return "SKIP", string.format("Course calculation failed: %s", unit.guid)
+    return "SKIP", string.format("ship=%s guid=%s reason=course_calculation_failed", unit.name, unit.guid)
   end
 
   unit.course = { destination }
   unit.manualSpeed = zone.lstSettings.speed
   saveData.c.amphibOps.barges[unit.guid] = { guid = unit.guid, roros = {} }
-  return "OK", string.format("%s -> course set", unit.guid), destination
+  return "OK", string.format("ship=%s guid=%s action=course_set", unit.name, unit.guid), destination
 end
 
 ---Pair a RORO ship with a barge for logistics chain
@@ -131,12 +132,14 @@ local function pairROROWithBarge(roroEntry, bargeEntry, saveData)
   local course = createCourseForRORO(roroEntry.zone, roroEntry.unit, bargeEntry.dest)
 
   if not course then
-    return "SKIP", string.format("RORO course failed: %s", roroEntry.unit.guid)
+    return "SKIP", string.format("ship=%s guid=%s barge=%s reason=roro_course_failed",
+      roroEntry.unit.name, roroEntry.unit.guid, bargeEntry.unit.guid)
   end
 
   roroEntry.unit.course = course
   roroEntry.unit.manualSpeed = roroEntry.zone.lstSettings.speed
-  return "OK", string.format("RORO %s -> paired with %s", roroEntry.unit.guid, bargeEntry.unit.guid)
+  return "OK", string.format("ship=%s guid=%s barge=%s action=paired",
+    roroEntry.unit.name, roroEntry.unit.guid, bargeEntry.unit.guid)
 end
 
 -- ============================================================================
@@ -183,10 +186,10 @@ local function spawnOffloadedVehicle(ship, item, location)
   })
 
   if not vehicle then
-    return "FAIL", string.format("AddUnit failed: %s", item.name)
+    return "FAIL", string.format("cargo=%s dbid=%d reason=add_unit_failed", item.name, item.dbid)
   end
 
-  return "OK", string.format("%s spawned as %s", item.name, unitType)
+  return "OK", string.format("cargo=%s dbid=%d unitType=%s", item.name, item.dbid, unitType)
 end
 
 -- ============================================================================
@@ -262,7 +265,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
     if unit then
       if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
         local tag, msg, dest = processBarge(unit, zone, saveData)
-        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+        table.insert(logEntries, LogFormat.entry(tag, msg))
         if dest then
           table.insert(barges, { unit = unit, zone = zone, dest = dest })
         end
@@ -278,16 +281,14 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
     for _, barge in ipairs(barges) do
       if barge.unit:inArea(roro.zone.lstAnchorageArea) then
         local tag, msg = pairROROWithBarge(roro, barge, saveData)
-        table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+        table.insert(logEntries, LogFormat.entry(tag, msg))
       end
     end
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
-      "[%s] Second wave unloading: %d entries\n%s",
-      zone.name, #logEntries, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
+      LogFormat.summary("zone", zone.name, "Second wave unloading", logEntries))
   end
 
   return true
@@ -315,13 +316,11 @@ function SecondWaveUnloading.offloadVehicles(params)
 
   for idx, item in ipairs(cargoItems) do
     local tag, msg = spawnOffloadedVehicle(ship, item, ACVlocations[idx])
-    table.insert(logEntries, string.format("  [%s] %s", tag, msg))
+    table.insert(logEntries, LogFormat.entry(tag, string.format("idx=%d %s", idx, msg)))
 
     if tag == "FAIL" then
-      Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
-        "Offload vehicles: failed at #%d\n%s",
-        idx, table.concat(logEntries, "\n")
-      ))
+      Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
+        LogFormat.summary("ship", ship.name or ship.guid, "Offload vehicles", logEntries))
       return
     end
 
@@ -329,10 +328,8 @@ function SecondWaveUnloading.offloadVehicles(params)
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING, string.format(
-      "Offload vehicles: %d units offloaded\n%s",
-      resultCount, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
+      LogFormat.summary("ship", ship.name or ship.guid, "Offload vehicles", logEntries))
   end
 
   return resultCount

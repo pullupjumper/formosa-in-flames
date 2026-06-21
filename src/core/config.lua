@@ -945,6 +945,7 @@ config.c.recon.template = {
   BZK005_RECON_1 = {
     templateId = "BZK005_RECON_1",
     type = "UAV",
+    reconObjectiveId = "C2_NORTH_TARGETING",
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.BZK005,
     course = constants.COURSES.BZK005_1,
@@ -965,6 +966,7 @@ config.c.recon.template = {
   WZ8_RECON_ISLAND = {
     templateId = "WZ8_RECON_ISLAND",
     type = "UAV",
+    reconObjectiveId = "TAIWAN_STRAIT_STRIKE_TARGETING",
     baseGUID = constants.BASES.LIUAN_AB,
     unitDBID = constants.PLATFORMS.H6N,
     course = constants.COURSES.H6N,
@@ -995,6 +997,7 @@ config.c.recon.template = {
   GJ11_RECON = {
     templateId = "GJ11_RECON",
     type = "UAV",
+    reconObjectiveId = "LANDING_SUPPORT_NORTH",
     baseGUID = "Type 076",
     unitDBID = constants.PLATFORMS.GJ11,
     course = constants.COURSES.GJ11,
@@ -1003,39 +1006,31 @@ config.c.recon.template = {
     isTracking = false
   }
 }
-config.c.recon.reconStrikeMatrix = {
-  -- UAV inner key is templateId (a config.c.recon.template key), not a platform DBID.
-  -- Templates absent here (BZK005_RECON_2, WZ7_RECON_1, TB001_RECON_1) trigger no strike.
-  UAV = {
-    BZK005_RECON_1 = {
-      { name = "STRIKE/C2/N/1", type = "ground", }
-    },
-    GJ11_RECON = {
-      { name = "CAS/N/1",       type = "air", },
-      { name = "STRIKE/C2/N/1", type = "ground", },
-    },
-    WZ8_RECON_ISLAND = {
-      { name = "ANTISHIP/E/1",            type = "ground" },
-      { name = "ANTISHIP/N/1",            type = "ground" },
-      { name = "ASUW/N/1",                type = "air" },
-      { name = "STRIKE/AB/E/1",           type = "air" },
-      { name = "STRIKE/AB/W/1",           type = "air" },
-      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
-    },
+config.c.recon.strikeMappingsByReconObjective = {
+  C2_NORTH_TARGETING = {
+    { name = "STRIKE/C2/N/1", type = "ground", }
   },
-  satellite = {
-    EOS = {
-      { name = "STRIKE/AB/W/1",           type = "air" },
-      { name = "STRIKE/AB/E/1",           type = "air" },
-      { name = "STRIKE/HELIPAD/1",        type = "ground" },
-      { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
-    }
+  LANDING_SUPPORT_NORTH = {
+    { name = "CAS/N/1",       type = "air", },
+    { name = "STRIKE/C2/N/1", type = "ground", },
   },
-  SIGINT = {
-    ELINT = {
-      { name = "STRIKE/C2/N/1", type = "ground" },
-      { name = "STRIKE/C2/C/1", type = "ground" }
-    }
+  TAIWAN_STRAIT_STRIKE_TARGETING = {
+    { name = "ANTISHIP/E/1",            type = "ground" },
+    { name = "ANTISHIP/N/1",            type = "ground" },
+    { name = "ASUW/N/1",                type = "air" },
+    { name = "STRIKE/AB/E/1",           type = "air" },
+    { name = "STRIKE/AB/W/1",           type = "air" },
+    { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+  },
+  FIXED_SITE_TARGETING = {
+    { name = "STRIKE/AB/W/1",           type = "air" },
+    { name = "STRIKE/AB/E/1",           type = "air" },
+    { name = "STRIKE/HELIPAD/1",        type = "ground" },
+    { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+  },
+  C2_EMITTER_TARGETING = {
+    { name = "STRIKE/C2/N/1", type = "ground" },
+    { name = "STRIKE/C2/C/1", type = "ground" }
   }
 }
 config.c.recon.frontlineRedirect = {
@@ -1069,30 +1064,30 @@ config.c.recon.queue = {
   -- },
   {
     type = "satellite",
-    platformKey = "EOS",
+    reconObjectiveId = "FIXED_SITE_TARGETING",
     endTime = "2027-06-09 01:00:00",
     -- endTime = "2027-06-09 04:40:00",
   },
   {
     type = "SIGINT",
-    platformKey = "ELINT",
+    reconObjectiveId = "C2_EMITTER_TARGETING",
     endTime = "2027-06-09 01:30:00"
   },
   {
     type = "satellite",
-    platformKey = "EOS",
+    reconObjectiveId = "FIXED_SITE_TARGETING",
     -- endTime = "2027-06-09 01:00:00",
     endTime = "2027-06-09 05:44:00",
   },
   {
     type = "satellite",
-    platformKey = "EOS",
+    reconObjectiveId = "FIXED_SITE_TARGETING",
     -- endTime = "2027-06-09 01:30:00",
     endTime = "2027-06-09 08:04:00",
   },
   {
     type = "satellite",
-    platformKey = "EOS",
+    reconObjectiveId = "FIXED_SITE_TARGETING",
     endTime = "2027-06-09 11:25:00",
   },
 }

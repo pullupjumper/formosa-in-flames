@@ -1,6 +1,7 @@
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
@@ -141,7 +142,7 @@ function Coordinator.process(config, saveData, contacts, currentTime, filteredSh
     if operation then
       processZone(config, saveData, zone, operation, contacts, currentTime, filteredShips)
     else
-      Logger.error(string.format("Operation not found for zone: %s", zone.name))
+      Logger.error(LogFormat.event("zone", zone.name, "ERROR", "reason=operation_not_found"))
     end
   end
 
@@ -175,7 +176,8 @@ function Coordinator.evaluateFireSupportGate(config, saveData)
 
   if amphib.fireSupportOnHold and arrived then
     amphib.fireSupportOnHold = false
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, "[RESUME] Fire support resumed: all zones at staging waters")
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
+      LogFormat.event("scope", "fireSupportGate", "RESUME", "reason=all_zones_at_staging_waters"))
     return
   end
 
@@ -189,11 +191,17 @@ function Coordinator.evaluateFireSupportGate(config, saveData)
   local report = MissileSystem.getAmmoInventory(srbmCtx, constants.SIDES.ENEMY)
   if report.total.percentage < config.c.amphibOps.fireSupportHoldThreshold then
     amphib.fireSupportOnHold = true
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, string.format(
-      "[HOLD] Fire support held: SRBM total %d%% < %d%% (firing %d%% / resupply %d%% / depot %d%%)",
-      report.total.percentage,
-      config.c.amphibOps.fireSupportHoldThreshold,
-      report.firing.percentage, report.resupply.percentage, report.ammo.percentage))
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.event(
+      "scope",
+      "fireSupportGate",
+      "HOLD",
+      string.format(
+        "reason=srbm_low total=%d threshold=%d firing=%d resupply=%d depot=%d",
+        report.total.percentage,
+        config.c.amphibOps.fireSupportHoldThreshold,
+        report.firing.percentage,
+        report.resupply.percentage,
+        report.ammo.percentage)))
   end
 end
 

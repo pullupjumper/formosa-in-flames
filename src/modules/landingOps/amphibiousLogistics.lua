@@ -1,5 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local AssignMission = require("src.modules.assignMission")
+local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
 
@@ -346,7 +347,7 @@ end
 local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
   local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
   if not cargo then
-    return "FAIL", string.format("%s: cargo proxy creation failed", sourceUnit.name or sourceUnit.guid)
+    return "FAIL", string.format("unit=%s reason=cargo_proxy_creation_failed", sourceUnit.name or sourceUnit.guid)
   end
 
   stripCargoProxyMounts(cargo, sideName)
@@ -360,7 +361,7 @@ local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName
 
   GameApi.ScenEdit_DeleteUnit({ guid = sourceUnit.guid })
 
-  return "OK", sourceUnit.name or sourceUnit.guid
+  return "OK", string.format("unit=%s", sourceUnit.name or sourceUnit.guid)
 end
 
 -- ============================================================================
@@ -428,20 +429,19 @@ function AmphibiousLogistics.createCargoMissions(zone)
   for _, mission in ipairs(zone.boat.missions) do
     local result = createSingleCargoMission("boat", zone, mission.name)
     if not result then return false end
-    table.insert(logEntries, string.format("  [OK] %s", mission.name))
+    table.insert(logEntries, LogFormat.entry("OK", string.format("platform=boat mission=%s", mission.name)))
   end
 
   for _, mission in ipairs(zone.transportHelicopter.missions) do
     local result = createSingleCargoMission("transportHelicopter", zone, mission.name)
     if not result then return false end
-    table.insert(logEntries, string.format("  [OK] %s", mission.name))
+    table.insert(logEntries, LogFormat.entry("OK", string.format(
+      "platform=transportHelicopter mission=%s", mission.name)))
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
-      "[%s] Created cargo missions: %d entries\n%s",
-      zone.name, #logEntries, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
+      LogFormat.summary("zone", zone.name, "Create cargo missions", logEntries))
   end
 
   return true
@@ -459,15 +459,13 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
     if u:inArea(zone.anchorageArea) then
       processShipTransfers(u.guid, u.dbid, zone)
       processShipAssignments(u.guid, u.dbid, zone)
-      table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", u.name or u.guid, u.dbid))
+      table.insert(logEntries, LogFormat.entry("OK", string.format("ship=%s dbid=%d", u.name or u.guid, u.dbid)))
     end
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
-      "[%s] Transfer and assign: %d entries\n%s",
-      zone.name, #logEntries, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
+      LogFormat.summary("zone", zone.name, "Transfer and assign", logEntries))
   end
 
   return true
@@ -493,14 +491,13 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
       item.dbid,
       item.missions
     )
-    table.insert(logEntries, string.format("  [OK] Transport aircraft %s", item.name or item.guid))
+    table.insert(logEntries, LogFormat.entry("OK", string.format(
+      "aircraft=%s dbid=%d", item.name or item.guid, item.dbid)))
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
-      "Transfer and assign transport aircraft: %d entries\n%s",
-      #logEntries, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
+      LogFormat.summary("scope", "transportAircraft", "Transfer and assign", logEntries))
   end
 
   return true
@@ -522,18 +519,17 @@ function AmphibiousLogistics.loadCargo(base, unitCtx, sideName)
   for idx, guid in ipairs(group) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     if not unit then
-      table.insert(logEntries, string.format("  [SKIP] #%d %s: unit not found", idx, guid))
+      table.insert(logEntries, LogFormat.entry("SKIP", string.format(
+        "idx=%d guid=%s reason=unit_not_found", idx, guid)))
     else
       local tag, msg = convertGroupMember(base, unit, idx, weaponDBIDSet, sideName)
-      table.insert(logEntries, string.format("  [%s] #%d %s", tag, idx, msg))
+      table.insert(logEntries, LogFormat.entry(tag, string.format("idx=%d %s", idx, msg)))
     end
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
-      "Load cargo onto %s: %d members\n%s",
-      base.name or base.guid, #group, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
+      LogFormat.summary("ship", base.name or base.guid, "Load cargo", logEntries))
   end
 end
 
@@ -549,21 +545,19 @@ function AmphibiousLogistics.retransferCargos(zone, units)
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if not unit then
-      table.insert(logEntries, string.format("  [SKIP] %s: unit not found", u.guid))
+      table.insert(logEntries, LogFormat.entry("SKIP", string.format("guid=%s reason=unit_not_found", u.guid)))
       goto continue
     end
 
     processShipTransfers(unit.guid, unit.dbid, zone)
-    table.insert(logEntries, string.format("  [OK] %s (DBID:%d)", unit.name or unit.guid, unit.dbid))
+    table.insert(logEntries, LogFormat.entry("OK", string.format("ship=%s dbid=%d", unit.name or unit.guid, unit.dbid)))
 
     ::continue::
   end
 
   if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS, string.format(
-      "[%s] Retransfer cargos: %d entries\n%s",
-      zone.name, #logEntries, table.concat(logEntries, "\n")
-    ))
+    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
+      LogFormat.summary("zone", zone.name, "Retransfer cargos", logEntries))
   end
 
   return true

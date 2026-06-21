@@ -8,7 +8,7 @@
 
 ## 概述
 
-recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會依照平台類型與 `reconStrikeMatrix` 配置，自動排程後續打擊作戰至 `reconSchedule`。
+recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會依照 `reconObjectiveId` 查詢 `strikeMappingsByReconObjective`，自動排程後續打擊作戰至 `reconSchedule`。
 
 除了偵察生命週期外，模組也負責兩項與打擊規劃緊密相關的副功能：
 
@@ -48,11 +48,11 @@ flowchart TD
 
 ## 支援的偵察類型
 
-| 類型 | 處理函數 | 完成條件 | reconStrikeMatrix 索引鍵 |
+| 類型 | 處理函數 | 完成條件 | 打擊映射索引 |
 |---|---|---|---|
-| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） | `entry.templateId`（字串，對應 `config.c.recon.template` 的鍵） |
-| satellite | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `EOS`） |
-| SIGINT | `processSatelliteEntry` | endTime 到達即完成 | `entry.platformKey`（語意字串，例如 `ELINT`） |
+| UAV | `processUAVEntry` | 航線完成 + endTime 到達（或 endTime 後被擊落） | `entry.reconObjectiveId`；`templateId` 只用於 UAV 模板身分與動態插入去重 |
+| satellite | `processSatelliteEntry` | endTime 到達即完成 | `entry.reconObjectiveId` |
+| SIGINT | `processSatelliteEntry` | endTime 到達即完成 | `entry.reconObjectiveId` |
 
 ### UAV 處理階段
 
@@ -79,12 +79,12 @@ flowchart TD
 
 ## 動態作戰排程
 
-偵察任務成功完成後，`scheduleDynamicReconOperations` 依平台類型生成後續打擊作戰。當 sticky 旗標 `reconContext.frontlineRedirected` 為 true 時，會在進入主迴圈前先依 `frontlineRedirect.mappings` 改寫對應 mapping 的名稱（先深拷貝再改寫，避免動到共用的 config 結構）。
+偵察任務成功完成後，`scheduleDynamicReconOperations` 依 `entry.reconObjectiveId` 生成後續打擊作戰。當 sticky 旗標 `reconContext.frontlineRedirected` 為 true 時，會在進入主迴圈前先依 `frontlineRedirect.mappings` 改寫對應 mapping 的名稱（先深拷貝再改寫，避免動到共用的 config 結構）。
 
 ```mermaid
 flowchart TD
     RECON_OK["偵察成功完成"]
-    MATRIX["查詢 reconStrikeMatrix<br>UAV 依 templateId（字串）<br>satellite/SIGINT 依 platformKey（字串）"]
+    MATRIX["查詢 strikeMappingsByReconObjective<br>依 reconObjectiveId 取出 strikeMappings"]
     REDIRECT{"reconContext<br>.frontlineRedirected?"}
     REWRITE["改寫符合 fromPrefix 的<br>mapping.name → toPrefix<br>rewriteStrikeMappings"]
     LOOP["遍歷所有 strikeMappings"]
@@ -109,7 +109,7 @@ flowchart TD
 
 - `STRIKE/AB/E/1`（LACM 打擊）：僅在 `LACMContext.enabled` 時生成
 - `STRIKE/INFRASTRUCTURE/*`（SRBM 重點打擊）：當 `fireSupportOnHold = true` 時整批跳過並輸出 `[HOLD]` 日誌；該旗標由 [landingOps/coordinator](../landingOps/coordinator.md) 依 SRBM 彈藥水平與各區域到位狀況維護
-- 矩陣未命中：`findStrikeMappingsForEntry` 找不到對應映射時輸出 `[SKIP] No strike mappings for <type> key=<key>` 日誌
+- 映射未命中：`findStrikeMappingsForReconObjective` 找不到對應映射時輸出 `reason=strike_mapping_not_found` 日誌
 - 下一波生成：呼叫 `DynamicOperationsUtils.generateNextOperation` 遞增模板編號
 - 下一波重複檢查（`tryGenerateNextOperation`）：當回傳狀態為 `FOUND_NEXT` 且 `DynamicOperationsUtils.hasPendingOperation` 顯示同名 `/N+1` 已在 `reconSchedule` 中待執行時，整筆跳過並輸出 `[SKIP] <name> already pending`。否則同一個 `/N+1` 會在稍後另一次偵察完成時被再次排入，導致打擊包翻倍。`REUSED_CURRENT`（無下一波模板、重用已執行的 `/N`）則刻意保留，不套用這道檢查
 - 命名互不衝突：`STRIKE/AB/W/N` 與 `STRIKE/AB/W/AAR/N` 在 `findPrefixMatch` 不會互相誤匹配（後者的 `AAR/N` 無法轉成數字），所以重導向前後產生的下一波作戰各走各的序列，不會混到一起
@@ -203,7 +203,7 @@ flowchart TD
 | `toPrefix` | string | 命中時用此字首替換 |
 | `type` | `"air" \| "ground"` | 限定 mapping 類型 |
 
-`rewriteStrikeMappings` 會先用 `Utils.deepCopy` 複製一份再改寫，避免動到 `config.c.recon.reconStrikeMatrix` 這份共用設定。
+`rewriteStrikeMappings` 會先用 `Utils.deepCopy` 複製一份再改寫，避免動到 `config.c.recon.strikeMappingsByReconObjective` 這份共用設定。
 
 ### 設計取捨
 
@@ -294,7 +294,7 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `config.c.recon.reconStrikeMatrix` | 偵察-打擊映射表（UAV 依 `templateId`、satellite/SIGINT 依 `platformKey` 索引；皆為字串） |
+| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `entry.reconObjectiveId` 索引 |
 | `config.c.recon.queue` | 偵察佇列模板（被 `initReconQueueEntries` 深拷貝至 saveData） |
 | `config.c.recon.template` | 偵察 entry 模板字典（如 `BZK005_RECON_1`）；每筆含 `templateId`，`insertEntry` 動態插入時用它判斷該模板是否已重複 |
 | `config.c.recon.frontlineRedirect.enabled` | 是否啟用前線重導向機制 |

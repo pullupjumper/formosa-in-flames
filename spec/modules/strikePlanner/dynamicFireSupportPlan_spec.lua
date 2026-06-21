@@ -596,7 +596,7 @@ describe("DynamicFireSupportPlan", function()
       -- ============================================================================
 
       -- Positive: info log for successful and waiting operations
-      it("should output single info log mixing OK and WAIT outcomes without error log", function()
+      it("should output single info log mixing OK and SKIP outcomes without error log", function()
         local reconEntry1 = makeReconEntry()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
@@ -616,8 +616,9 @@ describe("DynamicFireSupportPlan", function()
         assert.stub(errorStub).was_not.called()
         local logMessage = logStub.calls[1].vals[2]
         assert.truthy(logMessage:find("%[OK%]"))
-        assert.truthy(logMessage:find("%[WAIT%]"))
-        assert.truthy(logMessage:find("2 items"))
+        assert.truthy(logMessage:find("%[SKIP%]"))
+        assert.truthy(logMessage:find("reason=insufficient_targets"))
+        assert.truthy(logMessage:find("total=2"))
       end)
 
       -- Positive: both info and error logs for mixed results
@@ -641,10 +642,10 @@ describe("DynamicFireSupportPlan", function()
         assert.stub(errorStub).was.called(1)
         local logMessage = logStub.calls[1].vals[2]
         assert.truthy(logMessage:find("%[OK%]"))
-        assert.truthy(logMessage:find("1 items"))
+        assert.truthy(logMessage:find("total=1"))
         local errorMessage = errorStub.calls[1].vals[1]
         assert.truthy(errorMessage:find("%[ERROR%]"))
-        assert.truthy(errorMessage:find("1 items"))
+        assert.truthy(errorMessage:find("total=1"))
       end)
     end)
 
@@ -672,7 +673,7 @@ describe("DynamicFireSupportPlan", function()
       end)
 
       -- Negative: window expired (current time past trigger + windowSec)
-      it("should mark operation executed=false and emit [TIMEOUT] log when window expires", function()
+      it("should mark operation executed=false and emit warning log when window expires", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local saveData = makeSaveData({ reconSchedule = { reconEntry } })
@@ -693,7 +694,8 @@ describe("DynamicFireSupportPlan", function()
         assert.is_false(markOperationExecutedStub.calls[1].vals[3])
         assert.stub(logStub).was.called(1)
         local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[TIMEOUT%]"))
+        assert.truthy(logMessage:find("%[WARN%]"))
+        assert.truthy(logMessage:find("reason=observation_window_expired"))
       end)
 
       -- Negative: insufficient targets keeps operation pending (no markExecuted)
@@ -738,8 +740,8 @@ describe("DynamicFireSupportPlan", function()
         assert.stub(markOperationExecutedStub).was_not.called()
       end)
 
-      -- Positive: WAIT log emitted every tick the operation is still observing
-      it("should emit [WAIT] log every tick while operation is observing", function()
+      -- Positive: SKIP log emitted every tick the operation is still observing
+      it("should emit [SKIP] log every tick while operation is observing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
         local saveData = makeSaveData({ reconSchedule = { reconEntry } })
@@ -758,7 +760,8 @@ describe("DynamicFireSupportPlan", function()
 
         assert.stub(logStub).was.called(3)
         for i = 1, 3 do
-          assert.truthy(logStub.calls[i].vals[2]:find("%[WAIT%]"))
+          assert.truthy(logStub.calls[i].vals[2]:find("%[SKIP%]"))
+          assert.truthy(logStub.calls[i].vals[2]:find("state=observing"))
         end
       end)
 

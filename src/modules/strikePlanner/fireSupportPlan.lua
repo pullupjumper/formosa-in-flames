@@ -2,6 +2,7 @@ local AttackManager = require("src.modules.attackManager")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
@@ -116,7 +117,7 @@ local function executeFireSupportTasks(saveData, matrix)
         end
 
         task.isFinished = true
-        table.insert(strikeResults, string.format("%s: fired %d", task.name, result))
+        table.insert(strikeResults, string.format("task=%s fired=%d", LogFormat.value(task.name), result))
       end
     end
   end
@@ -147,7 +148,7 @@ end
 ---@param saveData SBJ__SaveData Saved game state
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to process
 ---@return boolean allInPosition Whether all firing units across all tasks are in position
----@return string[] pendingTasks Task descriptions with not-ready unit names
+---@return {taskName: string, notReadyNames: string[]}[] pendingTasks Tasks with not-ready unit names
 local function processActiveMatrix(saveData, matrix)
   local allInPosition = true
   local pendingTasks = {}
@@ -157,7 +158,10 @@ local function processActiveMatrix(saveData, matrix)
       local taskReady, notReadyNames = deployTaskFiringUnits(saveData, task)
       if not taskReady then
         allInPosition = false
-        table.insert(pendingTasks, string.format("%s (%s)", task.name, table.concat(notReadyNames, ", ")))
+        table.insert(pendingTasks, {
+          taskName = task.name,
+          notReadyNames = notReadyNames
+        })
       end
     end
   end
@@ -169,16 +173,6 @@ end
 -- ============================================================================
 -- Log Formatting
 -- ============================================================================
-
----Format pending task names into summary string
----@param pendingTasks string[] Task descriptions with not-ready unit names
----@return string # Formatted summary or "none"
-local function formatPendingTasks(pendingTasks)
-  if #pendingTasks == 0 then
-    return "none"
-  end
-  return table.concat(pendingTasks, "; ")
-end
 
 ---Format strike results into summary string
 ---@param strikeResults string[] Strike result descriptions per task
@@ -214,22 +208,31 @@ function FireSupportPlan.strike(saveData)
       end
 
       if #strikeResults > 0 then
-        table.insert(infoLines, string.format("  [STRIKE] %s | %s",
-          matrix.name, formatStrikeResults(strikeResults)))
+        table.insert(infoLines, LogFormat.entry("OK", string.format("matrix=%s action=strike %s",
+          LogFormat.value(matrix.name),
+          formatStrikeResults(strikeResults)
+        )))
       elseif #pendingTasks > 0 then
-        table.insert(infoLines, string.format("  [PENDING] %s | not at firing position: %s",
-          matrix.name, formatPendingTasks(pendingTasks)))
+        for _, pendingTask in ipairs(pendingTasks) do
+          table.insert(infoLines, LogFormat.entry("SKIP", string.format(
+            "matrix=%s task=%s reason=firing_units_not_in_position units=%q",
+            LogFormat.value(matrix.name),
+            LogFormat.value(pendingTask.taskName),
+            table.concat(pendingTask.notReadyNames, "; ")
+          )))
+        end
       end
 
       if matrix.isFinished then
-        table.insert(infoLines, string.format("  [DONE] %s | all tasks completed", matrix.name))
+        table.insert(infoLines, LogFormat.entry("OK", string.format(
+          "matrix=%s state=finished", LogFormat.value(matrix.name))))
       end
     end
   end
 
   if #infoLines > 0 then
-    Logger.log(constants.TAGS.GROUND, string.format(
-      "Fire support plan: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+    Logger.log(constants.TAGS.GROUND, LogFormat.summary(
+      "scope", "fireSupportPlan", "Execute fire support plan", infoLines))
   end
 end
 

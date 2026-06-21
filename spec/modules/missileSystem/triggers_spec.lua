@@ -9,6 +9,11 @@ local constants = require("src.core.constants")
 describe("MissileSystem Triggers", function()
   ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
+
   ---Track and register method stub for automatic cleanup.
   ---@param obj table
   ---@param method string
@@ -21,8 +26,8 @@ describe("MissileSystem Triggers", function()
 
   before_each(function()
     activeStubs = {}
-    table.insert(activeStubs, stub(Logger, "log"))
-    table.insert(activeStubs, stub(Logger, "error"))
+    logStub = trackStub(Logger, "log")
+    errorStub = trackStub(Logger, "error")
   end)
 
   after_each(function()
@@ -53,11 +58,13 @@ describe("MissileSystem Triggers", function()
       trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
       trackStub(GameUtils, "removeZones").returns(0, true)
       trackStub(GameUtils, "removeEventTriggers").returns(0, true)
+      trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
+      trackStub(GameApi, "VP_GetSide").returns({ standardzones = {} })
       trackStub(GameUtils, "convertToRPArray").invokes(function(zone)
         return zone.area
       end)
-      trackStub(GameApi, "ScenEdit_SetTrigger")
-      trackStub(GameApi, "ScenEdit_SetEventTrigger")
+      trackStub(GameApi, "ScenEdit_SetTrigger").returns(true)
+      trackStub(GameApi, "ScenEdit_SetEventTrigger").returns(true)
       trackStub(GameApi, "ScenEdit_AddZone").invokes(function(_, zoneType, opts)
         local zone = {
           description = opts.description,
@@ -96,11 +103,13 @@ describe("MissileSystem Triggers", function()
       trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
       trackStub(GameUtils, "removeZones").returns(0, true)
       trackStub(GameUtils, "removeEventTriggers").returns(0, true)
+      trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
+      trackStub(GameApi, "VP_GetSide").returns({ standardzones = {} })
       trackStub(GameUtils, "convertToRPArray").invokes(function(zone)
         return { zone.description .. "-RP-1", zone.description .. "-RP-2" }
       end)
-      trackStub(GameApi, "ScenEdit_SetTrigger")
-      trackStub(GameApi, "ScenEdit_SetEventTrigger")
+      trackStub(GameApi, "ScenEdit_SetTrigger").returns(true)
+      trackStub(GameApi, "ScenEdit_SetEventTrigger").returns(true)
       trackStub(GameApi, "ScenEdit_AddZone").invokes(function(_, zoneType, opts)
         local zone = {
           description = opts.description,
@@ -127,6 +136,50 @@ describe("MissileSystem Triggers", function()
         constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name .. "-RP-1",
         constants.POSITION_TYPES.MASK .. "/" .. operationalArea.name .. "-RP-2"
       }, operationalArea.mask.area)
+    end)
+
+    -- Negative: logs a specific failure reason when event trigger binding fails
+    it("should log event trigger binding failure reason", function()
+      local operationalArea = {
+        name = "OPAREA-1",
+        uShapeVertices = { "MASK-RP-1", "MASK-RP-2", "MASK-RP-3", "MASK-RP-4" },
+        shelterPoints = {
+          { latitude = 25.0, longitude = 121.0 }
+        },
+        RL = {
+          { area = { "RL-RP-1", "RL-RP-2", "RL-RP-3", "RL-RP-4" } }
+        }
+      }
+
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
+      trackStub(GameApi, "VP_GetSide").returns({ standardzones = {} })
+      trackStub(GameUtils, "convertToRPArray").invokes(function(zone)
+        return zone.area
+      end)
+      trackStub(GameApi, "ScenEdit_SetTrigger").returns(true)
+      trackStub(GameApi, "ScenEdit_SetEventTrigger").returns(nil)
+      trackStub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BUNKER-1" })
+      trackStub(GameApi, "ScenEdit_AddZone").invokes(function(_, zoneType, opts)
+        return {
+          description = opts.description,
+          area = opts.area,
+          zoneType = zoneType
+        }
+      end)
+
+      Triggers.initEventTriggers(
+        { operationalArea },
+        {},
+        { constants.POSITION_TYPES.RELOAD_POINT },
+        constants.SIDES.PLAYER
+      )
+
+      assert.stub(errorStub).was.called(1)
+      local message = errorStub.calls[1].vals[1]
+      assert.is_not_nil(string.find(message, "reason=set_event_trigger_failed", 1, true))
+      assert.is_not_nil(string.find(message, "area=\"OPAREA-1\"", 1, true))
+      assert.stub(logStub).was.called(1)
     end)
   end)
 end)

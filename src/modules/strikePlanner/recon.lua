@@ -1,6 +1,7 @@
 local GameUtils = require("src.utils.gameUtils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
+local LogFormat = require("src.utils.logFormat")
 local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
@@ -27,6 +28,12 @@ local TRACKING_STATUS = {
   TARGET_LOST = "target_lost",
 }
 
+local POST_COURSE_ACTION = {
+  COMPLETE_MISSION = "complete_mission",
+  CONTINUE_TRACKING = "continue_tracking",
+  TRACKING_FAILED = "tracking_failed",
+}
+
 local MISSION_RESULT = {
   SUCCESS = "success",
   FAILED = "failed",
@@ -48,7 +55,7 @@ local WZ8_INITIAL_SPEED = 3300
 ---@param unitCount number The number of units to launch
 ---@param unitDBID number The unit database ID to filter by
 ---@param unitType string The unit type to launch (e.g., 'Aircraft' or 'Boats')
----@return string[] # Returns array of launched unit GUIDs (empty if none launched)
+---@return CMO__Unit[] # Returns array of launched unit objects (empty if none launched)
 local function launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
@@ -74,7 +81,7 @@ local function launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
       actualUnit:Launch(true)
       actualUnit.course = course
       count = count + 1
-      table.insert(temp, actualUnit.guid)
+      table.insert(temp, actualUnit)
     end
 
     if count >= unitCount then
@@ -285,13 +292,12 @@ local function shouldRedirectFrontlineStrike(config, reconContext)
     return false, nil
   end
 
-  local summary = Recon.calculateAirbaseAttrition(
-    config.c.air.landBased.deployedACs, cfg.frontlineBaseNames)
+  local summary = Recon.calculateAirbaseAttrition(config.c.air.landBased.deployedACs, cfg.frontlineBaseNames)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
     reconContext.frontlineRedirected = true
     return true, string.format(
-      "Frontline strike redirect ACTIVATED: attrition=%.1f%% (threshold=%.1f%%, expected=%d, current=%d)",
+      "action=activate reason=attrition_threshold_reached attritionPct=%.1f thresholdPct=%.1f expected=%d current=%d",
       summary.attritionPct, cfg.attritionThresholdPct, summary.expectedTotal, summary.currentTotal)
   end
 
@@ -299,7 +305,7 @@ local function shouldRedirectFrontlineStrike(config, reconContext)
 end
 
 ---Apply mapping name rewrites for frontline redirect
----Returns a deep-copied list to avoid mutating the shared reconStrikeMatrix in config.
+---Returns a deep-copied list to avoid mutating shared strike mappings in config.
 ---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list (not mutated)
 ---@param rules SBJ__StrikeMappingRewriteRule[] Rewrite rules
 ---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
@@ -316,15 +322,13 @@ local function rewriteStrikeMappings(strikeMappings, rules)
   return result
 end
 
----Find matching strike mappings for a reconnaissance queue entry from the strike matrix
----UAV entries are looked up by templateId (string); satellite/SIGINT entries by platformKey (string).
----@param strikeMatrix table<string, SBJ__ReconStrikeMapping[]> Strike matrix for the entry's platform type
+---Find strike mappings for a completed reconnaissance objective
+---@param strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconObjectiveId
 ---@param entry SBJ__ReconQueueEntry Queue entry to find mappings for
 ---@return SBJ__ReconStrikeMapping[]|nil # Matching strike mappings or nil if not found
-local function findStrikeMappingsForEntry(strikeMatrix, entry)
-  local key = entry.templateId or entry.platformKey
-  if not key then return nil end
-  return strikeMatrix[key]
+local function findStrikeMappingsForReconObjective(strikeMappingsByReconObjective, entry)
+  if not entry.reconObjectiveId then return nil end
+  return strikeMappingsByReconObjective[entry.reconObjectiveId]
 end
 
 ---Build a single operation from a strike mapping configuration
@@ -335,7 +339,10 @@ end
 ---@return string logEntry Log entry describing the result
 local function buildOperationFromMapping(strikeMapping, config, LACMContext)
   if strikeMapping.name == "STRIKE/AB/E/1" and not LACMContext.enabled then
-    return nil, string.format("[SKIP] %s | LACM not activated", strikeMapping.name)
+    return nil, LogFormat.entry("SKIP", string.format("operation=%s type=%s reason=lacm_not_active",
+      LogFormat.value(strikeMapping.name),
+      LogFormat.value(strikeMapping.type)
+    ))
   end
 
   local newOperation = {
@@ -356,7 +363,10 @@ local function buildOperationFromMapping(strikeMapping, config, LACMContext)
     newOperation.template.strikeInterval = 0
   end
 
-  return newOperation, string.format("[NEW] %s (%s)", strikeMapping.name, strikeMapping.type)
+  return newOperation, LogFormat.entry("OK", string.format("operation=%s type=%s action=schedule_new",
+    LogFormat.value(strikeMapping.name),
+    LogFormat.value(strikeMapping.type)
+  ))
 end
 
 ---Try to generate a next operation from an existing prefix-matched operation
@@ -383,15 +393,24 @@ local function tryGenerateNextOperation(strikeMapping, reconSchedule, config)
   -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.
   if status == "FOUND_NEXT"
       and DynamicOperationsUtils.hasPendingOperation(reconSchedule, nextOperation.template.name, strikeMapping.type) then
-    return nil, string.format("[SKIP] %s already pending", nextOperation.template.name)
+    return nil, LogFormat.entry("SKIP", string.format("operation=%s type=%s reason=already_pending",
+      LogFormat.value(nextOperation.template.name),
+      LogFormat.value(strikeMapping.type)
+    ))
   end
 
-  local logEntry = string.format("[NEXT] %s -> %s (%s)", operation.template.name, nextOperation.template.name, status)
+  local logEntry = LogFormat.entry("OK", string.format(
+    "operation=%s nextOperation=%s type=%s action=schedule_next status=%s",
+    LogFormat.value(operation.template.name),
+    LogFormat.value(nextOperation.template.name),
+    LogFormat.value(strikeMapping.type),
+    LogFormat.value(status)
+  ))
   return nextOperation, logEntry
 end
 
----Get platform-specific operations for BZK-005 (C2 strike) and WZ-8 (anti-ship/airbase strike)
----Each UAV platform triggers different specialized operations based on successful reconnaissance
+---Build follow-on operations unlocked by a completed reconnaissance objective
+---Each objective maps to zero or more air/ground operations.
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
@@ -400,21 +419,33 @@ end
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings (STRIKE/INFRASTRUCTURE/*) should be skipped to conserve ammo
 ---@return SBJ__Operation[] operations Array of special operations to add
 ---@return string[] logEntries Array of log entry strings for batched output
-local function getPlatformSpecialOperations(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
+local function buildOperationsForReconObjective(config, reconContext, reconSchedule, entry, LACMContext,
+                                                fireSupportOnHold)
   local operations = {}
   local logEntries = {}
-  local strikeMatrix = config.c.recon.reconStrikeMatrix[entry.type]
+  local strikeMappingsByReconObjective = config.c.recon.strikeMappingsByReconObjective
 
-  if not strikeMatrix then
-    table.insert(logEntries, string.format("  [ERROR] No strike mappings found for platform type: %s",
-      tostring(entry.type)))
+  if not strikeMappingsByReconObjective then
+    table.insert(logEntries, LogFormat.entry("ERROR", string.format(
+      "type=%s reason=strike_mappings_by_recon_objective_not_found", LogFormat.value(entry.type))
+    ))
     return operations, logEntries
   end
 
-  local strikeMappings = findStrikeMappingsForEntry(strikeMatrix, entry)
+  if not entry.reconObjectiveId then
+    table.insert(logEntries, LogFormat.entry("SKIP", string.format(
+      "type=%s reason=recon_objective_not_assigned", LogFormat.value(entry.type))
+    ))
+    return operations, logEntries
+  end
+
+  local strikeMappings = findStrikeMappingsForReconObjective(strikeMappingsByReconObjective, entry)
   if not strikeMappings then
-    table.insert(logEntries, string.format("  [SKIP] No strike mappings for %s key=%s",
-      tostring(entry.type), tostring(entry.templateId or entry.platformKey)))
+    table.insert(logEntries, LogFormat.entry("SKIP", string.format(
+      "type=%s objective=%s reason=strike_mapping_not_found",
+      LogFormat.value(entry.type),
+      LogFormat.value(entry.reconObjectiveId))
+    ))
     return operations, logEntries
   end
 
@@ -428,13 +459,17 @@ local function getPlatformSpecialOperations(config, reconContext, reconSchedule,
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Gate: SRBM mappings (STRIKE/INFRASTRUCTURE/*) skipped while fire support is on hold
     if fireSupportOnHold and strikeMapping.name:find("^STRIKE/INFRASTRUCTURE/") then
-      table.insert(logEntries, string.format("  [HOLD] %s skipped: fire support on hold", strikeMapping.name))
+      table.insert(logEntries, LogFormat.entry("HOLD", string.format(
+        "operation=%s type=%s reason=fire_support_on_hold",
+        LogFormat.value(strikeMapping.name),
+        LogFormat.value(strikeMapping.type))
+      ))
     else
       local skipMapping = false
 
       if not DynamicOperationsUtils.hasOperation(reconSchedule, strikeMapping.name, strikeMapping.type) then
         local newOp, logEntry = buildOperationFromMapping(strikeMapping, config, LACMContext)
-        table.insert(logEntries, "  " .. logEntry)
+        table.insert(logEntries, logEntry)
         if newOp then
           table.insert(operations, newOp)
         else
@@ -446,7 +481,9 @@ local function getPlatformSpecialOperations(config, reconContext, reconSchedule,
         local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, reconSchedule, config)
         if nextOp then
           table.insert(operations, nextOp)
-          table.insert(logEntries, "  " .. nextLog)
+          table.insert(logEntries, nextLog)
+        elseif nextLog then
+          table.insert(logEntries, nextLog)
         end
       end
     end
@@ -469,10 +506,12 @@ local function scheduleDynamicReconOperations(config, reconContext, reconSchedul
   -- Generate next wave operations
   local operations = {}
 
-  -- Add platform-specific operations
-  local specialOps, logEntries = getPlatformSpecialOperations(
-    config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
-  for _, op in ipairs(specialOps) do
+  -- Add operations unlocked by the completed reconnaissance objective.
+  local reconTriggeredOps, logEntries = buildOperationsForReconObjective(
+    config, reconContext, reconSchedule,
+    entry, LACMContext, fireSupportOnHold
+  )
+  for _, op in ipairs(reconTriggeredOps) do
     table.insert(operations, op)
   end
 
@@ -490,25 +529,32 @@ local function scheduleDynamicReconOperations(config, reconContext, reconSchedul
   -- Batched log output
   local infoLines = {}
 
-  table.insert(infoLines, string.format("  recon context: most recent=%s, next=%s, air=%d, ground=%d",
-    reconResult.mostRecentTime or "none",
-    reconResult.nextReconTime or "none",
+  table.insert(infoLines, LogFormat.entry("OK", string.format(
+    "state=context mostRecentTime=%q nextReconTime=%q airOps=%d groundOps=%d",
+    tostring(reconResult.mostRecentTime or "none"),
+    tostring(reconResult.nextReconTime or "none"),
     #reconResult.air,
-    #reconResult.ground))
+    #reconResult.ground)
+  ))
 
   for _, logEntry in ipairs(logEntries) do
     table.insert(infoLines, logEntry)
   end
 
   if #operations > 0 then
-    table.insert(infoLines, string.format("  [RESULT] Scheduled %d operations for recon at %s",
-      #operations, entry.endTime))
+    table.insert(infoLines, LogFormat.entry("OK", string.format(
+      "action=schedule_operations scheduled=%d endTime=%q",
+      #operations, entry.endTime)
+    ))
   else
-    table.insert(infoLines, "  [RESULT] No operations to schedule")
+    table.insert(infoLines, LogFormat.entry("SKIP", string.format(
+      "reason=no_operations_to_schedule endTime=%q", entry.endTime
+    )))
   end
 
-  Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, string.format(
-    "Dynamic recon scheduling for %s (%s)\n%s", entry.type, entry.endTime, table.concat(infoLines, "\n")))
+  Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary("reconType", entry.type,
+    string.format("Schedule dynamic operations endTime=%q", entry.endTime), infoLines
+  ))
 end
 
 -- ============================================================================
@@ -521,17 +567,22 @@ end
 ---@return string message Human-readable status description
 local function handleReconLaunch(entry)
   if entry.hasLaunched or not GameUtils.isAfterStartTime(entry.takeoffTime) then
-    return LAUNCH_STATUS.NOT_READY, string.format("Not ready for launch (base %s)", entry.baseGUID)
+    return LAUNCH_STATUS.NOT_READY, string.format(
+      "base=%s reason=takeoff_time_not_reached",
+      LogFormat.value(entry.baseGUID)
+    )
   end
 
   local units = launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, "Aircraft")
 
   if #units > 0 then
-    entry.unitGUID = units[1]
+    entry.unitGUID = units[1].guid
     entry.hasLaunched = true
-    return LAUNCH_STATUS.LAUNCHED, string.format("Launched unit %s from base %s", units[1], entry.baseGUID)
+    return LAUNCH_STATUS.LAUNCHED, string.format(
+      "unit=%q base=%s action=launch", LogFormat.readable(units[1].name), LogFormat.value(entry.baseGUID))
   else
-    return LAUNCH_STATUS.FAILED, string.format("Failed to launch from base %s", entry.baseGUID)
+    return LAUNCH_STATUS.FAILED, string.format(
+      "base=%s reason=launch_failed", LogFormat.value(entry.baseGUID))
   end
 end
 
@@ -542,20 +593,20 @@ end
 ---@return string message Human-readable status description
 local function handleReconTracking(entry, actualUnit)
   if not entry.trackingTargetGUID then
-    return TRACKING_STATUS.NO_TARGET_GUID,
-        string.format("No tracking assignment for unit %s", actualUnit.guid)
+    return TRACKING_STATUS.NO_TARGET_GUID, string.format("unit=%q reason=tracking_target_not_assigned",
+      LogFormat.readable(actualUnit.name))
   end
 
   if not entry.speed then
-    return TRACKING_STATUS.NO_SPEED,
-        string.format("No speed configured for unit %s", actualUnit.guid)
+    return TRACKING_STATUS.NO_SPEED, string.format("unit=%q reason=speed_not_configured",
+      LogFormat.readable(actualUnit.name))
   end
 
   local target = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, entry.trackingTargetGUID)
 
   if not target then
-    return TRACKING_STATUS.TARGET_LOST,
-        string.format("Tracking target lost: %s", entry.trackingTargetGUID)
+    return TRACKING_STATUS.TARGET_LOST, string.format("target=%s reason=tracking_target_lost",
+      LogFormat.value(entry.trackingTargetGUID))
   end
 
   -- Update course to target position (continuous tracking for missile guidance)
@@ -566,11 +617,11 @@ local function handleReconTracking(entry, actualUnit)
     presetThrottle = "Military"
   } }
 
-  return TRACKING_STATUS.UPDATED,
-      string.format("Tracking updated for unit %s -> target %s", actualUnit.guid, entry.trackingTargetGUID)
+  return TRACKING_STATUS.UPDATED, string.format("unit=%q target=%s action=update_tracking",
+    LogFormat.readable(actualUnit.name), LogFormat.value(entry.trackingTargetGUID))
 end
 
----Finish reconnaissance mission and conditionally schedule next operations
+---Settle reconnaissance mission and conditionally schedule next operations
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (consulted for sticky redirect flag)
 ---@param reconSchedule SBJ__ReconScheduleEntry[] Reconnaissance schedule
@@ -579,7 +630,7 @@ end
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 ---@param success boolean Mission success status
 ---@return string # Mission result from MISSION_RESULT
-local function finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+local function settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
   -- Prevent double execution
   if entry.isFinished then
     return MISSION_RESULT.ALREADY_FINISHED
@@ -604,24 +655,32 @@ end
 ---@return string message Status description
 local function handleUAVDestroyed(entry, isEndTimeReached)
   if isEndTimeReached then
-    return true, string.format("Unit %s destroyed after endTime, mission successful", tostring(entry.unitGUID))
+    return true, string.format(
+      "unit=%s state=destroyed result=success reason=end_time_reached", LogFormat.value(entry.unitGUID))
   else
-    return false, string.format("Unit %s destroyed before endTime, mission failed", tostring(entry.unitGUID))
+    return false, string.format(
+      "unit=%s state=destroyed result=failed reason=destroyed_before_end_time", LogFormat.value(entry.unitGUID))
   end
 end
 
----Handle mission completion when UAV has finished course and endTime
+---Resolve the next action after a UAV has finished its course and reached endTime
 ---@param entry SBJ__ReconQueueEntryUAV Queue entry
 ---@param actualUnit CMO__Unit The reconnaissance unit
----@return string|nil trackStatus Tracking status if in tracking mode, nil for normal completion
+---@return string action Post-course action from POST_COURSE_ACTION
 ---@return string message Status description
-local function handleMissionCompletion(entry, actualUnit)
+local function resolvePostCourseUAVAction(entry, actualUnit)
   if entry.isTracking and entry.trackingTargetGUID then
-    local status, message = handleReconTracking(entry, actualUnit)
-    return status, message
-  else
-    return nil, string.format("Mission completed for %s", actualUnit.name)
+    local trackingStatus, message = handleReconTracking(entry, actualUnit)
+
+    if trackingStatus == TRACKING_STATUS.UPDATED then
+      return POST_COURSE_ACTION.CONTINUE_TRACKING, message
+    end
+
+    return POST_COURSE_ACTION.TRACKING_FAILED, message
   end
+
+  return POST_COURSE_ACTION.COMPLETE_MISSION,
+      string.format("unit=%q action=complete_mission", LogFormat.readable(actualUnit.name))
 end
 
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
@@ -631,18 +690,18 @@ end
 ---@param entry SBJ__ReconQueueEntryUAV UAV queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
----@return string|nil tag Semantic log tag ([OK], [SKIP], [FAIL]) or nil if no logging needed
+---@return string|nil tag Semantic log tag (OK/SKIP/FAIL) or nil if no logging needed
 ---@return string|nil message Human-readable log message
 local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
     local status, message = handleReconLaunch(entry)
     if status == LAUNCH_STATUS.LAUNCHED then
-      return "[OK]", message
+      return "OK", message
     elseif status == LAUNCH_STATUS.NOT_READY then
-      return "[SKIP]", message
+      return "SKIP", message
     else
-      return "[FAIL]", message
+      return "FAIL", message
     end
   end
 
@@ -658,38 +717,40 @@ local function processUAVEntry(config, reconContext, reconSchedule, entry, LACMC
   -- Phase 2a: UAV destroyed or missing
   if not actualUnit then
     local success, message = handleUAVDestroyed(entry, isEndTimeReached)
-    finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
-    local tag = success and "[OK]" or "[FAIL]"
+    settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, success)
+    local tag = success and "OK" or "FAIL"
     return tag, message
   end
 
   -- Phase 2b: Still flying course
   if #actualUnit.course > 0 then
-    return "[SKIP]", string.format("Unit %s still flying course", actualUnit.name)
+    return "SKIP", string.format("unit=%q state=in_flight reason=course_not_completed",
+      LogFormat.readable(actualUnit.name))
   end
 
   -- Phase 2c: Course complete but endTime not reached
   if not isEndTimeReached then
-    return "[SKIP]", string.format("Unit %s completed course, waiting for endTime %s",
-      actualUnit.name, entry.endTime)
+    return "SKIP", string.format("unit=%q state=waiting_end_time endTime=%q",
+      LogFormat.readable(actualUnit.name), entry.endTime)
   end
 
-  -- Phase 2d: Mission completion
-  local trackStatus, message = handleMissionCompletion(entry, actualUnit)
+  -- Phase 2d: Mission completion or continued tracking
+  local postCourseAction, message = resolvePostCourseUAVAction(entry, actualUnit)
 
-  if trackStatus == TRACKING_STATUS.UPDATED then
-    return "[OK]", message
+  if postCourseAction == POST_COURSE_ACTION.CONTINUE_TRACKING then
+    return "OK", message
   end
 
-  if trackStatus then
+  if postCourseAction == POST_COURSE_ACTION.TRACKING_FAILED then
     -- Tracking failed but recon completed successfully
-    finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
-    return "[FAIL]", string.format("Tracking failed for %s, mission completed", actualUnit.name)
+    settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+    return "FAIL", string.format("unit=%q reason=tracking_failed missionStatus=completed",
+      LogFormat.readable(actualUnit.name))
   end
 
   -- Normal reconnaissance completion
-  finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
-  return "[OK]", message
+  settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  return "OK", message
 end
 
 ---Process a single satellite reconnaissance queue entry
@@ -699,7 +760,7 @@ end
 ---@param entry SBJ__ReconQueueEntry Satellite queue entry to process
 ---@param LACMContext SBJ__LACMContext LACM context data
 ---@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
----@return string|nil tag Semantic log tag ([OK], [SKIP]) or nil if no logging needed
+---@return string|nil tag Semantic log tag (OK/SKIP) or nil if no logging needed
 ---@return string|nil message Human-readable log message
 local function processSatelliteEntry(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold)
   if entry.isFinished then
@@ -709,11 +770,13 @@ local function processSatelliteEntry(config, reconContext, reconSchedule, entry,
   local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
 
   if not isEndTimeReached then
-    return "[SKIP]", string.format("Satellite waiting for endTime %s", entry.endTime)
+    return "SKIP", string.format("type=%s state=waiting_end_time endTime=%q",
+      LogFormat.value(entry.type), entry.endTime)
   end
 
-  finishReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
-  return "[OK]", string.format("Satellite mission completed at %s", entry.endTime)
+  settleReconMission(config, reconContext, reconSchedule, entry, LACMContext, fireSupportOnHold, true)
+  return "OK", string.format("type=%s action=complete_mission endTime=%q",
+    LogFormat.value(entry.type), entry.endTime)
 end
 
 -- ============================================================================
@@ -800,7 +863,7 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
   -- Activation log is captured here (instead of inside the helper) so handleReconQueue owns all log emission.
   local _, activationMessage = shouldRedirectFrontlineStrike(config, reconContext)
   if activationMessage then
-    Logger.log(constants.TAGS.RECON, activationMessage)
+    Logger.log(constants.TAGS.RECON, LogFormat.event("scope", "frontlineRedirect", "RESUME", activationMessage))
   end
 
   local infoLines = {}
@@ -816,8 +879,8 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
     end
 
     if tag and message then
-      local line = string.format("  %s %s | %s", tag, entry.type, message)
-      if tag == "[FAIL]" or tag == "[ERROR]" then
+      local line = LogFormat.entry(tag, string.format("entryType=%s %s", LogFormat.value(entry.type), message))
+      if tag == "FAIL" or tag == "ERROR" then
         table.insert(errorLines, line)
       else
         table.insert(infoLines, line)
@@ -826,13 +889,11 @@ function Recon.handleReconQueue(config, reconContext, reconSchedule, LACMContext
   end
 
   if #infoLines > 0 then
-    Logger.log(constants.TAGS.RECON, string.format(
-      "Recon queue processed: %d items\n%s", #infoLines, table.concat(infoLines, "\n")))
+    Logger.log(constants.TAGS.RECON, LogFormat.summary("scope", "reconQueue", "Process queue", infoLines))
   end
 
   if #errorLines > 0 then
-    Logger.error(string.format(
-      "Recon queue errors: %d items\n%s", #errorLines, table.concat(errorLines, "\n")))
+    Logger.error(LogFormat.summary("scope", "reconQueue", "Process queue", errorLines))
   end
 end
 
@@ -850,19 +911,29 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   local UAV = findClosestUAV(units, UAVDBID, target)
   if not UAV then
+    Logger.log(constants.TAGS.RECON, LogFormat.event(
+      "scope", "targetTracking", "SKIP",
+      string.format("target=%s platformDBID=%s reason=no_available_uav",
+        LogFormat.value(target.guid), LogFormat.value(UAVDBID))))
     return false
   end
 
   local queueEntry = findQueueEntryByUnitGUID(reconContext.queue, UAV.guid)
   if not queueEntry then
-    Logger.log(constants.TAGS.RECON,
-      string.format("UAV %s (GUID: %s) is not in reconnaissance queue. Cannot assign tracking mission.", UAV.name,
-        UAV.guid))
+    Logger.log(constants.TAGS.RECON, LogFormat.event(
+      "scope", "targetTracking", "FAIL",
+      string.format("uav=%s guid=%s target=%s reason=uav_not_in_recon_queue",
+        LogFormat.readable(UAV.name),
+        LogFormat.value(UAV.guid),
+        LogFormat.value(target.guid))))
     return false
   end
 
   assignTrackingMission(queueEntry, target.guid)
-  Logger.log(constants.TAGS.RECON, string.format("Assigned UAV %s to track target %s", UAV.name, target.guid))
+  Logger.log(constants.TAGS.RECON, LogFormat.event(
+    "scope", "targetTracking", "OK",
+    string.format("uav=%s target=%s action=assign_tracking",
+      LogFormat.readable(UAV.name), LogFormat.value(target.guid))))
   return true
 end
 
