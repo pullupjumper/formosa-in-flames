@@ -31,14 +31,10 @@ function StrikePlanner.launchWZ8(h6n, course)
   return Recon.launchWZ8(h6n, course)
 end
 
----Handle reconnaissance queue processing and dynamic scheduling
----@param config SBJ__Config Global configuration table
----@param reconContext SBJ__ReconContext Reconnaissance runtime context
----@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Dynamic operation batches triggered by reconnaissance
----@param LACMContext SBJ__LACMContext LACM context data
----@param fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
-function StrikePlanner.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
-  Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
+---Process reconnaissance queue and dynamic scheduling
+---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+function StrikePlanner.processReconQueue(processingContext)
+  Recon.processQueue(processingContext)
 end
 
 ---Track target with active reconnaissance assets

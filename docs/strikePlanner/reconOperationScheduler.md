@@ -8,7 +8,7 @@
 
 ## 概述
 
-`reconOperationScheduler` 是 [recon](recon.md) 從偵察生命週期拆出的動態作戰排程層。它不處理 UAV 發射、航線監控或衛星任務完成判定，只接收已完成且成功的 `SBJ__ReconQueueEntry`，再把偵察目標轉換成 `SBJ__Operation`。
+`reconOperationScheduler` 是 [recon](recon.md) 從偵察生命週期拆出的動態作戰排程層。它不處理 UAV 發射、航線監控或衛星任務完成判定，只接收 `SBJ__ReconQueueProcessingContext` 與已完成且成功的 `SBJ__ReconQueueEntry`，再把偵察目標轉換成 `SBJ__Operation`。
 
 模組會依 `entry.reconObjectiveId` 查詢 `config.c.recon.strikeMappingsByReconObjective`，逐筆建立空中或地面作戰。空中作戰使用 `config.c.packageTemplates`，地面作戰使用 `config.c.fireSupportTaskTemplates`，兩者都會先把 strike mapping 名稱中的 `/` 轉成 `_` 當模板表鍵名。
 
@@ -129,7 +129,17 @@ saveData.c.dynamicOperations.reconTriggeredOperations
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `schedule(config, reconContext, reconTriggeredOperations, entry, LACMContext, fireSupportOnHold)` | `SBJ__Config`, `SBJ__ReconContext`, `SBJ__ReconTriggeredOperationBatch[]`, `SBJ__ReconQueueEntry`, `SBJ__LACMContext`, `boolean` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增 `ReconTriggeredOperationBatch` 並輸出 log |
+| `schedule(processingContext, entry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增 `ReconTriggeredOperationBatch` 並輸出 log |
+
+`processingContext` 欄位：
+
+| 欄位 | 用途 |
+|---|---|
+| `config` | 讀取 recon objective mappings、air package templates 與 ground fire support templates |
+| `reconContext` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
+| `reconTriggeredOperations` | 查詢既有/待執行作戰，並在有新作戰時追加 `ReconTriggeredOperationBatch` |
+| `LACMContext` | 判斷 `STRIKE/AB/E/1` 等 LACM 依賴 mapping 是否可建立 |
+| `fireSupportOnHold` | 暫停 `STRIKE/INFRASTRUCTURE/*` mapping，避免消耗 SRBM 彈藥 |
 
 ---
 

@@ -104,6 +104,23 @@ describe("ReconOperationScheduler", function()
     return { enabled = enabled or false, startTime = "2026-02-14 06:00:00" }
   end
 
+  ---Create a reconnaissance queue processing context.
+  ---@param config SBJ__Config Configuration data
+  ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
+  ---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+  ---@param LACMContext SBJ__LACMContext LACM context data
+  ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
+  ---@return SBJ__ReconQueueProcessingContext
+  local function makeProcessingContext(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
+    return {
+      config = config,
+      reconContext = reconContext,
+      reconTriggeredOperations = reconTriggeredOperations,
+      LACMContext = LACMContext,
+      fireSupportOnHold = fireSupportOnHold == true
+    }
+  end
+
   ---Stub recurring DynamicOperationsUtils calls used by scheduler.
   local function stubRecurringHelpers()
     trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
@@ -136,8 +153,10 @@ describe("ReconOperationScheduler", function()
       local operations = {}
       stubRecurringHelpers()
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ reconObjectiveId = "C2_NORTH_TARGETING" }), makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
 
       assert.are.equal(0, #operations)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
@@ -153,8 +172,10 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" }), makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
@@ -168,8 +189,10 @@ describe("ReconOperationScheduler", function()
       local operations = {}
       stubRecurringHelpers()
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ reconObjectiveId = "UNKNOWN_OBJECTIVE" }), makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ reconObjectiveId = "UNKNOWN_OBJECTIVE" })
+      )
 
       assert.are.equal(0, #operations)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
@@ -185,9 +208,10 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ type = "SIGINT", reconObjectiveId = "C2_EMITTER_TARGETING" }),
-        makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ type = "SIGINT", reconObjectiveId = "C2_EMITTER_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
@@ -214,9 +238,10 @@ describe("ReconOperationScheduler", function()
         { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" }),
-        makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal(2, #operations[1].operations)
@@ -236,8 +261,10 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" }), makeLACMContext(true), true)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(true), true),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal(1, #operations[1].operations)
@@ -261,8 +288,10 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" }), makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal("STRIKE/INFRASTRUCTURE/1", operations[1].operations[1].template.name)
@@ -278,9 +307,10 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" }),
-        makeLACMContext(false), true)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), true),
+        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
@@ -315,9 +345,10 @@ describe("ReconOperationScheduler", function()
         { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext(), operations,
-        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" }),
-        makeLACMContext(false), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal("STRIKE/C2/N/2", operations[1].operations[1].template.name)
@@ -340,8 +371,16 @@ describe("ReconOperationScheduler", function()
       stubRecurringHelpers()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false, nil, nil))
 
-      ReconOperationScheduler.schedule(cfg, makeReconContext({ frontlineRedirected = true }), operations,
-        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" }), makeLACMContext(true), false)
+      ReconOperationScheduler.schedule(
+        makeProcessingContext(
+          cfg,
+          makeReconContext({ frontlineRedirected = true }),
+          operations,
+          makeLACMContext(true),
+          false
+        ),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
 
       assert.are.equal(1, #operations)
       assert.are.equal(2, #operations[1].operations)

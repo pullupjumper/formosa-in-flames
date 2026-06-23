@@ -29,13 +29,13 @@ if saveData.c.dynamicOperations.enabled then
 end
 
 if saveData.c.recon.enabled then
-  StrikePlanner.handleReconQueue(
-    config,
-    saveData.c.recon,
-    saveData.c.dynamicOperations.reconTriggeredOperations,
-    saveData.c.surface.lacm,
-    saveData.c.amphibOps.fireSupportOnHold == true
-  )
+  StrikePlanner.processReconQueue({
+    config = config,
+    reconContext = saveData.c.recon,
+    reconTriggeredOperations = saveData.c.dynamicOperations.reconTriggeredOperations,
+    LACMContext = saveData.c.surface.lacm,
+    fireSupportOnHold = saveData.c.amphibOps.fireSupportOnHold == true
+  })
 
   if math.random() > 0.5 then
     StrikePlanner.insertEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)

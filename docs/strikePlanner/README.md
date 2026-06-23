@@ -78,7 +78,7 @@ flowchart TB
     subgraph 動態路徑["動態計畫路徑"]
         DFSP["dynamicFireSupportPlan<br>.execute()"]
         DATO["dynamicATOInsertion<br>.process()"]
-        RECON["recon<br>.handleReconQueue()"]
+        RECON["recon<br>.processQueue()"]
         RSCHED["reconOperationScheduler<br>.schedule()"]
         FREDIR["frontlineRedirect<br>.evaluate/applyMappings()"]
         ATTR["airbaseAttrition<br>.calculate()"]

@@ -34,7 +34,7 @@
 | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 要納入統計的前線基地名稱 |
 | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 啟用 redirect 的整體戰損門檻 |
 
-達標時會回傳 `true` 以及一段 activation log 內容，實際 log 由 [recon](recon.md) 的 `handleReconQueue` 輸出到 `constants.TAGS.RECON`。
+達標時會回傳 `true` 以及一段 activation log 內容，實際 log 由 [recon](recon.md) 的 `processQueue` 輸出到 `constants.TAGS.RECON`。
 
 ### Mapping rewrite
 

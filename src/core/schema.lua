@@ -1197,6 +1197,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
 ---@field frontlineRedirected boolean Sticky flag set true once frontline strike redirect activates; never cleared
 
+---Shared runtime inputs for processing reconnaissance queue entries
+---@class SBJ__ReconQueueProcessingContext: table
+---@field config SBJ__Config Configuration data
+---@field reconContext SBJ__ReconContext Reconnaissance runtime context
+---@field reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@field LACMContext SBJ__LACMContext LACM context data
+---@field fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
+
 ---Reconnaissance-Strike mapping entry
 ---Defines strike mission to execute after reconnaissance platform detects target
 ---@class SBJ__ReconStrikeMapping: table
@@ -1250,7 +1258,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
 ---@field tanker? SBJ__MissionDeploymentDescriptor Tanker configuration (optional)
 ---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
----@field timeToReady? number Ready time in minutes (optional)
+---@field timeToReady? number Ready time in seconds (optional)
 ---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
 
 ---Loadout status tracking for mission preparation

@@ -81,11 +81,11 @@ flowchart TD
 
 ## 拆分模組協調
 
-`Recon.handleReconQueue` 是偵察 tick 的協調入口。它先評估前線重導向 sticky 旗標，再逐筆處理偵察佇列；只有偵察成功完成時，才把 entry 交給 scheduler 建立後續動態作戰。
+`Recon.processQueue` 是偵察 tick 的協調入口。`StrikePlanner.processReconQueue` 會把事件腳本組好的 `SBJ__ReconQueueProcessingContext` 轉交給它。它先評估前線重導向 sticky 旗標，再逐筆處理偵察佇列；只有偵察成功完成時，才把 entry 交給 scheduler 建立後續動態作戰。
 
 ```mermaid
 flowchart TD
-    TICK["handleReconQueue tick"]
+    TICK["processReconQueue tick"]
     REDIRECT["FrontlineRedirect.evaluate<br>更新 frontlineRedirected sticky 旗標"]
     LOOP["逐筆處理 reconContext.queue"]
     ENTRY{"entry 類型"}
@@ -178,11 +178,21 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；偵察成功時把 `LACMContext` 與 `fireSupportOnHold` 轉交 scheduler |
+| `processQueue(processingContext)` | 處理偵察佇列；每次 tick 同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出；偵察成功時透過 `processingContext` 把 `LACMContext` 與 `fireSupportOnHold` 轉交 scheduler |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8 偵察無人機 |
 | `trackTarget(reconContext, units, UAVDBID, target)` | 指派 UAV 追蹤特定目標 |
 | `insertEntry(reconContext, entryTemplate, startTime?)` | 在兩次衛星過境的空窗中動態插入一筆 UAV 偵察 entry，成功時回傳該筆 entry；同模板已覆蓋或飛行會超過下次過境時回傳 `nil` 不插入。`startTime` 省略時以當前時間為起算錨點 |
 | `initReconQueueEntries(reconConfig, reconContext)` | 初始化偵察佇列項目（不重置 `frontlineRedirected`） |
+
+`processQueue` 的公開參數使用 context table，呼叫端通常透過 `StrikePlanner.processReconQueue(processingContext)` 進入：
+
+| 欄位 | 型別 | 用途 |
+|---|---|---|
+| `config` | `SBJ__Config` | 讀取偵察設定、strike mappings 與後續任務模板 |
+| `reconContext` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
+| `reconTriggeredOperations` | `SBJ__ReconTriggeredOperationBatch[]` | 已由偵察觸發的動態作戰批次，供 scheduler 去重與追加 |
+| `LACMContext` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
+| `fireSupportOnHold` | `boolean` | 為保存彈藥而暫停 SRBM-driven mappings 時設為 `true` |
 
 ---
 

@@ -296,10 +296,10 @@ describe("Recon", function()
   end)
 
   -- ============================================================================
-  -- handleReconQueue
+  -- processQueue
   -- ============================================================================
 
-  describe("handleReconQueue", function()
+  describe("processQueue", function()
     local config, reconTriggeredOperations, LACMContext
 
     before_each(function()
@@ -307,6 +307,20 @@ describe("Recon", function()
       reconTriggeredOperations = {}
       LACMContext = makeLACMContext()
     end)
+
+    ---Create a reconnaissance queue processing context
+    ---@param reconContext table Reconnaissance runtime context
+    ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
+    ---@return SBJ__ReconQueueProcessingContext
+    local function makeProcessingContext(reconContext, fireSupportOnHold)
+      return {
+        config = config,
+        reconContext = reconContext,
+        reconTriggeredOperations = reconTriggeredOperations,
+        LACMContext = LACMContext,
+        fireSupportOnHold = fireSupportOnHold == true
+      }
+    end
 
     -- ========================================================================
     -- UAV Phase 1: Launch
@@ -326,7 +340,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.hasLaunched)
       assert.are.equal("AC-001", entry.unitGUID)
@@ -338,7 +352,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(entry.hasLaunched)
       assert.is_nil(entry.unitGUID)
@@ -352,7 +366,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- Should proceed to phase 2, not re-launch
       assert.is_true(entry.hasLaunched)
@@ -370,7 +384,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(entry.isFinished)
     end)
@@ -383,7 +397,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(entry.isFinished)
     end)
@@ -400,7 +414,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
       -- No dynamic operations scheduled (mission failed)
@@ -418,7 +432,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -439,7 +453,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -464,7 +478,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- Should update course to target position
       assert.are.equal(1, #ac.course)
@@ -495,7 +509,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -518,7 +532,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- Tracking failed => settleReconMission called with success=true
       assert.is_true(entry.isFinished)
@@ -542,7 +556,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -559,7 +573,7 @@ describe("Recon", function()
       })
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- isFinished should remain true, no additional scheduling
       assert.is_true(entry.isFinished)
@@ -579,7 +593,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -590,7 +604,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(entry.isFinished)
     end)
@@ -601,7 +615,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- Should not schedule duplicate operations
       assert.are.equal(0, #reconTriggeredOperations)
@@ -616,7 +630,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
     end)
@@ -640,7 +654,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ uavEntry, satEntry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(uavEntry.hasLaunched)
       assert.is_true(satEntry.isFinished)
@@ -670,7 +684,7 @@ describe("Recon", function()
       ))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
       -- Should have scheduled operations (STRIKE/C2/1 new + STRIKE/C2/2 next)
@@ -699,7 +713,7 @@ describe("Recon", function()
       trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       -- LACM not enabled => STRIKE/AB/E/1 skipped => no operations
       assert.is_true(entry.isFinished)
@@ -712,7 +726,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
       assert.are.equal(0, #reconTriggeredOperations)
@@ -736,7 +750,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
       assert.stub(errorStub).was_not.called()
@@ -748,7 +762,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(hasLogCall("recon", "%[SKIP%]"))
       assert.stub(errorStub).was_not.called()
@@ -761,7 +775,7 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(hasErrorCall("%[FAIL%]"))
     end)
@@ -775,7 +789,7 @@ describe("Recon", function()
       }))
 
       local reconContext = makeReconContext({ entry })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(hasLogCall("recon", "%[OK%]"))
       assert.stub(errorStub).was_not.called()
@@ -786,7 +800,7 @@ describe("Recon", function()
       local entry2 = makeSatelliteEntry({ isFinished = true })
 
       local reconContext = makeReconContext({ entry1, entry2 })
-      Recon.handleReconQueue(config, reconContext, reconTriggeredOperations, LACMContext, false)
+      Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_false(hasLogCall("recon", "."))
       assert.stub(errorStub).was_not.called()
