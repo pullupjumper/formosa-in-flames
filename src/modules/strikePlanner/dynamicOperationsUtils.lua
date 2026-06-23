@@ -67,20 +67,20 @@ end
 -- ============================================================================
 
 ---Check if all operations in a reconnaissance-triggered batch are completed
----@param reconEntry SBJ__ReconTriggeredOperationBatch Operation batch with operations array
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch with operations array
 ---@return boolean # Whether all operations are completed
-function DynamicOperationsUtils.checkOperationBatchCompleted(reconEntry)
-  if not reconEntry.operations then
+function DynamicOperationsUtils.checkOperationBatchCompleted(operationBatch)
+  if not operationBatch.operations then
     return true
   end
 
-  for _, operation in ipairs(reconEntry.operations) do
+  for _, operation in ipairs(operationBatch.operations) do
     if not operation.executed then
       return false
     end
   end
 
-  reconEntry.executed = true
+  operationBatch.executed = true
   return true
 end
 

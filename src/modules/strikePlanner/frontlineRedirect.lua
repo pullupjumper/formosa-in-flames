@@ -14,6 +14,7 @@ local FrontlineRedirect = {}
 ---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
 function FrontlineRedirect.rewriteMappings(strikeMappings, rules)
   local result = Utils.deepCopy(strikeMappings)
+
   for _, mapping in ipairs(result) do
     for _, rule in ipairs(rules) do
       if mapping.type == rule.type and mapping.name:sub(1, #rule.fromPrefix) == rule.fromPrefix then
@@ -64,9 +65,15 @@ function FrontlineRedirect.evaluate(config, reconContext)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
     reconContext.frontlineRedirected = true
-    return true, string.format(
+    local msg = string.format(
       "action=activate reason=attrition_threshold_reached attritionPct=%.1f thresholdPct=%.1f expected=%d current=%d",
-      summary.attritionPct, cfg.attritionThresholdPct, summary.expectedTotal, summary.currentTotal)
+      summary.attritionPct,
+      cfg.attritionThresholdPct,
+      summary.expectedTotal,
+      summary.currentTotal
+    )
+
+    return true, msg
   end
 
   return false, nil

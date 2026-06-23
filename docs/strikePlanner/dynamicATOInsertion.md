@@ -2,17 +2,17 @@
 
 > 原始碼：`src/modules/strikePlanner/dynamicATOInsertion.lua`
 
-**職責**：依據偵察排程與即時接觸資料，篩選有效空中打擊包、計算任務時序，並插入可由 `airTaskingOrder` 執行的 ATO Wave。
+**職責**：消費偵察觸發的 `air` operation，評估目標與機隊資源，產生可由 `airTaskingOrder` 執行的動態 ATO Wave。
 
 ---
 
 ## 概述
 
-`dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO 任務或派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 取出尚未執行的 `air` operation，評估目標與機隊資源後，產生 `SBJ__Wave` 寫入 `saveData.c.air.airTaskingOrder`。
+`dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
 
-模組的核心工作分為三段：第一段用 [targetingProcess](targetingProcess.md) 依 template 取得可打擊目標；第二段檢查各角色基地是否還有未派任務且 DBID 符合的飛機，支援 `baseGUIDCandidates` 跨基地 fallback，並以「半戰力門檻」在飛機不足全額時仍允許以半數出擊；第三段依飛行距離、支援角色到位時間與 `strikeInterval` 產生每個 Package 的 `startTime`、`endTime` 與 `loadoutStatus`。
+模組的主要流程分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
 
-成功插入 Wave 後，模組會透過 [dynamicOperationsUtils](dynamicOperationsUtils.md) 登記 generated operation，避免後續 tick 產生同名 Wave。無有效 Package 時會將 operation 標記為已處理但不插入 Wave；缺少 template 則保留未執行狀態並輸出錯誤。
+插入 Wave 後，模組會透過 [dynamicOperationsUtils](dynamicOperationsUtils.md) 登記 generated operation，避免後續 tick 產生同名任務。若沒有有效 package，operation 會被標記為已處理但不插入 Wave；若 operation 缺少 template，則保留未執行狀態並輸出錯誤，讓後續仍可追蹤問題。
 
 ---
 
@@ -24,66 +24,80 @@
 flowchart TD
     ENTRY["process(config, saveData, contacts)"]
     ENABLED{"dynamicOperations enabled?"}
-    FILTER["filterOperationsByType(reconTriggeredOperations, air)"]
-    LOOP{"還有未處理的 air operation?"}
-    TRIGGER{"reconEntry time + delay 到達?"}
+    EVAL_TIME["lastEvaluationTime = ScenEdit_CurrentTime()"]
+    HAS_BATCH{"reconTriggeredOperations 存在且非空?"}
+    FILTER["filterOperationsByType(..., air)"]
+    HAS_AIR{"有未執行 air operation?"}
+    LOOP["逐一處理 air operation"]
+    TRIGGER{"operationBatch time + delay 已到?"}
     TEMPLATE{"operation.template 存在?"}
-    VALIDATE["processATOTemplateWithValidation<br>目標處理 + 資源驗證"]
+    TARGETS["evaluateTargetsFromTemplate<br/>TargetingProcess.processTargets()"]
+    HAS_TARGETS{"至少一個 package 目標足夠?"}
+    BUILD_PKGS["buildExecutablePackages<br/>機隊驗證 + 時序計算"]
     HAS_PACKAGE{"validPackages > 0?"}
-    COPY["deepCopy operation.template<br>替換 packages 為 validPackages"]
+    ATO_READY{"airTaskingOrder 已初始化?"}
     NAME["generateUniqueAirOperationName"]
-    BUILD["buildATOWave<br>計算 package/role timing"]
-    INSERT["insertWave<br>寫入 saveData.c.air.airTaskingOrder"]
-    REGISTER["registerGeneratedOperation(air, wave.name)"]
-    MARK["markOperationExecuted(reconEntry, operation, true)"]
-    LOG_ERROR["MISSING_TEMPLATE<br>不標記 executed"]
-    NEXT["此 operation 處理完畢"]
+    BUILD_WAVE["buildATOWave + collectWaveTimingLogEntries"]
+    INSERT["insertWave<br/>寫入 airTaskingOrder 並 registerGeneratedOperation"]
+    MARK["markOperationExecuted<br/>missing_template 以外皆標記"]
+    LOGS["emitProcessedResultsLog"]
     END_FALSE["return false"]
     END_RESULT["return hasExecutedAny"]
 
     ENTRY --> ENABLED
     ENABLED -->|否| END_FALSE
-    ENABLED -->|是| FILTER --> LOOP
-    LOOP -->|否| END_RESULT
-    LOOP -->|是| TRIGGER
-    TRIGGER -->|否| NEXT
+    ENABLED -->|是| EVAL_TIME --> HAS_BATCH
+    HAS_BATCH -->|否| END_FALSE
+    HAS_BATCH -->|是| FILTER --> HAS_AIR
+    HAS_AIR -->|否| END_FALSE
+    HAS_AIR -->|是| LOOP --> TRIGGER
+    TRIGGER -->|否| LOOP
     TRIGGER -->|是| TEMPLATE
-    TEMPLATE -->|否| LOG_ERROR --> NEXT
-    TEMPLATE -->|是| VALIDATE --> HAS_PACKAGE
+    TEMPLATE -->|否| MARK
+    TEMPLATE -->|是| TARGETS --> HAS_TARGETS
+    HAS_TARGETS -->|否| MARK
+    HAS_TARGETS -->|是| BUILD_PKGS --> HAS_PACKAGE
     HAS_PACKAGE -->|否| MARK
-    HAS_PACKAGE -->|是| COPY --> NAME --> BUILD --> INSERT --> REGISTER --> MARK
-    MARK --> NEXT
-    NEXT --> LOOP
+    HAS_PACKAGE -->|是| ATO_READY
+    ATO_READY -->|否| MARK
+    ATO_READY -->|是| NAME --> BUILD_WAVE --> INSERT --> MARK
+    MARK --> LOOP
+    LOOP --> LOGS --> END_RESULT
 ```
 
-### 目標與機隊驗證
+### 目標評估與 package 篩選
 
-`processATOTemplateWithValidation()` 會 deep copy Wave template 的 packages，避免直接修改 config 或 recon-triggered operation batch 中的原始 template。每個 Package 先呼叫 `TargetingProcess.processTargets()` 產生 `target.list`，再以 `validateIndividualPackage()` 驗證目標數與各角色飛機數。
+`evaluateTargetsFromTemplate()` 會依 `waveTemplate.packages` 順序處理每個 package，呼叫 `TargetingProcess.processTargets(config, saveData, contacts, packageData.target, waveTemplate.isFirstWave)` 取得候選目標。若目標數達到 `packageData.target.minTargetCount`，該 package index 會被記錄在 `targetsByPackageIndex`；若沒有設定 `minTargetCount`，預設需求為 1 個目標。
 
-機隊驗證依 `PACKAGE_ROLES`（`striker`、`escort`、`wildWeasel`、`jammer`、`tanker`）逐一檢查。`validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選清單依序嘗試；一旦某基地的可用餘額達到「半戰力門檻」，就把 `roleData.baseGUID` 改寫為實際選定基地（下游因此只會看到單一字串），並把預訂量累加進 `assignedAircraft`，讓同一輪 validation 中後續 Package 扣除已保留的飛機。
+`buildExecutablePackages()` 只會處理已通過目標門檻的 package。它會從 `operation.template` 的 deep copy 建立執行態 package，將 `package.target.list` 改成實際目標清單，並在機隊驗證成功後呼叫 `createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接使用「前一個有效 package」作為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
 
-可用餘額不足全額時仍允許以半數兵力出擊，門檻為 `requiredCount / 2`（不取整，例如 `requiredCount = 3` 時門檻為 1.5，可用 1 架會被拒絕）。預訂量則視餘額是否達全額而定：
+驗證摘要會以 `packagesValid`、`packagesTotal`、`targets`、`packagesSkipped` 形式寫入 log，方便在 CMO console 或測試輸出追蹤哪些 operation 只是無有效 package，而不是插入流程失敗。
+
+### 機隊資源驗證
+
+機隊驗證依 `PACKAGE_ROLES` 固定順序檢查：
+
+```text
+striker -> escort -> wildWeasel -> jammer -> tanker
+```
+
+`validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選基地清單，依序尋找可用飛機。可用飛機由 `getBaseAircraftCapacity()` 計算，條件是基地 `embarkedUnits.Aircraft` 中的 aircraft `dbid` 符合 `roleData.unitDBID`，且 `aircraft.mission == ""` 或 `nil`。
 
 ```text
 可用餘額 free = getBaseAircraftCapacity(baseGUID, unitDBID) - assignedAircraft[baseGUID]
 
-接受條件： free >= requiredCount / 2
-預訂量：   free >= requiredCount → 預訂 requiredCount（全額）
-           否則                 → 預訂 free（保留該基地剩餘全部）
-
-getBaseAircraftCapacity:
-  base.embarkedUnits.Aircraft
-  └── aircraft.dbid == requiredUnitDBID
-      └── aircraft.mission == "" or nil
+接受條件： free >= roleData.unitCount / 2
+預訂量：   free >= roleData.unitCount -> 預訂 roleData.unitCount
+           free <  roleData.unitCount -> 預訂 free
 ```
 
-即使以半戰力獲准，`roleData.unitCount` 仍維持 template 原值（不會被改寫成實際可用數），由下游 ATO 執行層依基地實有飛機派遣。
+當某候選基地通過半戰力門檻，模組會把 `roleData.baseGUID` 改寫為實際選定基地，並把預訂量累加到 `assignedAircraft`，讓同一輪後續 package 不會重複分配同批飛機。`roleData.unitCount` 不會因半戰力通過而改寫；實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
 
-`collectAssignedAircraft()` 另會掃描既有 `saveData.c.air.airTaskingOrder`，統計已啟動、未發射 Wave 中各 Package（同樣涵蓋 `PACKAGE_ROLES`，含 `jammer`）已佔用的 role `unitCount`，避免動態插入重複分配同一批飛機。
+`collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
 
 ### 飛行時間與任務時序
 
-支援角色的前置時間來自基地到任務區的距離。`getPatrolZonePoint()` 會優先讀取 `missionCreationParams.opts.patrolZone`，若沒有則 fallback 至 `opts.zone`，再用第一個 reference point 作為任務區座標。`computeRoleFlightTime()` 以 `GameApi.Tool_Range()` 取距離，`calculateFlightTimeFromDistance()` 依角色與距離決定速度。
+支援角色包含 `escort`、`wildWeasel`、`jammer`、`tanker`。`getPatrolZonePoint()` 會先讀取 `missionCreationParams.opts.patrolZone`，若不存在則使用 `opts.zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取得第一個任務區座標。若任務區、reference point 或距離資料缺失，角色前置時間會 fallback 到 `ESCORT_ADVANCE_TIME`。
 
 | 條件 | 速度 |
 |---|---:|
@@ -91,17 +105,23 @@ getBaseAircraftCapacity:
 | 非 tanker 且距離 `< 450 nm` | 470 kt |
 | 非 tanker 且距離 `>= 450 nm` | 430 kt |
 
-第一個 Package 若未指定 striker `startTime`，會以目前時間、`timeToReady`、支援角色最長飛行時間計算。後續 Package 則用前一包 striker `startTime + strikeInterval`。若支援角色最長飛行時間達 `MAX_FLIGHT_TIME`，會套用 `ELAPSED_TIME` 修正。
+striker 飛行時間會用 striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程，估算飛到武器釋放點所需時間。`ScenEdit_QueryDB("weapon", weaponDBID)`、`ranges.land.max` 或 `Tool_Range()` 任一資料缺失或不可轉為 number 時，會 fallback 到 `MISSION_DURATION`，避免 CMO DB 查詢缺欄位造成 runtime error。
+
+
+時序公式如下：
 
 ```text
-第一包 strikerStart =
+第一個有效 package strikerStart =
   currentTime + supportAdvanceTime - 遠距修正 + (package.timeToReady or 5 分鐘)
 
-後續包 strikerStart =
-  previousPackage.striker.startTime + strikeInterval
+後續有效 package strikerStart =
+  previousValidPackage.striker.startTime + strikeInterval
+
+strikerEnd =
+  strikerStart + (package 有 tanker ? TANKER_DURATION : MISSION_DURATION)
 
 supportStart =
-  strikerStart - (tanker 用 maxSupportAdvanceTime；其餘角色用各自 roleAdvanceTime)
+  strikerStart - (tanker 用 maxSupportAdvanceTime；其他角色用各自 roleAdvanceTime)
               + 遠距修正 + (package.timeToReady or 5 分鐘)
 
 supportEnd =
@@ -109,7 +129,18 @@ supportEnd =
               (tanker 再扣 ELAPSED_TIME 30 分鐘)
 ```
 
-`calculateStrikerFlightTime()` 會用 striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程，估算飛到武器釋放點的時間；若資料不足或距離無效，使用 `MISSION_DURATION` 作為 fallback。
+### 結果分類與 log
+
+`processAirOperation()` 可能回傳下列內部原因：
+
+| reason | 條件 | 後續處理 |
+|---|---|---|
+| `missing_template` | operation 缺少 `template` | 不標記 executed，輸出 `ERROR` |
+| `no_valid_packages` | 目標不足或機隊驗證後沒有有效 package | 標記 executed，輸出 `SKIP` |
+| `insertion_failed` | `airTaskingOrder` 未初始化或插入失敗 | 標記 executed，輸出 `FAIL` |
+| `nil` | Wave 成功插入 | 標記 executed，輸出 `OK` 與 timing log |
+
+log 由 `emitProcessedResultsLog()` 集中輸出，分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 scope，tag 使用 `constants.TAGS.DYNAMIC_OPERATIONS`。
 
 ---
 
@@ -118,39 +149,72 @@ supportEnd =
 ```text
 saveData.c
 ├── dynamicOperations
-│   ├── enabled
-│   ├── lastEvaluationTime
+│   ├── enabled: boolean
+│   ├── lastEvaluationTime?: number
 │   ├── generatedOperations
-│   │   └── air: table<string, boolean>
+│   │   ├── air: table<string, boolean>
+│   │   └── ground: table<string, boolean>
 │   └── reconTriggeredOperations: SBJ__ReconTriggeredOperationBatch[]
 │       └── ReconTriggeredOperationBatch
-│           ├── time
-│           ├── type
-│           ├── delay
-│           ├── executed
+│           ├── time: string
+│           ├── type: string
+│           ├── delay: number
+│           ├── executed: boolean
 │           └── operations: SBJ__Operation[]
 │               ├── type: "air"
-│               ├── executed
-│               ├── executionResult?
+│               ├── executed: boolean
+│               ├── executionResult?: boolean
 │               └── template: SBJ__WaveTemplate
 └── air
     └── airTaskingOrder: table<string, SBJ__Wave>
         └── generated Wave
-            ├── name
+            ├── name: string
             ├── isActivated = true
-            ├── isFirstWave
+            ├── isFirstWave: boolean
             ├── hasLaunched = false
-            ├── strikeInterval
+            ├── strikeInterval: number
             └── packages: SBJ__Package[]
+                ├── timeToReady: number
+                ├── loadoutStatus: SBJ__LoadoutStatus
+                ├── hasLaunched = false
+                ├── striker / escort / wildWeasel / jammer / tanker
+                └── target.list: string[]
 ```
+
+### 寫入與副作用
+
+| 路徑或 API | 行為 |
+|---|---|
+| `saveData.c.dynamicOperations.lastEvaluationTime` | 每次 `process()` 通過 enabled 檢查後寫入目前 CMO 時間。 |
+| `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時寫入新的 `SBJ__Wave`。 |
+| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicOperationsUtils.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
+| `operation.executed` / `operation.executionResult` | 透過 `markOperationExecuted()` 標記，`missing_template` 例外。 |
+| `operationBatch.executed` | 當 batch 內所有 operation 都完成時由 `DynamicOperationsUtils.checkOperationBatchCompleted()` 更新。 |
 
 ---
 
-## Public API
+## local constants
 
-| 函數 | 參數 | 回傳 | 說明 |
-|---|---|---|---|
-| `DynamicATOInsertion.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理到時的 air operations；若至少成功插入一個 ATO Wave，回傳 `true`。 |
+| 名稱 | 內容 | 用途 |
+|---|---|---|
+| `TIME_CONSTANTS` | `ESCORT_ADVANCE_TIME`、`MISSION_DURATION`、`TANKER_DURATION`、`ELAPSED_TIME`、速度與距離門檻 | 任務時序與飛行時間估算。`TANKER_ADVANCE_TIME` 目前宣告但未被使用。 |
+| `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | 機隊驗證與既有任務占用量統計。 |
+| `SUPPORT_ROLES` | `escort`、`wildWeasel`、`jammer`、`tanker` | 支援角色時序計算。 |
+| `ALL_ROLES` | `PACKAGE_ROLES` 加上 `reconUAV` | timing log 收集。 |
+| `PROCESS_REASON` | `missing_template`、`no_valid_packages`、`insertion_failed` | operation 處理失敗或略過原因。 |
+| `OPERATION_OUTCOME` | `ok`、`skip`、`missing_template`、`fail` | log 分類。 |
+
+---
+
+## config 與 constants 參考
+
+| 類型 | 路徑 | 使用方式 |
+|---|---|---|
+| `config` | `config` 參數 | 本模組不直接索引特定 `config.*` 欄位；會原樣傳入 `TargetingProcess.processTargets()`。 |
+| `config` | `config.c.packageTemplates` | 上游 [reconOperationScheduler](reconOperationScheduler.md) 的 air operation template 來源，動態 operation 最終會攜帶 `SBJ__WaveTemplate` 進入本模組。 |
+| `config` | `config.readytime` | 多數 package template 的 `timeToReady` 來源，runtime 以秒為單位；本模組 fallback 為 `5 * 60`。 |
+| `constants` | `constants.SIDES.ENEMY` | 讀取支援角色任務區 reference point。 |
+| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出 dynamic ATO 處理結果與 timing log。 |
 
 ---
 
@@ -158,25 +222,30 @@ saveData.c
 
 | 模組 | 用途 |
 |---|---|
-| `src.modules.strikePlanner.targetingProcess` | 依 target template 與 contacts 產生可打擊目標清單。 |
-| `src.modules.strikePlanner.dynamicOperationsUtils` | 篩選 air operations、產生唯一 Wave 名稱、登記生成結果、標記執行狀態。 |
-| `src.utils.gameApi` | 讀取基地/飛機/reference point、查詢武器資料庫、計算距離、取得目前時間。 |
-| `src.utils.gameUtils` | 判斷排程時間是否到達。 |
-| `src.utils.utils` | deep copy、時間字串轉 timestamp。 |
+| `src.modules.strikePlanner.targetingProcess` | 依 target template、contacts 與 BDA 條件產生可打擊目標清單。 |
+| `src.modules.strikePlanner.dynamicOperationsUtils` | 篩選 air operations、產生唯一 Wave 名稱、登記 generated operation、標記 operation 執行狀態。 |
+| `src.utils.gameApi` | 取得目前時間、基地/飛機/reference point、weapon DB 查詢與距離計算。 |
+| `src.utils.gameUtils` | 判斷 recon-triggered operation 是否已到觸發時間。 |
+| `src.utils.utils` | deep copy 與 UTC datetime 字串轉 timestamp。 |
 | `src.utils.logger` | 輸出動態空中作戰結果與錯誤。 |
-| `src.core.constants` | 使用 `SIDES.ENEMY`、`TAGS.DYNAMIC_OPERATIONS`。 |
+| `src.utils.logFormat` | 產生一致的 key/value log entry 與 summary。 |
+| `src.core.constants` | 提供 side name 與 log tag。 |
 
 ---
 
-## 設定與常數參考
+## Public API
 
-| 類型 | 路徑 | 用途 |
-|---|---|---|
-| `config` | `config.c.packageTemplates` | 由 `reconOperationScheduler` 建立 operation template；本模組接收其中的 `SBJ__WaveTemplate`。 |
-| `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperations` | 動態空中作戰的觸發來源。 |
-| `saveData` | `saveData.c.air.airTaskingOrder` | 動態 Wave 插入位置，也是既有任務佔用量掃描來源。 |
-| `constants` | `constants.SIDES.ENEMY` | 讀取 China side reference point。 |
-| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 動態 ATO timing 與處理結果 log tag。 |
+| 函數 | 參數 | 回傳 | 說明 |
+|---|---|---|---|
+| `DynamicATOInsertion.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有已到觸發時間的未執行 air operations；若至少成功插入一個 ATO Wave，回傳 `true`。 |
+
+### 呼叫者與觸發方式
+
+| 呼叫者 | 觸發 |
+|---|---|
+| `StrikePlanner.processDynamicATO(config, saveData, contacts)` | Strike Planner facade，轉呼叫本模組 public API。 |
+| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本在 `saveData.c.dynamicOperations.enabled` 為 true 時呼叫 `StrikePlanner.processDynamicATO()`。 |
+| [airTaskingOrder](airTaskingOrder.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active Wave。 |
 
 ---
 
@@ -185,5 +254,6 @@ saveData.c
 - [airTaskingOrder](airTaskingOrder.md) — 執行本模組插入的 ATO Wave。
 - [targetingProcess](targetingProcess.md) — 動態目標評估與 BDA 過濾。
 - [dynamicOperationsUtils](dynamicOperationsUtils.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
-- [reconOperationScheduler](reconOperationScheduler.md) — 依偵察結果建立 air operation template。
+- [reconOperationScheduler](reconOperationScheduler.md) — 偵察完成後建立 air operation template。
+- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 對應的動態地面 FSEM 生成流程。
 - [系統架構](README.md)

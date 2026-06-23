@@ -27,6 +27,19 @@ local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
 local SUPPORT_ROLES = { "escort", "wildWeasel", "jammer", "tanker" }
 local ALL_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker", "reconUAV" }
 
+local PROCESS_REASON = {
+  MISSING_TEMPLATE = "missing_template",
+  NO_VALID_PACKAGES = "no_valid_packages",
+  INSERTION_FAILED = "insertion_failed"
+}
+
+local OPERATION_OUTCOME = {
+  OK = "ok",
+  SKIP = "skip",
+  MISSING_TEMPLATE = "missing_template",
+  FAIL = "fail"
+}
+
 
 -- ============================================================================
 -- Target Processing
@@ -44,12 +57,13 @@ local function collectAssignedAircraft(saveData)
   end
 
   for _, wave in pairs(saveData.c.air.airTaskingOrder) do
-    if wave.isActivated and not wave.hasLaunched and wave.packages then
+    if wave.isActivated and not wave.hasLaunched then
       for _, package in ipairs(wave.packages) do
         if not package.hasLaunched then
           for _, roleName in ipairs(PACKAGE_ROLES) do
-            local role = package[roleName]
-            if role and role.baseGUID then
+            local role = package[roleName] --[[@as SBJ__MissionDeploymentDescriptor]]
+
+            if role then
               assignedAircraft[role.baseGUID] = (assignedAircraft[role.baseGUID] or 0) + (role.unitCount or 0)
             end
           end
@@ -89,11 +103,8 @@ local function getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
   return availableCount
 end
 
----Validate aircraft availability for a role, resolving baseGUID via fallback candidates
----Iterates roleData.baseGUID then roleData.baseGUIDCandidates in order; picks the first base with
----enough unassigned aircraft of unitDBID. On success: rewrites roleData.baseGUID to the chosen GUID
----(downstream sees a single string) and increments assignedAircraft so later packages in the same
----wave deduct correctly.
+---Validate aircraft availability and resolve baseGUID via fallback candidates
+---Mutates roleData.baseGUID and assignedAircraft when a candidate reaches half-strength.
 ---@param roleData SBJ__MissionDeploymentDescriptor Role configuration; mutated in place on success
 ---@param roleName string Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex integer Package index for error messages
@@ -119,6 +130,7 @@ local function validateAircraftRole(roleData, roleName, packageIndex, assignedAi
   for _, baseGUID in ipairs(candidates) do
     local assignedCount = assignedAircraft[baseGUID] or 0
     local availableCount = getBaseAircraftCapacity(baseGUID, requiredUnitDBID)
+
     if availableCount - assignedCount >= requiredCount / 2 then
       roleData.baseGUID = baseGUID
       assignedAircraft[baseGUID] = assignedCount +
@@ -126,84 +138,105 @@ local function validateAircraftRole(roleData, roleName, packageIndex, assignedAi
       return true, nil
     end
 
-    table.insert(attempts, string.format("%s:available=%d:assigned=%d",
-      LogFormat.value(baseGUID), availableCount, assignedCount))
+    table.insert(attempts, string.format(
+      "%s:available=%d:assigned=%d",
+      LogFormat.value(baseGUID),
+      availableCount,
+      assignedCount
+    ))
   end
 
-  return false, string.format(
+  local msg = string.format(
     "package=%d role=%s reason=insufficient_aircraft required=%d attempts=%s",
-    packageIndex, LogFormat.value(roleName), requiredCount, table.concat(attempts, "|")
+    packageIndex,
+    LogFormat.value(roleName),
+    requiredCount,
+    table.concat(attempts, "|")
   )
+  return false, msg
 end
 
----Check if individual package has sufficient targets and resources
----Validates both target count meets minimum requirements and all roles have available aircraft
+---Check if individual package has sufficient aircraft resources
+---Target sufficiency is evaluated before package construction.
 ---@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
----@param packageTargets string[] Array of target GUIDs found for this package
 ---@param packageIndex integer Index of the package for logging
 ---@param assignedAircraft table<string, integer> Map of base GUID to currently assigned aircraft count
 ---@return boolean success true if package is valid and can be executed
 ---@return string|nil reason Reason string (error message on failure, success message on pass)
-local function validateIndividualPackage(packageData, packageTargets, packageIndex, assignedAircraft)
-  -- Check target sufficiency
-  local targetCount = #packageTargets
-  local minTargetCount = 1
-
-  if packageData.target and packageData.target.minTargetCount then
-    minTargetCount = packageData.target.minTargetCount
-  end
-
-  if targetCount < minTargetCount then
-    return false, string.format("package=%d reason=insufficient_targets targets=%d required=%d",
-      packageIndex, targetCount, minTargetCount)
-  end
-
+local function validateIndividualPackage(packageData, packageIndex, assignedAircraft)
   for _, role in ipairs(PACKAGE_ROLES) do
     local isValid, errorMessage = validateAircraftRole(packageData[role], role, packageIndex, assignedAircraft)
+
     if not isValid then
       return false, errorMessage
     end
   end
 
-  return true, string.format("package=%d status=valid", packageIndex)
+  local msg = string.format("package=%d status=valid", packageIndex)
+  return true, msg
 end
 
+---Get minimum target count for one package template
+---@param packageData SBJ__PackageTemplate Package configuration with target requirements
+---@return integer # Minimum target count required for this package
+local function getPackageMinTargetCount(packageData)
+  if packageData.target and packageData.target.minTargetCount then
+    return packageData.target.minTargetCount
+  end
 
----Process ATO template with integrated validation - single pass through packages
----Processes all packages in wave template, finding targets and validating resources in one pass
+  return 1
+end
+
+---Format package validation counters into summary fields
+---@param validPackageCount integer Number of packages accepted for execution
+---@param totalPackageCount integer Total package templates evaluated
+---@param totalTargets integer Total target count assigned to accepted packages
+---@param skippedPackageCount integer Number of packages skipped by validation
+---@return string # Package validation summary
+local function formatPackageValidationSummary(validPackageCount, totalPackageCount, totalTargets, skippedPackageCount)
+  return string.format(
+    "packagesValid=%d packagesTotal=%d targets=%d packagesSkipped=%d",
+    validPackageCount,
+    totalPackageCount,
+    totalTargets,
+    skippedPackageCount
+  )
+end
+
+---Evaluate targets for all packages in a wave template
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@param isFirstWave boolean Whether this is the first wave (affects BDA assessment)
----@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
----@return string statusSummary Human-readable summary of validation results
-local function processATOTemplateWithValidation(config, saveData, contacts, waveTemplate, isFirstWave)
-  local copyPackages = Utils.deepCopy(waveTemplate.packages)
-  local validPackages = {}
-  local assignedAircraft = collectAssignedAircraft(saveData)
-  local totalTargets = 0
-  local skippedReasons = {}
+---@return table<integer, string[]> targetsByPackageIndex Evaluated targets grouped by package index
+---@return integer targetQualifiedPackageCount Number of package templates with enough targets
+---@return integer targetSkippedPackageCount Number of package templates skipped by target sufficiency
+local function evaluateTargetsFromTemplate(config, saveData, contacts, waveTemplate)
+  local targetsByPackageIndex = {}
+  local targetQualifiedPackageCount = 0
+  local targetSkippedPackageCount = 0
 
-  for packageIndex, packageData in ipairs(copyPackages) do
-    local strikeTargets = TargetingProcess.processTargets(config, saveData, contacts, packageData.target, isFirstWave)
-    local isValid, reason = validateIndividualPackage(packageData, strikeTargets, packageIndex, assignedAircraft)
+  for packageIndex, packageData in ipairs(waveTemplate.packages) do
+    local packageTargets = TargetingProcess.processTargets(
+      config,
+      saveData,
+      contacts,
+      packageData.target,
+      waveTemplate.isFirstWave
+    )
+    packageTargets = packageTargets or {}
+    local targetCount = #packageTargets
+    local requiredCount = getPackageMinTargetCount(packageData)
 
-    if isValid then
-      if packageData.target then
-        packageData.target.list = strikeTargets
-      end
-      table.insert(validPackages, packageData)
-      totalTargets = totalTargets + #strikeTargets
+    if targetCount >= requiredCount then
+      targetsByPackageIndex[packageIndex] = packageTargets
+      targetQualifiedPackageCount = targetQualifiedPackageCount + 1
     else
-      table.insert(skippedReasons, reason)
+      targetSkippedPackageCount = targetSkippedPackageCount + 1
     end
   end
 
-  local summary = string.format("packagesValid=%d packagesTotal=%d targets=%d packagesSkipped=%d",
-    #validPackages, #copyPackages, totalTargets, #skippedReasons)
-
-  return validPackages, summary
+  return targetsByPackageIndex, targetQualifiedPackageCount, targetSkippedPackageCount
 end
 
 -- ============================================================================
@@ -309,12 +342,26 @@ end
 ---@return integer # Flight time in seconds from base to weapon release point
 local function calculateStrikerFlightTime(packageData)
   if not packageData.striker or not packageData.striker.baseGUID or
+      not packageData.striker.weaponDBID or
       not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
     return TIME_CONSTANTS.MISSION_DURATION
   end
 
-  local range = GameApi.ScenEdit_QueryDB("weapon", packageData.striker.weaponDBID).ranges.land.max
-  local distance = GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1]) - range
+  local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", packageData.striker.weaponDBID)
+  local weaponRange = tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges.land
+    .max)
+
+  if not weaponRange then
+    return TIME_CONSTANTS.MISSION_DURATION
+  end
+
+  local targetRange = tonumber(GameApi.Tool_Range(packageData.striker.baseGUID, packageData.target.list[1]))
+
+  if not targetRange then
+    return TIME_CONSTANTS.MISSION_DURATION
+  end
+
+  local distance = targetRange - weaponRange
 
   if not distance or distance <= 0 then
     return TIME_CONSTANTS.MISSION_DURATION
@@ -330,16 +377,14 @@ end
 ---Calculate mission timing for a package
 ---Determines striker start and end times based on support advance time and strike intervals
 ---@param packageData SBJ__PackageTemplate Package configuration with role and timing information
----@param packageIndex integer Index of the package (1-based)
----@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
+---@param previousPackage SBJ__Package|nil Previous executable package for sequential timing, nil for first valid package
 ---@param strikeInterval integer Time interval in seconds between consecutive strikes
 ---@return {strikerStart: string, strikerEnd: string} # Table with striker start/end times in "YYYY-MM-DD HH:MM:SS" format
-local function calculatePackageTiming(packageData, packageIndex, previousPackage, strikeInterval)
+local function calculatePackageTiming(packageData, previousPackage, strikeInterval)
   local timing = {}
-
   -- Calculate striker timing
   if not packageData.striker.startTime then
-    if packageIndex == 1 then
+    if not previousPackage then
       -- Check if there are support roles
       local hasSupportRoles = packageData.escort or packageData.wildWeasel or packageData.jammer
       local advanceTime = 0
@@ -370,7 +415,6 @@ local function calculatePackageTiming(packageData, packageIndex, previousPackage
   return timing
 end
 
-
 ---Calculate support role timing (escort, wildWeasel, jammer, tanker)
 ---Computes when support aircraft should launch to arrive before striker
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
@@ -391,25 +435,25 @@ local function calculateRoleTiming(role, packageData)
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
   local endTime = role == "tanker" and (startTime + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTime + duration
-  timing.endTime = os.date("%Y-%m-%d %H:%M:%S", endTime)
+  timing.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
   return timing
 end
 
 ---Create a single package with proper timing
 ---Converts package template to executable package with calculated timings for all roles
 ---@param packageData SBJ__PackageTemplate Package template configuration
----@param packageIndex integer Index of the package (1-based)
----@param previousPackage SBJ__PackageTemplate|nil Previous package for sequential timing, nil for first package
+---@param previousPackage SBJ__Package|nil Previous executable package for sequential timing, nil for first valid package
 ---@param strikeInterval integer Time interval in seconds between consecutive strikes
 ---@return SBJ__Package # Executable package with complete timing and loadout status
-local function createPackageWithTiming(packageData, packageIndex, previousPackage, strikeInterval)
+local function createPackageWithTiming(packageData, previousPackage, strikeInterval)
   -- Calculate main timing
-  local timing = calculatePackageTiming(packageData, packageIndex, previousPackage, strikeInterval)
+  local timing = calculatePackageTiming(packageData, previousPackage, strikeInterval)
 
   -- Set striker timing
   if not packageData.striker.startTime then
     packageData.striker.startTime = timing.strikerStart
   end
+
   if not packageData.striker.endTime then
     packageData.striker.endTime = timing.strikerEnd
   end
@@ -456,6 +500,50 @@ local function createPackageWithTiming(packageData, packageIndex, previousPackag
   }
 end
 
+---Build executable package templates from evaluated targets and aircraft validation
+---Mutates copied package templates with target lists and resolved baseGUID values.
+---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
+---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
+---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
+---@param targetSkippedPackageCount integer Number of packages already skipped by target sufficiency
+---@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
+---@return string statusSummary Human-readable summary of validation results
+local function buildExecutablePackages(saveData, waveTemplate, targetsByPackageIndex, targetSkippedPackageCount)
+  -- local copyPackages = Utils.deepCopy(waveTemplate.packages)
+  local validPackages = {}
+  local assignedAircraft = collectAssignedAircraft(saveData)
+  local totalTargets = 0
+  local aircraftSkippedPackageCount = 0
+  local previousPackage = nil
+
+  for packageIndex, packageTemplate in ipairs(waveTemplate.packages) do
+    local strikeTargets = targetsByPackageIndex[packageIndex]
+
+    if strikeTargets then
+      local isValid = validateIndividualPackage(packageTemplate, packageIndex, assignedAircraft)
+
+      if isValid then
+        local package = Utils.deepCopy(packageTemplate)
+        package.target.list = strikeTargets
+        package = createPackageWithTiming(package, previousPackage, waveTemplate.strikeInterval or 0)
+        table.insert(validPackages, package)
+        previousPackage = package
+        totalTargets = totalTargets + #strikeTargets
+      else
+        aircraftSkippedPackageCount = aircraftSkippedPackageCount + 1
+      end
+    end
+  end
+
+  local summary = formatPackageValidationSummary(
+    #validPackages,
+    #waveTemplate.packages,
+    totalTargets,
+    targetSkippedPackageCount + aircraftSkippedPackageCount
+  )
+  return validPackages, summary
+end
+
 -- ============================================================================
 -- Wave Construction
 -- ============================================================================
@@ -463,49 +551,44 @@ end
 ---Build ATO wave structure from template and validated packages
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param waveName string Generated unique wave name
----@return SBJ__Wave wave Wave structure with all packages and timing applied
----@return string[] timingLogEntries Package timing log entries
-local function buildATOWave(waveTemplate, waveName)
-  ---@type SBJ__Wave
-  local newWave = {
+---@param packages SBJ__Package[] Validated packages to insert into the wave
+---@return SBJ__Wave # Wave structure with all packages and timing applied
+local function buildATOWave(waveTemplate, waveName, packages)
+  return {
     name = waveName,
     isActivated = true,
     isFirstWave = waveTemplate.isFirstWave or false,
     hasLaunched = false,
     strikeInterval = waveTemplate.strikeInterval or 0,
-    packages = {}
+    packages = packages
   }
+end
 
-  local previousPackage = nil
+---Collect package role timing entries for consolidated log output
+---@param wave SBJ__Wave Wave structure with calculated package timings
+---@return string[] # Package timing log entries
+local function collectWaveTimingLogEntries(wave)
   local timingLogEntries = {}
 
-  for packageIndex, packageData in ipairs(waveTemplate.packages) do
-    local newPackage = createPackageWithTiming(
-      packageData,
-      packageIndex,
-      previousPackage,
-      waveTemplate.strikeInterval or 0
-    )
-    table.insert(newWave.packages, newPackage)
-
-    -- Record each role's timing for batched output by the public API.
+  for packageIndex, packageData in ipairs(wave.packages) do
     for _, role in ipairs(ALL_ROLES) do
-      local roleData = newPackage[role]
+      local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
+
       if roleData then
-        table.insert(timingLogEntries, LogFormat.entry("OK", string.format(
+        local msg = string.format(
           "wave=%s package=%d role=%s startTime=%q endTime=%q",
-          LogFormat.value(waveName),
+          LogFormat.value(wave.name),
           packageIndex,
           LogFormat.value(role),
-          tostring(roleData.startTime or "unknown"),
-          tostring(roleData.endTime or "unknown"))))
+          roleData.startTime or "unknown",
+          roleData.endTime or "unknown"
+        )
+        table.insert(timingLogEntries, LogFormat.entry("OK", msg))
       end
     end
-
-    previousPackage = packageData
   end
 
-  return newWave, timingLogEntries
+  return timingLogEntries
 end
 
 ---Insert ATO wave into saveData and register as generated operation
@@ -518,21 +601,61 @@ local function insertWave(saveData, wave)
   return true
 end
 
----Build and insert ATO wave into saveData
----@param saveData SBJ__SaveData Persistent save data to insert wave into
----@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@param operationBatchType string Reconnaissance type identifier used for wave naming
----@return boolean success True if wave was successfully inserted, false on failure
----@return string|nil waveName Generated wave name when available
----@return string[] timingLogEntries Package timing log entries
-local function insertATOWave(saveData, waveTemplate, operationBatchType)
-  if not saveData.c.air.airTaskingOrder then
-    return false, nil, {}
+---Generate wave name from template and reconnaissance type
+---@param waveTemplate SBJ__WaveTemplate Template used for name source
+---@param reconType string Reconnaissance type identifier
+---@param saveData SBJ__SaveData Persistent save data for uniqueness check
+---@return string # Generated unique wave name
+local function buildWaveName(waveTemplate, reconType, saveData)
+  return DynamicOperationsUtils.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
+end
+
+---Create actual ATO wave from template and evaluation results
+---Constructs executable packages, calculates timing, and inserts the wave.
+---@param saveData SBJ__SaveData Persistent save data for ATO insertion
+---@param waveTemplate SBJ__WaveTemplate Template defining ATO wave and package configurations
+---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
+---@param targetSkippedPackageCount integer Number of packages skipped by target sufficiency
+---@param reconType string Reconnaissance type identifier used for wave naming
+---@return boolean success True if ATO wave was successfully created and inserted
+---@return string|nil reason Failure reason when success is false
+---@return string statusSummary Package validation summary
+---@return {waveName: string, timingLogEntries: string[]}|nil details Additional operation details for logging
+local function createAndInsertATOWaveFromTemplate(
+    saveData,
+    waveTemplate,
+    targetsByPackageIndex,
+    targetSkippedPackageCount,
+    reconType)
+  local validPackages, statusSummary = buildExecutablePackages(
+    saveData,
+    waveTemplate,
+    targetsByPackageIndex,
+    targetSkippedPackageCount
+  )
+
+  if #validPackages == 0 then
+    return false, PROCESS_REASON.NO_VALID_PACKAGES, statusSummary, nil
   end
 
-  local waveName = DynamicOperationsUtils.generateUniqueAirOperationName(waveTemplate.name, operationBatchType, saveData)
-  local wave, timingLogEntries = buildATOWave(waveTemplate, waveName)
-  return insertWave(saveData, wave), waveName, timingLogEntries
+  if not saveData.c.air.airTaskingOrder then
+    return false, PROCESS_REASON.INSERTION_FAILED, statusSummary, { waveName = nil, timingLogEntries = {} }
+  end
+
+  -- local executableTemplate = Utils.deepCopy(waveTemplate)
+  -- executableTemplate.packages = validPackages
+  local waveName = buildWaveName(waveTemplate, reconType, saveData)
+  local wave = buildATOWave(waveTemplate, waveName, validPackages)
+  local timingLogEntries = collectWaveTimingLogEntries(wave)
+
+  if not insertWave(saveData, wave) then
+    return false, PROCESS_REASON.INSERTION_FAILED, statusSummary, {
+      waveName = waveName,
+      timingLogEntries = timingLogEntries or {}
+    }
+  end
+
+  return true, nil, statusSummary, { waveName = waveName, timingLogEntries = timingLogEntries or {} }
 end
 
 -- ============================================================================
@@ -544,17 +667,12 @@ end
 ---@return boolean # True when current time is at or past trigger time
 local function isReconTriggered(reconEntry)
   local scheduledTimestamp = Utils.parseDatetimeToTimestamp(reconEntry.time)
+
   if reconEntry.delay then
     scheduledTimestamp = scheduledTimestamp + reconEntry.delay
   end
-  return GameUtils.isAfterStartTime(scheduledTimestamp)
-end
 
----Convert an internal reason code to a log-safe snake_case value
----@param reason? string Internal reason code
----@return string # Log-safe reason value
-local function formatReason(reason)
-  return LogFormat.value(string.lower(reason or "unknown"))
+  return GameUtils.isAfterStartTime(scheduledTimestamp)
 end
 
 ---Process single air operation: evaluate targets, validate packages, insert ATO wave
@@ -569,32 +687,145 @@ end
 ---@return table|nil details Additional operation details for logging
 local function processAirOperation(config, saveData, contacts, reconEntry, operation)
   if not operation.template then
-    return false, "MISSING_TEMPLATE", nil, nil
+    return false, PROCESS_REASON.MISSING_TEMPLATE, nil, nil
   end
 
-  local validPackages, statusSummary = processATOTemplateWithValidation(
-    config, saveData, contacts, operation.template, operation.template.isFirstWave
+  local waveTemplate = Utils.deepCopy(operation.template)
+  local targetsByPackageIndex, targetQualifiedPackageCount, targetSkippedPackageCount = evaluateTargetsFromTemplate(
+    config,
+    saveData,
+    contacts,
+    operation.template
   )
 
-  if #validPackages == 0 then
-    return false, "NO_VALID_PACKAGES", statusSummary, nil
+  if targetQualifiedPackageCount == 0 then
+    local statusSummary = formatPackageValidationSummary(0, #waveTemplate.packages, 0, targetSkippedPackageCount)
+    return false, PROCESS_REASON.NO_VALID_PACKAGES, statusSummary, nil
   end
 
-  local modifiedTemplate = Utils.deepCopy(operation.template)
-  modifiedTemplate.packages = validPackages
+  return createAndInsertATOWaveFromTemplate(
+    saveData,
+    waveTemplate,
+    targetsByPackageIndex,
+    targetSkippedPackageCount,
+    reconEntry.type
+  )
+end
 
-  local success, waveName, timingLogEntries = insertATOWave(saveData, modifiedTemplate, reconEntry.type)
-  if not success then
-    return false, "INSERTION_FAILED", statusSummary, {
-      waveName = waveName,
-      timingLogEntries = timingLogEntries or {}
-    }
+---Classify a processed air operation result into a log outcome
+---@param success boolean Whether the operation inserted an ATO wave
+---@param reason? string Process reason from PROCESS_REASON
+---@return string # Operation outcome from OPERATION_OUTCOME
+local function classifyOperationOutcome(success, reason)
+  if success then
+    return OPERATION_OUTCOME.OK
   end
 
-  return true, nil, statusSummary, {
-    waveName = waveName,
-    timingLogEntries = timingLogEntries or {}
-  }
+  if reason == PROCESS_REASON.NO_VALID_PACKAGES then
+    return OPERATION_OUTCOME.SKIP
+  end
+
+  if reason == PROCESS_REASON.MISSING_TEMPLATE then
+    return OPERATION_OUTCOME.MISSING_TEMPLATE
+  end
+
+  return OPERATION_OUTCOME.FAIL
+end
+
+---Format one processed air operation result into a log line
+---@param result table Processed operation result
+---@return string level Log entry level
+---@return string message Log-safe operation result message
+local function formatProcessedResultLine(result)
+  if result.outcome == OPERATION_OUTCOME.OK then
+    local msg = string.format(
+      "operation=%s operationBatchTime=%q operationBatchType=%s wave=%s %s",
+      LogFormat.value(result.operationName),
+      result.operationBatchTime,
+      LogFormat.value(result.operationBatchType),
+      LogFormat.value(result.waveName),
+      result.statusSummary or "status=none"
+    )
+    return "OK", msg
+  end
+
+  if result.outcome == OPERATION_OUTCOME.SKIP then
+    local msg = string.format(
+      "operation=%s operationBatchTime=%q operationBatchType=%s reason=no_valid_packages %s",
+      LogFormat.value(result.operationName),
+      result.operationBatchTime,
+      LogFormat.value(result.operationBatchType),
+      result.statusSummary or "status=none"
+    )
+    return "SKIP", msg
+  end
+
+  if result.outcome == OPERATION_OUTCOME.MISSING_TEMPLATE then
+    local msg = string.format(
+      "operation=%s operationBatchTime=%q operationBatchType=%s reason=missing_wave_template",
+      LogFormat.value(result.operationName),
+      result.operationBatchTime,
+      LogFormat.value(result.operationBatchType)
+    )
+    return "ERROR", msg
+  end
+
+  local msg = string.format(
+    "operation=%s operationBatchTime=%q operationBatchType=%s reason=%s %s",
+    LogFormat.value(result.operationName),
+    result.operationBatchTime,
+    LogFormat.value(result.operationBatchType),
+    LogFormat.value(string.lower(result.reason or "unknown")),
+    result.statusSummary or "status=none"
+  )
+  return "FAIL", msg
+end
+
+---Emit consolidated logs for processed air operation results
+---@param processedResults table[] Processed operation results accumulated in one tick
+local function emitProcessedResultsLog(processedResults)
+  if #processedResults == 0 then
+    return
+  end
+
+  local infoLines = {}
+  local errorLines = {}
+  local timingLines = {}
+
+  for _, result in ipairs(processedResults) do
+    local level, message = formatProcessedResultLine(result)
+    local line = LogFormat.entry(level, message)
+
+    if level == "ERROR" or level == "FAIL" then
+      table.insert(errorLines, line)
+    else
+      table.insert(infoLines, line)
+    end
+
+    if result.timingLogEntries then
+      for _, entry in ipairs(result.timingLogEntries) do
+        table.insert(timingLines, entry)
+      end
+    end
+  end
+
+  if #infoLines > 0 then
+    Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
+      "scope", "dynamicAirOperations", "Process operations", infoLines)
+    )
+  end
+
+  if #timingLines > 0 then
+    Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
+      "scope", "dynamicAirTiming", "Build ATO wave timing", timingLines)
+    )
+  end
+
+  if #errorLines > 0 then
+    Logger.error(LogFormat.summary(
+      "scope", "dynamicAirOperations", "Process operations", errorLines)
+    )
+  end
 end
 
 -- ============================================================================
@@ -633,10 +864,16 @@ function DynamicATOInsertion.process(config, saveData, contacts)
 
     if isReconTriggered(operationBatch) then
       local operationName = (operation.template and operation.template.name) or "unknown"
-      local success, reason, statusSummary, details = processAirOperation(config, saveData, contacts, operationBatch,
-        operation)
+      local success, reason, statusSummary, details = processAirOperation(
+        config,
+        saveData,
+        contacts,
+        operationBatch,
+        operation
+      )
+      local outcome = classifyOperationOutcome(success, reason)
 
-      if reason ~= "MISSING_TEMPLATE" then
+      if reason ~= PROCESS_REASON.MISSING_TEMPLATE then
         DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, true)
       end
 
@@ -648,7 +885,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
         operationName = operationName,
         operationBatchTime = operationBatch.time,
         operationBatchType = operationBatch.type,
-        success = success,
+        outcome = outcome,
         reason = reason,
         statusSummary = statusSummary,
         waveName = details and details.waveName or nil,
@@ -657,66 +894,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     end
   end
 
-  if #processedResults > 0 then
-    local infoLines = {}
-    local errorLines = {}
-    local timingLines = {}
-
-    for _, r in ipairs(processedResults) do
-      if r.success then
-        table.insert(infoLines, LogFormat.entry("OK", string.format(
-          "operation=%s operationBatchTime=%q operationBatchType=%s wave=%s %s",
-          LogFormat.value(r.operationName),
-          r.operationBatchTime,
-          LogFormat.value(r.operationBatchType),
-          LogFormat.value(r.waveName),
-          r.statusSummary or "status=none")))
-      elseif r.reason == "NO_VALID_PACKAGES" then
-        table.insert(infoLines, LogFormat.entry("SKIP", string.format(
-          "operation=%s operationBatchTime=%q operationBatchType=%s reason=no_valid_packages %s",
-          LogFormat.value(r.operationName),
-          r.operationBatchTime,
-          LogFormat.value(r.operationBatchType),
-          r.statusSummary or "status=none")))
-      elseif r.reason == "MISSING_TEMPLATE" then
-        table.insert(errorLines, LogFormat.entry("ERROR", string.format(
-          "operation=%s operationBatchTime=%q operationBatchType=%s reason=missing_wave_template",
-          LogFormat.value(r.operationName),
-          r.operationBatchTime,
-          LogFormat.value(r.operationBatchType))))
-      else
-        table.insert(errorLines, LogFormat.entry("FAIL", string.format(
-          "operation=%s operationBatchTime=%q operationBatchType=%s reason=%s %s",
-          LogFormat.value(r.operationName),
-          r.operationBatchTime,
-          LogFormat.value(r.operationBatchType),
-          formatReason(r.reason),
-          r.statusSummary or "status=none")))
-      end
-
-      if r.timingLogEntries then
-        for _, entry in ipairs(r.timingLogEntries) do
-          table.insert(timingLines, entry)
-        end
-      end
-    end
-
-    if #infoLines > 0 then
-      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
-        "scope", "dynamicAirOperations", "Process operations", infoLines))
-    end
-
-    if #timingLines > 0 then
-      Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
-        "scope", "dynamicAirTiming", "Build ATO wave timing", timingLines))
-    end
-
-    if #errorLines > 0 then
-      Logger.error(LogFormat.summary(
-        "scope", "dynamicAirOperations", "Process operations", errorLines))
-    end
-  end
-
+  emitProcessedResultsLog(processedResults)
   return hasExecutedAny
 end
 
