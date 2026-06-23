@@ -71,7 +71,7 @@ src/
 ├── core/           # init, config, constants, schema, saveData
 ├── utils/          # gameApi, gameUtils, utils, logger
 ├── modules/
-│   ├── strikePlanner/  # ATO, fire support, recon, targeting (docs/strikePlanner/)
+│   ├── strikePlanner/  # ATO/FSP execution, recon, dynamic operation builders, targeting (docs/strikePlanner/)
 │   ├── ew/             # GNSS/comms jamming, SIGINT (docs/ew/)
 │   ├── landingOps/     # Amphibious assault, logistics, ship movement (docs/landingOps/)
 │   ├── missileSystem   # TEL management (docs/missileSystem.md)

@@ -1,6 +1,6 @@
-# reconOperationScheduler — 偵察觸發作戰排程
+# operationScheduler — 偵察觸發作戰排程
 
-> 原始碼：`src/modules/strikePlanner/reconOperationScheduler.lua`
+> 原始碼：`src/modules/strikePlanner/operationScheduler.lua`
 
 **職責**：在偵察任務成功完成後，依 `reconObjectiveId` 建立後續 air/ground operations，並寫入 `reconTriggeredOperations`
 
@@ -8,11 +8,11 @@
 
 ## 概述
 
-`reconOperationScheduler` 是 [recon](recon.md) 從偵察生命週期拆出的動態作戰排程層。它不處理 UAV 發射、航線監控或衛星任務完成判定，只接收 `SBJ__ReconQueueProcessingContext` 與已完成且成功的 `SBJ__ReconQueueEntry`，再把偵察目標轉換成 `SBJ__Operation`。
+`operationScheduler` 是 [recon](recon.md) 從偵察生命週期拆出的動態作戰排程層。它不處理 UAV 發射、航線監控或衛星任務完成判定，只接收 `SBJ__ReconQueueProcessingContext` 與已完成且成功的 `SBJ__ReconQueueEntry`，再把偵察目標轉換成 `SBJ__Operation`。
 
 模組會依 `entry.reconObjectiveId` 查詢 `config.c.recon.strikeMappingsByReconObjective`，逐筆建立空中或地面作戰。空中作戰使用 `config.c.packageTemplates`，地面作戰使用 `config.c.fireSupportTaskTemplates`，兩者都會先把 strike mapping 名稱中的 `/` 轉成 `_` 當模板表鍵名。
 
-排程結果會新增為 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperations`。後續由 [dynamicATOInsertion](dynamicATOInsertion.md) 取出 `air` operation 生成 ATO Wave，並由 [dynamicFireSupportPlan](dynamicFireSupportPlan.md) 取出 `ground` operation 生成 FSEM。
+排程結果會新增為 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperations`。後續由 [atoBuilder](atoBuilder.md) 取出 `air` operation 生成 ATO Wave，並由 [fsemBuilder](fsemBuilder.md) 取出 `ground` operation 生成 FSEM。
 
 ---
 
@@ -41,9 +41,9 @@
 
 ### 下一波與重複排程防護
 
-若同名 operation 已存在於 `reconTriggeredOperations`，scheduler 不再建立同名作戰，但會嘗試以前綴尋找已執行的最新波次，呼叫 `DynamicOperationsUtils.generateNextOperation` 生成 `/N+1`。
+若同名 operation 已存在於 `reconTriggeredOperations`，scheduler 不再建立同名作戰，但會嘗試以前綴尋找已執行的最新波次，呼叫 `OperationScheduler.generateNextOperation` 生成 `/N+1`。
 
-當 `generateNextOperation` 回傳 `FOUND_NEXT`，模組會再呼叫 `DynamicOperationsUtils.hasPendingOperation` 檢查同名下一波是否已排入但尚未執行。若已存在，會輸出 `[SKIP] reason=already_pending`，防止同一個 `/N+1` 被多次偵察完成重複排入。
+當 `generateNextOperation` 回傳 `FOUND_NEXT`，模組會再呼叫 `OperationScheduler.hasPendingOperation` 檢查同名下一波是否已排入但尚未執行。若已存在，會輸出 `[SKIP] reason=already_pending`，防止同一個 `/N+1` 被多次偵察完成重複排入。
 
 ---
 
@@ -51,7 +51,7 @@
 
 ```mermaid
 flowchart TD
-    START["ReconOperationScheduler.schedule"]
+    START["OperationScheduler.schedule"]
     CONTEXT["getLastExecutedOperationsAndNextTime<br>取得現有動態作戰脈絡"]
     MAPTABLE{"strikeMappingsByReconObjective<br>存在?"}
     OBJECTIVE{"entry.reconObjectiveId<br>存在?"}
@@ -147,7 +147,7 @@ saveData.c.dynamicOperations.reconTriggeredOperations
 
 - [recon](recon.md) — 偵察任務完成後呼叫 scheduler
 - [frontlineRedirect](frontlineRedirect.md) — 提供 sticky redirect 後的 mapping 改寫
-- [dynamicOperationsUtils](dynamicOperationsUtils.md) — 提供作戰查詢、下一波生成與 pending 檢查
-- [dynamicATOInsertion](dynamicATOInsertion.md) — 消費 `air` operation，生成 ATO Wave
-- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 消費 `ground` operation，生成 FSEM
+- [dynamicState](dynamicState.md) — 提供執行端共用的狀態、命名與 generated operation 登記
+- [atoBuilder](atoBuilder.md) — 消費 `air` operation，生成 ATO Wave
+- [fsemBuilder](fsemBuilder.md) — 消費 `ground` operation，生成 FSEM
 - [系統架構](README.md)

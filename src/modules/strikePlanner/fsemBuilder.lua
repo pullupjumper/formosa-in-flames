@@ -4,10 +4,10 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
-local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local constants = require("src.core.constants")
 
-local DynamicFireSupportPlan = {}
+local FsemBuilder = {}
 local FIRING_UNIT_STATUS = {
   AVAILABLE = "available",
   MISSING_NAME = "missing_name",
@@ -246,7 +246,7 @@ end
 ---@return boolean # True if FSEM was successfully inserted and registered
 local function insertMatrix(saveData, newMatrix)
   saveData.c.ground.fireSupportPlan[newMatrix.name] = newMatrix
-  DynamicOperationsUtils.registerGeneratedOperation("ground", newMatrix.name, saveData)
+  DynamicState.registerGeneratedOperation("ground", newMatrix.name, saveData)
   return true
 end
 
@@ -358,7 +358,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data for uniqueness check
 ---@return string # Generated unique matrix name
 local function buildMatrixName(matrixTemplate, reconType, saveData)
-  return DynamicOperationsUtils.generateUniqueGroundOperationName(
+  return DynamicState.generateUniqueGroundOperationName(
     matrixTemplate.name:match("([^/]+)") or matrixTemplate.name,
     reconType,
     saveData
@@ -544,7 +544,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
 ---@return boolean # True if any ground operation was processed and executed, false if disabled or none ready
-function DynamicFireSupportPlan.execute(config, saveData, contacts)
+function FsemBuilder.execute(config, saveData, contacts)
   if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.enabled then
     return false
   end
@@ -554,7 +554,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   local windowSec = config.c.recon.observationWindowSec
   local hasExecutedAny = false
 
-  local groundOperations = DynamicOperationsUtils.filterOperationsByType(
+  local groundOperations = DynamicState.filterOperationsByType(
     saveData.c.dynamicOperations.reconTriggeredOperations,
     "ground"
   )
@@ -572,7 +572,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
     local windowState = evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
     if windowState == OBSERVATION_STATE.EXPIRED then
-      DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
+      DynamicState.markOperationExecuted(operationBatch, operation, false)
       table.insert(processedResults, {
         operationName = operationName,
         operationBatchTime = operationBatch.time,
@@ -589,7 +589,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
       )
 
       if success then
-        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, true)
+        DynamicState.markOperationExecuted(operationBatch, operation, true)
         hasExecutedAny = true
         table.insert(processedResults, {
           operationName = operationName,
@@ -599,7 +599,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
           statusSummary = statusSummary,
         })
       elseif reason == PROCESS_REASON.MISSING_TEMPLATE then
-        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
+        DynamicState.markOperationExecuted(operationBatch, operation, false)
         table.insert(processedResults, {
           operationName = operationName,
           operationBatchTime = operationBatch.time,
@@ -620,7 +620,7 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
         })
       else
         -- Unknown failure reason; mark executed to avoid infinite retry.
-        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, false)
+        DynamicState.markOperationExecuted(operationBatch, operation, false)
         table.insert(processedResults, {
           operationName = operationName,
           operationBatchTime = operationBatch.time,
@@ -638,4 +638,4 @@ function DynamicFireSupportPlan.execute(config, saveData, contacts)
   return hasExecutedAny
 end
 
-return DynamicFireSupportPlan
+return FsemBuilder

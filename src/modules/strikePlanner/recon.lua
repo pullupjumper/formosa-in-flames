@@ -3,7 +3,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local FrontlineRedirect = require("src.modules.strikePlanner.frontlineRedirect")
-local ReconOperationScheduler = require("src.modules.strikePlanner.reconOperationScheduler")
+local OperationScheduler = require("src.modules.strikePlanner.operationScheduler")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
@@ -217,7 +217,7 @@ local function settleReconMission(processingContext, entry, success)
 
   if success then
     -- Mission successful: intelligence data is complete, schedule next wave operations
-    ReconOperationScheduler.schedule(processingContext, entry)
+    OperationScheduler.schedule(processingContext, entry)
     return MISSION_RESULT.SUCCESS
   else
     -- Mission failed: intelligence data is incomplete, skip scheduling

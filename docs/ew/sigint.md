@@ -167,7 +167,7 @@ SIGINT 的 `transmissions` 資料被 `targetingProcess.lua` 的 `findRadioDirect
 1. 合併地面目標與 C2 設施的感測器接觸
 2. 計算每個接觸與 `transmissions` 中各無線電源的距離
 3. 僅保留距離 <= `maxRange` 且偵測次數 > `maxCount` 的目標
-4. 產出的目標供 `dynamicFireSupportPlan` / `dynamicATOInsertion` 生成打擊任務
+4. 產出的目標供 `fsemBuilder` / `atoBuilder` 生成打擊任務
 
 ---
 

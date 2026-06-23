@@ -8,7 +8,7 @@
 
 ## 概述
 
-`airTaskingOrder` 是 Strike Planner 的空中打擊執行層，處理 `saveData.c.air.airTaskingOrder` 內所有 `isActivated == true` 且尚未完成的 Wave。模組不負責產生 Wave；靜態資料可由初始化流程寫入，動態資料則由 [dynamicATOInsertion](dynamicATOInsertion.md) 插入。
+`airTaskingOrder` 是 Strike Planner 的空中打擊執行層，處理 `saveData.c.air.airTaskingOrder` 內所有 `isActivated == true` 且尚未完成的 Wave。模組不負責產生 Wave；靜態資料可由初始化流程寫入，動態資料則由 [atoBuilder](atoBuilder.md) 插入。
 
 每次呼叫 `airStrike()` 時，模組會依序推進各 Package 的生命週期。若時間到達掛彈窗口，先對基地內符合 `unitDBID` 的飛機設定 `loadoutID`；掛彈完成且最早出發角色達到出擊窗口後，才建立任務、排程偵察 UAV、指派目標與派遣飛機。
 
@@ -229,8 +229,8 @@ saveData.c
 
 ## 相關模組
 
-- [dynamicATOInsertion](dynamicATOInsertion.md) — 產生並插入動態 ATO Wave。
-- [dynamicOperationsUtils](dynamicOperationsUtils.md) — 動態作戰命名與登記，由插入層使用。
+- [atoBuilder](atoBuilder.md) — 產生並插入動態 ATO Wave。
+- [dynamicState](dynamicState.md) — 動態作戰命名與登記，由插入層使用。
 - [targetingProcess](targetingProcess.md) — 由插入層先產生 `target.list`，本模組只負責指派。
 - [recon](recon.md) — 本模組呼叫 `Recon.insertEntry()` 排入打擊後偵察 UAV；偵察佇列中的任務則由 recon 執行。
 - [系統架構](README.md)

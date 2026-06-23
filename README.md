@@ -5,7 +5,7 @@ A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait confl
 ## Features
 
 - **Modular, event-driven architecture** orchestrated from `src/core/init.lua`.
-- **Strike Planner** — Air Tasking Order (ATO), dynamic ATO insertion, fire support plans, recon, and targeting pipelines.
+- **Strike Planner** — ATO/FSP execution, recon-triggered operation scheduling, dynamic ATO/FSEM builders, and targeting pipelines.
 - **Electronic Warfare** — GNSS jamming, communications jamming, and SIGINT.
 - **Amphibious Landing Operations** — assault waves, logistics, unloading, ship movement.
 - **Missile System** — TEL concealment, deployment cycles, movement, ammo, and trigger management.
@@ -20,7 +20,7 @@ A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait confl
 │   ├── core/           # init, config, constants, schema, saveData
 │   ├── utils/          # gameApi, gameUtils, utils, logger
 │   ├── modules/
-│   │   ├── strikePlanner/   # ATO, fire support, recon, targeting
+│   │   ├── strikePlanner/   # ATO/FSP execution, recon, dynamic operation builders, targeting
 │   │   ├── ew/              # GNSS/comms jamming, SIGINT
 │   │   ├── landingOps/      # amphibious assault, logistics, ship movement
 │   │   ├── missileSystem/   # TEL management

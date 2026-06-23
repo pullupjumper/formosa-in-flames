@@ -3,7 +3,7 @@ local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
-local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local OperationScheduler = require("src.modules.strikePlanner.operationScheduler")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local BaseConfig = require("src.core.config")
@@ -426,10 +426,10 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -447,10 +447,10 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -503,10 +503,10 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -526,10 +526,10 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -550,10 +550,10 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -588,7 +588,7 @@ describe("Recon", function()
       local entry = makeSatelliteEntry()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
 
@@ -625,7 +625,7 @@ describe("Recon", function()
       local entry = makeSIGINTEntry()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
 
@@ -649,7 +649,7 @@ describe("Recon", function()
         if time == satEntry.endTime then return true end
         return false
       end))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
 
@@ -675,11 +675,11 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
-      trackStub(stub(DynamicOperationsUtils, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "STRIKE/C2/2" } }, "FOUND_NEXT"
       ))
 
@@ -707,10 +707,10 @@ describe("Recon", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
-      trackStub(stub(DynamicOperationsUtils, "hasOperation").returns(false))
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false))
 
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
@@ -784,7 +784,7 @@ describe("Recon", function()
       local entry = makeSatelliteEntry()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(DynamicOperationsUtils, "getLastExecutedOperationsAndNextTime").returns({
+      trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
 

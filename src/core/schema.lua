@@ -1214,7 +1214,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- ============================================================================
 -- Dynamic Operations (ATO/FSEM)
 -- ============================================================================
--- Dynamic operations types for dynamicATOInsertion and dynamicFireSupportPlan modules
+-- Dynamic operations types for atoBuilder and fsemBuilder modules
 
 ---Generated operations tracker for dynamic operations
 ---@class SBJ__GeneratedOperationsTracker: table

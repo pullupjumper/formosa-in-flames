@@ -8,12 +8,12 @@
 
 ## 概述
 
-recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會委派 [reconOperationScheduler](reconOperationScheduler.md) 依照 `reconObjectiveId` 建立後續 `air` / `ground` operations。
+recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期。偵察成功完成後，會委派 [operationScheduler](operationScheduler.md) 依照 `reconObjectiveId` 建立後續 `air` / `ground` operations。
 
 除了偵察生命週期外，recon 只負責協調兩個拆分模組：
 
 - 每個 tick 開頭呼叫 [frontlineRedirect](frontlineRedirect.md)，更新 `saveData.c.recon.frontlineRedirected` sticky 旗標。
-- 偵察成功結算時呼叫 [reconOperationScheduler](reconOperationScheduler.md)，將完成的偵察 entry 轉成 `saveData.c.dynamicOperations.reconTriggeredOperations` 批次。
+- 偵察成功結算時呼叫 [operationScheduler](operationScheduler.md)，將完成的偵察 entry 轉成 `saveData.c.dynamicOperations.reconTriggeredOperations` 批次。
 
 [airbaseAttrition](airbaseAttrition.md) 是 `frontlineRedirect` 的下游統計工具，recon 不直接呼叫。
 
@@ -92,7 +92,7 @@ flowchart TD
     UAV["processUAVEntry<br>發射 / 監控 / 完成判定"]
     SAT["processSatelliteEntry<br>時間到即完成"]
     SUCCESS{"偵察成功?"}
-    SCHED["ReconOperationScheduler.schedule<br>建立 reconTriggeredOperations"]
+    SCHED["OperationScheduler.schedule<br>建立 reconTriggeredOperations"]
     LOG["輸出 RECON summary log"]
 
     TICK --> REDIRECT --> LOOP --> ENTRY
@@ -105,7 +105,7 @@ flowchart TD
 | 協調點 | recon 的責任 | 詳細文件 |
 |---|---|---|
 | 前線重導向 | 每 tick 呼叫 `FrontlineRedirect.evaluate`；若回傳 activation message，統一用 RECON log 輸出 | [frontlineRedirect](frontlineRedirect.md) |
-| 偵察完成排程 | 偵察成功時呼叫 `ReconOperationScheduler.schedule`；失敗時不排程 | [reconOperationScheduler](reconOperationScheduler.md) |
+| 偵察完成排程 | 偵察成功時呼叫 `OperationScheduler.schedule`；失敗時不排程 | [operationScheduler](operationScheduler.md) |
 | 機場戰損統計 | 不直接呼叫；由 `frontlineRedirect` 使用 | [airbaseAttrition](airbaseAttrition.md) |
 
 ---
@@ -202,7 +202,7 @@ flowchart TD
 |---|---|
 | `config.c.recon.queue` | 偵察佇列模板（被 `initReconQueueEntries` 深拷貝至 saveData） |
 | `config.c.recon.template` | 偵察 entry 模板字典（如 `BZK005_RECON_1`）；每筆含 `templateId`，`insertEntry` 動態插入時用它判斷該模板是否已重複 |
-| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；由 `reconOperationScheduler` 消費 |
+| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；由 `operationScheduler` 消費 |
 | `config.c.recon.frontlineRedirect` | 前線重導向設定；由 `FrontlineRedirect.evaluate` 消費 |
 | `saveData.c.recon.enabled` | 偵察系統是否啟用 |
 | `saveData.c.recon.queue` | 執行期偵察佇列（含 `hasLaunched` / `isFinished` / `unitGUID` 等狀態） |
@@ -217,10 +217,10 @@ flowchart TD
 
 ## 相關模組
 
-- [reconOperationScheduler](reconOperationScheduler.md) — 偵察完成後建立 recon-triggered operations
+- [operationScheduler](operationScheduler.md) — 偵察完成後建立 recon-triggered operations
 - [frontlineRedirect](frontlineRedirect.md) — 前線基地戰損觸發與 strike mapping 改寫
 - [airbaseAttrition](airbaseAttrition.md) — 多基地駐機戰損統計
-- [dynamicATOInsertion](dynamicATOInsertion.md) — 從 reconTriggeredOperations 取出 air operations 並插入 ATO
-- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 從 reconTriggeredOperations 取出 ground operations 並插入 FSEM
+- [atoBuilder](atoBuilder.md) — 從 reconTriggeredOperations 取出 air operations 並插入 ATO
+- [fsemBuilder](fsemBuilder.md) — 從 reconTriggeredOperations 取出 ground operations 並插入 FSEM
 - [targetingProcess](targetingProcess.md) — 呼叫 `trackTarget` 進行偵察追蹤觸發
 - [系統架構](README.md)

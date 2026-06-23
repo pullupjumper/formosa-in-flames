@@ -27,7 +27,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | **Find** | [recon](recon.md), [targetingProcess](targetingProcess.md) | UAV/衛星偵察、感測器接觸辨識 |
 | **Fix** | [targetingProcess](targetingProcess.md) | 目標分類與定位（機場、港口、SAM、C2） |
 | **Track** | [recon](recon.md), [targetingProcess](targetingProcess.md) | UAV 持續追蹤、SIGINT 無線電測向 |
-| **Target** | [targetingProcess](targetingProcess.md), [dynamicFireSupportPlan](dynamicFireSupportPlan.md), [dynamicATOInsertion](dynamicATOInsertion.md) | 目標篩選、BDA 評估、打擊任務生成 |
+| **Target** | [targetingProcess](targetingProcess.md), [fsemBuilder](fsemBuilder.md), [atoBuilder](atoBuilder.md) | 目標篩選、BDA 評估、打擊任務生成 |
 | **Engage** | [airTaskingOrder](airTaskingOrder.md), [fireSupportPlan](fireSupportPlan.md) | ATO/FSP 任務執行 |
 | **Assess** | [targetingProcess](targetingProcess.md) (BDA), [recon](recon.md) | 戰損評估、下一波偵察排程 |
 
@@ -40,13 +40,13 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | 角色 | 模組 | 說明 |
 |---|---|---|
 | 目標資料來源 | [targetingProcess](targetingProcess.md) | 建立與查詢目標清單，供空中與地面打擊使用。 |
-| 偵察排程者 | [recon](recon.md) / [reconOperationScheduler](reconOperationScheduler.md) | recon 管理偵察生命週期，scheduler 將偵察結果轉為後續 air/ground operations。 |
+| 偵察排程者 | [recon](recon.md) / [operationScheduler](operationScheduler.md) | recon 管理偵察生命週期，scheduler 將偵察結果轉為後續 air/ground operations。 |
 | 前線重導向 | [frontlineRedirect](frontlineRedirect.md), [airbaseAttrition](airbaseAttrition.md) | 依前線基地駐機戰損啟用 sticky redirect，將符合規則的 strike mapping 改用 AAR 編組。 |
-| 動態空中生成者 | [dynamicATOInsertion](dynamicATOInsertion.md) | 驗證目標與機隊資源後插入 ATO Wave。 |
+| 動態空中生成者 | [atoBuilder](atoBuilder.md) | 驗證目標與機隊資源後插入 ATO Wave。 |
 | 靜態/動態 ATO 執行者 | [airTaskingOrder](airTaskingOrder.md) | 執行所有已啟動 Wave，不區分來源。 |
-| 動態地面生成者 | [dynamicFireSupportPlan](dynamicFireSupportPlan.md) | 驗證目標與發射單元後插入 FSEM。 |
+| 動態地面生成者 | [fsemBuilder](fsemBuilder.md) | 驗證目標與發射單元後插入 FSEM。 |
 | 靜態/動態 FSP 執行者 | [fireSupportPlan](fireSupportPlan.md) | 執行所有已啟動 FSEM，不區分來源。 |
-| 共用狀態工具 | [dynamicOperationsUtils](dynamicOperationsUtils.md) | 管理 recon-triggered operation 狀態、命名與 generated operation 登記。 |
+| 共用狀態工具 | [dynamicState](dynamicState.md) | 管理 recon-triggered operation 狀態、命名與 generated operation 登記。 |
 
 ### 模組摘要
 
@@ -54,14 +54,14 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 |---|---|---|
 | [targetingProcess](targetingProcess.md) | `targetingProcess.lua` | 目標掃描、分類、動態篩選與 BDA 評估 |
 | [recon](recon.md) | `recon.lua` | UAV/衛星偵察生命週期管理，並協調動態作戰排程 |
-| [reconOperationScheduler](reconOperationScheduler.md) | `reconOperationScheduler.lua` | 偵察完成後建立 recon-triggered air/ground operations |
+| [operationScheduler](operationScheduler.md) | `operationScheduler.lua` | 偵察完成後建立 recon-triggered air/ground operations |
 | [frontlineRedirect](frontlineRedirect.md) | `frontlineRedirect.lua` | 依前線基地戰損觸發 sticky 重導向與 strike mapping 改寫 |
 | [airbaseAttrition](airbaseAttrition.md) | `airbaseAttrition.lua` | 彙整多基地駐機戰損與整體 attrition |
 | [airTaskingOrder](airTaskingOrder.md) | `airTaskingOrder.lua` | ATO 執行（掛彈、任務建立、目標指派、單元派遣） |
 | [fireSupportPlan](fireSupportPlan.md) | `fireSupportPlan.lua` | FSP 執行（發射單元部署與打擊） |
-| [dynamicFireSupportPlan](dynamicFireSupportPlan.md) | `dynamicFireSupportPlan.lua` | 動態 FSEM 生成（偵察驅動） |
-| [dynamicATOInsertion](dynamicATOInsertion.md) | `dynamicATOInsertion.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
-| [dynamicOperationsUtils](dynamicOperationsUtils.md) | `dynamicOperationsUtils.lua` | 動態作戰共用工具（排程、命名、狀態追蹤） |
+| [fsemBuilder](fsemBuilder.md) | `fsemBuilder.lua` | 動態 FSEM 生成（偵察驅動） |
+| [atoBuilder](atoBuilder.md) | `atoBuilder.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
+| [dynamicState](dynamicState.md) | `dynamicState.lua` | 動態作戰狀態工具（命名、登記、狀態追蹤） |
 
 ---
 
@@ -76,10 +76,10 @@ flowchart TB
     end
 
     subgraph 動態路徑["動態計畫路徑"]
-        DFSP["dynamicFireSupportPlan<br>.execute()"]
-        DATO["dynamicATOInsertion<br>.process()"]
+        DFSP["fsemBuilder<br>.execute()"]
+        DATO["atoBuilder<br>.process()"]
         RECON["recon<br>.processQueue()"]
-        RSCHED["reconOperationScheduler<br>.schedule()"]
+        RSCHED["operationScheduler<br>.schedule()"]
         FREDIR["frontlineRedirect<br>.evaluate/applyMappings()"]
         ATTR["airbaseAttrition<br>.calculate()"]
     end
@@ -91,7 +91,7 @@ flowchart TB
 
     subgraph 共用模組
         TP["targetingProcess"]
-        DOU["dynamicOperationsUtils"]
+        DSTATE["dynamicState"]
     end
 
     TRIGGER --> DFSP
@@ -101,18 +101,17 @@ flowchart TB
     TRIGGER --> ATO
 
     DFSP --> TP
-    DFSP --> DOU
+    DFSP --> DSTATE
     DATO --> TP
-    DATO --> DOU
+    DATO --> DSTATE
     RECON --> RSCHED
     RECON --> FREDIR
     RSCHED --> FREDIR
-    RSCHED --> DOU
     FREDIR --> ATTR
 
     style TRIGGER fill:#137cbd
     style TP fill:#d9822b
-    style DOU fill:#0f9960
+    style DSTATE fill:#0f9960
 ```
 
 ### 動態作戰循環
@@ -120,7 +119,7 @@ flowchart TB
 ```mermaid
 flowchart LR
     RECON_COMPLETE["偵察完成"]
-    SCHED["排程動態作戰<br>ReconOperationScheduler.schedule"]
+    SCHED["排程動態作戰<br>OperationScheduler.schedule"]
     RECON_SCHED["reconTriggeredOperations<br>新增偵察觸發作戰批次"]
     DFSP_EXEC["DynamicFSP.execute()"]
     DATO_EXEC["DynamicATO.process()"]
@@ -232,26 +231,25 @@ flowchart BT
     subgraph Strike Planner
         TP["targetingProcess"]
         RECON["recon"]
-        DOU["dynamicOperationsUtils"]
-        RSCHED["reconOperationScheduler"]
+        DSTATE["dynamicState"]
+        RSCHED["operationScheduler"]
         FREDIR["frontlineRedirect"]
         ATTR["airbaseAttrition"]
         ATO["airTaskingOrder"]
         FSP["fireSupportPlan"]
-        DFSP["dynamicFireSupportPlan"]
-        DATO["dynamicATOInsertion"]
+        DFSP["fsemBuilder"]
+        DATO["atoBuilder"]
     end
 
     ATO --> UTILS & GAMEAPI & GAMEUTILS & ASSIGN & RECON
     FSP --> GAMEAPI & GAMEUTILS & ATTACK & MISSILE & CONSTANTS
-    DFSP --> TP & DOU & GAMEAPI & UTILS & MISSILE & CONSTANTS
-    DATO --> TP & DOU & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
+    DFSP --> TP & DSTATE & GAMEAPI & UTILS & MISSILE & CONSTANTS
+    DATO --> TP & DSTATE & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
     RECON --> RSCHED & FREDIR & GAMEAPI & GAMEUTILS & UTILS & CONSTANTS
-    RSCHED --> DOU & FREDIR & LOGGER & CONSTANTS
+    RSCHED --> FREDIR & GAMEAPI & UTILS & LOGGER & CONSTANTS
     FREDIR --> ATTR & UTILS
     ATTR --> GAMEAPI & UTILS & CONSTANTS
     TP --> GAMEAPI & UTILS & RECON & CONSTANTS
-    DOU --> UTILS & GAMEAPI
 ```
 
 ---
@@ -265,9 +263,9 @@ flowchart BT
 | `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
 | `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
 | `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
-| `config.c.recon.observationWindowSec` | ground operation 的觀測窗長度；由 `dynamicFireSupportPlan` 消費 scheduler 建立的 ground operations 時使用 |
-| `config.c.packageTemplates` | 空中打擊包模板；`reconOperationScheduler` 建立 air operation template，`dynamicATOInsertion` 轉為 Wave |
-| `config.c.fireSupportTaskTemplates` | 火力支援任務模板；`reconOperationScheduler` 建立 ground operation template，`dynamicFireSupportPlan` 轉為 FSEM |
+| `config.c.recon.observationWindowSec` | ground operation 的觀測窗長度；由 `fsemBuilder` 消費 scheduler 建立的 ground operations 時使用 |
+| `config.c.packageTemplates` | 空中打擊包模板；`operationScheduler` 建立 air operation template，`atoBuilder` 轉為 Wave |
+| `config.c.fireSupportTaskTemplates` | 火力支援任務模板；`operationScheduler` 建立 ground operation template，`fsemBuilder` 轉為 FSEM |
 | `config.c.air.landBased.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
 | `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |
 | `config.c.sigint.maxCount` | SIGINT 偵測次數門檻 |

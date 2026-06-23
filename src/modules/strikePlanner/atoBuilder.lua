@@ -4,10 +4,10 @@ local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local constants = require("src.core.constants")
 
-local DynamicATOInsertion = {}
+local AtoBuilder = {}
 
 -- Time constants
 local TIME_CONSTANTS = {
@@ -597,7 +597,7 @@ end
 ---@return boolean # True if wave was successfully inserted
 local function insertWave(saveData, wave)
   saveData.c.air.airTaskingOrder[wave.name] = wave
-  DynamicOperationsUtils.registerGeneratedOperation("air", wave.name, saveData)
+  DynamicState.registerGeneratedOperation("air", wave.name, saveData)
   return true
 end
 
@@ -607,7 +607,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data for uniqueness check
 ---@return string # Generated unique wave name
 local function buildWaveName(waveTemplate, reconType, saveData)
-  return DynamicOperationsUtils.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
+  return DynamicState.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
 end
 
 ---Create actual ATO wave from template and evaluation results
@@ -838,7 +838,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
-function DynamicATOInsertion.process(config, saveData, contacts)
+function AtoBuilder.process(config, saveData, contacts)
   if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.enabled then
     return false
   end
@@ -850,7 +850,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
     return false
   end
 
-  local airOperations = DynamicOperationsUtils.filterOperationsByType(reconTriggeredOperations, "air")
+  local airOperations = DynamicState.filterOperationsByType(reconTriggeredOperations, "air")
   if #airOperations == 0 then
     return false
   end
@@ -874,7 +874,7 @@ function DynamicATOInsertion.process(config, saveData, contacts)
       local outcome = classifyOperationOutcome(success, reason)
 
       if reason ~= PROCESS_REASON.MISSING_TEMPLATE then
-        DynamicOperationsUtils.markOperationExecuted(operationBatch, operation, true)
+        DynamicState.markOperationExecuted(operationBatch, operation, true)
       end
 
       if success then
@@ -898,4 +898,4 @@ function DynamicATOInsertion.process(config, saveData, contacts)
   return hasExecutedAny
 end
 
-return DynamicATOInsertion
+return AtoBuilder

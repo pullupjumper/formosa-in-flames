@@ -276,7 +276,7 @@ saveData.c.ground
 
 | 文件 | 關係 |
 |---|---|
-| [dynamicFireSupportPlan](dynamicFireSupportPlan.md) | 動態產生 FSEM 並插入 `saveData.c.ground.fireSupportPlan`，由本模組後續執行。 |
+| [fsemBuilder](fsemBuilder.md) | 動態產生 FSEM 並插入 `saveData.c.ground.fireSupportPlan`，由本模組後續執行。 |
 | [targetingProcess](targetingProcess.md) | 提供動態 FSEM 生成時的目標評估；本模組只消耗已寫入 FST 的 target list。 |
 | [missileSystem](../missileSystem/README.md) | 管理 firing unit 狀態機、移動、stow 與 reload。 |
 | [attackManager](../attackManager.md) | 實際執行 `attackContacts()` 發射流程。 |

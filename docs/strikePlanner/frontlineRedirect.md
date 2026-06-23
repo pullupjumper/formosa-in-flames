@@ -49,7 +49,7 @@
 rule.toPrefix .. mapping.name:sub(#rule.fromPrefix + 1)
 ```
 
-以目前設定為例，`STRIKE/AB/W/1` 會被改寫為 `STRIKE/AB/W/AAR/1`，使 [reconOperationScheduler](reconOperationScheduler.md) 查詢 `config.c.packageTemplates.STRIKE_AB_W_AAR_1`。
+以目前設定為例，`STRIKE/AB/W/1` 會被改寫為 `STRIKE/AB/W/AAR/1`，使 [operationScheduler](operationScheduler.md) 查詢 `config.c.packageTemplates.STRIKE_AB_W_AAR_1`。
 
 ---
 
@@ -128,6 +128,6 @@ saveData.c.recon
 ## 相關模組
 
 - [airbaseAttrition](airbaseAttrition.md) — 計算前線基地整體戰損率
-- [reconOperationScheduler](reconOperationScheduler.md) — 在建立 operation 前套用 mapping 改寫
+- [operationScheduler](operationScheduler.md) — 在建立 operation 前套用 mapping 改寫
 - [recon](recon.md) — 每 tick 呼叫 `evaluate`，並負責輸出 activation log
 - [系統架構](README.md)

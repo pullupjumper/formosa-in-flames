@@ -1,6 +1,6 @@
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
-local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
-local DynamicFireSupportPlan = require("src.modules.strikePlanner.dynamicFireSupportPlan")
+local AtoBuilder = require("src.modules.strikePlanner.atoBuilder")
+local FsemBuilder = require("src.modules.strikePlanner.fsemBuilder")
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local Recon = require("src.modules.strikePlanner.recon")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
@@ -78,7 +78,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 function StrikePlanner.executeDynamicFireSupportPlan(config, saveData, contacts)
-  DynamicFireSupportPlan.execute(config, saveData, contacts)
+  FsemBuilder.execute(config, saveData, contacts)
 end
 
 ---Execute dynamic air tasking order insertion
@@ -86,7 +86,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 function StrikePlanner.processDynamicATO(config, saveData, contacts)
-  DynamicATOInsertion.process(config, saveData, contacts)
+  AtoBuilder.process(config, saveData, contacts)
 end
 
 ---Execute ground fire support strikes for active matrices

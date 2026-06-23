@@ -119,5 +119,5 @@ flowchart TD
 ## 相關模組
 
 - [recon](recon.md) — `triggerReconTracking` 呼叫 `Recon.trackTarget` 指派追蹤
-- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) / [dynamicATOInsertion](dynamicATOInsertion.md) — 呼叫 `processTargets` 評估目標
+- [fsemBuilder](fsemBuilder.md) / [atoBuilder](atoBuilder.md) — 呼叫 `processTargets` 評估目標
 - [系統架構](README.md)

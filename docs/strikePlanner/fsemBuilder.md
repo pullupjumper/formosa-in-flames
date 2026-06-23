@@ -1,6 +1,6 @@
-# dynamicFireSupportPlan — 動態火力支援計畫
+# fsemBuilder — 動態 FSEM 生成
 
-> 原始碼：`src/modules/strikePlanner/dynamicFireSupportPlan.lua`
+> 原始碼：`src/modules/strikePlanner/fsemBuilder.lua`
 
 **職責**：在偵察觸發後的觀察窗內評估 ground operations，當目標與發射單元可用時產生 FSEM 並插入 `saveData.c.ground.fireSupportPlan`。
 
@@ -8,11 +8,11 @@
 
 ## 概述
 
-`dynamicFireSupportPlan` 是 Strike Planner 的動態地面打擊生成層。它不直接發射武器，而是消費 `saveData.c.dynamicOperations.reconTriggeredOperations` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 建立新的 `SBJ__FireSupportExecutionMatrix`。
+`fsemBuilder` 是 Strike Planner 的動態地面打擊生成層。它不直接發射武器，而是消費 `saveData.c.dynamicOperations.reconTriggeredOperations` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 建立新的 `SBJ__FireSupportExecutionMatrix`。
 
 模組以 observation window 控制重試行為。當情境時間進入 `operationBatch.time + operationBatch.delay` 到 `config.c.recon.observationWindowSec` 的區間後，operation 會每個 tick 重新評估目標與 firing units；若只是目標不足或發射單元暫不可用，operation 會保持 pending。
 
-成功建立 FSEM 時，模組會寫入 `saveData.c.ground.fireSupportPlan`，並透過 [dynamicOperationsUtils](dynamicOperationsUtils.md) 登記 generated ground operation 名稱。缺少 template、觀察窗逾時或未知失敗會標記 operation executed，避免無限重試。
+成功建立 FSEM 時，模組會寫入 `saveData.c.ground.fireSupportPlan`，並透過 [dynamicState](dynamicState.md) 登記 generated ground operation 名稱。缺少 template、觀察窗逾時或未知失敗會標記 operation executed，避免無限重試。
 
 ---
 
@@ -21,7 +21,7 @@
 | 相依 | 用途 |
 |---|---|
 | `src.modules.strikePlanner.targetingProcess` | 依 FST target template 與 contacts 產生可打擊目標 GUID 清單。 |
-| `src.modules.strikePlanner.dynamicOperationsUtils` | 篩選 ground operations、產生唯一 FSEM 名稱、登記 generated operation、標記 operation 結果。 |
+| `src.modules.strikePlanner.dynamicState` | 篩選 ground operations、產生唯一 FSEM 名稱、登記 generated operation、標記 operation 結果。 |
 | `src.modules.missileSystem.init` | 透過 `isLowAmmo()` 檢查發射單元彈量是否低於門檻。 |
 | `src.utils.gameApi` | 取得目前情境時間、查詢實際 CMO unit。 |
 | `src.utils.utils` | `deepCopy()` template、解析偵察時間字串。 |
@@ -83,7 +83,7 @@ stateDiagram-v2
 
 `buildExecutableTasks()` 是 FST 建構的 orchestration 層。它先收集已分配 firing unit 名稱，再依通過目標評估的 FST 選出可用 firing units，最後以 `Utils.deepCopy(taskTemplate)` 複製 template 並補上 runtime 欄位：`firingUnits`、`startTime`、`isFinished = false`、`target.list = targets`。
 
-FSEM 名稱由 `DynamicOperationsUtils.generateUniqueGroundOperationName()` 生成，會同時檢查 `generatedOperations.ground` 與既有 `fireSupportPlan`。成功後 `insertMatrix()` 將 matrix 寫入 FSP，並呼叫 `registerGeneratedOperation("ground", newMatrix.name, saveData)`。
+FSEM 名稱由 `DynamicState.generateUniqueGroundOperationName()` 生成，會同時檢查 `generatedOperations.ground` 與既有 `fireSupportPlan`。成功後 `insertMatrix()` 將 matrix 寫入 FSP，並呼叫 `registerGeneratedOperation("ground", newMatrix.name, saveData)`。
 
 ### 日誌輸出
 
@@ -103,7 +103,7 @@ FSEM 名稱由 `DynamicOperationsUtils.generateUniqueGroundOperationName()` 生�
 
 ```mermaid
 flowchart TD
-    ENTRY["DynamicFireSupportPlan.execute"]
+    ENTRY["FsemBuilder.execute"]
     ENABLED{"dynamicOperations enabled?"}
     FILTER["filterOperationsByType(..., ground)"]
     LOOP["逐一處理 ground operation"]
@@ -208,7 +208,7 @@ saveData.c
 
 | 函數 | 參數 | 回傳 | 呼叫者 | 說明 |
 |---|---|---|---|---|
-| `DynamicFireSupportPlan.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | `StrikePlanner.executeDynamicFireSupportPlan()` → `src/scripts/china/scheduledStrikePlanner.lua` | 處理尚未執行的 ground operations；若至少插入一個 FSEM，回傳 `true`。 |
+| `FsemBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | `StrikePlanner.executeDynamicFireSupportPlan()` → `src/scripts/china/scheduledStrikePlanner.lua` | 處理尚未執行的 ground operations；若至少插入一個 FSEM，回傳 `true`。 |
 
 ---
 
@@ -226,8 +226,8 @@ saveData.c
 ## 相關模組
 
 - [targetingProcess](targetingProcess.md) — 依 target template 與 contacts 解析可打擊目標。
-- [dynamicOperationsUtils](dynamicOperationsUtils.md) — 管理 recon-triggered operation 狀態、命名與 generated operation 登記。
+- [dynamicState](dynamicState.md) — 管理 recon-triggered operation 狀態、命名與 generated operation 登記。
 - [fireSupportPlan](fireSupportPlan.md) — 執行本模組插入的 FSEM。
-- [reconOperationScheduler](reconOperationScheduler.md) — 依偵察結果建立 ground operation template。
+- [operationScheduler](operationScheduler.md) — 依偵察結果建立 ground operation template。
 - [missileSystem](../missileSystem/README.md) — 提供 firing unit 狀態與彈量檢查相關功能。
 - [Strike Planner 系統架構](README.md)

@@ -1,6 +1,6 @@
-# dynamicATOInsertion — 動態空中任務令插入
+# atoBuilder — 動態 ATO Wave 生成
 
-> 原始碼：`src/modules/strikePlanner/dynamicATOInsertion.lua`
+> 原始碼：`src/modules/strikePlanner/atoBuilder.lua`
 
 **職責**：消費偵察觸發的 `air` operation，評估目標與機隊資源，產生可由 `airTaskingOrder` 執行的動態 ATO Wave。
 
@@ -8,11 +8,11 @@
 
 ## 概述
 
-`dynamicATOInsertion` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
+`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
 
 模組的主要流程分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
 
-插入 Wave 後，模組會透過 [dynamicOperationsUtils](dynamicOperationsUtils.md) 登記 generated operation，避免後續 tick 產生同名任務。若沒有有效 package，operation 會被標記為已處理但不插入 Wave；若 operation 缺少 template，則保留未執行狀態並輸出錯誤，讓後續仍可追蹤問題。
+插入 Wave 後，模組會透過 [dynamicState](dynamicState.md) 登記 generated operation，避免後續 tick 產生同名任務。若沒有有效 package，operation 會被標記為已處理但不插入 Wave；若 operation 缺少 template，則保留未執行狀態並輸出錯誤，讓後續仍可追蹤問題。
 
 ---
 
@@ -187,9 +187,9 @@ saveData.c
 |---|---|
 | `saveData.c.dynamicOperations.lastEvaluationTime` | 每次 `process()` 通過 enabled 檢查後寫入目前 CMO 時間。 |
 | `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時寫入新的 `SBJ__Wave`。 |
-| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicOperationsUtils.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
+| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicState.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
 | `operation.executed` / `operation.executionResult` | 透過 `markOperationExecuted()` 標記，`missing_template` 例外。 |
-| `operationBatch.executed` | 當 batch 內所有 operation 都完成時由 `DynamicOperationsUtils.checkOperationBatchCompleted()` 更新。 |
+| `operationBatch.executed` | 當 batch 內所有 operation 都完成時由 `DynamicState.checkOperationBatchCompleted()` 更新。 |
 
 ---
 
@@ -211,7 +211,7 @@ saveData.c
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
 | `config` | `config` 參數 | 本模組不直接索引特定 `config.*` 欄位；會原樣傳入 `TargetingProcess.processTargets()`。 |
-| `config` | `config.c.packageTemplates` | 上游 [reconOperationScheduler](reconOperationScheduler.md) 的 air operation template 來源，動態 operation 最終會攜帶 `SBJ__WaveTemplate` 進入本模組。 |
+| `config` | `config.c.packageTemplates` | 上游 [operationScheduler](operationScheduler.md) 的 air operation template 來源，動態 operation 最終會攜帶 `SBJ__WaveTemplate` 進入本模組。 |
 | `config` | `config.readytime` | 多數 package template 的 `timeToReady` 來源，runtime 以秒為單位；本模組 fallback 為 `5 * 60`。 |
 | `constants` | `constants.SIDES.ENEMY` | 讀取支援角色任務區 reference point。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出 dynamic ATO 處理結果與 timing log。 |
@@ -223,7 +223,7 @@ saveData.c
 | 模組 | 用途 |
 |---|---|
 | `src.modules.strikePlanner.targetingProcess` | 依 target template、contacts 與 BDA 條件產生可打擊目標清單。 |
-| `src.modules.strikePlanner.dynamicOperationsUtils` | 篩選 air operations、產生唯一 Wave 名稱、登記 generated operation、標記 operation 執行狀態。 |
+| `src.modules.strikePlanner.dynamicState` | 篩選 air operations、產生唯一 Wave 名稱、登記 generated operation、標記 operation 執行狀態。 |
 | `src.utils.gameApi` | 取得目前時間、基地/飛機/reference point、weapon DB 查詢與距離計算。 |
 | `src.utils.gameUtils` | 判斷 recon-triggered operation 是否已到觸發時間。 |
 | `src.utils.utils` | deep copy 與 UTC datetime 字串轉 timestamp。 |
@@ -237,7 +237,7 @@ saveData.c
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `DynamicATOInsertion.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有已到觸發時間的未執行 air operations；若至少成功插入一個 ATO Wave，回傳 `true`。 |
+| `AtoBuilder.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有已到觸發時間的未執行 air operations；若至少成功插入一個 ATO Wave，回傳 `true`。 |
 
 ### 呼叫者與觸發方式
 
@@ -253,7 +253,7 @@ saveData.c
 
 - [airTaskingOrder](airTaskingOrder.md) — 執行本模組插入的 ATO Wave。
 - [targetingProcess](targetingProcess.md) — 動態目標評估與 BDA 過濾。
-- [dynamicOperationsUtils](dynamicOperationsUtils.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
-- [reconOperationScheduler](reconOperationScheduler.md) — 偵察完成後建立 air operation template。
-- [dynamicFireSupportPlan](dynamicFireSupportPlan.md) — 對應的動態地面 FSEM 生成流程。
+- [dynamicState](dynamicState.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
+- [operationScheduler](operationScheduler.md) — 偵察完成後建立 air operation template。
+- [fsemBuilder](fsemBuilder.md) — 對應的動態地面 FSEM 生成流程。
 - [系統架構](README.md)

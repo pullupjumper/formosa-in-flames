@@ -1,14 +1,15 @@
--- DynamicATOInsertion Unit Tests
-local DynamicATOInsertion = require("src.modules.strikePlanner.dynamicATOInsertion")
+-- AtoBuilder Unit Tests
+local AtoBuilder = require("src.modules.strikePlanner.atoBuilder")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
-local DynamicOperationsUtils = require("src.modules.strikePlanner.dynamicOperationsUtils")
+local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local BaseConfig = require("src.core.config")
 
-describe("DynamicATOInsertion", function()
+
+describe("AtoBuilder", function()
   ---@type luassert.spy[]
   local activeStubs
   ---@type luassert.spy
@@ -54,7 +55,7 @@ describe("DynamicATOInsertion", function()
     }
   end
 
-  ---Create full typed config for DynamicATOInsertion tests
+  ---Create full typed config for AtoBuilder tests
   ---@return SBJ__Config
   local function makeConfig()
     return Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
@@ -91,7 +92,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
 
-    DynamicATOInsertion.process(makeConfig(), saveData, {})
+    AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.are.equal(5000, saveData.c.dynamicOperations.lastEvaluationTime)
   end)
@@ -133,7 +134,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -151,11 +152,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/AB/1/1"))
-    local stubRegister = trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/AB/1/1"))
+    local stubRegister = trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(stubRegister).was.called(1)
@@ -197,7 +198,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -212,11 +213,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    DynamicATOInsertion.process(makeConfig(), saveData, {})
+    AtoBuilder.process(makeConfig(), saveData, {})
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
 
@@ -275,7 +276,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -292,11 +293,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/ANTISHIP/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/ANTISHIP/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/AIRCRAFT/ANTISHIP/1/1"])
@@ -345,7 +346,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -368,11 +369,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -423,7 +424,7 @@ describe("DynamicATOInsertion", function()
       end
       return 1000
     end))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -445,11 +446,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -491,7 +492,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry1, operation = operation1 },
       { operationBatch = reconEntry2, operation = operation2 }
     }))
@@ -507,11 +508,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     -- markOperationExecuted called for operation2 (the one with template)
@@ -561,7 +562,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
       return baseTimestamp
     end))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -586,11 +587,11 @@ describe("DynamicATOInsertion", function()
       ranges = { land = { max = 50 } }
     }))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -643,7 +644,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
       return baseTimestamp
     end))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -664,11 +665,11 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns(nil))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -717,7 +718,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
       return baseTimestamp
     end))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -740,11 +741,11 @@ describe("DynamicATOInsertion", function()
       ranges = { land = { max = 50 } }
     }))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -783,7 +784,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
       return baseTimestamp
     end))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -805,11 +806,11 @@ describe("DynamicATOInsertion", function()
       ranges = { land = { max = 50 } }
     }))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -856,7 +857,7 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     -- parseDatetimeToTimestamp returns 1000, plus delay 500 = 1500
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     -- isAfterStartTime(1500) with current time 2000 => true
@@ -873,11 +874,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(stubMarkExecuted).was.called(1)
@@ -890,7 +891,7 @@ describe("DynamicATOInsertion", function()
   -- Negative: dynamicOperations not configured
   it("should return false when dynamicOperations is not configured", function()
     local saveData = { c = {} }
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: dynamicOperations disabled
@@ -900,7 +901,7 @@ describe("DynamicATOInsertion", function()
         dynamicOperations = { enabled = false }
       }
     }
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: reconTriggeredOperations nil
@@ -912,7 +913,7 @@ describe("DynamicATOInsertion", function()
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: reconTriggeredOperations empty
@@ -924,7 +925,7 @@ describe("DynamicATOInsertion", function()
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
   -- Negative: no air operations pending
@@ -938,9 +939,9 @@ describe("DynamicATOInsertion", function()
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    local stubFilterOps = trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({}))
+    local stubFilterOps = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
 
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
     assert.stub(stubFilterOps).was.called(1)
     assert.are.equal("air", stubFilterOps.calls[1].vals[2])
   end)
@@ -965,13 +966,13 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
     -- parseDatetimeToTimestamp returns 50, plus delay 600 = 650 > 100 (current time from isAfterStartTime)
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    assert.is_false(DynamicATOInsertion.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
     assert.stub(stubMarkExecuted).was_not.called()
   end)
 
@@ -990,14 +991,14 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
-    local stubMarkExecuted = trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    DynamicATOInsertion.process(makeConfig(), saveData, {})
+    AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.stub(stubGenName).was_not.called()
     -- MISSING_TEMPLATE reason skips markOperationExecuted
@@ -1035,15 +1036,15 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Returns only 1 target but minTargetCount = 5
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
+    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- No valid packages => no ATO wave inserted
     assert.is_false(result)
@@ -1077,7 +1078,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1094,7 +1095,7 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1130,7 +1131,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1147,11 +1148,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.are.equal(1, #saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"].packages)
@@ -1184,14 +1185,14 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
     -- Only 2 targets, minTargetCount = 3
     trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1223,7 +1224,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1240,11 +1241,11 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
   end)
@@ -1294,7 +1295,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1311,7 +1312,7 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- 4 available - 3 assigned = 1, below half-strength threshold (2) => fail
     assert.is_false(result)
@@ -1363,7 +1364,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1379,11 +1380,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- Launched waves not counted: 4 available - 0 assigned >= 3 required => pass
     assert.is_true(result)
@@ -1416,7 +1417,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1436,7 +1437,7 @@ describe("DynamicATOInsertion", function()
       return nil
     end))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- Only 1 available (AC-1), requires 4 => 1 < half-strength threshold (2) => fail
     assert.is_false(result)
@@ -1473,7 +1474,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1485,7 +1486,7 @@ describe("DynamicATOInsertion", function()
       embarkedUnits = nil
     }))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1517,7 +1518,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1525,7 +1526,7 @@ describe("DynamicATOInsertion", function()
     -- Base not found
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1558,7 +1559,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1573,11 +1574,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/1/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- insertATOWave returns false when airTaskingOrder is nil
     assert.is_false(result)
@@ -1601,12 +1602,12 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- No valid packages (empty) => no wave inserted
     assert.is_false(result)
@@ -1639,12 +1640,12 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- No valid packages (target is nil, processTargets returns empty) => rejected
     assert.is_false(result)
@@ -1677,12 +1678,12 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- Fixed path with no objs => empty targets => insufficient
     assert.is_false(result)
@@ -1716,12 +1717,12 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- Unknown filter => no targets found => package invalid => false
     assert.is_false(result)
@@ -1765,7 +1766,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1779,11 +1780,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/1"]
@@ -1826,7 +1827,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1843,7 +1844,7 @@ describe("DynamicATOInsertion", function()
       return { dbid = 100, mission = nil }
     end))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -1887,7 +1888,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1905,11 +1906,11 @@ describe("DynamicATOInsertion", function()
     end))
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/3"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/3"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/3"]
@@ -1965,7 +1966,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -1979,11 +1980,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/4"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/4"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/4"]
@@ -2026,7 +2027,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -2045,11 +2046,11 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/TANKER"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/TANKER"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/TANKER"]
@@ -2091,7 +2092,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -2110,11 +2111,11 @@ describe("DynamicATOInsertion", function()
     trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/JAMMER"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/FALLBACK/JAMMER"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/JAMMER"]
@@ -2154,7 +2155,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -2166,11 +2167,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/1"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/1"]
@@ -2207,7 +2208,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -2219,9 +2220,9 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    local stubGenName = trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName"))
+    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
     assert.stub(stubGenName).was_not.called()
@@ -2274,7 +2275,7 @@ describe("DynamicATOInsertion", function()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
-    trackStub(stub(DynamicOperationsUtils, "filterOperationsByType").returns({
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
       { operationBatch = reconEntry, operation = operation }
     }))
     trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -2289,11 +2290,11 @@ describe("DynamicATOInsertion", function()
       end
       return { dbid = 100, mission = nil }
     end))
-    trackStub(stub(DynamicOperationsUtils, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/3"))
-    trackStub(stub(DynamicOperationsUtils, "registerGeneratedOperation"))
-    trackStub(stub(DynamicOperationsUtils, "markOperationExecuted"))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/PARTIAL/3"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = DynamicATOInsertion.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/3"]
