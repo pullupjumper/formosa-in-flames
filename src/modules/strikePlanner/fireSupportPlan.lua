@@ -7,6 +7,20 @@ local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 local FireSupportPlan = {}
+local PLAN_OUTCOME = {
+  STRIKE = "strike",
+  PENDING = "pending",
+  FINISHED = "finished",
+  FAIL = "fail"
+}
+
+---@class SBJ__FireSupportPlanProcessedResult
+---@field matrixName string Matrix name
+---@field outcome string Result outcome from PLAN_OUTCOME
+---@field taskName? string Fire support task name
+---@field fired? integer Fired weapon count
+---@field notReadyNames? string[] Firing unit names not yet in position
+---@field reason? string Failure reason
 
 -- ============================================================================
 -- Firing Unit Readiness
@@ -92,7 +106,7 @@ end
 ---Launches attacks when start time reached and minimum target count met, marks tasks as finished
 ---@param saveData SBJ__SaveData Saved game state
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
----@return string[] # Strike result descriptions per task
+---@return {taskName: string, fired: integer}[] # Strike result records per task
 local function executeFireSupportTasks(saveData, matrix)
   local strikeResults = {}
 
@@ -117,7 +131,10 @@ local function executeFireSupportTasks(saveData, matrix)
         end
 
         task.isFinished = true
-        table.insert(strikeResults, string.format("task=%s fired=%d", LogFormat.value(task.name), result))
+        table.insert(strikeResults, {
+          taskName = task.name,
+          fired = result
+        })
       end
     end
   end
@@ -174,14 +191,76 @@ end
 -- Log Formatting
 -- ============================================================================
 
----Format strike results into summary string
----@param strikeResults string[] Strike result descriptions per task
----@return string # Formatted summary or "none"
-local function formatStrikeResults(strikeResults)
-  if #strikeResults == 0 then
-    return "none"
+---Format one processed matrix result into a log line
+---@param result SBJ__FireSupportPlanProcessedResult Processed matrix result
+---@return string level Log entry level
+---@return string message Log-safe matrix result message
+local function formatProcessedResultLine(result)
+  if result.outcome == PLAN_OUTCOME.STRIKE then
+    return "OK", string.format(
+      "matrix=%s action=strike task=%s fired=%d",
+      LogFormat.value(result.matrixName),
+      LogFormat.value(result.taskName),
+      result.fired or 0
+    )
   end
-  return table.concat(strikeResults, "; ")
+
+  if result.outcome == PLAN_OUTCOME.PENDING then
+    return "SKIP", string.format(
+      "matrix=%s task=%s reason=firing_units_not_in_position units=%q",
+      LogFormat.value(result.matrixName),
+      LogFormat.value(result.taskName),
+      table.concat(result.notReadyNames or {}, "; ")
+    )
+  end
+
+  if result.outcome == PLAN_OUTCOME.FINISHED then
+    return "OK", string.format(
+      "matrix=%s state=finished",
+      LogFormat.value(result.matrixName)
+    )
+  end
+
+  return "FAIL", string.format(
+    "matrix=%s reason=%s",
+    LogFormat.value(result.matrixName),
+    LogFormat.value(result.reason or "unknown")
+  )
+end
+
+---Emit consolidated logs for processed fire support plan results
+---@param processedResults SBJ__FireSupportPlanProcessedResult[] Processed matrix results accumulated in one tick
+local function emitProcessedResultsLog(processedResults)
+  if #processedResults == 0 then
+    return
+  end
+
+  local infoLines = {}
+  local errorLines = {}
+
+  for _, result in ipairs(processedResults) do
+    local level, message = formatProcessedResultLine(result)
+    local line = LogFormat.entry(level, message)
+
+    if level == "ERROR" or level == "FAIL" then
+      table.insert(errorLines, line)
+    else
+      table.insert(infoLines, line)
+    end
+  end
+
+  if #infoLines > 0 then
+    Logger.log(constants.TAGS.GROUND, LogFormat.summary(
+      "scope",
+      "fireSupportPlan",
+      "Execute fire support plan",
+      infoLines
+    ))
+  end
+
+  if #errorLines > 0 then
+    Logger.error(LogFormat.summary("scope", "fireSupportPlan", "Execute fire support plan", errorLines))
+  end
 end
 
 -- ============================================================================
@@ -192,7 +271,7 @@ end
 ---Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function FireSupportPlan.strike(saveData)
-  local infoLines = {}
+  local processedResults = {}
 
   for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
@@ -208,32 +287,35 @@ function FireSupportPlan.strike(saveData)
       end
 
       if #strikeResults > 0 then
-        table.insert(infoLines, LogFormat.entry("OK", string.format("matrix=%s action=strike %s",
-          LogFormat.value(matrix.name),
-          formatStrikeResults(strikeResults)
-        )))
+        for _, strikeResult in ipairs(strikeResults) do
+          table.insert(processedResults, {
+            matrixName = matrix.name,
+            taskName = strikeResult.taskName,
+            fired = strikeResult.fired,
+            outcome = PLAN_OUTCOME.STRIKE
+          })
+        end
       elseif #pendingTasks > 0 then
         for _, pendingTask in ipairs(pendingTasks) do
-          table.insert(infoLines, LogFormat.entry("SKIP", string.format(
-            "matrix=%s task=%s reason=firing_units_not_in_position units=%q",
-            LogFormat.value(matrix.name),
-            LogFormat.value(pendingTask.taskName),
-            table.concat(pendingTask.notReadyNames, "; ")
-          )))
+          table.insert(processedResults, {
+            matrixName = matrix.name,
+            taskName = pendingTask.taskName,
+            notReadyNames = pendingTask.notReadyNames,
+            outcome = PLAN_OUTCOME.PENDING
+          })
         end
       end
 
       if matrix.isFinished then
-        table.insert(infoLines, LogFormat.entry("OK", string.format(
-          "matrix=%s state=finished", LogFormat.value(matrix.name))))
+        table.insert(processedResults, {
+          matrixName = matrix.name,
+          outcome = PLAN_OUTCOME.FINISHED
+        })
       end
     end
   end
 
-  if #infoLines > 0 then
-    Logger.log(constants.TAGS.GROUND, LogFormat.summary(
-      "scope", "fireSupportPlan", "Execute fire support plan", infoLines))
-  end
+  emitProcessedResultsLog(processedResults)
 end
 
 return FireSupportPlan

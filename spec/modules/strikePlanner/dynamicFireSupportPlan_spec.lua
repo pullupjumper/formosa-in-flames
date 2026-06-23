@@ -35,6 +35,7 @@ describe("DynamicFireSupportPlan", function()
   local function makeBatteryContext(overrides)
     overrides = overrides or {}
     return {
+      name = overrides.name or "Battery-1",
       state = overrides.state or constants.MISSILE_SYSTEM_STATE.HIDE,
       ammoThreshold = overrides.ammoThreshold or 40,
       weaponDBID = overrides.weaponDBID or 3104
@@ -451,8 +452,11 @@ describe("DynamicFireSupportPlan", function()
         local saveData = makeSaveData({
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext(),
-            ["Battery-2"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }),
-            ["Battery-3"] = makeBatteryContext()
+            ["Battery-2"] = makeBatteryContext({
+              name = "Battery-2",
+              state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+            }),
+            ["Battery-3"] = makeBatteryContext({ name = "Battery-3" })
           },
           reconTriggeredOperations = { reconEntry }
         })
@@ -533,7 +537,7 @@ describe("DynamicFireSupportPlan", function()
         local saveData = makeSaveData({
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext(),
-            ["Battery-2"] = makeBatteryContext()
+            ["Battery-2"] = makeBatteryContext({ name = "Battery-2" })
           },
           reconTriggeredOperations = { reconEntry }
         })
@@ -570,7 +574,7 @@ describe("DynamicFireSupportPlan", function()
         local saveData = makeSaveData({
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext(),
-            ["Battery-2"] = makeBatteryContext()
+            ["Battery-2"] = makeBatteryContext({ name = "Battery-2" })
           },
           reconTriggeredOperations = { reconEntry1, reconEntry2 }
         })

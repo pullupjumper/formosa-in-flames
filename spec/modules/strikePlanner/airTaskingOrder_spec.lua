@@ -10,6 +10,11 @@ local BaseConfig = require("src.core.config")
 describe("AirTaskingOrder", function()
   ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
+
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -20,8 +25,8 @@ describe("AirTaskingOrder", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "error"))
+    logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -1221,6 +1226,60 @@ describe("AirTaskingOrder", function()
 
       assert.is_true(pkg1.hasLaunched)
       assert.is_false(pkg2.hasLaunched)
+    end)
+  end)
+
+  -- ============================================================================
+  -- Consolidated Log Output
+  -- ============================================================================
+
+  describe("consolidated log output", function()
+    -- Positive: info log for successful and skipped packages
+    it("should output single info log mixing OK and SKIP outcomes without error log", function()
+      local pkg1 = makePackage({ targetList = {}, minTargetCount = 2 })
+      local pkg2 = makePackage({
+        striker = makeRole({ missionName = "STRIKE-PKG-2" }),
+        targetList = { "TGT-1", "TGT-2" },
+        minTargetCount = 1
+      })
+      local saveData = makeSaveData({ packages = { pkg1, pkg2 } })
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+      stubMissionAndAssignment()
+
+      AirTaskingOrder.airStrike(makeConfig(), saveData)
+
+      assert.stub(logStub).was.called(1)
+      assert.stub(errorStub).was_not.called()
+      local logMessage = logStub.calls[1].vals[2]
+      assert.truthy(logMessage:find("%[OK%]"))
+      assert.truthy(logMessage:find("%[SKIP%]"))
+      assert.truthy(logMessage:find("reason=insufficient_targets"))
+      assert.truthy(logMessage:find("wave=WAVE%-1"))
+      assert.truthy(logMessage:find("total=2"))
+    end)
+
+    -- Negative: package execution failures are emitted through error log
+    it("should output FAIL error log when target assignment API fails", function()
+      local pkg = makePackage()
+      local saveData = makeSaveData({ packages = { pkg } })
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+      trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
+      trackStub(stub(GameUtils, "createMission").returns({ name = "m" }))
+      trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
+      trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(nil))
+
+      AirTaskingOrder.airStrike(makeConfig(), saveData)
+
+      assert.stub(logStub).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      local errorMessage = errorStub.calls[1].vals[1]
+      assert.truthy(errorMessage:find("%[FAIL%]"))
+      assert.truthy(errorMessage:find("reason=target_assignment_failed"))
+      assert.truthy(errorMessage:find("total=1"))
     end)
   end)
 
