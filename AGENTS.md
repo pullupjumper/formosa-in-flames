@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
 
 ## Project Overview
 
@@ -16,8 +16,11 @@ busted --lua=luajit spec
 
 ### Build and Deployment
 ```bash
-# Process Lua modules for deployment (removes requires, cleans modules)
-python3 tools/build_lua_scenario.py
+# Full deployment build: UI build -> Lua flatten/inject -> minify
+bash bin/build.sh
+
+# Run tests before deployment build
+bash bin/build.sh -t
 ```
 
 ### Development Mode
@@ -81,23 +84,31 @@ src/
 
 See `docs/` for detailed module architecture documentation.
 
+### CMO Build And Runtime Constraints
+
+CMO cannot run this project directly from modular Lua source because runtime Lua module/filesystem APIs such as normal `require` are unavailable or restricted. Treat `src/` as development source only; CMO deployment must use the generated single-file output.
+
+Use `bash bin/build.sh` for deployment builds. It optionally runs busted tests with `-t`, builds `htmls-app` pages into `src/htmls/*.html`, runs `tools/build_lua_scenario.py`, then writes `slim/main.lua` and minifies or copies it to `slim/_main.lua`.
+
+`tools/build_lua_scenario.py` strips project-local `require` lines, comments, and module-level `return`; promotes module table declarations when needed; orders `core/`, `utils/`, and `modules/` by priority plus source `require` dependency analysis; injects `src/htmls/*.html` into `unitStatusUI.lua`; and expands `src/core/init.lua` event/special-action loops by embedding processed `src/scripts/**` as CMO `ScriptText`.
+
+Do not edit `slim/` manually. Change `src/`, `src/scripts/`, or `htmls-app/`, then rebuild. When adding event scripts or special actions, also register their path/action name in `src/core/init.lua`; the bundler uses those lists to inject script bodies. Avoid runtime dependencies on `io`, `package`, `dofile`, `loadfile`, dynamic `require`, or filesystem access in code that must run inside CMO.
+
 ### Event System
 
-CMO provides several event types that trigger the scripts in `src/scripts/`:
+CMO drives scenario behavior through event-bound Lua scripts under `src/scripts/{faction}/{feature}/`. Register event action paths and special actions in `src/core/init.lua`; the bundler injects those script bodies into CMO actions during deployment.
 
-- **Unit Remains in Area** - Triggers every 5 minutes when units stay within defined areas
-- **Unit Enters Area** - Triggers when units enter defined areas
-- **Unit Destroyed** - Triggers when units are destroyed
-- **Unit Damaged** - Triggers when units take damage
-- **Unit Base Status** - Triggers on base status changes
-- **Regular Time** - Scheduled events at 1-minute or 5-minute intervals
-- **Scen Loaded** - Triggers once when scenario initializes; `src/core/init.lua` orchestrates all system initialization
-
-Scripts are organized under `src/scripts/{faction}/{feature}/` by faction and event type.
+Common event usage:
+- **Scen Loaded** - One-time initialization through `src/core/init.lua`
+- **Regular Time** - Periodic systems such as strike planning, EW, reload/hide checks, and runway repair
+- **Unit Remains in Area** - Repeated area checks, usually every 5 minutes
+- **Unit Enters Area** - Area-entry reactions
+- **Unit Destroyed** / **Unit Damaged** - Loss accounting, scoring, and cascading reactions
+- **Unit Base Status** - Base state transitions
 
 ## htmls-app (React UI)
 
-The `htmls-app/` directory contains React-based UI components that are built into single HTML files for CMO's embedded browser.
+The `htmls-app/` directory contains React-based UI panels for CMO's embedded browser. Build output goes to `src/htmls/*.html`; deployment injection is handled by `bin/build.sh`.
 
 ### Tech Stack
 React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Uses `vite-plugin-singlefile` to bundle into single HTML files. ESLint 9 + Prettier for code quality.
@@ -124,13 +135,13 @@ htmls-app/src/
 - Utility functions: Pure functions with named exports and JSDoc comments
 
 ### Data Flow
-CMO game engine injects JSON data via `window.__INJECT_*__` globals. Components parse with `parseJSON()` and fall back to mock data from `src/data/` during development.
+HTML pages use `window.__INJECT_*__` placeholders. `unitStatusUI.lua` fills them with runtime JSON via `string.format`; during frontend development they fall back to mock data from `src/data/`.
 
 ### Build Commands
 ```bash
 cd htmls-app
 npm run dev          # Development server
-npm run build        # Build all pages to ../src/htmls/
+npm run build        # Rebuild src/htmls only; full deployment uses bin/build.sh
 npm run lint         # Run ESLint
 npm run format       # Format with Prettier
 ```
