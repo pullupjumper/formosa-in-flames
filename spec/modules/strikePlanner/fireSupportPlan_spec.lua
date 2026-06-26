@@ -332,8 +332,8 @@ describe("FireSupportPlan", function()
       assert.is_false(task.isFinished)
     end)
 
-    -- Negative: insufficient targets
-    it("should not execute strike when target count is below minTargetCount", function()
+    -- Positive: target threshold is handled before FSP execution
+    it("should pass existing targets to attackContacts without checking minTargetCount", function()
       local saveData = makeSaveData({
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         targetList = {},
@@ -342,11 +342,15 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
-      local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
+      local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(0))
 
       FireSupportPlan.strike(saveData)
 
-      assert.stub(stubAttack).was_not.called()
+      assert.stub(stubAttack).was.called_with({
+        contacts = {},
+        qty = 2,
+        firingUnits = { { name = "Battery-1" } },
+      })
     end)
 
     -- Negative: units not in position blocks all strikes
@@ -480,7 +484,9 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
-      trackStub(stub(AttackManager, "attackContacts").returns(2))
+      trackStub(stub(AttackManager, "attackContacts").invokes(function(opts)
+        return #opts.contacts > 0 and 2 or 0
+      end))
 
       FireSupportPlan.strike(saveData)
 
@@ -518,7 +524,9 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
-      trackStub(stub(AttackManager, "attackContacts").returns(2))
+      trackStub(stub(AttackManager, "attackContacts").invokes(function(opts)
+        return #opts.contacts > 0 and 2 or 0
+      end))
 
       FireSupportPlan.strike(saveData)
 

@@ -1255,7 +1255,7 @@ describe("AirTaskingOrder", function()
       local logMessage = logStub.calls[1].vals[2]
       assert.truthy(logMessage:find("%[OK%]"))
       assert.truthy(logMessage:find("%[SKIP%]"))
-      assert.truthy(logMessage:find("reason=insufficient_targets"))
+      assert.truthy(logMessage:find("reason=invalid_package_targets"))
       assert.truthy(logMessage:find("wave=WAVE%-1"))
       assert.truthy(logMessage:find("total=2"))
     end)

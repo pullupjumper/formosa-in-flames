@@ -35,7 +35,7 @@
 | `missionName` | `string` | striker 任務名稱，也是 Package log identity。 |
 | `waveName` | `string?` | `processWave()` 補上的 Wave 名稱。 |
 | `action` | `string?` | 成功動作，例如 `initiate_loadout` 或 `launch`。 |
-| `reason` | `string?` | skip/fail/error 原因，例如 `insufficient_targets`。 |
+| `reason` | `string?` | skip/fail/error 原因，例如 `invalid_package_targets` 或 `target_assignment_failed`。 |
 | `readyTime` | `string?` | 掛彈預計完成 UTC 時間。 |
 | `reconUavTakeoff` | `string?` | 偵察 UAV 成功排程後的 UTC 起飛時間。 |
 | `targets` | `integer?` | 可用或已指派目標數。 |
@@ -48,6 +48,7 @@ flowchart TD
     START["airStrike(config, saveData)"]
     WAVE["掃描已啟動且未完成的 Wave"]
     PKG["processWave<br>處理未發射 Package"]
+    TARGET_EXISTS{"target.list 有目標?"}
     LOADOUT_TIME{"達到掛彈開始時間?"}
     INIT_LOADOUT["initiateLoadoutForPackage<br>設定各角色 loadout"]
     LOADOUT_READY{"掛彈完成?"}
@@ -63,7 +64,9 @@ flowchart TD
     LOG["emitProcessedResultsLog<br>輸出 summary log"]
     WAIT["等待下次 tick"]
 
-    START --> WAVE --> PKG --> LOADOUT_TIME
+    START --> WAVE --> PKG --> TARGET_EXISTS
+    TARGET_EXISTS -->|否| RESULT
+    TARGET_EXISTS -->|是| LOADOUT_TIME
     LOADOUT_TIME -->|是且尚未啟動| INIT_LOADOUT --> RESULT
     LOADOUT_TIME -->|已啟動| LOADOUT_READY
     LOADOUT_READY -->|是| TAKEOFF_TIME
@@ -96,7 +99,9 @@ flowchart TD
 
 `createMission()` 以 `constants.SIDES.ENEMY` 建立任務，並使用角色的 `missionCreationParams` 與 `emcon`。若任務含 `endTime`，模組會設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`TakeOffTime`、`endtime`，必要時設定 `TimeOnTargetStation`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。
 
-任務建立成功後，`assignTargetsToMission()` 會確認 `target.list` 數量達到 `target.minTargetCount`，再將目標指派給 striker 任務。若目標不足，處理結果會標記為 `skip`，原因為 `insufficient_targets`；若目標數足夠但 CMO API 回傳 `nil`，處理結果會標記為 `fail`，原因為 `target_assignment_failed`。
+`processPackage()` 在生命週期一開始會檢查 `target.list` 是否存在且非空；空目標會標記為 `skip`，原因為 `invalid_package_targets`，並附上 `targets=0` 與 `required=<minTargetCount>`。
+
+任務建立成功後，`assignTargetsToMission()` 只負責把已存在的 `target.list` 指派給 striker 任務。若 CMO API 回傳 `nil`，處理結果會標記為 `fail`，原因為 `target_assignment_failed`，並附上目前目標數與 `target.minTargetCount` 供 log 判讀。
 
 `assignUnits()` 依 `LOADOUT_ROLES` 派遣各角色，透過 `AssignMission.assignEmbarkedUnitToStrikeMission()` 從基地派出指定數量飛機。非 `striker`、非 `tanker` 的支援任務會呼叫 `GameApi.ScenEdit_CreateMissionFlightPlan()` 建立空 flight plan；只有 striker 成功分配至少一架飛機時，Package 才會標記 `hasLaunched = true`。
 
@@ -137,14 +142,14 @@ summary 格式固定使用 `LogFormat.summary("scope", "airTaskingOrder", "Execu
 
 ```text
 [scope=airTaskingOrder] Execute packages: total=2 ok=1 skip=1 fail=0 error=0 warn=0
-  [SKIP] wave=WAVE-1 mission=STRIKE-PKG-1 reason=insufficient_targets targets=0 required=2
+  [SKIP] wave=WAVE-1 mission=STRIKE-PKG-1 reason=invalid_package_targets targets=0 required=2
   [OK] wave=WAVE-1 mission=STRIKE-PKG-2 action=launch targets=2 reconUavTakeoff="2026-02-14 08:05:00"
 ```
 
 | Outcome | Log level | Logger | 說明 |
 |---|---|---|---|
 | `ok` | `[OK]` | `Logger.log(constants.TAGS.AIR, ...)` | 掛彈啟動或 Package 發射成功。 |
-| `skip` | `[SKIP]` | `Logger.log(constants.TAGS.AIR, ...)` | 目前可恢復的等待狀態，例如 `insufficient_targets`。 |
+| `skip` | `[SKIP]` | `Logger.log(constants.TAGS.AIR, ...)` | 可略過但非錯誤的狀態，目前由空 `target.list` 產生 `invalid_package_targets`。 |
 | `fail` | `[FAIL]` | `Logger.error(...)` | Package 執行失敗，例如任務建立、目標指派或 striker 分配失敗。 |
 | `error` | `[ERROR]` | `Logger.error(...)` | 保留給不可預期或結構性錯誤分類；目前程式沒有產生此 outcome 的分支。 |
 
@@ -181,13 +186,24 @@ saveData.c
 │               ├── reconUAV?
 │               └── target
 │                   ├── list: string[]
-│                   └── minTargetCount
+│                   └── minTargetCount  # 上游建立 Wave 時使用；本模組只作 log required 欄位
 └── recon
     ├── enabled: boolean
     └── queue: SBJ__ReconQueueEntry[]
 ```
 
-`airTaskingOrder` 會寫入 `package.loadoutStatus`、`package.hasLaunched`、`wave.hasLaunched`，並可能透過 `Recon.insertEntry()` 間接新增 `saveData.c.recon.queue` entry。
+### 狀態讀寫
+
+| 路徑 | 操作 | 說明 |
+|---|---|---|
+| `saveData.c.air.airTaskingOrder` | read | `airStrike()` 掃描所有已啟動且未完成的 Wave。 |
+| `package.loadoutStatus.loadoutStartTime` | write | `ensureLoadoutStartTime()` 快取掛彈開始時間。 |
+| `package.loadoutStatus.isLoadoutInitiated` | write | `initiateLoadoutForPackage()` 標記掛彈流程已啟動。 |
+| `package.loadoutStatus.loadoutInitiatedTime` | write | 記錄實際啟動掛彈的 scenario timestamp。 |
+| `package.loadoutStatus.expectedReadyTime` | write | 記錄預期掛彈完成 timestamp。 |
+| `package.hasLaunched` | write | `processWave()` 在 package 成功 launch 後標記。 |
+| `wave.hasLaunched` | write | `airStrike()` 在所有 packages 都已 launch 後標記。 |
+| `saveData.c.recon.queue` | write | `scheduleReconUAV()` 透過 `Recon.insertEntry()` 間接新增打擊後偵察 entry。 |
 
 ---
 
@@ -221,6 +237,9 @@ saveData.c
 | 類型 | 路徑 | 用途 |
 |---|---|---|
 | `config` | `config.c.ground.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
+| `config` | `config.readytime` | 常見 package template 會用它填入 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
+| `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
+| `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
 | `constants` | `constants.SIDES.ENEMY` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |
 | `constants` | `constants.TAGS.AIR` | ATO 成功、略過與失敗 summary log 的 tag。 |
 | `constants` | `constants.TIME_FORMATS` | CMO 任務時間欄位附加格式。 |
