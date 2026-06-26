@@ -225,16 +225,10 @@ end
 ---@return boolean # True if targets successfully assigned
 local function assignTargetsToMission(packageData)
   local evaluatedTargetlist = packageData.target.list
-
-  if #evaluatedTargetlist < packageData.target.minTargetCount then
-    return false
-  end
-
   local targetsAssigned = GameApi.ScenEdit_AssignUnitAsTarget(
     evaluatedTargetlist,
     packageData.striker.missionCreationParams.name
   )
-
   return targetsAssigned ~= nil
 end
 
@@ -354,6 +348,16 @@ end
 ---@return boolean launched Whether package was successfully launched
 ---@return SBJ__ATOPackageProcessResult|nil result Processed package result, or nil when nothing should be logged
 local function processPackage(config, saveData, packageData)
+  if not packageData.target.list or #packageData.target.list == 0 then
+    return false, {
+      outcome = ATO_OUTCOME.SKIP,
+      missionName = packageData.striker.missionCreationParams.name,
+      reason = "invalid_package_targets",
+      targets = 0,
+      required = packageData.target.minTargetCount
+    }
+  end
+
   ensureLoadoutStartTime(packageData)
 
   if not isTimeToStartLoadout(packageData) then
@@ -392,15 +396,7 @@ local function processPackage(config, saveData, packageData)
 
   if not assignTargetsToMission(packageData) then
     local targetList = packageData.target.list
-    if #targetList < packageData.target.minTargetCount then
-      return false, {
-        outcome = ATO_OUTCOME.SKIP,
-        missionName = packageData.striker.missionCreationParams.name,
-        reason = "insufficient_targets",
-        targets = #targetList,
-        required = packageData.target.minTargetCount
-      }
-    end
+
     return false, {
       outcome = ATO_OUTCOME.FAIL,
       missionName = packageData.striker.missionCreationParams.name,

@@ -111,15 +111,14 @@ local function executeFireSupportTasks(saveData, matrix)
   local strikeResults = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
-    if not task.isFinished and GameUtils.isAfterStartTime(task.startTime)
-        and #task.target.list >= task.target.minTargetCount then
-      local result = AttackManager.attackContacts({
+    if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
+      local fired = AttackManager.attackContacts({
         contacts = task.target.list,
         qty = task.target.ammoPerTarget,
         firingUnits = task.firingUnits,
       })
 
-      if result > 0 then
+      if fired > 0 then
         if task.missileSystem ~= "SAM" then
           for _, firingUnit in ipairs(task.firingUnits) do
             local firingUnitContext = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
@@ -133,7 +132,7 @@ local function executeFireSupportTasks(saveData, matrix)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,
-          fired = result
+          fired = fired
         })
       end
     end

@@ -193,11 +193,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
 ---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
 
+---Dynamic operation type discriminator
+---@alias SBJ__OperationType "air"|"ground"
+
 ---Strike mapping rewrite rule used by frontline redirect
 ---@class SBJ__StrikeMappingRewriteRule: table
 ---@field fromPrefix string Prefix that identifies the original mapping family (e.g. "STRIKE/AB/W/")
 ---@field toPrefix string Prefix substituted into the rewritten mapping name (e.g. "STRIKE/AB/W/AAR/")
----@field type "air"|"ground" Strike mission type the rule applies to
+---@field type SBJ__OperationType Strike mission type the rule applies to
 
 ---Frontline strike redirect configuration
 ---Switches strike mappings from frontline bases to rear bases with AAR support
@@ -1209,7 +1212,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Defines strike mission to execute after reconnaissance platform detects target
 ---@class SBJ__ReconStrikeMapping: table
 ---@field name string Strike mission name
----@field type "air"|"ground" Strike mission type
+---@field type SBJ__OperationType Strike mission type
 
 -- ============================================================================
 -- Dynamic Operations (ATO/FSEM)
@@ -1228,6 +1231,23 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
 ---@field reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
 
+---Air operation definition for dynamic ATO insertion
+---@class SBJ__AirOperation: table
+---@field type "air" Operation type discriminator
+---@field executed boolean Whether operation has been executed
+---@field template SBJ__WaveTemplate ATO wave template
+---@field executionResult? boolean Operation execution result (true for success, false for failure)
+
+---Ground operation definition for dynamic fire support insertion
+---@class SBJ__GroundOperation: table
+---@field type "ground" Operation type discriminator
+---@field executed boolean Whether operation has been executed
+---@field template SBJ__FireSupportExecutionMatrixTemplate FSEM template
+---@field executionResult? boolean Operation execution result (true for success, false for failure)
+
+---Operation definition for dynamic operations
+---@alias SBJ__Operation SBJ__AirOperation|SBJ__GroundOperation
+
 ---Operation batch triggered by completed reconnaissance
 ---@class SBJ__ReconTriggeredOperationBatch: table
 ---@field time string Reconnaissance time in format "2027-06-09 14:30:00"
@@ -1235,13 +1255,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field delay number Delay trigger time (seconds)
 ---@field executed boolean Whether already executed
 ---@field operations SBJ__Operation[] Operations to execute
-
----Operation definition for dynamic operations
----@class SBJ__Operation: table
----@field type string Template type
----@field executed boolean Whether operation has been executed
----@field template SBJ__FireSupportExecutionMatrixTemplate|SBJ__WaveTemplate Operation template (FSEM or Wave)
----@field executionResult? boolean Operation execution result (true for success, false for failure)
 
 ---Wave template for Dynamic ATO Insertion
 ---@class SBJ__WaveTemplate: table
