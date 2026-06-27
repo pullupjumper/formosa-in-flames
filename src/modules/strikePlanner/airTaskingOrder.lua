@@ -119,7 +119,7 @@ local function setLoadoutForRole(missionRole, timeToReady)
     end
 
     local unit = GameApi.ScenEdit_GetUnit(unitGUID)
-    if unit and unit.dbid == targetUnitDBID then
+    if unit and unit.dbid == targetUnitDBID and unit.mission == nil then
       local result = GameApi.ScenEdit_SetLoadout({
         unitname = unit.name,
         LoadoutID = loadoutID,

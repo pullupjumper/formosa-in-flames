@@ -59,7 +59,7 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGUID)
           side = embarkedUnit.side,
           type = embarkedUnit.type,
           dbid = embarkedUnit.dbid,
-          unitname = embarkedUnit.name .. " #" .. Utils.randomTxt(2),
+          unitname = embarkedUnit.name .. " #" .. Utils.randomTxt(3),
           base = baseGUID,
         }
 
