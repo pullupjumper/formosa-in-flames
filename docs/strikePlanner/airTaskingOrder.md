@@ -99,11 +99,17 @@ flowchart TD
 
 `createMission()` 以 `constants.SIDES.ENEMY` 建立任務，並使用角色的 `missionCreationParams` 與 `emcon`。若任務含 `endTime`，模組會設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`TakeOffTime`、`endtime`，必要時設定 `TimeOnTargetStation`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。
 
+一般角色的 `missionCreationParams` 維持單一物件；只有 tanker 可設定為單一物件或陣列。tanker 使用陣列時，執行層會逐一建立所有 support mission，並對每個任務套用角色共用的 `endTime`、`timeOnStation` 與 `emcon`。既有單一 tanker mission 設定不需修改。
+
 `processPackage()` 在生命週期一開始會檢查 `target.list` 是否存在且非空；空目標會標記為 `skip`，原因為 `invalid_package_targets`，並附上 `targets=0` 與 `required=<minTargetCount>`。
 
 任務建立成功後，`assignTargetsToMission()` 只負責把已存在的 `target.list` 指派給 striker 任務。若 CMO API 回傳 `nil`，處理結果會標記為 `fail`，原因為 `target_assignment_failed`，並附上目前目標數與 `target.minTargetCount` 供 log 判讀。
 
 `assignUnits()` 依 `LOADOUT_ROLES` 派遣各角色，透過 `AssignMission.assignEmbarkedUnitToStrikeMission()` 從基地派出指定數量飛機。非 `striker`、非 `tanker` 的支援任務會呼叫 `GameApi.ScenEdit_CreateMissionFlightPlan()` 建立空 flight plan；只有 striker 成功分配至少一架飛機時，Package 才會標記 `hasLaunched = true`。
+
+多任務 tanker 會先驗證 `unitCount` 可被任務數整除，再將相同數量依設定順序分派至各任務。例如 `unitCount = 8` 且有兩個任務時，每個任務分派 4 架。掛載仍依角色總 `unitCount` 執行一次，不會按任務重複設定。
+
+使用這些加油任務的 receiver mission 必須在 `opts.TankerMissionList` 列出所有 tanker mission name；執行層不會自動改寫 receiver 的任務設定。
 
 ### 偵察 UAV 排程
 
@@ -178,7 +184,7 @@ saveData.c
 │               │   └── loadoutStartTime
 │               ├── striker / escort / wildWeasel / jammer / tanker
 │               │   ├── baseGUID
-│               │   ├── missionCreationParams
+│               │   ├── missionCreationParams  # tanker 可為單一物件或陣列
 │               │   ├── unitCount / unitDBID / weaponDBID
 │               │   ├── loadoutID
 │               │   ├── startTime / endTime / timeOnStation

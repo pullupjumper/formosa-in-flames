@@ -354,8 +354,11 @@ constants.AREAS = {
   TARGET_AREA_JHI_PATROL = { "rp-163354", "rp-163355", },
   TARGET_AREA_JIASHAN_PROSECUTION = { "rp-163356", "rp-163357", "rp-163358", "rp-163359", },
   TARGET_AREA_JIASHAN_PATROL = { "rp-163360", "rp-163161", },
-  AAR_PATROL = { "RP-44509", "RP-44510", "RP-44511", "RP-44512", },
-  AAR_PATROL_2 = { "RP-181270", "RP-181271", "RP-181272", "RP-181273", },
+  AAR_PATROL_1 = { "RP-208443", "RP-208444", },
+  AAR_PATROL_2 = { "RP-181270", "RP-181271", },
+  AAR_PATROL_3 = { "RP-44509", "RP-44510", },
+  AAR_PATROL_4 = { "RP-208445", "RP-208446", },
+  AAR_PATROL_5 = { "RP-208447", "RP-208448", },
 }
 
 constants.BASES = {
@@ -2654,6 +2657,7 @@ constants.TAGS = {
 
 constants.SENSOR_ARCS = { "PB1", "PB2", "SB1", "SB2", "SMF1", "PMF2" }
 constants.TIME_FORMATS = "!yyyy-MM-dd HH:mm:ss"
+constants.DATE_FORMAT = "!%Y-%m-%d %H:%M:%S"
 constants.MOUNT_DESCRIPTORS = {
   CUSTOMED_TK3 = { { dbid = 1630, mountCount = 1 }, { dbid = 45, mountCount = 6 } },
   HF2E = { { dbid = 2782, mountCount = 4 } },

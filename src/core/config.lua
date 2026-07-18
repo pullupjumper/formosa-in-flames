@@ -98,6 +98,7 @@ config.targetScanning = {
 config.radarDistance = 70
 -- config.readytime = 3600 * 1.5
 config.readytime = 5 * 60
+config.strikeInterval = 60 * 60
 
 
 -- ============================================================================
@@ -3516,7 +3517,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3543,7 +3544,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3564,7 +3565,7 @@ config.c.packageTemplates = {
           opts = {
             zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3578,16 +3579,36 @@ config.c.packageTemplates = {
         baseGUIDCandidates = { constants.BASES.LEIYANG_AB },
         unitDBID = constants.PLATFORMS.HY6U_BADGER,
         weaponDBID = 0,
-        unitCount = 8,
+        unitCount = 6,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/E",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 2,
-            zone = constants.AREAS.AAR_PATROL_2
-          }
+          {
+            name = "AAR/N/SWEEP/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_2
+            }
+          },
+          {
+            name = "AAR/N/JAMMING/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/N/SEAD/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -3617,7 +3638,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/STRIKE/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3644,7 +3665,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3671,7 +3692,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3692,7 +3713,7 @@ config.c.packageTemplates = {
           opts = {
             zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3709,13 +3730,42 @@ config.c.packageTemplates = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/C",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 4,
-            zone = constants.AREAS.AAR_PATROL
-          }
+          {
+            name = "AAR/C/STRIKE/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_2
+            }
+          },
+          {
+            name = "AAR/C/SWEEP/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/C/JAMMING/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_4
+            }
+          },
+          {
+            name = "AAR/C/SEAD/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -3746,7 +3796,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/STRIKE/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3773,7 +3823,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3800,7 +3850,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3816,12 +3866,12 @@ config.c.packageTemplates = {
         unitCount = 1,
         loadoutID = nil,
         missionCreationParams = {
-          name = "JAMMING/AB/C/1",
+          name = "JAMMING/AB/S/1",
           type = "support",
           opts = {
             zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3838,13 +3888,42 @@ config.c.packageTemplates = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/S",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 4,
-            zone = constants.AREAS.AAR_PATROL
-          }
+          {
+            name = "AAR/S/STRIKE/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_2
+            }
+          },
+          {
+            name = "AAR/S/SWEEP/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/S/SEAD/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
+          {
+            name = "AAR/S/JAMMING/1",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_5
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -3905,7 +3984,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3932,7 +4011,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3953,7 +4032,7 @@ config.c.packageTemplates = {
           opts = {
             zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/E" },
+            TankerMissionList = { "AAR/N/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3970,13 +4049,33 @@ config.c.packageTemplates = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/E",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 2,
-            zone = constants.AREAS.AAR_PATROL_2
-          }
+          {
+            name = "AAR/N/SWEEP/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_2
+            }
+          },
+          {
+            name = "AAR/N/JAMMING/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/N/SEAD/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -4006,7 +4105,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/STRIKE/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4033,7 +4132,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4060,7 +4159,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4081,7 +4180,7 @@ config.c.packageTemplates = {
           opts = {
             zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/C" },
+            TankerMissionList = { "AAR/C/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4098,13 +4197,42 @@ config.c.packageTemplates = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/C",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 4,
-            zone = constants.AREAS.AAR_PATROL
-          }
+          {
+            name = "AAR/C/SEAD/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/C/SWEEP/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/C/JAMMING/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_4
+            }
+          },
+          {
+            name = "AAR/C/STRIKE/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -4135,7 +4263,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/STRIKE/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4162,7 +4290,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4189,7 +4317,7 @@ config.c.packageTemplates = {
             prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
             patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4210,7 +4338,7 @@ config.c.packageTemplates = {
           opts = {
             zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
-            TankerMissionList = { "AAR/S" },
+            TankerMissionList = { "AAR/S/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -4227,13 +4355,42 @@ config.c.packageTemplates = {
         unitCount = 8,
         loadoutID = nil,
         missionCreationParams = {
-          name = "AAR/S",
-          type = "support",
-          opts = {
-            OneThirdRule = false,
-            FlightSize = 4,
-            zone = constants.AREAS.AAR_PATROL
-          }
+          {
+            name = "AAR/S/SEAD/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_2
+            }
+          },
+          {
+            name = "AAR/S/SWEEP/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_3
+            }
+          },
+          {
+            name = "AAR/S/STRIKE/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_1
+            }
+          },
+          {
+            name = "AAR/S/JAMMING/3",
+            type = "support",
+            opts = {
+              OneThirdRule = false,
+              FlightSize = 2,
+              zone = constants.AREAS.AAR_PATROL_5
+            }
+          },
         },
         emcon = "Radar=Passive;OECM=Passive"
       },
@@ -4292,7 +4449,7 @@ config.c.packageTemplates = {
           opts = {
             OneThirdRule = false,
             FlightSize = 1,
-            zone = constants.AREAS.AAR_PATROL
+            zone = constants.AREAS.AAR_PATROL_3
           }
         },
         emcon = "Radar=Passive;OECM=Passive"

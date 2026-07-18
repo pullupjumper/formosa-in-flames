@@ -829,6 +829,169 @@ describe("AtoBuilder", function()
     assert.is_true(duration <= 7200)
   end)
 
+  -- Positive: tanker timing uses the farthest configured mission zone
+  it("should use the farthest tanker mission zone for timing", function()
+    local baseTimestamp = 1770000000
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/TANKER/MULTI-ZONE",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            timeToReady = 5,
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            tanker = {
+              baseGUID = "BASE-2",
+              unitCount = 2,
+              unitDBID = 102,
+              weaponDBID = 0,
+              missionCreationParams = {
+                { name = "AAR-NEAR", type = "support", opts = { zone = { "RP-NEAR" } } },
+                { name = "AAR-FAR", type = "support", opts = { zone = { "RP-FAR" } } }
+              }
+            },
+            target = {
+              objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
+      { operationBatch = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = guid, embarkedUnits = { Aircraft = { "STRIKER-1" } } }
+      end
+      if guid == "BASE-2" then
+        return { guid = guid, embarkedUnits = { Aircraft = { "TANKER-1", "TANKER-2" } } }
+      end
+      if guid == "STRIKER-1" then return { dbid = 100, mission = nil } end
+      return { dbid = 102, mission = nil }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").invokes(function(params)
+      if params.name == "RP-FAR" then
+        return { latitude = 2, longitude = 121 }
+      end
+      return { latitude = 1, longitude = 121 }
+    end))
+    trackStub(stub(GameApi, "Tool_Range").invokes(function(from, destination)
+      if from == "BASE-2" then
+        return destination.latitude == 2 and 200 or 100
+      end
+      return 200
+    end))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({
+      ranges = { land = { max = 50 } }
+    }))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/TANKER/MULTI-ZONE"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
+
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TANKER/MULTI-ZONE"]
+    local tankerStartTime = Utils.parseDatetimeToTimestamp(wave.packages[1].tanker.startTime)
+    assert.are.equal(baseTimestamp - 2870, tankerStartTime)
+  end)
+
+  -- Negative: tanker unit count cannot be divided evenly
+  it("should reject non-divisible tanker mission allocation", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/TANKER/INVALID-COUNT",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            tanker = {
+              baseGUID = "BASE-2",
+              unitCount = 3,
+              unitDBID = 102,
+              weaponDBID = 0,
+              missionCreationParams = {
+                { name = "AAR-1", type = "support", opts = {} },
+                { name = "AAR-2", type = "support", opts = {} }
+              }
+            },
+            target = { contactAge = 300, minTargetCount = 1 }
+          }
+        }
+      }
+    }
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
+      { operationBatch = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
+
+    assert.is_false(result)
+    assert.is_nil(saveData.c.air.airTaskingOrder["STRIKE/TANKER/INVALID-COUNT"])
+  end)
+
+  -- Negative: tanker mission names must be unique
+  it("should reject duplicate tanker mission names", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/TANKER/DUPLICATE-NAME",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            tanker = {
+              baseGUID = "BASE-2",
+              unitCount = 2,
+              unitDBID = 102,
+              weaponDBID = 0,
+              missionCreationParams = {
+                { name = "AAR-DUPLICATE", type = "support", opts = {} },
+                { name = "AAR-DUPLICATE", type = "support", opts = {} }
+              }
+            },
+            target = { contactAge = 300, minTargetCount = 1 }
+          }
+        }
+      }
+    }
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
+      { operationBatch = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
+
+    assert.is_false(result)
+  end)
+
   -- Positive: recon entry delay handled
   it("should handle recon entry delay correctly", function()
     local reconEntry = makeReconEntry({ delay = 500 })

@@ -641,8 +641,8 @@ function Recon.insertEntry(reconContext, entryTemplate, startTime)
     local nextEntryTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
 
     if endTime <= nextEntryTimestamp then
-      entry.takeoffTime = os.date("!%Y-%m-%d %H:%M:%S", startTimestamp) --[[@as string]]
-      entry.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+      entry.takeoffTime = os.date(constants.DATE_FORMAT, startTimestamp) --[[@as string]]
+      entry.endTime = os.date(constants.DATE_FORMAT, endTime) --[[@as string]]
       entry.hasLaunched = false
       entry.isFinished = false
       entry.trackingTargetGUID = nil

@@ -309,6 +309,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
 ---@field radarDistance number Radar detection distance (nautical miles)
 ---@field readytime number Ready time for missions (seconds)
+---@field strikeInterval number Strike interval for strike packages (seconds)
 ---@field missileSystemState table<string, integer> Battery state enumeration
 ---@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
 ---@field c SBJ__ChinaConfig China faction configuration
@@ -793,6 +794,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field type string The type of the mission
 ---@field opts CMO__Mission The options for the mission
 
+---Tanker mission creation parameters
+---Supports one mission or multiple independently configured tanker missions
+---@alias SBJ__TankerMissionCreationParams SBJ__MissionCreationParams|SBJ__MissionCreationParams[]
+
 ---Mission deployment descriptor for air operations
 ---Complete mission deployment configuration including base, units, weapons, and timing
 ---@class SBJ__MissionDeploymentDescriptor: table
@@ -807,6 +812,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field endTime? string The end time of the mission (optional)
 ---@field timeOnStation? string The time on station (optional)
 ---@field emcon string The EMCON settings for the mission
+
+---Tanker deployment descriptor supporting multiple tanker missions
+---@class SBJ__TankerMissionDeploymentDescriptor: SBJ__MissionDeploymentDescriptor
+---@field missionCreationParams SBJ__TankerMissionCreationParams The tanker mission parameters
 
 ---Air operations context managing air tasking orders and aircraft status
 ---@class SBJ__AirOperationsContext: table
@@ -1269,7 +1278,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field escort? SBJ__MissionDeploymentDescriptor Escort configuration (optional)
 ---@field wildWeasel? SBJ__MissionDeploymentDescriptor Wild Weasel configuration (optional)
 ---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
----@field tanker? SBJ__MissionDeploymentDescriptor Tanker configuration (optional)
+---@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration (optional)
 ---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
 ---@field timeToReady? number Ready time in seconds (optional)
 ---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor

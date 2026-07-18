@@ -5,12 +5,13 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local AssignMission = require("src.modules.assignMission")
 local Recon = require("src.modules.strikePlanner.recon")
+local TankerMission = require("src.modules.strikePlanner.tankerMission")
 local constants = require("src.core.constants")
 
 local AirTaskingOrder = {}
 
 local ADVANCE_SECONDS = 300
-local LOADOUT_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
+local LOADOUT_ROLES = { "tanker", "striker", "escort", "wildWeasel", "jammer", }
 local ATO_OUTCOME = {
   OK = "ok",
   SKIP = "skip",
@@ -175,19 +176,15 @@ end
 -- ============================================================================
 
 ---Creates a mission for a specific role if it doesn't exist
----@param packageData SBJ__Package The strike package containing mission parameters
----@param role string The role identifier
+---@param missionRole SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@return boolean # True if mission exists or was successfully created
-local function createMission(packageData, role)
-  ---@type SBJ__MissionDeploymentDescriptor
-  local missionRole = packageData[role]
-  -- local mission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, missionRole.missionCreationParams.name)
-
+local function createMission(missionRole, missionCreationParams)
   local mission = GameUtils.createMission(
     constants.SIDES.ENEMY,
-    missionRole.missionCreationParams.name,
-    missionRole.missionCreationParams.type,
-    missionRole.missionCreationParams.opts,
+    missionCreationParams.name,
+    missionCreationParams.type,
+    missionCreationParams.opts,
     missionRole.emcon
   )
 
@@ -195,17 +192,18 @@ local function createMission(packageData, role)
     mission.OnDeactivateDelete = true
     mission.OnDeactivateRTB = true
 
-    if missionRole.startTime then
-      mission.TakeOffTime = missionRole.startTime .. constants.TIME_FORMATS
-    end
+    -- if missionRole.startTime then
+    --   mission.TakeOffTime = missionRole.startTime .. constants.TIME_FORMATS
+    -- end
 
     mission.endtime = missionRole.endTime .. constants.TIME_FORMATS
 
     if missionRole.timeOnStation then
       mission.TimeOnTargetStation = missionRole.timeOnStation .. constants.TIME_FORMATS
+      -- mission.TakeOffTime = nil
     end
 
-    if missionRole.missionCreationParams.type == "strike" then
+    if missionCreationParams.type == "strike" then
       GameApi.ScenEdit_SetDoctrine(
         { side = constants.SIDES.ENEMY, mission = mission.name },
         { automatic_evasion = false }
@@ -236,6 +234,39 @@ end
 -- Unit Assignment
 -- ============================================================================
 
+---Assign units from one role to one mission
+---@param missionRole SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param missionName string Mission name
+---@param unitCount integer Number of units to assign
+---@return string[]|nil # Assigned unit GUIDs
+local function assignRoleUnitsToMission(missionRole, missionName, unitCount)
+  return AssignMission.assignEmbarkedUnitToStrikeMission(
+    missionRole.baseGUID,
+    unitCount,
+    missionRole.weaponDBID,
+    missionRole.unitDBID,
+    missionName,
+    false
+  )
+end
+
+---Assign tanker units evenly across all configured tanker missions
+---@param missionRole SBJ__TankerMissionDeploymentDescriptor Tanker deployment descriptor
+local function assignTankerUnits(missionRole)
+  local missionParamsList = TankerMission.normalizeCreationParams(missionRole.missionCreationParams)
+  local missionCount = #missionParamsList
+
+  if missionCount == 0 or missionRole.unitCount % missionCount ~= 0 then
+    return
+  end
+
+  local unitCountPerMission = missionRole.unitCount / missionCount
+
+  for _, missionParams in ipairs(missionParamsList) do
+    assignRoleUnitsToMission(missionRole, missionParams.name, unitCountPerMission)
+  end
+end
+
 ---Assigns all units in the package to their respective missions
 ---@param packageData SBJ__Package The strike package containing unit assignment data
 ---@return boolean # True if the primary striker units were successfully assigned
@@ -247,20 +278,22 @@ local function assignUnits(packageData)
     local missionRole = packageData[role]
 
     if missionRole then
-      local result = AssignMission.assignEmbarkedUnitToStrikeMission(
-        missionRole.baseGUID,
-        missionRole.unitCount,
-        missionRole.weaponDBID,
-        missionRole.unitDBID,
-        missionRole.missionCreationParams.name,
-        false
-      )
-      if role ~= "tanker" and role ~= "striker" then
-        GameApi.ScenEdit_CreateMissionFlightPlan(constants.SIDES.ENEMY, missionRole.missionCreationParams.name, {})
-      end
+      if role == "tanker" then
+        assignTankerUnits(missionRole --[[@as SBJ__TankerMissionDeploymentDescriptor]])
+      else
+        local result = assignRoleUnitsToMission(
+          missionRole,
+          missionRole.missionCreationParams.name,
+          missionRole.unitCount
+        )
 
-      if role == "striker" and result and #result > 0 then
-        strikerAssigned = true
+        if role ~= "striker" then
+          GameApi.ScenEdit_CreateMissionFlightPlan(constants.SIDES.ENEMY, missionRole.missionCreationParams.name, {})
+        end
+
+        if role == "striker" and result and #result > 0 then
+          strikerAssigned = true
+        end
       end
     end
   end
@@ -286,7 +319,7 @@ local function scheduleReconUAV(config, saveData, packageData)
     local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
     local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
         flightTime
-    local takeoffTimeStr = os.date("!%Y-%m-%d %H:%M:%S", takeoffTime) --[[@as string]]
+    local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
     return Recon.insertEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
   end
 
@@ -329,10 +362,18 @@ local function createAllMissions(packageData)
     local missionRole = packageData[role]
 
     if missionRole then
-      local missionCreated = createMission(packageData, role)
+      if role == "tanker" then
+        local tankerMissionParams = TankerMission.normalizeCreationParams(missionRole.missionCreationParams)
 
-      if role == "striker" and not missionCreated then
-        return false
+        for _, missionCreationParams in ipairs(tankerMissionParams) do
+          createMission(missionRole, missionCreationParams)
+        end
+      else
+        local missionCreated = createMission(missionRole, missionRole.missionCreationParams)
+
+        if role == "striker" and not missionCreated then
+          return false
+        end
       end
     end
   end
@@ -366,7 +407,7 @@ local function processPackage(config, saveData, packageData)
 
   if not packageData.loadoutStatus.isLoadoutInitiated then
     initiateLoadoutForPackage(packageData)
-    local readyTimeStr = os.date("!%Y-%m-%d %H:%M:%S", packageData.loadoutStatus.expectedReadyTime)
+    local readyTimeStr = os.date(constants.DATE_FORMAT, packageData.loadoutStatus.expectedReadyTime)
     return false, {
       outcome = ATO_OUTCOME.OK,
       missionName = packageData.striker.missionCreationParams.name,

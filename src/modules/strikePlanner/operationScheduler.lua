@@ -304,7 +304,7 @@ local function buildOperationFromMapping(strikeMapping, processingContext)
 
   if strikeMapping.type == "air" then
     newOperation.template.packages = processingContext.config.c.packageTemplates[key]
-    newOperation.template.strikeInterval = 30 * 60
+    newOperation.template.strikeInterval = processingContext.config.strikeInterval
   elseif strikeMapping.type == "ground" then
     newOperation.template.fireSupportTasks = processingContext.config.c.fireSupportTaskTemplates[key]
     newOperation.template.strikeInterval = 0

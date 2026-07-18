@@ -5,6 +5,7 @@ local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local DynamicState = require("src.modules.strikePlanner.dynamicState")
+local TankerMission = require("src.modules.strikePlanner.tankerMission")
 local constants = require("src.core.constants")
 
 local AtoBuilder = {}
@@ -39,7 +40,6 @@ local OPERATION_OUTCOME = {
   MISSING_TEMPLATE = "missing_template",
   FAIL = "fail"
 }
-
 
 -- ============================================================================
 -- Target Processing
@@ -156,6 +156,61 @@ local function validateAircraftRole(roleData, roleName, packageIndex, assignedAi
   return false, msg
 end
 
+---Validate multi-mission tanker configuration
+---@param tankerData SBJ__TankerMissionDeploymentDescriptor|nil Tanker role configuration
+---@param packageIndex integer Package index for error messages
+---@return boolean success True when tanker mission configuration is valid
+---@return string|nil errorMessage Validation error message, nil on success
+local function validateTankerMissionConfig(tankerData, packageIndex)
+  if not tankerData or not tankerData.missionCreationParams then
+    return true, nil
+  end
+
+  local missionParamsList, isSingle = TankerMission.normalizeCreationParams(tankerData.missionCreationParams)
+  if isSingle then
+    return true, nil
+  end
+
+  local missionCount = #missionParamsList
+
+  if missionCount == 0 then
+    return false, string.format("package=%d role=tanker reason=empty_tanker_missions", packageIndex)
+  end
+
+  local unitCount = tankerData.unitCount or 0
+  if unitCount <= 0 or unitCount % missionCount ~= 0 then
+    return false, string.format(
+      "package=%d role=tanker reason=indivisible_tanker_unit_count unitCount=%d missions=%d",
+      packageIndex,
+      unitCount,
+      missionCount
+    )
+  end
+
+  local missionNames = {}
+  for missionIndex, missionParams in ipairs(missionParamsList) do
+    if type(missionParams.name) ~= "string" or missionParams.name == "" then
+      return false, string.format(
+        "package=%d role=tanker reason=invalid_tanker_mission_name mission=%d",
+        packageIndex,
+        missionIndex
+      )
+    end
+
+    if missionNames[missionParams.name] then
+      return false, string.format(
+        "package=%d role=tanker reason=duplicate_tanker_mission_name mission=%s",
+        packageIndex,
+        LogFormat.value(missionParams.name)
+      )
+    end
+
+    missionNames[missionParams.name] = true
+  end
+
+  return true, nil
+end
+
 ---Check if individual package has sufficient aircraft resources
 ---Target sufficiency is evaluated before package construction.
 ---@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
@@ -164,6 +219,11 @@ end
 ---@return boolean success true if package is valid and can be executed
 ---@return string|nil reason Reason string (error message on failure, success message on pass)
 local function validateIndividualPackage(packageData, packageIndex, assignedAircraft)
+  local tankerValid, tankerError = validateTankerMissionConfig(packageData.tanker, packageIndex)
+  if not tankerValid then
+    return false, tankerError
+  end
+
   for _, role in ipairs(PACKAGE_ROLES) do
     local isValid, errorMessage = validateAircraftRole(packageData[role], role, packageIndex, assignedAircraft)
 
@@ -243,14 +303,12 @@ end
 -- Flight Time Calculation
 -- ============================================================================
 
----Get the operational reference point for a role's mission zone
----Reads patrolZone first (patrol-type missions), falls back to zone (support-type missions like jammer/tanker)
----@param packageData SBJ__PackageTemplate Package configuration containing role mission parameters
----@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
+---Get the operational reference point for one mission zone
+---Reads patrolZone first and falls back to zone
+---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@return CMO__Location|nil # Zone reference point coordinates or nil if unavailable
-local function getPatrolZonePoint(packageData, role)
-  local missionRole = packageData[role]
-  local opts = missionRole and missionRole.missionCreationParams and missionRole.missionCreationParams.opts
+local function getMissionZonePoint(missionCreationParams)
+  local opts = missionCreationParams and missionCreationParams.opts
   if not opts then
     return nil
   end
@@ -266,6 +324,23 @@ local function getPatrolZonePoint(packageData, role)
   end
 
   return { latitude = point.latitude, longitude = point.longitude }
+end
+
+---Get normalized mission parameters for one role
+---@param missionRole SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param role string Role name
+---@return SBJ__MissionCreationParams[] # Mission parameter array
+local function getRoleMissionCreationParams(missionRole, role)
+  if role == "tanker" then
+    local result = TankerMission.normalizeCreationParams(missionRole.missionCreationParams)
+    return result
+  end
+
+  if not missionRole.missionCreationParams then
+    return {}
+  end
+
+  return { missionRole.missionCreationParams }
 end
 
 ---Calculate flight time in seconds from distance in nautical miles
@@ -284,7 +359,7 @@ local function calculateFlightTimeFromDistance(distance, role)
   return math.ceil((distance / speed) * 3600)
 end
 
----Compute flight time from a role's base to its operational zone
+---Compute the longest flight time from a role's base to its operational zones
 ---@param packageData SBJ__PackageTemplate Package configuration containing role data
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
 ---@return integer|nil # Flight time in seconds, or nil if role/base/zone/distance unavailable
@@ -295,17 +370,25 @@ local function computeRoleFlightTime(packageData, role)
     return nil
   end
 
-  local targetPoint = getPatrolZonePoint(packageData, role)
-  if not targetPoint then
-    return nil
+  local maxFlightTime = nil
+  local missionParamsList = getRoleMissionCreationParams(missionRole, role)
+
+  for _, missionCreationParams in ipairs(missionParamsList) do
+    local targetPoint = getMissionZonePoint(missionCreationParams)
+
+    if targetPoint then
+      local distance = GameApi.Tool_Range(missionRole.baseGUID, targetPoint)
+
+      if distance and distance > 0 then
+        local flightTime = calculateFlightTimeFromDistance(distance, role)
+        if not maxFlightTime or flightTime > maxFlightTime then
+          maxFlightTime = flightTime
+        end
+      end
+    end
   end
 
-  local distance = GameApi.Tool_Range(missionRole.baseGUID, targetPoint)
-  if not distance or distance <= 0 then
-    return nil
-  end
-
-  return calculateFlightTimeFromDistance(distance, role)
+  return maxFlightTime
 end
 
 ---Calculate advance time for a specific role based on distance to its operational zone
@@ -395,11 +478,11 @@ local function calculatePackageTiming(packageData, previousPackage, strikeInterv
 
       local delayTime = advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
       local startTime = GameApi.ScenEdit_CurrentTime() + advanceTime - delayTime + (packageData.timeToReady or (5 * 60))
-      timing.strikerStart = os.date("!%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
+      timing.strikerStart = os.date(constants.DATE_FORMAT, startTime) --[[@as string]]
     else
       if previousPackage and previousPackage.striker.startTime then
         local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
-        timing.strikerStart = os.date("!%Y-%m-%d %H:%M:%S", previousStartTime + strikeInterval) --[[@as string]]
+        timing.strikerStart = os.date(constants.DATE_FORMAT, previousStartTime + strikeInterval) --[[@as string]]
       end
     end
   else
@@ -411,7 +494,50 @@ local function calculatePackageTiming(packageData, previousPackage, strikeInterv
   local strikerStartTime = Utils.parseDatetimeToTimestamp(timing.strikerStart)
   local missionDuration = packageData.tanker and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
   local endTime = strikerStartTime + missionDuration
-  timing.strikerEnd = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+  timing.strikerEnd = os.date(constants.DATE_FORMAT, endTime) --[[@as string]]
+  return timing
+end
+
+---Calculate mission timing for a package
+---Determines striker start and end times based on support advance time and strike intervals
+---@param packageData SBJ__PackageTemplate Package configuration with role and timing information
+---@param previousPackage SBJ__Package|nil Previous executable package for sequential timing, nil for first valid package
+---@param strikeInterval integer Time interval in seconds between consecutive strikes
+---@return {startTime: string, timeOnTarget: string, endTime: string} # Table with TOT start/end times in "YYYY-MM-DD HH:MM:SS" format
+local function calculateStrikerTimeOnTarget(packageData, previousPackage, strikeInterval)
+  local timing = {}
+
+  if not previousPackage then
+    -- Check if there are support roles
+    local hasSupportRoles = packageData.escort or packageData.wildWeasel or packageData.jammer
+    local advanceTime = 0
+
+    if hasSupportRoles then
+      advanceTime = calculateSupportAdvanceTime(packageData)
+    end
+
+    local delayTime = advanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
+    local strikerFlightTime = calculateStrikerFlightTime(packageData)
+    local startTime = GameApi.ScenEdit_CurrentTime() + advanceTime - delayTime + (packageData.timeToReady or (5 * 60))
+    local timeOnTarget = startTime + strikerFlightTime + 20 * 60
+    timing.startTime = os.date(constants.DATE_FORMAT, startTime) --[[@as string]]
+    timing.timeOnTarget = os.date(constants.DATE_FORMAT, timeOnTarget) --[[@as string]]
+  else
+    if previousPackage and previousPackage.striker.timeOnStation then
+      local previousTOT = Utils.parseDatetimeToTimestamp(previousPackage.striker.timeOnStation)
+      timing.timeOnTarget = os.date(constants.DATE_FORMAT, previousTOT + strikeInterval) --[[@as string]]
+    end
+
+    if previousPackage and previousPackage.striker.startTime then
+      local previousStartTime = Utils.parseDatetimeToTimestamp(previousPackage.striker.startTime)
+      timing.startTime = os.date(constants.DATE_FORMAT, previousStartTime + strikeInterval) --[[@as string]]
+    end
+  end
+  -- Calculate striker end time
+  local timeOnTarget = Utils.parseDatetimeToTimestamp(timing.timeOnTarget)
+  local missionDuration = packageData.tanker and TIME_CONSTANTS.TANKER_DURATION or TIME_CONSTANTS.MISSION_DURATION
+  local endTime = timeOnTarget + missionDuration
+  timing.endTime = os.date(constants.DATE_FORMAT, endTime) --[[@as string]]
   return timing
 end
 
@@ -431,11 +557,41 @@ local function calculateRoleTiming(role, packageData)
   local delayTime = maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
   local startTime = strikerTimestamp - (role == "tanker" and maxAdvanceTime or advanceTime) + delayTime +
       (packageData.timeToReady or (5 * 60))
-  timing.startTime = os.date("!%Y-%m-%d %H:%M:%S", startTime) --[[@as string]]
+  timing.startTime = os.date(constants.DATE_FORMAT, startTime) --[[@as string]]
   local strikerFlightTime = calculateStrikerFlightTime(packageData)
   local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
   local endTime = role == "tanker" and (startTime + duration - TIME_CONSTANTS.ELAPSED_TIME) or startTime + duration
-  timing.endTime = os.date("!%Y-%m-%d %H:%M:%S", endTime) --[[@as string]]
+  timing.endTime = os.date(constants.DATE_FORMAT, endTime) --[[@as string]]
+  return timing
+end
+
+---Calculate support role timing (escort, wildWeasel, jammer, tanker)
+---Computes when support aircraft should launch to arrive before striker
+---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
+---@param packageData SBJ__PackageTemplate Package data containing striker timing and role configurations
+---@return {startTime: string|nil, endTime: string, timeOnStation: string|nil} # Table with startTime, endTime, and timeOnStation in "YYYY-MM-DD HH:MM:SS" format
+local function calculateRoleTimeOnStation(role, packageData)
+  local strikerTimestamp = Utils.parseDatetimeToTimestamp(packageData.striker.timeOnStation)
+  local startTimestamp = Utils.parseDatetimeToTimestamp(packageData.striker.startTime)
+  local timing = {}
+
+  -- Calculate start time based on role
+  local advanceTime = calculateRoleAdvanceTime(packageData, role)
+  local maxAdvanceTime = calculateSupportAdvanceTime(packageData)
+  -- Setting delay time based on max advance time and role
+  local delayTime = maxAdvanceTime >= TIME_CONSTANTS.MAX_FLIGHT_TIME and TIME_CONSTANTS.ELAPSED_TIME or 0
+  local timeOnStation = strikerTimestamp + delayTime - calculateStrikerFlightTime(packageData) +
+      (packageData.timeToReady or (5 * 60)) - (role == "tanker" and 30 * 60 or 0)
+  local startTime = startTimestamp - (role == "tanker" and maxAdvanceTime or advanceTime) + delayTime +
+      (packageData.timeToReady or (5 * 60))
+  timing.timeOnStation = os.date(constants.DATE_FORMAT, timeOnStation) --[[@as string]]
+  timing.startTime = os.date(constants.DATE_FORMAT, startTime) --[[@as string]]
+  local strikerFlightTime = calculateStrikerFlightTime(packageData)
+  local duration = maxAdvanceTime + strikerFlightTime + 10 * 60
+  local endTime = role == "tanker" and (timeOnStation + duration - TIME_CONSTANTS.ELAPSED_TIME) or
+      timeOnStation + duration
+  timing.endTime = os.date(constants.DATE_FORMAT, endTime) --[[@as string]]
+
   return timing
 end
 
@@ -447,15 +603,28 @@ end
 ---@return SBJ__Package # Executable package with complete timing and loadout status
 local function createPackageWithTiming(packageData, previousPackage, strikeInterval)
   -- Calculate main timing
-  local timing = calculatePackageTiming(packageData, previousPackage, strikeInterval)
+  -- local timing = calculatePackageTiming(packageData, previousPackage, strikeInterval)
+  local timing = calculateStrikerTimeOnTarget(packageData, previousPackage, strikeInterval)
 
   -- Set striker timing
+  -- if not packageData.striker.startTime then
+  --   packageData.striker.startTime = timing.strikerStart
+  -- end
+
+  -- if not packageData.striker.endTime then
+  --   packageData.striker.endTime = timing.strikerEnd
+  -- end
+
   if not packageData.striker.startTime then
-    packageData.striker.startTime = timing.strikerStart
+    packageData.striker.startTime = timing.startTime
+  end
+
+  if not packageData.striker.timeOnStation then
+    packageData.striker.timeOnStation = timing.timeOnTarget
   end
 
   if not packageData.striker.endTime then
-    packageData.striker.endTime = timing.strikerEnd
+    packageData.striker.endTime = timing.endTime
   end
 
   -- Set support role timing
@@ -466,14 +635,20 @@ local function createPackageWithTiming(packageData, previousPackage, strikeInter
       goto continue
     end
 
-    if not missionRole.startTime or not missionRole.endTime then
-      local roleTiming = calculateRoleTiming(role, packageData)
-      missionRole.startTime = missionRole.startTime or roleTiming.startTime
-      missionRole.endTime = missionRole.endTime or roleTiming.endTime
+    -- if not missionRole.startTime or not missionRole.endTime then
+    --   local roleTiming = calculateRoleTiming(role, packageData)
+    --   missionRole.startTime = missionRole.startTime or roleTiming.startTime
+    --   missionRole.endTime = missionRole.endTime or roleTiming.endTime
 
-      if roleTiming.timeOnStation then
-        missionRole.timeOnStation = roleTiming.timeOnStation
-      end
+    --   if roleTiming.timeOnStation then
+    --     missionRole.timeOnStation = roleTiming.timeOnStation
+    --   end
+    -- end
+    if not missionRole.timeOnStation or not missionRole.endTime or not missionRole.startTime then
+      local roleTiming = calculateRoleTimeOnStation(role, packageData)
+      missionRole.timeOnStation = missionRole.timeOnStation or roleTiming.timeOnStation
+      missionRole.endTime = missionRole.endTime or roleTiming.endTime
+      missionRole.startTime = missionRole.startTime or roleTiming.startTime
     end
 
     ::continue::
@@ -576,11 +751,12 @@ local function collectWaveTimingLogEntries(wave)
 
       if roleData then
         local msg = string.format(
-          "wave=%s package=%d role=%s startTime=%q endTime=%q",
+          "wave=%s package=%d role=%s startTime=%q timeOnStation=%q endTime=%q",
           LogFormat.value(wave.name),
           packageIndex,
           LogFormat.value(role),
           roleData.startTime or "unknown",
+          roleData.timeOnStation or "unknown",
           roleData.endTime or "unknown"
         )
         table.insert(timingLogEntries, LogFormat.entry("OK", msg))

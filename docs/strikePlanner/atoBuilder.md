@@ -95,9 +95,11 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 `collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
 
+若 tanker 的 `missionCreationParams` 使用陣列，建立 Wave 前會額外驗證陣列非空、任務名稱有效且不重複，以及 `unitCount` 可被任務數整除。機隊容量與預訂量仍使用 tanker 的總 `unitCount`，不會因任務拆分而重複計算。
+
 ### 飛行時間與任務時序
 
-支援角色包含 `escort`、`wildWeasel`、`jammer`、`tanker`。`getPatrolZonePoint()` 會先讀取 `missionCreationParams.opts.patrolZone`，若不存在則使用 `opts.zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取得第一個任務區座標。若任務區、reference point 或距離資料缺失，角色前置時間會 fallback 到 `ESCORT_ADVANCE_TIME`。
+支援角色包含 `escort`、`wildWeasel`、`jammer`、`tanker`。任務區會先讀取 `missionCreationParams.opts.patrolZone`，若不存在則使用 `opts.zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取得第一個任務區座標。多任務 tanker 會計算所有可解析 zone 的航程並採用最長飛行時間；若所有任務區、reference point 或距離資料都缺失，角色前置時間會 fallback 到 `ESCORT_ADVANCE_TIME`。
 
 | 條件 | 速度 |
 |---|---:|

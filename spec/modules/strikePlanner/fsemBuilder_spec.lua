@@ -556,8 +556,8 @@ describe("FsemBuilder", function()
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.are.equal(2, #fsem.fireSupportTasks)
         -- taskIndex=1: 1000 + (1*120) = 1120, taskIndex=2: 1000 + (2*120) = 1240
-        local expectedTime1 = os.date("!%Y-%m-%d %H:%M:%S", 1120)
-        local expectedTime2 = os.date("!%Y-%m-%d %H:%M:%S", 1240)
+        local expectedTime1 = os.date(constants.DATE_FORMAT, 1120)
+        local expectedTime2 = os.date(constants.DATE_FORMAT, 1240)
         assert.are.equal(expectedTime1, fsem.fireSupportTasks[1].startTime)
         assert.are.equal(expectedTime2, fsem.fireSupportTasks[2].startTime)
       end)

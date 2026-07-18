@@ -1185,8 +1185,8 @@ describe("Recon", function()
       assert.is_false(inserted.hasLaunched)
       assert.is_false(inserted.isFinished)
       assert.is_nil(inserted.trackingTargetGUID)
-      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", CURRENT_TIMESTAMP), inserted.takeoffTime)
-      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", CURRENT_TIMESTAMP + 2500), inserted.endTime)
+      assert.are.equal(os.date(constants.DATE_FORMAT, CURRENT_TIMESTAMP), inserted.takeoffTime)
+      assert.are.equal(os.date(constants.DATE_FORMAT, CURRENT_TIMESTAMP + 2500), inserted.endTime)
     end)
 
     -- Positive: inserted entry is a deep copy; the template stays untouched
@@ -1221,8 +1221,8 @@ describe("Recon", function()
       local result = Recon.insertEntry(reconContext, makeUAVTemplate(), "2026-02-14 05:30:00")
 
       assert.is_not_nil(result)
-      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", 5500), result and result.takeoffTime)
-      assert.are.equal(os.date("!%Y-%m-%d %H:%M:%S", 7500), result and result.endTime)
+      assert.are.equal(os.date(constants.DATE_FORMAT, 5500), result and result.takeoffTime)
+      assert.are.equal(os.date(constants.DATE_FORMAT, 7500), result and result.endTime)
     end)
 
     -- Negative: startTime delays the flight past the next pass (would have fit from current time)

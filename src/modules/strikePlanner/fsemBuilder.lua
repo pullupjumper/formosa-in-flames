@@ -225,7 +225,7 @@ end
 ---@param taskIndex integer Sequential task index within matrix
 ---@return string # UTC datetime string for task start time
 local function buildTaskStartTime(matrixStartTime, strikeInterval, taskIndex)
-  return os.date("!%Y-%m-%d %H:%M:%S", matrixStartTime + (taskIndex * strikeInterval)) --[[@as string]]
+  return os.date(constants.DATE_FORMAT, matrixStartTime + (taskIndex * strikeInterval)) --[[@as string]]
 end
 
 ---Mark newly assigned firing units to prevent duplicate allocation in current build cycle
