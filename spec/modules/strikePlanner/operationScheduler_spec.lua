@@ -167,7 +167,7 @@ describe("OperationScheduler", function()
     it("should resolve satellite mappings by reconObjectiveId", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-          { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
@@ -185,7 +185,7 @@ describe("OperationScheduler", function()
     it("should log SKIP when no mappings match the entry's recon objective", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-          { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
 
@@ -203,7 +203,7 @@ describe("OperationScheduler", function()
     it("should resolve SIGINT mappings by reconObjectiveId", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_EMITTER_TARGETING =
-          { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
@@ -255,7 +255,7 @@ describe("OperationScheduler", function()
         { name = "STRIKE/AB/W/1",           type = "air" },
       }
       cfg.c.packageTemplates.STRIKE_AB_W_1 = {
-        { name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+        { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operations = {}
       stubRecurringHelpers()
@@ -277,7 +277,7 @@ describe("OperationScheduler", function()
     it("should insert STRIKE/INFRASTRUCTURE/* mappings when fireSupportOnHold is false", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-          { { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" } }
+      { { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" } }
       cfg.c.fireSupportTaskTemplates.STRIKE_INFRASTRUCTURE_1 = { {
         name = "FST-INFRA-1",
         firingUnits = {},
@@ -362,10 +362,10 @@ describe("OperationScheduler", function()
         { name = "STRIKE/AB/E/1", type = "air" },
       }
       cfg.c.packageTemplates.STRIKE_AB_W_AAR_1 = {
-        { name = "PKG-AB-W-AAR-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+        { timeToReady = 5 * 60, name = "PKG-AB-W-AAR-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       cfg.c.packageTemplates.STRIKE_AB_E_1 = {
-        { name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+        { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operations = {}
       stubRecurringHelpers()

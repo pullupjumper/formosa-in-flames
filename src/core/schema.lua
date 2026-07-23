@@ -219,8 +219,20 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isTesting boolean Whether system is in test mode
 ---@field observationWindowSec number Ground operation observation window in seconds (window starts at recon trigger time; ground operations re-evaluate targets every tick within this window before being marked executed)
 
+---Air package timing configuration
+---@class SBJ__AirTimingConfig: table
+---@field assignmentSafetyMargin number Seconds reserved between assignment completion and planned takeoff
+---@field flightTimeSafetyMargin number Extra seconds added to estimated transit time
+---@field supportLeadTime table<string, number> Support-role arrival lead time before striker TOT
+---@field tankerSetupTime number Seconds tanker should be on station before the earliest receiver arrives
+---@field tankerUnresolvedArrivalLeadTime number Tanker lead time before striker TOT when receiver arrival cannot be resolved
+---@field unresolvedFlightTime { striker: number, support: number } Fallback flight times when route data cannot be resolved
+---@field missionDuration { standard: number, tanker: number } Mission durations measured from TOS/TOT, or takeoff in takeoff-only mode
+---@field cruiseSpeed { combatAircraft: number, tanker: number } Cruise speeds used for flight-time estimation in knots
+
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
+---@field timing SBJ__AirTimingConfig Dynamic ATO timing and safety margins
 ---@field landBased { deployedACs: SBJ__AirbaseDeploymentDescriptor[], wpnNum?: number } Land-based aircraft deployment
 ---@field shipBased table Ship-based aircraft configuration (reserved)
 
@@ -792,7 +804,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string The name of the mission
 ---@field side? string The side of the mission
 ---@field type string The type of the mission
----@field opts CMO__Mission The options for the mission
+---@field opts CMO__MissionOpts The options for the mission
 
 ---Tanker mission creation parameters
 ---Supports one mission or multiple independently configured tanker missions
@@ -812,6 +824,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field endTime? string The end time of the mission (optional)
 ---@field timeOnStation? string The time on station (optional)
 ---@field emcon string The EMCON settings for the mission
+
+---Calculated timestamps for one air package role
+---@class SBJ__RoleTiming: table
+---@field startTime number Conservative planned takeoff timestamp
+---@field timeOnStation? number CMO time-on-station timestamp
+---@field endTime number Mission end timestamp
 
 ---Tanker deployment descriptor supporting multiple tanker missions
 ---@class SBJ__TankerMissionDeploymentDescriptor: SBJ__MissionDeploymentDescriptor
@@ -1280,7 +1298,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
 ---@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration (optional)
 ---@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
----@field timeToReady? number Ready time in seconds (optional)
+---@field timeToReady number Ready time in seconds
 ---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
 
 ---Loadout status tracking for mission preparation

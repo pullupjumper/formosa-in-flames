@@ -227,6 +227,24 @@ describe("AirTaskingOrder", function()
       assert.are.equal(5000 - 600, pkg.loadoutStatus.loadoutStartTime)
     end)
 
+    -- Positive: configured assignment margin advances loadout processing
+    it("should use configured assignment safety margin for loadout timing", function()
+      local pkg = makePackage({
+        timeToReady = 600,
+        loadoutStatus = { isLoadoutInitiated = false, loadoutStartTime = nil }
+      })
+      local saveData = makeSaveData({ packages = { pkg } })
+      local config = makeConfig()
+      config.c.air.timing.assignmentSafetyMargin = 900
+
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
+      local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
+
+      AirTaskingOrder.airStrike(config, saveData)
+
+      assert.stub(stubIsAfter).was.called_with(4400, 900)
+    end)
+
     -- Positive: default timeToReady
     it("should default timeToReady to 9*60 when not specified", function()
       local pkg = makePackage({
@@ -785,17 +803,49 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameUtils, "createMission").returns(missionObj))
       local stubDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
-      trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
+      trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").invokes(function()
+        assert.is_nil(missionObj.TimeOnTargetStation)
+        assert.is_nil(missionObj.TakeOffTime)
+        return { "U1" }
+      end))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
       AirTaskingOrder.airStrike(makeConfig(), saveData)
 
       assert.is_true(missionObj.OnDeactivateDelete)
       assert.is_true(missionObj.OnDeactivateRTB)
-      -- assert.are.equal("2026-02-14 06:00:00!yyyy-MM-dd HH:mm:ss", missionObj.TakeOffTime)
+      assert.is_nil(missionObj.TakeOffTime)
       assert.are.equal("2026-02-14 08:00:00!yyyy-MM-dd HH:mm:ss", missionObj.endtime)
       assert.are.equal("00:30!yyyy-MM-dd HH:mm:ss", missionObj.TimeOnTargetStation)
       assert.stub(stubDoctrine).was.called(1)
+    end)
+
+    -- Positive: takeoff-only schedule remains mutually exclusive with TOS
+    it("should set TakeOffTime only after assignment when timeOnStation is absent", function()
+      local striker = makeRole({
+        missionName = "STRIKE-PKG-1",
+        startTime = "2026-02-14 06:00:00",
+        endTime = "2026-02-14 08:00:00"
+      })
+      local pkg = makePackage({ striker = striker })
+      local saveData = makeSaveData({ packages = { pkg } })
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
+      local missionObj = { name = "STRIKE-PKG-1" }
+      trackStub(stub(GameUtils, "createMission").returns(missionObj))
+      trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
+      trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
+      trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").invokes(function()
+        assert.is_nil(missionObj.TakeOffTime)
+        assert.is_nil(missionObj.TimeOnTargetStation)
+        return { "U1" }
+      end))
+
+      AirTaskingOrder.airStrike(makeConfig(), saveData)
+
+      assert.are.equal("2026-02-14 06:00:00!yyyy-MM-dd HH:mm:ss", missionObj.TakeOffTime)
+      assert.is_nil(missionObj.TimeOnTargetStation)
     end)
 
     -- Negative: striker creation fails

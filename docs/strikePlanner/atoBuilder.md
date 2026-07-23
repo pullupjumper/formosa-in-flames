@@ -38,7 +38,7 @@ flowchart TD
     ATO_READY{"airTaskingOrder 已初始化?"}
     NAME["generateUniqueAirOperationName"]
     BUILD_WAVE["buildATOWave + collectWaveTimingLogEntries"]
-    INSERT["insertWave<br/>寫入 airTaskingOrder 並 registerGeneratedOperation"]
+    INSERT["寫入 airTaskingOrder<br/>registerGeneratedOperation"]
     MARK["markOperationExecuted<br/>missing_template 以外皆標記"]
     LOGS["emitProcessedResultsLog"]
     END_FALSE["return false"]
@@ -71,7 +71,7 @@ flowchart TD
 
 `buildExecutablePackages()` 只會處理已通過目標門檻的 package。它會從 `operation.template` 的 deep copy 建立執行態 package，將 `package.target.list` 改成實際目標清單，並在機隊驗證成功後呼叫 `createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接使用「前一個有效 package」作為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
 
-驗證摘要會以 `packagesValid`、`packagesTotal`、`targets`、`packagesSkipped` 形式寫入 log，方便在 CMO console 或測試輸出追蹤哪些 operation 只是無有效 package，而不是插入流程失敗。
+驗證摘要會以 `packagesValid`、`packagesTotal`、`targets`、`packagesSkipped` 形式寫入 log；若 package 因機隊或加油機設定驗證失敗，摘要也會附上 `validationErrors`，列出 package、role、原因及已嘗試的基地資源。這能在 CMO console 或測試輸出直接辨識無有效 package 的原因，而不是只看到插入流程未執行。
 
 ### 機隊資源驗證
 
@@ -91,7 +91,7 @@ striker -> escort -> wildWeasel -> jammer -> tanker
            free <  roleData.unitCount -> 預訂 free
 ```
 
-當某候選基地通過半戰力門檻，模組會把 `roleData.baseGUID` 改寫為實際選定基地，並把預訂量累加到 `assignedAircraft`，讓同一輪後續 package 不會重複分配同批飛機。`roleData.unitCount` 不會因半戰力通過而改寫；實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
+當某候選基地通過半戰力門檻，模組會把 `roleData.baseGUID` 改寫為實際選定基地，並先把預訂量累加到 package 專用的暫存表。只有所有已設定角色都通過驗證時，暫存預約才會提交至 `assignedAircraft`；任一角色失敗時會丟棄整包暫存預約，避免未執行的 package 占用後續 package 的飛機。`roleData.unitCount` 不會因半戰力通過而改寫；實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
 
 `collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
 
@@ -99,37 +99,35 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 ### 飛行時間與任務時序
 
-支援角色包含 `escort`、`wildWeasel`、`jammer`、`tanker`。任務區會先讀取 `missionCreationParams.opts.patrolZone`，若不存在則使用 `opts.zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取得第一個任務區座標。多任務 tanker 會計算所有可解析 zone 的航程並採用最長飛行時間；若所有任務區、reference point 或距離資料都缺失，角色前置時間會 fallback 到 `ESCORT_ADVANCE_TIME`。
+支援角色包含 `escort`、`wildWeasel`、`jammer`、`tanker`。任務區會先讀取 `missionCreationParams.opts.PatrolZone`，若不存在則使用 `opts.Zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取得第一個任務區座標。多任務 tanker 會計算所有可解析 zone 的航程並採用最長飛行時間；若所有任務區、reference point 或距離資料都缺失，角色飛行時間會 fallback 到 `config.c.air.timing.unresolvedFlightTime.support`。
 
 | 條件 | 速度 |
 |---|---:|
-| `role == "tanker"` | 250 kt |
-| 非 tanker 且距離 `< 450 nm` | 470 kt |
-| 非 tanker 且距離 `>= 450 nm` | 430 kt |
+| `role == "tanker"` | `config.c.air.timing.cruiseSpeed.tanker` |
+| 其他角色 | `config.c.air.timing.cruiseSpeed.combatAircraft` |
 
-striker 飛行時間會用 striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程，估算飛到武器釋放點所需時間。`ScenEdit_QueryDB("weapon", weaponDBID)`、`ranges.land.max` 或 `Tool_Range()` 任一資料缺失或不可轉為 number 時，會 fallback 到 `MISSION_DURATION`，避免 CMO DB 查詢缺欄位造成 runtime error。
+striker 飛行時間會用 striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程，估算飛到武器釋放點所需時間。`ScenEdit_QueryDB("weapon", weaponDBID)`、`ranges.land.max` 或 `Tool_Range()` 任一資料缺失或不可轉為 number 時，會 fallback 到 `config.c.air.timing.unresolvedFlightTime.striker`。所有估算航程會額外加上 `config.c.air.timing.flightTimeSafetyMargin`，避免 CMO 實際 flight plan 比直線距離更長。
 
 
-時序公式如下：
+`timeOnStation` 是寫入 CMO 的權威到站時間；`startTime` 是內部使用的保守預估起飛時間。支援角色會依 `config.c.air.timing.supportLeadTime` 提前抵達作戰區：
 
 ```text
-第一個有效 package strikerStart =
-  currentTime + supportAdvanceTime - 遠距修正 + (package.timeToReady or 5 分鐘)
+supportTOS = strikerTOT - supportLeadTime[role]
+roleStart = roleTOS - conservativeFlightTime
 
-後續有效 package strikerStart =
-  previousValidPackage.striker.startTime + strikeInterval
-
-strikerEnd =
-  strikerStart + (package 有 tanker ? TANKER_DURATION : MISSION_DURATION)
-
-supportStart =
-  strikerStart - (tanker 用 maxSupportAdvanceTime；其他角色用各自 roleAdvanceTime)
-              + 遠距修正 + (package.timeToReady or 5 分鐘)
-
-supportEnd =
-  supportStart + maxSupportAdvanceTime + strikerFlightTime + 10 分鐘
-              (tanker 再扣 ELAPSED_TIME 30 分鐘)
+tankerTOS = earliestReceiverArrivalAtTankerZone - tankerSetupTime
 ```
+
+receiver 會由 `missionCreationParams.opts.TankerMissionList` 對應 tanker mission name；若無法解析 receiver 或 tanker zone，則 fallback 為 `strikerTOT - tankerUnresolvedArrivalLeadTime`。多任務 tanker 共用最早需要的 TOS，並以最遠 tanker zone 反推最早起飛時間。
+
+第一個有效 package 會先建立相對時序，再以以下約束整體向後平移：
+
+```text
+earliestAllowedTakeoff = currentTime + timeToReady + assignmentSafetyMargin
+scheduleShift = max(0, earliestAllowedTakeoff - earliestRoleStart)
+```
+
+後續 package 的 striker TOT 至少為前一個有效 package 的 striker TOT 加上 `strikeInterval`。前一包若使用 TakeOffTime 模式，會以前一包的起飛時間與航程估算 TOT；若本包仍不滿足掛載與 assign 安全條件，會再整組向後平移。TOS 模式下的 `endTime` 以 TOS/TOT 為基準加上任務持續時間；TakeOffTime 模式才以起飛時間為基準。
 
 ### 結果分類與 log
 
@@ -139,7 +137,7 @@ supportEnd =
 |---|---|---|
 | `missing_template` | operation 缺少 `template` | 不標記 executed，輸出 `ERROR` |
 | `no_valid_packages` | 目標不足或機隊驗證後沒有有效 package | 標記 executed，輸出 `SKIP` |
-| `insertion_failed` | `airTaskingOrder` 未初始化或插入失敗 | 標記 executed，輸出 `FAIL` |
+| `insertion_failed` | `airTaskingOrder` 未初始化 | 標記 executed，輸出 `FAIL` |
 | `nil` | Wave 成功插入 | 標記 executed，輸出 `OK` 與 timing log |
 
 log 由 `emitProcessedResultsLog()` 集中輸出，分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 scope，tag 使用 `constants.TAGS.DYNAMIC_OPERATIONS`。
@@ -199,9 +197,7 @@ saveData.c
 
 | 名稱 | 內容 | 用途 |
 |---|---|---|
-| `TIME_CONSTANTS` | `ESCORT_ADVANCE_TIME`、`MISSION_DURATION`、`TANKER_DURATION`、`ELAPSED_TIME`、速度與距離門檻 | 任務時序與飛行時間估算。`TANKER_ADVANCE_TIME` 目前宣告但未被使用。 |
 | `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | 機隊驗證與既有任務占用量統計。 |
-| `SUPPORT_ROLES` | `escort`、`wildWeasel`、`jammer`、`tanker` | 支援角色時序計算。 |
 | `ALL_ROLES` | `PACKAGE_ROLES` 加上 `reconUAV` | timing log 收集。 |
 | `PROCESS_REASON` | `missing_template`、`no_valid_packages`、`insertion_failed` | operation 處理失敗或略過原因。 |
 | `OPERATION_OUTCOME` | `ok`、`skip`、`missing_template`、`fail` | log 分類。 |
@@ -212,9 +208,9 @@ saveData.c
 
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
-| `config` | `config` 參數 | 本模組不直接索引特定 `config.*` 欄位；會原樣傳入 `TargetingProcess.processTargets()`。 |
+| `config` | `config.c.air.timing` | 支援角色戰術提前量、tanker 就位時間、巡航速度、無法解析航程時的 fallback、任務持續時間與安全裕度。 |
 | `config` | `config.c.packageTemplates` | 上游 [operationScheduler](operationScheduler.md) 的 air operation template 來源，動態 operation 最終會攜帶 `SBJ__WaveTemplate` 進入本模組。 |
-| `config` | `config.readytime` | 多數 package template 的 `timeToReady` 來源，runtime 以秒為單位；本模組 fallback 為 `5 * 60`。 |
+| `config` | `config.readytime` | Package template 必填的 `timeToReady` 來源，runtime 以秒為單位；本模組不提供 fallback。 |
 | `constants` | `constants.SIDES.ENEMY` | 讀取支援角色任務區 reference point。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出 dynamic ATO 處理結果與 timing log。 |
 

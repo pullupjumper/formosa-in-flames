@@ -22,8 +22,8 @@
 
 | 名稱 | 類型 | 用途 |
 |---|---|---|
-| `ADVANCE_SECONDS` | `number` | 掛彈與出擊檢查的提前秒數，目前為 `300`。 |
-| `LOADOUT_ROLES` | `string[]` | ATO Package 會依序檢查 `striker`、`escort`、`wildWeasel`、`jammer`、`tanker`。 |
+| `config.c.air.timing.assignmentSafetyMargin` | `number` | 掛彈與 assign 必須早於預估起飛時間的安全秒數。 |
+| `LOADOUT_ROLES` | `string[]` | ATO Package 會依序檢查 `tanker`、`striker`、`escort`、`wildWeasel`、`jammer`。 |
 | `ATO_OUTCOME` | table enum | Package 處理結果分類：`ok`、`skip`、`fail`、`error`。 |
 | `SBJ__ATOPackageProcessResult` | LuaLS class | `processPackage()` 回傳給 log formatter 的結構化結果。 |
 
@@ -89,15 +89,17 @@ flowchart TD
 
 ### 掛彈時序
 
-掛彈開始時間由所有角色中最早的 `startTime` 減去 `packageData.timeToReady` 得出；若未指定 `timeToReady`，執行層預設使用 9 分鐘。`ensureLoadoutStartTime()` 會將計算結果快取到 `packageData.loadoutStatus.loadoutStartTime`。
+掛彈開始時間由所有角色中最早的 `startTime` 減去 `packageData.timeToReady` 得出；標準 package 必須提供 `timeToReady`，執行層僅為舊存檔或非標準資料保留 9 分鐘 fallback。`ensureLoadoutStartTime()` 會將計算結果快取到 `packageData.loadoutStatus.loadoutStartTime`。
 
-`isTimeToStartLoadout()` 會以 `ADVANCE_SECONDS = 300` 秒作為提前檢查量。到點後 `setLoadoutForRole()` 會讀取角色基地 `baseGUID` 的 `embarkedUnits.Aircraft`，挑選 DBID 符合 `unitDBID` 的飛機，呼叫 `GameApi.ScenEdit_SetLoadout()` 設定 `LoadoutID` 與 `TimeToReady_Minutes`。
+`isTimeToStartLoadout()` 會以 `config.c.air.timing.assignmentSafetyMargin` 作為提前檢查量；舊 save/config 結構缺少此欄位時 fallback 為 300 秒。到點後 `setLoadoutForRole()` 會讀取角色基地 `baseGUID` 的 `embarkedUnits.Aircraft`，挑選 DBID 符合 `unitDBID` 的飛機，呼叫 `GameApi.ScenEdit_SetLoadout()` 設定 `LoadoutID` 與 `TimeToReady_Minutes`。
 
 `initiateLoadoutForPackage()` 會更新 `loadoutStatus.isLoadoutInitiated`、`loadoutInitiatedTime` 與 `expectedReadyTime`。後續 tick 由 `isLoadoutReady()` 判斷 `expectedReadyTime` 是否已到。
 
 ### 任務建立與派遣
 
-`createMission()` 以 `constants.SIDES.ENEMY` 建立任務，並使用角色的 `missionCreationParams` 與 `emcon`。若任務含 `endTime`，模組會設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`TakeOffTime`、`endtime`，必要時設定 `TimeOnTargetStation`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。
+`createMission()` 以 `constants.SIDES.ENEMY` 建立尚未排程的任務，並使用角色的 `missionCreationParams` 與 `emcon`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。完成目標與單元指派後，`applyPackageMissionSchedules()` 才設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`endtime` 與排程欄位，避免 CMO 在掛載或 assign 完成前依 TOS/TOT 自動產生起飛時間。
+
+排程欄位互斥：角色有 `timeOnStation` 時只設定 `TimeOnTargetStation`；否則才以 `startTime` 設定 `TakeOffTime`。`startTime` 在 TOS 模式下只作為內部掛載與 assign 的保守預估起飛時間，不會寫入 CMO。
 
 一般角色的 `missionCreationParams` 維持單一物件；只有 tanker 可設定為單一物件或陣列。tanker 使用陣列時，執行層會逐一建立所有 support mission，並對每個任務套用角色共用的 `endTime`、`timeOnStation` 與 `emcon`。既有單一 tanker mission 設定不需修改。
 
@@ -243,7 +245,7 @@ saveData.c
 | 類型 | 路徑 | 用途 |
 |---|---|---|
 | `config` | `config.c.ground.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
-| `config` | `config.readytime` | 常見 package template 會用它填入 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
+| `config` | `config.readytime` | Package template 會用它填入必填的 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
 | `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
 | `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
 | `constants` | `constants.SIDES.ENEMY` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |

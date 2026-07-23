@@ -169,7 +169,7 @@ end
 ---Update mission settings
 ---@param side string Side name
 ---@param missionName string Mission name
----@param settings CMO__Mission Mission settings to update
+---@param settings CMO__MissionOpts Mission settings to update
 ---@return CMO__Mission|nil # Updated mission object
 function realApi.ScenEdit_SetMission(side, missionName, settings)
   local result = ScenEdit_SetMission(side, missionName, settings)

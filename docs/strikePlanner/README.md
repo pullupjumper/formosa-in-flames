@@ -270,7 +270,7 @@ flowchart BT
 | `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |
 | `config.c.sigint.maxCount` | SIGINT 偵測次數門檻 |
 | `config.targetScanning` | 目標掃描配置（距離門檻、機場/港口清單、模式匹配） |
-| `config.readytime` | 多數空中打擊 template 的 `timeToReady` 來源，進入 Package 後由 ATO 掛彈流程使用 |
+| `config.readytime` | 所有空中打擊 template 必填的 `timeToReady` 來源，進入 Package 後由 ATO 掛彈流程使用 |
 
 ### constants.lua（不可變常數）
 

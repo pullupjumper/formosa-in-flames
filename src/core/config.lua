@@ -1100,6 +1100,29 @@ config.c.recon.isTesting = true
 -- ============================================================================
 
 config.c.air = {}
+config.c.air.timing = {
+  assignmentSafetyMargin = 5 * 60,
+  flightTimeSafetyMargin = 5 * 60,
+  supportLeadTime = {
+    escort = 15 * 60,
+    wildWeasel = 15 * 60,
+    jammer = 15 * 60,
+  },
+  tankerSetupTime = 15 * 60,
+  tankerUnresolvedArrivalLeadTime = 30 * 60,
+  unresolvedFlightTime = {
+    striker = 40 * 60,
+    support = 20 * 60,
+  },
+  missionDuration = {
+    standard = 40 * 60,
+    tanker = 120 * 60,
+  },
+  cruiseSpeed = {
+    combatAircraft = 450,
+    tanker = 250,
+  },
+}
 config.c.air.landBased = {}
 config.c.air.shipBased = {}
 config.c.air.landBased.deployedACs = {
@@ -2951,8 +2974,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -2973,8 +2996,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -2989,7 +3012,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/S/1",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3034,8 +3057,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3055,8 +3078,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3070,7 +3093,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/C/1",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_CENTER_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_CENTER_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3115,8 +3138,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3136,8 +3159,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3151,7 +3174,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/N/1",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_NORTH_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_NORTH_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3257,8 +3280,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3278,8 +3301,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3293,7 +3316,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/S/3",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3339,8 +3362,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3360,8 +3383,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3375,7 +3398,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/C/3",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_CENTER_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_CENTER_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3420,8 +3443,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3441,8 +3464,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -3456,7 +3479,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/N/3",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_NORTH_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_NORTH_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -3514,8 +3537,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3541,8 +3564,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3563,7 +3586,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/N/1",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3588,7 +3611,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_2
+              Zone = constants.AREAS.AAR_PATROL_2
             }
           },
           {
@@ -3597,7 +3620,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -3606,7 +3629,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
         },
@@ -3638,7 +3661,8 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
-            TankerMissionList = { "AAR/C/STRIKE/1" },
+            TankerUsage = 1,
+            TankerMissionList = { "AAR/C/STRIKE/1", "AAR/C/SWEEP/1", "AAR/C/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
             LaunchMissionWithoutTankersInPlace = true,
@@ -3662,8 +3686,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3689,8 +3713,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3711,7 +3735,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/C/1",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3736,7 +3760,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_2
+              Zone = constants.AREAS.AAR_PATROL_2
             }
           },
           {
@@ -3745,7 +3769,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -3754,7 +3778,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_4
+              Zone = constants.AREAS.AAR_PATROL_4
             }
           },
           {
@@ -3763,7 +3787,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
         },
@@ -3796,6 +3820,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
+            TankerUsage = 1,
             TankerMissionList = { "AAR/S/STRIKE/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
@@ -3820,8 +3845,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/SWEEP/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3847,8 +3872,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/SEAD/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3869,7 +3894,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/S/1",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/JAMMING/1" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -3894,7 +3919,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_2
+              Zone = constants.AREAS.AAR_PATROL_2
             }
           },
           {
@@ -3903,7 +3928,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -3912,7 +3937,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
           {
@@ -3921,7 +3946,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_5
+              Zone = constants.AREAS.AAR_PATROL_5
             }
           },
         },
@@ -3981,8 +4006,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4008,8 +4033,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_NORTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4030,7 +4055,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/N/3",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_NORTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/N/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4055,7 +4080,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_2
+              Zone = constants.AREAS.AAR_PATROL_2
             }
           },
           {
@@ -4064,7 +4089,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -4073,7 +4098,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
         },
@@ -4105,6 +4130,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
+            TankerUsage = 1,
             TankerMissionList = { "AAR/C/STRIKE/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
@@ -4129,8 +4155,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4156,8 +4182,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_CENTER_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4178,7 +4204,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/C/3",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_CENTER_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/C/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4203,7 +4229,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -4212,7 +4238,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -4221,7 +4247,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_4
+              Zone = constants.AREAS.AAR_PATROL_4
             }
           },
           {
@@ -4230,7 +4256,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
         },
@@ -4263,6 +4289,7 @@ config.c.packageTemplates = {
           type = "strike",
           opts = {
             type = "land",
+            TankerUsage = 1,
             TankerMissionList = { "AAR/S/STRIKE/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
             MaxReceiversInQueuePerTanker_airborne = 1,
@@ -4287,8 +4314,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/SWEEP/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4314,8 +4341,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            ProsecutionZone = constants.AREAS.TARGET_AREA_SOUTH_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/SEAD/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4336,7 +4363,7 @@ config.c.packageTemplates = {
           name = "JAMMING/AB/S/3",
           type = "support",
           opts = {
-            zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
+            Zone = constants.AREAS.TARGET_AREA_SOUTH_PATROL,
             TankerUsage = 1,
             TankerMissionList = { "AAR/S/JAMMING/3" },
             FuelQtyToStartLookingForTanker_airborne = 85,
@@ -4361,7 +4388,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_2
+              Zone = constants.AREAS.AAR_PATROL_2
             }
           },
           {
@@ -4370,7 +4397,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_3
+              Zone = constants.AREAS.AAR_PATROL_3
             }
           },
           {
@@ -4379,7 +4406,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_1
+              Zone = constants.AREAS.AAR_PATROL_1
             }
           },
           {
@@ -4388,7 +4415,7 @@ config.c.packageTemplates = {
             opts = {
               OneThirdRule = false,
               FlightSize = 2,
-              zone = constants.AREAS.AAR_PATROL_5
+              Zone = constants.AREAS.AAR_PATROL_5
             }
           },
         },
@@ -4449,7 +4476,7 @@ config.c.packageTemplates = {
           opts = {
             OneThirdRule = false,
             FlightSize = 1,
-            zone = constants.AREAS.AAR_PATROL_3
+            Zone = constants.AREAS.AAR_PATROL_3
           }
         },
         emcon = "Radar=Passive;OECM=Passive"
@@ -4494,8 +4521,8 @@ config.c.packageTemplates = {
       --       FlightSize = 4,
       --       CheckOPAREA = false,
       --       CheckWWR = false,
-      --       prosecutionZone = constants.AREASs.TARGET_AREA_JHI_PROSECUTION,
-      --       patrolZone = constants.AREASs.TARGET_AREA_JHI_PATROL
+      --       ProsecutionZone = constants.AREASs.TARGET_AREA_JHI_PROSECUTION,
+      --       PatrolZone = constants.AREASs.TARGET_AREA_JHI_PATROL
       --     }
       --   },
       --   emcon = "Radar=Passive;OECM=Active"
@@ -4515,8 +4542,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_JHI_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_JHI_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_JHI_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_JHI_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -4530,7 +4557,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/JHI/1",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_JHI_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_JHI_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -4575,8 +4602,8 @@ config.c.packageTemplates = {
       --       FlightSize = 4,
       --       CheckOPAREA = false,
       --       CheckWWR = false,
-      --       prosecutionZone = constants.AREASs.TARGET_AREA_JIASHAN_PROSECUTION,
-      --       patrolZone = constants.AREASs.TARGET_AREA_JIASHAN_PATROL
+      --       ProsecutionZone = constants.AREASs.TARGET_AREA_JIASHAN_PROSECUTION,
+      --       PatrolZone = constants.AREASs.TARGET_AREA_JIASHAN_PATROL
       --     }
       --   },
       --   emcon = "Radar=Passive;OECM=Active"
@@ -4596,8 +4623,8 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            prosecutionZone = constants.AREAS.TARGET_AREA_JIASHAN_PROSECUTION,
-            patrolZone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL
+            ProsecutionZone = constants.AREAS.TARGET_AREA_JIASHAN_PROSECUTION,
+            PatrolZone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL
           }
         },
         emcon = "Radar=Passive;OECM=Active"
@@ -4611,7 +4638,7 @@ config.c.packageTemplates = {
         missionCreationParams = {
           name = "JAMMING/AB/JIA/1",
           type = "support",
-          opts = { zone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL }
+          opts = { Zone = constants.AREAS.TARGET_AREA_JIASHAN_PATROL }
         },
         emcon = "Radar=Passive;OECM=Active"
       },
@@ -4658,7 +4685,7 @@ config.c.packageTemplates = {
             FlightSize = 4,
             CheckOPAREA = false,
             CheckWWR = false,
-            zone = constants.AREAS.AREA_OF_OPS_D
+            Zone = constants.AREAS.AREA_OF_OPS_D
           }
         },
         emcon = "Radar=Passive;OECM=Active"

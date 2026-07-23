@@ -13,6 +13,8 @@ describe("AtoBuilder", function()
   ---@type luassert.spy[]
   local activeStubs
   ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
   local warnStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
@@ -63,7 +65,7 @@ describe("AtoBuilder", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "error"))
     warnStub = trackStub(stub(Logger, "warn"))
   end)
@@ -255,6 +257,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               unitCount = 2,
@@ -459,6 +462,102 @@ describe("AtoBuilder", function()
     assert.is_string(wave.packages[1].striker.startTime)
   end)
 
+  -- Positive: a previous takeoff-only package uses its own flight time for interval spacing
+  it("should derive package interval from the previous takeoff-only striker flight time", function()
+    local baseTimestamp = 1770000000
+    local firstTakeoff = baseTimestamp + 10000
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/TAKEOFF/INTERVAL",
+        isFirstWave = true,
+        strikeInterval = 10 * 60,
+        packages = {
+          {
+            timeToReady = 5,
+            striker = {
+              baseGUID = "BASE-1",
+              unitCount = 1,
+              unitDBID = 100,
+              weaponDBID = 200,
+              startTime = os.date("%Y-%m-%d %H:%M:%S", firstTakeoff)
+            },
+            target = {
+              objs = { { baseName = "TARGET-1", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          },
+          {
+            timeToReady = 5,
+            striker = {
+              baseGUID = "BASE-2",
+              unitCount = 1,
+              unitDBID = 100,
+              weaponDBID = 200
+            },
+            target = {
+              objs = { { baseName = "TARGET-2", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+    local config = makeConfig()
+    config.c.air.timing.cruiseSpeed.combatAircraft = 300
+    config.c.air.timing.flightTimeSafetyMargin = 2 * 60
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
+      { operationBatch = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+      return { targetConfig.objs[1].baseName }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = guid, embarkedUnits = { Aircraft = { "AC-1" } } }
+      end
+      if guid == "BASE-2" then
+        return { guid = guid, embarkedUnits = { Aircraft = { "AC-2" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(GameApi, "Tool_Range").invokes(function(baseGUID)
+      return baseGUID == "BASE-1" and 200 or 400
+    end))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({
+      ranges = { land = { max = 50 } }
+    }))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/TAKEOFF/INTERVAL"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
+
+    local result = AtoBuilder.process(config, saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TAKEOFF/INTERVAL"]
+    assert.are.equal(2, #wave.packages)
+    assert.is_nil(wave.packages[1].striker.timeOnStation)
+
+    for _, s in ipairs(activeStubs) do s:revert() end
+    activeStubs = {}
+
+    local firstTakeoffTime = Utils.parseDatetimeToTimestamp(wave.packages[1].striker.startTime)
+    local secondTimeOnTarget = Utils.parseDatetimeToTimestamp(wave.packages[2].striker.timeOnStation)
+    local timingConfig = config.c.air.timing
+    local previousFlightTime = math.ceil((150 / timingConfig.cruiseSpeed.combatAircraft) * 3600) +
+        timingConfig.flightTimeSafetyMargin
+    assert.are.equal(previousFlightTime + (10 * 60), secondTimeOnTarget - firstTakeoffTime)
+  end)
+
   -- Positive: at least one operation succeeds among multiple
   it("should return true when at least one air operation is processed successfully", function()
     local reconEntry1 = makeReconEntry()
@@ -477,6 +576,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -543,7 +643,7 @@ describe("AtoBuilder", function()
               unitCount = 2,
               unitDBID = 101,
               missionCreationParams = {
-                opts = { patrolZone = { "RP-ESCORT-1" } }
+                opts = { PatrolZone = { "RP-ESCORT-1" } }
               }
             },
             target = {
@@ -603,6 +703,23 @@ describe("AtoBuilder", function()
     assert.is_string(pkg.escort.endTime)
     assert.is_false(pkg.hasLaunched)
     assert.is_false(pkg.loadoutStatus.isLoadoutInitiated)
+
+    for _, s in ipairs(activeStubs) do s:revert() end
+    activeStubs = {}
+
+    local strikerTimeOnStation = Utils.parseDatetimeToTimestamp(pkg.striker.timeOnStation)
+    local strikerEndTime = Utils.parseDatetimeToTimestamp(pkg.striker.endTime)
+    local escortTimeOnStation = Utils.parseDatetimeToTimestamp(pkg.escort.timeOnStation)
+    local escortStartTime = Utils.parseDatetimeToTimestamp(pkg.escort.startTime)
+    assert.are.equal(
+      BaseConfig.c.air.timing.supportLeadTime.escort,
+      strikerTimeOnStation - escortTimeOnStation
+    )
+    assert.are.equal(
+      BaseConfig.c.air.timing.missionDuration.standard,
+      strikerEndTime - strikerTimeOnStation
+    )
+    assert.are.equal(baseTimestamp + 5 + (5 * 60), escortStartTime)
   end)
 
   -- Positive: missing weapon database range falls back to default striker flight time
@@ -625,7 +742,7 @@ describe("AtoBuilder", function()
               unitCount = 1,
               unitDBID = 101,
               missionCreationParams = {
-                opts = { patrolZone = { "RP-ESCORT-1" } }
+                opts = { PatrolZone = { "RP-ESCORT-1" } }
               }
             },
             target = {
@@ -639,6 +756,9 @@ describe("AtoBuilder", function()
     }
 
     local saveData = makeSaveData({ reconEntry })
+    local config = makeConfig()
+    config.c.air.timing.unresolvedFlightTime.striker = 17 * 60
+    config.c.air.timing.flightTimeSafetyMargin = 2 * 60
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function()
@@ -669,11 +789,22 @@ describe("AtoBuilder", function()
     trackStub(stub(DynamicState, "registerGeneratedOperation"))
     trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.process(config, saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
-    assert.is_string(wave.packages[1].escort.endTime)
+    local pkg = wave.packages[1]
+    assert.is_string(pkg.escort.endTime)
+
+    for _, s in ipairs(activeStubs) do s:revert() end
+    activeStubs = {}
+
+    local strikerStartTime = Utils.parseDatetimeToTimestamp(pkg.striker.startTime)
+    local strikerTimeOnStation = Utils.parseDatetimeToTimestamp(pkg.striker.timeOnStation)
+    assert.are.equal(
+      config.c.air.timing.unresolvedFlightTime.striker + config.c.air.timing.flightTimeSafetyMargin,
+      strikerTimeOnStation - strikerStartTime
+    )
   end)
 
   -- Positive: support role end time uses UTC formatting
@@ -696,7 +827,7 @@ describe("AtoBuilder", function()
               unitCount = 1,
               unitDBID = 101,
               missionCreationParams = {
-                opts = { patrolZone = { "RP-ESCORT-1" } }
+                opts = { PatrolZone = { "RP-ESCORT-1" } }
               }
             },
             target = {
@@ -821,12 +952,11 @@ describe("AtoBuilder", function()
     for _, s in ipairs(activeStubs) do s:revert() end
     activeStubs = {}
 
-    local startTs = Utils.parseDatetimeToTimestamp(pkg.striker.startTime)
+    local timeOnStationTs = Utils.parseDatetimeToTimestamp(pkg.striker.timeOnStation)
     local endTs = Utils.parseDatetimeToTimestamp(pkg.striker.endTime)
-    local duration = endTs - startTs
-    -- With tanker: duration ~7200 (TANKER_DURATION), not ~2400 (MISSION_DURATION)
-    assert.is_true(duration > 5000)
-    assert.is_true(duration <= 7200)
+    local duration = endTs - timeOnStationTs
+    -- With tanker: mission remains active for 120 minutes after striker TOT.
+    assert.are.equal(BaseConfig.c.air.timing.missionDuration.tanker, duration)
   end)
 
   -- Positive: tanker timing uses the farthest configured mission zone
@@ -843,15 +973,23 @@ describe("AtoBuilder", function()
         packages = {
           {
             timeToReady = 5,
-            striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
+            striker = {
+              baseGUID = "BASE-1",
+              unitCount = 1,
+              unitDBID = 100,
+              weaponDBID = 200,
+              missionCreationParams = {
+                opts = { TankerMissionList = { "AAR-FAR" } }
+              }
+            },
             tanker = {
               baseGUID = "BASE-2",
               unitCount = 2,
               unitDBID = 102,
               weaponDBID = 0,
               missionCreationParams = {
-                { name = "AAR-NEAR", type = "support", opts = { zone = { "RP-NEAR" } } },
-                { name = "AAR-FAR", type = "support", opts = { zone = { "RP-FAR" } } }
+                { name = "AAR-NEAR", type = "support", opts = { Zone = { "RP-NEAR" } } },
+                { name = "AAR-FAR", type = "support", opts = { Zone = { "RP-FAR" } } }
               }
             },
             target = {
@@ -906,7 +1044,19 @@ describe("AtoBuilder", function()
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TANKER/MULTI-ZONE"]
     local tankerStartTime = Utils.parseDatetimeToTimestamp(wave.packages[1].tanker.startTime)
-    assert.are.equal(baseTimestamp - 2870, tankerStartTime)
+    local tankerTimeOnStation = Utils.parseDatetimeToTimestamp(wave.packages[1].tanker.timeOnStation)
+    local strikerStartTime = Utils.parseDatetimeToTimestamp(wave.packages[1].striker.startTime)
+    local timingConfig = BaseConfig.c.air.timing
+    local tankerFlightTime = math.ceil((200 / timingConfig.cruiseSpeed.tanker) * 3600) +
+        timingConfig.flightTimeSafetyMargin
+    local receiverTransitTime = math.ceil((200 / timingConfig.cruiseSpeed.combatAircraft) * 3600) +
+        timingConfig.flightTimeSafetyMargin
+    assert.are.equal(baseTimestamp + 305, tankerStartTime)
+    assert.are.equal(tankerFlightTime, tankerTimeOnStation - tankerStartTime)
+    assert.are.equal(
+      timingConfig.tankerSetupTime,
+      strikerStartTime + receiverTransitTime - tankerTimeOnStation
+    )
   end)
 
   -- Negative: tanker unit count cannot be divided evenly
@@ -1004,6 +1154,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -1279,6 +1430,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -1372,6 +1524,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -1493,6 +1646,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 3, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -1706,6 +1860,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -1908,6 +2063,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
@@ -2010,6 +2166,15 @@ describe("AtoBuilder", function()
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
+    assert.stub(logStub).was.called()
+    local logMessage = logStub.calls[1].vals[2]
+    assert.truthy(string.find(logMessage, "validationErrors=", 1, true))
+    assert.truthy(string.find(logMessage, "package=1", 1, true))
+    assert.truthy(string.find(logMessage, "role=striker", 1, true))
+    assert.truthy(string.find(logMessage, "reason=insufficient_aircraft", 1, true))
+    assert.truthy(string.find(logMessage, "BASE-1:available=1:assigned=0", 1, true))
+    assert.truthy(string.find(logMessage, "BASE-2:available=1:assigned=0", 1, true))
+    assert.truthy(string.find(logMessage, "BASE-3:available=1:assigned=0", 1, true))
   end)
 
   -- Positive: each role resolves its base independently within the same package
@@ -2024,6 +2189,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
@@ -2082,6 +2248,71 @@ describe("AtoBuilder", function()
     assert.are.equal("BASE-1", wave.packages[1].escort.baseGUID)
   end)
 
+  -- Positive: a failed package does not retain staged aircraft reservations
+  it("should release staged reservations when a later role invalidates the package", function()
+    local reconEntry = makeReconEntry()
+    local operation = {
+      type = "air",
+      executed = false,
+      template = {
+        name = "STRIKE/TRANSACTION/1",
+        isFirstWave = true,
+        strikeInterval = 0,
+        packages = {
+          {
+            timeToReady = 5,
+            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            escort = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 101, weaponDBID = 300 },
+            target = {
+              objs = { { baseName = "FIRST", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          },
+          {
+            timeToReady = 5,
+            striker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 100, weaponDBID = 200 },
+            target = {
+              objs = { { baseName = "SECOND", subTypes = { "Radar" } } },
+              contactAge = 300,
+              minTargetCount = 1
+            }
+          }
+        }
+      }
+    }
+
+    local saveData = makeSaveData({ reconEntry })
+
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+    trackStub(stub(DynamicState, "filterOperationsByType").returns({
+      { operationBatch = reconEntry, operation = operation }
+    }))
+    trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+      return { targetConfig.objs[1].baseName }
+    end))
+    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      if guid == "BASE-1" then
+        return { guid = guid, embarkedUnits = { Aircraft = { "S1", "S2" } } }
+      end
+      return { dbid = 100, mission = nil }
+    end))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/TRANSACTION/1"))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    trackStub(stub(DynamicState, "markOperationExecuted"))
+
+    local result = AtoBuilder.process(makeConfig(), saveData, {})
+
+    assert.is_true(result)
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TRANSACTION/1"]
+    assert.are.equal(1, #wave.packages)
+    assert.are.equal("SECOND", wave.packages[1].target.list[1])
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+  end)
+
   -- Positive: second package in same wave falls back because first package consumed primary
   it("should deduct same-wave bookings so later packages fallback to candidates", function()
     local reconEntry = makeReconEntry()
@@ -2094,6 +2325,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
@@ -2108,6 +2340,7 @@ describe("AtoBuilder", function()
             }
           },
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
@@ -2169,6 +2402,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             tanker = {
               baseGUID = "BASE-1",
@@ -2234,6 +2468,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 },
             jammer = {
               baseGUID = "BASE-1",
@@ -2303,6 +2538,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = { baseGUID = "BASE-1", unitCount = 4, unitDBID = 100, weaponDBID = 200 },
             target = {
               objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -2403,6 +2639,7 @@ describe("AtoBuilder", function()
         strikeInterval = 0,
         packages = {
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
@@ -2417,6 +2654,7 @@ describe("AtoBuilder", function()
             }
           },
           {
+            timeToReady = 5,
             striker = {
               baseGUID = "BASE-1",
               baseGUIDCandidates = { "BASE-2" },
