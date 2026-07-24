@@ -1178,8 +1178,9 @@ def build_dependency_graph(
     Returns dict of {file_path: set_of_dependencies}
     """
     dependency_graph = {}
+    standalone_count = 0
 
-    print("📊 Analyzing file dependencies...")
+    print(f"📊 Analyzing dependencies · {len(files)} files\n")
     for rel_path, full_path in files.items():
         dependencies = analyze_file_dependencies(full_path, slim_dir, src_dir)
         # Only keep dependencies that exist in our file list
@@ -1187,9 +1188,19 @@ def build_dependency_graph(
         dependency_graph[rel_path] = valid_dependencies
 
         if valid_dependencies:
-            print(f"  {rel_path} depends on: {', '.join(sorted(valid_dependencies))}")
+            ordered_deps = sorted(valid_dependencies)
+            dep_count = len(ordered_deps)
+            noun = "dep" if dep_count == 1 else "deps"
+            print(f"  {rel_path}  ({dep_count} {noun})")
+            for index, dep in enumerate(ordered_deps):
+                branch = "└─" if index == dep_count - 1 else "├─"
+                print(f"    {branch} {dep}")
         else:
-            print(f"  {rel_path} has no dependencies")
+            standalone_count += 1
+            print(f"  {rel_path}  (no deps)")
+
+    with_deps_count = len(files) - standalone_count
+    print(f"\n  {with_deps_count} with deps · {standalone_count} standalone")
 
     return dependency_graph
 
