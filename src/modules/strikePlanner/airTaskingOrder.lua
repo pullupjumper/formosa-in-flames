@@ -18,23 +18,6 @@ local ATO_OUTCOME = {
   ERROR = "error"
 }
 
----@alias SBJ__ATOPackageProcessOutcome
----| "ok"
----| "skip"
----| "fail"
----| "error"
-
----@class SBJ__ATOPackageProcessResult
----@field outcome SBJ__ATOPackageProcessOutcome Processing outcome used for log classification
----@field missionName string Strike mission name used as log identity
----@field waveName? string Wave name added by processWave before log emission
----@field action? string Successful action token, such as "initiate_loadout" or "launch"
----@field reason? string Failure or skip reason token
----@field readyTime? string UTC ready time for loadout completion
----@field reconUavTakeoff? string UTC recon UAV takeoff time when scheduled
----@field targets? integer Number of targets available or assigned
----@field required? integer Minimum target count required
-
 -- ============================================================================
 -- Loadout Timing
 -- ============================================================================

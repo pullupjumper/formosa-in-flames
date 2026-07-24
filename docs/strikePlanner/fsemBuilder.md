@@ -208,7 +208,7 @@ saveData.c
 
 | 函數 | 參數 | 回傳 | 呼叫者 | 說明 |
 |---|---|---|---|---|
-| `FsemBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | `StrikePlanner.executeDynamicFireSupportPlan()` → `src/scripts/china/scheduledStrikePlanner.lua` | 處理尚未執行的 ground operations；若至少插入一個 FSEM，回傳 `true`。 |
+| `FsemBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | `StrikePlanner.processDynamicGroundOperations()` → `src/scripts/china/scheduledStrikePlanner.lua` | 處理尚未執行的 ground operations；若至少插入一個 FSEM，回傳 `true`。 |
 
 ---
 

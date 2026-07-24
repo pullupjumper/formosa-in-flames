@@ -22,7 +22,7 @@ if unit then
     if entry.unitGUID == unit.guid then
       local course = nil
       course = constants.COURSES.WZ8
-      local wz8 = StrikePlanner.launchWZ8(unit, course)
+      local wz8 = StrikePlanner.launchWZ8FromH6N(unit, course)
 
       if wz8 then
         entry.unitGUID = wz8.guid

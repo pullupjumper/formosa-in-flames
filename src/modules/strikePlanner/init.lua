@@ -7,19 +7,19 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 
 local StrikePlanner = {}
 
----Initialize reconnaissance queue entries from configuration
+---Initialize reconnaissance queue from configuration
 ---@param reconConfig SBJ__ReconConfig Reconnaissance configuration
 ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
-function StrikePlanner.initReconQueueEntries(reconConfig, reconContext)
+function StrikePlanner.initReconQueue(reconConfig, reconContext)
   Recon.initReconQueueEntries(reconConfig, reconContext)
 end
 
----Insert a new entry into the reconnaissance queue
+---Schedule a UAV entry in the reconnaissance queue
 ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
 ---@param entryTemplate SBJ__ReconQueueEntryTemplateUAV The template for the entry to insert
 ---@param startTime string|nil The start time of the entry to insert
 ---@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
-function StrikePlanner.insertEntry(reconContext, entryTemplate, startTime)
+function StrikePlanner.scheduleReconUAVEntry(reconContext, entryTemplate, startTime)
   return Recon.insertEntry(reconContext, entryTemplate, startTime)
 end
 
@@ -27,7 +27,7 @@ end
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__Waypoint[] The reconnaissance course for WZ-8
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched
-function StrikePlanner.launchWZ8(h6n, course)
+function StrikePlanner.launchWZ8FromH6N(h6n, course)
   return Recon.launchWZ8(h6n, course)
 end
 
@@ -37,68 +37,48 @@ function StrikePlanner.processReconQueue(processingContext)
   Recon.processQueue(processingContext)
 end
 
----Track target with active reconnaissance assets
----@param reconContext SBJ__ReconContext Reconnaissance runtime context
----@param units CMO__Unit[] Active reconnaissance units
----@param UAVDBID number UAV database ID
----@param target CMO__Contact|CMO__Unit Target to track
-function StrikePlanner.trackTarget(reconContext, units, UAVDBID, target)
-  Recon.trackTarget(reconContext, units, UAVDBID, target)
-end
-
----Scan and categorize contacts into a target list
+---Populate the persistent target list from categorized contacts
 ---@param sideName string Side name to get contacts from
 ---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration
 ---@param saveData SBJ__SaveData Persistent save data
-function StrikePlanner.scanTargets(sideName, scanConfig, saveData)
+function StrikePlanner.populateTargetList(sideName, scanConfig, saveData)
   TargetingProcess.scanTargets(sideName, scanConfig, saveData)
 end
 
----Filter targets by base and subtype criteria
+---Select target GUIDs by base and subtype criteria
 ---@param targetlist SBJ__TargetEntry[] Target list entries
 ---@param queryParams SBJ__TargetQueryParam[] Filter query parameters
 ---@return string[] # Array of matching target GUIDs
-function StrikePlanner.filterTargetsByTypeAndBase(targetlist, queryParams)
+function StrikePlanner.selectTargetGUIDsByBaseAndSubtype(targetlist, queryParams)
   return TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
 end
 
----Resolve executable targets for strike planning
+---Process dynamic ground operations and generate fire support matrices
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param targetConfig SBJ__TargetTemplate Target selection configuration
----@param isFirstWave boolean Whether the strike is the first wave
----@return string[] # Array of target GUIDs
-function StrikePlanner.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
-  return TargetingProcess.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
-end
-
----Execute dynamic ground fire support planning
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
----@param contacts CMO__Contact[] Available sensor contacts from the game
-function StrikePlanner.executeDynamicFireSupportPlan(config, saveData, contacts)
+function StrikePlanner.processDynamicGroundOperations(config, saveData, contacts)
   FsemBuilder.execute(config, saveData, contacts)
 end
 
----Execute dynamic air tasking order insertion
+---Process dynamic air operations and generate air tasking order waves
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
-function StrikePlanner.processDynamicATO(config, saveData, contacts)
+function StrikePlanner.processDynamicAirOperations(config, saveData, contacts)
   AtoBuilder.process(config, saveData, contacts)
 end
 
----Execute ground fire support strikes for active matrices
+---Process active fire support plans, including deployment and strikes
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
-function StrikePlanner.strikeGroundTargets(saveData)
+function StrikePlanner.processActiveFireSupportPlans(saveData)
   FireSupportPlan.strike(saveData)
 end
 
----Execute scheduled air strike packages
+---Process active air tasking order waves and strike packages
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
-function StrikePlanner.executeAirStrike(config, saveData)
+function StrikePlanner.processActiveATOWaves(config, saveData)
   AirTaskingOrder.airStrike(config, saveData)
 end
 

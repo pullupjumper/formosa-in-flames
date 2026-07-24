@@ -43,6 +43,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | 偵察排程者 | [recon](recon.md) / [operationScheduler](operationScheduler.md) | recon 管理偵察生命週期，scheduler 將偵察結果轉為後續 air/ground operations。 |
 | 前線重導向 | [frontlineRedirect](frontlineRedirect.md), [airbaseAttrition](airbaseAttrition.md) | 依前線基地駐機戰損啟用 sticky redirect，將符合規則的 strike mapping 改用 AAR 編組。 |
 | 動態空中生成者 | [atoBuilder](atoBuilder.md) | 驗證目標與機隊資源後插入 ATO Wave。 |
+| 空中時序計算者 | [packageTiming](packageTiming.md) | 為通過驗證的 package 計算各角色時序與加油機受油協調。 |
 | 靜態/動態 ATO 執行者 | [airTaskingOrder](airTaskingOrder.md) | 執行所有已啟動 Wave，不區分來源。 |
 | 動態地面生成者 | [fsemBuilder](fsemBuilder.md) | 驗證目標與發射單元後插入 FSEM。 |
 | 靜態/動態 FSP 執行者 | [fireSupportPlan](fireSupportPlan.md) | 執行所有已啟動 FSEM，不區分來源。 |
@@ -61,6 +62,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | [fireSupportPlan](fireSupportPlan.md) | `fireSupportPlan.lua` | FSP 執行（發射單元部署與打擊） |
 | [fsemBuilder](fsemBuilder.md) | `fsemBuilder.lua` | 動態 FSEM 生成（偵察驅動） |
 | [atoBuilder](atoBuilder.md) | `atoBuilder.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
+| [packageTiming](packageTiming.md) | `packageTiming.lua` | Package 時序計算（飛行時間、加油機受油協調、時程平移） |
 | [dynamicState](dynamicState.md) | `dynamicState.lua` | 動態作戰狀態工具（命名、登記、狀態追蹤） |
 
 ---
@@ -239,12 +241,14 @@ flowchart BT
         FSP["fireSupportPlan"]
         DFSP["fsemBuilder"]
         DATO["atoBuilder"]
+        PKGT["packageTiming"]
     end
 
     ATO --> UTILS & GAMEAPI & GAMEUTILS & ASSIGN & RECON
     FSP --> GAMEAPI & GAMEUTILS & ATTACK & MISSILE & CONSTANTS
     DFSP --> TP & DSTATE & GAMEAPI & UTILS & MISSILE & CONSTANTS
-    DATO --> TP & DSTATE & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
+    DATO --> TP & DSTATE & PKGT & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
+    PKGT --> GAMEAPI & UTILS & CONSTANTS
     RECON --> RSCHED & FREDIR & GAMEAPI & GAMEUTILS & UTILS & CONSTANTS
     RSCHED --> FREDIR & GAMEAPI & UTILS & LOGGER & CONSTANTS
     FREDIR --> ATTR & UTILS

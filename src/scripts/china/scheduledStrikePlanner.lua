@@ -20,12 +20,9 @@ if saveData == nil then
   return
 end
 
--- Dynamic operations plan - unified handling of reconnaissance scheduling and various strike methods
 if saveData.c.dynamicOperations.enabled then
-  -- Execute ground fire support operations
-  StrikePlanner.executeDynamicFireSupportPlan(config, saveData, contacts)
-  -- Execute air combat missions
-  StrikePlanner.processDynamicATO(config, saveData, contacts)
+  StrikePlanner.processDynamicGroundOperations(config, saveData, contacts)
+  StrikePlanner.processDynamicAirOperations(config, saveData, contacts)
 end
 
 if saveData.c.recon.enabled then
@@ -38,17 +35,17 @@ if saveData.c.recon.enabled then
   })
 
   if math.random() > 0.5 then
-    StrikePlanner.insertEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)
+    StrikePlanner.scheduleReconUAVEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)
   end
 end
 
 if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
-  for _, value in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
-    local unit = GameApi.ScenEdit_GetUnit(value)
+  for _, guid in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
-      table.insert(ships, { guid = value, weaponDBID = config.c.surface.lacm.weaponDBID })
+      table.insert(ships, { guid = guid, weaponDBID = config.c.surface.lacm.weaponDBID })
     end
   end
 
@@ -67,8 +64,8 @@ if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.
 
     if actualUnit then
       local course = { { latitude = actualUnit.latitude, longitude = actualUnit.longitude, presetDepth = 2 } }
-      for _, value in ipairs(actualUnit.course) do
-        table.insert(course, { latitude = value.latitude, longitude = value.longitude, presetDepth = 2 })
+      for _, waypoint in ipairs(actualUnit.course) do
+        table.insert(course, { latitude = waypoint.latitude, longitude = waypoint.longitude, presetDepth = 2 })
       end
 
       actualUnit.course = course
@@ -86,11 +83,11 @@ if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.
 end
 
 if saveData.c.ground.enabled then
-  StrikePlanner.strikeGroundTargets(saveData)
+  StrikePlanner.processActiveFireSupportPlans(saveData)
 end
 
 if saveData.c.air.enabled then
-  StrikePlanner.executeAirStrike(config, saveData)
+  StrikePlanner.processActiveATOWaves(config, saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

@@ -254,7 +254,7 @@ saveData.c.ground
 
 | 呼叫者 | 條件 | 說明 |
 |---|---|---|
-| `StrikePlanner.strikeGroundTargets(saveData)` | 無額外條件 | `src/modules/strikePlanner/init.lua` 對外包裝。 |
+| `StrikePlanner.processActiveFireSupportPlans(saveData)` | 無額外條件 | `src/modules/strikePlanner/init.lua` 對外包裝。 |
 | `src/scripts/china/scheduledStrikePlanner.lua` | `saveData.c.ground.enabled == true` | 定時排程中執行 FSP；同一輪腳本結束時會儲存 `SaveData`。 |
 
 ---

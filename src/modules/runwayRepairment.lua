@@ -16,7 +16,7 @@ function RunwayRepairment.initRunways(config, saveData)
     table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
   end
 
-  local targetlist = StrikePlanner.filterTargetsByTypeAndBase(saveData.c.targetlist, taiwanAirBases)
+  local targetlist = StrikePlanner.selectTargetGUIDsByBaseAndSubtype(saveData.c.targetlist, taiwanAirBases)
 
   for _, guid in ipairs(targetlist) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
