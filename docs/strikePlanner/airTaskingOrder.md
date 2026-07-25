@@ -23,7 +23,7 @@
 | 名稱 | 類型 | 用途 |
 |---|---|---|
 | `config.c.air.timing.assignmentSafetyMargin` | `number` | 掛彈與 assign 必須早於預估起飛時間的安全秒數。 |
-| `LOADOUT_ROLES` | `string[]` | ATO Package 會依序檢查 `tanker`、`striker`、`escort`、`wildWeasel`、`jammer`。 |
+| `PACKAGE_ROLE_ORDER` | `string[]` | ATO Package 會依序處理 `tanker`、`striker`、`escort`、`wildWeasel`、`jammer`。 |
 | `ATO_OUTCOME` | table enum | Package 處理結果分類：`ok`、`skip`、`fail`、`error`。 |
 | `SBJ__ATOPackageProcessResult` | LuaLS class | `processPackage()` 回傳給 log formatter 的結構化結果。 |
 
@@ -53,10 +53,10 @@ flowchart TD
     INIT_LOADOUT["initiateLoadoutForPackage<br>設定各角色 loadout"]
     LOADOUT_READY{"掛彈完成?"}
     TAKEOFF_TIME{"最早角色達到出擊窗口?"}
-    MISSIONS{"createAllMissions 成功?"}
+    MISSIONS{"createPackageMissions 成功?"}
     RECON["scheduleReconUAV<br>委派 Recon.insertEntry"]
     TARGETS{"assignTargetsToMission 成功?"}
-    UNITS{"assignUnits 成功?"}
+    UNITS{"assignPackageUnits 成功?"}
     LAUNCHED["package.hasLaunched = true"]
     DONE{"Wave 全部 Package 完成?"}
     WAVE_DONE["waveData.hasLaunched = true"]
@@ -97,7 +97,7 @@ flowchart TD
 
 ### 任務建立與派遣
 
-`createMission()` 以 `constants.SIDES.ENEMY` 建立尚未排程的任務，並使用角色的 `missionCreationParams` 與 `emcon`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。完成目標與單元指派後，`applyPackageMissionSchedules()` 才設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`endtime` 與排程欄位，避免 CMO 在掛載或 assign 完成前依 TOS/TOT 自動產生起飛時間。
+`createPackageMission()` 以 `constants.SIDES.ENEMY` 建立尚未排程的任務，並使用角色的 `missionCreationParams` 與 `emcon`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。完成目標與單元指派後，`applyPackageMissionSchedules()` 才設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`endtime` 與排程欄位，避免 CMO 在掛載或 assign 完成前依 TOS/TOT 自動產生起飛時間。
 
 排程欄位互斥：角色有 `timeOnStation` 時只設定 `TimeOnTargetStation`；否則才以 `startTime` 設定 `TakeOffTime`。`startTime` 在 TOS 模式下只作為內部掛載與 assign 的保守預估起飛時間，不會寫入 CMO。
 
@@ -107,7 +107,7 @@ flowchart TD
 
 任務建立成功後，`assignTargetsToMission()` 只負責把已存在的 `target.list` 指派給 striker 任務。若 CMO API 回傳 `nil`，處理結果會標記為 `fail`，原因為 `target_assignment_failed`，並附上目前目標數與 `target.minTargetCount` 供 log 判讀。
 
-`assignUnits()` 依 `LOADOUT_ROLES` 派遣各角色，透過 `AssignMission.assignEmbarkedUnitToStrikeMission()` 從基地派出指定數量飛機。非 `striker`、非 `tanker` 的支援任務會呼叫 `GameApi.ScenEdit_CreateMissionFlightPlan()` 建立空 flight plan；只有 striker 成功分配至少一架飛機時，Package 才會標記 `hasLaunched = true`。
+`assignPackageUnits()` 依 `PACKAGE_ROLE_ORDER` 派遣各角色，透過 `AssignMission.assignEmbarkedUnitToStrikeMission()` 從基地派出指定數量飛機。非 `striker`、非 `tanker` 的支援任務會呼叫 `GameApi.ScenEdit_CreateMissionFlightPlan()` 建立空 flight plan；只有 striker 成功分配至少一架飛機時，Package 才會標記 `hasLaunched = true`。
 
 多任務 tanker 會先驗證 `unitCount` 可被任務數整除，再將相同數量依設定順序分派至各任務。例如 `unitCount = 8` 且有兩個任務時，每個任務分派 4 架。掛載仍依角色總 `unitCount` 執行一次，不會按任務重複設定。
 

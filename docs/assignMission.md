@@ -102,7 +102,7 @@ flowchart TD
   - `processShipAssignments(...)`
   - `transferAndAssignTransportAircraft(...)`
 - `src/modules/strikePlanner/airTaskingOrder.lua`
-  - `assignUnits(...)`
+  - `assignPackageUnits(...)`
 
 ### 觸發脈絡
 
