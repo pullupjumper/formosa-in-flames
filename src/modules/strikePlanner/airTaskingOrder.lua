@@ -53,10 +53,6 @@ end
 ---@param packageData SBJ__Package The strike package to initialize
 local function ensureLoadoutStartTime(packageData)
   local loadoutStatus = packageData.loadoutStatus
-  if not loadoutStatus then
-    return
-  end
-
   if not loadoutStatus.loadoutStartTime then
     loadoutStatus.loadoutStartTime = calculateLoadoutStartTime(packageData)
   end
@@ -68,7 +64,7 @@ end
 ---@return boolean # True if current time has reached or passed the loadout start time
 local function isTimeToStartLoadout(packageData, assignmentSafetyMargin)
   local loadoutStatus = packageData.loadoutStatus
-  if not (loadoutStatus and loadoutStatus.loadoutStartTime) then
+  if not loadoutStatus.loadoutStartTime then
     return false
   end
 
@@ -82,29 +78,6 @@ local function resolveAssignmentSafetyMargin(config)
   local airConfig = config.c.air
   local timingConfig = airConfig and airConfig.timing
   return timingConfig and timingConfig.assignmentSafetyMargin or (5 * 60)
-end
-
----Find the earliest departing flight group
----@param packageData SBJ__Package The strike package containing flight groups
----@return SBJ__MissionDeploymentDescriptor|nil # The flight group with the earliest start time
-local function findEarliestRole(packageData)
-  local earliestRole = nil
-  local earliestStartTimestamp = nil
-
-  for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
-    local roleData = packageData[role]
-
-    if roleData and roleData.startTime then
-      local startTimeTimestamp = Utils.parseDatetimeToTimestamp(roleData.startTime)
-      if not earliestStartTimestamp or startTimeTimestamp < earliestStartTimestamp then
-        earliestStartTimestamp = startTimeTimestamp
-        earliestRole = roleData
-      end
-    end
-  end
-
-  return earliestRole
 end
 
 -- ============================================================================
@@ -176,10 +149,6 @@ end
 ---@return boolean # True if loadout has been initiated and expected ready time has passed
 local function isLoadoutReady(packageData)
   local loadoutStatus = packageData.loadoutStatus
-  if not loadoutStatus then
-    return false
-  end
-
   if not (loadoutStatus.isLoadoutInitiated and loadoutStatus.expectedReadyTime) then
     return false
   end
@@ -517,11 +486,9 @@ local function advancePackagePreparation(packageData, assignmentSafetyMargin)
     return false, nil
   end
 
-  local earliestRole = findEarliestRole(packageData)
-  if not (earliestRole and GameUtils.isAfterStartTime(earliestRole.startTime, assignmentSafetyMargin)) then
-    return false, nil
-  end
-
+  -- No separate pre-takeoff gate: isTimeToStartLoadout advances the loadout start by
+  -- assignmentSafetyMargin, so loadout readiness already lands that margin ahead of the
+  -- earliest planned takeoff, reserving it for the assignment performed next.
   return true, nil
 end
 

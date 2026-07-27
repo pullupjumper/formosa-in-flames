@@ -200,17 +200,6 @@ describe("AirTaskingOrder", function()
       assert.is_false(pkg.hasLaunched)
     end)
 
-    -- Negative: nil loadoutStatus
-    it("should not proceed when loadoutStatus is nil", function()
-      local pkg = makePackage()
-      pkg.loadoutStatus = nil
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      assert.is_false(pkg.hasLaunched)
-    end)
-
     -- Positive: calculate loadoutStartTime
     it("should calculate loadoutStartTime as earliest startTime minus timeToReady", function()
       local pkg = makePackage({
@@ -645,86 +634,6 @@ describe("AirTaskingOrder", function()
       AirTaskingOrder.airStrike(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
-    end)
-  end)
-
-  -- ============================================================================
-  -- Departure time check (findEarliestRole)
-  -- ============================================================================
-
-  describe("departure time check", function()
-    -- Negative: departure time not reached
-    it("should not launch when departure time not reached", function()
-      local pkg = makePackage({
-        loadoutStatus = {
-          isLoadoutInitiated = true,
-          expectedReadyTime = 1500
-        }
-      })
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      -- departure check receives string startTime; loadout checks receive numeric timestamps
-      trackStub(stub(GameUtils, "isAfterStartTime").invokes(function(timeVal)
-        if type(timeVal) == "string" then return false end
-        return true
-      end))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      assert.is_false(pkg.hasLaunched)
-    end)
-
-    -- Negative: no startTime on any role
-    it("should not launch when no role has startTime", function()
-      local striker = makeRole({ missionName = "STRIKE-PKG-1" })
-      striker.startTime = nil
-      local pkg = makePackage({
-        striker = striker,
-        loadoutStatus = {
-          isLoadoutInitiated = true,
-          expectedReadyTime = 1500
-        }
-      })
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      -- findEarliestRole returns nil -> processPackage returns false
-      assert.is_false(pkg.hasLaunched)
-    end)
-
-    -- Positive: earliest role selection
-    it("should use earliest startTime among all roles for departure check", function()
-      local escort = makeRole({
-        missionName = "ESCORT-1",
-        startTime = "2026-02-14 05:30:00"
-      })
-      local pkg = makePackage({
-        escort = escort,
-        loadoutStatus = {
-          isLoadoutInitiated = true,
-          expectedReadyTime = 1500
-        }
-      })
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(dateStr)
-        if dateStr == "2026-02-14 05:30:00" then return 4000 end
-        return 5000
-      end))
-
-      local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      stubMissionAndAssignment()
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      -- 3rd call = departure check, should use escort's startTime (earlier)
-      assert.are.equal("2026-02-14 05:30:00", stubIsAfter.calls[3].vals[1])
-      assert.are.equal(300, stubIsAfter.calls[3].vals[2])
     end)
   end)
 
