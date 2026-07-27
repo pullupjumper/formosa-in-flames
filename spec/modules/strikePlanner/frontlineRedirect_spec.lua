@@ -54,7 +54,7 @@ describe("FrontlineRedirect", function()
       attritionThresholdPct = 50,
       frontlineBaseNames = { "Frontline Base" },
       mappings = {
-        { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+        { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       },
     }
     if redirectOverrides then
@@ -161,20 +161,20 @@ describe("FrontlineRedirect", function()
     -- Positive: matching prefixes are rewritten on a copied mapping list.
     it("should rewrite only mappings matching prefix and type", function()
       local mappings = {
-        { name = "STRIKE/AB/W/1", type = "air" },
-        { name = "STRIKE/AB/E/1", type = "air" },
-        { name = "STRIKE/AB/W/1", type = "ground" },
+        { name = "AIR/STRIKE/AB/W/1", type = "air" },
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
+        { name = "AIR/STRIKE/AB/W/1", type = "ground" },
       }
       local rules = {
-        { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+        { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       }
 
       local result = FrontlineRedirect.rewriteMappings(mappings, rules)
 
-      assert.are.equal("STRIKE/AB/W/AAR/1", result[1].name)
-      assert.are.equal("STRIKE/AB/E/1", result[2].name)
-      assert.are.equal("STRIKE/AB/W/1", result[3].name)
-      assert.are.equal("STRIKE/AB/W/1", mappings[1].name)
+      assert.are.equal("AIR/STRIKE/AB/W/AAR/1", result[1].name)
+      assert.are.equal("AIR/STRIKE/AB/E/1", result[2].name)
+      assert.are.equal("AIR/STRIKE/AB/W/1", result[3].name)
+      assert.are.equal("AIR/STRIKE/AB/W/1", mappings[1].name)
     end)
   end)
 
@@ -182,23 +182,23 @@ describe("FrontlineRedirect", function()
     -- Positive: active sticky redirect applies configured rewrites.
     it("should apply configured mapping rewrites when redirect is active", function()
       local cfg = makeConfig()
-      local mappings = { { name = "STRIKE/AB/W/1", type = "air" } }
+      local mappings = { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
 
       local result = FrontlineRedirect.applyMappings(cfg, makeReconContext({ frontlineRedirected = true }), mappings)
 
-      assert.are.equal("STRIKE/AB/W/AAR/1", result[1].name)
-      assert.are.equal("STRIKE/AB/W/1", mappings[1].name)
+      assert.are.equal("AIR/STRIKE/AB/W/AAR/1", result[1].name)
+      assert.are.equal("AIR/STRIKE/AB/W/1", mappings[1].name)
     end)
 
     -- Negative: inactive redirect returns the original mapping list.
     it("should keep original mappings when redirect is inactive", function()
       local cfg = makeConfig()
-      local mappings = { { name = "STRIKE/AB/W/1", type = "air" } }
+      local mappings = { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
 
       local result = FrontlineRedirect.applyMappings(cfg, makeReconContext(), mappings)
 
       assert.are.equal(mappings, result)
-      assert.are.equal("STRIKE/AB/W/1", result[1].name)
+      assert.are.equal("AIR/STRIKE/AB/W/1", result[1].name)
     end)
   end)
 end)

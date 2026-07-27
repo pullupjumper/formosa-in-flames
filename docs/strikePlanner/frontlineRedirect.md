@@ -49,7 +49,7 @@
 rule.toPrefix .. mapping.name:sub(#rule.fromPrefix + 1)
 ```
 
-以目前設定為例，`STRIKE/AB/W/1` 會被改寫為 `STRIKE/AB/W/AAR/1`，使 [operationScheduler](operationScheduler.md) 查詢 `config.c.packageTemplates.STRIKE_AB_W_AAR_1`。
+以目前設定為例，`AIR/STRIKE/AB/W/1` 會被改寫為 `AIR/STRIKE/AB/W/AAR/1`，使 [operationScheduler](operationScheduler.md) 查詢 `config.c.packageTemplates.AIR_STRIKE_AB_W_AAR_1`。
 
 ---
 

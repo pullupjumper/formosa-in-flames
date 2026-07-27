@@ -152,7 +152,7 @@ describe("Recon", function()
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
     cfg.c.recon.strikeMappingsByReconObjective = {
       C2_NORTH_TARGETING = {
-        { name = "STRIKE/C2/N/1", type = "ground" },
+        { name = "GND/STRIKE/C2/N/1", type = "ground" },
       },
     }
     cfg.c.recon.frontlineRedirect = {
@@ -160,7 +160,7 @@ describe("Recon", function()
       attritionThresholdPct = 50,
       frontlineBaseNames = {},
       mappings = {
-        { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+        { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       },
     }
     cfg.c.packageTemplates = {}
@@ -691,10 +691,10 @@ describe("Recon", function()
       assert.is_true(#reconTriggeredOperations > 0)
     end)
 
-    it("should skip STRIKE/AB/E/1 when LACM is not enabled", function()
+    it("should skip AIR/STRIKE/AB/E/1 when LACM is not enabled", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
-        { name = "STRIKE/AB/E/1", type = "air" },
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
       }
 
       local entry = makeUAVEntry({
@@ -715,7 +715,7 @@ describe("Recon", function()
       local reconContext = makeReconContext({ entry })
       Recon.processQueue(makeProcessingContext(reconContext))
 
-      -- LACM not enabled => STRIKE/AB/E/1 skipped => no operations
+      -- LACM not enabled => AIR/STRIKE/AB/E/1 skipped => no operations
       assert.is_true(entry.isFinished)
     end)
 

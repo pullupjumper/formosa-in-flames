@@ -282,7 +282,7 @@ end
 ---@return SBJ__Operation|nil operation Built operation or nil if skipped
 ---@return string logEntry Log entry describing the result
 local function buildOperationFromMapping(strikeMapping, processingContext)
-  if strikeMapping.name == "STRIKE/AB/E/1" and not processingContext.LACMContext.enabled then
+  if strikeMapping.name == "AIR/STRIKE/AB/E/1" and not processingContext.LACMContext.enabled then
     local msg = string.format(
       "operation=%s type=%s reason=lacm_not_active",
       LogFormat.value(strikeMapping.name),
@@ -414,8 +414,8 @@ local function buildOperationsForReconObjective(processingContext, entry)
   )
 
   for _, strikeMapping in ipairs(strikeMappings) do
-    -- Gate: SRBM mappings (STRIKE/INFRASTRUCTURE/*) skipped while fire support is on hold.
-    if processingContext.fireSupportOnHold and strikeMapping.name:find("^STRIKE/INFRASTRUCTURE/") then
+    -- Gate: SRBM mappings (GND/STRIKE/INFRA/*) skipped while fire support is on hold.
+    if processingContext.fireSupportOnHold and strikeMapping.name:find("^GND/STRIKE/INFRA/") then
       local msg = string.format(
         "operation=%s type=%s reason=fire_support_on_hold",
         LogFormat.value(strikeMapping.name),

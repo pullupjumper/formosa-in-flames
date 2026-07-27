@@ -359,7 +359,7 @@ end
 ---@return string # Generated unique matrix name
 local function buildMatrixName(matrixTemplate, reconType, saveData)
   return DynamicState.generateUniqueGroundOperationName(
-    matrixTemplate.name:match("([^/]+)") or matrixTemplate.name,
+    matrixTemplate.name,
     reconType,
     saveData
   )

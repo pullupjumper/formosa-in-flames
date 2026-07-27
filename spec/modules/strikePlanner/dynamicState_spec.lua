@@ -9,7 +9,7 @@ describe("DynamicState", function()
     local op = {
       type = "air",
       executed = false,
-      template = { name = "STRIKE/AB/W/1" }
+      template = { name = "AIR/STRIKE/AB/W/1" }
     }
     if overrides then
       for k, v in pairs(overrides) do op[k] = v end

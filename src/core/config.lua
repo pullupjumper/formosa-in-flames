@@ -1009,29 +1009,29 @@ config.c.recon.template = {
 }
 config.c.recon.strikeMappingsByReconObjective = {
   C2_NORTH_TARGETING = {
-    { name = "STRIKE/C2/N/1", type = "ground", }
+    { name = "GND/STRIKE/C2/N/1", type = "ground", }
   },
   LANDING_SUPPORT_NORTH = {
-    { name = "CAS/N/1",       type = "air", },
-    { name = "STRIKE/C2/N/1", type = "ground", },
+    { name = "AIR/CAS/TROOPS/N/1", type = "air", },
+    { name = "GND/STRIKE/C2/N/1",  type = "ground", },
   },
   TAIWAN_STRAIT_STRIKE_TARGETING = {
-    { name = "ANTISHIP/E/1",            type = "ground" },
-    { name = "ANTISHIP/N/1",            type = "ground" },
-    { name = "ASUW/N/1",                type = "air" },
-    { name = "STRIKE/AB/E/1",           type = "air" },
-    { name = "STRIKE/AB/W/1",           type = "air" },
-    { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+    { name = "GND/ASUW/SHIP/E/1",               type = "ground" },
+    { name = "GND/ASUW/SHIP/N/1",               type = "ground" },
+    { name = "AIR/ASUW/SHIP/N/1",               type = "air" },
+    { name = "AIR/STRIKE/AB/E/1",               type = "air" },
+    { name = "AIR/STRIKE/AB/W/1",               type = "air" },
+    { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" },
   },
   FIXED_SITE_TARGETING = {
-    { name = "STRIKE/AB/W/1",           type = "air" },
-    { name = "STRIKE/AB/E/1",           type = "air" },
-    { name = "STRIKE/HELIPAD/1",        type = "ground" },
-    { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
+    { name = "AIR/STRIKE/AB/W/1",               type = "air" },
+    { name = "AIR/STRIKE/AB/E/1",               type = "air" },
+    { name = "GND/STRIKE/HELIPAD/ALL/1",        type = "ground" },
+    { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" },
   },
   C2_EMITTER_TARGETING = {
-    { name = "STRIKE/C2/N/1", type = "ground" },
-    { name = "STRIKE/C2/C/1", type = "ground" }
+    { name = "GND/STRIKE/C2/N/1", type = "ground" },
+    { name = "GND/STRIKE/C2/C/1", type = "ground" }
   }
 }
 config.c.recon.frontlineRedirect = {
@@ -1045,7 +1045,7 @@ config.c.recon.frontlineRedirect = {
     "Longtian AAB"
   },
   mappings = {
-    { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+    { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
   },
 }
 config.c.recon.queue = {
@@ -2648,7 +2648,7 @@ config.repairRunway = {
 -- ============================================================================
 
 config.c.fireSupportTaskTemplates = {
-  STRIKE_INFRASTRUCTURE_1 = {
+  GND_STRIKE_INFRA_ALL_1 = {
     {
       name = "RADAR",
       missileSystem = "SRBM",
@@ -2739,7 +2739,7 @@ config.c.fireSupportTaskTemplates = {
       },
     },
   },
-  STRIKE_INFRASTRUCTURE_2 = {
+  GND_STRIKE_INFRA_ALL_2 = {
     {
       name = "RADAR",
       missileSystem = "SRBM",
@@ -2841,7 +2841,7 @@ config.c.fireSupportTaskTemplates = {
       },
     },
   },
-  ANTISHIP_E_1 = {
+  GND_ASUW_SHIP_E_1 = {
     {
       name = "ANTISHIP",
       missileSystem = "MRBM",
@@ -2859,7 +2859,7 @@ config.c.fireSupportTaskTemplates = {
       },
     }
   },
-  ANTISHIP_N_1 = {
+  GND_ASUW_SHIP_N_1 = {
     {
       name = "ANTISHIP",
       missileSystem = "ASCM",
@@ -2877,7 +2877,7 @@ config.c.fireSupportTaskTemplates = {
       },
     }
   },
-  STRIKE_C2_N_1 = {
+  GND_STRIKE_C2_N_1 = {
     {
       name = "PINGTAN",
       missileSystem = "MLRS",
@@ -2895,7 +2895,7 @@ config.c.fireSupportTaskTemplates = {
       },
     },
   },
-  STRIKE_C2_C_1 = {
+  GND_STRIKE_C2_C_1 = {
     {
       name = "CHINCHEW",
       missileSystem = "MLRS",
@@ -2913,7 +2913,7 @@ config.c.fireSupportTaskTemplates = {
       },
     },
   },
-  STRIKE_HELIPAD_1 = {
+  GND_STRIKE_HELIPAD_ALL_1 = {
     {
       name = "HELIPAD",
       missileSystem = "GLCM",
@@ -2945,7 +2945,7 @@ config.c.fireSupportTaskTemplates = {
 -- ============================================================================
 
 config.c.packageTemplates = {
-  STRIKE_AB_W_1 = {
+  AIR_STRIKE_AB_W_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -3192,7 +3192,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  STRIKE_AB_W_2 = {
+  AIR_STRIKE_AB_W_2 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -3252,7 +3252,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  STRIKE_AB_W_3 = {
+  AIR_STRIKE_AB_W_3 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -3497,7 +3497,7 @@ config.c.packageTemplates = {
       },
     },
   },
-  STRIKE_AB_W_AAR_1 = {
+  AIR_STRIKE_AB_W_AAR_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -3966,7 +3966,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  STRIKE_AB_W_AAR_3 = {
+  AIR_STRIKE_AB_W_AAR_3 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -4436,7 +4436,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  AIR_INTERCEPT_E = {
+  AIR_INTERCEPT_AIR_E_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -4492,7 +4492,7 @@ config.c.packageTemplates = {
       }
     }
   },
-  STRIKE_AB_E_1 = {
+  AIR_STRIKE_AB_E_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -4656,7 +4656,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  ASUW_N_1 = {
+  AIR_ASUW_SHIP_N_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -4703,7 +4703,7 @@ config.c.packageTemplates = {
       },
     }
   },
-  CAS_N_1 = {
+  AIR_CAS_TROOPS_N_1 = {
     {
       timeToReady = config.readytime,
       striker = {
@@ -4732,7 +4732,7 @@ config.c.packageTemplates = {
     }
   }
 }
-config.c.packageTemplates.STRIKE_AB_W_AAR_2 = config.c.packageTemplates.STRIKE_AB_W_2
+config.c.packageTemplates.AIR_STRIKE_AB_W_AAR_2 = config.c.packageTemplates.AIR_STRIKE_AB_W_2
 
 
 -- ============================================================================

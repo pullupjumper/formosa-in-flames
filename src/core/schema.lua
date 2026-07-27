@@ -198,8 +198,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Strike mapping rewrite rule used by frontline redirect
 ---@class SBJ__StrikeMappingRewriteRule: table
----@field fromPrefix string Prefix that identifies the original mapping family (e.g. "STRIKE/AB/W/")
----@field toPrefix string Prefix substituted into the rewritten mapping name (e.g. "STRIKE/AB/W/AAR/")
+---@field fromPrefix string Prefix that identifies the original mapping family (e.g. "AIR/STRIKE/AB/W/")
+---@field toPrefix string Prefix substituted into the rewritten mapping name (e.g. "AIR/STRIKE/AB/W/AAR/")
 ---@field type SBJ__OperationType Strike mission type the rule applies to
 
 ---Frontline strike redirect configuration
@@ -777,7 +777,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodOfTime number Check interval in seconds
----@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRASTRUCTURE/*) are held until all zones reach staging waters
+---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
 ---@field cargoList table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field cargoListForTransfer table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartime table<string, number[]> Mission start times by type (seconds)

@@ -13,7 +13,7 @@ local function ensureGeneratedOperations(saveData)
 end
 
 ---Generate unique operation name by checking registry and existing plan table
----@param operationType string Type label for the name (e.g., "STRIKE/AB/W", "INFRASTRUCTURE")
+---@param operationType string Type label for the name (e.g., "AIR/STRIKE/AB/W", "GND/STRIKE/INFRA/ALL")
 ---@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
 ---@param registry table<string, boolean> Generated operations registry to check
 ---@param existingPlan table<string, any>|nil Existing plan table to check for conflicts
@@ -110,7 +110,7 @@ end
 -- ============================================================================
 
 ---Generate unique operation name with dynamic prefix for air operations (ATO waves)
----@param operationType string Type of the operation (e.g., "STRIKE/AB/W")
+---@param operationType string Type of the operation (e.g., "AIR/STRIKE/AB/W")
 ---@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
 ---@param saveData SBJ__SaveData Game save data
 ---@return string # Generated unique operation name
@@ -124,7 +124,7 @@ function DynamicState.generateUniqueAirOperationName(operationType, reconType, s
 end
 
 ---Generate unique operation name with dynamic prefix for ground operations (FSEMs)
----@param operationType string Type of the operation (e.g., "INFRASTRUCTURE", "ANTISHIP")
+---@param operationType string Type of the operation (e.g., "GND/STRIKE/INFRA/ALL", "GND/ASUW/SHIP")
 ---@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
 ---@param saveData SBJ__SaveData Game save data
 ---@return string # Generated unique operation name

@@ -82,7 +82,7 @@ stateDiagram-v2
 
 ## 火力支援暫停閘門
 
-`evaluateFireSupportGate` 防止 SRBM 在艦隊抵達錨泊區之前耗盡彈藥。閘門狀態存於 `saveData.c.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRASTRUCTURE/*` 映射。
+`evaluateFireSupportGate` 防止 SRBM 在艦隊抵達錨泊區之前耗盡彈藥。閘門狀態存於 `saveData.c.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
 
 ### 狀態轉移
 
@@ -91,7 +91,7 @@ stateDiagram-v2
     [*] --> 未暫停
     未暫停 --> 暫停: SRBM total% < threshold<br>且 !allZonesArrived
     暫停 --> 未暫停: allZonesArrived
-    note right of 暫停: STRIKE/INFRASTRUCTURE/* 被 recon 跳過
+    note right of 暫停: STRIKE/INFRA/* 被 recon 跳過
 ```
 
 ### 判定流程
@@ -173,5 +173,5 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 - [amphibiousAssault](amphibiousAssault.md) — Phase 3：突擊
 - [secondWaveUnloading](secondWaveUnloading.md) — Phase 4：第二波卸載
 - [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供火力閘門所需的庫存報告
-- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例呼叫 `Recon.insertEntry` 排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRASTRUCTURE/*`
+- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例呼叫 `Recon.insertEntry` 排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRA/*`
 - [系統架構](README.md)

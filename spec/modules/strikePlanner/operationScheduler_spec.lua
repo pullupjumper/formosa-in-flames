@@ -41,7 +41,7 @@ describe("OperationScheduler", function()
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
     cfg.c.recon.strikeMappingsByReconObjective = {
       C2_NORTH_TARGETING = {
-        { name = "STRIKE/C2/N/1", type = "ground" },
+        { name = "GND/STRIKE/C2/N/1", type = "ground" },
       },
     }
     cfg.c.recon.frontlineRedirect = {
@@ -49,18 +49,18 @@ describe("OperationScheduler", function()
       attritionThresholdPct = 50,
       frontlineBaseNames = {},
       mappings = {
-        { fromPrefix = "STRIKE/AB/W/", toPrefix = "STRIKE/AB/W/AAR/", type = "air" },
+        { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       },
     }
     cfg.c.packageTemplates = {}
     cfg.c.fireSupportTaskTemplates = {
-      STRIKE_C2_N_1 = { {
+      GND_STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
         missileSystem = "",
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } },
-      STRIKE_C2_N_2 = { {
+      GND_STRIKE_C2_N_2 = { {
         name = "FST-C2-2",
         firingUnits = {},
         missileSystem = "",
@@ -167,7 +167,7 @@ describe("OperationScheduler", function()
     it("should resolve satellite mappings by reconObjectiveId", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-      { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
@@ -178,14 +178,14 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(1, #operations)
-      assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
+      assert.are.equal("GND/STRIKE/C2/N/1", operations[1].operations[1].template.name)
     end)
 
     -- Negative: unmapped objectives are skipped.
     it("should log SKIP when no mappings match the entry's recon objective", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-      { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
 
@@ -203,7 +203,7 @@ describe("OperationScheduler", function()
     it("should resolve SIGINT mappings by reconObjectiveId", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_EMITTER_TARGETING =
-      { { name = "STRIKE/C2/N/1", type = "ground" } }
+      { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operations = {}
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
@@ -214,28 +214,28 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(1, #operations)
-      assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
+      assert.are.equal("GND/STRIKE/C2/N/1", operations[1].operations[1].template.name)
     end)
 
     -- Positive: mixed mappings can schedule new operations and next operations.
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
-        { name = "STRIKE/C2/N/1", type = "ground" },
-        { name = "STRIKE/AB/E/1", type = "air" },
+        { name = "GND/STRIKE/C2/N/1", type = "ground" },
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
       }
       local operations = {}
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if name == "STRIKE/C2/N/1" and opType == "ground" then return false, nil, nil end
-        if name == "STRIKE/AB/E/1" and opType == "air" then return false, nil, nil end
-        if name == "STRIKE/C2/N/" and opType == "ground" then
-          return true, { type = "ground", template = { name = "STRIKE/C2/N/1" } }, nil
+        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then return false, nil, nil end
+        if name == "AIR/STRIKE/AB/E/1" and opType == "air" then return false, nil, nil end
+        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", template = { name = "GND/STRIKE/C2/N/1" } }, nil
         end
         return false, nil, nil
       end))
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
+        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
       OperationScheduler.schedule(
@@ -247,14 +247,14 @@ describe("OperationScheduler", function()
       assert.are.equal(2, #operations[1].operations)
     end)
 
-    -- Negative: STRIKE/INFRASTRUCTURE/* mappings are skipped while fire support is on hold.
-    it("should skip STRIKE/INFRASTRUCTURE/* mappings when fireSupportOnHold is true", function()
+    -- Negative: GND/STRIKE/INFRA/ALL/* mappings are skipped while fire support is on hold.
+    it("should skip GND/STRIKE/INFRA/ALL/* mappings when fireSupportOnHold is true", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
-        { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" },
-        { name = "STRIKE/AB/W/1",           type = "air" },
+        { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" },
+        { name = "AIR/STRIKE/AB/W/1",           type = "air" },
       }
-      cfg.c.packageTemplates.STRIKE_AB_W_1 = {
+      cfg.c.packageTemplates.AIR_STRIKE_AB_W_1 = {
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operations = {}
@@ -268,17 +268,17 @@ describe("OperationScheduler", function()
 
       assert.are.equal(1, #operations)
       assert.are.equal(1, #operations[1].operations)
-      assert.are.equal("STRIKE/AB/W/1", operations[1].operations[1].template.name)
+      assert.are.equal("AIR/STRIKE/AB/W/1", operations[1].operations[1].template.name)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
-        "%[HOLD%].*operation=STRIKE/INFRASTRUCTURE/1.*reason=fire_support_on_hold"))
+        "%[HOLD%].*operation=GND/STRIKE/INFRA/ALL/1.*reason=fire_support_on_hold"))
     end)
 
-    -- Positive: STRIKE/INFRASTRUCTURE/* mappings are inserted when hold is off.
-    it("should insert STRIKE/INFRASTRUCTURE/* mappings when fireSupportOnHold is false", function()
+    -- Positive: GND/STRIKE/INFRA/ALL/* mappings are inserted when hold is off.
+    it("should insert GND/STRIKE/INFRA/ALL/* mappings when fireSupportOnHold is false", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
-      { { name = "STRIKE/INFRASTRUCTURE/1", type = "ground" } }
-      cfg.c.fireSupportTaskTemplates.STRIKE_INFRASTRUCTURE_1 = { {
+      { { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" } }
+      cfg.c.fireSupportTaskTemplates.GND_STRIKE_INFRA_ALL_1 = { {
         name = "FST-INFRA-1",
         firingUnits = {},
         missileSystem = "",
@@ -294,14 +294,14 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(1, #operations)
-      assert.are.equal("STRIKE/INFRASTRUCTURE/1", operations[1].operations[1].template.name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1", operations[1].operations[1].template.name)
     end)
 
     -- Negative: non-INFRASTRUCTURE mappings are unaffected by fire support hold.
     it("should not gate non-INFRASTRUCTURE mappings even when fireSupportOnHold is true", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
-        { name = "STRIKE/C2/N/1", type = "ground" },
+        { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operations = {}
       stubRecurringHelpers()
@@ -313,14 +313,14 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(1, #operations)
-      assert.are.equal("STRIKE/C2/N/1", operations[1].operations[1].template.name)
+      assert.are.equal("GND/STRIKE/C2/N/1", operations[1].operations[1].template.name)
     end)
 
     -- Boundary: pending next waves are deduplicated.
     it("should not schedule a duplicate next wave when an identical one is already pending", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
-        { name = "STRIKE/C2/N/1", type = "ground" },
+        { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operations = {
         {
@@ -328,21 +328,21 @@ describe("OperationScheduler", function()
           type = "UAV",
           delay = 0,
           executed = false,
-          operations = { { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } } },
+          operations = { { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } } },
         }
       }
       stubRecurringHelpers()
       trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if name == "STRIKE/C2/N/1" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }, nil
+        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
         end
-        if name == "STRIKE/C2/N/" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }, nil
+        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
         end
         return false, nil, nil
       end))
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "STRIKE/C2/N/2" } }, "FOUND_NEXT"
+        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
       OperationScheduler.schedule(
@@ -351,20 +351,20 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(1, #operations)
-      assert.are.equal("STRIKE/C2/N/2", operations[1].operations[1].template.name)
+      assert.are.equal("GND/STRIKE/C2/N/2", operations[1].operations[1].template.name)
     end)
 
     -- Positive: active frontline redirect rewrites matching strike mappings.
     it("should apply frontline redirect mappings when sticky flag is active", function()
       local cfg = makeConfig()
       cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
-        { name = "STRIKE/AB/W/1", type = "air" },
-        { name = "STRIKE/AB/E/1", type = "air" },
+        { name = "AIR/STRIKE/AB/W/1", type = "air" },
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
       }
-      cfg.c.packageTemplates.STRIKE_AB_W_AAR_1 = {
+      cfg.c.packageTemplates.AIR_STRIKE_AB_W_AAR_1 = {
         { timeToReady = 5 * 60, name = "PKG-AB-W-AAR-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
-      cfg.c.packageTemplates.STRIKE_AB_E_1 = {
+      cfg.c.packageTemplates.AIR_STRIKE_AB_E_1 = {
         { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operations = {}
@@ -389,8 +389,8 @@ describe("OperationScheduler", function()
         operations[1].operations[2].template.name,
       }
       table.sort(names)
-      assert.are.equal("STRIKE/AB/E/1", names[1])
-      assert.are.equal("STRIKE/AB/W/AAR/1", names[2])
+      assert.are.equal("AIR/STRIKE/AB/E/1", names[1])
+      assert.are.equal("AIR/STRIKE/AB/W/AAR/1", names[2])
     end)
   end)
 
@@ -402,7 +402,7 @@ describe("OperationScheduler", function()
       local op = {
         type = "air",
         executed = false,
-        template = { name = "STRIKE/AB/W/1" }
+        template = { name = "AIR/STRIKE/AB/W/1" }
       }
       if overrides then
         for k, v in pairs(overrides) do op[k] = v end
@@ -624,11 +624,11 @@ describe("OperationScheduler", function()
     describe("hasOperation", function()
       -- Positive: exact match
       it("should find exact match by template name and type", function()
-        local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
+        local op = makeOperation({ type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
         local entry = makeOperationBatch({ operations = { op } })
 
         local exists, foundOp, foundEntry = OperationScheduler.hasOperation(
-          { entry }, "STRIKE/AB/W/1", "air")
+          { entry }, "AIR/STRIKE/AB/W/1", "air")
 
         assert.is_true(exists)
         assert.are.equal(op, foundOp)
@@ -659,20 +659,20 @@ describe("OperationScheduler", function()
 
       -- Negative: type mismatch
       it("should not match when type differs", function()
-        local op = makeOperation({ type = "ground", template = { name = "STRIKE/AB/W/1" } })
+        local op = makeOperation({ type = "ground", template = { name = "AIR/STRIKE/AB/W/1" } })
         local schedule = { makeOperationBatch({ operations = { op } }) }
 
-        local exists = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/1", "air")
+        local exists = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/1", "air")
 
         assert.is_false(exists)
       end)
 
       -- Negative: name mismatch
       it("should not match when name differs", function()
-        local op = makeOperation({ type = "air", template = { name = "STRIKE/AB/W/1" } })
+        local op = makeOperation({ type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
         local schedule = { makeOperationBatch({ operations = { op } }) }
 
-        local exists = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/2", "air")
+        local exists = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/2", "air")
 
         assert.is_false(exists)
       end)
@@ -703,15 +703,15 @@ describe("OperationScheduler", function()
 
       -- Positive: prefix search finds highest number
       it("should find highest number with prefix search", function()
-        local op1 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/1" } })
-        local op3 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/3" } })
-        local op2 = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
+        local op1 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
+        local op3 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/3" } })
+        local op2 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/2" } })
 
         local schedule = {
           makeOperationBatch({ operations = { op1, op3, op2 } })
         }
 
-        local exists, foundOp = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists, foundOp = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_true(exists)
         assert.are.equal(op3, foundOp)
@@ -719,15 +719,15 @@ describe("OperationScheduler", function()
 
       -- Positive: prefix search picks latest time on same number
       it("should pick latest time when prefix search finds same max number", function()
-        local olderOp = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
-        local newerOp = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/2" } })
+        local olderOp = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/2" } })
+        local newerOp = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/2" } })
 
         local schedule = {
           makeOperationBatch({ time = "2026-02-14 06:00:00", operations = { olderOp } }),
           makeOperationBatch({ time = "2026-02-14 12:00:00", operations = { newerOp } }),
         }
 
-        local exists, foundOp, foundEntry = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists, foundOp, foundEntry = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert(foundEntry ~= nil)
         assert.is_true(exists)
@@ -738,11 +738,11 @@ describe("OperationScheduler", function()
       -- Negative: prefix search skips operations that are not yet executed
       it("should skip unexecuted operations in prefix search", function()
         local pendingOp = makeOperation({
-          executed = false, type = "air", template = { name = "STRIKE/AB/W/3" },
+          executed = false, type = "air", template = { name = "AIR/STRIKE/AB/W/3" },
         })
         local schedule = { makeOperationBatch({ operations = { pendingOp } }) }
 
-        local exists, foundOp = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists, foundOp = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_false(exists)
         assert.is_nil(foundOp)
@@ -751,14 +751,14 @@ describe("OperationScheduler", function()
       -- Positive: prefix search picks the highest executed number, ignoring unexecuted ones
       it("should ignore unexecuted higher-numbered ops and pick highest executed", function()
         local executedOp1 = makeOperation({
-          executed = true, type = "air", template = { name = "STRIKE/AB/W/1" },
+          executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/1" },
         })
         local pendingOp3 = makeOperation({
-          executed = false, type = "air", template = { name = "STRIKE/AB/W/3" },
+          executed = false, type = "air", template = { name = "AIR/STRIKE/AB/W/3" },
         })
         local schedule = { makeOperationBatch({ operations = { executedOp1, pendingOp3 } }) }
 
-        local exists, foundOp = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists, foundOp = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_true(exists)
         assert.are.equal(executedOp1, foundOp)
@@ -767,12 +767,12 @@ describe("OperationScheduler", function()
       -- Positive: exact match is not affected by executed gate
       it("should still find unexecuted operations via exact match", function()
         local pendingOp = makeOperation({
-          executed = false, type = "ground", template = { name = "STRIKE/INFRASTRUCTURE/1" },
+          executed = false, type = "ground", template = { name = "GND/STRIKE/INFRA/ALL/1" },
         })
         local schedule = { makeOperationBatch({ operations = { pendingOp } }) }
 
         local exists, foundOp = OperationScheduler.hasOperation(
-          schedule, "STRIKE/INFRASTRUCTURE/1", "ground"
+          schedule, "GND/STRIKE/INFRA/ALL/1", "ground"
         )
 
         assert.is_true(exists)
@@ -784,27 +784,27 @@ describe("OperationScheduler", function()
         local op = makeOperation({ type = "air", template = { name = "SEAD/1" } })
         local schedule = { makeOperationBatch({ operations = { op } }) }
 
-        local exists = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_false(exists)
       end)
 
       -- Negative: prefix search ignores non-numeric suffix
       it("should ignore non-numeric suffix in prefix search", function()
-        local op = makeOperation({ executed = true, type = "air", template = { name = "STRIKE/AB/W/abc" } })
+        local op = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/abc" } })
         local schedule = { makeOperationBatch({ operations = { op } }) }
 
-        local exists = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_false(exists)
       end)
 
       -- Negative: prefix search filters by type
       it("should filter by type in prefix search", function()
-        local groundOp = makeOperation({ executed = true, type = "ground", template = { name = "STRIKE/AB/W/5" } })
+        local groundOp = makeOperation({ executed = true, type = "ground", template = { name = "AIR/STRIKE/AB/W/5" } })
         local schedule = { makeOperationBatch({ operations = { groundOp } }) }
 
-        local exists = OperationScheduler.hasOperation(schedule, "STRIKE/AB/W/", "air")
+        local exists = OperationScheduler.hasOperation(schedule, "AIR/STRIKE/AB/W/", "air")
 
         assert.is_false(exists)
       end)
@@ -818,41 +818,41 @@ describe("OperationScheduler", function()
       -- Positive: a matching unexecuted operation exists
       it("should return true when a matching unexecuted operation exists", function()
         local schedule = {
-          makeOperationBatch({ operations = { makeOperation({ template = { name = "STRIKE/C2/N/2" } }) } }),
+          makeOperationBatch({ operations = { makeOperation({ template = { name = "GND/STRIKE/C2/N/2" } }) } }),
         }
 
-        assert.is_true(OperationScheduler.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+        assert.is_true(OperationScheduler.hasPendingOperation(schedule, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: the matching operation is already executed
       it("should return false when the matching operation is already executed", function()
         local schedule = {
           makeOperationBatch({
-            operations = { makeOperation({ executed = true, template = { name = "STRIKE/C2/N/2" } }) }
+            operations = { makeOperation({ executed = true, template = { name = "GND/STRIKE/C2/N/2" } }) }
           }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: the operation type differs
       it("should return false when the operation type differs", function()
         local schedule = {
           makeOperationBatch({
-            operations = { makeOperation({ type = "ground", template = { name = "STRIKE/C2/N/2" } }) }
+            operations = { makeOperation({ type = "ground", template = { name = "GND/STRIKE/C2/N/2" } }) }
           }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: no operation name matches
       it("should return false when no operation name matches", function()
         local schedule = {
-          makeOperationBatch({ operations = { makeOperation({ template = { name = "STRIKE/C2/N/1" } }) } }),
+          makeOperationBatch({ operations = { makeOperation({ template = { name = "GND/STRIKE/C2/N/1" } }) } }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.hasPendingOperation(schedule, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Positive: executed prior wave plus pending next wave across separate entries
@@ -860,19 +860,19 @@ describe("OperationScheduler", function()
         local schedule = {
           makeOperationBatch({
             executed = true,
-            operations = { makeOperation({ type = "ground", executed = true, template = { name = "STRIKE/C2/N/1" } }) }
+            operations = { makeOperation({ type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }) }
           }),
           makeOperationBatch({
-            operations = { makeOperation({ type = "ground", template = { name = "STRIKE/C2/N/2" } }) }
+            operations = { makeOperation({ type = "ground", template = { name = "GND/STRIKE/C2/N/2" } }) }
           }),
         }
 
-        assert.is_true(OperationScheduler.hasPendingOperation(schedule, "STRIKE/C2/N/2", "ground"))
+        assert.is_true(OperationScheduler.hasPendingOperation(schedule, "GND/STRIKE/C2/N/2", "ground"))
       end)
 
       -- Boundary: empty schedule
       it("should return false for an empty schedule", function()
-        assert.is_false(OperationScheduler.hasPendingOperation({}, "STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.hasPendingOperation({}, "GND/STRIKE/C2/N/2", "air"))
       end)
     end)
 
@@ -886,7 +886,7 @@ describe("OperationScheduler", function()
         local operation = makeOperation({
           type = "air",
           template = {
-            name = "STRIKE/AB/W/1",
+            name = "AIR/STRIKE/AB/W/1",
             isFirstWave = true,
             strikeInterval = 120,
             packages = { { striker = {} } }
@@ -895,14 +895,14 @@ describe("OperationScheduler", function()
         local config = {
           c = {
             packageTemplates = {
-              STRIKE_AB_W_2 = { { striker = { baseGUID = "NEW-BASE" } } }
+              AIR_STRIKE_AB_W_2 = { { striker = { baseGUID = "NEW-BASE" } } }
             }
           }
         }
 
         local result, status = OperationScheduler.generateNextOperation(operation, config)
 
-        assert.are.equal("STRIKE/AB/W/2", result.template.name)
+        assert.are.equal("AIR/STRIKE/AB/W/2", result.template.name)
         assert.are.equal("air", result.type)
         assert.is_false(result.executed)
         assert.is_false(result.template.isFirstWave)
@@ -987,7 +987,7 @@ describe("OperationScheduler", function()
         local operation = makeOperation({
           type = "air",
           template = {
-            name = "STRIKE/AB/W/5",
+            name = "AIR/STRIKE/AB/W/5",
             isFirstWave = true,
             strikeInterval = 90,
             packages = originalPackages
@@ -997,7 +997,7 @@ describe("OperationScheduler", function()
 
         local result, status = OperationScheduler.generateNextOperation(operation, config)
 
-        assert.are.equal("STRIKE/AB/W/5", result.template.name)
+        assert.are.equal("AIR/STRIKE/AB/W/5", result.template.name)
         assert.are.equal(originalPackages, result.template.packages)
         assert.are.equal("REUSED_CURRENT", status)
       end)
