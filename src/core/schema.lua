@@ -1248,7 +1248,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconQueueProcessingContext: table
 ---@field config SBJ__Config Configuration data
 ---@field reconContext SBJ__ReconContext Reconnaissance runtime context
----@field reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@field LACMContext SBJ__LACMContext LACM context data
 ---@field fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 
@@ -1273,7 +1273,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether dynamic operations system is enabled
 ---@field lastEvaluationTime? number Last evaluation timestamp (Unix time)
 ---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
----@field reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
+---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
 
 ---Air operation definition for dynamic ATO insertion
 ---@class SBJ__AirOperation: table
@@ -1299,6 +1299,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field delay number Delay trigger time (seconds)
 ---@field executed boolean Whether already executed
 ---@field operations SBJ__Operation[] Operations to execute
+
+---Operation paired with the reconnaissance-triggered batch that owns it
+---Returned by DynamicState.filterOperationsByType so callers can write execution status back to the parent batch
+---@class SBJ__BatchedOperation: table
+---@field operationBatch SBJ__ReconTriggeredOperationBatch Parent batch owning the operation
+---@field operation SBJ__Operation Operation to execute
 
 ---Wave template for Dynamic ATO Insertion
 ---@class SBJ__WaveTemplate: table

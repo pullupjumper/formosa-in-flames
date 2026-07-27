@@ -300,11 +300,11 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("processQueue", function()
-    local config, reconTriggeredOperations, LACMContext
+    local config, reconTriggeredOperationBatches, LACMContext
 
     before_each(function()
       config = makeConfig()
-      reconTriggeredOperations = {}
+      reconTriggeredOperationBatches = {}
       LACMContext = makeLACMContext()
     end)
 
@@ -316,7 +316,7 @@ describe("Recon", function()
       return {
         config = config,
         reconContext = reconContext,
-        reconTriggeredOperations = reconTriggeredOperations,
+        reconTriggeredOperationBatches = reconTriggeredOperationBatches,
         LACMContext = LACMContext,
         fireSupportOnHold = fireSupportOnHold == true
       }
@@ -418,7 +418,7 @@ describe("Recon", function()
 
       assert.is_true(entry.isFinished)
       -- No dynamic operations scheduled (mission failed)
-      assert.are.equal(0, #reconTriggeredOperations)
+      assert.are.equal(0, #reconTriggeredOperationBatches)
     end)
 
     it("should mark mission as successful when UAV destroyed after endTime", function()
@@ -577,7 +577,7 @@ describe("Recon", function()
 
       -- isFinished should remain true, no additional scheduling
       assert.is_true(entry.isFinished)
-      assert.are.equal(0, #reconTriggeredOperations)
+      assert.are.equal(0, #reconTriggeredOperationBatches)
     end)
 
     -- ========================================================================
@@ -618,7 +618,7 @@ describe("Recon", function()
       Recon.processQueue(makeProcessingContext(reconContext))
 
       -- Should not schedule duplicate operations
-      assert.are.equal(0, #reconTriggeredOperations)
+      assert.are.equal(0, #reconTriggeredOperationBatches)
     end)
 
     it("should finish SIGINT mission when endTime reached", function()
@@ -688,7 +688,7 @@ describe("Recon", function()
 
       assert.is_true(entry.isFinished)
       -- Should have scheduled operations (STRIKE/C2/1 new + STRIKE/C2/2 next)
-      assert.is_true(#reconTriggeredOperations > 0)
+      assert.is_true(#reconTriggeredOperationBatches > 0)
     end)
 
     it("should skip AIR/STRIKE/AB/E/1 when LACM is not enabled", function()
@@ -729,7 +729,7 @@ describe("Recon", function()
       Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
-      assert.are.equal(0, #reconTriggeredOperations)
+      assert.are.equal(0, #reconTriggeredOperationBatches)
     end)
 
     -- ========================================================================

@@ -14,7 +14,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 ### 系統能力
 
 - 偵察資產生命週期管理：UAV、衛星、SIGINT 偵察項目可排入 `saveData.c.recon.queue`
-- 動態作戰排程：偵察完成後建立 `reconTriggeredOperations`，同時掛載 air/ground operations
+- 動態作戰排程：偵察完成後建立 `reconTriggeredOperationBatches`，同時掛載 air/ground operations
 - 空中打擊生成：依 `SBJ__WaveTemplate` 評估目標、檢查飛機可用性、產生 ATO Wave
 - 空中打擊執行：管理 Package 掛彈、任務建立、目標指派、飛機派遣與打擊後偵察
 - 火力支援生成與執行：建立 FSEM，協調 TEL/發射單元移動、射擊與再補給
@@ -122,7 +122,7 @@ flowchart TB
 flowchart LR
     RECON_COMPLETE["偵察完成"]
     SCHED["排程動態作戰<br>OperationScheduler.schedule"]
-    RECON_SCHED["reconTriggeredOperations<br>新增偵察觸發作戰批次"]
+    RECON_SCHED["reconTriggeredOperationBatches<br>新增偵察觸發作戰批次"]
     DFSP_EXEC["DynamicFSP.execute()"]
     DATO_EXEC["DynamicATO.process()"]
     FSP_INSERT["插入新 FSEM<br>至 fireSupportPlan"]
@@ -182,7 +182,7 @@ saveData.c.dynamicOperations
 ├── generatedOperations: SBJ__GeneratedOperationsTracker
 │   ├── air: table<string, boolean>
 │   └── ground: table<string, boolean>
-└── reconTriggeredOperations: SBJ__ReconTriggeredOperationBatch[]
+└── reconTriggeredOperationBatches: SBJ__ReconTriggeredOperationBatch[]
     └── ReconTriggeredOperationBatch
         ├── time / type / delay / executed
         └── operations: SBJ__Operation[]

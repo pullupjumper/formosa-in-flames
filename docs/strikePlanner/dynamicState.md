@@ -16,7 +16,7 @@
 
 ```mermaid
 flowchart TD
-    SCHED["reconTriggeredOperations[]"]
+    SCHED["reconTriggeredOperationBatches[]"]
     ENTRY["ReconTriggeredOperationBatch"]
     OP["Operation"]
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ## 作戰篩選
 
-`filterOperationsByType(reconTriggeredOperations, operationType)` 從尚未完成的 batch 中篩選指定類型、尚未執行的 operation。
+`filterOperationsByType(reconTriggeredOperationBatches, operationType)` 從尚未完成的 batch 中篩選指定類型、尚未執行的 operation。
 
 篩選條件：
 
@@ -83,7 +83,7 @@ DYNAMIC/{RECON_TYPE}/{OPERATION_TYPE}/{SEQUENCE}
 |---|---|
 | `checkOperationBatchCompleted(reconEntry)` | 檢查作戰批次所有作戰是否完成 |
 | `updateReconTriggeredOperationStatus(saveData)` | 更新所有偵察觸發作戰批次完成狀態 |
-| `filterOperationsByType(reconTriggeredOperations, operationType)` | 依類型篩選未執行的作戰 |
+| `filterOperationsByType(reconTriggeredOperationBatches, operationType)` | 依類型篩選未執行的作戰 |
 | `markOperationExecuted(reconEntry, operation, success)` | 標記作戰已執行 |
 | `generateUniqueAirOperationName(operationType, reconType, saveData)` | 生成唯一空中作戰名稱 |
 | `generateUniqueGroundOperationName(operationType, reconType, saveData)` | 生成唯一地面作戰名稱 |

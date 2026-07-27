@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/strikePlanner/operationScheduler.lua`
 
-**職責**：在偵察任務成功完成後，依 `reconObjectiveId` 建立後續 air/ground operations，並寫入 `reconTriggeredOperations`
+**職責**：在偵察任務成功完成後，依 `reconObjectiveId` 建立後續 air/ground operations，並寫入 `reconTriggeredOperationBatches`
 
 ---
 
@@ -12,7 +12,7 @@
 
 模組會依 `entry.reconObjectiveId` 查詢 `config.c.recon.strikeMappingsByReconObjective`，逐筆建立空中或地面作戰。空中作戰使用 `config.c.packageTemplates`，地面作戰使用 `config.c.fireSupportTaskTemplates`，兩者都會先把 strike mapping 名稱中的 `/` 轉成 `_` 當模板表鍵名。
 
-排程結果會新增為 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperations`。後續由 [atoBuilder](atoBuilder.md) 取出 `air` operation 生成 ATO Wave，並由 [fsemBuilder](fsemBuilder.md) 取出 `ground` operation 生成 FSEM。
+排程結果會新增為 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperationBatches`。後續由 [atoBuilder](atoBuilder.md) 取出 `air` operation 生成 ATO Wave，並由 [fsemBuilder](fsemBuilder.md) 取出 `ground` operation 生成 FSEM。
 
 ---
 
@@ -35,13 +35,13 @@
 
 特殊規則：
 
-- `STRIKE/AB/E/1` 只有在 `LACMContext.enabled == true` 時建立，否則輸出 `[SKIP] reason=lacm_not_active`。
-- `fireSupportOnHold == true` 時，所有 `STRIKE/INFRASTRUCTURE/*` mapping 會輸出 `[HOLD] reason=fire_support_on_hold` 並跳過，避免 SRBM 彈藥被重點基礎設施打擊消耗。
+- `AIR/STRIKE/AB/E/1` 只有在 `LACMContext.enabled == true` 時建立，否則輸出 `[SKIP] reason=lacm_not_active`。
+- `fireSupportOnHold == true` 時，所有 `GND/STRIKE/INFRA/*` mapping 會輸出 `[HOLD] reason=fire_support_on_hold` 並跳過，避免 SRBM 彈藥被重點基礎設施打擊消耗。
 - 若 `reconContext.frontlineRedirected == true`，會先呼叫 [frontlineRedirect](frontlineRedirect.md) 改寫 mapping 名稱，使後續空中打擊改用 AAR 編組模板。
 
 ### 下一波與重複排程防護
 
-若同名 operation 已存在於 `reconTriggeredOperations`，scheduler 不再建立同名作戰，但會嘗試以前綴尋找已執行的最新波次，呼叫 `OperationScheduler.generateNextOperation` 生成 `/N+1`。
+若同名 operation 已存在於 `reconTriggeredOperationBatches`，scheduler 不再建立同名作戰，但會嘗試以前綴尋找已執行的最新波次，呼叫 `OperationScheduler.generateNextOperation` 生成 `/N+1`。
 
 當 `generateNextOperation` 回傳 `FOUND_NEXT`，模組會再呼叫 `OperationScheduler.hasPendingOperation` 檢查同名下一波是否已排入但尚未執行。若已存在，會輸出 `[SKIP] reason=already_pending`，防止同一個 `/N+1` 被多次偵察完成重複排入。
 
@@ -58,12 +58,12 @@ flowchart TD
     MAPPING{"找到 objective<br>對應 mappings?"}
     REDIRECT["FrontlineRedirect.applyMappings<br>必要時改寫 mapping.name"]
     LOOP["逐筆處理 strikeMappings"]
-    HOLD{"fireSupportOnHold<br>且 STRIKE/INFRASTRUCTURE/*?"}
+    HOLD{"fireSupportOnHold<br>且 GND/STRIKE/INFRA/*?"}
     EXISTS{"同名作戰已存在?"}
     NEWOP["buildOperationFromMapping<br>建立新 operation"]
     NEXTOP["tryGenerateNextOperation<br>生成下一波"]
     INSERT{"operations 數量 > 0?"}
-    BATCH["新增 ReconTriggeredOperationBatch<br>寫入 reconTriggeredOperations"]
+    BATCH["新增 ReconTriggeredOperationBatch<br>寫入 reconTriggeredOperationBatches"]
     LOG["輸出 DYNAMIC_OPERATIONS summary log"]
     SKIP["只記錄 skip/error，不新增批次"]
 
@@ -91,7 +91,7 @@ flowchart TD
 ## 資料結構
 
 ```
-saveData.c.dynamicOperations.reconTriggeredOperations
+saveData.c.dynamicOperations.reconTriggeredOperationBatches
 └── SBJ__ReconTriggeredOperationBatch
     ├── time: string              -- entry.endTime
     ├── type: string              -- entry.type
@@ -119,7 +119,7 @@ saveData.c.dynamicOperations.reconTriggeredOperations
 | `config` | `config.c.recon.frontlineRedirect` | 交由 `FrontlineRedirect.applyMappings` 判斷是否改寫 mapping 名稱 |
 | `config` | `config.c.packageTemplates` | `air` operation 的 template 來源 |
 | `config` | `config.c.fireSupportTaskTemplates` | `ground` operation 的 template 來源 |
-| `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperations` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
+| `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.applyMappings` 讀取；本模組不直接改寫 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 summary log |
 
@@ -137,9 +137,9 @@ saveData.c.dynamicOperations.reconTriggeredOperations
 |---|---|
 | `config` | 讀取 recon objective mappings、air package templates 與 ground fire support templates |
 | `reconContext` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
-| `reconTriggeredOperations` | 查詢既有/待執行作戰，並在有新作戰時追加 `ReconTriggeredOperationBatch` |
-| `LACMContext` | 判斷 `STRIKE/AB/E/1` 等 LACM 依賴 mapping 是否可建立 |
-| `fireSupportOnHold` | 暫停 `STRIKE/INFRASTRUCTURE/*` mapping，避免消耗 SRBM 彈藥 |
+| `reconTriggeredOperationBatches` | 查詢既有/待執行作戰，並在有新作戰時追加 `ReconTriggeredOperationBatch` |
+| `LACMContext` | 判斷 `AIR/STRIKE/AB/E/1` 等 LACM 依賴 mapping 是否可建立 |
+| `fireSupportOnHold` | 暫停 `GND/STRIKE/INFRA/*` mapping，避免消耗 SRBM 彈藥 |
 
 ---
 

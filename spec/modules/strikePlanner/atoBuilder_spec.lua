@@ -95,7 +95,7 @@ describe("AtoBuilder", function()
   end
 
   ---Create full saveData structure for tests
-  local function makeSaveData(reconTriggeredOperations, opts)
+  local function makeSaveData(reconTriggeredOperationBatches, opts)
     opts = opts or {}
     return {
       c = {
@@ -103,7 +103,7 @@ describe("AtoBuilder", function()
         targetlist = opts.targetlist or {},
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = reconTriggeredOperations,
+          reconTriggeredOperationBatches = reconTriggeredOperationBatches,
           generatedOperations = opts.generatedOperations or { air = {}, ground = {} }
         }
       }
@@ -194,7 +194,7 @@ describe("AtoBuilder", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = {}
+          reconTriggeredOperationBatches = {}
         }
       }
     }
@@ -567,11 +567,11 @@ describe("AtoBuilder", function()
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
-  -- Negative: reconTriggeredOperations nil
-  it("should return false when reconTriggeredOperations is nil", function()
+  -- Negative: reconTriggeredOperationBatches nil
+  it("should return false when reconTriggeredOperationBatches is nil", function()
     local saveData = {
       c = {
-        dynamicOperations = { enabled = true, reconTriggeredOperations = nil }
+        dynamicOperations = { enabled = true, reconTriggeredOperationBatches = nil }
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
@@ -579,11 +579,11 @@ describe("AtoBuilder", function()
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
-  -- Negative: reconTriggeredOperations empty
-  it("should return false when reconTriggeredOperations is empty", function()
+  -- Negative: reconTriggeredOperationBatches empty
+  it("should return false when reconTriggeredOperationBatches is empty", function()
     local saveData = {
       c = {
-        dynamicOperations = { enabled = true, reconTriggeredOperations = {} }
+        dynamicOperations = { enabled = true, reconTriggeredOperationBatches = {} }
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
@@ -597,7 +597,7 @@ describe("AtoBuilder", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = { { time = "2026-02-14 00:00:00", operations = {} } }
+          reconTriggeredOperationBatches = { { time = "2026-02-14 00:00:00", operations = {} } }
         }
       }
     }
@@ -621,7 +621,7 @@ describe("AtoBuilder", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         }
       }
     }
@@ -645,7 +645,7 @@ describe("AtoBuilder", function()
       c = {
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         }
       }
     }

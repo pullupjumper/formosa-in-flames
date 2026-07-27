@@ -8,7 +8,7 @@
 
 ## 概述
 
-`fsemBuilder` 是 Strike Planner 的動態地面打擊生成層。它不直接發射武器，而是消費 `saveData.c.dynamicOperations.reconTriggeredOperations` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 建立新的 `SBJ__FireSupportExecutionMatrix`。
+`fsemBuilder` 是 Strike Planner 的動態地面打擊生成層。它不直接發射武器，而是消費 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 建立新的 `SBJ__FireSupportExecutionMatrix`。
 
 模組以 observation window 控制重試行為。當情境時間進入 `operationBatch.time + operationBatch.delay` 到 `config.c.recon.observationWindowSec` 的區間後，operation 會每個 tick 重新評估目標與 firing units；若只是目標不足或發射單元暫不可用，operation 會保持 pending。
 
@@ -153,7 +153,7 @@ saveData.c
 │   ├── enabled: boolean
 │   ├── generatedOperations
 │   │   └── ground: table<string, boolean>
-│   └── reconTriggeredOperations: SBJ__ReconTriggeredOperationBatch[]
+│   └── reconTriggeredOperationBatches: SBJ__ReconTriggeredOperationBatch[]
 │       └── ReconTriggeredOperationBatch
 │           ├── time: string
 │           ├── type: string
@@ -193,7 +193,7 @@ saveData.c
 | 類型 | 路徑 / API | 行為 |
 |---|---|---|
 | 讀取 | `saveData.c.dynamicOperations.enabled` | 判斷模組是否啟用。 |
-| 讀取 | `saveData.c.dynamicOperations.reconTriggeredOperations` | ground operation 來源。 |
+| 讀取 | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | ground operation 來源。 |
 | 讀取 | `saveData.c.ground.fireSupportPlan` | 掃描 active FSEM，避免 firing unit 重複分配。 |
 | 讀取 | `saveData.c.ground[missileSystemLower].firingUnits[firingUnitName]` | 取得 firing unit runtime context。 |
 | 寫入 | `saveData.c.ground.fireSupportPlan[newMatrix.name]` | 插入新 FSEM。 |

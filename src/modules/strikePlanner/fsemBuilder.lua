@@ -419,12 +419,14 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param reconType string Reconnaissance type identifier used for FSEM naming
----@param operation SBJ__Operation Ground operation containing FSEM template
+---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
 ---@return boolean success True if FSEM was successfully created from reconnaissance results
 ---@return string|nil reason Failure reason when success is false
 ---@return string|nil statusSummary Firing unit status summary if available
-local function processGroundOperation(config, saveData, contacts, reconType, operation)
+local function processGroundOperation(config, saveData, contacts, batchedOp)
+  local operation = batchedOp.operation
+  local reconType = batchedOp.operationBatch.type
+
   if not operation.template or not operation.template.fireSupportTasks then
     return false, PROCESS_REASON.MISSING_TEMPLATE, nil
   end
@@ -554,20 +556,20 @@ function FsemBuilder.execute(config, saveData, contacts)
   local windowSec = config.c.recon.observationWindowSec
   local hasExecutedAny = false
 
-  local groundOperations = DynamicState.filterOperationsByType(
-    saveData.c.dynamicOperations.reconTriggeredOperations,
+  local groundBatchedOperations = DynamicState.filterOperationsByType(
+    saveData.c.dynamicOperations.reconTriggeredOperationBatches,
     "ground"
   )
 
-  if #groundOperations == 0 then
+  if #groundBatchedOperations == 0 then
     return false
   end
 
   local processedResults = {}
 
-  for _, item in ipairs(groundOperations) do
-    local operationBatch = item.operationBatch
-    local operation = item.operation
+  for _, batchedOp in ipairs(groundBatchedOperations) do
+    local operationBatch = batchedOp.operationBatch
+    local operation = batchedOp.operation
     local operationName = (operation.template and operation.template.name) or "unknown"
     local windowState = evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
@@ -580,13 +582,7 @@ function FsemBuilder.execute(config, saveData, contacts)
         outcome = OPERATION_OUTCOME.TIMEOUT,
       })
     elseif windowState == OBSERVATION_STATE.IN_WINDOW then
-      local success, reason, statusSummary = processGroundOperation(
-        config,
-        saveData,
-        contacts,
-        operationBatch.type,
-        operation
-      )
+      local success, reason, statusSummary = processGroundOperation(config, saveData, contacts, batchedOp)
 
       if success then
         DynamicState.markOperationExecuted(operationBatch, operation, true)

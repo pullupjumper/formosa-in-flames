@@ -107,15 +107,15 @@ describe("OperationScheduler", function()
   ---Create a reconnaissance queue processing context.
   ---@param config SBJ__Config Configuration data
   ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
-  ---@param reconTriggeredOperations SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+  ---@param reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
   ---@param LACMContext SBJ__LACMContext LACM context data
   ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
   ---@return SBJ__ReconQueueProcessingContext
-  local function makeProcessingContext(config, reconContext, reconTriggeredOperations, LACMContext, fireSupportOnHold)
+  local function makeProcessingContext(config, reconContext, reconTriggeredOperationBatches, LACMContext, fireSupportOnHold)
     return {
       config = config,
       reconContext = reconContext,
-      reconTriggeredOperations = reconTriggeredOperations,
+      reconTriggeredOperationBatches = reconTriggeredOperationBatches,
       LACMContext = LACMContext,
       fireSupportOnHold = fireSupportOnHold == true
     }

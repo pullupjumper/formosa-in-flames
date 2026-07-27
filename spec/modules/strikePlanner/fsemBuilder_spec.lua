@@ -87,7 +87,7 @@ describe("FsemBuilder", function()
         },
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperations = overrides.reconTriggeredOperations or {},
+          reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches or {},
           generatedOperations = { ground = {}, air = {} }
         }
       }
@@ -148,7 +148,7 @@ describe("FsemBuilder", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconTriggeredOperations = {}
+            reconTriggeredOperationBatches = {}
           }
         }
       }
@@ -169,7 +169,7 @@ describe("FsemBuilder", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconTriggeredOperations = { reconEntry }
+            reconTriggeredOperationBatches = { reconEntry }
           }
         }
       }
@@ -193,7 +193,7 @@ describe("FsemBuilder", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconTriggeredOperations = { reconEntry }
+            reconTriggeredOperationBatches = { reconEntry }
           }
         }
       }
@@ -232,7 +232,7 @@ describe("FsemBuilder", function()
       it("should create and insert FSEM when targets and firing units are available", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -254,7 +254,7 @@ describe("FsemBuilder", function()
       it("should set FSEM fields correctly with isActivated true and strikeInterval 0", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -278,7 +278,7 @@ describe("FsemBuilder", function()
       it("should return false and keep operation pending when targets are insufficient", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -297,7 +297,7 @@ describe("FsemBuilder", function()
       it("should not create FSEM when firing unit name is missing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ firingUnits = { {} } })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -321,7 +321,7 @@ describe("FsemBuilder", function()
               }
             }
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -336,7 +336,7 @@ describe("FsemBuilder", function()
       it("should not create FSEM when firing unit is not found in game", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -353,7 +353,7 @@ describe("FsemBuilder", function()
         local operation = makeOperation()
         local saveData = makeSaveData({
           srbmFiringUnits = {},
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -373,7 +373,7 @@ describe("FsemBuilder", function()
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -389,7 +389,7 @@ describe("FsemBuilder", function()
       it("should not create FSEM when firing unit has low ammunition", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -422,7 +422,7 @@ describe("FsemBuilder", function()
               }
             }
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -459,7 +459,7 @@ describe("FsemBuilder", function()
             }),
             ["Battery-3"] = makeBatteryContext({ name = "Battery-3" })
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -499,7 +499,7 @@ describe("FsemBuilder", function()
             }
           }
         })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
@@ -540,7 +540,7 @@ describe("FsemBuilder", function()
             ["Battery-1"] = makeBatteryContext(),
             ["Battery-2"] = makeBatteryContext({ name = "Battery-2" })
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -577,7 +577,7 @@ describe("FsemBuilder", function()
             ["Battery-1"] = makeBatteryContext(),
             ["Battery-2"] = makeBatteryContext({ name = "Battery-2" })
           },
-          reconTriggeredOperations = { reconEntry1, reconEntry2 }
+          reconTriggeredOperationBatches = { reconEntry1, reconEntry2 }
         })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -606,7 +606,7 @@ describe("FsemBuilder", function()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
         local operation2 = makeOperation({ templateName = "WAIT-OP/1", minTargetCount = 10 })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry1, reconEntry2 } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry1, reconEntry2 } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry1, operation = operation1 },
@@ -632,7 +632,7 @@ describe("FsemBuilder", function()
         local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
         local operation2 = { type = "ground", executed = false }
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry1, reconEntry2 } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry1, reconEntry2 } })
 
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry1, operation = operation1 },
@@ -663,7 +663,7 @@ describe("FsemBuilder", function()
       it("should silently skip operations before observation window opens", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(500))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
@@ -681,7 +681,7 @@ describe("FsemBuilder", function()
       it("should mark operation executed=false and emit warning log when window expires", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         local config = makeConfig()
         local triggerTime = 1000
@@ -707,7 +707,7 @@ describe("FsemBuilder", function()
       it("should keep operation pending when targets are insufficient inside window", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
@@ -729,7 +729,7 @@ describe("FsemBuilder", function()
           srbmFiringUnits = {
             ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
           },
-          reconTriggeredOperations = { reconEntry }
+          reconTriggeredOperationBatches = { reconEntry }
         })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
@@ -749,7 +749,7 @@ describe("FsemBuilder", function()
       it("should emit [SKIP] log every tick while operation is observing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 5 })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
@@ -774,7 +774,7 @@ describe("FsemBuilder", function()
       it("should insert FSEM when targets accumulate to satisfy minTargetCount mid-window", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ minTargetCount = 2 })
-        local saveData = makeSaveData({ reconTriggeredOperations = { reconEntry } })
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))

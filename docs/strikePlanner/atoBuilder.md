@@ -8,7 +8,7 @@
 
 ## 概述
 
-`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperations` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
+`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
 
 模組的主要流程分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
 
@@ -25,7 +25,7 @@ flowchart TD
     ENTRY["process(config, saveData, contacts)"]
     ENABLED{"dynamicOperations enabled?"}
     EVAL_TIME["lastEvaluationTime = ScenEdit_CurrentTime()"]
-    HAS_BATCH{"reconTriggeredOperations 存在且非空?"}
+    HAS_BATCH{"reconTriggeredOperationBatches 存在且非空?"}
     FILTER["filterOperationsByType(..., air)"]
     HAS_AIR{"有未執行 air operation?"}
     LOOP["逐一處理 air operation"]
@@ -126,7 +126,7 @@ saveData.c
 │   ├── generatedOperations
 │   │   ├── air: table<string, boolean>
 │   │   └── ground: table<string, boolean>
-│   └── reconTriggeredOperations: SBJ__ReconTriggeredOperationBatch[]
+│   └── reconTriggeredOperationBatches: SBJ__ReconTriggeredOperationBatch[]
 │       └── ReconTriggeredOperationBatch
 │           ├── time: string
 │           ├── type: string

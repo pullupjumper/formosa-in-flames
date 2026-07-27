@@ -45,7 +45,7 @@ describe("DynamicState", function()
         air = { airTaskingOrder = overrides.airTaskingOrder or {} },
         ground = { fireSupportPlan = overrides.fireSupportPlan or {} },
         dynamicOperations = {
-          reconTriggeredOperations = overrides.reconTriggeredOperations or {},
+          reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches or {},
           generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
         }
       }
@@ -127,7 +127,7 @@ describe("DynamicState", function()
       local entry = makeOperationBatch({
         operations = { makeOperation({ executed = true }) }
       })
-      local saveData = makeSaveData({ reconTriggeredOperations = { entry } })
+      local saveData = makeSaveData({ reconTriggeredOperationBatches = { entry } })
 
       DynamicState.updateReconTriggeredOperationStatus(saveData)
 
@@ -140,7 +140,7 @@ describe("DynamicState", function()
         executed = true,
         operations = { makeOperation({ executed = false }) }
       })
-      local saveData = makeSaveData({ reconTriggeredOperations = { entry } })
+      local saveData = makeSaveData({ reconTriggeredOperationBatches = { entry } })
 
       DynamicState.updateReconTriggeredOperationStatus(saveData)
 
@@ -155,7 +155,7 @@ describe("DynamicState", function()
       local entry2 = makeOperationBatch({
         operations = { makeOperation({ executed = false }) }
       })
-      local saveData = makeSaveData({ reconTriggeredOperations = { entry1, entry2 } })
+      local saveData = makeSaveData({ reconTriggeredOperationBatches = { entry1, entry2 } })
 
       DynamicState.updateReconTriggeredOperationStatus(saveData)
 
@@ -172,8 +172,8 @@ describe("DynamicState", function()
       end)
     end)
 
-    -- Boundary: nil reconTriggeredOperations
-    it("should not error when reconTriggeredOperations is nil", function()
+    -- Boundary: nil reconTriggeredOperationBatches
+    it("should not error when reconTriggeredOperationBatches is nil", function()
       local saveData = { c = { dynamicOperations = {} } }
 
       assert.has_no.error(function()

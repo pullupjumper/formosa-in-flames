@@ -330,7 +330,7 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
   end
 
   local existing, operation = OperationScheduler.hasOperation(
-    processingContext.reconTriggeredOperations,
+    processingContext.reconTriggeredOperationBatches,
     baseName,
     strikeMapping.type
   )
@@ -345,7 +345,7 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
   -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.
   if status == "FOUND_NEXT"
       and OperationScheduler.hasPendingOperation(
-        processingContext.reconTriggeredOperations,
+        processingContext.reconTriggeredOperationBatches,
         nextOperation.template.name,
         strikeMapping.type
       ) then
@@ -426,7 +426,7 @@ local function buildOperationsForReconObjective(processingContext, entry)
       local skipMapping = false
 
       if not OperationScheduler.hasOperation(
-            processingContext.reconTriggeredOperations,
+            processingContext.reconTriggeredOperationBatches,
             strikeMapping.name,
             strikeMapping.type
           ) then
@@ -463,8 +463,8 @@ end
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 function OperationScheduler.schedule(processingContext, entry)
-  local reconTriggeredOperations = processingContext.reconTriggeredOperations
-  local reconResult = OperationScheduler.getLastExecutedOperationsAndNextTime(reconTriggeredOperations)
+  local reconTriggeredOperationBatches = processingContext.reconTriggeredOperationBatches
+  local reconResult = OperationScheduler.getLastExecutedOperationsAndNextTime(reconTriggeredOperationBatches)
 
   local operations = {}
   local reconTriggeredOps, logEntries = buildOperationsForReconObjective(processingContext, entry)
@@ -474,7 +474,7 @@ function OperationScheduler.schedule(processingContext, entry)
   end
 
   if #operations > 0 then
-    table.insert(reconTriggeredOperations, {
+    table.insert(reconTriggeredOperationBatches, {
       time = entry.endTime,
       type = entry.type,
       delay = 0,

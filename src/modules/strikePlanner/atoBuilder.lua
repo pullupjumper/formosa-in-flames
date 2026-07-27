@@ -448,13 +448,15 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
----@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch triggering this operation
----@param operation SBJ__Operation Air operation containing wave template
+---@param batchedOp SBJ__BatchedOperation Air operation paired with its parent batch
 ---@return boolean success True if ATO wave was successfully created and inserted
 ---@return string|nil reason Failure reason when success is false
 ---@return string|nil statusSummary Package validation summary
 ---@return {waveName: string, timingLogEntries: string[]}|nil details Additional operation details for logging
-local function processAirOperation(config, saveData, contacts, operationBatch, operation)
+local function processAirOperation(config, saveData, contacts, batchedOp)
+  local operationBatch = batchedOp.operationBatch
+  local operation = batchedOp.operation
+
   if not operation.template then
     return false, PROCESS_REASON.MISSING_TEMPLATE, nil, nil
   end
@@ -611,32 +613,26 @@ function AtoBuilder.process(config, saveData, contacts)
 
   saveData.c.dynamicOperations.lastEvaluationTime = GameApi.ScenEdit_CurrentTime()
 
-  local reconTriggeredOperations = saveData.c.dynamicOperations.reconTriggeredOperations
-  if not reconTriggeredOperations or #reconTriggeredOperations == 0 then
+  local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
+  if not reconTriggeredOperationBatches or #reconTriggeredOperationBatches == 0 then
     return false
   end
 
-  local airOperations = DynamicState.filterOperationsByType(reconTriggeredOperations, "air")
-  if #airOperations == 0 then
+  local airBatchedOperations = DynamicState.filterOperationsByType(reconTriggeredOperationBatches, "air")
+  if #airBatchedOperations == 0 then
     return false
   end
 
   local hasExecutedAny = false
   local processedResults = {}
 
-  for _, item in ipairs(airOperations) do
-    local operationBatch = item.operationBatch
-    local operation = item.operation
+  for _, batchedOp in ipairs(airBatchedOperations) do
+    local operationBatch = batchedOp.operationBatch
+    local operation = batchedOp.operation
 
     if isReconTriggered(operationBatch) then
       local operationName = (operation.template and operation.template.name) or "unknown"
-      local success, reason, statusSummary, details = processAirOperation(
-        config,
-        saveData,
-        contacts,
-        operationBatch,
-        operation
-      )
+      local success, reason, statusSummary, details = processAirOperation(config, saveData, contacts, batchedOp)
       local outcome = classifyOperationOutcome(success, reason)
 
       if reason ~= PROCESS_REASON.MISSING_TEMPLATE then

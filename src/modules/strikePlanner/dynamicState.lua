@@ -56,11 +56,11 @@ end
 ---Update completion status for all reconnaissance-triggered operation batches
 ---@param saveData SBJ__SaveData Game save data
 function DynamicState.updateReconTriggeredOperationStatus(saveData)
-  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconTriggeredOperations then
+  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.reconTriggeredOperationBatches then
     return
   end
 
-  for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconTriggeredOperations) do
+  for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconTriggeredOperationBatches) do
     if not reconEntry.executed then
       DynamicState.checkOperationBatchCompleted(reconEntry)
     end
@@ -74,15 +74,15 @@ end
 ---Filter operations by type from reconnaissance-triggered operation batches
 ---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param operationType string Operation type to filter ("air" or "ground")
----@return table<number, {operationBatch: SBJ__ReconTriggeredOperationBatch, operation: SBJ__Operation}> # Array of matching operations with their parent batches
+---@return SBJ__BatchedOperation[] # Matching operations paired with their parent batches
 function DynamicState.filterOperationsByType(operationBatches, operationType)
-  local filteredOperations = {}
+  local batchedOperations = {}
 
   for _, operationBatch in ipairs(operationBatches) do
     if not operationBatch.executed and operationBatch.operations then
       for _, operation in ipairs(operationBatch.operations) do
         if operation.type == operationType and not operation.executed then
-          table.insert(filteredOperations, {
+          table.insert(batchedOperations, {
             operationBatch = operationBatch,
             operation = operation
           })
@@ -91,7 +91,7 @@ function DynamicState.filterOperationsByType(operationBatches, operationType)
     end
   end
 
-  return filteredOperations
+  return batchedOperations
 end
 
 ---Mark operation as executed and update parent operation batch status

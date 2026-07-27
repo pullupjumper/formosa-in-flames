@@ -29,7 +29,7 @@ if saveData.c.recon.enabled then
   StrikePlanner.processReconQueue({
     config = config,
     reconContext = saveData.c.recon,
-    reconTriggeredOperations = saveData.c.dynamicOperations.reconTriggeredOperations,
+    reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches,
     LACMContext = saveData.c.surface.lacm,
     fireSupportOnHold = saveData.c.amphibOps.fireSupportOnHold == true
   })

@@ -13,7 +13,7 @@ recon 模組管理偵察佇列中所有 UAV 與衛星任務的完整生命週期
 除了偵察生命週期外，recon 只負責協調兩個拆分模組：
 
 - 每個 tick 開頭呼叫 [frontlineRedirect](frontlineRedirect.md)，更新 `saveData.c.recon.frontlineRedirected` sticky 旗標。
-- 偵察成功結算時呼叫 [operationScheduler](operationScheduler.md)，將完成的偵察 entry 轉成 `saveData.c.dynamicOperations.reconTriggeredOperations` 批次。
+- 偵察成功結算時呼叫 [operationScheduler](operationScheduler.md)，將完成的偵察 entry 轉成 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 批次。
 
 [airbaseAttrition](airbaseAttrition.md) 是 `frontlineRedirect` 的下游統計工具，recon 不直接呼叫。
 
@@ -92,7 +92,7 @@ flowchart TD
     UAV["processUAVEntry<br>發射 / 監控 / 完成判定"]
     SAT["processSatelliteEntry<br>時間到即完成"]
     SUCCESS{"偵察成功?"}
-    SCHED["OperationScheduler.schedule<br>建立 reconTriggeredOperations"]
+    SCHED["OperationScheduler.schedule<br>建立 reconTriggeredOperationBatches"]
     LOG["輸出 RECON summary log"]
 
     TICK --> REDIRECT --> LOOP --> ENTRY
@@ -190,7 +190,7 @@ flowchart TD
 |---|---|---|
 | `config` | `SBJ__Config` | 讀取偵察設定、strike mappings 與後續任務模板 |
 | `reconContext` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
-| `reconTriggeredOperations` | `SBJ__ReconTriggeredOperationBatch[]` | 已由偵察觸發的動態作戰批次，供 scheduler 去重與追加 |
+| `reconTriggeredOperationBatches` | `SBJ__ReconTriggeredOperationBatch[]` | 已由偵察觸發的動態作戰批次，供 scheduler 去重與追加 |
 | `LACMContext` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
 | `fireSupportOnHold` | `boolean` | 為保存彈藥而暫停 SRBM-driven mappings 時設為 `true` |
 
@@ -207,7 +207,7 @@ flowchart TD
 | `saveData.c.recon.enabled` | 偵察系統是否啟用 |
 | `saveData.c.recon.queue` | 執行期偵察佇列（含 `hasLaunched` / `isFinished` / `unitGUID` 等狀態） |
 | `saveData.c.recon.frontlineRedirected` | sticky 旗標；觸發後恆為 `true`，存檔保留 |
-| `saveData.c.dynamicOperations.reconTriggeredOperations` | 偵察成功後由 scheduler 寫入的動態作戰批次；recon 只負責傳入 |
+| `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 偵察成功後由 scheduler 寫入的動態作戰批次；recon 只負責傳入 |
 | `constants.PLATFORMS.WZ8` / `constants.LOADOUTS.WZ8_RECON` / `constants.SENSORS.WZ8_RADAR` | 發射 WZ-8 時用到的平台、掛載、感測器 DBID |
 | `constants.BASES.LONGTIAN_AAB` | WZ-8 預設歸屬基地 |
 | `constants.SIDES.ENEMY` | China side 名稱；`launchWZ8` 建立 WZ-8 時使用 |
@@ -220,7 +220,7 @@ flowchart TD
 - [operationScheduler](operationScheduler.md) — 偵察完成後建立 recon-triggered operations
 - [frontlineRedirect](frontlineRedirect.md) — 前線基地戰損觸發與 strike mapping 改寫
 - [airbaseAttrition](airbaseAttrition.md) — 多基地駐機戰損統計
-- [atoBuilder](atoBuilder.md) — 從 reconTriggeredOperations 取出 air operations 並插入 ATO
-- [fsemBuilder](fsemBuilder.md) — 從 reconTriggeredOperations 取出 ground operations 並插入 FSEM
+- [atoBuilder](atoBuilder.md) — 從 reconTriggeredOperationBatches 取出 air operations 並插入 ATO
+- [fsemBuilder](fsemBuilder.md) — 從 reconTriggeredOperationBatches 取出 ground operations 並插入 FSEM
 - [targetingProcess](targetingProcess.md) — 呼叫 `trackTarget` 進行偵察追蹤觸發
 - [系統架構](README.md)
