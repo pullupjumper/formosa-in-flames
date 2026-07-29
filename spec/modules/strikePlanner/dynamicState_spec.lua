@@ -352,62 +352,64 @@ describe("DynamicState", function()
   -- ============================================================================
 
   describe("generateUniqueAirOperationName", function()
-    -- Positive: first sequence
-    it("should generate first sequence name when nothing exists", function()
+    -- Positive: first sequence, and the template wave-stage number is preserved (not swallowed)
+    it("should generate first sequence name and preserve the template wave-stage number", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueAirOperationName("STRIKE/AB/W", "satellite", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/STRIKE/AB/W/1", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
+      -- Wave-stage number stays recoverable as the trailing /<digits> of the template segment
+      assert.are.equal("2", name:match("^AIR/STRIKE/AB/W/(%d+)/DYN"))
     end)
 
-    -- Positive: uppercases reconType
-    it("should uppercase reconType in name", function()
+    -- Positive: UAV source passes through as uppercase (not in the abbreviation table)
+    it("should pass through UAV source as uppercase in name", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueAirOperationName("ANTISHIP", "aircraft", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "UAV", saveData)
 
-      assert.are.equal("DYNAMIC/AIRCRAFT/ANTISHIP/1", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-UAV-01", name)
     end)
 
     -- Negative: skips names in generatedOperations.air
     it("should skip names already in generatedOperations.air", function()
       local saveData = makeSaveData({
         generatedOperations = {
-          air = { ["DYNAMIC/SATELLITE/STRIKE/AB/W/1"] = true },
+          air = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = true },
           ground = {}
         }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("STRIKE/AB/W", "satellite", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/STRIKE/AB/W/2", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", name)
     end)
 
     -- Negative: skips names in airTaskingOrder
     it("should skip names already in airTaskingOrder", function()
       local saveData = makeSaveData({
-        airTaskingOrder = { ["DYNAMIC/AIRCRAFT/SEAD/1"] = { name = "existing" } }
+        airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("SEAD", "aircraft", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/AIRCRAFT/SEAD/2", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", name)
     end)
 
     -- Negative: skips names in both registries
     it("should skip names in both generatedOperations and airTaskingOrder", function()
       local saveData = makeSaveData({
         generatedOperations = {
-          air = { ["DYNAMIC/SATELLITE/STRIKE/1"] = true },
+          air = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = true },
           ground = {}
         },
-        airTaskingOrder = { ["DYNAMIC/SATELLITE/STRIKE/2"] = { name = "existing" } }
+        airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-02"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("STRIKE", "satellite", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/STRIKE/3", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-03", name)
     end)
 
     -- Boundary: nil generatedOperations
@@ -415,9 +417,9 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
 
-      local name = DynamicState.generateUniqueAirOperationName("STRIKE", "satellite", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/STRIKE/1", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations.air)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations.ground)
@@ -428,9 +430,9 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.air.airTaskingOrder = nil
 
-      local name = DynamicState.generateUniqueAirOperationName("STRIKE", "satellite", saveData)
+      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/STRIKE/1", name)
+      assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
     end)
   end)
 
@@ -443,9 +445,18 @@ describe("DynamicState", function()
     it("should generate first sequence name when nothing exists", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueGroundOperationName("INFRASTRUCTURE", "satellite", saveData)
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/1", name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
+    end)
+
+    -- Positive: SIGINT source passes through as uppercase (not in the abbreviation table)
+    it("should pass through SIGINT source as uppercase in name", function()
+      local saveData = makeSaveData()
+
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "SIGINT", saveData)
+
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SIGINT-01", name)
     end)
 
     -- Negative: skips names in generatedOperations.ground
@@ -453,24 +464,24 @@ describe("DynamicState", function()
       local saveData = makeSaveData({
         generatedOperations = {
           air = {},
-          ground = { ["DYNAMIC/SATELLITE/INFRASTRUCTURE/1"] = true }
+          ground = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = true }
         }
       })
 
-      local name = DynamicState.generateUniqueGroundOperationName("INFRASTRUCTURE", "satellite", saveData)
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/2", name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", name)
     end)
 
     -- Negative: skips names in fireSupportPlan
     it("should skip names already in fireSupportPlan", function()
       local saveData = makeSaveData({
-        fireSupportPlan = { ["DYNAMIC/AIRCRAFT/ANTISHIP/1"] = { name = "existing" } }
+        fireSupportPlan = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueGroundOperationName("ANTISHIP", "aircraft", saveData)
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/AIRCRAFT/ANTISHIP/2", name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", name)
     end)
 
     -- Boundary: nil generatedOperations
@@ -478,9 +489,9 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
 
-      local name = DynamicState.generateUniqueGroundOperationName("INFRASTRUCTURE", "satellite", saveData)
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/1", name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
     end)
 
@@ -489,9 +500,9 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.ground.fireSupportPlan = nil
 
-      local name = DynamicState.generateUniqueGroundOperationName("INFRASTRUCTURE", "satellite", saveData)
+      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
-      assert.are.equal("DYNAMIC/SATELLITE/INFRASTRUCTURE/1", name)
+      assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
     end)
   end)
 

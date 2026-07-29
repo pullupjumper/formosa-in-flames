@@ -1,3 +1,5 @@
+local constants = require("src.core.constants")
+
 local DynamicState = {}
 
 -- ============================================================================
@@ -12,19 +14,31 @@ local function ensureGeneratedOperations(saveData)
   end
 end
 
----Generate unique operation name by checking registry and existing plan table
----@param operationType string Type label for the name (e.g., "AIR/STRIKE/AB/W", "GND/STRIKE/INFRA/ALL")
----@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
+---Abbreviate a reconnaissance source for use in a dynamic instance tag
+---Falls back to the uppercased reconType when the source is not mapped.
+---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
+---@return string # Short uppercase source code (e.g., "SAT", "UAV", "SIGINT")
+local function abbreviateReconSource(reconType)
+  return constants.RECON_SOURCE_ABBREVIATIONS[reconType] or string.upper(reconType)
+end
+
+---Generate a unique operation name by appending a dynamic instance tag to the template name.
+---The template name (wave-stage number included) is kept verbatim as the prefix so downstream
+---wave-number parsing stays intact; the appended "/DYN-<source>-NN" segment uses "-" separators
+---to stay visually distinct from the "/" taxonomy path.
+---Example: template "AIR/STRIKE/AB/W/2" + "satellite" -> "AIR/STRIKE/AB/W/2/DYN-SAT-01"
+---@param templateName string Full operation template name, wave-stage number included (e.g. "AIR/STRIKE/AB/W/2")
+---@param reconType string Reconnaissance source that triggered the operation (e.g., "satellite", "UAV", "SIGINT")
 ---@param registry table<string, boolean> Generated operations registry to check
 ---@param existingPlan table<string, any>|nil Existing plan table to check for conflicts
 ---@return string # Generated unique operation name
-local function generateUniqueOperationName(operationType, reconType, registry, existingPlan)
+local function generateUniqueOperationName(templateName, reconType, registry, existingPlan)
+  local instancePrefix = templateName .. "/DYN-" .. abbreviateReconSource(reconType) .. "-"
   local sequence = 1
-  local baseName = "DYNAMIC/" .. string.upper(reconType) .. "/" .. operationType
 
   local operationName
   repeat
-    operationName = baseName .. "/" .. sequence
+    operationName = instancePrefix .. string.format("%02d", sequence)
     sequence = sequence + 1
   until not registry[operationName] and not (existingPlan and existingPlan[operationName])
 
@@ -109,29 +123,29 @@ end
 -- Operation Name Generation
 -- ============================================================================
 
----Generate unique operation name with dynamic prefix for air operations (ATO waves)
----@param operationType string Type of the operation (e.g., "AIR/STRIKE/AB/W")
----@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
+---Generate a unique air-operation (ATO wave) name from a template name and recon source
+---@param templateName string Full wave template name, wave-stage number included (e.g. "AIR/STRIKE/AB/W/2")
+---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
 ---@param saveData SBJ__SaveData Game save data
----@return string # Generated unique operation name
-function DynamicState.generateUniqueAirOperationName(operationType, reconType, saveData)
+---@return string # Generated unique operation name (e.g. "AIR/STRIKE/AB/W/2/DYN-SAT-01")
+function DynamicState.generateUniqueAirOperationName(templateName, reconType, saveData)
   ensureGeneratedOperations(saveData)
   return generateUniqueOperationName(
-    operationType, reconType,
+    templateName, reconType,
     saveData.c.dynamicOperations.generatedOperations.air,
     saveData.c.air.airTaskingOrder
   )
 end
 
----Generate unique operation name with dynamic prefix for ground operations (FSEMs)
----@param operationType string Type of the operation (e.g., "GND/STRIKE/INFRA/ALL", "GND/ASUW/SHIP")
----@param reconType string Reconnaissance type (e.g., "satellite", "aircraft")
+---Generate a unique ground-operation (FSEM) name from a template name and recon source
+---@param templateName string Full FSEM template name, wave-stage number included (e.g. "GND/STRIKE/INFRA/ALL/1")
+---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
 ---@param saveData SBJ__SaveData Game save data
----@return string # Generated unique operation name
-function DynamicState.generateUniqueGroundOperationName(operationType, reconType, saveData)
+---@return string # Generated unique operation name (e.g. "GND/STRIKE/INFRA/ALL/1/DYN-SAT-01")
+function DynamicState.generateUniqueGroundOperationName(templateName, reconType, saveData)
   ensureGeneratedOperations(saveData)
   return generateUniqueOperationName(
-    operationType, reconType,
+    templateName, reconType,
     saveData.c.dynamicOperations.generatedOperations.ground,
     saveData.c.ground.fireSupportPlan
   )

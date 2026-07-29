@@ -2634,6 +2634,14 @@ constants.MISSILE_SYSTEM_TYPES = {
   MLRS = "mlrs",
 }
 
+---Reconnaissance source codes used in dynamic operation instance tags.
+---Keys are the reconnaissance types from SBJ__ReconQueueEntry.type ("UAV"|"satellite"|"SIGINT").
+constants.RECON_SOURCE_ABBREVIATIONS = {
+  satellite = "SAT",
+  UAV       = "UAV",
+  SIGINT    = "SIGINT",
+}
+
 constants.TAGS = {
   AIR = "air",
   AMPHIBIOUS_ASSAULT = "amphibiousAssault",
