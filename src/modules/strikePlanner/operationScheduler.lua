@@ -351,6 +351,17 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
 
   local nextOperation, status = OperationScheduler.generateNextOperation(operation, processingContext.config)
 
+  -- PARSE_ERROR and UNKNOWN_TYPE hand back a copy of the source operation, which would
+  -- re-queue an already-executed wave. Report the miss instead of scheduling the duplicate.
+  if status ~= NEXT_OPERATION_STATUS.FOUND_NEXT and status ~= NEXT_OPERATION_STATUS.REUSED_CURRENT then
+    return nil, { tag = "WARN", fields = {
+      operation = operation.template.name,
+      type = strikeMapping.type,
+      action = "schedule_next",
+      reason = string.lower(status)
+    } }
+  end
+
   -- Skip if an equivalent next wave is already scheduled but not yet executed; otherwise the same
   -- /N+1 would be queued again from a later recon completion and double the strike package.
   -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.

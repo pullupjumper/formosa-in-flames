@@ -438,6 +438,36 @@ describe("OperationScheduler", function()
       assert.are.equal("AIR/STRIKE/AB/W/AAR/1", names[2])
     end)
 
+    -- Negative: an underivable next wave must not re-queue the already-executed source
+    it("should warn instead of scheduling when generateNextOperation cannot derive a next wave", function()
+      local cfg = makeConfig()
+      local operations = {}
+      stubRecurringHelpers()
+      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
+        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
+        end
+        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
+        end
+        return false, nil, nil
+      end))
+      -- PARSE_ERROR hands back a copy of the source operation; scheduling it would duplicate the wave
+      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "PARSE_ERROR"
+      ))
+
+      OperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
+
+      assert.are.equal(0, #operations)
+      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "%[WARN%]"))
+      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "reason=parse_error"))
+      assert.is_false(hasErrorCall("."))
+    end)
+
     -- Positive: the domain status is lowercased into the status field
     it("should emit the next operation status as a snake_case token", function()
       local cfg = makeConfig()
