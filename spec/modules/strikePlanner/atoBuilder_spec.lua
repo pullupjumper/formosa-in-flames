@@ -19,6 +19,8 @@ describe("AtoBuilder", function()
   ---@type luassert.spy
   local logStub
   ---@type luassert.spy
+  local errorStub
+  ---@type luassert.spy
   local warnStub
 
   ---Track and register test stub for automatic cleanup.
@@ -173,7 +175,7 @@ describe("AtoBuilder", function()
   before_each(function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
     warnStub = trackStub(stub(Logger, "warn"))
   end)
 
@@ -661,6 +663,11 @@ describe("AtoBuilder", function()
     assert.stub(stubGenName).was_not.called()
     -- MISSING_TEMPLATE reason skips markOperationExecuted
     assert.stub(stubMarkExecuted).was_not.called()
+    -- The reason token doubles as the control-flow sentinel, so pin it
+    assert.stub(errorStub).was.called(1)
+    local errorMessage = errorStub.calls[1].vals[1]
+    assert.truthy(errorMessage:find("%[ERROR%]"))
+    assert.truthy(errorMessage:find("reason=missing_wave_template", 1, true))
   end)
 
   -- ============================================================================
@@ -1130,13 +1137,12 @@ describe("AtoBuilder", function()
     assert.is_false(result)
     assert.stub(logStub).was.called()
     local logMessage = logStub.calls[1].vals[2]
-    assert.truthy(string.find(logMessage, "validationErrors=", 1, true))
-    assert.truthy(string.find(logMessage, "package=1", 1, true))
-    assert.truthy(string.find(logMessage, "role=striker", 1, true))
+    -- The rejected package is a detail row, so the rollup counts only the operation
+    assert.truthy(string.find(logMessage, "total=1 skip=1", 1, true))
+    assert.truthy(string.find(logMessage, "[SKIP] package=1 role=striker", 1, true))
     assert.truthy(string.find(logMessage, "reason=insufficient_aircraft", 1, true))
-    assert.truthy(string.find(logMessage, "BASE-1:available=1:assigned=0", 1, true))
-    assert.truthy(string.find(logMessage, "BASE-2:available=1:assigned=0", 1, true))
-    assert.truthy(string.find(logMessage, "BASE-3:available=1:assigned=0", 1, true))
+    -- All three candidates hold 1 free aircraft against a required 4
+    assert.truthy(string.find(logMessage, "available=1 bases=3 required=4", 1, true))
   end)
 
   -- Positive: each role resolves its base independently within the same package

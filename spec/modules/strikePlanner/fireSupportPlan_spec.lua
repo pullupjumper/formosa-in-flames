@@ -597,7 +597,7 @@ describe("FireSupportPlan", function()
       local logMessage = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(logMessage, "%[OK%]"))
       assert.is_truthy(string.find(logMessage, "action=strike"))
-      assert.is_truthy(string.find(logMessage, "task=FST%-ALPHA fired=4"))
+      assert.is_truthy(string.find(logMessage, "task=FST%-ALPHA action=strike fired=4"))
     end)
 
     -- Positive: pending units logged
@@ -618,7 +618,8 @@ describe("FireSupportPlan", function()
       assert.is_truthy(string.find(logMessage, "%[SKIP%]"))
       assert.is_truthy(string.find(logMessage, "reason=firing_units_not_in_position"))
       assert.is_truthy(string.find(logMessage, "task=FST%-ALPHA"))
-      assert.is_truthy(string.find(logMessage, 'units="Battery%-1"'))
+      -- Separator-free values stay unquoted under the single escaping rule
+      assert.is_truthy(string.find(logMessage, "units=Battery%-1 reason=firing_units_not_in_position"))
     end)
 
     -- Positive: completion logged without strike info

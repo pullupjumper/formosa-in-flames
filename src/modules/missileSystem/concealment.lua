@@ -71,13 +71,13 @@ end
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
 ---@param unit CMO__Unit Firing unit to unload
 ---@return boolean success Whether unload was performed
----@return string? errorMsg Error message if failed
+---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.moveFromHideArea(unitCtx, unit)
   local group = Shared.getGroupUnits(unit)
   local buildings = Concealment.findBuildingsInMaskArea(unitCtx, unit.side)
 
   if not buildings then
-    return false, "No buildings found in mask area"
+    return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
   end
 
   for _, u in ipairs(buildings) do
@@ -96,21 +96,23 @@ function Concealment.moveFromHideArea(unitCtx, unit)
 end
 
 ---Load firing unit into a random building within mask area
+---Failure fields omit the unit name because every caller already labels the row
+---with the unit it was acting on.
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
 ---@param unit CMO__Unit Firing unit to hide
 ---@return boolean success Whether hide was performed
----@return string? errorMsg Error message if failed
+---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.hideUnit(unitCtx, unit)
   local buildings = Concealment.findBuildingsInMaskArea(unitCtx, unit.side)
 
   if not buildings then
-    return false, "No buildings found in mask area"
+    return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
   end
 
   local building = Concealment.getRandomBuilding(buildings)
 
   if not building then
-    return false, string.format("No available building in mask area for '%s'", unitCtx.name)
+    return false, { reason = "no_available_building", area = unitCtx.operationalArea.name }
   end
 
   AmphibiousLogistics.loadCargo(building, unitCtx, unit.side)

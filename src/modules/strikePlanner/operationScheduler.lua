@@ -1,11 +1,13 @@
 local FrontlineRedirect = require("src.modules.strikePlanner.frontlineRedirect")
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 local OperationScheduler = {}
+
+-- Scope value shared by the info and error sinks of this module
+local LOG_SCOPE = "dynamicOperationScheduling"
 
 ---Type-specific configuration lookup for generateNextOperation
 local TYPE_CONFIG = {
@@ -20,6 +22,17 @@ local TYPE_CONFIG = {
     defaultInterval = 0,
   }
 }
+
+-- Domain status returned by generateNextOperation, part of that function's
+-- public contract. Distinct from log tags: the emit path lowercases these into
+-- the status field.
+local NEXT_OPERATION_STATUS = {
+  FOUND_NEXT = "FOUND_NEXT",
+  REUSED_CURRENT = "REUSED_CURRENT",
+  PARSE_ERROR = "PARSE_ERROR",
+  UNKNOWN_TYPE = "UNKNOWN_TYPE",
+}
+
 
 -- ============================================================================
 -- Operation Search Helpers
@@ -224,12 +237,12 @@ function OperationScheduler.generateNextOperation(operation, config)
   local baseName, currentNumber = templateName:match("^(.+/)(%d+)$")
 
   if not baseName or not currentNumber then
-    return Utils.deepCopy(operation), "PARSE_ERROR"
+    return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.PARSE_ERROR
   end
 
   local typeConfig = TYPE_CONFIG[operation.type]
   if not typeConfig then
-    return Utils.deepCopy(operation), "UNKNOWN_TYPE"
+    return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.UNKNOWN_TYPE
   end
 
   local nextNumber = tonumber(currentNumber) + 1
@@ -239,13 +252,13 @@ function OperationScheduler.generateNextOperation(operation, config)
   ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]|nil
   local newTemplate = config.c[typeConfig.configTable][configKey]
   local finalName = nextName
-  local status = "FOUND_NEXT"
+  local status = NEXT_OPERATION_STATUS.FOUND_NEXT
 
   if not newTemplate then
     ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]
     newTemplate = operation.template[typeConfig.templateKey]
     finalName = templateName
-    status = "REUSED_CURRENT"
+    status = NEXT_OPERATION_STATUS.REUSED_CURRENT
   end
 
   local newOperation = {
@@ -280,15 +293,14 @@ end
 ---@param strikeMapping SBJ__ReconStrikeMapping Strike mapping definition
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@return SBJ__Operation|nil operation Built operation or nil if skipped
----@return string logEntry Log entry describing the result
+---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildOperationFromMapping(strikeMapping, processingContext)
   if strikeMapping.name == "AIR/STRIKE/AB/E/1" and not processingContext.LACMContext.enabled then
-    local msg = string.format(
-      "operation=%s type=%s reason=lacm_not_active",
-      LogFormat.value(strikeMapping.name),
-      LogFormat.value(strikeMapping.type)
-    )
-    return nil, LogFormat.entry("SKIP", msg)
+    return nil, { tag = "SKIP", fields = {
+      operation = strikeMapping.name,
+      type = strikeMapping.type,
+      reason = "lacm_not_active"
+    } }
   end
 
   local newOperation = {
@@ -310,19 +322,18 @@ local function buildOperationFromMapping(strikeMapping, processingContext)
     newOperation.template.strikeInterval = 0
   end
 
-  local msg = string.format(
-    "operation=%s type=%s action=schedule_new",
-    LogFormat.value(strikeMapping.name),
-    LogFormat.value(strikeMapping.type)
-  )
-  return newOperation, LogFormat.entry("OK", msg)
+  return newOperation, { tag = "OK", fields = {
+    operation = strikeMapping.name,
+    type = strikeMapping.type,
+    action = "schedule_new"
+  } }
 end
 
 ---Try to generate a next operation from an existing prefix-matched operation
 ---@param strikeMapping SBJ__ReconStrikeMapping Strike mapping with template name
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@return SBJ__Operation|nil nextOperation Generated next operation or nil
----@return string|nil logEntry Log entry describing the result
+---@return SBJ__LogResult|nil result Deferred log result, nil when there is nothing to report
 local function tryGenerateNextOperation(strikeMapping, processingContext)
   local baseName = strikeMapping.name:match("^(.+/)%d+$")
   if not baseName then
@@ -343,28 +354,26 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
   -- Skip if an equivalent next wave is already scheduled but not yet executed; otherwise the same
   -- /N+1 would be queued again from a later recon completion and double the strike package.
   -- REUSED_CURRENT (no next-wave template; reuses the already-executed /N) is intentionally kept.
-  if status == "FOUND_NEXT"
+  if status == NEXT_OPERATION_STATUS.FOUND_NEXT
       and OperationScheduler.hasPendingOperation(
         processingContext.reconTriggeredOperationBatches,
         nextOperation.template.name,
         strikeMapping.type
       ) then
-    local msg = string.format(
-      "operation=%s type=%s reason=already_pending",
-      LogFormat.value(nextOperation.template.name),
-      LogFormat.value(strikeMapping.type)
-    )
-    return nil, LogFormat.entry("SKIP", msg)
+    return nil, { tag = "SKIP", fields = {
+      operation = nextOperation.template.name,
+      type = strikeMapping.type,
+      reason = "already_pending"
+    } }
   end
 
-  local msg = string.format(
-    "operation=%s nextOperation=%s type=%s action=schedule_next status=%s",
-    LogFormat.value(operation.template.name),
-    LogFormat.value(nextOperation.template.name),
-    LogFormat.value(strikeMapping.type),
-    LogFormat.value(status)
-  )
-  return nextOperation, LogFormat.entry("OK", msg)
+  return nextOperation, { tag = "OK", fields = {
+    operation = operation.template.name,
+    nextOperation = nextOperation.template.name,
+    type = strikeMapping.type,
+    action = "schedule_next",
+    status = string.lower(status)
+  } }
 end
 
 ---Build follow-on operations unlocked by a completed reconnaissance objective
@@ -372,39 +381,36 @@ end
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@return SBJ__Operation[] operations Array of special operations to add
----@return string[] logEntries Array of log entry strings for batched output
+---@return SBJ__LogResult[] results Per-mapping scheduling results for batched output
 local function buildOperationsForReconObjective(processingContext, entry)
   local operations = {}
-  local logEntries = {}
+  local results = {}
   local strikeMappingsByReconObjective = processingContext.config.c.recon.strikeMappingsByReconObjective
 
   if not strikeMappingsByReconObjective then
-    local msg = string.format(
-      "type=%s reason=strike_mappings_by_recon_objective_not_found",
-      LogFormat.value(entry.type)
-    )
-    table.insert(logEntries, LogFormat.entry("ERROR", msg))
-    return operations, logEntries
+    table.insert(results, { tag = "ERROR", fields = {
+      type = entry.type,
+      reason = "strike_mappings_by_recon_objective_not_found"
+    } })
+    return operations, results
   end
 
   if not entry.reconObjectiveId then
-    local msg = string.format(
-      "type=%s reason=recon_objective_not_assigned",
-      LogFormat.value(entry.type)
-    )
-    table.insert(logEntries, LogFormat.entry("SKIP", msg))
-    return operations, logEntries
+    table.insert(results, { tag = "SKIP", fields = {
+      type = entry.type,
+      reason = "recon_objective_not_assigned"
+    } })
+    return operations, results
   end
 
   local strikeMappings = findStrikeMappingsForReconObjective(strikeMappingsByReconObjective, entry)
   if not strikeMappings then
-    local msg = string.format(
-      "type=%s objective=%s reason=strike_mapping_not_found",
-      LogFormat.value(entry.type),
-      LogFormat.value(entry.reconObjectiveId)
-    )
-    table.insert(logEntries, LogFormat.entry("SKIP", msg))
-    return operations, logEntries
+    table.insert(results, { tag = "SKIP", fields = {
+      type = entry.type,
+      objective = entry.reconObjectiveId,
+      reason = "strike_mapping_not_found"
+    } })
+    return operations, results
   end
 
   strikeMappings = FrontlineRedirect.applyMappings(
@@ -416,12 +422,11 @@ local function buildOperationsForReconObjective(processingContext, entry)
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Gate: SRBM mappings (GND/STRIKE/INFRA/*) skipped while fire support is on hold.
     if processingContext.fireSupportOnHold and strikeMapping.name:find("^GND/STRIKE/INFRA/") then
-      local msg = string.format(
-        "operation=%s type=%s reason=fire_support_on_hold",
-        LogFormat.value(strikeMapping.name),
-        LogFormat.value(strikeMapping.type)
-      )
-      table.insert(logEntries, LogFormat.entry("HOLD", msg))
+      table.insert(results, { tag = "HOLD", fields = {
+        operation = strikeMapping.name,
+        type = strikeMapping.type,
+        reason = "fire_support_on_hold"
+      } })
     else
       local skipMapping = false
 
@@ -430,8 +435,8 @@ local function buildOperationsForReconObjective(processingContext, entry)
             strikeMapping.name,
             strikeMapping.type
           ) then
-        local newOp, logEntry = buildOperationFromMapping(strikeMapping, processingContext)
-        table.insert(logEntries, logEntry)
+        local newOp, result = buildOperationFromMapping(strikeMapping, processingContext)
+        table.insert(results, result)
         if newOp then
           table.insert(operations, newOp)
         else
@@ -440,18 +445,49 @@ local function buildOperationsForReconObjective(processingContext, entry)
       end
 
       if not skipMapping then
-        local nextOp, nextLog = tryGenerateNextOperation(strikeMapping, processingContext)
+        local nextOp, nextResult = tryGenerateNextOperation(strikeMapping, processingContext)
         if nextOp then
           table.insert(operations, nextOp)
-          table.insert(logEntries, nextLog)
-        elseif nextLog then
-          table.insert(logEntries, nextLog)
+        end
+        if nextResult then
+          table.insert(results, nextResult)
         end
       end
     end
   end
 
-  return operations, logEntries
+  return operations, results
+end
+
+-- ============================================================================
+-- Logging
+-- ============================================================================
+
+---Emit batched scheduling logs, routing failures to the error sink
+---Batch-level metadata lives in the report action so the rollup stays per-mapping.
+---@param entry SBJ__ReconQueueEntry Queue entry that triggered scheduling
+---@param reconResult {air: SBJ__Operation[], ground: SBJ__Operation[], nextOperationBatchTime: string|nil, mostRecentTime: string|nil} Scheduler state snapshot
+---@param operations SBJ__Operation[] Operations added to the batch
+---@param results SBJ__LogResult[] Per-mapping scheduling results
+local function emitScheduleLog(entry, reconResult, operations, results)
+  local action = "Schedule dynamic operations " .. LogFormat.fields({
+    endTime = entry.endTime,
+    scheduled = #operations,
+    mostRecentTime = reconResult.mostRecentTime or "none",
+    nextOperationBatchTime = reconResult.nextOperationBatchTime or "none",
+    airOps = #reconResult.air,
+    groundOps = #reconResult.ground
+  })
+
+  local report = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, action)
+
+  if #results == 0 then
+    report.add("SKIP", { reason = "no_operations_to_schedule" })
+  else
+    report.addAll(results)
+  end
+
+  report.emit()
 end
 
 -- ============================================================================
@@ -466,12 +502,7 @@ function OperationScheduler.schedule(processingContext, entry)
   local reconTriggeredOperationBatches = processingContext.reconTriggeredOperationBatches
   local reconResult = OperationScheduler.getLastExecutedOperationsAndNextTime(reconTriggeredOperationBatches)
 
-  local operations = {}
-  local reconTriggeredOps, logEntries = buildOperationsForReconObjective(processingContext, entry)
-
-  for _, op in ipairs(reconTriggeredOps) do
-    table.insert(operations, op)
-  end
+  local operations, results = buildOperationsForReconObjective(processingContext, entry)
 
   if #operations > 0 then
     table.insert(reconTriggeredOperationBatches, {
@@ -483,42 +514,7 @@ function OperationScheduler.schedule(processingContext, entry)
     })
   end
 
-  local infoLines = {}
-  local msg = string.format(
-    "state=context mostRecentTime=%q nextOperationBatchTime=%q airOps=%d groundOps=%d",
-    tostring(reconResult.mostRecentTime or "none"),
-    tostring(reconResult.nextOperationBatchTime or "none"),
-    #reconResult.air,
-    #reconResult.ground
-  )
-  table.insert(infoLines, LogFormat.entry("OK", msg))
-
-  for _, logEntry in ipairs(logEntries) do
-    table.insert(infoLines, logEntry)
-  end
-
-  if #operations > 0 then
-    local submsg = string.format(
-      "action=schedule_operations scheduled=%d endTime=%q",
-      #operations,
-      entry.endTime
-    )
-    table.insert(infoLines, LogFormat.entry("OK", submsg))
-  else
-    local submsg = string.format(
-      "reason=no_operations_to_schedule endTime=%q",
-      entry.endTime
-    )
-    table.insert(infoLines, LogFormat.entry("SKIP", submsg))
-  end
-
-  local summaryMsg = string.format("Schedule dynamic operations endTime=%q", entry.endTime)
-  Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, LogFormat.summary(
-    "reconType",
-    entry.type,
-    summaryMsg,
-    infoLines
-  ))
+  emitScheduleLog(entry, reconResult, operations, results)
 end
 
 return OperationScheduler

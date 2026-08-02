@@ -49,11 +49,12 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("moveToFiringPoint", function()
-    -- Negative: logs and returns false when movement fails with a message
+    -- Negative: logs and returns false when movement fails with structured fields
     it("should forward arguments, log an error and return false when movement fails", function()
       local firingUnitCtx = { name = "FU1" }
       local firingUnit = { name = "FU1" }
-      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint").returns(false, "boom")
+      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint")
+          .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
 
       local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
 
@@ -62,7 +63,8 @@ describe("MissileSystem", function()
       assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
-        "[module=missileSystem] [FAIL] action=move_to_firing_point unit=\"FU1\" reason=movement_failed detail=\"boom\"")
+        "[FAIL] module=missileSystem area=OPAREA-1 unit=FU1 action=move_to_firing_point position=FP" ..
+        " reason=no_positions_available")
     end)
 
     -- Positive: forwards arguments and returns true without logging
@@ -79,7 +81,7 @@ describe("MissileSystem", function()
       assert.stub(errorStub).was_not.called()
     end)
 
-    -- Boundary: failure without errorMsg should not log (avoid "[FAIL] nil")
+    -- Boundary: failure without error fields should not log (avoid "[FAIL] nil")
     it("should not log when movement fails without an error message", function()
       trackStub(Movement, "moveToFiringPoint").returns(false)
       local firingUnitCtx = { name = "FU1" }
@@ -128,9 +130,9 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemCtx)
         if systemCtx.id == "srbm" then
-          return { { tag = "OK", unitName = "SRBM1", action = "reload done" } }
+          return { { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } }
         elseif systemCtx.id == "mrbm" then
-          return { { tag = "WARN", unitName = "MRBM1", action = "low ammo" } }
+          return { { tag = "WARN", fields = { unit = "MRBM1", action = "low_ammo" } } }
         end
         return {}
       end)
@@ -164,9 +166,7 @@ describe("MissileSystem", function()
       trackStub(Cycle, "process").returns({
         {
           tag = "FAIL",
-          unitName = "SRBM1",
-          action = "Move to hide area",
-          reason = "No HA defined"
+          fields = { unit = "SRBM1", action = "move_to_hide_area", reason = "no_ha_defined" }
         }
       })
 
@@ -225,7 +225,7 @@ describe("MissileSystem", function()
       local tag = logStub.calls[1].vals[1]
       local message = logStub.calls[1].vals[2]
       assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
-      assert.is_not_nil(string.find(message, "[system=srbm]", 1, true))
+      assert.is_not_nil(string.find(message, "system=srbm", 1, true))
       assert.is_not_nil(string.find(message, "role=ammo_depot", 1, true))
       assert.is_not_nil(string.find(message, "delta=-100", 1, true))
     end)
@@ -444,7 +444,8 @@ describe("MissileSystem", function()
       assert.is_not_nil(string.find(message, "state=HIDE", 1, true))
     end)
 
-    -- Negative: HA hide failure is reported as a functional warning
+    -- Negative: HA hide failure is reported as a functional warning.
+    -- WARN rows ride the info log: report routes only FAIL/ERROR to the error sink.
     it("should log warning when HA concealment fails", function()
       local unit = { name = "FU1", guid = "guid-fu1", side = "China" }
       local firingUnitCtx = { name = "FU1" }
@@ -456,7 +457,8 @@ describe("MissileSystem", function()
 
       trackStub(Movement, "isRepositioning").returns(false)
       trackStub(Movement, "setStateToHide")
-      trackStub(Concealment, "hideUnit").returns(false, "No buildings found in mask area")
+      trackStub(Concealment, "hideUnit")
+          .returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
 
       MissileSystem.handleMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
@@ -471,13 +473,14 @@ describe("MissileSystem", function()
         }
       })
 
-      assert.stub(logStub).was_not.called()
-      assert.stub(warnStub).was.called(1)
+      assert.stub(warnStub).was_not.called()
+      assert.stub(logStub).was.called(1)
 
-      local message = warnStub.calls[1].vals[1]
+      local message = logStub.calls[1].vals[2]
+      assert.is_not_nil(string.find(message, "[WARN]", 1, true))
       assert.is_not_nil(string.find(message, "action=concealment_failed", 1, true))
-      assert.is_not_nil(string.find(message, "reason=hide_failed", 1, true))
-      assert.is_not_nil(string.find(message, "detail=\"No buildings found in mask area\"", 1, true))
+      assert.is_not_nil(string.find(message, "reason=no_buildings_in_mask", 1, true))
+      assert.is_not_nil(string.find(message, "area=OPAREA-1", 1, true))
     end)
 
     -- Boundary: HA handler early-returns when unit is not a firing unit of the system
@@ -543,7 +546,7 @@ describe("MissileSystem", function()
       local message = logStub.calls[1].vals[2]
       assert.is_not_nil(string.find(message, "action=reload_started", 1, true))
       assert.is_not_nil(string.find(message, "position=RL", 1, true))
-      assert.is_not_nil(string.find(message, "triggerUnit=\"FU1\"", 1, true))
+      assert.is_not_nil(string.find(message, "triggerUnit=FU1", 1, true))
     end)
 
     -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path.
@@ -620,7 +623,7 @@ describe("MissileSystem", function()
       local message = logStub.calls[1].vals[2]
       assert.is_not_nil(string.find(message, "action=resupply_concealed", 1, true))
       assert.is_not_nil(string.find(message, "position=RL", 1, true))
-      assert.is_not_nil(string.find(message, "pairedFiringUnit=\"FU1\"", 1, true))
+      assert.is_not_nil(string.find(message, "pairedFiringUnit=FU1", 1, true))
     end)
 
     -- Negative: RL no-meeting + low ammo must not hide the resupply unit

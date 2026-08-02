@@ -44,8 +44,17 @@ flowchart TD
 | `isHideSiteOccupied` | `building, unitGUID?` | `boolean` | 判斷建築是否已有載貨或指定機動車組 |
 | `findBuildingsInMaskArea` | `unitCtx, sideName` | `CMO__Unit[]|nil` | 取得 mask 區建築清單 |
 | `getRandomBuilding` | `buildings` | `CMO__Unit|nil` | 隨機挑未占用建築 |
-| `moveFromHideArea` | `unitCtx, unit` | `boolean, string?` | 卸載離開建築 |
-| `hideUnit` | `unitCtx, unit` | `boolean, string?` | 載入建築隱蔽 |
+| `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 卸載離開建築 |
+| `hideUnit` | `unitCtx, unit` | `boolean, table?` | 載入建築隱蔽 |
+
+失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
+
+| `reason` | 附帶欄位 | 情境 |
+|---|---|---|
+| `no_buildings_in_mask` | `area` | `findBuildingsInMaskArea` 回 nil |
+| `no_available_building` | `area` | 有建築但全數已被占用 |
+
+`no_buildings_in_mask` 目前合併了兩種原因（side 查不到、`mask.area` 未設定）；要區分需改 `findBuildingsInMaskArea` 的回傳形狀。
 
 ---
 

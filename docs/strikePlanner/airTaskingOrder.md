@@ -12,7 +12,7 @@
 
 每次呼叫 `airStrike()` 時，模組會依序推進各 Package 的生命週期。若時間到達掛彈窗口，先對基地內符合 `unitDBID` 的飛機設定 `loadoutID`；掛彈完成且最早出發角色達到出擊窗口後，才建立任務、排程偵察 UAV、指派目標與派遣飛機。
 
-為避免單次 tick 大量改動 CMO 狀態，`processWave()` 每次最多成功發射一個 Package。Package 處理結果會先回傳為 `SBJ__ATOPackageProcessResult`，最後由 `emitProcessedResultsLog()` 統一輸出 summary log；流程 helper 本身不直接呼叫 `Logger`。
+為避免單次 tick 大量改動 CMO 狀態，`processWave()` 每次最多成功發射一個 Package。Package 處理結果直接回傳為 `SBJ__LogResult`（`tag` + `fields`），最後由單一 `LogFormat.report` 輸出；流程 helper 本身不直接呼叫 `Logger`。
 
 ---
 
@@ -24,22 +24,19 @@
 |---|---|---|
 | `config.c.air.timing.assignmentSafetyMargin` | `number` | 掛彈與 assign 必須早於預估起飛時間的安全秒數。 |
 | `PACKAGE_ROLE_ORDER` | `string[]` | ATO Package 會依序處理 `tanker`、`striker`、`escort`、`wildWeasel`、`jammer`。 |
-| `ATO_OUTCOME` | table enum | Package 處理結果分類：`ok`、`skip`、`fail`、`error`。 |
-| `SBJ__ATOPackageProcessResult` | LuaLS class | `processPackage()` 回傳給 log formatter 的結構化結果。 |
+| `LOG_SCOPE`／`LOG_ACTION` | string | report 的 scope `airTaskingOrder` 與 action `Execute packages`。 |
 
-`SBJ__ATOPackageProcessResult` 欄位：
+各 helper 直接回傳 `SBJ__LogResult`，`fields` 使用的欄位：
 
-| 欄位 | 型別 | 說明 |
-|---|---|---|
-| `outcome` | `SBJ__ATOPackageProcessOutcome` | 用來轉換成 `[OK]`、`[SKIP]`、`[FAIL]` 或 `[ERROR]`。 |
-| `missionName` | `string` | striker 任務名稱，也是 Package log identity。 |
-| `waveName` | `string?` | `processWave()` 補上的 Wave 名稱。 |
-| `action` | `string?` | 成功動作，例如 `initiate_loadout` 或 `launch`。 |
-| `reason` | `string?` | skip/fail/error 原因，例如 `invalid_package_targets` 或 `target_assignment_failed`。 |
-| `readyTime` | `string?` | 掛彈預計完成 UTC 時間。 |
-| `reconUavTakeoff` | `string?` | 偵察 UAV 成功排程後的 UTC 起飛時間。 |
-| `targets` | `integer?` | 可用或已指派目標數。 |
-| `required` | `integer?` | Package 需要的最低目標數。 |
+| 欄位 | 說明 |
+|---|---|
+| `wave` | `processWave()` 補上的 Wave 名稱。 |
+| `mission` | striker 任務名稱，Package 的 log identity。 |
+| `action` | 成功動作，例如 `initiate_loadout` 或 `launch`。 |
+| `reason` | skip/fail 原因，例如 `invalid_package_targets` 或 `target_assignment_failed`。 |
+| `readyTime` | 掛彈預計完成 UTC 時間。 |
+| `reconUavTakeoff` | 偵察 UAV 成功排程後的 UTC 起飛時間。 |
+| `targets`／`required` | 可用或已指派目標數，以及所需的最低目標數。 |
 
 ### Package 生命週期
 
@@ -60,8 +57,8 @@ flowchart TD
     LAUNCHED["package.hasLaunched = true"]
     DONE{"Wave 全部 Package 完成?"}
     WAVE_DONE["waveData.hasLaunched = true"]
-    RESULT["累積 SBJ__ATOPackageProcessResult"]
-    LOG["emitProcessedResultsLog<br>輸出 summary log"]
+    RESULT["累積 SBJ__LogResult"]
+    LOG["report.emit()"]
     WAIT["等待下次 tick"]
 
     START --> WAVE --> PKG --> TARGET_EXISTS
@@ -131,35 +128,22 @@ takeoffTime = striker.endTime + config.c.ground.srbm.reloadTime - flightTime
 
 ### 日誌輸出
 
-`processPackage()` 只回傳 `SBJ__ATOPackageProcessResult`，不直接輸出 log。`airStrike()` 收集每個 Wave 產生的結果後，交給 `emitProcessedResultsLog()` 分成 info 與 error 兩組輸出：
-
-```mermaid
-flowchart LR
-    PACKAGE["processPackage"]
-    RESULT["SBJ__ATOPackageProcessResult"]
-    FORMAT["formatProcessedResultLine"]
-    INFO["Logger.log<br>constants.TAGS.AIR"]
-    ERROR["Logger.error"]
-
-    PACKAGE --> RESULT --> FORMAT
-    FORMAT -->|OK / SKIP| INFO
-    FORMAT -->|FAIL / ERROR| ERROR
-```
-
-summary 格式固定使用 `LogFormat.summary("scope", "airTaskingOrder", "Execute packages", entries)`。每筆 entry 由 `LogFormat.entry(level, message)` 建立，message 使用可搜尋的 key/value 欄位，例如：
+每個 helper 在自己的分支決定 `tag`，不經過 outcome → tag 對照表。`processWave()` 只補上 `fields.wave`，`airStrike()` 以 `report.addAll()` 收集後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責。詳見 [logFormat](../logFormat.md)。
 
 ```text
-[scope=airTaskingOrder] Execute packages: total=2 ok=1 skip=1 fail=0 error=0 warn=0
-  [SKIP] wave=WAVE-1 mission=STRIKE-PKG-1 reason=invalid_package_targets targets=0 required=2
-  [OK] wave=WAVE-1 mission=STRIKE-PKG-2 action=launch targets=2 reconUavTakeoff="2026-02-14 08:05:00"
+[AIR] airTaskingOrder: Execute packages | total=3 ok=2 skip=1
+  [OK]   wave=DYNAMIC/SATELLITE/STRIKE/AB/1/1 mission=PKG-AB-1 action=initiate_loadout readyTime="2026-02-14 03:20:00"
+  [OK]   wave=DYNAMIC/SATELLITE/STRIKE/AB/1/1 mission=PKG-AB-2 action=launch reconUavTakeoff="2026-02-14 03:05:00" targets=6
+  [SKIP] wave=DYNAMIC/UAV/ANTISHIP/1/1 mission=PKG-AS-1 required=2 targets=0 reason=invalid_package_targets
+[ERROR] airTaskingOrder: Execute packages | total=1 fail=1
+  [FAIL] wave=DYNAMIC/UAV/ANTISHIP/1/1 mission=PKG-AS-2 required=2 targets=1 reason=target_assignment_failed
 ```
 
-| Outcome | Log level | Logger | 說明 |
-|---|---|---|---|
-| `ok` | `[OK]` | `Logger.log(constants.TAGS.AIR, ...)` | 掛彈啟動或 Package 發射成功。 |
-| `skip` | `[SKIP]` | `Logger.log(constants.TAGS.AIR, ...)` | 可略過但非錯誤的狀態，目前由空 `target.list` 產生 `invalid_package_targets`。 |
-| `fail` | `[FAIL]` | `Logger.error(...)` | Package 執行失敗，例如任務建立、目標指派或 striker 分配失敗。 |
-| `error` | `[ERROR]` | `Logger.error(...)` | 保留給不可預期或結構性錯誤分類；目前程式沒有產生此 outcome 的分支。 |
+| tag | Logger | 說明 |
+|---|---|---|
+| `[OK]` | `Logger.log(constants.TAGS.AIR, ...)` | 掛彈啟動或 Package 發射成功。 |
+| `[SKIP]` | `Logger.log(constants.TAGS.AIR, ...)` | 可略過但非錯誤的狀態，目前由空 `target.list` 產生 `invalid_package_targets`。 |
+| `[FAIL]` | `Logger.error(...)` | Package 執行失敗，例如任務建立、目標指派或 striker 分配失敗。 |
 
 ---
 
@@ -219,7 +203,7 @@ saveData.c
 
 | 函數 | 參數 | 回傳 | 呼叫者 | 說明 |
 |---|---|---|---|---|
-| `AirTaskingOrder.airStrike(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | `StrikePlanner.processActiveATOWaves()` → `src/scripts/china/scheduledStrikePlanner.lua` | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派、單元派遣與 summary log 輸出。 |
+| `AirTaskingOrder.airStrike(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | `StrikePlanner.processActiveATOWaves()` → `src/scripts/china/scheduledStrikePlanner.lua` | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派、單元派遣與 report 輸出。 |
 
 `scheduledStrikePlanner.lua` 會在 `saveData.c.air.enabled == true` 時呼叫 `StrikePlanner.processActiveATOWaves(config, saveData)`。同一個排程 tick 也會先處理 dynamic ATO insertion，因此動態插入且已啟動的 Wave 可在後續 ATO 執行階段被推進。
 
@@ -232,8 +216,7 @@ saveData.c
 | `src.utils.utils` | 時間字串轉 timestamp。 |
 | `src.utils.gameApi` | 包裝 CMO API：讀取單元、設定掛載、指派目標、建立 flight plan、設定 doctrine。 |
 | `src.utils.gameUtils` | 時間判斷、任務建立、路徑距離與飛行時間計算。 |
-| `src.utils.logger` | 輸出 ATO summary info/error log。 |
-| `src.utils.logFormat` | 建立 `[OK]` / `[SKIP]` / `[FAIL]` entry 與 summary log。 |
+| `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]` / `[SKIP]` / `[FAIL]` 行。 |
 | `src.modules.assignMission` | 從基地派遣 embarked aircraft 至任務。 |
 | `src.modules.strikePlanner.recon` | 透過 `Recon.insertEntry()` 將打擊後偵察 UAV 排入偵察佇列。 |
 | `src.core.constants` | 使用 `SIDES.ENEMY`、`TAGS.AIR`、`TIME_FORMATS`。 |
@@ -249,7 +232,7 @@ saveData.c
 | `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
 | `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
 | `constants` | `constants.SIDES.ENEMY` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |
-| `constants` | `constants.TAGS.AIR` | ATO 成功、略過與失敗 summary log 的 tag。 |
+| `constants` | `constants.TAGS.AIR` | ATO report 的模組 tag。 |
 | `constants` | `constants.TIME_FORMATS` | CMO 任務時間欄位附加格式。 |
 
 ---

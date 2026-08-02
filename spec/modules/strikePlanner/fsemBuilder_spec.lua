@@ -650,6 +650,7 @@ describe("FsemBuilder", function()
         assert.truthy(logMessage:find("total=1"))
         local errorMessage = errorStub.calls[1].vals[1]
         assert.truthy(errorMessage:find("%[ERROR%]"))
+        assert.truthy(errorMessage:find("reason=missing_fsem_template", 1, true))
         assert.truthy(errorMessage:find("total=1"))
       end)
     end)

@@ -3,7 +3,6 @@ local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
-local Logger = require("src.utils.logger")
 
 local AmphibiousAssault = {}
 
@@ -70,18 +69,17 @@ end
 ---Calculates start time relative to current time and updates the mission
 ---@param mission SBJ__LandingMissionDescriptor Mission descriptor with delay offset
 ---@param currentTime number Current scenario time in seconds
----@return string tag Result tag (OK/FAIL)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setMissionStartTime(mission, currentTime)
   local startTime = os.date("%Y-%m-%d %H:%M:%S", (currentTime + mission.startTime))
   local m = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, mission.name)
 
   if not m then
-    return "FAIL", string.format("mission=%s reason=mission_not_found", mission.name)
+    return { tag = "FAIL", fields = { mission = mission.name, reason = "mission_not_found" } }
   end
 
   m.starttime = startTime .. constants.TIME_FORMATS
-  return "OK", string.format("mission=%s startTime=\"%s\"", mission.name, startTime)
+  return { tag = "OK", fields = { mission = mission.name, startTime = startTime } }
 end
 
 ---Set start times for all missions in a single zone
@@ -89,21 +87,22 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param currentTime number Current scenario time in seconds
 ---@return boolean success True if all missions were set
----@return string[] logEntries Collected log entries
+---@return SBJ__LogResult[] results Deferred log results in emission order
 local function setZoneMissionStartTimes(zone, currentTime)
-  local logEntries = {}
+  local results = {}
 
   for _, category in ipairs(MISSION_CATEGORIES) do
     for _, mission in ipairs(zone[category].missions) do
-      local tag, msg = setMissionStartTime(mission, currentTime)
-      table.insert(logEntries, LogFormat.entry(tag, msg))
-      if tag == "FAIL" then
-        return false, logEntries
+      local result = setMissionStartTime(mission, currentTime)
+      table.insert(results, result)
+
+      if result.tag == "FAIL" then
+        return false, results
       end
     end
   end
 
-  return true, logEntries
+  return true, results
 end
 
 -- ============================================================================
@@ -135,8 +134,7 @@ end
 ---@param acvType {name: string, dbid: number} ACV type descriptor
 ---@param location CMO__Location Spawn coordinates
 ---@param destination CMO__Location[] Course destination waypoints
----@return string tag Result tag (OK/FAIL)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function spawnSingleACV(acvType, location, destination)
   local addedUnit = GameApi.ScenEdit_AddUnit({
     side = constants.SIDES.ENEMY,
@@ -148,18 +146,50 @@ local function spawnSingleACV(acvType, location, destination)
   })
 
   if not addedUnit then
-    return "FAIL", string.format("vehicle=%s reason=add_unit_failed", acvType.name)
+    return { tag = "FAIL", fields = { unit = acvType.name, reason = "add_unit_failed" } }
   end
 
   local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = "no" })
 
   if not doctrine then
-    return "FAIL", string.format("vehicle=%s reason=set_doctrine_failed", acvType.name)
+    return { tag = "FAIL", fields = { unit = acvType.name, reason = "set_doctrine_failed" } }
   end
 
   addedUnit.throttle = "Full"
   addedUnit.course = destination
-  return "OK", string.format("vehicle=%s lat=%.4f lon=%.4f", acvType.name, location.latitude, location.longitude)
+  return {
+    tag = "OK",
+    fields = {
+      unit = acvType.name,
+      lat = string.format("%.4f", location.latitude),
+      lon = string.format("%.4f", location.longitude)
+    }
+  }
+end
+
+---Spawn every allocated ACV, stopping at the first failure
+---@param allocations {acvType: {name: string, dbid: number}, count: number}[] ACV allocations by type
+---@param locations CMO__Location[] Spawn coordinates in launch order
+---@param destination CMO__Location[] Course destination waypoints
+---@return integer|nil count ACVs launched, nil when a spawn failed
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function spawnAllocatedACVs(allocations, locations, destination)
+  local results = {}
+  local index = 0
+
+  for _, allocation in ipairs(allocations) do
+    for _ = 1, allocation.count do
+      index = index + 1
+      local result = spawnSingleACV(allocation.acvType, locations[index], destination)
+      table.insert(results, result)
+
+      if result.tag == "FAIL" then
+        return nil, results
+      end
+    end
+  end
+
+  return index, results
 end
 
 -- ============================================================================
@@ -169,8 +199,7 @@ end
 ---Set course for an LST to approach the beach
 ---@param unit CMO__Unit LST ship unit
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@return string tag Result tag (OK/SKIP/FAIL)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setCourseForLST(unit, zone)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
@@ -180,32 +209,81 @@ local function setCourseForLST(unit, zone)
   })
 
   if not destination then
-    return "FAIL", string.format("ship=%s reason=destination_calc_failed", unit.name)
+    return { tag = "FAIL", fields = { ship = unit.name, reason = "destination_calc_failed" } }
   end
 
-  if isLST(unit) then
-    unit.course = { destination }
-    unit.manualSpeed = zone.lstSettings.speed
-    return "OK",
-        string.format("ship=%s bearing=%d speed=%d", unit.name, zone.lstSettings.course.bearing, zone.lstSettings.speed)
+  if not isLST(unit) then
+    return { tag = "SKIP", fields = { ship = unit.name, reason = "non_lst_auxiliary" } }
   end
 
-  return "SKIP", string.format("ship=%s reason=non_lst_auxiliary", unit.name)
+  unit.course = { destination }
+  unit.manualSpeed = zone.lstSettings.speed
+  return {
+    tag = "OK",
+    fields = { ship = unit.name, bearing = zone.lstSettings.course.bearing, speed = zone.lstSettings.speed }
+  }
 end
 
 ---Set course for a Surface Action Group
 ---@param descriptor SBJ__SAGDescriptor SAG descriptor with groupName and destination
----@return string tag Result tag (OK/FAIL)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setCourseForSAG(descriptor)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
 
   if not unit then
-    return "FAIL", string.format("sag=%s reason=sag_unit_not_found", descriptor.groupName)
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unit_not_found" } }
   end
 
   unit.course = descriptor.to.amphibiousVehicleStagingArea
-  return "OK", string.format("sag=%s dest=amphibious_vehicle_staging_area", descriptor.groupName)
+  return { tag = "OK", fields = { sag = descriptor.groupName, dest = "amphibious_vehicle_staging_area" } }
+end
+
+---Set courses for every LST anchored in a zone, stopping at the first failure
+---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
+---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@return boolean success True when no LST failed
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function setZoneLSTCourses(zone, units)
+  local results = {}
+
+  for _, u in ipairs(units) do
+    local unit = GameApi.ScenEdit_GetUnit(u.guid)
+
+    if unit and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+      local result = setCourseForLST(unit, zone)
+      table.insert(results, result)
+
+      if result.tag == "FAIL" then
+        return false, results
+      end
+    end
+  end
+
+  return true, results
+end
+
+---Set courses for every SAG in an operation, stopping at the first failure
+---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
+---@param sagLookup table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
+---@return boolean success True when no SAG failed
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function setOperationSAGCourses(operation, sagLookup)
+  local results = {}
+
+  for _, sagName in ipairs(operation.sagNames) do
+    local descriptor = sagLookup[sagName]
+
+    if descriptor then
+      local result = setCourseForSAG(descriptor)
+      table.insert(results, result)
+
+      if result.tag == "FAIL" then
+        return false, results
+      end
+    end
+  end
+
+  return true, results
 end
 
 -- ============================================================================
@@ -220,20 +298,14 @@ end
 function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   local currentTime = GameApi.ScenEdit_CurrentTime()
   zoneState.airlandingMissionStartTime = currentTime
-  local success, logEntries = setZoneMissionStartTimes(zone, currentTime)
+  local success, results = setZoneMissionStartTimes(zone, currentTime)
 
-  if not success then
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-      LogFormat.summary("zone", zone.name, "Set landing mission start times", logEntries))
-    return false
-  end
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set landing mission start times")
+  report.addAll(results)
+  report.emit()
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-      LogFormat.summary("zone", zone.name, "Set landing mission start times", logEntries))
-  end
-
-  return true
+  return success
 end
 
 ---Set course for LSTs to approach beach and move SAGs to staging areas
@@ -244,43 +316,20 @@ end
 ---@param sagLookup table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
 ---@return boolean # True if all LST courses were successfully set
 function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
-  local logEntries = {}
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set courses for LSTs")
 
-  for _, u in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(u.guid)
+  local success, results = setZoneLSTCourses(zone, units)
+  report.addAll(results)
 
-    if unit then
-      if unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-        local tag, msg = setCourseForLST(unit, zone)
-        table.insert(logEntries, LogFormat.entry(tag, msg))
-        if tag == "FAIL" then
-          Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-            LogFormat.summary("zone", zone.name, "Set courses for LSTs", logEntries))
-          return false
-        end
-      end
-    end
+  if success then
+    local sagResults
+    success, sagResults = setOperationSAGCourses(operation, sagLookup)
+    report.addAll(sagResults)
   end
 
-  for _, sagName in ipairs(operation.sagNames) do
-    local descriptor = sagLookup[sagName]
-    if descriptor then
-      local tag, msg = setCourseForSAG(descriptor)
-      table.insert(logEntries, LogFormat.entry(tag, msg))
-      if tag == "FAIL" then
-        Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-          LogFormat.summary("zone", zone.name, "Set courses for LSTs", logEntries))
-        return false
-      end
-    end
-  end
+  report.emit()
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-      LogFormat.summary("zone", zone.name, "Set courses for LSTs", logEntries))
-  end
-
-  return true
+  return success
 end
 
 ---Count enemy ground force contacts in the air landing zone
@@ -309,28 +358,12 @@ function AmphibiousAssault.launchACV(params)
   })
 
   local allocations = deleteCargoByPriority(ship, params.num)
-  local logEntries = {}
-  local index = 0
-  local count = 0
+  local count, results = spawnAllocatedACVs(allocations, ACVlocations, destination)
 
-  for _, allocation in ipairs(allocations) do
-    for _ = 1, allocation.count do
-      index = index + 1
-      local tag, msg = spawnSingleACV(allocation.acvType, ACVlocations[index], destination)
-      table.insert(logEntries, LogFormat.entry(tag, msg))
-      if tag == "FAIL" then
-        Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-          LogFormat.summary("ship", ship.name or ship.guid, "Launch ACV", logEntries))
-        return
-      end
-      count = count + 1
-    end
-  end
-
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-      LogFormat.summary("ship", ship.name or ship.guid, "Launch ACV", logEntries))
-  end
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_ASSAULT, "ship=" .. (ship.name or ship.guid), "Launch ACV")
+  report.addAll(results)
+  report.emit()
 
   return count
 end

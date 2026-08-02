@@ -37,10 +37,10 @@ flowchart TD
     HAS_PACKAGE{"validPackages > 0?"}
     ATO_READY{"airTaskingOrder 已初始化?"}
     NAME["generateUniqueAirOperationName"]
-    BUILD_WAVE["buildATOWave + collectWaveTimingLogEntries"]
+    BUILD_WAVE["buildATOWave + collectWaveTimingResults"]
     INSERT["寫入 airTaskingOrder<br/>registerGeneratedOperation"]
     MARK["markOperationExecuted<br/>missing_template 以外皆標記"]
-    LOGS["emitProcessedResultsLog"]
+    LOGS["operations.emit() + timing.emit()"]
     END_FALSE["return false"]
     END_RESULT["return hasExecutedAny"]
 
@@ -71,7 +71,7 @@ flowchart TD
 
 `buildExecutablePackages()` 只會處理已通過目標門檻的 package。它會從 `operation.template` 的 deep copy 建立執行態 package，將 `package.target.list` 改成實際目標清單，並在機隊驗證成功後委派 [packageTiming](packageTiming.md) 的 `createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接使用「前一個有效 package」作為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
 
-驗證摘要會以 `packagesValid`、`packagesTotal`、`targets`、`packagesSkipped` 形式寫入 log；若 package 因機隊或加油機設定驗證失敗，摘要也會附上 `validationErrors`，列出 package、role、原因及已嘗試的基地資源。這能在 CMO console 或測試輸出直接辨識無有效 package 的原因，而不是只看到插入流程未執行。
+驗證摘要會以 `packages=<有效>/<總數>` 與 `targets` 形式寫入 operation log 行。若 package 因機隊或加油機設定驗證失敗，該筆失敗會成為 operation 行底下縮排一層的 `[SKIP]` detail 行，列出 package、role、需求數、最佳候選基地的可用機數與嘗試過的基地數。detail 行跟隨父行進同一個 sink，但不計入 header 的 `total`，因此 `total` 恆等於本次處理的 operation 數。這能在 CMO console 或測試輸出直接辨識無有效 package 的原因，而不是只看到插入流程未執行。
 
 ### 機隊資源驗證
 
@@ -103,16 +103,26 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 ### 結果分類與 log
 
-`processAirOperation()` 可能回傳下列內部原因：
+`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`，內含 `success`、`reason`、`tag`、`fields`、`details` 與 `timing`。`success` 與 `reason` 供 `AtoBuilder.process()` 判斷是否 `markOperationExecuted` 與模組回傳值；`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，log 行可以直接反查到產生它的分支。
 
-| reason | 條件 | 後續處理 |
-|---|---|---|
-| `missing_template` | operation 缺少 `template` | 不標記 executed，輸出 `ERROR` |
-| `no_valid_packages` | 目標不足或機隊驗證後沒有有效 package | 標記 executed，輸出 `SKIP` |
-| `insertion_failed` | `airTaskingOrder` 未初始化 | 標記 executed，輸出 `FAIL` |
-| `nil` | Wave 成功插入 | 標記 executed，輸出 `OK` 與 timing log |
+| reason | tag | 條件 | 後續處理 |
+|---|---|---|---|
+| `missing_wave_template` | `ERROR` | operation 缺少 `template` | 不標記 executed |
+| `no_valid_packages` | `SKIP` | 目標不足或機隊驗證後沒有有效 package | 標記 executed |
+| `insertion_failed` | `FAIL` | `airTaskingOrder` 未初始化 | 標記 executed |
+| `nil` | `OK` | Wave 成功插入 | 標記 executed，另外輸出 timing report |
 
-log 由 `emitProcessedResultsLog()` 集中輸出，分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 scope，tag 使用 `constants.TAGS.DYNAMIC_OPERATIONS`。
+tag 由產生分支直接寫入結果，不再經過 reason → tag 對照表。`AtoBuilder.process()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+
+log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 report，tag 使用 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，因此歸屬清楚，且不計入 header 的 `total`（`total` 代表本次處理的 operation 數）：
+
+```text
+[DYNAMIC_OPERATIONS] dynamicAirOperations: Process operations | total=2 ok=1 skip=1
+  [OK]   operation=AIR/STRIKE/AB/1 wave=DYNAMIC/SATELLITE/STRIKE/AB/1/1 batch="satellite@2026-02-14 00:00:00" packages=2/3 targets=8
+    [SKIP] package=3 role=striker available=1 bases=2 required=4 reason=insufficient_aircraft
+  [SKIP] operation=AIR/STRIKE/CD/1 batch="uav@2026-02-14 03:00:00" packages=0/2 targets=0 reason=no_valid_packages
+    [SKIP] package=1 role=striker available=1 bases=3 required=4 reason=insufficient_aircraft
+```
 
 ---
 
@@ -171,8 +181,9 @@ saveData.c
 |---|---|---|
 | `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | 機隊驗證與既有任務占用量統計。 |
 | `ALL_ROLES` | `PACKAGE_ROLES` 加上 `reconUAV` | timing log 收集。 |
-| `PROCESS_REASON` | `missing_template`、`no_valid_packages`、`insertion_failed` | operation 處理失敗或略過原因。 |
-| `OPERATION_OUTCOME` | `ok`、`skip`、`missing_template`、`fail` | log 分類。 |
+| `PROCESS_REASON` | `missing_wave_template`、`no_valid_packages`、`insertion_failed` | operation 處理失敗或略過原因，同時作為 log 的 `reason=` 值。 |
+| `LOG_SCOPE`／`LOG_ACTION` | `dynamicAirOperations`／`Process operations` | operation report 的 scope 與 action。 |
+| `TIMING_LOG_SCOPE`／`TIMING_LOG_ACTION` | `dynamicAirTiming`／`Build ATO wave timing` | timing report 的 scope 與 action。 |
 
 ---
 

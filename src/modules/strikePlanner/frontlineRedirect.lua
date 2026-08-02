@@ -50,7 +50,7 @@ end
 ---@param config SBJ__Config Configuration data
 ---@param reconContext SBJ__ReconContext Reconnaissance context (mutated when redirect triggers)
 ---@return boolean isRedirected Whether redirect is active after this evaluation
----@return string|nil activationMessage Non-nil only on the tick redirect just activated; caller should log it
+---@return table<string, any>|nil activationFields Non-nil only on the tick redirect just activated; caller should log it
 function FrontlineRedirect.evaluate(config, reconContext)
   if reconContext.frontlineRedirected then
     return true, nil
@@ -65,15 +65,15 @@ function FrontlineRedirect.evaluate(config, reconContext)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
     reconContext.frontlineRedirected = true
-    local msg = string.format(
-      "action=activate reason=attrition_threshold_reached attritionPct=%.1f thresholdPct=%.1f expected=%d current=%d",
-      summary.attritionPct,
-      cfg.attritionThresholdPct,
-      summary.expectedTotal,
-      summary.currentTotal
-    )
 
-    return true, msg
+    return true, {
+      action = "activate",
+      reason = "attrition_threshold_reached",
+      attritionPct = string.format("%.1f", summary.attritionPct),
+      thresholdPct = string.format("%.1f", cfg.attritionThresholdPct),
+      expected = summary.expectedTotal,
+      current = summary.currentTotal
+    }
   end
 
   return false, nil

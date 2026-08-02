@@ -578,8 +578,8 @@ describe("ShipMovement", function()
       local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_false(result)
-      assert.stub(logStub).was.called(1)
-      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=sag_group_not_found"))
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=sag_group_not_found"))
     end)
 
     -- Negative: missing calculation result should fail before issuing movement orders
@@ -623,8 +623,8 @@ describe("ShipMovement", function()
       local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_false(result)
-      assert.stub(logStub).was.called(1)
-      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=calculation_entry_missing"))
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_entry_missing"))
     end)
 
     -- Negative: SAG testing mode requires a group unit list
@@ -644,8 +644,8 @@ describe("ShipMovement", function()
       local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_false(result)
-      assert.stub(logStub).was.called(1)
-      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=sag_unitlist_missing"))
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=sag_unitlist_missing"))
     end)
 
     -- Negative: SAG anchorage area is required
@@ -661,8 +661,8 @@ describe("ShipMovement", function()
       local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
 
       assert.is_false(result)
-      assert.stub(logStub).was.called(1)
-      assert.truthy(string.find(logStub.calls[1].vals[2], "reason=anchorage_area_missing"))
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=anchorage_area_missing"))
     end)
 
     -- Negative: SAG individual ship not found in testing mode

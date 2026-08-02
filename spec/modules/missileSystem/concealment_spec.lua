@@ -61,10 +61,10 @@ describe("MissileSystem Concealment", function()
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide(nil))
 
-      local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
+      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
 
       assert.is_false(success)
-      assert.are.equal("No buildings found in mask area", errorMsg)
+      assert.are.equal("no_buildings_in_mask", errorFields.reason)
     end)
 
     -- Negative: returns false when buildings cannot be retrieved
@@ -75,10 +75,10 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
-      assert(errorMsg ~= nil)
+      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
+      assert(errorFields ~= nil)
       assert.is_false(success)
-      assert.is_truthy(errorMsg:match("No available building"))
+      assert.are.equal("no_available_building", errorFields.reason)
     end)
 
     -- Negative: returns false when all buildings are occupied
@@ -93,10 +93,10 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
 
-      local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
-      assert(errorMsg ~= nil)
+      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
+      assert(errorFields ~= nil)
       assert.is_false(success)
-      assert.is_truthy(errorMsg:match("No available building"))
+      assert.are.equal("no_available_building", errorFields.reason)
     end)
 
     -- Positive: loads cargo when building exists
@@ -152,10 +152,10 @@ describe("MissileSystem Concealment", function()
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide(nil))
 
-      local success, errorMsg = Concealment.moveFromHideArea(unitCtx, unit)
+      local success, errorFields = Concealment.moveFromHideArea(unitCtx, unit)
 
       assert.is_false(success)
-      assert.are.equal("No buildings found in mask area", errorMsg)
+      assert.are.equal("no_buildings_in_mask", errorFields.reason)
     end)
 
     -- Positive: unloads cargo when unit is found in building

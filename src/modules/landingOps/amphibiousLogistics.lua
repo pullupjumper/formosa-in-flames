@@ -2,7 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local AssignMission = require("src.modules.assignMission")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
-local Logger = require("src.utils.logger")
 
 local AmphibiousLogistics = {}
 
@@ -19,6 +18,10 @@ local CARGO_ENTRY = {
   TYPE = 3,
   QUANTITY = 1,
 }
+
+---Zone config keys whose missions are created as cargo transport missions.
+---@type string[]
+local CARGO_MISSION_PLATFORMS = { "boat", "transportHelicopter" }
 
 local WEAPON_CLEAR_AMOUNT = 999
 
@@ -342,12 +345,18 @@ end
 ---@param idx integer Index in group unit list
 ---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@param sideName string Side name
----@return string tag "OK" or "FAIL"
----@return string msg Description of the result
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
   local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
   if not cargo then
-    return "FAIL", string.format("unit=%s reason=cargo_proxy_creation_failed", sourceUnit.name or sourceUnit.guid)
+    return {
+      tag = "FAIL",
+      fields = {
+        unit = sourceUnit.name or sourceUnit.guid,
+        index = idx,
+        reason = "cargo_proxy_creation_failed"
+      }
+    }
   end
 
   stripCargoProxyMounts(cargo, sideName)
@@ -361,7 +370,7 @@ local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName
 
   GameApi.ScenEdit_DeleteUnit({ guid = sourceUnit.guid })
 
-  return "OK", string.format("unit=%s", sourceUnit.name or sourceUnit.guid)
+  return { tag = "OK", fields = { unit = sourceUnit.name or sourceUnit.guid, index = idx } }
 end
 
 -- ============================================================================
@@ -372,20 +381,48 @@ end
 ---@param platformType string Platform config key (e.g., "boat", "transportHelicopter")
 ---@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
 ---@param missionName string Name for the cargo mission
----@return boolean # True if mission was successfully created and configured
+---@return boolean success True if mission was successfully created and configured
+---@return SBJ__LogResult result Deferred log result describing the outcome
 local function createSingleCargoMission(platformType, zone, missionName)
   local descriptor = zone[platformType]
-  local m = GameApi.ScenEdit_AddMission(constants.SIDES.ENEMY, missionName, MISSION_TYPE.CARGO,
-    { zone = descriptor.zone })
-  if not m then return false end
+  local reason
 
-  m = GameApi.ScenEdit_SetMission(constants.SIDES.ENEMY, missionName, descriptor.settings)
-  if not m then return false end
+  if not GameApi.ScenEdit_AddMission(
+        constants.SIDES.ENEMY, missionName, MISSION_TYPE.CARGO, { zone = descriptor.zone }) then
+    reason = "add_mission_failed"
+  elseif not GameApi.ScenEdit_SetMission(constants.SIDES.ENEMY, missionName, descriptor.settings) then
+    reason = "set_mission_failed"
+  elseif not GameApi.ScenEdit_SetDoctrine(
+        { side = constants.SIDES.ENEMY, mission = missionName }, { automatic_evasion = false }) then
+    reason = "set_doctrine_failed"
+  end
 
-  m = GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.ENEMY, mission = missionName }, { automatic_evasion = false })
-  if not m then return false end
+  if reason then
+    return false, { tag = "FAIL", fields = { platform = platformType, mission = missionName, reason = reason } }
+  end
 
-  return true
+  return true, { tag = "OK", fields = { platform = platformType, mission = missionName } }
+end
+
+---Create every cargo mission configured for a zone, stopping at the first failure
+---@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
+---@return boolean success True when every mission was created
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function createZoneCargoMissions(zone)
+  local results = {}
+
+  for _, platformType in ipairs(CARGO_MISSION_PLATFORMS) do
+    for _, mission in ipairs(zone[platformType].missions) do
+      local created, result = createSingleCargoMission(platformType, zone, mission.name)
+      table.insert(results, result)
+
+      if not created then
+        return false, results
+      end
+    end
+  end
+
+  return true, results
 end
 
 -- ============================================================================
@@ -424,27 +461,14 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@return boolean # True if all cargo missions were successfully created
 function AmphibiousLogistics.createCargoMissions(zone)
-  local logEntries = {}
+  local success, results = createZoneCargoMissions(zone)
 
-  for _, mission in ipairs(zone.boat.missions) do
-    local result = createSingleCargoMission("boat", zone, mission.name)
-    if not result then return false end
-    table.insert(logEntries, LogFormat.entry("OK", string.format("platform=boat mission=%s", mission.name)))
-  end
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Create cargo missions")
+  report.addAll(results)
+  report.emit()
 
-  for _, mission in ipairs(zone.transportHelicopter.missions) do
-    local result = createSingleCargoMission("transportHelicopter", zone, mission.name)
-    if not result then return false end
-    table.insert(logEntries, LogFormat.entry("OK", string.format(
-      "platform=transportHelicopter mission=%s", mission.name)))
-  end
-
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
-      LogFormat.summary("zone", zone.name, "Create cargo missions", logEntries))
-  end
-
-  return true
+  return success
 end
 
 ---Transfer cargo to embarked units and assign them to missions
@@ -453,20 +477,18 @@ end
 ---@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
 ---@return boolean # True if all transfers and assignments completed successfully
 function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
-  local logEntries = {}
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
 
   for _, u in ipairs(unitsInAnchorageArea) do
     if u:inArea(zone.anchorageArea) then
       processShipTransfers(u.guid, u.dbid, zone)
       processShipAssignments(u.guid, u.dbid, zone)
-      table.insert(logEntries, LogFormat.entry("OK", string.format("ship=%s dbid=%d", u.name or u.guid, u.dbid)))
+      report.add("OK", { ship = u.name or u.guid, dbid = u.dbid })
     end
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
-      LogFormat.summary("zone", zone.name, "Transfer and assign", logEntries))
-  end
+  report.emit()
 
   return true
 end
@@ -475,7 +497,8 @@ end
 ---@param transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@return boolean # True if all transfers and assignments completed successfully
 function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
-  local logEntries = {}
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")
 
   for _, item in ipairs(transportAircraft) do
     AmphibiousLogistics.transferCargo(
@@ -491,14 +514,10 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
       item.dbid,
       item.missions
     )
-    table.insert(logEntries, LogFormat.entry("OK", string.format(
-      "aircraft=%s dbid=%d", item.name or item.guid, item.dbid)))
+    report.add("OK", { aircraft = item.name or item.guid, dbid = item.dbid })
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
-      LogFormat.summary("scope", "transportAircraft", "Transfer and assign", logEntries))
-  end
+  report.emit()
 
   return true
 end
@@ -514,23 +533,21 @@ function AmphibiousLogistics.loadCargo(base, unitCtx, sideName)
 
   local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
   local weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID)
-  local logEntries = {}
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "ship=" .. (base.name or base.guid), "Load cargo")
 
   for idx, guid in ipairs(group) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
+
     if not unit then
-      table.insert(logEntries, LogFormat.entry("SKIP", string.format(
-        "idx=%d guid=%s reason=unit_not_found", idx, guid)))
+      report.add("SKIP", { guid = guid, index = idx, reason = "unit_not_found" })
     else
-      local tag, msg = convertGroupMember(base, unit, idx, weaponDBIDSet, sideName)
-      table.insert(logEntries, LogFormat.entry(tag, string.format("idx=%d %s", idx, msg)))
+      local result = convertGroupMember(base, unit, idx, weaponDBIDSet, sideName)
+      report.add(result.tag, result.fields)
     end
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
-      LogFormat.summary("ship", base.name or base.guid, "Load cargo", logEntries))
-  end
+  report.emit()
 end
 
 ---Re-transfer cargo to embarked units for second wave operations
@@ -539,26 +556,21 @@ end
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if all cargo was successfully re-transferred
 function AmphibiousLogistics.retransferCargos(zone, units)
-  local logEntries = {}
+  local report = LogFormat.report(
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Retransfer cargos")
 
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if not unit then
-      table.insert(logEntries, LogFormat.entry("SKIP", string.format("guid=%s reason=unit_not_found", u.guid)))
-      goto continue
+      report.add("SKIP", { guid = u.guid, reason = "unit_not_found" })
+    else
+      processShipTransfers(unit.guid, unit.dbid, zone)
+      report.add("OK", { ship = unit.name or unit.guid, dbid = unit.dbid })
     end
-
-    processShipTransfers(unit.guid, unit.dbid, zone)
-    table.insert(logEntries, LogFormat.entry("OK", string.format("ship=%s dbid=%d", unit.name or unit.guid, unit.dbid)))
-
-    ::continue::
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.AMPHIBIOUS_LOGISTICS,
-      LogFormat.summary("zone", zone.name, "Retransfer cargos", logEntries))
-  end
+  report.emit()
 
   return true
 end

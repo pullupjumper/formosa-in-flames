@@ -54,7 +54,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | 轉呼叫 `Movement.moveToFiringPoint` |
-| `moveFromHideArea` | `unitCtx, unit` | `boolean, string?` | 轉呼叫 `Concealment.moveFromHideArea` |
+| `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 轉呼叫 `Concealment.moveFromHideArea` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 轉呼叫 `Ammo.isLowAmmo` |
 | `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryReport` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
 | `checkMissileSystemState` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
@@ -63,6 +63,36 @@ flowchart TD
 | `addMissileSystems` | `groundForceCfg, sideName` | `nil` | 轉呼叫 `Deployment.addMissileSystems` |
 | `initMissileSystemContexts` | `groundForceCfg, groundForceCtx` | `nil` | 轉呼叫 `Context.initMissileSystemContexts` |
 | `handleMoveToPositionEvent` | `opts` | `nil` | 處理位置事件主流程 |
+
+---
+
+## 日誌輸出
+
+兩個批次流程各自建立一份 `LogFormat.report`，改成 per-row 分流：`FAIL`／`ERROR` 進 error sink，`OK`／`WARN` 留在 info log。
+
+```
+[missileSystem] side=China: Reload cycle mode=auto | total=3 ok=2 warn=1
+  [OK]   system=SRBM unit=SRBM-FU-1 action=missile_reload_finished loaded=6
+  [OK]   system=SRBM unit=SRBM-RU-1 action=move_resupply_to_reload_point
+  [WARN] system=MRBM unit=MRBM-RU-2 action=move_resupply_to_reload_point reason=unit_not_found
+```
+```
+（error sink）side=China: Reload cycle mode=auto | total=1 fail=1
+  [FAIL] system=MLRS area=Fujian unit=MLRS-FU-3 action=move_to_hide_area reason=no_ha_defined
+```
+
+`handleMoveToPositionEvent` 的 `position` 來自 event trigger，整批相同，因此放在 header 而非每一行：
+
+```
+[missileSystem] side=China: Position event mode=auto position=RL | total=2 ok=1 warn=1
+  [OK]   system=SRBM unit=SRBM-FU-1 state=RELOAD action=reload_started startedAt=3600 triggerUnit=SRBM-RU-1
+  [WARN] system=SRBM unit=SRBM-RU-2 action=resupply_concealment_failed pairedFiringUnit=SRBM-FU-2
+         area=OPAREA-1 reason=no_buildings_in_mask
+```
+
+**行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後三個 WARN（`concealment_failed`／`resupply_concealment_failed`／`reload_not_started`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
+
+`moveToFiringPoint` 與 `handleSupplyAssetDestruction` 是單筆事件而非批次，走 `LogFormat.line` 並在呼叫端自行選 sink。
 
 ---
 

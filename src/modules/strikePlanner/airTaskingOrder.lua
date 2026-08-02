@@ -1,6 +1,5 @@
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local AssignMission = require("src.modules.assignMission")
@@ -12,12 +11,10 @@ local AirTaskingOrder = {}
 
 -- Tanker missions must be prepared before receiver missions.
 local PACKAGE_ROLE_ORDER = { "tanker", "striker", "escort", "wildWeasel", "jammer" }
-local ATO_OUTCOME = {
-  OK = "ok",
-  SKIP = "skip",
-  FAIL = "fail",
-  ERROR = "error"
-}
+
+-- Scope and action values for the report this module emits
+local LOG_SCOPE = "airTaskingOrder"
+local LOG_ACTION = "Execute packages"
 
 -- ============================================================================
 -- Loadout Timing
@@ -310,7 +307,7 @@ end
 
 ---Validate package target data before lifecycle processing
 ---@param packageData SBJ__Package Package data
----@return SBJ__ATOPackageProcessResult|nil # Validation failure, or nil when valid
+---@return SBJ__LogResult|nil # Validation failure row, or nil when valid
 local function validatePackageTargets(packageData)
   local targetList = packageData.target.list
 
@@ -319,11 +316,13 @@ local function validatePackageTargets(packageData)
   end
 
   return {
-    outcome = ATO_OUTCOME.SKIP,
-    missionName = packageData.striker.missionCreationParams.name,
-    reason = "invalid_package_targets",
-    targets = 0,
-    required = packageData.target.minTargetCount
+    tag = "SKIP",
+    fields = {
+      mission = packageData.striker.missionCreationParams.name,
+      targets = 0,
+      required = packageData.target.minTargetCount,
+      reason = "invalid_package_targets"
+    }
   }
 end
 
@@ -462,7 +461,7 @@ end
 ---@param packageData SBJ__Package Package data
 ---@param assignmentSafetyMargin number Assignment safety margin in seconds
 ---@return boolean isReadyForAssignment Whether mission assignment may begin
----@return SBJ__ATOPackageProcessResult|nil preparationResult Interim result, or nil while waiting
+---@return SBJ__LogResult|nil preparationResult Interim row, or nil while waiting
 local function advancePackagePreparation(packageData, assignmentSafetyMargin)
   ensureLoadoutStartTime(packageData)
 
@@ -475,10 +474,12 @@ local function advancePackagePreparation(packageData, assignmentSafetyMargin)
     local readyTime = os.date(constants.DATE_FORMAT, packageData.loadoutStatus.expectedReadyTime)
 
     return false, {
-      outcome = ATO_OUTCOME.OK,
-      missionName = packageData.striker.missionCreationParams.name,
-      action = "initiate_loadout",
-      readyTime = readyTime
+      tag = "OK",
+      fields = {
+        mission = packageData.striker.missionCreationParams.name,
+        action = "initiate_loadout",
+        readyTime = readyTime
+      }
     }
   end
 
@@ -495,34 +496,34 @@ end
 ---Create missions and assign package targets and units
 ---@param packageData SBJ__Package Package data
 ---@return table<string, CMO__Mission>|nil createdMissions Created missions, or nil on failure
----@return SBJ__ATOPackageProcessResult|nil failureResult Failure result, or nil on success
+---@return SBJ__LogResult|nil failureResult Failure row, or nil on success
 local function createAndAssignPackageMissions(packageData)
   local missionName = packageData.striker.missionCreationParams.name
   local missionsCreated, createdMissions = createPackageMissions(packageData)
 
   if not missionsCreated then
     return nil, {
-      outcome = ATO_OUTCOME.FAIL,
-      missionName = missionName,
-      reason = "striker_mission_creation_failed"
+      tag = "FAIL",
+      fields = { mission = missionName, reason = "striker_mission_creation_failed" }
     }
   end
 
   if not assignTargetsToMission(packageData) then
     return nil, {
-      outcome = ATO_OUTCOME.FAIL,
-      missionName = missionName,
-      reason = "target_assignment_failed",
-      targets = #packageData.target.list,
-      required = packageData.target.minTargetCount
+      tag = "FAIL",
+      fields = {
+        mission = missionName,
+        targets = #packageData.target.list,
+        required = packageData.target.minTargetCount,
+        reason = "target_assignment_failed"
+      }
     }
   end
 
   if not assignPackageUnits(packageData) then
     return nil, {
-      outcome = ATO_OUTCOME.FAIL,
-      missionName = missionName,
-      reason = "striker_assignment_failed"
+      tag = "FAIL",
+      fields = { mission = missionName, reason = "striker_assignment_failed" }
     }
   end
 
@@ -534,21 +535,23 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param packageData SBJ__Package Package data
 ---@param createdMissions table<string, CMO__Mission> Created missions
----@return SBJ__ATOPackageProcessResult # Successful launch result
+---@return SBJ__LogResult # Successful launch row
 local function finalizePackageLaunch(config, saveData, packageData, createdMissions)
   applyPackageMissionSchedules(packageData, createdMissions)
   local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
 
-  ---@type SBJ__ATOPackageProcessResult
+  ---@type SBJ__LogResult
   local launchResult = {
-    outcome = ATO_OUTCOME.OK,
-    missionName = packageData.striker.missionCreationParams.name,
-    action = "launch",
-    targets = #packageData.target.list
+    tag = "OK",
+    fields = {
+      mission = packageData.striker.missionCreationParams.name,
+      action = "launch",
+      targets = #packageData.target.list
+    }
   }
 
   if reconUAVEntry then
-    launchResult.reconUavTakeoff = reconUAVEntry.takeoffTime
+    launchResult.fields.reconUavTakeoff = reconUAVEntry.takeoffTime
   end
 
   return launchResult
@@ -560,7 +563,7 @@ end
 ---@param saveData SBJ__SaveData The persistent save data containing ATO state
 ---@param packageData SBJ__Package The strike package data to process
 ---@return boolean launched Whether package was successfully launched
----@return SBJ__ATOPackageProcessResult|nil result Processed package result, or nil when nothing should be logged
+---@return SBJ__LogResult|nil result Processed package row, or nil when nothing should be logged
 local function processPackage(config, saveData, packageData)
   local validationResult = validatePackageTargets(packageData)
   if validationResult then
@@ -605,9 +608,9 @@ end
 ---@param saveData SBJ__SaveData The persistent save data
 ---@param waveName string The wave identifier used for logging
 ---@param waveData SBJ__Wave The wave containing strike packages
----@return SBJ__ATOPackageProcessResult[] # Processed package results from this wave
+---@return SBJ__LogResult[] # Processed package rows from this wave
 local function processWave(config, saveData, waveName, waveData)
-  ---@type SBJ__ATOPackageProcessResult[]
+  ---@type SBJ__LogResult[]
   local processedResults = {}
 
   for _, packageData in ipairs(waveData.packages) do
@@ -619,7 +622,7 @@ local function processWave(config, saveData, waveName, waveData)
       end
 
       if packageResult then
-        packageResult.waveName = waveName
+        packageResult.fields.wave = waveName
         table.insert(processedResults, packageResult)
       end
 
@@ -632,99 +635,6 @@ local function processWave(config, saveData, waveName, waveData)
   return processedResults
 end
 
----Append optional target count fields to a log message
----@param message string Base log message
----@param packageResult SBJ__ATOPackageProcessResult Processed package result
----@return string # Log message with target fields when present
-local function appendTargetFields(message, packageResult)
-  if packageResult.targets ~= nil then
-    message = message .. string.format(" targets=%d", packageResult.targets)
-  end
-
-  if packageResult.required ~= nil then
-    message = message .. string.format(" required=%d", packageResult.required)
-  end
-
-  return message
-end
-
----Format one processed ATO package result into a log line
----@param packageResult SBJ__ATOPackageProcessResult Processed package result
----@return string level Log entry level
----@return string message Log-safe package result message
-local function formatProcessedResultLine(packageResult)
-  local prefix = string.format(
-    "wave=%s mission=%s",
-    LogFormat.value(packageResult.waveName or "unknown"),
-    LogFormat.value(packageResult.missionName or "unknown")
-  )
-
-  if packageResult.outcome == ATO_OUTCOME.OK then
-    local message = string.format("%s action=%s", prefix, LogFormat.value(packageResult.action or "unknown"))
-
-    if packageResult.readyTime then
-      message = message .. string.format(" readyTime=%q", packageResult.readyTime)
-    end
-
-    message = appendTargetFields(message, packageResult)
-
-    if packageResult.reconUavTakeoff then
-      message = message .. string.format(" reconUavTakeoff=%q", packageResult.reconUavTakeoff)
-    end
-
-    return "OK", message
-  end
-
-  local message = string.format(
-    "%s reason=%s",
-    prefix,
-    LogFormat.value(packageResult.reason or "unknown")
-  )
-  message = appendTargetFields(message, packageResult)
-
-  if packageResult.outcome == ATO_OUTCOME.SKIP then
-    return "SKIP", message
-  end
-
-  if packageResult.outcome == ATO_OUTCOME.ERROR then
-    return "ERROR", message
-  end
-
-  return "FAIL", message
-end
-
----Emit consolidated logs for processed ATO package results
----@param processedResults SBJ__ATOPackageProcessResult[] Processed package results accumulated in one tick
-local function emitProcessedResultsLog(processedResults)
-  if #processedResults == 0 then
-    return
-  end
-
-  local infoLines = {}
-  local errorLines = {}
-
-  for _, packageResult in ipairs(processedResults) do
-    local level, message = formatProcessedResultLine(packageResult)
-    local logLine = LogFormat.entry(level, message)
-
-    if level == "ERROR" or level == "FAIL" then
-      table.insert(errorLines, logLine)
-    else
-      table.insert(infoLines, logLine)
-    end
-  end
-
-  if #infoLines > 0 then
-    Logger.log(constants.TAGS.AIR, LogFormat.summary(
-      "scope", "airTaskingOrder", "Execute packages", infoLines))
-  end
-
-  if #errorLines > 0 then
-    Logger.error(LogFormat.summary(
-      "scope", "airTaskingOrder", "Execute packages", errorLines))
-  end
-end
-
 -- ============================================================================
 -- Public API
 -- ============================================================================
@@ -734,16 +644,11 @@ end
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
 function AirTaskingOrder.airStrike(config, saveData)
-  ---@type SBJ__ATOPackageProcessResult[]
-  local processedResults = {}
+  local report = LogFormat.report(constants.TAGS.AIR, LOG_SCOPE, LOG_ACTION)
 
   for waveName, waveData in pairs(saveData.c.air.airTaskingOrder) do
     if waveData.isActivated and not waveData.hasLaunched then
-      local waveResults = processWave(config, saveData, waveName, waveData)
-
-      for _, packageResult in ipairs(waveResults) do
-        table.insert(processedResults, packageResult)
-      end
+      report.addAll(processWave(config, saveData, waveName, waveData))
 
       if isWaveFinished(waveData) then
         waveData.hasLaunched = true
@@ -751,7 +656,7 @@ function AirTaskingOrder.airStrike(config, saveData)
     end
   end
 
-  emitProcessedResultsLog(processedResults)
+  report.emit()
 end
 
 return AirTaskingOrder

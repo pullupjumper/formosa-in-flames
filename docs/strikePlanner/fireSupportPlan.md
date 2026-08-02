@@ -12,7 +12,7 @@
 
 模組的核心流程分成部署與打擊兩段。部署階段只處理尚未完成且已達 `startTime` 的 FST，檢查發射單元實體、飛彈系統狀態與彈量；只有目前需要處理的發射單元都進入 `STATIC` 狀態後，才會進入打擊階段。打擊階段會呼叫 `AttackManager.attackContacts()`，成功發射後標記 FST 完成，並在非 SAM 任務上寫入 `stowStartTime`，讓 missileSystem 狀態機接手後續收車與再補給流程。
 
-日誌輸出採集中彙整模式。各階段只回傳結構化結果，最後由 `emitProcessedResultsLog()` 統一格式化為 `LogFormat.summary()`，以 `constants.TAGS.GROUND` 寫入一般地面作戰日誌；未來若出現失敗結果則可分流至 `Logger.error()`。
+日誌輸出採集中彙整模式。各階段直接把 `tag` 與結構化欄位交給單一 `LogFormat.report`，由它負責格式化、info／error 分流與空輸出抑制，以 `constants.TAGS.GROUND` 寫入一般地面作戰日誌。
 
 ---
 
@@ -22,9 +22,8 @@
 |---|---|
 | `src.modules.attackManager` | 透過 `attackContacts()` 對目標 GUID 清單發射武器。 |
 | `src.utils.gameUtils` | 使用 `isAfterStartTime()` 判斷 FST 是否已達啟動時間。 |
-| `src.utils.logger` | 輸出集中式 summary 日誌。 |
 | `src.utils.gameApi` | 透過 `ScenEdit_GetUnit()` 取得實體單位，透過 `ScenEdit_CurrentTime()` 寫入 stow 起始時間。 |
-| `src.utils.logFormat` | 格式化 `[OK]`、`[SKIP]`、`[FAIL]` entry 與 summary。 |
+| `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]`／`[SKIP]` 行。 |
 | `src.modules.missileSystem.init` | 檢查彈量並移動發射單元至射擊點。 |
 | `src.core.constants` | 使用 `MISSILE_SYSTEM_STATE` 與 `TAGS.GROUND`。 |
 
@@ -89,27 +88,22 @@ firingUnitContext.stowStartTime = GameApi.ScenEdit_CurrentTime()
 
 ### Consolidated Logging
 
-`strike()` 會累積 `SBJ__FireSupportPlanProcessedResult[]`，最後交由 `emitProcessedResultsLog()` 統一輸出。
+`strike()` 建立單一 `LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")`，各分支直接 `report.add(tag, fields)`，結尾 `report.emit()`。沒有中介的結果陣列，也沒有 outcome → tag 對照表。詳見 [logFormat](../logFormat.md)。
 
-| outcome | log level | 主要欄位 |
+| 情境 | tag | 欄位 |
 |---|---|---|
-| `strike` | `[OK]` | `matrix`、`action=strike`、`task`、`fired` |
-| `pending` | `[SKIP]` | `matrix`、`task`、`reason=firing_units_not_in_position`、`units` |
-| `finished` | `[OK]` | `matrix`、`state=finished` |
-| fallback | `[FAIL]` | `matrix`、`reason` |
+| 已開火 | `[OK]` | `matrix`、`task`、`action=strike`、`fired` |
+| firing unit 未就位 | `[SKIP]` | `matrix`、`task`、`units`、`reason=firing_units_not_in_position` |
+| FSEM 完成 | `[OK]` | `matrix`、`state=finished` |
 
-一般結果會透過：
-
-```lua
-Logger.log(constants.TAGS.GROUND, LogFormat.summary(
-  "scope",
-  "fireSupportPlan",
-  "Execute fire support plan",
-  infoLines
-))
+```text
+[GROUND] fireSupportPlan: Execute fire support plan | total=3 ok=2 skip=1
+  [OK]   matrix=GND/STRIKE/C2/N/1 task=FST-ALPHA action=strike fired=4
+  [SKIP] matrix=GND/STRIKE/C2/N/1 task=FST-BRAVO units=Battery-1,Battery-2 reason=firing_units_not_in_position
+  [OK]   matrix=GND/STRIKE/INFRA/ALL/1 state=finished
 ```
 
-`FAIL` 或 `ERROR` entry 會被分流到 `Logger.error()`。
+`FAIL` 與 `ERROR` 會由 report 自動分流到 `Logger.error()`，目前本模組沒有產生這兩種 tag 的分支。
 
 ---
 
@@ -137,7 +131,7 @@ flowchart TD
     TASK_DONE["task.isFinished = true"]
     MATRIX_DONE{"isMatrixFinished()?"}
     FINISH["matrix.isFinished = true"]
-    LOG["emitProcessedResultsLog()"]
+    LOG["report.emit()"]
 
     START --> LOOP
     LOOP --> ACTIVE
@@ -248,7 +242,7 @@ saveData.c.ground
 
 | 函式 | 參數 | 回傳 | 副作用 |
 |---|---|---|---|
-| `FireSupportPlan.strike(saveData)` | `SBJ__SaveData` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan summary 日誌。 |
+| `FireSupportPlan.strike(saveData)` | `SBJ__SaveData` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan report。 |
 
 ### 上游呼叫
 
@@ -271,8 +265,6 @@ saveData.c.ground
 | `executeFireSupportTasks()` | 對可執行 FST 發射武器並標記完成。 | `saveData`, `matrix` | `{ taskName, fired }[]` |
 | `isMatrixFinished()` | 判斷 FSEM 內所有 FST 是否完成。 | `matrix` | `boolean` |
 | `processActiveMatrix()` | 執行 FSEM 部署階段並回傳 pending task。 | `saveData`, `matrix` | `allInPosition`, `pendingTasks` |
-| `formatProcessedResultLine()` | 將結構化結果轉為單行日誌 entry 內容。 | `SBJ__FireSupportPlanProcessedResult` | `level`, `message` |
-| `emitProcessedResultsLog()` | 分流 info/error 並輸出 summary。 | `SBJ__FireSupportPlanProcessedResult[]` | 無 |
 
 ---
 

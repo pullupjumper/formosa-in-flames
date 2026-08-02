@@ -127,11 +127,11 @@ describe("FrontlineRedirect", function()
         attritionPct = 100,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconContext)
+      local isRedirected, activationFields = FrontlineRedirect.evaluate(cfg, reconContext)
       assert.is_true(isRedirected)
       assert.is_true(reconContext.frontlineRedirected)
-      assert.is_truthy(message and message:find("reason=attrition_threshold_reached"))
-      assert.is_truthy(message and message:find("attritionPct=100.0"))
+      assert.are.equal("attrition_threshold_reached", activationFields.reason)
+      assert.are.equal("100.0", activationFields.attritionPct)
     end)
 
     -- Positive: sticky flag skips recomputing attrition.

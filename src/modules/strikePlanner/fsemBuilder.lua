@@ -1,7 +1,6 @@
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
-local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
 local DynamicState = require("src.modules.strikePlanner.dynamicState")
@@ -28,20 +27,30 @@ local FIRING_UNIT_STATUS_LOG_FIELD = {
   [FIRING_UNIT_STATUS.LOW_AMMO] = "firingLowAmmo",
 }
 
+-- Failure reasons, written straight into reason=<token>. INSUFFICIENT_TARGETS
+-- and NO_AVAILABLE_FIRING_UNITS also drive the retry decision in
+-- FsemBuilder.execute, so a log line is always greppable back to its branch.
 local PROCESS_REASON = {
-  MISSING_TEMPLATE = "missing_template",
+  MISSING_TEMPLATE = "missing_fsem_template",
   INSUFFICIENT_TARGETS = "insufficient_targets",
   NO_AVAILABLE_FIRING_UNITS = "no_available_firing_units",
-  NO_VALID_TASKS = "no_valid_tasks"
+  NO_VALID_TASKS = "no_valid_tasks",
+  INSERTION_FAILED = "insertion_failed",
+  OBSERVATION_WINDOW_EXPIRED = "observation_window_expired"
 }
 
-local OPERATION_OUTCOME = {
-  OK = "ok",
-  WAIT = "wait",
-  TIMEOUT = "timeout",
-  MISSING_TEMPLATE = "missing_template",
-  FAIL = "fail"
+-- Reasons that keep an operation pending for a later tick inside the window.
+local RETRYABLE_REASON = {
+  [PROCESS_REASON.INSUFFICIENT_TARGETS] = true,
+  [PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS] = true
 }
+
+-- Scope and action values shared by the info and error sinks of this module
+local LOG_SCOPE = "dynamicGroundOperations"
+local LOG_ACTION = "Process operations"
+
+-- Stand-in counters for an outcome that never reached firing unit evaluation
+local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
 ---Observation window state for a ground operation in a recon-triggered batch
 local OBSERVATION_STATE = {
@@ -79,9 +88,9 @@ local function countFiringUnitStatus(firingUnitStatusCounter, status)
   end
 end
 
----Format status counter into top-level key=value fields
+---Format status counter into log fields
 ---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter table
----@return string # Printable status summary fields
+---@return table<string, any> # Status log fields, firingUnits=none when nothing was counted
 local function formatFiringUnitStatusCounter(firingUnitStatusCounter)
   local statusOrder = {
     FIRING_UNIT_STATUS.AVAILABLE,
@@ -92,20 +101,22 @@ local function formatFiringUnitStatusCounter(firingUnitStatusCounter)
     FIRING_UNIT_STATUS.BAD_STATE,
     FIRING_UNIT_STATUS.LOW_AMMO
   }
-  local fragments = {}
+  local statusFields = {}
+  local hasCount = false
 
   for _, status in ipairs(statusOrder) do
     local count = firingUnitStatusCounter[status] or 0
     if count > 0 then
-      table.insert(fragments, FIRING_UNIT_STATUS_LOG_FIELD[status] .. "=" .. count)
+      statusFields[FIRING_UNIT_STATUS_LOG_FIELD[status]] = count
+      hasCount = true
     end
   end
 
-  if #fragments == 0 then
-    return "firingUnits=none"
+  if not hasCount then
+    return { firingUnits = "none" }
   end
 
-  return table.concat(fragments, " ")
+  return statusFields
 end
 
 -- ============================================================================
@@ -371,9 +382,7 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param targetsByTaskName table<string, string[]> Map of FST name to evaluated target GUID arrays
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
----@return boolean success true if FSEM was successfully created and inserted
----@return string|nil reason Failure reason when success is false
----@return string statusSummary Firing unit status summary
+---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
 local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType)
   local matrixStartTime = GameApi.ScenEdit_CurrentTime()
   local matrixName = buildMatrixName(matrixTemplate, reconType, saveData)
@@ -383,18 +392,33 @@ local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targets
     targetsByTaskName,
     matrixStartTime
   )
-  local statusSummary = formatFiringUnitStatusCounter(firingUnitStatusCounter)
+  local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
 
   if #fireSupportTasks == 0 then
-    if unavailableFiringUnitTaskCount > 0 then
-      return false, PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS, statusSummary
-    end
+    local isRetryable = unavailableFiringUnitTaskCount > 0
 
-    return false, PROCESS_REASON.NO_VALID_TASKS, statusSummary
+    return {
+      success = false,
+      tag = isRetryable and "SKIP" or "FAIL",
+      reason = isRetryable
+          and PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS
+          or PROCESS_REASON.NO_VALID_TASKS,
+      fields = statusFields
+    }
   end
 
   local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks)
-  return insertMatrix(saveData, newMatrix), nil, statusSummary
+
+  if not insertMatrix(saveData, newMatrix) then
+    return {
+      success = false,
+      tag = "FAIL",
+      reason = PROCESS_REASON.INSERTION_FAILED,
+      fields = statusFields
+    }
+  end
+
+  return { success = true, tag = "OK", fields = statusFields }
 end
 
 ---Evaluate observation window state for a ground operation
@@ -420,15 +444,13 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
----@return boolean success True if FSEM was successfully created from reconnaissance results
----@return string|nil reason Failure reason when success is false
----@return string|nil statusSummary Firing unit status summary if available
+---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
 local function processGroundOperation(config, saveData, contacts, batchedOp)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
   if not operation.template or not operation.template.fireSupportTasks then
-    return false, PROCESS_REASON.MISSING_TEMPLATE, nil
+    return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
   end
 
   local matrixTemplate = Utils.deepCopy(operation.template)
@@ -440,100 +462,16 @@ local function processGroundOperation(config, saveData, contacts, batchedOp)
   )
 
   if targetQualifiedTaskCount == 0 then
-    return false, PROCESS_REASON.INSUFFICIENT_TARGETS, nil
+    -- No firing unit was evaluated yet, so there are no counters to report.
+    return {
+      success = false,
+      tag = "SKIP",
+      reason = PROCESS_REASON.INSUFFICIENT_TARGETS,
+      fields = NO_FIRING_UNITS_FIELDS
+    }
   end
 
   return createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType)
-end
-
----Format one processed operation result into a log line
----@param result table Processed operation result
----@return string level Log entry level
----@return string message Log-safe operation result message
-local function formatProcessedResultLine(result)
-  if result.outcome == OPERATION_OUTCOME.OK then
-    return "OK", string.format(
-      "operation=%s operationBatchTime=%q operationBatchType=%s %s",
-      LogFormat.value(result.operationName),
-      result.operationBatchTime,
-      LogFormat.value(result.operationBatchType),
-      result.statusSummary or "firingUnits=none"
-    )
-  end
-
-  if result.outcome == OPERATION_OUTCOME.WAIT then
-    return "SKIP", string.format(
-      "operation=%s operationBatchTime=%q operationBatchType=%s state=observing reason=%s %s",
-      LogFormat.value(result.operationName),
-      result.operationBatchTime,
-      LogFormat.value(result.operationBatchType),
-      LogFormat.value(result.reason or "unknown"),
-      result.statusSummary or "firingUnits=none"
-    )
-  end
-
-  if result.outcome == OPERATION_OUTCOME.TIMEOUT then
-    return "WARN", string.format(
-      "operation=%s operationBatchTime=%q operationBatchType=%s reason=observation_window_expired",
-      LogFormat.value(result.operationName),
-      result.operationBatchTime,
-      LogFormat.value(result.operationBatchType)
-    )
-  end
-
-  if result.outcome == OPERATION_OUTCOME.MISSING_TEMPLATE then
-    return "ERROR", string.format(
-      "operation=%s operationBatchTime=%q operationBatchType=%s reason=missing_fsem_template",
-      LogFormat.value(result.operationName),
-      result.operationBatchTime,
-      LogFormat.value(result.operationBatchType)
-    )
-  end
-
-  return "FAIL", string.format(
-    "operation=%s operationBatchTime=%q operationBatchType=%s reason=%s %s",
-    LogFormat.value(result.operationName),
-    result.operationBatchTime,
-    LogFormat.value(result.operationBatchType),
-    LogFormat.value(result.reason or "unknown"),
-    result.statusSummary or "firingUnits=none"
-  )
-end
-
----Emit consolidated logs for processed operation results
----@param processedResults table[] Processed operation results accumulated in one tick
-local function emitProcessedResultsLog(processedResults)
-  if #processedResults == 0 then
-    return
-  end
-
-  local infoLines = {}
-  local errorLines = {}
-
-  for _, result in ipairs(processedResults) do
-    local level, message = formatProcessedResultLine(result)
-    local line = LogFormat.entry(level, message)
-
-    if level == "ERROR" or level == "FAIL" then
-      table.insert(errorLines, line)
-    else
-      table.insert(infoLines, line)
-    end
-  end
-
-  if #infoLines > 0 then
-    local msg = LogFormat.summary(
-      "scope",
-      "dynamicGroundOperations",
-      "Process operations",
-      infoLines
-    )
-    Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, msg)
-  end
-
-  if #errorLines > 0 then
-    Logger.error(LogFormat.summary("scope", "dynamicGroundOperations", "Process operations", errorLines))
-  end
 end
 
 -- ============================================================================
@@ -565,72 +503,47 @@ function FsemBuilder.execute(config, saveData, contacts)
     return false
   end
 
-  local processedResults = {}
+  local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
 
   for _, batchedOp in ipairs(groundBatchedOperations) do
     local operationBatch = batchedOp.operationBatch
     local operation = batchedOp.operation
-    local operationName = (operation.template and operation.template.name) or "unknown"
     local windowState = evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
-    if windowState == OBSERVATION_STATE.EXPIRED then
-      DynamicState.markOperationExecuted(operationBatch, operation, false)
-      table.insert(processedResults, {
-        operationName = operationName,
-        operationBatchTime = operationBatch.time,
-        operationBatchType = operationBatch.type,
-        outcome = OPERATION_OUTCOME.TIMEOUT,
-      })
-    elseif windowState == OBSERVATION_STATE.IN_WINDOW then
-      local success, reason, statusSummary = processGroundOperation(config, saveData, contacts, batchedOp)
+    -- PRE_TRIGGER: silent skip, identical to legacy behavior before observation window.
+    if windowState ~= OBSERVATION_STATE.PRE_TRIGGER then
+      ---@type SBJ__OperationProcessResult
+      local outcome
+      if windowState == OBSERVATION_STATE.EXPIRED then
+        outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
+      else
+        outcome = processGroundOperation(config, saveData, contacts, batchedOp)
+      end
 
-      if success then
+      local fields = LogFormat.merge({
+        operation = (operation.template and operation.template.name) or "unknown",
+        batch = operationBatch.type .. "@" .. operationBatch.time
+      }, outcome.fields)
+      fields.reason = outcome.reason
+
+      if outcome.success then
         DynamicState.markOperationExecuted(operationBatch, operation, true)
         hasExecutedAny = true
-        table.insert(processedResults, {
-          operationName = operationName,
-          operationBatchTime = operationBatch.time,
-          operationBatchType = operationBatch.type,
-          outcome = OPERATION_OUTCOME.OK,
-          statusSummary = statusSummary,
-        })
-      elseif reason == PROCESS_REASON.MISSING_TEMPLATE then
-        DynamicState.markOperationExecuted(operationBatch, operation, false)
-        table.insert(processedResults, {
-          operationName = operationName,
-          operationBatchTime = operationBatch.time,
-          operationBatchType = operationBatch.type,
-          outcome = OPERATION_OUTCOME.MISSING_TEMPLATE,
-        })
-      elseif reason == PROCESS_REASON.INSUFFICIENT_TARGETS or
-          reason == PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS then
-        -- Keep retryable operations pending inside the observation window; emit SKIP every tick.
-        -- This exposes whether targets or firing units are currently blocking.
-        table.insert(processedResults, {
-          operationName = operationName,
-          operationBatchTime = operationBatch.time,
-          operationBatchType = operationBatch.type,
-          outcome = OPERATION_OUTCOME.WAIT,
-          reason = reason,
-          statusSummary = statusSummary,
-        })
+      elseif RETRYABLE_REASON[outcome.reason] then
+        -- Retryable operations stay pending inside the window and re-report the
+        -- blocking counters every tick, so the log shows what is holding them back.
+        fields.state = "observing"
       else
-        -- Unknown failure reason; mark executed to avoid infinite retry.
+        -- Everything else, including an unknown reason, is marked executed to
+        -- avoid infinite retry.
         DynamicState.markOperationExecuted(operationBatch, operation, false)
-        table.insert(processedResults, {
-          operationName = operationName,
-          operationBatchTime = operationBatch.time,
-          operationBatchType = operationBatch.type,
-          outcome = OPERATION_OUTCOME.FAIL,
-          reason = reason,
-          statusSummary = statusSummary,
-        })
       end
+
+      opReport.add(outcome.tag, fields, outcome.details)
     end
-    -- PRE_TRIGGER: silent skip, identical to legacy behavior before observation window.
   end
 
-  emitProcessedResultsLog(processedResults)
+  opReport.emit()
   return hasExecutedAny
 end
 

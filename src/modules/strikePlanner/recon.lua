@@ -16,31 +16,6 @@ local ENTRY_TYPE = {
   SIGINT = "SIGINT"
 }
 
-local LAUNCH_STATUS = {
-  LAUNCHED = "launched",
-  NOT_READY = "not_ready",
-  FAILED = "failed",
-}
-
-local TRACKING_STATUS = {
-  UPDATED = "updated",
-  NO_TARGET_GUID = "no_target_guid",
-  NO_SPEED = "no_speed",
-  TARGET_LOST = "target_lost",
-}
-
-local POST_COURSE_ACTION = {
-  COMPLETE_MISSION = "complete_mission",
-  CONTINUE_TRACKING = "continue_tracking",
-  TRACKING_FAILED = "tracking_failed",
-}
-
-local MISSION_RESULT = {
-  SUCCESS = "success",
-  FAILED = "failed",
-  ALREADY_FINISHED = "already_finished",
-}
-
 local MAX_TRACKING_DISTANCE = 1000
 local WZ8_INITIAL_ALTITUDE = 20574
 local WZ8_INITIAL_HEADING = 180
@@ -135,15 +110,10 @@ end
 
 ---Handle reconnaissance launch phase
 ---@param entry SBJ__ReconQueueEntryUAV Queue entry to process (UAV only)
----@return string status Launch status from LAUNCH_STATUS
----@return string message Human-readable status description
+---@return SBJ__LogResult # Launch outcome row
 local function handleReconLaunch(entry)
   if entry.hasLaunched or not GameUtils.isAfterStartTime(entry.takeoffTime) then
-    local message = string.format(
-      "base=%s reason=takeoff_time_not_reached",
-      LogFormat.value(entry.baseGUID)
-    )
-    return LAUNCH_STATUS.NOT_READY, message
+    return { tag = "SKIP", fields = { base = entry.baseGUID, reason = "takeoff_time_not_reached" } }
   end
 
   local units = launchUnits(entry.baseGUID, entry.course, entry.unitCount, entry.unitDBID, "Aircraft")
@@ -151,39 +121,34 @@ local function handleReconLaunch(entry)
   if #units > 0 then
     entry.unitGUID = units[1].guid
     entry.hasLaunched = true
-    local message = string.format(
-      "unit=%q base=%s action=launch",
-      LogFormat.readable(units[1].name),
-      LogFormat.value(entry.baseGUID)
-    )
-    return LAUNCH_STATUS.LAUNCHED, message
+    return { tag = "OK", fields = { unit = units[1].name, base = entry.baseGUID, action = "launch" } }
   else
-    local message = string.format("base=%s reason=launch_failed", LogFormat.value(entry.baseGUID))
-    return LAUNCH_STATUS.FAILED, message
+    return { tag = "FAIL", fields = { base = entry.baseGUID, reason = "launch_failed" } }
   end
 end
 
 ---Handle reconnaissance tracking mode - continuously update course to track moving target
----@param entry SBJ__ReconQueueEntryUAV Queue entry (UAV only)
+---Caller must have already established that entry.trackingTargetGUID is set; a
+---missing GUID is treated as "not tracking" one level up and completes normally.
+---@param entry SBJ__ReconQueueEntryUAV Queue entry (UAV only, tracking target assigned)
 ---@param actualUnit CMO__Unit The reconnaissance unit
----@return string status Tracking status from TRACKING_STATUS
----@return string message Human-readable status description
+---@return boolean isUpdated Whether the course was successfully retargeted
+---@return SBJ__LogResult result Tracking outcome row
 local function handleReconTracking(entry, actualUnit)
-  if not entry.trackingTargetGUID then
-    local message = string.format("unit=%q reason=tracking_target_not_assigned", LogFormat.readable(actualUnit.name))
-    return TRACKING_STATUS.NO_TARGET_GUID, message
-  end
-
   if not entry.speed then
-    local message = string.format("unit=%q reason=speed_not_configured", LogFormat.readable(actualUnit.name))
-    return TRACKING_STATUS.NO_SPEED, message
+    return false, {
+      tag = "FAIL",
+      fields = { unit = actualUnit.name, reason = "speed_not_configured" }
+    }
   end
 
   local target = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, entry.trackingTargetGUID)
 
   if not target then
-    local message = string.format("target=%s reason=tracking_target_lost", LogFormat.value(entry.trackingTargetGUID))
-    return TRACKING_STATUS.TARGET_LOST, message
+    return false, {
+      tag = "FAIL",
+      fields = { target = entry.trackingTargetGUID, reason = "tracking_target_lost" }
+    }
   end
 
   -- Update course to target position (continuous tracking for missile guidance)
@@ -194,23 +159,25 @@ local function handleReconTracking(entry, actualUnit)
     presetThrottle = "Military"
   } }
 
-  local message = string.format(
-    "unit=%q target=%s action=update_tracking",
-    LogFormat.readable(actualUnit.name),
-    LogFormat.value(entry.trackingTargetGUID)
-  )
-  return TRACKING_STATUS.UPDATED, message
+  return true, {
+    tag = "OK",
+    fields = {
+      unit = actualUnit.name,
+      target = entry.trackingTargetGUID,
+      action = "update_tracking"
+    }
+  }
 end
 
 ---Settle reconnaissance mission and conditionally schedule next operations
+---Idempotent: a settled entry is left untouched.
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param success boolean Mission success status
----@return string # Mission result from MISSION_RESULT
 local function settleReconMission(processingContext, entry, success)
   -- Prevent double execution
   if entry.isFinished then
-    return MISSION_RESULT.ALREADY_FINISHED
+    return
   end
 
   entry.isFinished = true
@@ -218,10 +185,6 @@ local function settleReconMission(processingContext, entry, success)
   if success then
     -- Mission successful: intelligence data is complete, schedule next wave operations
     OperationScheduler.schedule(processingContext, entry)
-    return MISSION_RESULT.SUCCESS
-  else
-    -- Mission failed: intelligence data is incomplete, skip scheduling
-    return MISSION_RESULT.FAILED
   end
 end
 
@@ -229,64 +192,61 @@ end
 ---@param entry SBJ__ReconQueueEntryUAV Queue entry
 ---@param isEndTimeReached boolean Whether endTime was reached before destruction
 ---@return boolean success Whether mission should be considered successful
----@return string message Status description
+---@return SBJ__LogResult result Destruction outcome row
 local function handleUAVDestroyed(entry, isEndTimeReached)
   if isEndTimeReached then
-    local message = string.format(
-      "unit=%s state=destroyed result=success reason=end_time_reached",
-      LogFormat.value(entry.unitGUID)
-    )
-    return true, message
+    return true, {
+      tag = "OK",
+      fields = { unit = entry.unitGUID, state = "destroyed", result = "success", reason = "end_time_reached" }
+    }
   else
-    local message = string.format(
-      "unit=%s state=destroyed result=failed reason=destroyed_before_end_time",
-      LogFormat.value(entry.unitGUID)
-    )
-    return false, message
+    return false, {
+      tag = "FAIL",
+      fields = { unit = entry.unitGUID, state = "destroyed", result = "failed", reason = "destroyed_before_end_time" }
+    }
   end
 end
 
 ---Resolve the next action after a UAV has finished its course and reached endTime
+---A tracking failure still settles the mission: the recon leg itself succeeded,
+---so the row keeps the specific tracking reason plus missionStatus=completed.
 ---@param entry SBJ__ReconQueueEntryUAV Queue entry
 ---@param actualUnit CMO__Unit The reconnaissance unit
----@return string action Post-course action from POST_COURSE_ACTION
----@return string message Status description
+---@return boolean shouldSettle Whether the mission should be settled as successful
+---@return SBJ__LogResult result Post-course outcome row
 local function resolvePostCourseUAVAction(entry, actualUnit)
   if entry.isTracking and entry.trackingTargetGUID then
-    local trackingStatus, message = handleReconTracking(entry, actualUnit)
+    local isUpdated, trackingResult = handleReconTracking(entry, actualUnit)
 
-    if trackingStatus == TRACKING_STATUS.UPDATED then
-      return POST_COURSE_ACTION.CONTINUE_TRACKING, message
+    if isUpdated then
+      return false, trackingResult
     end
 
-    return POST_COURSE_ACTION.TRACKING_FAILED, message
+    trackingResult.fields.unit = trackingResult.fields.unit or actualUnit.name
+    trackingResult.fields.state = "tracking_failed"
+    trackingResult.fields.missionStatus = "completed"
+    return true, trackingResult
   end
 
-  local message = string.format("unit=%q action=complete_mission", LogFormat.readable(actualUnit.name))
-  return POST_COURSE_ACTION.COMPLETE_MISSION, message
+  return true, {
+    tag = "OK",
+    fields = { unit = actualUnit.name, action = "complete_mission" }
+  }
 end
 
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntryUAV UAV queue entry to process
----@return string|nil tag Semantic log tag (OK/SKIP/FAIL) or nil if no logging needed
----@return string|nil message Human-readable log message
+---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
 local function processUAVEntry(processingContext, entry)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
-    local status, message = handleReconLaunch(entry)
-    if status == LAUNCH_STATUS.LAUNCHED then
-      return "OK", message
-    elseif status == LAUNCH_STATUS.NOT_READY then
-      return "SKIP", message
-    else
-      return "FAIL", message
-    end
+    return handleReconLaunch(entry)
   end
 
   -- Already finished, skip
   if entry.isFinished then
-    return nil, nil
+    return nil
   end
 
   -- Phase 2: In-flight management
@@ -295,81 +255,54 @@ local function processUAVEntry(processingContext, entry)
 
   -- Phase 2a: UAV destroyed or missing
   if not actualUnit then
-    local success, message = handleUAVDestroyed(entry, isEndTimeReached)
+    local success, result = handleUAVDestroyed(entry, isEndTimeReached)
     settleReconMission(processingContext, entry, success)
-    local tag = success and "OK" or "FAIL"
-    return tag, message
+    return result
   end
 
   -- Phase 2b: Still flying course
   if #actualUnit.course > 0 then
-    local message = string.format(
-      "unit=%q state=in_flight reason=course_not_completed",
-      LogFormat.readable(actualUnit.name)
-    )
-    return "SKIP", message
+    return {
+      tag = "SKIP",
+      fields = { unit = actualUnit.name, state = "in_flight", reason = "course_not_completed" }
+    }
   end
 
   -- Phase 2c: Course complete but endTime not reached
   if not isEndTimeReached then
-    local message = string.format(
-      "unit=%q state=waiting_end_time endTime=%q",
-      LogFormat.readable(actualUnit.name),
-      entry.endTime
-    )
-    return "SKIP", message
+    return {
+      tag = "SKIP",
+      fields = { unit = actualUnit.name, state = "waiting_end_time", endTime = entry.endTime }
+    }
   end
 
   -- Phase 2d: Mission completion or continued tracking
-  local postCourseAction, message = resolvePostCourseUAVAction(entry, actualUnit)
+  local shouldSettle, result = resolvePostCourseUAVAction(entry, actualUnit)
 
-  if postCourseAction == POST_COURSE_ACTION.CONTINUE_TRACKING then
-    return "OK", message
-  end
-
-  if postCourseAction == POST_COURSE_ACTION.TRACKING_FAILED then
-    -- Tracking failed but recon completed successfully
+  if shouldSettle then
     settleReconMission(processingContext, entry, true)
-    local msg = string.format(
-      "unit=%q reason=tracking_failed missionStatus=completed",
-      LogFormat.readable(actualUnit.name)
-    )
-    return "FAIL", msg
   end
 
-  -- Normal reconnaissance completion
-  settleReconMission(processingContext, entry, true)
-  return "OK", message
+  return result
 end
 
 ---Process a single satellite reconnaissance queue entry
 ---@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntry Satellite or SIGINT queue entry to process
----@return string|nil tag Semantic log tag (OK/SKIP) or nil if no logging needed
----@return string|nil message Human-readable log message
+---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
 local function processSatelliteEntry(processingContext, entry)
   if entry.isFinished then
-    return nil, nil
+    return nil
   end
 
   local isEndTimeReached = GameUtils.isAfterStartTime(entry.endTime)
 
   if not isEndTimeReached then
-    local message = string.format(
-      "type=%s state=waiting_end_time endTime=%q",
-      LogFormat.value(entry.type),
-      entry.endTime
-    )
-    return "SKIP", message
+    return { tag = "SKIP", fields = { state = "waiting_end_time", endTime = entry.endTime } }
   end
 
   settleReconMission(processingContext, entry, true)
-  local message = string.format(
-    "type=%s action=complete_mission endTime=%q",
-    LogFormat.value(entry.type),
-    entry.endTime
-  )
-  return "OK", message
+  return { tag = "OK", fields = { action = "complete_mission", endTime = entry.endTime } }
 end
 
 -- ============================================================================
@@ -454,41 +387,30 @@ function Recon.processQueue(processingContext)
   -- Proactively evaluate frontline-redirect sticky flag once per tick so the rewrite
   -- becomes effective on the next recon completion even if the queue is otherwise quiet.
   -- Activation log is captured here (instead of inside the helper) so processQueue owns all log emission.
-  local _, activationMessage = FrontlineRedirect.evaluate(config, reconContext)
-  if activationMessage then
-    Logger.log(constants.TAGS.RECON, LogFormat.event("scope", "frontlineRedirect", "RESUME", activationMessage))
+  local _, activationFields = FrontlineRedirect.evaluate(config, reconContext)
+  if activationFields then
+    Logger.log(constants.TAGS.RECON,
+      LogFormat.line("RESUME", LogFormat.merge({ scope = "frontlineRedirect" }, activationFields)))
   end
 
-  local infoLines = {}
-  local errorLines = {}
+  local report = LogFormat.report(constants.TAGS.RECON, "reconQueue", "Process queue")
 
   for _, entry in ipairs(reconContext.queue) do
-    local tag, message
+    local result
 
     if entry.type == ENTRY_TYPE.UAV then
-      tag, message = processUAVEntry(processingContext, entry)
+      result = processUAVEntry(processingContext, entry)
     elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
-      tag, message = processSatelliteEntry(processingContext, entry)
+      result = processSatelliteEntry(processingContext, entry)
     end
 
-    if tag and message then
-      local line = LogFormat.entry(tag, string.format("entryType=%s %s", LogFormat.value(entry.type), message))
-
-      if tag == "FAIL" or tag == "ERROR" then
-        table.insert(errorLines, line)
-      else
-        table.insert(infoLines, line)
-      end
+    if result then
+      result.fields.entryType = entry.type
+      report.add(result.tag, result.fields)
     end
   end
 
-  if #infoLines > 0 then
-    Logger.log(constants.TAGS.RECON, LogFormat.summary("scope", "reconQueue", "Process queue", infoLines))
-  end
-
-  if #errorLines > 0 then
-    Logger.error(LogFormat.summary("scope", "reconQueue", "Process queue", errorLines))
-  end
+  report.emit()
 end
 
 ---Assign UAV to track a specific target contact
@@ -505,34 +427,34 @@ function Recon.trackTarget(reconContext, units, UAVDBID, target)
 
   local UAV = findClosestUAV(units, UAVDBID, target)
   if not UAV then
-    local msg = string.format(
-      "target=%s platformDBID=%s reason=no_available_uav",
-      LogFormat.value(target.guid),
-      LogFormat.value(UAVDBID)
-    )
-    Logger.log(constants.TAGS.RECON, LogFormat.event("scope", "targetTracking", "SKIP", msg))
+    Logger.log(constants.TAGS.RECON, LogFormat.line("SKIP", {
+      scope = "targetTracking",
+      target = target.guid,
+      platformDBID = UAVDBID,
+      reason = "no_available_uav"
+    }))
     return false
   end
 
   local queueEntry = findQueueEntryByUnitGUID(reconContext.queue, UAV.guid)
   if not queueEntry then
-    local msg = string.format(
-      "uav=%s guid=%s target=%s reason=uav_not_in_recon_queue",
-      LogFormat.readable(UAV.name),
-      LogFormat.value(UAV.guid),
-      LogFormat.value(target.guid)
-    )
-    Logger.log(constants.TAGS.RECON, LogFormat.event("scope", "targetTracking", "FAIL", msg))
+    Logger.error(LogFormat.line("FAIL", {
+      scope = "targetTracking",
+      uav = UAV.name,
+      guid = UAV.guid,
+      target = target.guid,
+      reason = "uav_not_in_recon_queue"
+    }))
     return false
   end
 
   assignTrackingMission(queueEntry, target.guid)
-  local msg = string.format(
-    "uav=%s target=%s action=assign_tracking",
-    LogFormat.readable(UAV.name),
-    LogFormat.value(target.guid)
-  )
-  Logger.log(constants.TAGS.RECON, LogFormat.event("scope", "targetTracking", "OK", msg))
+  Logger.log(constants.TAGS.RECON, LogFormat.line("OK", {
+    scope = "targetTracking",
+    uav = UAV.name,
+    target = target.guid,
+    action = "assign_tracking"
+  }))
   return true
 end
 

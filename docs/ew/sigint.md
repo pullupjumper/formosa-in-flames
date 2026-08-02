@@ -126,7 +126,7 @@ flowchart TD
     AUTODETECT["autodetectable = true<br>updateAutodetectableState()"]
     UNDETECTED["handleUndetected()<br>衰減 level"]
     NOTIFY["showDetectionNotification()<br>地圖通知"]
-    LOG["Logger.log()<br>批次報告"]
+    LOG["report.emit()<br>批次報告"]
 
     START --> ARGS
     ARGS --> RESOLVE

@@ -34,7 +34,7 @@
 | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 要納入統計的前線基地名稱 |
 | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 啟用 redirect 的整體戰損門檻 |
 
-達標時會回傳 `true` 以及一段 activation log 內容，實際 log 由 [recon](recon.md) 的 `processQueue` 輸出到 `constants.TAGS.RECON`。
+達標時會回傳 `true` 以及一份 activation log 欄位表（`action`／`reason`／`attritionPct`／`thresholdPct`／`expected`／`current`），實際 log 由 [recon](recon.md) 的 `processQueue` 併上 `scope=frontlineRedirect` 後以 `LogFormat.line` 輸出到 `constants.TAGS.RECON`。
 
 ### Mapping rewrite
 
@@ -119,7 +119,7 @@ saveData.c.recon
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `evaluate(config, reconContext)` | `SBJ__Config`, `SBJ__ReconContext` | `boolean, string|nil` | 評估前線基地戰損是否達門檻；首次啟用時寫入 sticky 旗標並回傳 activation message |
+| `evaluate(config, reconContext)` | `SBJ__Config`, `SBJ__ReconContext` | `boolean, table|nil` | 評估前線基地戰損是否達門檻；首次啟用時寫入 sticky 旗標並回傳 activation 欄位表 |
 | `applyMappings(config, reconContext, strikeMappings)` | `SBJ__Config`, `SBJ__ReconContext`, `SBJ__ReconStrikeMapping[]` | `SBJ__ReconStrikeMapping[]` | 當 sticky redirect 已啟用且有規則時，回傳改寫後 mapping 副本 |
 | `rewriteMappings(strikeMappings, rules)` | `SBJ__ReconStrikeMapping[]`, `SBJ__StrikeMappingRewriteRule[]` | `SBJ__ReconStrikeMapping[]` | 深拷貝 mappings，依規則改寫符合字首與類型的 mapping 名稱 |
 

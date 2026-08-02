@@ -45,6 +45,22 @@
 
 當 `generateNextOperation` 回傳 `FOUND_NEXT`，模組會再呼叫 `OperationScheduler.hasPendingOperation` 檢查同名下一波是否已排入但尚未執行。若已存在，會輸出 `[SKIP] reason=already_pending`，防止同一個 `/N+1` 被多次偵察完成重複排入。
 
+`generateNextOperation` 的 `PARSE_ERROR` 與 `UNKNOWN_TYPE` 代表無法推導下一波（template 名稱結尾不是 `/N`，或 `operation.type` 不在 `TYPE_CONFIG` 內）。這兩種狀態下它會回傳來源 operation 的 deep copy，若直接排入就會重複已執行的波次，因此 `tryGenerateNextOperation` 不排程，改輸出 `[WARN] reason=parse_error` 或 `[WARN] reason=unknown_type`。
+
+### 日誌輸出
+
+每個 producer（`buildOperationFromMapping`、`tryGenerateNextOperation`、`buildOperationsForReconObjective`）直接回傳 `SBJ__LogResult`，`emitScheduleLog()` 只負責建立 `LogFormat.report` 並 `addAll` 後 `emit()`，中間沒有轉換層。詳見 [logFormat](../logFormat.md)。
+
+批次層級的排程快照（`endTime`、`scheduled`、`airOps`、`groundOps` 等）以 `LogFormat.fields()` 接在 report 的 action 之後，因此不會進入 entry rollup —— `total` 恆等於本次處理的 mapping 數。`NEXT_OPERATION_STATUS` 的值是 `generateNextOperation` 公開契約的一部分（大寫），寫進 log 時以 `string.lower()` 轉成 token。
+
+```text
+[DYNAMIC_OPERATIONS] dynamicOperationScheduling: Schedule dynamic operations endTime=... scheduled=1 airOps=0 groundOps=0 mostRecentTime=none nextOperationBatchTime=none | total=2 ok=1 skip=1
+  [OK]   operation=AIR/STRIKE/AB/W/1 type=air action=schedule_new
+  [SKIP] operation=GND/STRIKE/C2/N/2 type=ground reason=already_pending
+```
+
+沒有任何 mapping 產生結果時，report 會補上一筆 `[SKIP] reason=no_operations_to_schedule`，避免整批靜默。
+
 ---
 
 ## 排程流程
@@ -64,7 +80,7 @@ flowchart TD
     NEXTOP["tryGenerateNextOperation<br>生成下一波"]
     INSERT{"operations 數量 > 0?"}
     BATCH["新增 ReconTriggeredOperationBatch<br>寫入 reconTriggeredOperationBatches"]
-    LOG["輸出 DYNAMIC_OPERATIONS summary log"]
+    LOG["emitScheduleLog<br/>LogFormat.report"]
     SKIP["只記錄 skip/error，不新增批次"]
 
     START --> CONTEXT --> MAPTABLE
@@ -121,7 +137,7 @@ saveData.c.dynamicOperations.reconTriggeredOperationBatches
 | `config` | `config.c.fireSupportTaskTemplates` | `ground` operation 的 template 來源 |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.applyMappings` 讀取；本模組不直接改寫 |
-| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 summary log |
+| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 report |
 
 ---
 

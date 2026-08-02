@@ -1,4 +1,6 @@
 local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
+local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
@@ -7,64 +9,21 @@ local Concealment = require("src.modules.missileSystem.concealment")
 
 local Cycle = {}
 
----Format free-text detail for log output
----@param value any Value to format
----@return string # Quoted detail field
-local function detailField(value)
-  if value == nil then
-    return "detail=\"unknown\""
-  end
-
-  return string.format("detail=%q", tostring(value))
-end
-
----Build a structured reload cycle result
----@param tag string Result tag
----@param unitName string Unit name
----@param action string Action description
----@param reason? string Optional reason for non-OK outcomes
----@param detail? string Optional key=value detail fields
----@return SBJ__ReloadCycleResult # Structured result
-local function buildResult(tag, unitName, action, reason, detail)
-  return {
-    tag = tag,
-    unitName = unitName,
-    action = action,
-    reason = reason,
-    detail = detail
-  }
-end
-
----Append all source results into destination result list
----@param destination SBJ__ReloadCycleResult[] Destination result list
----@param source SBJ__ReloadCycleResult[]|nil Source result list
-local function appendResults(destination, source)
-  if not source then return end
-
-  for _, result in ipairs(source) do
-    table.insert(destination, result)
-  end
-end
-
 ---Append a movement command result
----@param results SBJ__ReloadCycleResult[] Result list to append to
+---Rows carry only unit-level fields; the caller adds the owning system name.
+---The failing helper supplies its own reason, so no generic one is invented here.
+---@param results SBJ__LogResult[] Result list to append to
 ---@param success boolean Whether the command succeeded
----@param errorMsg string|nil Error message when command failed
+---@param errorFields table<string, any>|nil Log fields describing the failure
 ---@param unitName string Unit name
----@param action string Action description
-local function appendCommandResult(results, success, errorMsg, unitName, action)
+---@param action string Snake_case action token
+local function appendCommandResult(results, success, errorFields, unitName, action)
   if success then
-    table.insert(results, buildResult("OK", unitName, action))
+    table.insert(results, { tag = "OK", fields = { unit = unitName, action = action } })
     return
   end
 
-  table.insert(results, buildResult(
-    "FAIL",
-    unitName,
-    action,
-    "command_failed",
-    errorMsg and detailField(errorMsg) or nil
-  ))
+  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = unitName, action = action }, errorFields) })
 end
 
 ---Check if firing unit reload conditions are met
@@ -97,7 +56,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAuto)
   local results = {}
 
@@ -115,10 +74,14 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
   -- Begin the stow countdown the first cycle we detect a redeploy trigger
   if not firingUnitCtx.stowStartTime then
     firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
-    table.insert(results, buildResult(
-      "OK", firingUnitCtx.name, "Stow countdown started",
-      nil, string.format("startedAt=%d", firingUnitCtx.stowStartTime)
-    ))
+    table.insert(results, {
+      tag = "OK",
+      fields = {
+        unit = firingUnitCtx.name,
+        action = "stow_countdown_started",
+        startedAt = firingUnitCtx.stowStartTime
+      }
+    })
     return results
   end
 
@@ -130,8 +93,8 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
 
   -- Stow complete: sufficient ammo -> hide area; low -> reload point
   if not isLowAmmo then
-    local success, errorMsg = Movement.moveToHideArea(firingUnitCtx, firingUnit)
-    appendCommandResult(results, success, errorMsg, firingUnitCtx.name, "Move to hide area")
+    local success, errorFields = Movement.moveToHideArea(firingUnitCtx, firingUnit)
+    appendCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_hide_area")
     firingUnitCtx.stowStartTime = nil
     return results
   end
@@ -141,36 +104,46 @@ local function triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAut
     local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, firingUnit.side)
 
     if resupplyUnit then
-      local unloadSuccess, unloadMsg = Concealment.moveFromHideArea(resupplyUnitCtx, resupplyUnit)
+      local unloadSuccess, unloadFields = Concealment.moveFromHideArea(resupplyUnitCtx, resupplyUnit)
       if not unloadSuccess then
-        table.insert(results, buildResult(
-          "WARN",
-          resupplyUnitCtx.name,
-          "Unload from hide area",
-          "unload_failed",
-          unloadMsg and detailField(unloadMsg) or nil
-        ))
+        table.insert(results, {
+          tag = "WARN",
+          fields = LogFormat.merge({
+            unit = resupplyUnitCtx.name,
+            action = "unload_from_hide_area"
+          }, unloadFields)
+        })
       end
 
-      local success, errorMsg = Movement.moveToReloadPoint(
+      local success, errorFields = Movement.moveToReloadPoint(
         resupplyUnitCtx,
         resupplyUnit,
         resupplyUnitCtx.operationalArea.SHRL
       )
-      appendCommandResult(results, success, errorMsg, resupplyUnitCtx.name, "Move resupply to reload point")
+      appendCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_resupply_to_reload_point")
     else
-      table.insert(results, buildResult(
-        "WARN", resupplyUnitCtx.name, "Move resupply to reload point", "unit_not_found"
-      ))
+      table.insert(results, {
+        tag = "WARN",
+        fields = {
+          unit = resupplyUnitCtx.name,
+          action = "move_resupply_to_reload_point",
+          reason = "unit_not_found"
+        }
+      })
     end
   else
-    table.insert(results, buildResult(
-      "WARN", firingUnitCtx.resupplyUnit or "unknown", "Move resupply to reload point", "context_not_found"
-    ))
+    table.insert(results, {
+      tag = "WARN",
+      fields = {
+        unit = firingUnitCtx.resupplyUnit or "unknown",
+        action = "move_resupply_to_reload_point",
+        reason = "context_not_found"
+      }
+    })
   end
 
-  local success, errorMsg = Movement.moveToReloadPoint(firingUnitCtx, firingUnit)
-  appendCommandResult(results, success, errorMsg, firingUnitCtx.name, "Move firing unit to reload point")
+  local success, errorFields = Movement.moveToReloadPoint(firingUnitCtx, firingUnit)
+  appendCommandResult(results, success, errorFields, firingUnitCtx.name, "move_firing_unit_to_reload_point")
   firingUnitCtx.stowStartTime = nil
   return results
 end
@@ -180,7 +153,7 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function completeFiringUnitReload(systemCtx, firingUnitCtx, firingUnit, isAuto)
   local results = {}
 
@@ -203,35 +176,36 @@ local function completeFiringUnitReload(systemCtx, firingUnitCtx, firingUnit, is
   local resupplyUnitCtx = systemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
   local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, firingUnit.side)
   local loaded = Ammo.reloadFiringUnit(firingUnitCtx, resupplyUnitCtx, firingUnitCtx.weaponDBID, firingUnit.side)
-  table.insert(results, buildResult(
-    "OK",
-    firingUnitCtx.name,
-    "Missile reload finished",
-    nil,
-    string.format("loaded=%d", loaded)
-  ))
+  table.insert(results, {
+    tag = "OK",
+    fields = {
+      unit = firingUnitCtx.name,
+      action = "missile_reload_finished",
+      loaded = loaded
+    }
+  })
 
   if isAuto then
     if resupplyUnit and resupplyUnitCtx.wpnCurrent > 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
-      local hideSuccess, hideMsg = Concealment.hideUnit(resupplyUnitCtx, resupplyUnit)
+      local hideSuccess, hideFields = Concealment.hideUnit(resupplyUnitCtx, resupplyUnit)
       if not hideSuccess then
-        table.insert(results, buildResult(
-          "WARN",
-          resupplyUnitCtx.name,
-          "Hide resupply unit",
-          "hide_failed",
-          hideMsg and detailField(hideMsg) or nil
-        ))
+        table.insert(results, {
+          tag = "WARN",
+          fields = LogFormat.merge({
+            unit = resupplyUnitCtx.name,
+            action = "hide_resupply_unit"
+          }, hideFields)
+        })
       end
     end
 
-    local success, errorMsg
+    local success, errorFields
     if systemCtx.name == constants.MISSILE_SYSTEM_TYPES.SAM then
-      success, errorMsg = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
-      appendCommandResult(results, success, errorMsg, firingUnitCtx.name, "Move to firing point")
+      success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
+      appendCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_firing_point")
     else
-      success, errorMsg = Movement.moveToHideArea(firingUnitCtx, firingUnit)
-      appendCommandResult(results, success, errorMsg, firingUnitCtx.name, "Move to hide area")
+      success, errorFields = Movement.moveToHideArea(firingUnitCtx, firingUnit)
+      appendCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_hide_area")
     end
   end
 
@@ -243,10 +217,10 @@ end
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto)
   local results = triggerReloadMovement(systemCtx, firingUnitCtx, firingUnit, isAuto)
-  appendResults(results, completeFiringUnitReload(systemCtx, firingUnitCtx, firingUnit, isAuto))
+  Utils.insertList(results, completeFiringUnitReload(systemCtx, firingUnitCtx, firingUnit, isAuto))
   return results
 end
 
@@ -254,7 +228,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function triggerResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
   local results = {}
 
@@ -263,8 +237,8 @@ local function triggerResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
   end
 
   if resupplyUnitCtx.wpnCurrent == 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
-    local success, errorMsg = Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
-    appendCommandResult(results, success, errorMsg, resupplyUnitCtx.name, "Move to ammo holding area")
+    local success, errorFields = Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
+    appendCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_to_ammo_holding_area")
   end
 
   return results
@@ -275,7 +249,7 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function completeResupplyUnitTransload(systemCtx, resupplyUnitCtx, resupplyUnit, isAuto)
   local results = {}
 
@@ -296,9 +270,14 @@ local function completeResupplyUnitTransload(systemCtx, resupplyUnitCtx, resuppl
 
   local ammoDepotCtx = systemCtx.ammunitions[resupplyUnitCtx.ammunition]
   if not ammoDepotCtx then
-    table.insert(results, buildResult(
-      "FAIL", resupplyUnitCtx.name, "Ammo transload finished", "ammo_context_not_found"
-    ))
+    table.insert(results, {
+      tag = "FAIL",
+      fields = {
+        unit = resupplyUnitCtx.name,
+        action = "ammo_transload_finished",
+        reason = "ammo_context_not_found"
+      }
+    })
     return results
   end
 
@@ -306,14 +285,20 @@ local function completeResupplyUnitTransload(systemCtx, resupplyUnitCtx, resuppl
   local beforeDepot = ammoDepotCtx.wpnCurrent
   Ammo.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
   local transferred = resupplyUnitCtx.wpnCurrent - beforeResupply
-  table.insert(results, buildResult(
-    "OK", resupplyUnitCtx.name, "Ammo transload finished", nil,
-    string.format("transferred=%d depotBefore=%d depotAfter=%d", transferred, beforeDepot, ammoDepotCtx.wpnCurrent)
-  ))
+  table.insert(results, {
+    tag = "OK",
+    fields = {
+      unit = resupplyUnitCtx.name,
+      action = "ammo_transload_finished",
+      transferred = transferred,
+      depotBefore = beforeDepot,
+      depotAfter = ammoDepotCtx.wpnCurrent
+    }
+  })
 
   if isAuto then
-    local success, errorMsg = Movement.moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
-    appendCommandResult(results, success, errorMsg, resupplyUnitCtx.name, "Move resupply to reload point")
+    local success, errorFields = Movement.moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
+    appendCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_resupply_to_reload_point")
   end
 
   return results
@@ -324,10 +309,10 @@ end
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@param isAuto boolean Whether in automatic mode
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function handleResupplyUnitReloadCycle(systemCtx, resupplyUnitCtx, resupplyUnit, isAuto)
   local results = triggerResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
-  appendResults(results, completeResupplyUnitTransload(systemCtx, resupplyUnitCtx, resupplyUnit, isAuto))
+  Utils.insertList(results, completeResupplyUnitTransload(systemCtx, resupplyUnitCtx, resupplyUnit, isAuto))
   return results
 end
 
@@ -335,14 +320,14 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function processFiringUnits(systemCtx, isAuto, sideName)
   local results = {}
   for _, firingUnitCtx in pairs(systemCtx.firingUnits) do
     local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
 
     if firingUnit then
-      appendResults(results, handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto))
+      Utils.insertList(results, handleFiringUnitReloadCycle(systemCtx, firingUnitCtx, firingUnit, isAuto))
     end
   end
   return results
@@ -352,14 +337,14 @@ end
 ---@param msContext SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnits(msContext, isAuto, sideName)
   local results = {}
   for _, resupplyUnitCtx in pairs(msContext.resupplyUnits) do
     local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
 
     if resupplyUnit then
-      appendResults(results, handleResupplyUnitReloadCycle(msContext, resupplyUnitCtx, resupplyUnit, isAuto))
+      Utils.insertList(results, handleResupplyUnitReloadCycle(msContext, resupplyUnitCtx, resupplyUnit, isAuto))
     end
   end
   return results
@@ -369,15 +354,11 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
----@return SBJ__ReloadCycleResult[] results Collected structured results
+---@return SBJ__LogResult[] results Collected structured results
 function Cycle.process(systemCtx, isAuto, sideName)
-  local firingResults = processFiringUnits(systemCtx, isAuto, sideName)
-  local resupplyResults = processResupplyUnits(systemCtx, isAuto, sideName)
-
-  local allResults = {}
-  for _, r in ipairs(firingResults) do table.insert(allResults, r) end
-  for _, r in ipairs(resupplyResults) do table.insert(allResults, r) end
-  return allResults
+  local results = processFiringUnits(systemCtx, isAuto, sideName)
+  Utils.insertList(results, processResupplyUnits(systemCtx, isAuto, sideName))
+  return results
 end
 
 return Cycle

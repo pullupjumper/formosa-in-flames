@@ -178,8 +178,10 @@ describe("MissileSystem Triggers", function()
       assert.stub(errorStub).was.called(1)
       local message = errorStub.calls[1].vals[1]
       assert.is_not_nil(string.find(message, "reason=set_event_trigger_failed", 1, true))
-      assert.is_not_nil(string.find(message, "area=\"OPAREA-1\"", 1, true))
-      assert.stub(logStub).was.called(1)
+      assert.is_not_nil(string.find(message, "area=OPAREA-1", 1, true))
+      -- Two info reports: the cleanup report, plus the init report's non-failing rows,
+      -- which the per-row routing keeps out of the error sink.
+      assert.stub(logStub).was.called(2)
     end)
   end)
 end)

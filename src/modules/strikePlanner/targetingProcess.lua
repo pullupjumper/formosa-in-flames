@@ -212,7 +212,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
 
   if not contacts then
-    Logger.warn(LogFormat.event("side", sideName, "WARN", "reason=contacts_unavailable"))
+    Logger.warn(LogFormat.line("WARN", { side = sideName, reason = "contacts_unavailable" }))
     saveData.c.targetlist = {}
     return
   end
@@ -255,8 +255,12 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   end
 
   saveData.c.targetlist = targetlist
-  Logger.log(constants.TAGS.TARGETING_PROCESS, LogFormat.event(
-    "side", sideName, "OK", string.format("action=scan_targets contacts=%d targets=%d", #contacts, #targetlist)))
+  Logger.log(constants.TAGS.TARGETING_PROCESS, LogFormat.line("OK", {
+    side = sideName,
+    action = "scan_targets",
+    contacts = #contacts,
+    targets = #targetlist
+  }))
 end
 
 -- ============================================================================
@@ -605,7 +609,7 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
         Utils.insertList(strikeTargets, targets)
       end
     else
-      Logger.warn(LogFormat.event("filter", filterName, "WARN", "reason=unknown_target_filter"))
+      Logger.warn(LogFormat.line("WARN", { filter = filterName, reason = "unknown_target_filter" }))
     end
   end
 

@@ -13,104 +13,6 @@ local Context = require("src.modules.missileSystem.context")
 
 local MissileSystem = {}
 
----Format free-text detail for log output
----@param value any Value to format
----@return string # Quoted detail field
-local function detailField(value)
-  return string.format("detail=%q", LogFormat.readable(value))
-end
-
----Format reload cycle result fields for log output
----@param result SBJ__ReloadCycleResult Result from cycle processing
----@param system string Missile system name
----@return string # Key=value log message
-local function formatCycleResult(result, system)
-  local message = string.format(
-    "system=%s unit=%q action=%s",
-    LogFormat.value(system),
-    LogFormat.readable(result.unitName),
-    LogFormat.token(result.action)
-  )
-
-  if result.reason then
-    message = message .. " reason=" .. LogFormat.token(result.reason)
-  end
-
-  if result.detail then
-    message = message .. " " .. result.detail
-  end
-
-  return message
-end
-
----Format supply asset destruction result for log output
----@param result SBJ__SupplyAssetDestructionResult Destruction result
----@return string # Key=value log message
-local function formatSupplyAssetDestructionResult(result)
-  return string.format(
-    "action=supply_asset_destroyed role=%s unit=%q context=%q ammoBefore=%d ammoAfter=%d delta=%d",
-    LogFormat.value(result.role),
-    LogFormat.readable(result.unitName),
-    LogFormat.readable(result.contextName),
-    result.ammoBefore,
-    result.ammoAfter,
-    result.delta
-  )
-end
-
----Build a structured UnitEntersArea functional result
----@param tag string Result tag
----@param system string Missile system name
----@param unitName string Unit name
----@param positionType string Position type token
----@param action string Functional action
----@param reason? string Reason for non-OK outcomes
----@param detail? string Additional key=value detail fields
----@return SBJ__PositionEventResult # Structured result
-local function buildPositionEventResult(tag, system, unitName, positionType, action, reason, detail)
-  return {
-    tag = tag,
-    system = system,
-    unitName = unitName,
-    positionType = positionType,
-    action = action,
-    reason = reason,
-    detail = detail
-  }
-end
-
----Append one position-event result when present
----@param results SBJ__PositionEventResult[] Result list
----@param result SBJ__PositionEventResult|nil Result to append
-local function appendPositionEventResult(results, result)
-  if result then
-    table.insert(results, result)
-  end
-end
-
----Format position-event result fields for log output
----@param result SBJ__PositionEventResult Result from UnitEntersArea processing
----@return string # Key=value log message
-local function formatPositionEventResult(result)
-  local message = string.format(
-    "system=%s unit=%q position=%s action=%s",
-    LogFormat.value(result.system),
-    LogFormat.readable(result.unitName),
-    LogFormat.value(result.positionType),
-    LogFormat.value(result.action)
-  )
-
-  if result.reason then
-    message = message .. " reason=" .. LogFormat.token(result.reason)
-  end
-
-  if result.detail then
-    message = message .. " " .. result.detail
-  end
-
-  return message
-end
-
 ---Extract position type token from UnitEntersArea trigger description
 ---@param event CMO__Event|nil Scenario event object
 ---@return string|nil # Position type token (FP/AHA/HA/RL)
@@ -155,13 +57,13 @@ end
 ---@param firingUnit CMO__Unit Firing unit group
 ---@return boolean success Whether the move was successful
 function MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
-  local success, errorMsg = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
-  if not success and errorMsg then
-    Logger.error(LogFormat.event("module", constants.TAGS.MISSILE_SYSTEM, "FAIL", string.format(
-      "action=move_to_firing_point unit=%q reason=movement_failed detail=%q",
-      LogFormat.readable(firingUnitCtx and firingUnitCtx.name or firingUnit and firingUnit.name),
-      LogFormat.readable(errorMsg)
-    )))
+  local success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
+  if not success and errorFields then
+    Logger.error(LogFormat.line("FAIL", LogFormat.merge({
+      module = constants.TAGS.MISSILE_SYSTEM,
+      action = "move_to_firing_point",
+      unit = firingUnitCtx and firingUnitCtx.name or firingUnit and firingUnit.name
+    }, errorFields)))
   end
   return success
 end
@@ -170,7 +72,7 @@ end
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
 ---@param unit CMO__Unit Firing unit to unload
 ---@return boolean success Whether unload was performed
----@return string? errorMsg Error message if failed
+---@return table<string, any>? errorFields Log fields describing the failure
 function MissileSystem.moveFromHideArea(unitCtx, unit)
   return Concealment.moveFromHideArea(unitCtx, unit)
 end
@@ -197,47 +99,19 @@ end
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
 function MissileSystem.checkMissileSystemState(groundCtx, isAuto, sideName)
-  local allResults = {}
-  local hasFailure = false
+  local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     local systemCtx = groundCtx[missileSystem]
     if systemCtx and systemCtx.enabled then
-      local systemResults = Cycle.process(systemCtx, isAuto, sideName)
-      for _, result in ipairs(systemResults) do
-        table.insert(allResults, {
-          system = missileSystem,
-          tag = result.tag,
-          action = result.action,
-          unitName = result.unitName,
-          reason = result.reason,
-          detail = result.detail
-        })
-        if result.tag == "FAIL" or result.tag == "ERROR" then
-          hasFailure = true
-        end
+      for _, result in ipairs(Cycle.process(systemCtx, isAuto, sideName)) do
+        result.fields.system = missileSystem
+        report.add(result.tag, result.fields)
       end
     end
   end
 
-  if #allResults > 0 then
-    local lines = {}
-    for _, r in ipairs(allResults) do
-      table.insert(lines, LogFormat.entry(r.tag, formatCycleResult(r, r.system)))
-    end
-    local summary = LogFormat.summary(
-      "side",
-      sideName,
-      string.format("Reload cycle mode=%s", isAuto and "auto" or "manual"),
-      lines
-    )
-
-    if hasFailure then
-      Logger.error(summary)
-    else
-      Logger.log(constants.TAGS.MISSILE_SYSTEM, summary)
-    end
-  end
+  report.emit({ mode = isAuto and "auto" or "manual" })
 end
 
 ---Handle logic when resupply unit is destroyed
@@ -249,12 +123,16 @@ function MissileSystem.handleSupplyAssetDestruction(unit, systemCtx)
   local success, result = Context.handleSupplyAssetDestruction(unit, systemCtx)
 
   if success and result then
-    Logger.log(constants.TAGS.MISSILE_SYSTEM, LogFormat.event(
-      "system",
-      result.system,
-      result.tag,
-      formatSupplyAssetDestructionResult(result)
-    ))
+    Logger.log(constants.TAGS.MISSILE_SYSTEM, LogFormat.line(result.tag, {
+      system = result.system,
+      action = "supply_asset_destroyed",
+      role = result.role,
+      unit = result.unitName,
+      context = result.contextName,
+      ammoBefore = result.ammoBefore,
+      ammoAfter = result.ammoAfter,
+      delta = result.delta
+    }))
   end
 
   return success, result
@@ -312,24 +190,22 @@ local function forEachEnabledSystem(groundCtx, callback)
 end
 
 ---Handle entering firing point logic for a single missile system context
+---Position handlers share one signature so they can be dispatched from a table;
+---this one has no behavior switches of its own.
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@return SBJ__PositionEventResult|nil result Functional result when state changed
-local function handleFiringPoint(systemName, systemCtx, unit, isAuto)
+---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration, unused here
+---@return SBJ__LogResult|nil result Deferred log row when state changed
+local function handleFiringPoint(systemName, systemCtx, unit, isAuto, behavior)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if Movement.isRepositioning(firingUnitCtx, isAuto) then
     Movement.setWCSToFree(firingUnitCtx, unit, isAuto)
-    return buildPositionEventResult(
-      "OK",
-      systemName,
-      unit.name,
-      constants.POSITION_TYPES.FIRING_POINT,
-      "firing_ready",
-      nil,
-      "state=STATIC wcs=FREE"
-    )
+    return {
+      tag = "OK",
+      fields = { system = systemName, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
+    }
   end
 
   return nil
@@ -341,7 +217,7 @@ end
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
----@return SBJ__PositionEventResult|nil result Functional result when hide flow ran
+---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
 local function handleHideArea(systemName, systemCtx, unit, isAuto, behavior)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if not firingUnitCtx then
@@ -350,28 +226,20 @@ local function handleHideArea(systemName, systemCtx, unit, isAuto, behavior)
 
   if behavior.hideOnEnterHA and not Ammo.isLowAmmo(unit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
     Movement.setStateToHide(firingUnitCtx, unit, isAuto)
-    local success, errorMsg = Concealment.hideUnit(firingUnitCtx, unit)
+    local success, errorFields = Concealment.hideUnit(firingUnitCtx, unit)
     if success == false then
-      return buildPositionEventResult(
-        "WARN",
-        systemName,
-        unit.name,
-        constants.POSITION_TYPES.HIDE_AREA,
-        "concealment_failed",
-        "hide_failed",
-        errorMsg and string.format("state=HIDE %s", detailField(errorMsg)) or "state=HIDE"
-      )
+      return {
+        tag = "WARN",
+        fields = LogFormat.merge({
+          system = systemName,
+          unit = unit.name,
+          action = "concealment_failed",
+          state = "HIDE"
+        }, errorFields)
+      }
     end
 
-    return buildPositionEventResult(
-      "OK",
-      systemName,
-      unit.name,
-      constants.POSITION_TYPES.HIDE_AREA,
-      "concealed",
-      nil,
-      "state=HIDE"
-    )
+    return { tag = "OK", fields = { system = systemName, unit = unit.name, action = "concealed", state = "HIDE" } }
   end
 
   return nil
@@ -383,7 +251,7 @@ end
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
----@return SBJ__PositionEventResult|nil result Functional result when fallback performed a visible action
+---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
 local function handleReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, behavior)
   -- Pass false instead of isAuto so a firing unit drifting through RL during repositioning is not halted.
   Movement.setStateToStatic(systemCtx, unit, false)
@@ -403,31 +271,29 @@ local function handleReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, b
 
   local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, behavior.firingUnitLookupSide)
   if firingUnit and not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
-    local success, errorMsg = Concealment.hideUnit(resupplyUnitCtx, unit)
+    local success, errorFields = Concealment.hideUnit(resupplyUnitCtx, unit)
     if success == false then
-      return buildPositionEventResult(
-        "WARN",
-        systemName,
-        unit.name,
-        constants.POSITION_TYPES.RELOAD_POINT,
-        "resupply_concealment_failed",
-        "hide_failed",
-        string.format("pairedFiringUnit=%q %s",
-          LogFormat.readable(firingUnitCtx.name),
-          detailField(errorMsg or "hide_failed")
-        )
-      )
+      return {
+        tag = "WARN",
+        fields = LogFormat.merge({
+          system = systemName,
+          unit = unit.name,
+          action = "resupply_concealment_failed",
+          pairedFiringUnit = firingUnitCtx.name
+        }, errorFields)
+      }
     end
 
-    return buildPositionEventResult(
-      "OK",
-      systemName,
-      unit.name,
-      constants.POSITION_TYPES.RELOAD_POINT,
-      "resupply_concealed",
-      nil,
-      string.format("pairedFiringUnit=%q ammoStatus=sufficient", LogFormat.readable(firingUnitCtx.name))
-    )
+    return {
+      tag = "OK",
+      fields = {
+        system = systemName,
+        unit = unit.name,
+        action = "resupply_concealed",
+        pairedFiringUnit = firingUnitCtx.name,
+        ammoStatus = "sufficient"
+      }
+    }
   end
 
   return nil
@@ -439,7 +305,7 @@ end
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
----@return SBJ__PositionEventResult|nil result Functional result when reload flow changed state
+---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
 local function handleReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
   local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
 
@@ -448,71 +314,86 @@ local function handleReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
         GameApi.ScenEdit_GetUnit(firingUnitCtx.name, unit.side)
     if firingUnit then
       Movement.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
-      return buildPositionEventResult(
-        "OK",
-        systemName,
-        firingUnitCtx.name,
-        constants.POSITION_TYPES.RELOAD_POINT,
-        "reload_started",
-        nil,
-        string.format("triggerUnit=%q state=RELOAD startedAt=%s",
-          LogFormat.readable(unit.name),
-          LogFormat.value(firingUnitCtx.reloadStartTime))
-      )
+      return {
+        tag = "OK",
+        fields = {
+          system = systemName,
+          unit = firingUnitCtx.name,
+          action = "reload_started",
+          triggerUnit = unit.name,
+          state = "RELOAD",
+          startedAt = firingUnitCtx.reloadStartTime
+        }
+      }
     end
 
-    return buildPositionEventResult(
-      "WARN",
-      systemName,
-      firingUnitCtx.name,
-      constants.POSITION_TYPES.RELOAD_POINT,
-      "reload_not_started",
-      "firing_unit_not_found",
-      string.format("triggerUnit=%q", LogFormat.readable(unit.name))
-    )
+    return {
+      tag = "WARN",
+      fields = {
+        system = systemName,
+        unit = firingUnitCtx.name,
+        action = "reload_not_started",
+        triggerUnit = unit.name,
+        reason = "firing_unit_not_found"
+      }
+    }
   end
 
   return handleReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, behavior)
 end
 
 ---Handle entering ammo holding area logic for a single missile system context
+---Position handlers share one signature so they can be dispatched from a table;
+---this one has no behavior switches of its own.
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@return SBJ__PositionEventResult|nil result Functional result when transload flow changed state
-local function handleAmmoHoldingArea(systemName, systemCtx, unit, isAuto)
+---@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration, unused here
+---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
+local function handleAmmoHoldingArea(systemName, systemCtx, unit, isAuto, behavior)
   local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
 
   if resupplyUnitCtx and hasMet and resupplyUnit then
     Movement.setReloadStartTime(resupplyUnit, unit, isAuto)
-    return buildPositionEventResult(
-      "OK",
-      systemName,
-      resupplyUnit.name,
-      constants.POSITION_TYPES.AMMO_HOLDING_AREA,
-      "transload_started",
-      nil,
-      string.format("state=RELOAD startedAt=%s", LogFormat.value(resupplyUnit.reloadStartTime))
-    )
+    return {
+      tag = "OK",
+      fields = {
+        system = systemName,
+        unit = resupplyUnit.name,
+        action = "transload_started",
+        state = "RELOAD",
+        startedAt = resupplyUnit.reloadStartTime
+      }
+    }
   end
 
   Movement.setStateToStatic(systemCtx, unit, isAuto)
   return nil
 end
 
+---Position handlers keyed by the token extracted from the event trigger.
+---Every entry takes the same arguments so the dispatch site never has to know
+---which of them a given handler actually uses.
+---@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, isAuto: boolean, behavior: SBJ__MoveToPositionBehavior): SBJ__LogResult|nil>
+local POSITION_HANDLERS = {
+  [constants.POSITION_TYPES.FIRING_POINT]      = handleFiringPoint,
+  [constants.POSITION_TYPES.HIDE_AREA]         = handleHideArea,
+  [constants.POSITION_TYPES.RELOAD_POINT]      = handleReloadPoint,
+  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = handleAmmoHoldingArea,
+}
+
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
 ---@param opts SBJ__MoveToPositionEventOpts Unit-enter-area event handling options
 function MissileSystem.handleMoveToPositionEvent(opts)
   local unit = opts.unit
-  local groundCtx = opts.groundCtx
   local isAuto = opts.isAuto
   local behavior = resolveBehavior(opts.behavior, unit.side)
   local positionType = extractPositionType(opts.event)
-  local results = {}
+  local handler = POSITION_HANDLERS[positionType]
 
-  if not positionType then
+  if not handler then
     return
   end
 
@@ -520,47 +401,18 @@ function MissileSystem.handleMoveToPositionEvent(opts)
     dropUnitContact(unit, opts.contacts)
   end
 
-  if positionType == constants.POSITION_TYPES.FIRING_POINT then
-    forEachEnabledSystem(groundCtx, function(systemCtx, systemName)
-      appendPositionEventResult(results, handleFiringPoint(systemName, systemCtx, unit, isAuto))
-    end)
-  elseif positionType == constants.POSITION_TYPES.HIDE_AREA then
-    forEachEnabledSystem(groundCtx, function(systemCtx, systemName)
-      appendPositionEventResult(results, handleHideArea(systemName, systemCtx, unit, isAuto, behavior))
-    end)
-  elseif positionType == constants.POSITION_TYPES.RELOAD_POINT then
-    forEachEnabledSystem(groundCtx, function(systemCtx, systemName)
-      appendPositionEventResult(results, handleReloadPoint(systemName, systemCtx, unit, isAuto, behavior))
-    end)
-  elseif positionType == constants.POSITION_TYPES.AMMO_HOLDING_AREA then
-    forEachEnabledSystem(groundCtx, function(systemCtx, systemName)
-      appendPositionEventResult(results, handleAmmoHoldingArea(systemName, systemCtx, unit, isAuto))
-    end)
-  end
+  local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
-  if #results > 0 then
-    local entries = {}
-    local hasWarning = false
-    for _, result in ipairs(results) do
-      table.insert(entries, LogFormat.entry(result.tag, formatPositionEventResult(result)))
-      if result.tag == "WARN" or result.tag == "FAIL" or result.tag == "ERROR" then
-        hasWarning = true
-      end
+  forEachEnabledSystem(opts.groundCtx, function(systemCtx, systemName)
+    local row = handler(systemName, systemCtx, unit, isAuto, behavior)
+    if row then
+      report.add(row.tag, row.fields)
     end
+  end)
 
-    local summary = LogFormat.summary(
-      "side",
-      unit.side,
-      string.format("Position event mode=%s", isAuto and "auto" or "manual"),
-      entries
-    )
-
-    if hasWarning then
-      Logger.warn(summary)
-    else
-      Logger.log(constants.TAGS.MISSILE_SYSTEM, summary)
-    end
-  end
+  -- position is derived from the event trigger, so it describes the whole batch
+  -- rather than any single row.
+  report.emit({ mode = isAuto and "auto" or "manual", position = positionType })
 end
 
 return MissileSystem

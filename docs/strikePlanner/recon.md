@@ -93,7 +93,7 @@ flowchart TD
     SAT["processSatelliteEntry<br>時間到即完成"]
     SUCCESS{"偵察成功?"}
     SCHED["OperationScheduler.schedule<br>建立 reconTriggeredOperationBatches"]
-    LOG["輸出 RECON summary log"]
+    LOG["report.emit()<br>輸出 RECON report"]
 
     TICK --> REDIRECT --> LOOP --> ENTRY
     ENTRY -->|UAV| UAV --> SUCCESS

@@ -1,5 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
@@ -361,7 +360,7 @@ end
 ---@param sideName string Owner side name
 ---@return integer created Number of triggers created
 ---@return integer failed Number of triggers failed
----@return string[] failMessages Failure detail messages
+---@return SBJ__LogResult[] failResults Failure detail rows
 local function createPositionTriggers(operationalArea, positionTypes, enemySide, sideName)
   local created, failed = 0, 0
   local failMessages = {}
@@ -370,24 +369,27 @@ local function createPositionTriggers(operationalArea, positionTypes, enemySide,
     for index, position in ipairs(operationalArea[positionType]) do
       ---@cast position SBJ__Position
       local success, reason = addTriggerToEvent({
-            positionType = positionType,
-            position = position,
-            index = index,
-            operationalArea = operationalArea,
-            enemySide = enemySide,
-            sideName = sideName
-          })
+        positionType = positionType,
+        position = position,
+        index = index,
+        operationalArea = operationalArea,
+        enemySide = enemySide,
+        sideName = sideName
+      })
       if success then
         created = created + 1
       else
         failed = failed + 1
-        table.insert(failMessages, LogFormat.entry("FAIL", string.format(
-          "area=%q kind=trigger position=%s index=%d reason=%s",
-          LogFormat.readable(operationalArea.name),
-          LogFormat.value(positionType),
-          index,
-          LogFormat.value(reason or "add_trigger_failed")
-        )))
+        table.insert(failMessages, {
+          tag = "FAIL",
+          fields = {
+            area = operationalArea.name,
+            kind = "trigger",
+            position = positionType,
+            index = index,
+            reason = reason or "add_trigger_failed"
+          }
+        })
       end
     end
   end
@@ -411,84 +413,76 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
 
   for _, operationalArea in ipairs(operationalAreas) do
     local created, failed, failMessages = createPositionTriggers(
-      operationalArea, positionTypes, sideCfg.enemySide, sideName)
+      operationalArea,
+      positionTypes,
+      sideCfg.enemySide,
+      sideName
+    )
     totalCreated = totalCreated + created
     totalFailed = totalFailed + failed
-    table.insert(initLogEntries, LogFormat.entry(failed > 0 and "FAIL" or "OK", string.format(
-      "area=%q kind=trigger created=%d expected=%d",
-      LogFormat.readable(operationalArea.name),
-      created,
-      created + failed
-    )))
+    table.insert(initLogEntries, {
+      tag = failed > 0 and "FAIL" or "OK",
+      fields = { area = operationalArea.name, kind = "trigger", created = created, expected = created + failed }
+    })
     for _, msg in ipairs(failMessages) do
       table.insert(initLogEntries, msg)
     end
 
     if addCustomEnvironmentZone(operationalArea, sideName) then
       maskCreated = maskCreated + 1
-      table.insert(initLogEntries, LogFormat.entry("OK", string.format(
-        "area=%q kind=mask created=1 expected=1",
-        LogFormat.readable(operationalArea.name)
-      )))
+      table.insert(initLogEntries, {
+        tag = "OK",
+        fields = { area = operationalArea.name, kind = "mask", created = 1, expected = 1 }
+      })
     else
       maskFailed = maskFailed + 1
-      table.insert(initLogEntries, LogFormat.entry("FAIL", string.format(
-        "area=%q kind=mask created=0 expected=1 reason=add_zone_failed",
-        LogFormat.readable(operationalArea.name)
-      )))
+      table.insert(initLogEntries, {
+        tag = "FAIL",
+        fields = { area = operationalArea.name, kind = "mask", created = 0, expected = 1, reason = "add_zone_failed" }
+      })
     end
 
     if addBunkers(operationalArea, sideName) then
       bunkersCreated = bunkersCreated + 1
-      table.insert(initLogEntries, LogFormat.entry("OK", string.format(
-        "area=%q kind=bunker created=1 expected=1",
-        LogFormat.readable(operationalArea.name)
-      )))
+      table.insert(initLogEntries, {
+        tag = "OK",
+        fields = { area = operationalArea.name, kind = "bunker", created = 1, expected = 1 }
+      })
     else
       bunkersFailed = bunkersFailed + 1
-      table.insert(initLogEntries, LogFormat.entry("FAIL", string.format(
-        "area=%q kind=bunker created=0 expected=1 reason=add_bunker_failed",
-        LogFormat.readable(operationalArea.name)
-      )))
+      table.insert(initLogEntries, {
+        tag = "FAIL",
+        fields = { area = operationalArea.name, kind = "bunker", created = 0, expected = 1, reason = "add_bunker_failed" }
+      })
     end
   end
 
-  local cleanupLogEntries = {
-    LogFormat.entry(triggerCleanupSuccessful and "OK" or "FAIL", string.format(
-      "kind=trigger removed=%d reason=%s",
-      removedTriggerCount,
-      triggerCleanupSuccessful and "none" or "cleanup_incomplete"
-    )),
-    LogFormat.entry(zoneCleanupSuccessful and "OK" or "FAIL", string.format(
-      "kind=zone removed=%d reason=%s",
-      removedZoneCount,
-      zoneCleanupSuccessful and "none" or "cleanup_incomplete"
-    ))
-  }
-  local cleanupSummary = LogFormat.summary("side", sideName, "Cleanup missile system triggers/zones", cleanupLogEntries)
-  if triggerCleanupSuccessful and zoneCleanupSuccessful then
-    Logger.log(constants.TAGS.MISSILE_SYSTEM, cleanupSummary)
-  else
-    Logger.error(cleanupSummary)
-  end
+  -- Both rows carry their own tag, so the report routes an incomplete cleanup to
+  -- the error sink without a separate module-wide flag.
+  local cleanupReport = LogFormat.report(
+    constants.TAGS.MISSILE_SYSTEM,
+    "side=" .. sideName,
+    "Cleanup missile system triggers/zones"
+  )
+  cleanupReport.add(triggerCleanupSuccessful and "OK" or "FAIL", {
+    kind = "trigger",
+    removed = removedTriggerCount,
+    reason = triggerCleanupSuccessful and "none" or "cleanup_incomplete"
+  })
+  cleanupReport.add(zoneCleanupSuccessful and "OK" or "FAIL", {
+    kind = "zone",
+    removed = removedZoneCount,
+    reason = zoneCleanupSuccessful and "none" or "cleanup_incomplete"
+  })
+  cleanupReport.emit()
 
-  if #initLogEntries > 0 then
-    local initSummary = LogFormat.summary("side", sideName, string.format(
-      "Initialize missile system triggers=%d/%d masks=%d/%d bunkers=%d/%d",
-      totalCreated,
-      totalCreated + totalFailed,
-      maskCreated,
-      maskCreated + maskFailed,
-      bunkersCreated,
-      bunkersCreated + bunkersFailed
-    ), initLogEntries)
-
-    if totalFailed == 0 and maskFailed == 0 and bunkersFailed == 0 then
-      Logger.log(constants.TAGS.MISSILE_SYSTEM, initSummary)
-    else
-      Logger.error(initSummary)
-    end
-  end
+  local initReport = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Initialize missile system")
+  initReport.addAll(initLogEntries)
+  initReport.emit({
+    triggers = totalCreated .. "/" .. (totalCreated + totalFailed),
+    masks = maskCreated .. "/" .. (maskCreated + maskFailed),
+    bunkers = bunkersCreated .. "/" .. (bunkersCreated + bunkersFailed)
+  })
 end
 
 return Triggers

@@ -10,6 +10,8 @@ describe("OperationScheduler", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local errorStub
 
   ---Track and register test stub for automatic cleanup.
   ---@param s any
@@ -22,6 +24,7 @@ describe("OperationScheduler", function()
   before_each(function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -141,6 +144,18 @@ describe("OperationScheduler", function()
     return false
   end
 
+  ---Find a Logger.error call matching the given message pattern.
+  ---@param pattern string
+  ---@return boolean
+  local function hasErrorCall(pattern)
+    for _, call in ipairs(errorStub.calls) do
+      if string.find(call.vals[1], pattern) then
+        return true
+      end
+    end
+    return false
+  end
+
   -- ============================================================================
   -- schedule
   -- ============================================================================
@@ -159,8 +174,8 @@ describe("OperationScheduler", function()
       )
 
       assert.are.equal(0, #operations)
-      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
-        "%[ERROR%].*reason=strike_mappings_by_recon_objective_not_found"))
+      assert.is_true(hasErrorCall("%[ERROR%].*reason=strike_mappings_by_recon_objective_not_found"))
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Positive: satellite entries resolve mappings by reconObjectiveId.
@@ -271,6 +286,36 @@ describe("OperationScheduler", function()
       assert.are.equal("AIR/STRIKE/AB/W/1", operations[1].operations[1].template.name)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
         "%[HOLD%].*operation=GND/STRIKE/INFRA/ALL/1.*reason=fire_support_on_hold"))
+    end)
+
+    -- Negative: scope metadata belongs to the summary action, not the entry rollup.
+    it("should keep scope metadata out of the entry counts", function()
+      local cfg = makeConfig()
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+      { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
+      cfg.c.packageTemplates.AIR_STRIKE_AB_W_1 = {
+        { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      local operations = {}
+      stubRecurringHelpers()
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+
+      OperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(true), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
+
+      assert.stub(logStub).was.called(1)
+      local message = logStub.calls[1].vals[2]
+
+      -- One mapping produced exactly one entry; context fields must not inflate the rollup.
+      assert.is_not_nil(string.find(message, "total=1 ok=1", 1, true))
+      -- Scope metadata sits on the report header, not in an entry.
+      assert.is_not_nil(string.find(message, "scheduled=1", 1, true))
+      assert.is_not_nil(string.find(message, "airOps=0", 1, true))
+      assert.is_nil(string.find(message, "state=context", 1, true))
+      -- Scope label aligns with the air/ground operation emitters.
+      assert.is_not_nil(string.find(message, "dynamicOperationScheduling: Schedule dynamic operations", 1, true))
     end)
 
     -- Positive: GND/STRIKE/INFRA/ALL/* mappings are inserted when hold is off.
@@ -391,6 +436,32 @@ describe("OperationScheduler", function()
       table.sort(names)
       assert.are.equal("AIR/STRIKE/AB/E/1", names[1])
       assert.are.equal("AIR/STRIKE/AB/W/AAR/1", names[2])
+    end)
+
+    -- Positive: the domain status is lowercased into the status field
+    it("should emit the next operation status as a snake_case token", function()
+      local cfg = makeConfig()
+      local operations = {}
+      stubRecurringHelpers()
+      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
+        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
+        end
+        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
+          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
+        end
+        return false, nil, nil
+      end))
+      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
+      ))
+
+      OperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
+      )
+
+      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "status=found_next"))
     end)
   end)
 

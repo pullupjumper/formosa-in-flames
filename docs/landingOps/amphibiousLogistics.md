@@ -139,6 +139,31 @@ flowchart TD
 
 ---
 
+## 日誌輸出
+
+五個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `ship=` / `transportAircraft`）。
+
+```
+[amphibiousLogistics] ship="Type 075 #1": Load cargo | total=2 ok=1 skip=1
+  [OK]   unit="PHL-16 #1" index=1
+  [SKIP] guid=U-4471 index=2 reason=unit_not_found
+```
+
+`createSingleCargoMission` 的三個失敗點原本一律收斂成 `false` 且不輸出任何日誌，現在各自帶具體 `reason`，並把已建立的任務留在 info log：
+
+```
+[amphibiousLogistics] zone=Taoyuan: Create cargo missions | total=1 ok=1
+  [OK]   mission="Taoyuan Boat Ferry" platform=boat
+```
+```
+（error sink）zone=Taoyuan: Create cargo missions | total=1 fail=1
+  [FAIL] mission="Taoyuan Helo Ferry" platform=transportHelicopter reason=set_doctrine_failed
+```
+
+`reason` 三值：`add_mission_failed`、`set_mission_failed`、`set_doctrine_failed`。
+
+---
+
 ## 相關模組
 
 - [shipMovement](shipMovement.md) — 前置階段：艦隊移動至錨泊區

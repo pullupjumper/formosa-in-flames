@@ -127,6 +127,30 @@ flowchart TD
 
 ---
 
+## 日誌輸出
+
+三個公開函式各自建立一個 `LogFormat.report`，每條路徑只 `emit()` 一次。`FAIL` 行走 error sink，其餘留在 info log，兩邊各有自己的 rollup。
+
+```
+[amphibiousAssault] zone=Taoyuan: Set courses for LSTs | total=3 ok=2 skip=1
+  [OK]   ship="Type 072A #1" bearing=270 speed=12
+  [SKIP] ship=RORO reason=non_lst_auxiliary
+  [OK]   sag="SAG Alpha" dest=amphibious_vehicle_staging_area
+```
+
+`launchACV` 遇到失敗會停在該筆，已成功的 ACV 仍留在 info log：
+
+```
+[amphibiousAssault] ship=Type 071 #2: Launch ACV | total=1 ok=1
+  [OK]   unit=ZBD-05 lat=25.1042 lon=121.1337
+```
+```
+（error sink）ship=Type 071 #2: Launch ACV | total=1 fail=1
+  [FAIL] unit=ZTD-05 reason=add_unit_failed
+```
+
+---
+
 ## 相關模組
 
 - [amphibiousLogistics](amphibiousLogistics.md) — `launchACV` 呼叫 `AmphibiousLogistics.deleteCargo` 刪除貨物

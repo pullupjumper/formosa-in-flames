@@ -125,6 +125,22 @@ flowchart TD
 
 ---
 
+## 日誌輸出
+
+`moveToStagingArea` 用單一 `LogFormat.report` 收集艦船與 SAG 兩段結果，回傳值由 `containsFailure(results)` 從 row 推導，不另外維護旗標。
+
+```
+[shipMovement] operation=Taoyuan Landing: Move to staging area | total=4 ok=3 skip=1
+  [OK]   ship="Type 075 #1" dbid=3556 index=1 dest=type075
+  [OK]   area=LPD ship="Type 071 #2" dbid=2340 index=2 dest=type071
+  [SKIP] ship=Tugboat dbid=1044 reason=unmatched
+  [OK]   sag="SAG Alpha" action=course_set positioned=3 skipped=0
+```
+
+`calculateDestination` 的前置計算失敗屬於單筆事件而非批次，走 `LogFormat.line` 直接送 error sink。
+
+---
+
 ## 相關模組
 
 - [amphibiousLogistics](amphibiousLogistics.md) — 艦隊到達後的貨物裝載與任務建立

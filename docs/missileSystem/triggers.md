@@ -31,7 +31,7 @@ flowchart TD
     C --> D[createPositionTriggers FP/HA/RL/AHA]
     C --> E[addCustomEnvironmentZone MASK]
     D --> F[ScenEdit_SetTrigger + SetEventTrigger]
-    A --> G[Logger summary/failures]
+    A --> G[LogFormat.report]
 ```
 
 ---

@@ -87,6 +87,28 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 
 -- ============================================================================
+-- Logging
+-- ============================================================================
+-- Deferred log result types shared by modules that emit batched summaries
+
+---One outcome captured for batched log emission
+---Producers return this shape instead of a formatted string, so field ordering
+---and status counting stay owned by LogFormat at emit time.
+---@class SBJ__LogResult: table
+---@field tag string Status tag accepted by LogFormat ("OK"/"SKIP"/"FAIL"/"ERROR"/"WARN"/"HOLD"/"RESUME")
+---@field fields table<string, any> Log fields keyed by field name
+---@field details? SBJ__LogResult[] Rows nested one level under this one, excluded from the rollup
+
+---Batched log collector returned by LogFormat.report
+---Rows are buffered until emit routes FAIL and ERROR to the error sink and
+---everything else to the info log; empty sinks emit nothing.
+---@class SBJ__LogReport: table
+---@field add fun(tag: string, fields: table<string, any>|nil, details?: SBJ__LogResult[]) Buffer one row and its nested detail rows
+---@field addAll fun(results: SBJ__LogResult[]|nil) Buffer every result in order, ignoring nil
+---@field emit fun(actionFields?: table<string, any>) Emit the buffered rows; optional batch-level counters are appended to the action
+
+
+-- ============================================================================
 -- Core Configuration & Data
 -- ============================================================================
 -- Core configuration and persistent data structures
@@ -842,23 +864,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether air operations system is activated
 ---@field airTaskingOrder table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
----@alias SBJ__ATOPackageProcessOutcome
----| "ok"
----| "skip"
----| "fail"
----| "error"
-
----@class SBJ__ATOPackageProcessResult
----@field outcome SBJ__ATOPackageProcessOutcome Processing outcome used for log classification
----@field missionName string Strike mission name used as log identity
----@field waveName? string Wave name added by processWave before log emission
----@field action? string Successful action token, such as "initiate_loadout" or "launch"
----@field reason? string Failure or skip reason token
----@field readyTime? string UTC ready time for loadout completion
----@field reconUavTakeoff? string UTC recon UAV takeoff time when scheduled
----@field targets? integer Number of targets available or assigned
----@field required? integer Minimum target count required
-
 
 -- ============================================================================
 -- Launcher & TEL Systems
@@ -1011,24 +1016,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isAuto boolean Whether the flow runs in automatic mode
 ---@field contacts CMO__Contact[]|nil Current side contacts used for drop-contact handling
 ---@field behavior SBJ__MoveToPositionBehavior|nil Optional behavior switches for side-specific differences
-
----Structured result from a missile-system UnitEntersArea functional action
----@class SBJ__PositionEventResult: table
----@field tag string Result tag (e.g. "OK")
----@field system string Missile system name
----@field unitName string Unit name
----@field positionType string Position type token
----@field action string Functional action
----@field reason string? Reason for non-OK outcomes
----@field detail string? Additional key=value detail fields
-
----Structured result from a reload cycle action
----@class SBJ__ReloadCycleResult: table
----@field tag string Result tag (e.g. "OK")
----@field unitName string Unit name
----@field action string Action description
----@field reason string? Reason for non-OK outcomes
----@field detail string? Additional key=value detail fields
 
 ---Options for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerOpts: table
@@ -1267,6 +1254,25 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__GeneratedOperationsTracker: table
 ---@field air table<string, boolean> Generated air operation names indexed by operation name
 ---@field ground table<string, boolean> Generated ground operation names indexed by operation name
+
+---Outcome of turning one recon-triggered operation into an inserted ATO wave or FSEM
+---Deliberately NOT a SBJ__LogResult: fields is a partial contribution that the
+---caller merges with the operation identity (operation=, batch=) before it
+---becomes a row, so this shape is not interchangeable with one. details and
+---timing, by contrast, are complete rows handed straight to a report.
+---A producer whose caller only needs "did it produce something" should return
+---SBJ__LogResult directly instead; this type exists because the caller must
+---also tell retryable failures apart from terminal ones, which needs reason.
+---@class SBJ__OperationProcessResult: table
+---@field success boolean Whether the operation produced an inserted wave or FSEM
+---@field reason? string Failure reason token when success is false, also written into the row
+---@field tag string Status tag for the operation row
+---@field fields? table<string, any> Evaluation counters merged into the operation row
+---@field details? SBJ__LogResult[] Complete rows nested under the operation row
+
+---Air-path outcome adding the wave timing rows emitted into a separate report
+---@class SBJ__AirOperationProcessResult: SBJ__OperationProcessResult
+---@field timing? SBJ__LogResult[] Complete rows for the separate timing report
 
 ---Dynamic operations context managing intelligence-driven adaptive strike planning
 ---@class SBJ__DynamicOperationsContext: table

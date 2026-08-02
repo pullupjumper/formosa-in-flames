@@ -177,6 +177,22 @@ flowchart TD
 
 ---
 
+## 日誌輸出
+
+兩個作業 API 各自建立一份 `LogFormat.report`。`offloadVehicles` 原本在失敗與成功兩條路徑各 emit 一次相同的 summary，現在收斂成單一 emit。
+
+```
+[secondWaveUnloading] zone=Taoyuan: Second wave unloading | total=2 ok=2
+  [OK]   ship=Barge action=course_set guid=B-001
+  [OK]   ship=RORO action=paired guid=R-014 barge=B-001
+```
+```
+[secondWaveUnloading] ship=Barge: Offload vehicles | total=1 ok=1
+  [OK]   unit=ZBD-04A type="Ground unit" dbid=3211 index=1
+```
+
+---
+
 ## 相關模組
 
 - [amphibiousAssault](amphibiousAssault.md) — 前置階段：ACV 突擊與灘頭建立

@@ -48,17 +48,27 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `moveUnitToPosition` | `opts` | `boolean, string?` | 共用移動執行器 |
-| `moveToReloadPoint` | `unitCtx, unit` | `boolean, string?` | 移動至 RL |
-| `moveToHideArea` | `firingUnitCtx, firingUnit` | `boolean, string?` | 移動至 HA |
-| `moveToAmmoHoldingArea` | `resupplyUnitCtx, resupplyUnit` | `boolean, string?` | 移動至 AHA |
-| `moveResupplyUnitToReloadPoint` | `resupplyUnitCtx, resupplyUnit` | `boolean, string?` | 彈藥補給車回 RL |
-| `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean, string?` | 移動至 FP |
+| `moveUnitToPosition` | `opts` | `boolean, table?` | 共用移動執行器 |
+| `moveToReloadPoint` | `unitCtx, unit` | `boolean, table?` | 移動至 RL |
+| `moveToHideArea` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 HA |
+| `moveToAmmoHoldingArea` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 移動至 AHA |
+| `moveResupplyUnitToReloadPoint` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 彈藥補給車回 RL |
+| `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 FP |
 | `setReloadStartTime` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `RELOAD` 與起始時間 |
 | `setWCSToFree` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `STATIC` + `WCS.FREE` |
 | `setStateToHide` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `HIDE` + `WCS.HOLD` |
 | `setStateToStatic` | `systemCtx, firingUnit, isAuto` | `nil` | 清空 reload timer 並設 `STATIC` |
 | `isRepositioning` | `firingUnitCtx, isAuto` | `boolean` | 判斷事件是否可接受 |
+
+移動失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
+
+| `reason` | 附帶欄位 | 情境 |
+|---|---|---|
+| `no_positions_available` | `position`、`area` | 該陣地類型未設定任何位置 |
+| `invalid_position_data` | `position`、`index`、`area` | 抽中的位置缺少 `course` |
+| `no_ha_defined` | `area` | `operationalArea.HA` 未定義 |
+
+欄位不含 `unit`：六個呼叫端都已自行標上 `unit=`，識別欄位歸呼叫端、失敗原因歸 producer。
 
 ---
 

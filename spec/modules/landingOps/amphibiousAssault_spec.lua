@@ -11,6 +11,8 @@ describe("AmphibiousAssault", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -23,7 +25,7 @@ describe("AmphibiousAssault", function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -255,7 +257,8 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
       assert.is_false(result)
-      assert.stub(logStub).was.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=mission_not_found"))
     end)
 
     -- Boundary: zone with no missions in any category
@@ -775,7 +778,8 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(logStub).was.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=add_unit_failed"))
     end)
 
     -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZTD
@@ -802,7 +806,8 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(logStub).was.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=set_doctrine_failed"))
     end)
 
     -- Negative: returns nil when ScenEdit_AddUnit fails for ZBD
@@ -832,7 +837,8 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(logStub).was.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=add_unit_failed"))
     end)
 
     -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZBD
@@ -862,7 +868,8 @@ describe("AmphibiousAssault", function()
       local result = AmphibiousAssault.launchACV(params)
 
       assert.is_nil(result)
-      assert.stub(logStub).was.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=set_doctrine_failed"))
     end)
 
     -- Boundary: both ZBD and ZTD delete zero cargo

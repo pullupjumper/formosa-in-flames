@@ -383,7 +383,7 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
   local detectionSkipProbability = sigintConfig.detectionSkipProbability or 0.3
 
   local results = {}
-  local reportEntries = {}
+  local report = LogFormat.report(constants.TAGS.SIGINT, "side=" .. sideName, "Collect SIGINT")
   local totalProcessed = 0
   local totalDetected = 0
   local totalUnits = 0
@@ -397,15 +397,13 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       -- Resolve actual unit
       local actualUnit = resolveUnit(unitCtx, enemySide)
       if not actualUnit then
-        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND],
-          string.format("unit=%q reason=unit_not_found", ctxName)))
+        report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND], { unit = ctxName, reason = "unit_not_found" })
         goto continue
       end
 
       -- Skip some units randomly for performance
       if math.random() <= detectionSkipProbability then
-        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED],
-          string.format("unit=%q reason=random_skip", ctxName)))
+        report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED], { unit = ctxName, reason = "random_skip" })
         goto continue
       end
 
@@ -422,27 +420,25 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       if result.isDetected then
         totalDetected = totalDetected + 1
         local status = updateTransmissionData(sigintContext, unitCtx, result, actualUnit)
-        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[status],
-          string.format("unit=%q result=%s", ctxName, status)))
+        report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
           showDetectionNotification(result, unitCtx.msg, sigintConfig)
         end
       else
         local status = handleUndetected(sigintContext, actualUnit)
-        table.insert(reportEntries, LogFormat.entry(SIGINT_RESULT_TAGS[status],
-          string.format("unit=%q result=%s reason=%q", ctxName, status, emissionReason or "unknown")))
+        report.add(SIGINT_RESULT_TAGS[status], {
+          unit = ctxName,
+          result = status,
+          reason = emissionReason or "unknown"
+        })
       end
 
       ::continue::
     end
   end
 
-  Logger.log(constants.TAGS.SIGINT, LogFormat.summary(
-    "side",
-    sideName,
-    string.format("Collect SIGINT processed=%d units=%d detections=%d", totalProcessed, totalUnits, totalDetected),
-    reportEntries))
+  report.emit({ processed = totalProcessed, units = totalUnits, detections = totalDetected })
   return results
 end
 
@@ -456,7 +452,7 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
-    Logger.warn(LogFormat.event("side", sideName, "WARN", "reason=no_aircraft_units"))
+    Logger.warn(LogFormat.line("WARN", { side = sideName, reason = "no_aircraft_units" }))
     return 0
   end
 
@@ -478,8 +474,11 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
     end
   end
 
-  Logger.log(constants.TAGS.SIGINT, LogFormat.event(
-    "side", sideName, "OK", string.format("action=init_recon_aircraft count=%d", initializedCount)))
+  Logger.log(constants.TAGS.SIGINT, LogFormat.line("OK", {
+    side = sideName,
+    action = "init_recon_aircraft",
+    count = initializedCount
+  }))
   return initializedCount
 end
 

@@ -66,6 +66,21 @@ local SHIP_ROW_LAYOUT = {
 -- Ship Position Utilities
 -- ============================================================================
 
+---Check whether a batch of rows contains a failure
+---moveToStagingArea reports success through its return value, so it derives the
+---answer from the rows instead of carrying a flag that could drift from them.
+---@param results SBJ__LogResult[] Rows collected during the pass
+---@return boolean # True when at least one row is tagged FAIL
+local function containsFailure(results)
+  for _, result in ipairs(results) do
+    if result.tag == "FAIL" then
+      return true
+    end
+  end
+
+  return false
+end
+
 ---Move a ship to a target location with specified speed
 ---In testing mode, teleports the ship directly to the destination
 ---@param unit CMO__Unit The ship unit to move
@@ -123,15 +138,15 @@ end
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationResult>|nil Calculation result lookup
 ---@param operationName string Operation name
 ---@return table<string, SBJ__ShipCalculationResult>|nil result Operation movement result
----@return string|nil msg Error message when result is missing
+---@return table<string, any>|nil errorFields Log fields describing the failure
 local function getOperationResult(calculationResult, operationName)
   if not calculationResult then
-    return nil, "reason=calculation_result_missing"
+    return nil, { reason = "calculation_result_missing" }
   end
 
   local operationResult = calculationResult[operationName]
   if not operationResult or not operationResult.result then
-    return nil, "reason=calculation_result_missing"
+    return nil, { reason = "calculation_result_missing" }
   end
 
   return operationResult.result
@@ -143,24 +158,30 @@ end
 ---@param resultKey string Result key used for destination lookup
 ---@param speed number Ship speed in knots
 ---@param isTesting boolean Testing mode flag
----@return string tag Result tag (OK/SKIP)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveShipToNextLocation(unit, resultEntry, resultKey, speed, isTesting)
   if not resultEntry or not resultEntry.locations or not resultEntry.locationIndex then
-    return "FAIL", string.format("ship=%s dbid=%s dest=%s reason=calculation_entry_missing",
-      unit.name, tostring(unit.dbid), resultKey)
+    return {
+      tag = "FAIL",
+      fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, reason = "calculation_entry_missing" }
+    }
   end
 
   local index = resultEntry.locationIndex
   local location = resultEntry.locations[index]
   if not location then
-    return "SKIP", string.format("ship=%s dbid=%s dest=%s index=%d reason=no_location",
-      unit.name, tostring(unit.dbid), resultKey, index)
+    return {
+      tag = "SKIP",
+      fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, index = index, reason = "no_location" }
+    }
   end
+
   moveShip(unit, location, speed, isTesting)
   resultEntry.locationIndex = index + 1
-  return "OK", string.format("ship=%s dbid=%s dest=%s index=%d",
-    unit.name, tostring(unit.dbid), resultKey, index)
+  return {
+    tag = "OK",
+    fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, index = index }
+  }
 end
 
 ---Handle Type 071 movement with overflow to LST area
@@ -168,14 +189,15 @@ end
 ---@param result table<string, SBJ__ShipCalculationResult> Full result table
 ---@param speed number Ship speed
 ---@param isTesting boolean Testing mode flag
----@return string tag Result tag
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveType071(unit, result, speed, isTesting)
   local entry = result.type071
   local lstEntry = result.type071InLSTArea
   if not entry or not entry.locations or not entry.locationIndex or not lstEntry or not lstEntry.locations then
-    return "FAIL", string.format("ship=%s dbid=%s dest=type071 reason=calculation_entry_missing",
-      unit.name, tostring(unit.dbid))
+    return {
+      tag = "FAIL",
+      fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", reason = "calculation_entry_missing" }
+    }
   end
 
   local index = entry.locationIndex
@@ -187,14 +209,24 @@ local function moveType071(unit, result, speed, isTesting)
     location = entry.locations[index]
   end
   if not location then
-    return "SKIP", string.format("ship=%s dbid=%s dest=type071 index=%d reason=no_location",
-      unit.name, tostring(unit.dbid), index)
+    return {
+      tag = "SKIP",
+      fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", index = index, reason = "no_location" }
+    }
   end
+
   moveShip(unit, location, speed, isTesting)
   entry.locationIndex = index + 1
-  local area = index > len and "LST" or "LPD"
-  return "OK", string.format("ship=%s dbid=%s dest=type071 area=%s index=%d",
-    unit.name, tostring(unit.dbid), area, index)
+  return {
+    tag = "OK",
+    fields = {
+      ship = unit.name,
+      dbid = unit.dbid,
+      dest = "type071",
+      area = index > len and "LST" or "LPD",
+      index = index
+    }
+  }
 end
 
 ---Match ship by DBID or name and move to next location
@@ -202,8 +234,7 @@ end
 ---@param result table<string, SBJ__ShipCalculationResult> Calculation results
 ---@param speed number Ship speed
 ---@param isTesting boolean Testing mode flag
----@return string tag Result tag
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function matchAndMoveShip(unit, result, speed, isTesting)
   for _, entry in ipairs(SHIP_TYPE_DBIDS) do
     if unit.dbid == entry.dbid then
@@ -219,7 +250,7 @@ local function matchAndMoveShip(unit, result, speed, isTesting)
     return moveShipToNextLocation(unit, result[nameKey], nameKey, speed, isTesting)
   end
 
-  return "SKIP", string.format("ship=%s dbid=%s reason=unmatched", unit.name, tostring(unit.dbid))
+  return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }
 end
 
 -- ============================================================================
@@ -230,32 +261,31 @@ end
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
----@return string tag Result tag
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function handleSAG(descriptor, isTesting)
   local anchorageArea = descriptor.to and descriptor.to.anchorageArea
   if not anchorageArea or #anchorageArea == 0 then
-    return "FAIL", string.format("sag=%s reason=anchorage_area_missing", descriptor.groupName)
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_area_missing" } }
   end
 
   local anchoragePoint = anchorageArea[#anchorageArea]
   if not anchoragePoint or not anchoragePoint.latitude or not anchoragePoint.longitude then
-    return "FAIL", string.format("sag=%s reason=anchorage_point_missing", descriptor.groupName)
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_point_missing" } }
   end
 
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
   if not unit then
-    return "FAIL", string.format("sag=%s reason=sag_group_not_found", descriptor.groupName)
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_group_not_found" } }
   end
 
   unit.course = anchorageArea
 
   if not isTesting then
-    return "OK", string.format("sag=%s action=course_set", descriptor.groupName)
+    return { tag = "OK", fields = { sag = descriptor.groupName, action = "course_set" } }
   end
 
   if not unit.group or not unit.group.unitlist then
-    return "FAIL", string.format("sag=%s reason=sag_unitlist_missing", descriptor.groupName)
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unitlist_missing" } }
   end
 
   local type052d, type054a = 0, 0
@@ -311,8 +341,15 @@ local function handleSAG(descriptor, isTesting)
     end
   end
 
-  return "OK", string.format("sag=%s action=course_set positioned=%d skipped=%d",
-    descriptor.groupName, positioned, skipped)
+  return {
+    tag = "OK",
+    fields = {
+      sag = descriptor.groupName,
+      action = "course_set",
+      positioned = positioned,
+      skipped = skipped
+    }
+  }
 end
 
 -- ============================================================================
@@ -335,11 +372,11 @@ end
 ---@param area SBJ__OperationAreaDescriptor Area configuration
 ---@param key string Starting point key
 ---@return CMO__Location|nil point Reference point
----@return string|nil msg Error message when point is missing
+---@return table<string, any>|nil errorFields Log fields describing the failure
 local function getStartingReferencePoint(area, key)
   local startingPointArea = area.startingPoints and area.startingPoints[key]
   if not startingPointArea then
-    return nil, string.format("point=%s reason=starting_point_area_missing", key)
+    return nil, { point = key, reason = "starting_point_area_missing" }
   end
 
   local points = GameApi.ScenEdit_GetReferencePoints({
@@ -347,7 +384,7 @@ local function getStartingReferencePoint(area, key)
   })
 
   if not points or not points[1] then
-    return nil, string.format("point=%s reason=reference_point_missing", key)
+    return nil, { point = key, reason = "reference_point_missing" }
   end
 
   return points[1]
@@ -357,21 +394,21 @@ end
 ---@param area SBJ__OperationAreaDescriptor Area configuration with startingPoints, heading
 ---@param formationSettings SBJ__AmphibiousFormationSettings Formation distance settings
 ---@return table<string, CMO__Location>|nil startingPoints Mapping of key to starting location
----@return string|nil msg Error message when calculation fails
+---@return table<string, any>|nil errorFields Log fields describing the failure
 local function calculateStartingPoints(area, formationSettings)
   local startingPoints = {}
-  local msg
+  local errorFields
 
-  startingPoints.type075, msg = getStartingReferencePoint(area, "type075")
-  if not startingPoints.type075 then return nil, msg end
+  startingPoints.type075, errorFields = getStartingReferencePoint(area, "type075")
+  if not startingPoints.type075 then return nil, errorFields end
 
-  startingPoints.type071, msg = getStartingReferencePoint(area, "type071")
-  if not startingPoints.type071 then return nil, msg end
+  startingPoints.type071, errorFields = getStartingReferencePoint(area, "type071")
+  if not startingPoints.type071 then return nil, errorFields end
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
     local fromPoint = startingPoints[row.from]
     if not fromPoint then
-      return nil, string.format("point=%s from=%s reason=source_point_missing", row.key, row.from)
+      return nil, { point = row.key, from = row.from, reason = "source_point_missing" }
     end
 
     startingPoints[row.key] = GameApi.World_GetPointFromBearing({
@@ -382,7 +419,7 @@ local function calculateStartingPoints(area, formationSettings)
     })
 
     if not startingPoints[row.key] then
-      return nil, string.format("point=%s from=%s reason=derived_point_failed", row.key, row.from)
+      return nil, { point = row.key, from = row.from, reason = "derived_point_failed" }
     end
   end
 
@@ -418,10 +455,11 @@ function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
   for _, operation in ipairs(amphibOpsConfig.operations) do
     for areaIndex, area in ipairs(operation.to.areas) do
       initOperationResult(operation.name, calculationResult)
-      local startingPoints, msg = calculateStartingPoints(area, formationSettings)
+      local startingPoints, errorFields = calculateStartingPoints(area, formationSettings)
       if not startingPoints then
-        Logger.error(LogFormat.event("operation", operation.name, "ERROR",
-          string.format("areaIndex=%d %s", areaIndex, msg or "reason=starting_point_calculation_failed")))
+        Logger.error(LogFormat.line("ERROR", LogFormat.merge(
+          { operation = operation.name, areaIndex = areaIndex },
+          errorFields or { reason = "starting_point_calculation_failed" })))
         return false
       end
 
@@ -451,44 +489,38 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   local formationSettings = amphibOpsConfig.formationSettings
   local calculationResult = saveData and saveData.c and saveData.c.amphibOps and saveData.c.amphibOps.calculationResult
   local isTesting = amphibOpsConfig.isTesting
-  local logEntries = {}
-  local hasFailure = false
-  local result, msg = getOperationResult(calculationResult, operation.name)
+  local result, errorFields = getOperationResult(calculationResult, operation.name)
 
   if not result then
-    Logger.error(LogFormat.event("operation", operation.name, "ERROR", msg or "reason=calculation_result_missing"))
+    Logger.error(LogFormat.line("ERROR", LogFormat.merge(
+      { operation = operation.name },
+      errorFields or { reason = "calculation_result_missing" })))
     return false
   end
 
+  local results = {}
+
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
-    if unit then
-      if unit:inArea(operation.from.stagingArea) then
-        local tag, msg = matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting)
-        table.insert(logEntries, LogFormat.entry(tag, msg))
-        if tag == "FAIL" then hasFailure = true end
-      end
+    if unit and unit:inArea(operation.from.stagingArea) then
+      table.insert(results, matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting))
     end
   end
 
   for _, sagName in ipairs(operation.sagNames) do
     local descriptor = amphibOpsConfig.sag[sagName]
     if descriptor then
-      local tag, sagMsg = handleSAG(descriptor, isTesting)
-      table.insert(logEntries, LogFormat.entry(tag, sagMsg))
-      if tag == "FAIL" then hasFailure = true end
+      table.insert(results, handleSAG(descriptor, isTesting))
     else
-      table.insert(logEntries, LogFormat.entry("SKIP",
-        string.format("sag=%s reason=sag_descriptor_not_found", sagName)))
+      table.insert(results, { tag = "SKIP", fields = { sag = sagName, reason = "sag_descriptor_not_found" } })
     end
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.SHIP_MOVEMENT,
-      LogFormat.summary("operation", operation.name, "Move to staging area", logEntries))
-  end
+  local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. operation.name, "Move to staging area")
+  report.addAll(results)
+  report.emit()
 
-  return not hasFailure
+  return not containsFailure(results)
 end
 
 return ShipMovement

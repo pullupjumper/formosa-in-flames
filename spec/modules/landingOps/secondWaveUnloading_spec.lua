@@ -10,6 +10,8 @@ describe("SecondWaveUnloading", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -22,7 +24,7 @@ describe("SecondWaveUnloading", function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -835,6 +837,8 @@ describe("SecondWaveUnloading", function()
 
       assert.is_nil(result)
       assert.stub(logStub).was.called(1)
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=add_unit_failed"))
     end)
 
     -- Boundary: limits cargo to params.num even when more cargo exists

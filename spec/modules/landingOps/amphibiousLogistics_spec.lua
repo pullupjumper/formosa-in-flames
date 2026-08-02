@@ -11,6 +11,8 @@ describe("AmphibiousLogistics", function()
   local activeStubs
   ---@type luassert.spy
   local logStub
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -23,7 +25,7 @@ describe("AmphibiousLogistics", function()
     activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    trackStub(stub(Logger, "error"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -890,6 +892,8 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=add_mission_failed"))
     end)
 
     -- Negative: should return false when SetMission fails
@@ -900,6 +904,8 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=set_mission_failed"))
     end)
 
     -- Negative: should return false when SetDoctrine fails
@@ -910,6 +916,8 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_false(result)
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=set_doctrine_failed"))
     end)
   end)
 
@@ -1665,8 +1673,7 @@ describe("AmphibiousLogistics", function()
       assert.stub(logStub).was.called(1)
       local callArgs = logStub.calls[1].vals
       assert.are.equal("amphibiousLogistics", callArgs[1])
-      assert.truthy(string.find(callArgs[2], "%[ship=BaseShip%] Load cargo"))
-      assert.truthy(string.find(callArgs[2], "total=1 ok=1 skip=0 fail=0 error=0"))
+      assert.truthy(string.find(callArgs[2], "ship=BaseShip: Load cargo | total=1 ok=1"))
       assert.truthy(string.find(callArgs[2], "%[OK%]"))
     end)
   end)

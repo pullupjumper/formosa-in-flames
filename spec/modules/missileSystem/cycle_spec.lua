@@ -140,7 +140,7 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.is_nil(systemCtx.firingUnits["Firing Unit Alpha"].reloadStartTime)
       assert.are.equal(1, #results)
-      assert.are.equal("Missile reload finished", results[1].action)
+      assert.are.equal("missile_reload_finished", results[1].fields.action)
     end)
 
     -- Positive: transfers ammo to resupply unit when transfer conditions are met
@@ -196,7 +196,7 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(80, systemCtx.ammunitions["Ammo Depot"].wpnCurrent)
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemCtx.resupplyUnits["Ammo Sec, Alpha"].state)
       assert.are.equal(1, #results)
-      assert.are.equal("Ammo transload finished", results[1].action)
+      assert.are.equal("ammo_transload_finished", results[1].fields.action)
     end)
 
     -- Negative: skips firing unit when game unit cannot be found
@@ -342,8 +342,8 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
       assert.are.equal(2000, firingCtx.stowStartTime)
       assert.are.equal(1, #results)
-      assert.are.equal("Stow countdown started", results[1].action)
-      assert.are.equal("startedAt=2000", results[1].detail)
+      assert.are.equal("stow_countdown_started", results[1].fields.action)
+      assert.are.equal(2000, results[1].fields.startedAt)
     end)
 
     -- Negative: returns a failure result when movement command cannot be built
@@ -394,9 +394,9 @@ describe("MissileSystem Cycle", function()
 
       assert.are.equal(1, #results)
       assert.are.equal("FAIL", results[1].tag)
-      assert.are.equal("Move to hide area", results[1].action)
-      assert.are.equal("command_failed", results[1].reason)
-      assert.is_not_nil(string.find(results[1].detail, "No HA defined", 1, true))
+      assert.are.equal("move_to_hide_area", results[1].fields.action)
+      assert.are.equal("no_ha_defined", results[1].fields.reason)
+      assert.is_nil(results[1].fields.detail)
     end)
 
     -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode

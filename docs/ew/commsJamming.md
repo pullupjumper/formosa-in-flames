@@ -95,7 +95,7 @@ flowchart TD
     LEVEL["getCommsLevel()<br>計算飛機通訊等級"]
     RTB{"commsLevel <<br>commsThreshold?"}
     FORCE_RTB["強制 RTB"]
-    LOG["Logger.log()<br>批次報告"]
+    LOG["report.emit()<br>批次報告"]
 
     START --> FIND_J
     START --> FIND_T

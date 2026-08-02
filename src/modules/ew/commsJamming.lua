@@ -1,5 +1,4 @@
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
@@ -385,7 +384,7 @@ end
 ---@param unitCtxs table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
 ---@return integer totalAttempts Total jamming attempts made
 ---@return integer totalJammed Total units processed
----@return string[] reportLines Per-jammer result lines for batch logging
+---@return SBJ__LogResult[] results Per-jammer result rows for batch logging
 local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
   local totalJammedUnits = 0
   local totalAttempts = 0
@@ -407,26 +406,26 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
     end)
 
     local count = 0
-    local entries = {}
     for _, entry in ipairs(unitsWithDistance) do
       if count >= commsJammingConfig.limit then
         break
       end
 
       local result = jammingFn(commsJammingConfig, entry, jammer)
-      table.insert(entries, LogFormat.entry(COMMS_RESULT_TAGS[result], string.format(
-        "jammer=%q target=%q distanceNm=%d result=%s",
-        jammer.name, entry.unitCtx.name, math.floor(entry.distance), result)))
+      table.insert(reportLines, {
+        tag = COMMS_RESULT_TAGS[result],
+        fields = {
+          jammer = jammer.name,
+          target = entry.unitCtx.name,
+          distanceNm = math.floor(entry.distance),
+          result = result
+        }
+      })
       count = count + 1
     end
 
     totalJammedUnits = totalJammedUnits + count
     totalAttempts = totalAttempts + count
-    if #entries > 0 then
-      for _, e in ipairs(entries) do
-        table.insert(reportLines, e)
-      end
-    end
   end
 
   return totalAttempts, totalJammedUnits, reportLines
@@ -438,7 +437,7 @@ end
 ---@param saveData SBJ__SaveData Save data containing aircraft contexts
 ---@return integer processed Total aircraft processed
 ---@return integer rtbCount Total aircraft ordered RTB
----@return string[] reportLines RTB detail lines for batch logging
+---@return SBJ__LogResult[] results RTB detail rows for batch logging
 local function processAircraftComms(commsJammingConfig, saveData)
   local aircraftProcessed = 0
   local aircraftRTB = 0
@@ -454,9 +453,17 @@ local function processAircraftComms(commsJammingConfig, saveData)
       if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
         GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
         aircraftRTB = aircraftRTB + 1
-        table.insert(reportLines, LogFormat.entry("FAIL", string.format(
-          "aircraft=%q action=rtb commsLevel=%d threshold=%d",
-          actualAircraft.name, aircraftCtx.commsLevel, aircraftCtx.commsThreshold)))
+        -- An RTB is this module's intended effect, not an error: tagging it FAIL
+        -- would route successful jamming into the error sink.
+        table.insert(reportLines, {
+          tag = "OK",
+          fields = {
+            aircraft = actualAircraft.name,
+            action = "rtb",
+            commsLevel = aircraftCtx.commsLevel,
+            threshold = aircraftCtx.commsThreshold
+          }
+        })
       end
     end
   end
@@ -478,26 +485,21 @@ function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   local unitCtxs, targetCount = findSAMAndRadar(saveData.t.iads)
 
   recoverAllComms(commsJammingConfig, unitCtxs)
-  local totalAttempts, totalJammed, jammingLines = processJammingCycle(commsJammingConfig, jammers, unitCtxs)
-  local aircraftProcessed, aircraftRTB, rtbLines = processAircraftComms(commsJammingConfig, saveData)
+  local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitCtxs)
+  local aircraftProcessed, aircraftRTB, rtbResults = processAircraftComms(commsJammingConfig, saveData)
 
-  local reportLines = {}
+  local report = LogFormat.report(constants.TAGS.COMMS_JAMMING, "commsJamming", "Handle comms jamming")
 
-  for _, line in ipairs(jammingLines) do
-    table.insert(reportLines, line)
-  end
-
-  for _, line in ipairs(rtbLines) do
-    table.insert(reportLines, line)
-  end
-
-  Logger.log(constants.TAGS.COMMS_JAMMING, LogFormat.summary(
-    "scope",
-    "commsJamming",
-    string.format(
-      "Handle comms jamming jammers=%d targets=%d aircraft=%d attempts=%d processed=%d rtb=%d",
-      #jammers, targetCount, aircraftProcessed, totalAttempts, totalJammed, aircraftRTB),
-    reportLines))
+  report.addAll(jammingResults)
+  report.addAll(rtbResults)
+  report.emit({
+    jammers = #jammers,
+    targets = targetCount,
+    aircraft = aircraftProcessed,
+    attempts = totalAttempts,
+    processed = totalJammed,
+    rtb = aircraftRTB
+  })
 end
 
 ---Initialize communications jammer contexts for the specified side

@@ -3,7 +3,6 @@ local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
-local Logger = require("src.utils.logger")
 
 local SecondWaveUnloading = {}
 
@@ -104,20 +103,25 @@ end
 ---@param unit CMO__Unit Barge unit to process
 ---@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
 ---@param saveData SBJ__SaveData Save data to track barge
----@return string tag Result tag (OK/SKIP)
----@return string msg Description
----@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing
+---@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing, nil when the course failed
+---@return SBJ__LogResult result Deferred log result describing the outcome
 local function processBarge(unit, zone, saveData)
   local destination = createCourseForBarge(zone, unit)
 
   if not destination then
-    return "SKIP", string.format("ship=%s guid=%s reason=course_calculation_failed", unit.name, unit.guid)
+    return nil, {
+      tag = "SKIP",
+      fields = { ship = unit.name, guid = unit.guid, reason = "course_calculation_failed" }
+    }
   end
 
   unit.course = { destination }
   unit.manualSpeed = zone.lstSettings.speed
   saveData.c.amphibOps.barges[unit.guid] = { guid = unit.guid, roros = {} }
-  return "OK", string.format("ship=%s guid=%s action=course_set", unit.name, unit.guid), destination
+  return destination, {
+    tag = "OK",
+    fields = { ship = unit.name, guid = unit.guid, action = "course_set" }
+  }
 end
 
 ---Pair a RORO ship with a barge for logistics chain
@@ -125,21 +129,34 @@ end
 ---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor } RORO entry
 ---@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] } Barge entry
 ---@param saveData SBJ__SaveData Save data to track RORO-barge relationship
----@return string tag Result tag (OK/SKIP)
----@return string msg Description
+---@return SBJ__LogResult # Deferred log result describing the outcome
 local function pairROROWithBarge(roroEntry, bargeEntry, saveData)
   table.insert(saveData.c.amphibOps.barges[bargeEntry.unit.guid].roros, roroEntry.unit.guid)
   local course = createCourseForRORO(roroEntry.zone, roroEntry.unit, bargeEntry.dest)
 
   if not course then
-    return "SKIP", string.format("ship=%s guid=%s barge=%s reason=roro_course_failed",
-      roroEntry.unit.name, roroEntry.unit.guid, bargeEntry.unit.guid)
+    return {
+      tag = "SKIP",
+      fields = {
+        ship = roroEntry.unit.name,
+        guid = roroEntry.unit.guid,
+        barge = bargeEntry.unit.guid,
+        reason = "roro_course_failed"
+      }
+    }
   end
 
   roroEntry.unit.course = course
   roroEntry.unit.manualSpeed = roroEntry.zone.lstSettings.speed
-  return "OK", string.format("ship=%s guid=%s barge=%s action=paired",
-    roroEntry.unit.name, roroEntry.unit.guid, bargeEntry.unit.guid)
+  return {
+    tag = "OK",
+    fields = {
+      ship = roroEntry.unit.name,
+      guid = roroEntry.unit.guid,
+      barge = bargeEntry.unit.guid,
+      action = "paired"
+    }
+  }
 end
 
 -- ============================================================================
@@ -170,9 +187,9 @@ end
 ---@param ship CMO__Unit Ship to delete cargo from
 ---@param item { guid: string, dbid: number, name: string, type: number } Cargo item to spawn
 ---@param location CMO__Location Spawn coordinates
----@return string tag Result tag (OK/FAIL)
----@return string msg Description
-local function spawnOffloadedVehicle(ship, item, location)
+---@param index integer Position in the offload sequence
+---@return SBJ__LogResult # Deferred log result describing the outcome
+local function spawnOffloadedVehicle(ship, item, location, index)
   ship:deleteUnitCargo(item.guid)
   local unitType = CARGO_TYPE_MAP[item.type] or DEFAULT_CARGO_TYPE
 
@@ -186,10 +203,37 @@ local function spawnOffloadedVehicle(ship, item, location)
   })
 
   if not vehicle then
-    return "FAIL", string.format("cargo=%s dbid=%d reason=add_unit_failed", item.name, item.dbid)
+    return {
+      tag = "FAIL",
+      fields = { unit = item.name, dbid = item.dbid, index = index, reason = "add_unit_failed" }
+    }
   end
 
-  return "OK", string.format("cargo=%s dbid=%d unitType=%s", item.name, item.dbid, unitType)
+  return {
+    tag = "OK",
+    fields = { unit = item.name, type = unitType, dbid = item.dbid, index = index }
+  }
+end
+
+---Spawn every extracted cargo item, stopping at the first failure
+---@param ship CMO__Unit Ship to offload from
+---@param cargoItems { guid: string, dbid: number, name: string, type: number }[] Cargo items to spawn
+---@param locations CMO__Location[] Spawn coordinates aligned with cargoItems
+---@return integer|nil count Vehicles offloaded, nil when a spawn failed
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function spawnOffloadedVehicles(ship, cargoItems, locations)
+  local results = {}
+
+  for index, item in ipairs(cargoItems) do
+    local result = spawnOffloadedVehicle(ship, item, locations[index], index)
+    table.insert(results, result)
+
+    if result.tag == "FAIL" then
+      return nil, results
+    end
+  end
+
+  return #results, results
 end
 
 -- ============================================================================
@@ -257,15 +301,16 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
   local barges = {}
-  local logEntries = {}
+  local report = LogFormat.report(
+    constants.TAGS.SECOND_WAVE_UNLOADING, "zone=" .. zone.name, "Second wave unloading")
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
       if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-        local tag, msg, dest = processBarge(unit, zone, saveData)
-        table.insert(logEntries, LogFormat.entry(tag, msg))
+        local dest, result = processBarge(unit, zone, saveData)
+        report.add(result.tag, result.fields)
         if dest then
           table.insert(barges, { unit = unit, zone = zone, dest = dest })
         end
@@ -280,16 +325,13 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
   for _, roro in ipairs(roros) do
     for _, barge in ipairs(barges) do
       if barge.unit:inArea(roro.zone.lstAnchorageArea) then
-        local tag, msg = pairROROWithBarge(roro, barge, saveData)
-        table.insert(logEntries, LogFormat.entry(tag, msg))
+        local result = pairROROWithBarge(roro, barge, saveData)
+        report.add(result.tag, result.fields)
       end
     end
   end
 
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
-      LogFormat.summary("zone", zone.name, "Second wave unloading", logEntries))
-  end
+  report.emit()
 
   return true
 end
@@ -311,28 +353,14 @@ function SecondWaveUnloading.offloadVehicles(params)
   })
 
   local cargoItems = extractCargoItems(ship, params.num)
-  local logEntries = {}
-  local resultCount = 0
+  local count, results = spawnOffloadedVehicles(ship, cargoItems, ACVlocations)
 
-  for idx, item in ipairs(cargoItems) do
-    local tag, msg = spawnOffloadedVehicle(ship, item, ACVlocations[idx])
-    table.insert(logEntries, LogFormat.entry(tag, string.format("idx=%d %s", idx, msg)))
+  local report = LogFormat.report(
+    constants.TAGS.SECOND_WAVE_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")
+  report.addAll(results)
+  report.emit()
 
-    if tag == "FAIL" then
-      Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
-        LogFormat.summary("ship", ship.name or ship.guid, "Offload vehicles", logEntries))
-      return
-    end
-
-    resultCount = resultCount + 1
-  end
-
-  if #logEntries > 0 then
-    Logger.log(constants.TAGS.SECOND_WAVE_UNLOADING,
-      LogFormat.summary("ship", ship.name or ship.guid, "Offload vehicles", logEntries))
-  end
-
-  return resultCount
+  return count
 end
 
 return SecondWaveUnloading

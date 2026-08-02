@@ -33,7 +33,7 @@ flowchart TD
     C --> E[addResupplyUnit]
     C --> F[addAmmunition]
     D --> G[cleanupAndRedistributeWeapons]
-    B --> H[Logger summary]
+    B --> H[LogFormat.report]
 ```
 
 ---

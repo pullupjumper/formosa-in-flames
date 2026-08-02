@@ -59,7 +59,7 @@
 
 ### 結果回傳
 
-每個內部 cycle 函式都會回傳 `SBJ__ReloadCycleResult | nil`，由 `Cycle.process` 收成一個陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本），供 log 與 UI 使用。回傳結構固定為 `{ tag = "OK", unitName = ..., action = ... }`。
+每個內部 cycle 函式都會回傳 `SBJ__LogResult[]`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本），供 log 與 UI 使用。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `MissileSystem.checkMissileSystemState` 補上，本模組只負責 unit 層級的欄位。
 
 ---
 
@@ -125,7 +125,23 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `Cycle.process` | `systemCtx: SBJ__MissileSystemContext, isAuto: boolean, sideName: string` | `SBJ__ReloadCycleResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
+| `Cycle.process` | `systemCtx: SBJ__MissileSystemContext, isAuto: boolean, sideName: string` | `SBJ__LogResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
+
+---
+
+## 回傳的日誌列
+
+`Cycle.process` 回傳 `SBJ__LogResult[]`，由 [init](init.md) 補上 `system=` 後交給 `LogFormat.report`。`action` 由 producer 直接寫成 snake_case token，log 層不再做大小寫轉換。
+
+| `action` | 觸發時機 |
+|---|---|
+| `stow_countdown_started` | 首次偵測到需要轉移，開始 stow 倒數 |
+| `move_to_hide_area` / `move_to_firing_point` / `move_to_ammo_holding_area` | stow 完成後的移動指令 |
+| `move_resupply_to_reload_point` / `move_firing_unit_to_reload_point` | 補給車與射擊單元前往 RL |
+| `unload_from_hide_area` / `hide_resupply_unit` | 補給車進出遮蔽建築 |
+| `missile_reload_finished` / `ammo_transload_finished` | 補給完成，帶 `loaded=` / `transferred=` 數量 |
+
+移動指令失敗一律 `reason=command_failed`，`Movement` / `Concealment` 回傳的英文訊息放在 `detail=`。
 
 ---
 

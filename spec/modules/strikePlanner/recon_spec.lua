@@ -512,6 +512,10 @@ describe("Recon", function()
       Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
+      -- The specific tracking reason reaches the log; state keeps the coarse token greppable
+      assert.is_true(hasErrorCall("state=tracking_failed"))
+      assert.is_true(hasErrorCall("reason=tracking_target_lost"))
+      assert.is_true(hasErrorCall("missionStatus=completed"))
     end)
 
     it("should complete normally when isTracking set but no trackingTargetGUID", function()
@@ -536,6 +540,9 @@ describe("Recon", function()
 
       -- Tracking failed => settleReconMission called with success=true
       assert.is_true(entry.isFinished)
+      -- No trackingTargetGUID never enters the tracking path, so this is a normal completion
+      assert.is_true(hasLogCall(constants.TAGS.RECON, "action=complete_mission"))
+      assert.is_false(hasErrorCall("state=tracking_failed"))
     end)
 
     it("should finish mission via tracking failure when no speed configured", function()
@@ -544,12 +551,17 @@ describe("Recon", function()
         unitGUID = "AC-001",
         isTracking = true,
         trackingTargetGUID = "CONTACT-001",
-        speed = nil,
       })
+      -- speed=nil cannot travel through the overrides table, so clear it explicitly
+      entry.speed = nil
       local ac = makeUnit({ guid = "AC-001", course = {} })
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(ac))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      -- A live contact proves the speed guard fired rather than a lost target
+      trackStub(stub(GameApi, "ScenEdit_GetContact").returns({
+        guid = "CONTACT-001", latitude = 23.0, longitude = 119.0
+      }))
       trackStub(stub(OperationScheduler, "getLastExecutedOperationsAndNextTime").returns({
         air = {}, ground = {}, mostRecentTime = nil, nextReconTime = nil,
       }))
@@ -559,6 +571,9 @@ describe("Recon", function()
       Recon.processQueue(makeProcessingContext(reconContext))
 
       assert.is_true(entry.isFinished)
+      assert.is_true(hasErrorCall("state=tracking_failed"))
+      assert.is_true(hasErrorCall("reason=speed_not_configured"))
+      assert.is_false(hasErrorCall("reason=tracking_target_lost"))
     end)
 
     -- ========================================================================
