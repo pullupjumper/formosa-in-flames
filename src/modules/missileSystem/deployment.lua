@@ -6,20 +6,6 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Deployment = {}
 
----Check whether a helper's rows contain a failure
----Derived from the rows themselves so a separate flag can never drift from them.
----@param entries SBJ__LogResult[] Rows produced by a deployment helper
----@return boolean # True when at least one row is tagged FAIL
-local function containsFailure(entries)
-  for _, entry in ipairs(entries) do
-    if entry.tag == "FAIL" then
-      return true
-    end
-  end
-
-  return false
-end
-
 ---Remove missile systems from the game
 ---@param systemName string Missile system name
 ---@param role string Unit role
@@ -385,39 +371,39 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
     for _, descriptor in pairs(systemCfg.firingUnits) do
       local removeEntries = removeMissileSystem(systemName, "firing", descriptor, sideName)
       report.addAll(removeEntries)
-      systemHasFailure = systemHasFailure or containsFailure(removeEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
       local created, expected, detailEntries = addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
       fuTotal = fuTotal + created
       fuExpected = fuExpected + expected
       report.addAll(detailEntries)
-      systemHasFailure = systemHasFailure or containsFailure(detailEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(detailEntries)
     end
 
     local ruTotal, ruExpected = 0, 0
     for _, descriptor in pairs(systemCfg.resupplyUnits) do
       local removeEntries = removeMissileSystem(systemName, "resupply", descriptor, sideName)
       report.addAll(removeEntries)
-      systemHasFailure = systemHasFailure or containsFailure(removeEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
       local created, expected, detailEntries = addResupplyUnit(systemName, descriptor, sideName)
       ruTotal = ruTotal + created
       ruExpected = ruExpected + expected
       report.addAll(detailEntries)
-      systemHasFailure = systemHasFailure or containsFailure(detailEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(detailEntries)
     end
 
     local ammoOk, ammoTotal = 0, 0
     for _, descriptor in pairs(systemCfg.ammunitions) do
       local removeEntries = removeMissileSystem(systemName, "ammo", descriptor, sideName)
       report.addAll(removeEntries)
-      systemHasFailure = systemHasFailure or containsFailure(removeEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
       local success, ammoEntries = addAmmunition(systemName, systemCfg, descriptor, sideName)
       ammoTotal = ammoTotal + 1
       if success then ammoOk = ammoOk + 1 end
       report.addAll(ammoEntries)
-      systemHasFailure = systemHasFailure or containsFailure(ammoEntries)
+      systemHasFailure = systemHasFailure or LogFormat.hasFailure(ammoEntries)
     end
 
     if fuTotal < fuExpected or ruTotal < ruExpected or ammoOk < ammoTotal then

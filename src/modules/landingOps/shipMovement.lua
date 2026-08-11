@@ -66,21 +66,6 @@ local SHIP_ROW_LAYOUT = {
 -- Ship Position Utilities
 -- ============================================================================
 
----Check whether a batch of rows contains a failure
----moveToStagingArea reports success through its return value, so it derives the
----answer from the rows instead of carrying a flag that could drift from them.
----@param results SBJ__LogResult[] Rows collected during the pass
----@return boolean # True when at least one row is tagged FAIL
-local function containsFailure(results)
-  for _, result in ipairs(results) do
-    if result.tag == "FAIL" then
-      return true
-    end
-  end
-
-  return false
-end
-
 ---Move a ship to a target location with specified speed
 ---In testing mode, teleports the ship directly to the destination
 ---@param unit CMO__Unit The ship unit to move
@@ -520,7 +505,7 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   report.addAll(results)
   report.emit()
 
-  return not containsFailure(results)
+  return not LogFormat.hasFailure(results)
 end
 
 return ShipMovement

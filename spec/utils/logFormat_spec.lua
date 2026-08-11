@@ -141,6 +141,48 @@ describe("LogFormat", function()
   end)
 
   -- ============================================================================
+  -- hasFailure
+  -- ============================================================================
+
+  describe("hasFailure", function()
+    -- Positive: a FAIL anywhere in the batch settles the answer
+    it("should detect a FAIL row in any position", function()
+      assert.is_true(LogFormat.hasFailure({ { tag = "FAIL", fields = {} } }))
+      assert.is_true(LogFormat.hasFailure({
+        { tag = "OK",   fields = {} },
+        { tag = "SKIP", fields = {} },
+        { tag = "FAIL", fields = {} },
+      }))
+    end)
+
+    -- Negative: non-FAIL statuses must not be mistaken for failures
+    it("should return false when no row is tagged FAIL", function()
+      assert.is_false(LogFormat.hasFailure({
+        { tag = "OK",     fields = {} },
+        { tag = "SKIP",   fields = {} },
+        { tag = "WARN",   fields = {} },
+        { tag = "HOLD",   fields = {} },
+        { tag = "RESUME", fields = {} },
+      }))
+    end)
+
+    -- Boundary: ERROR routes to the error sink but is not a batch failure
+    it("should not treat ERROR as a failure", function()
+      assert.is_false(LogFormat.hasFailure({ { tag = "ERROR", fields = {} } }))
+    end)
+
+    -- Boundary: an empty pass handled nothing, so it failed at nothing
+    it("should return false for an empty batch", function()
+      assert.is_false(LogFormat.hasFailure({}))
+    end)
+
+    -- Boundary: tags are accepted with or without brackets, like every other entry point
+    it("should accept a bracketed tag", function()
+      assert.is_true(LogFormat.hasFailure({ { tag = "[FAIL]", fields = {} } }))
+    end)
+  end)
+
+  -- ============================================================================
   -- report
   -- ============================================================================
 

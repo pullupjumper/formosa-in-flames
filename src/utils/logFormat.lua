@@ -207,6 +207,21 @@ local function isErrorTag(tag)
   return ERROR_STATUS[normalizeTag(tag)] == true
 end
 
+---Check whether a batch of rows contains a failure
+---Callers that report success through their return value derive the answer from
+---the rows instead of carrying a flag that could drift from them.
+---@param rows SBJ__LogResult[] Rows collected during a pass
+---@return boolean # True when at least one row is tagged FAIL
+function LogFormat.hasFailure(rows)
+  for _, row in ipairs(rows) do
+    if normalizeTag(row.tag) == "FAIL" then
+      return true
+    end
+  end
+
+  return false
+end
+
 -- ============================================================================
 -- Batched Report
 -- ============================================================================
