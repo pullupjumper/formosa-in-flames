@@ -1,5 +1,6 @@
 local math = require("math")
 local Utils = require("src.utils.utils")
+local GameApi = require("src.utils.gameApi")
 
 local BearingOnlyLaunch = {}
 
@@ -74,7 +75,7 @@ end
 ---@return table<integer, SBJ__MissilePath> # Missile path list with waypoints and launch times
 function BearingOnlyLaunch.generateMissilePaths(params)
   local result = {}
-  local now = os.time()
+  local now = GameApi.ScenEdit_CurrentTime()
 
   local targetLat = params.targetLat
   local targetLon = params.targetLon

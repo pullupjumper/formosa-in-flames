@@ -61,13 +61,15 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
     isdst = false,
   }
 
-  -- Calculate timestamp: we want it to be UTC -> so first use os.time(utcTable) as local time
-  -- Then add back offset to get the real UTC timestamp
+  -- The string is UTC, but os.time() reads utcTable as local time, so the result
+  -- falls short by exactly the local UTC offset -- add it back.
+  -- This must stay a "+": subtracting under-shoots by twice the offset, which a
+  -- hardcoded +16h once masked on UTC+8 machines and nowhere else.
   local localTimestamp = os.time(utcTable)
   local date = os.date("!*t")
   ---@cast date osdate
   local tzOffset = os.difftime(os.time(), os.time(date))
-  return localTimestamp - tzOffset + (16 * 3600)
+  return localTimestamp + tzOffset
 end
 
 ---Safely call a function with error handling

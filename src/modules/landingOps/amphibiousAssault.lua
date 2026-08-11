@@ -71,7 +71,7 @@ end
 ---@param currentTime number Current scenario time in seconds
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setMissionStartTime(mission, currentTime)
-  local startTime = os.date("%Y-%m-%d %H:%M:%S", (currentTime + mission.startTime))
+  local startTime = os.date(constants.DATE_FORMAT, (currentTime + mission.startTime))
   local m = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, mission.name)
 
   if not m then

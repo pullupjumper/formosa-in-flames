@@ -322,7 +322,7 @@ local function handleReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
           action = "reload_started",
           triggerUnit = unit.name,
           state = "RELOAD",
-          startedAt = firingUnitCtx.reloadStartTime
+          startedAt = os.date(constants.DATE_FORMAT, firingUnitCtx.reloadStartTime)
         }
       }
     end
@@ -364,7 +364,7 @@ local function handleAmmoHoldingArea(systemName, systemCtx, unit, isAuto, behavi
         unit = resupplyUnit.name,
         action = "transload_started",
         state = "RELOAD",
-        startedAt = resupplyUnit.reloadStartTime
+        startedAt = os.date(constants.DATE_FORMAT, resupplyUnitCtx.reloadStartTime)
       }
     }
   end

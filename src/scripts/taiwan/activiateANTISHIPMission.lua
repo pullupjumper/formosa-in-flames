@@ -10,9 +10,9 @@ local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function setAntiShipMissionStartTime()
   local currentTime = GameApi.ScenEdit_CurrentTime()
-  local antiShipStartTime = os.date("%m/%d/%Y %I:%M:%S %p", currentTime)
-  local reconStartTime3 = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 10 * 60))
-  local asuwAgainstACVStartTime = os.date("%m/%d/%Y %I:%M:%S %p", (currentTime + 40 * 60))
+  local antiShipStartTime = os.date(constants.DATE_FORMAT, currentTime)
+  local reconStartTime3 = os.date(constants.DATE_FORMAT, (currentTime + 10 * 60))
+  local asuwAgainstACVStartTime = os.date(constants.DATE_FORMAT, (currentTime + 40 * 60))
   GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/SHIP/W/1").starttime = antiShipStartTime
   GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/SHIP/W/2").starttime = reconStartTime3
   GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/ACV/W").starttime = asuwAgainstACVStartTime

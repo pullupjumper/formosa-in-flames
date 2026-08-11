@@ -217,12 +217,11 @@ describe("AmphibiousAssault", function()
         boat = { missions = {} },
         attackHelicopter = { missions = {} },
       })
-      local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
 
-      local expectedTime = os.date("%Y-%m-%d %H:%M:%S", 1600) .. constants.TIME_FORMATS
+      local expectedTime = "1970-01-01 00:26:40" .. constants.TIME_FORMATS
       assert.are.equal(expectedTime, missionObj.starttime)
     end)
 
