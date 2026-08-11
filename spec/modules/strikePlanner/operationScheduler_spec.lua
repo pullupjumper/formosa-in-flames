@@ -288,6 +288,59 @@ describe("OperationScheduler", function()
         "%[HOLD%].*operation=GND/STRIKE/INFRA/ALL/1.*reason=fire_support_on_hold"))
     end)
 
+    -- Negative: the LACM strike stays out of the batch until the LACM context activates.
+    it("should skip AIR/STRIKE/AB/E/1 when LACM is not enabled", function()
+      local cfg = makeConfig()
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
+        { name = "AIR/STRIKE/AB/W/1", type = "air" },
+      }
+      cfg.c.packageTemplates.AIR_STRIKE_AB_E_1 = {
+        { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      cfg.c.packageTemplates.AIR_STRIKE_AB_W_1 = {
+        { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      local operations = {}
+      stubRecurringHelpers()
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+
+      OperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(false), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
+
+      -- The sibling mapping stays, so the gate dropped E/1 alone rather than the whole batch
+      assert.are.equal(1, #operations)
+      assert.are.equal(1, #operations[1].operations)
+      assert.are.equal("AIR/STRIKE/AB/W/1", operations[1].operations[1].template.name)
+      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS,
+        "%[SKIP%].*operation=AIR/STRIKE/AB/E/1.*reason=lacm_not_active"))
+    end)
+
+    -- Positive: the same mapping schedules once LACM is active, proving the gate is conditional
+    it("should schedule AIR/STRIKE/AB/E/1 when LACM is enabled", function()
+      local cfg = makeConfig()
+      cfg.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+        { name = "AIR/STRIKE/AB/E/1", type = "air" },
+      }
+      cfg.c.packageTemplates.AIR_STRIKE_AB_E_1 = {
+        { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
+      }
+      local operations = {}
+      stubRecurringHelpers()
+      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+
+      OperationScheduler.schedule(
+        makeProcessingContext(cfg, makeReconContext(), operations, makeLACMContext(true), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
+
+      assert.are.equal(1, #operations)
+      assert.are.equal(1, #operations[1].operations)
+      assert.are.equal("AIR/STRIKE/AB/E/1", operations[1].operations[1].template.name)
+    end)
+
     -- Negative: scope metadata belongs to the summary action, not the entry rollup.
     it("should keep scope metadata out of the entry counts", function()
       local cfg = makeConfig()

@@ -296,11 +296,14 @@ end
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildOperationFromMapping(strikeMapping, processingContext)
   if strikeMapping.name == "AIR/STRIKE/AB/E/1" and not processingContext.LACMContext.enabled then
-    return nil, { tag = "SKIP", fields = {
-      operation = strikeMapping.name,
-      type = strikeMapping.type,
-      reason = "lacm_not_active"
-    } }
+    return nil, {
+      tag = "SKIP",
+      fields = {
+        operation = strikeMapping.name,
+        type = strikeMapping.type,
+        reason = "lacm_not_active"
+      }
+    }
   end
 
   local newOperation = {
@@ -322,11 +325,14 @@ local function buildOperationFromMapping(strikeMapping, processingContext)
     newOperation.template.strikeInterval = 0
   end
 
-  return newOperation, { tag = "OK", fields = {
-    operation = strikeMapping.name,
-    type = strikeMapping.type,
-    action = "schedule_new"
-  } }
+  return newOperation, {
+    tag = "OK",
+    fields = {
+      operation = strikeMapping.name,
+      type = strikeMapping.type,
+      action = "schedule_new"
+    }
+  }
 end
 
 ---Try to generate a next operation from an existing prefix-matched operation
@@ -354,12 +360,15 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
   -- PARSE_ERROR and UNKNOWN_TYPE hand back a copy of the source operation, which would
   -- re-queue an already-executed wave. Report the miss instead of scheduling the duplicate.
   if status ~= NEXT_OPERATION_STATUS.FOUND_NEXT and status ~= NEXT_OPERATION_STATUS.REUSED_CURRENT then
-    return nil, { tag = "WARN", fields = {
-      operation = operation.template.name,
-      type = strikeMapping.type,
-      action = "schedule_next",
-      reason = string.lower(status)
-    } }
+    return nil, {
+      tag = "WARN",
+      fields = {
+        operation = operation.template.name,
+        type = strikeMapping.type,
+        action = "schedule_next",
+        reason = string.lower(status)
+      }
+    }
   end
 
   -- Skip if an equivalent next wave is already scheduled but not yet executed; otherwise the same
@@ -371,20 +380,26 @@ local function tryGenerateNextOperation(strikeMapping, processingContext)
         nextOperation.template.name,
         strikeMapping.type
       ) then
-    return nil, { tag = "SKIP", fields = {
-      operation = nextOperation.template.name,
-      type = strikeMapping.type,
-      reason = "already_pending"
-    } }
+    return nil, {
+      tag = "SKIP",
+      fields = {
+        operation = nextOperation.template.name,
+        type = strikeMapping.type,
+        reason = "already_pending"
+      }
+    }
   end
 
-  return nextOperation, { tag = "OK", fields = {
-    operation = operation.template.name,
-    nextOperation = nextOperation.template.name,
-    type = strikeMapping.type,
-    action = "schedule_next",
-    status = string.lower(status)
-  } }
+  return nextOperation, {
+    tag = "OK",
+    fields = {
+      operation = operation.template.name,
+      nextOperation = nextOperation.template.name,
+      type = strikeMapping.type,
+      action = "schedule_next",
+      status = string.lower(status)
+    }
+  }
 end
 
 ---Build follow-on operations unlocked by a completed reconnaissance objective
@@ -399,28 +414,37 @@ local function buildOperationsForReconObjective(processingContext, entry)
   local strikeMappingsByReconObjective = processingContext.config.c.recon.strikeMappingsByReconObjective
 
   if not strikeMappingsByReconObjective then
-    table.insert(results, { tag = "ERROR", fields = {
-      type = entry.type,
-      reason = "strike_mappings_by_recon_objective_not_found"
-    } })
+    table.insert(results, {
+      tag = "ERROR",
+      fields = {
+        type = entry.type,
+        reason = "strike_mappings_by_recon_objective_not_found"
+      }
+    })
     return operations, results
   end
 
   if not entry.reconObjectiveId then
-    table.insert(results, { tag = "SKIP", fields = {
-      type = entry.type,
-      reason = "recon_objective_not_assigned"
-    } })
+    table.insert(results, {
+      tag = "SKIP",
+      fields = {
+        type = entry.type,
+        reason = "recon_objective_not_assigned"
+      }
+    })
     return operations, results
   end
 
   local strikeMappings = findStrikeMappingsForReconObjective(strikeMappingsByReconObjective, entry)
   if not strikeMappings then
-    table.insert(results, { tag = "SKIP", fields = {
-      type = entry.type,
-      objective = entry.reconObjectiveId,
-      reason = "strike_mapping_not_found"
-    } })
+    table.insert(results, {
+      tag = "SKIP",
+      fields = {
+        type = entry.type,
+        objective = entry.reconObjectiveId,
+        reason = "strike_mapping_not_found"
+      }
+    })
     return operations, results
   end
 
@@ -433,11 +457,14 @@ local function buildOperationsForReconObjective(processingContext, entry)
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Gate: SRBM mappings (GND/STRIKE/INFRA/*) skipped while fire support is on hold.
     if processingContext.fireSupportOnHold and strikeMapping.name:find("^GND/STRIKE/INFRA/") then
-      table.insert(results, { tag = "HOLD", fields = {
-        operation = strikeMapping.name,
-        type = strikeMapping.type,
-        reason = "fire_support_on_hold"
-      } })
+      table.insert(results, {
+        tag = "HOLD",
+        fields = {
+          operation = strikeMapping.name,
+          type = strikeMapping.type,
+          reason = "fire_support_on_hold"
+        }
+      })
     else
       local skipMapping = false
 
