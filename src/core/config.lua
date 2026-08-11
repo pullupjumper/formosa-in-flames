@@ -950,7 +950,6 @@ config.c.recon.template = {
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.BZK005,
     course = constants.COURSES.BZK005_1,
-    unitCount = 1,
     speed = 115,
     isTracking = false
   },
@@ -960,7 +959,6 @@ config.c.recon.template = {
     baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
     unitDBID = constants.PLATFORMS.BZK005,
     course = constants.COURSES.BZK005_2,
-    unitCount = 1,
     speed = 115,
     isTracking = false
   },
@@ -971,8 +969,11 @@ config.c.recon.template = {
     baseGUID = constants.BASES.LIUAN_AB,
     unitDBID = constants.PLATFORMS.H6N,
     course = constants.COURSES.H6N,
-    unitCount = 1,
     speed = 450,
+    -- The H-6N launches, then launchWZ8.lua hands the entry over to the WZ-8 it releases.
+    -- speed above stays the H-6N cruise used for flight-time estimation; this is what the
+    -- WZ-8 is told to fly while shadowing a contact.
+    trackingSpeed = 3300,
     isTracking = true
   },
   WZ7_RECON_1 = {
@@ -981,7 +982,6 @@ config.c.recon.template = {
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.WZ7,
     course = constants.COURSES.BZK005_1,
-    unitCount = 1,
     speed = 450,
     isTracking = false
   },
@@ -991,7 +991,6 @@ config.c.recon.template = {
     baseGUID = constants.BASES.LONGTIAN_AAB,
     unitDBID = constants.PLATFORMS.TB001,
     course = constants.COURSES.BZK005_1,
-    unitCount = 1,
     speed = 135,
     isTracking = false
   },
@@ -1002,7 +1001,6 @@ config.c.recon.template = {
     baseGUID = "Type 076",
     unitDBID = constants.PLATFORMS.GJ11,
     course = constants.COURSES.GJ11,
-    unitCount = 1,
     speed = 600,
     isTracking = false
   }
@@ -1049,19 +1047,18 @@ config.c.recon.frontlineRedirect = {
   },
 }
 config.c.recon.queue = {
+  -- A UAV may be authored here instead of going through Recon.insertEntry, in which case it
+  -- must carry its own takeoffTime and endTime. Run-state fields (hasLaunched, isFinished,
+  -- unitGUID, trackingTargetGUID) are filled in by initQueue, not listed here.
   -- {
   --   type = "UAV",
+  --   templateId = "H6N_RECON_ISLAND",
   --   baseGUID = constants.BASES.LIUAN_AB,
   --   unitDBID = constants.PLATFORMS.H6N,
-  --   unitGUID = nil,
   --   course = constants.COURSES.H6N,
-  --   unitCount = 1,
-  --   -- takeoffTime = "2027-06-09 01:20:00",
+  --   speed = 450,
   --   takeoffTime = "2027-06-09 01:00:00",
   --   endTime = "2027-06-09 02:00:00",
-  --   isFinished = false,
-  --   trackingTargetGUID = nil,
-  --   speed = 450
   -- },
   {
     type = "satellite",

@@ -234,8 +234,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
----@field template table<string, SBJ__ReconQueueEntryTemplateUAV> Reconnaissance templates indexed by template name
----@field queue SBJ__ReconQueueEntryTemplate[] Reconnaissance queue
+---@field template table<string, SBJ__ReconUAVTemplate> Reconnaissance templates indexed by template name
+---@field queue SBJ__ReconQueuePlan[] Reconnaissance queue as authored in config; initQueue turns each plan into its SBJ__ReconQueueEntry form
 ---@field strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
@@ -1186,44 +1186,56 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- ============================================================================
 -- Reconnaissance and intelligence types for recon module
 
----Base reconnaissance queue entry template with shared fields
----@class SBJ__ReconQueueEntryBase: table
----@field type string Reconnaissance type: "UAV"|"satellite"|"SIGINT"
+---Reconnaissance platform discriminator
+---@alias SBJ__ReconType "UAV"|"satellite"|"SIGINT"
+
+---Execution state attached when a queue plan is initialized
+---Both flags are always present on a queued entry, which is what separates
+---SBJ__ReconQueueEntry from SBJ__ReconQueuePlan.
+---@class SBJ__ReconRunState: table
+---@field isFinished boolean Whether the mission has settled
+---@field hasScheduledOperations boolean Whether follow-on operations were queued; never cleared, unlike isFinished
+
+---UAV reconnaissance blueprint held in config.c.recon.template
+---Carries no timings: insertEntry resolves those when the entry is queued.
+---@class SBJ__ReconUAVTemplate: table
+---@field type "UAV" Platform discriminator
+---@field templateId string Unique identifier matching its key in config.c.recon.template; used to detect duplicate queue entries
 ---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings; omit for recon that does not trigger strikes
----@field endTime? string Scheduled end time in format "YYYY-MM-DD HH:MM:SS" (optional)
+---@field baseGUID string Base GUID where the UAV is stationed
+---@field unitDBID number Platform database ID of the unit launched from baseGUID
+---@field course CMO__Waypoint[] Waypoints for the reconnaissance route
+---@field speed number Cruise speed in knots of the launched unit; also drives flight-time estimation
+---@field trackingSpeed? number Desired speed in knots while shadowing a contact; falls back to speed when the tracking airframe is the launched one
+---@field isTracking? boolean Whether this mission may be handed a tracking target
 
----UAV reconnaissance queue entry template
----Complete configuration for UAV reconnaissance missions including launch and flight parameters
----@class SBJ__ReconQueueEntryTemplateUAV: SBJ__ReconQueueEntryBase
----@field templateId string Unique template identifier matching its key in config.c.recon.template; used to detect duplicate queue entries
----@field baseGUID string Base GUID where UAV is stationed
----@field unitDBID number UAV platform database ID
----@field course CMO__Waypoint[] Waypoints for reconnaissance route
----@field unitCount number Number of UAVs to deploy
----@field speed number Cruise speed in knots for tracking mode
----@field takeoffTime? string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
----@field isTracking? boolean Whether to track this reconnaissance mission (optional)
+---UAV blueprint plus resolved timings, as authored directly in config.c.recon.queue
+---Recon.insertEntry produces this shape too, by computing the timings from the course.
+---@class SBJ__ReconUAVPlan: SBJ__ReconUAVTemplate
+---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
+---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
 
----Satellite reconnaissance queue entry template
----Simplified configuration for satellite/SIGINT reconnaissance requiring timing and objective information
----@class SBJ__ReconQueueEntryTemplateSatellite: SBJ__ReconQueueEntryBase
+---UAV plan once queued, with execution state attached by initQueue
+---@class SBJ__ReconUAVEntry: SBJ__ReconUAVPlan, SBJ__ReconRunState
+---@field hasLaunched boolean Whether the launch phase has run
+---@field unitGUID? string Unit being monitored: the launched aircraft, or the WZ-8 it released
+---@field trackingTargetGUID? string Target contact GUID being shadowed
 
----Union type for all reconnaissance entry templates
----@alias SBJ__ReconQueueEntryTemplate SBJ__ReconQueueEntryTemplateUAV|SBJ__ReconQueueEntryTemplateSatellite
+---Satellite or SIGINT pass as authored in config.c.recon.queue
+---These have no launch phase, so the plan needs nothing beyond its objective and timing.
+---@class SBJ__ReconPassivePlan: table
+---@field type "satellite"|"SIGINT" Platform discriminator
+---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings
+---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
 
----UAV reconnaissance queue entry with execution state
----@class SBJ__ReconQueueEntryUAV: SBJ__ReconQueueEntryTemplateUAV
----@field unitGUID? string UAV unit GUID (nil if not yet created)
----@field hasLaunched boolean Whether reconnaissance mission has launched
----@field isFinished? boolean Whether reconnaissance mission has finished (optional)
----@field trackingTargetGUID? string Target contact GUID being tracked (optional, only used when isTracking is true)
+---Satellite or SIGINT pass once queued
+---@class SBJ__ReconPassiveEntry: SBJ__ReconPassivePlan, SBJ__ReconRunState
 
----Satellite reconnaissance queue entry with execution state
----@class SBJ__ReconQueueEntrySatellite: SBJ__ReconQueueEntryTemplateSatellite
----@field isFinished? boolean Whether reconnaissance mission has finished (optional)
+---Union of what config.c.recon.queue holds before initQueue runs
+---@alias SBJ__ReconQueuePlan SBJ__ReconUAVPlan|SBJ__ReconPassivePlan
 
----Union type for all reconnaissance queue entries with execution state
----@alias SBJ__ReconQueueEntry SBJ__ReconQueueEntryUAV|SBJ__ReconQueueEntrySatellite
+---Union of every queued reconnaissance entry
+---@alias SBJ__ReconQueueEntry SBJ__ReconUAVEntry|SBJ__ReconPassiveEntry
 
 ---Reconnaissance context managing reconnaissance operations state
 ---@class SBJ__ReconContext: table
@@ -1326,7 +1338,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field wildWeasel? SBJ__MissionDeploymentDescriptor Wild Weasel configuration (optional)
 ---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
 ---@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration (optional)
----@field reconUAV? SBJ__ReconQueueEntryTemplateUAV Reconnaissance UAV configuration (optional)
+---@field reconUAV? SBJ__ReconUAVTemplate Reconnaissance UAV configuration (optional)
 ---@field timeToReady number Ready time in seconds
 ---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
 

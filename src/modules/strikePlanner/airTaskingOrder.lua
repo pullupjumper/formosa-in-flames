@@ -436,21 +436,17 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param packageData SBJ__Package Package data with optional reconUAV
----@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
+---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 local function scheduleReconUAV(config, saveData, packageData)
   if not packageData.reconUAV then
     return
   end
 
-  if not packageData.reconUAV.takeoffTime then
-    local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
-    local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
-        flightTime
-    local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
-    return Recon.insertEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
-  end
-
-  return nil
+  local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
+  local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
+      flightTime
+  local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
+  return Recon.insertEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
 end
 
 -- ============================================================================

@@ -11,14 +11,14 @@ local StrikePlanner = {}
 ---@param reconConfig SBJ__ReconConfig Reconnaissance configuration
 ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
 function StrikePlanner.initReconQueue(reconConfig, reconContext)
-  Recon.initReconQueueEntries(reconConfig, reconContext)
+  Recon.initQueue(reconConfig, reconContext)
 end
 
 ---Schedule a UAV entry in the reconnaissance queue
 ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
----@param entryTemplate SBJ__ReconQueueEntryTemplateUAV The template for the entry to insert
+---@param entryTemplate SBJ__ReconUAVTemplate The template for the entry to insert
 ---@param startTime string|nil The start time of the entry to insert
----@return SBJ__ReconQueueEntryUAV|nil # The inserted entry, or nil if no entry was inserted
+---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 function StrikePlanner.scheduleReconUAVEntry(reconContext, entryTemplate, startTime)
   return Recon.insertEntry(reconContext, entryTemplate, startTime)
 end

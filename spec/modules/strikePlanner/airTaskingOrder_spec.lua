@@ -1107,30 +1107,6 @@ describe("AirTaskingOrder", function()
       assert.is_true(pkg.hasLaunched)
       assert.are.equal(0, #saveData.c.recon.queue)
     end)
-
-    -- Negative: takeoffTime already calculated
-    it("should not recalculate takeoffTime if already set", function()
-      local reconUAV = {
-        course = { { lat = 25.0, lon = 121.0 }, { lat = 24.0, lon = 120.0 } },
-        speed = 400,
-        takeoffTime = "2026-02-14 07:00:00",
-        endTime = "2026-02-14 08:00:00"
-      }
-      local pkg = makePackage({ reconUAV = reconUAV })
-      local saveData = makeSaveData({ packages = { pkg } })
-
-      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-      stubMissionAndAssignment()
-      local stubCalcPath = trackStub(stub(GameUtils, "calculatePathDistanceAndTime"))
-
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
-
-      assert.stub(stubCalcPath).was_not.called()
-      assert.are.equal("2026-02-14 07:00:00", reconUAV.takeoffTime)
-      -- An already-scheduled reconUAV is not re-inserted into the queue
-      assert.are.equal(0, #saveData.c.recon.queue)
-    end)
   end)
 
   -- ============================================================================
