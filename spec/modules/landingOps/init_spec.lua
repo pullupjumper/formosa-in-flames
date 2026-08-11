@@ -1,6 +1,7 @@
 -- LandingOps Init Unit Tests
 local LandingOps = require("src.modules.landingOps.init")
 local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
@@ -12,6 +13,10 @@ local constants = require("src.core.constants")
 describe("LandingOps", function()
   ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local logStub
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -22,6 +27,8 @@ describe("LandingOps", function()
 
   before_each(function()
     activeStubs = {}
+    logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()

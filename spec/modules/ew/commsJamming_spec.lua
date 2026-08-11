@@ -9,6 +9,8 @@ local constants = require("src.core.constants")
 describe("CommsJamming", function()
   ---@type luassert.spy[]
   local activeStubs
+  ---@type luassert.spy
+  local errorStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -21,6 +23,7 @@ describe("CommsJamming", function()
     activeStubs = {}
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
+    errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()

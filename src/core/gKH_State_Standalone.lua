@@ -8,7 +8,7 @@
 
 
 ---- Setup ----
-print("gKH.State library loading...");
+-- print("gKH.State library loading...");
 
 --Does overall gKH library exist? If not set up dummy one, if so do not overwrite it.
 if gKH == nil then
@@ -156,7 +156,7 @@ function gKH.json.parse(str, pos, end_delim)
       arr[#arr + 1] = val
       pos, delim_found = gKH.json.skip_delim(str, pos, ",")
     end
-  elseif first == "\"" then                      -- Parse a string.
+  elseif first == "\"" then                     -- Parse a string.
     return gKH.json.parse_str_val(str, pos + 1)
   elseif first == "-" or first:match("%d") then -- Parse a number.
     return gKH.json.parse_num_val(str, pos)
@@ -236,6 +236,6 @@ function gKH.State.LoadTableFromKey(theKey, nolog)
   return nil;
 end
 
-print("gKH.State library successfully loaded.");
+-- print("gKH.State library successfully loaded.");
 
 return gKH
