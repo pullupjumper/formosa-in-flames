@@ -443,7 +443,9 @@ local function processAirOperation(config, saveData, contacts, batchedOp)
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
-  if not operation.template then
+  -- packages is required: buildExecutablePackages and evaluateTargetsFromTemplate
+  -- both iterate it unconditionally. Mirrors the FSEM-side guard in fsemBuilder.
+  if not operation.template or not operation.template.packages then
     return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
   end
 

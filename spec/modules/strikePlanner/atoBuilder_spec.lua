@@ -670,6 +670,37 @@ describe("AtoBuilder", function()
     assert.truthy(errorMessage:find("reason=missing_wave_template", 1, true))
   end)
 
+  -- Negative: template resolved but its package array is missing
+  it("should not insert ATO wave when the template has no packages", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation()
+    -- A mapping whose config template lookup missed leaves packages unset;
+    -- evaluateTargetsFromTemplate would otherwise call ipairs(nil).
+    operation.template.packages = nil
+    local saveData = {
+      c = {
+        dynamicOperations = {
+          enabled = true,
+          reconTriggeredOperationBatches = { reconEntry }
+        }
+      }
+    }
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTriggered()
+    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+
+    AtoBuilder.process(makeConfig(), saveData, {})
+
+    assert.stub(stubGenName).was_not.called()
+    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(errorStub).was.called(1)
+    local errorMessage = errorStub.calls[1].vals[1]
+    assert.truthy(errorMessage:find("reason=missing_wave_template", 1, true))
+  end)
+
   -- ============================================================================
   -- Negative: Target and Aircraft Validation
   -- ============================================================================
