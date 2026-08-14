@@ -812,7 +812,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table
----@field enabled boolean Whether LACM is activated
+---@field enabled boolean Sticky flag set true once the CSG reaches its station; never cleared, so it reads as "the LACM element is committed" rather than "the salvo is pending"
+---@field hasLaunched boolean Whether the salvo has already been fired
 ---@field startTime string LACM start time
 
 -- ============================================================================
@@ -1256,6 +1257,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__ReconStrikeMapping: table
 ---@field name string Strike mission name
 ---@field type SBJ__OperationType Strike mission type
+---@field requiresLACM? boolean Only schedule while the LACM element is committed; gates the first wave and every follow-on wave alike
 
 -- ============================================================================
 -- Dynamic Operations (ATO/FSEM)

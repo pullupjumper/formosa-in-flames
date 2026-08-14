@@ -183,6 +183,7 @@ saveData.c.amphibOps.barges = {}
 saveData.c.surface = {}
 saveData.c.surface.lacm = {}
 saveData.c.surface.lacm.enabled = false
+saveData.c.surface.lacm.hasLaunched = false
 saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 

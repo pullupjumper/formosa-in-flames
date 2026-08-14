@@ -39,7 +39,12 @@ if saveData.c.recon.enabled then
   end
 end
 
-if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
+-- lacm.enabled is sticky once the CSG reaches station, so hasLaunched is what
+-- keeps the salvo one-shot. Strike scheduling reads enabled to tell whether the
+-- LACM element is committed at all.
+if saveData.c.surface.lacm.enabled
+    and not saveData.c.surface.lacm.hasLaunched
+    and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
   local ships = {}
 
   for _, guid in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
@@ -55,7 +60,7 @@ if saveData.c.surface.lacm.enabled and GameUtils.isAfterStartTime(saveData.c.sur
     firingUnits = ships,
     weaponDBID = config.c.surface.lacm.weaponDBID
   })
-  saveData.c.surface.lacm.enabled = false
+  saveData.c.surface.lacm.hasLaunched = true
 end
 
 if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
