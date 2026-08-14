@@ -23,38 +23,69 @@ recon 模組管理偵察佇列中所有 UAV、衛星與 SIGINT 任務的完整�
 
 ## 偵察佇列生命週期
 
+UAV 走 `processUAVEntry`（發射 → 飛行監控 → 完成判定 → 追蹤）：
+
 ```mermaid
 flowchart TD
-    START(["initQueue"])
-    PENDING["待發射"]
-    FLYING["飛行中"]
-    WAITING["等待 endTime"]
-    TRACK["追蹤模式"]
-    OK["結算：成功"]
-    FAIL["結算：失敗"]
-    NEXT(["等下個 tick"])
-    FINISH(["結束"])
+    START(["processUAVEntry"])
+    LAUNCHED{"hasLaunched?"}
+    LAUNCH["runLaunchPhase"]
+    FINISHED{"isFinished?"}
+    ALIVE{"ScenEdit_GetUnit 取得單位?"}
+    DESTROYED["resolveDestroyedUAVOutcome"]
+    COURSE{"航線仍有航點?"}
+    ENDTIME{"endTime 已到?"}
+    TRACKING{"isTracking 且有目標?"}
+    UPDATE["updateTrackingCourse"]
+    SETTLE["settleReconMission"]
+    ROW(["回傳結果列"])
+    NOROW(["回傳 nil"])
 
-    START --> PENDING
-    PENDING -->|takeoffTime 到達| FLYING
-    PENDING -->|發射失敗| NEXT
-    FLYING -->|航線完成| WAITING
-    FLYING -->|航線未完成| NEXT
-    FLYING -->|endTime 前被擊落| FAIL
-    WAITING -->|endTime 到達| OK
-    WAITING -->|已指派追蹤| TRACK
-    WAITING -->|endTime 未到| NEXT
-    TRACK -->|接觸遺失| OK
-    TRACK -->|接觸仍在| NEXT
-    OK --> FINISH
-    FAIL --> FINISH
+    START --> LAUNCHED
+    LAUNCHED -->|否| LAUNCH --> ROW
+    LAUNCHED -->|是| FINISHED
+    FINISHED -->|是| NOROW
+    FINISHED -->|否| ALIVE
+    ALIVE -->|否| DESTROYED --> SETTLE
+    ALIVE -->|是| COURSE
+    COURSE -->|是| ROW
+    COURSE -->|否| ENDTIME
+    ENDTIME -->|否| ROW
+    ENDTIME -->|是| TRACKING
+    TRACKING -->|否| SETTLE
+    TRACKING -->|是| UPDATE
+    UPDATE -->|更新成功| ROW
+    UPDATE -->|更新失敗| SETTLE
+    SETTLE --> ROW
 ```
 
-`NEXT` 表示這個 tick 不動作，下個 tick 從該 entry 當前所處階段重新判斷；發射失敗時 `hasLaunched` 仍為 `false`，會一直重試。`endTime` 之後才被擊落算成功（走 `FLYING → OK`，圖上未畫）。
+`TRACKING` 與 `UPDATE` 兩個節點對應 `resolvePostCourseUAVAction`。追蹤更新**失敗仍然結算成功** —— 偵察本身已完成，追蹤只是附加任務；該列會補上 `state=tracking_failed` 與 `missionStatus=completed`。
 
-`Recon.trackTarget` 可以把已結算的 entry 清掉 `isFinished` 拉回追蹤模式，那是 processQueue 之外的外部觸發，不在此圖流程內。
+`DESTROYED` 的成敗取決於是否已過 `endTime`：`endTime` 之後才被擊落算**成功**（`reason=end_time_reached`），之前被擊落算失敗（`reason=destroyed_before_end_time`）。
 
-UAV 走 `processUAVEntry`（發射 → 飛行監控 → 完成判定 → 追蹤）；satellite 與 SIGINT 走 `processPassiveEntry`，沒有發射階段，`endTime` 到達即完成。三種類型都以 `reconObjectiveId` 索引後續打擊映射。
+`runLaunchPhase` 在 `takeoffTime` 未到時回 `SKIP`、發射失敗回 `FAIL`，兩者都不設 `hasLaunched`，因此下個 tick 會重試。
+
+satellite 與 SIGINT 走 `processPassiveEntry`，沒有發射與追蹤階段：
+
+```mermaid
+flowchart TD
+    START(["processPassiveEntry"])
+    FINISHED{"isFinished?"}
+    ENDTIME{"endTime 已到?"}
+    SETTLE["settleReconMission"]
+    ROW(["回傳結果列"])
+    NOROW(["回傳 nil"])
+
+    START --> FINISHED
+    FINISHED -->|是| NOROW
+    FINISHED -->|否| ENDTIME
+    ENDTIME -->|否| ROW
+    ENDTIME -->|是| SETTLE --> ROW
+```
+
+除了 `SETTLE` 之外的每個出口都只回傳結果列、不改變 entry 狀態，因此下個 tick 會從同一階段重新判斷。三種類型都以 `reconObjectiveId` 索引後續打擊映射。
+
+`Recon.trackTarget` 可以把已結算的 entry 清掉 `isFinished` 拉回追蹤模式，那是 `processQueue` 之外的外部觸發，不在上述兩圖的流程內。
 
 ---
 
@@ -109,22 +140,35 @@ UAV 走 `processUAVEntry`（發射 → 飛行監控 → 完成判定 → 追蹤�
 
 ```mermaid
 flowchart TD
-    TICK(["processReconQueue"])
-    REDIRECT["FrontlineRedirect.evaluate"]
-    LOOP["逐筆處理 queue"]
-    ENTRY{"entry.type"}
+    TICK(["Recon.processQueue"])
+    EVAL["FrontlineRedirect.evaluate"]
+    ACT{"回傳 activation 欄位?"}
+    ACTLOG["輸出 RESUME 列"]
+    REPORT["建立 LogFormat.report"]
+    LOOP["逐筆 reconContext.queue"]
+    TYPE{"entry.type"}
     UAV["processUAVEntry"]
-    SAT["processPassiveEntry"]
-    SETTLE{"首次成功結算?"}
-    SCHED["OperationScheduler.schedule"]
-    LOG(["report.emit()"])
+    PASSIVE["processPassiveEntry"]
+    HASROW{"有結果列?"}
+    ADD["補 entryType 後 report.add"]
+    NEXT["下一筆"]
+    EMIT(["report.emit"])
 
-    TICK --> REDIRECT --> LOOP --> ENTRY
-    ENTRY -->|UAV| UAV --> SETTLE
-    ENTRY -->|satellite / SIGINT| SAT --> SETTLE
-    SETTLE -->|是| SCHED --> LOG
-    SETTLE -->|否| LOG
+    TICK --> EVAL --> ACT
+    ACT -->|是| ACTLOG --> REPORT
+    ACT -->|否| REPORT
+    REPORT --> LOOP --> TYPE
+    TYPE -->|UAV| UAV --> HASROW
+    TYPE -->|satellite / SIGINT| PASSIVE --> HASROW
+    HASROW -->|是| ADD --> NEXT
+    HASROW -->|否| NEXT
+    NEXT --> LOOP
+    LOOP --> EMIT
 ```
+
+`FrontlineRedirect.evaluate` 每 tick 都跑，讓安靜的佇列也能及時啟用改寫；activation 列在此處輸出，`processQueue` 因而擁有本模組全部的 log 出口。`entry.type` 不屬於三種已知型別時兩個分支都不走，`result` 為 nil，該筆不產生任何列。
+
+`OperationScheduler.schedule` **不由 `processQueue` 直接呼叫** —— 它在 `settleReconMission` 內，而後者由 `processUAVEntry` 與 `processPassiveEntry` 在各自的結算點呼叫（見上方生命週期圖的 `SETTLE` 節點）。
 
 | 協調點 | recon 的責任 | 詳細文件 |
 |---|---|---|
@@ -142,22 +186,32 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START(["insertEntry"])
-    CALC["推算 flightTime 與 endTime"]
+    START(["Recon.insertEntry"])
+    COPY["deepCopy 模板"]
+    FLIGHT["calculatePathDistanceAndTime"]
+    ORIGIN{"有給 startTime?"}
+    PARSE["parseDatetimeToTimestamp"]
+    NOW["ScenEdit_CurrentTime"]
     ANCHOR["findSatellitePassWindow"]
     HASNEXT{"有下次過境?"}
-    MATCH{"窗口內已有<br>同 templateId?"}
+    MATCH["findMatchingUAVEntry"]
+    DUP{"窗口內已有同 templateId?"}
     FIT{"endTime ≤ 下次過境?"}
-    INSERT["寫入時間與 run-state<br>插入 queue"]
-    SKIP(["回傳 nil"])
+    WRITE["寫入時間與 run-state"]
+    PUSH["插入 queue"]
+    OK(["回傳 entry"])
+    NIL(["回傳 nil"])
 
-    START --> CALC --> ANCHOR --> HASNEXT
-    HASNEXT -->|否| SKIP
-    HASNEXT -->|是| MATCH
-    MATCH -->|是| SKIP
-    MATCH -->|否| FIT
-    FIT -->|否| SKIP
-    FIT -->|是| INSERT
+    START --> COPY --> FLIGHT --> ORIGIN
+    ORIGIN -->|是| PARSE --> ANCHOR
+    ORIGIN -->|否| NOW --> ANCHOR
+    ANCHOR --> HASNEXT
+    HASNEXT -->|否| NIL
+    HASNEXT -->|是| MATCH --> DUP
+    DUP -->|是| NIL
+    DUP -->|否| FIT
+    FIT -->|否| NIL
+    FIT -->|是| WRITE --> PUSH --> OK
 ```
 
 窗口為 `(mostRecentEntry.endTime, nextEntry.endTime]`，候選 UAV 的 `takeoffTime` 與 `endTime` 都必須落在其中才算覆蓋。去重只看 `templateId`，course 內容不參與比對。
