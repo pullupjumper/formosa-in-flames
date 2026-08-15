@@ -124,13 +124,6 @@ describe("OperationScheduler", function()
     }
   end
 
-  ---Stub the batch snapshot query so tests do not depend on the game clock.
-  local function stubEmptyBatchSnapshot()
-    trackStub(stub(OperationScheduler, "getMostRecentOperationsAndNextTime").returns({
-      air = {}, ground = {}, mostRecentTime = nil, nextOperationBatchTime = nil,
-    }))
-  end
-
   ---Stub both scheduling queries so one numbered series reads as already executed.
   ---Any other mapping falls through as never scheduled, taking the first-wave path.
   ---@param templateName string Exact template name of the series, e.g. "GND/STRIKE/C2/N/1"
@@ -193,7 +186,6 @@ describe("OperationScheduler", function()
       config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -211,7 +203,6 @@ describe("OperationScheduler", function()
       config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), false),
@@ -229,7 +220,6 @@ describe("OperationScheduler", function()
       config.c.recon.strikeMappingsByReconObjective.C2_EMITTER_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -257,7 +247,6 @@ describe("OperationScheduler", function()
         { name = "AIR/STRIKE/AB/E/1", type = "air",    requiresLACM = true },
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       -- C/1 has already executed, so its mapping advances instead of opening a wave
       stubExecutedSeries("GND/STRIKE/C2/C/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
@@ -293,7 +282,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -322,7 +310,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -345,7 +332,6 @@ describe("OperationScheduler", function()
         { name = "AIR/STRIKE/AB/E/1", type = "air", requiresLACM = true },
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       -- Both stubs are load-bearing: without them the mapping falls through to the
       -- first-wave path and stops on a missing template, passing for the wrong reason.
       stubExecutedSeries("AIR/STRIKE/AB/E/1", "air")
@@ -372,7 +358,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -393,7 +378,6 @@ describe("OperationScheduler", function()
       }
       -- config.c.packageTemplates has no AIR_STRIKE_NOPE_1 entry
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -412,7 +396,6 @@ describe("OperationScheduler", function()
         { name = "SEA/STRIKE/PORT/1", type = "naval" },
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -435,7 +418,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -461,7 +443,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -493,7 +474,6 @@ describe("OperationScheduler", function()
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -512,7 +492,6 @@ describe("OperationScheduler", function()
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -539,7 +518,6 @@ describe("OperationScheduler", function()
           operations = { { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } } },
         }
       }
-      stubEmptyBatchSnapshot()
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
@@ -569,7 +547,6 @@ describe("OperationScheduler", function()
           operations = { { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } } },
         }
       }
-      stubEmptyBatchSnapshot()
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- No /2 template exists, so the scheduler falls back to the already-executed /1
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
@@ -600,7 +577,6 @@ describe("OperationScheduler", function()
           operations = { { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } } },
         }
       }
-      stubEmptyBatchSnapshot()
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
@@ -643,7 +619,6 @@ describe("OperationScheduler", function()
           } },
         }
       }
-      stubEmptyBatchSnapshot()
 
       ---Count unexecuted operations carrying the given template name.
       ---@param operationBatches table[]
@@ -685,7 +660,6 @@ describe("OperationScheduler", function()
         { timeToReady = 5 * 60, name = "PKG-AB-E-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
       }
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
@@ -714,7 +688,6 @@ describe("OperationScheduler", function()
     it("should warn instead of scheduling when generateNextOperation cannot derive a next wave", function()
       local config = makeConfig()
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- PARSE_ERROR hands back a copy of the source operation; scheduling it would duplicate the wave
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
@@ -736,7 +709,6 @@ describe("OperationScheduler", function()
     it("should emit the next operation status as a snake_case token", function()
       local config = makeConfig()
       local operationBatches = {}
-      stubEmptyBatchSnapshot()
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
