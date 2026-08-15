@@ -55,7 +55,7 @@ flowchart TD
     ENTER["strikeMapping"]
     LACM{"requiresLACM 未滿足?"}
     HOLD{"INFRA 且火力暫停?"}
-    EXISTS{"hasOperation 命中?"}
+    EXISTS{"isOperationScheduled?"}
     FIRST["buildFirstWaveOperation"]
     NEXTWAVE["buildNextWaveOperation"]
     NEXT["累積結果"]
@@ -83,13 +83,13 @@ flowchart TD
 
 ## 為什麼 REUSED_CURRENT 也要去重
 
-推進路徑呼叫 `generateNextOperation` 生成 `/N+1`，接著以 `hasPendingOperation` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
+推進路徑呼叫 `generateNextOperation` 生成 `/N+1`，接著以 `isOperationPending` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
 
 這道檢查**必須同時涵蓋 `FOUND_NEXT` 與 `REUSED_CURRENT`**。曾經只擋 `FOUND_NEXT`，理由是「`REUSED_CURRENT` 本來就要重跑同一波」——但那讓沒有 `/N+1` 模板的 mapping 在每次偵察完成時各疊一份待執行副本。實測連續三次偵察完成會累積三份。
 
 副本能共存的原因在下游：`fsemBuilder` 對可重試原因（目標不足、發射單位不可用）會**刻意保留 pending**，地面作戰因此可能長時間掛著，期間新的偵察完成就疊上一份，等目標出現時全部一起發射。
 
-去重不會封死重跑：`REUSED_CURRENT` 沿用已執行來源 `/N` 的名稱，而 `hasPendingOperation` 只比對未執行的作戰，所以只有先前重複排入的待執行副本會被擋，該副本執行完仍會重新排入。
+去重不會封死重跑：`REUSED_CURRENT` 沿用已執行來源 `/N` 的名稱，而 `isOperationPending` 只比對未執行的作戰，所以只有先前重複排入的待執行副本會被擋，該副本執行完仍會重新排入。
 
 ---
 
@@ -145,8 +145,9 @@ flowchart TD
 |---|---|---|---|
 | `schedule(processingContext, reconEntry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增批次並輸出 log |
 | `getMostRecentOperationsAndNextTime(operationBatches)` | `SBJ__ReconTriggeredOperationBatch[]` | snapshot table | 取時間已過的最近批次，依 type 分類其作戰，並回報下一個批次時間。**只看批次時間，不看執行狀態** |
-| `hasOperation(operationBatches, templateName, operationType)` | `SBJ__ReconTriggeredOperationBatch[]`, `string`, `string` | `boolean, operation?, batch?` | `templateName` 以 `/` 結尾走前綴搜尋（取波次號最大者，**僅限已執行**），否則精確比對（不限執行狀態） |
-| `hasPendingOperation(operationBatches, templateName, operationType)` | 同上 | `boolean` | 是否已有同名且**未執行**的作戰 |
+| `isOperationScheduled(operationBatches, templateName, operationType)` | `SBJ__ReconTriggeredOperationBatch[]`, `string`, `string` | `boolean` | 完整名稱比對，**不限執行狀態**。回答「這個 mapping 排過了嗎」 |
+| `isOperationPending(operationBatches, templateName, operationType)` | 同上 | `boolean` | 完整名稱比對，**只收未執行**。回答「同名波次是否已排入但還沒打」 |
+| `findLatestExecutedOperation(operationBatches, seriesPrefix, operationType)` | 同上，第二參數是以 `/` 結尾的系列前綴 | `SBJ__Operation\|nil` | 前綴＋數字後綴，**只收已執行**，取波次號最大者（同號比批次時間）。回答「有沒有可以推進的前導波次」 |
 | `generateNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
 
 `processingContext` 欄位：

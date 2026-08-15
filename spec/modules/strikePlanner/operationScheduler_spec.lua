@@ -131,6 +131,32 @@ describe("OperationScheduler", function()
     }))
   end
 
+  ---Stub both scheduling queries so one numbered series reads as already executed.
+  ---Any other mapping falls through as never scheduled, taking the first-wave path.
+  ---@param templateName string Exact template name of the series, e.g. "GND/STRIKE/C2/N/1"
+  ---@param operationType string Operation type of that series
+  ---@return table # The operation handed back as the series' latest executed wave
+  local function stubExecutedSeries(templateName, operationType)
+    local seriesPrefix = templateName:match("^(.+/)%d+$")
+    local executedOperation = {
+      type = operationType,
+      executed = true,
+      template = { name = templateName },
+    }
+
+    trackStub(stub(OperationScheduler, "isOperationScheduled").invokes(function(_, name, opType)
+      return name == templateName and opType == operationType
+    end))
+    trackStub(stub(OperationScheduler, "findLatestExecutedOperation").invokes(function(_, prefix, opType)
+      if prefix == seriesPrefix and opType == operationType then
+        return executedOperation
+      end
+      return nil
+    end))
+
+    return executedOperation
+  end
+
   ---Find a Logger.log call matching the given tag and message pattern.
   ---@param logTag string
   ---@param pattern string
@@ -168,7 +194,7 @@ describe("OperationScheduler", function()
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), false),
@@ -204,7 +230,7 @@ describe("OperationScheduler", function()
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), false),
@@ -232,13 +258,8 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        -- C/1 has already executed, so its mapping advances instead of opening a wave
-        if (name == "GND/STRIKE/C2/C/1" or name == "GND/STRIKE/C2/C/") and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/C/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      -- C/1 has already executed, so its mapping advances instead of opening a wave
+      stubExecutedSeries("GND/STRIKE/C2/C/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/C/2" } }, "FOUND_NEXT"
       ))
@@ -273,7 +294,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), true),
@@ -302,7 +323,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), false),
@@ -327,12 +348,7 @@ describe("OperationScheduler", function()
       stubEmptyBatchSnapshot()
       -- Both stubs are load-bearing: without them the mapping falls through to the
       -- first-wave path and stops on a missing template, passing for the wrong reason.
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if (name == "AIR/STRIKE/AB/E/1" or name == "AIR/STRIKE/AB/E/") and opType == "air" then
-          return true, { type = "air", executed = true, template = { name = "AIR/STRIKE/AB/E/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("AIR/STRIKE/AB/E/1", "air")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "air", executed = false, template = { name = "AIR/STRIKE/AB/E/1" } }, "REUSED_CURRENT"
       ))
@@ -357,7 +373,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), false),
@@ -378,7 +394,7 @@ describe("OperationScheduler", function()
       -- config.c.packageTemplates has no AIR_STRIKE_NOPE_1 entry
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), false),
@@ -397,7 +413,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), false),
@@ -420,7 +436,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), false),
@@ -446,7 +462,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(true), false),
@@ -478,7 +494,7 @@ describe("OperationScheduler", function()
       } }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), false),
@@ -497,7 +513,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLACMContext(false), true),
@@ -524,15 +540,7 @@ describe("OperationScheduler", function()
         }
       }
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
@@ -562,12 +570,7 @@ describe("OperationScheduler", function()
         }
       }
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if (name == "GND/STRIKE/C2/N/1" or name == "GND/STRIKE/C2/N/") and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- No /2 template exists, so the scheduler falls back to the already-executed /1
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
@@ -598,12 +601,7 @@ describe("OperationScheduler", function()
         }
       }
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if (name == "GND/STRIKE/C2/N/1" or name == "GND/STRIKE/C2/N/") and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
       ))
@@ -618,7 +616,7 @@ describe("OperationScheduler", function()
     end)
 
     -- Regression: repeated recon completions must not stack identical pending waves.
-    -- Runs the real hasOperation/generateNextOperation path; before the fix this reached 3.
+    -- Runs the real query/generateNextOperation path; before the fix this reached 3.
     it("should keep a single pending copy across repeated recon completions", function()
       local config = makeConfig()
       config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
@@ -688,7 +686,7 @@ describe("OperationScheduler", function()
       }
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").returns(false, nil, nil))
+      trackStub(stub(OperationScheduler, "isOperationScheduled").returns(false))
 
       OperationScheduler.schedule(
         makeProcessingContext(
@@ -717,15 +715,7 @@ describe("OperationScheduler", function()
       local config = makeConfig()
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- PARSE_ERROR hands back a copy of the source operation; scheduling it would duplicate the wave
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "PARSE_ERROR"
@@ -747,15 +737,7 @@ describe("OperationScheduler", function()
       local config = makeConfig()
       local operationBatches = {}
       stubEmptyBatchSnapshot()
-      trackStub(stub(OperationScheduler, "hasOperation").invokes(function(_, name, opType)
-        if name == "GND/STRIKE/C2/N/1" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        if name == "GND/STRIKE/C2/N/" and opType == "ground" then
-          return true, { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } }, nil
-        end
-        return false, nil, nil
-      end))
+      stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       trackStub(stub(OperationScheduler, "generateNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
@@ -981,21 +963,19 @@ describe("OperationScheduler", function()
     end)
 
     -- ============================================================================
-    -- hasOperation
+    -- isOperationScheduled
     -- ============================================================================
 
-    describe("hasOperation", function()
+    describe("isOperationScheduled", function()
       -- Positive: exact match
       it("should find exact match by template name and type", function()
         local operation = makeOperation({ type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
         local operationBatch = makeOperationBatch({ operations = { operation } })
 
-        local exists, foundOperation, foundEntry = OperationScheduler.hasOperation(
+        local exists = OperationScheduler.isOperationScheduled(
           { operationBatch }, "AIR/STRIKE/AB/W/1", "air")
 
         assert.is_true(exists)
-        assert.are.equal(operation, foundOperation)
-        assert.are.equal(operationBatch, foundEntry)
       end)
 
       -- Positive: searches across multiple entries
@@ -1014,10 +994,9 @@ describe("OperationScheduler", function()
           }),
         }
 
-        local exists, foundOperation = OperationScheduler.hasOperation(operationBatches, "INFRA/2", "ground")
+        local exists = OperationScheduler.isOperationScheduled(operationBatches, "INFRA/2", "ground")
 
         assert.is_true(exists)
-        assert.are.equal(targetOperation, foundOperation)
       end)
 
       -- Negative: type mismatch
@@ -1025,7 +1004,7 @@ describe("OperationScheduler", function()
         local operation = makeOperation({ type = "ground", template = { name = "AIR/STRIKE/AB/W/1" } })
         local operationBatches = { makeOperationBatch({ operations = { operation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/1", "air")
+        local exists = OperationScheduler.isOperationScheduled(operationBatches, "AIR/STRIKE/AB/W/1", "air")
 
         assert.is_false(exists)
       end)
@@ -1035,7 +1014,7 @@ describe("OperationScheduler", function()
         local operation = makeOperation({ type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
         local operationBatches = { makeOperationBatch({ operations = { operation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/2", "air")
+        local exists = OperationScheduler.isOperationScheduled(operationBatches, "AIR/STRIKE/AB/W/2", "air")
 
         assert.is_false(exists)
       end)
@@ -1045,7 +1024,7 @@ describe("OperationScheduler", function()
         local operation = makeOperation({ template = nil })
         local operationBatches = { makeOperationBatch({ operations = { operation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "STRIKE/1", "air")
+        local exists = OperationScheduler.isOperationScheduled(operationBatches, "STRIKE/1", "air")
 
         assert.is_false(exists)
       end)
@@ -1054,12 +1033,31 @@ describe("OperationScheduler", function()
       it("should skip entries with nil operations", function()
         local operationBatches = { makeOperationBatch({ operations = nil }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "STRIKE/1", "air")
+        local exists = OperationScheduler.isOperationScheduled(operationBatches, "STRIKE/1", "air")
 
         assert.is_false(exists)
       end)
 
-      -- Positive: prefix search finds highest number
+      -- Boundary: an unexecuted operation still counts as scheduled
+      it("should count an unexecuted operation as scheduled", function()
+        local pendingOperation = makeOperation({
+          executed = false, type = "ground", template = { name = "GND/STRIKE/INFRA/ALL/1" },
+        })
+        local operationBatches = { makeOperationBatch({ operations = { pendingOperation } }) }
+
+        local exists = OperationScheduler.isOperationScheduled(
+          operationBatches, "GND/STRIKE/INFRA/ALL/1", "ground")
+
+        assert.is_true(exists)
+      end)
+    end)
+
+    -- ============================================================================
+    -- findLatestExecutedOperation
+    -- ============================================================================
+
+    describe("findLatestExecutedOperation", function()
+      -- Positive: picks the highest wave number
       it("should find highest number with prefix search", function()
         local op1 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
         local op3 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/3" } })
@@ -1069,13 +1067,13 @@ describe("OperationScheduler", function()
           makeOperationBatch({ operations = { op1, op3, op2 } })
         }
 
-        local exists, foundOperation = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_true(exists)
+        assert.is_not_nil(foundOperation)
         assert.are.equal(op3, foundOperation)
       end)
 
-      -- Positive: prefix search picks latest time on same number
+      -- Positive: ties on wave number fall back to the later batch
       it("should pick latest time when prefix search finds same max number", function()
         local olderOperation = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/2" } })
         local newerOperation = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/2" } })
@@ -1085,12 +1083,10 @@ describe("OperationScheduler", function()
           makeOperationBatch({ time = "2026-02-14 12:00:00", operations = { newerOperation } }),
         }
 
-        local exists, foundOperation, foundEntry = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert(foundEntry ~= nil)
-        assert.is_true(exists)
+        assert.is_not_nil(foundOperation)
         assert.are.equal(newerOperation, foundOperation)
-        assert.are.equal("2026-02-14 12:00:00", foundEntry.time)
       end)
 
       -- Negative: prefix search skips operations that are not yet executed
@@ -1100,9 +1096,9 @@ describe("OperationScheduler", function()
         })
         local operationBatches = { makeOperationBatch({ operations = { pendingOperation } }) }
 
-        local exists, foundOperation = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_false(exists)
+        assert.is_nil(foundOperation)
         assert.is_nil(foundOperation)
       end)
 
@@ -1116,35 +1112,21 @@ describe("OperationScheduler", function()
         })
         local operationBatches = { makeOperationBatch({ operations = { executedOp1, pendingOp3 } }) }
 
-        local exists, foundOperation = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_true(exists)
+        assert.is_not_nil(foundOperation)
         assert.are.equal(executedOp1, foundOperation)
       end)
 
       -- Positive: exact match is not affected by executed gate
-      it("should still find unexecuted operations via exact match", function()
-        local pendingOperation = makeOperation({
-          executed = false, type = "ground", template = { name = "GND/STRIKE/INFRA/ALL/1" },
-        })
-        local operationBatches = { makeOperationBatch({ operations = { pendingOperation } }) }
-
-        local exists, foundOperation = OperationScheduler.hasOperation(
-          operationBatches, "GND/STRIKE/INFRA/ALL/1", "ground"
-        )
-
-        assert.is_true(exists)
-        assert.are.equal(pendingOperation, foundOperation)
-      end)
-
       -- Negative: prefix search no matches
-      it("should return false for prefix search with no matches", function()
+      it("should return nil for prefix search with no matches", function()
         local operation = makeOperation({ type = "air", template = { name = "SEAD/1" } })
         local operationBatches = { makeOperationBatch({ operations = { operation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_false(exists)
+        assert.is_nil(foundOperation)
       end)
 
       -- Negative: prefix search ignores non-numeric suffix
@@ -1152,9 +1134,9 @@ describe("OperationScheduler", function()
         local operation = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/abc" } })
         local operationBatches = { makeOperationBatch({ operations = { operation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_false(exists)
+        assert.is_nil(foundOperation)
       end)
 
       -- Negative: prefix search filters by type
@@ -1162,24 +1144,24 @@ describe("OperationScheduler", function()
         local groundOperation = makeOperation({ executed = true, type = "ground", template = { name = "AIR/STRIKE/AB/W/5" } })
         local operationBatches = { makeOperationBatch({ operations = { groundOperation } }) }
 
-        local exists = OperationScheduler.hasOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
+        local foundOperation = OperationScheduler.findLatestExecutedOperation(operationBatches, "AIR/STRIKE/AB/W/", "air")
 
-        assert.is_false(exists)
+        assert.is_nil(foundOperation)
       end)
     end)
 
     -- ============================================================================
-    -- hasPendingOperation
+    -- isOperationPending
     -- ============================================================================
 
-    describe("hasPendingOperation", function()
+    describe("isOperationPending", function()
       -- Positive: a matching unexecuted operation exists
       it("should return true when a matching unexecuted operation exists", function()
         local operationBatches = {
           makeOperationBatch({ operations = { makeOperation({ template = { name = "GND/STRIKE/C2/N/2" } }) } }),
         }
 
-        assert.is_true(OperationScheduler.hasPendingOperation(operationBatches, "GND/STRIKE/C2/N/2", "air"))
+        assert.is_true(OperationScheduler.isOperationPending(operationBatches, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: the matching operation is already executed
@@ -1190,7 +1172,7 @@ describe("OperationScheduler", function()
           }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(operationBatches, "GND/STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.isOperationPending(operationBatches, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: the operation type differs
@@ -1201,7 +1183,7 @@ describe("OperationScheduler", function()
           }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(operationBatches, "GND/STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.isOperationPending(operationBatches, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Negative: no operation name matches
@@ -1210,7 +1192,7 @@ describe("OperationScheduler", function()
           makeOperationBatch({ operations = { makeOperation({ template = { name = "GND/STRIKE/C2/N/1" } }) } }),
         }
 
-        assert.is_false(OperationScheduler.hasPendingOperation(operationBatches, "GND/STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.isOperationPending(operationBatches, "GND/STRIKE/C2/N/2", "air"))
       end)
 
       -- Positive: executed prior wave plus pending next wave across separate entries
@@ -1225,12 +1207,12 @@ describe("OperationScheduler", function()
           }),
         }
 
-        assert.is_true(OperationScheduler.hasPendingOperation(operationBatches, "GND/STRIKE/C2/N/2", "ground"))
+        assert.is_true(OperationScheduler.isOperationPending(operationBatches, "GND/STRIKE/C2/N/2", "ground"))
       end)
 
       -- Boundary: empty operationBatches
       it("should return false for an empty batch list", function()
-        assert.is_false(OperationScheduler.hasPendingOperation({}, "GND/STRIKE/C2/N/2", "air"))
+        assert.is_false(OperationScheduler.isOperationPending({}, "GND/STRIKE/C2/N/2", "air"))
       end)
     end)
 

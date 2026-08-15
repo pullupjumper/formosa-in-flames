@@ -57,82 +57,32 @@ local function forEachOperation(operationBatches, callback)
   end
 end
 
----Find exact match operation by template name and type
+---Return the first operation across all batches that satisfies the predicate
 ---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param templateName string Exact template name to match
----@param operationType string Operation type to match
----@return boolean exists Whether the operation was found
----@return SBJ__Operation|nil operation Found operation
----@return SBJ__ReconTriggeredOperationBatch|nil operationBatch Parent batch
-local function findExactMatch(operationBatches, templateName, operationType)
-  local foundOperation, foundBatch
+---@param predicate fun(operation: SBJ__Operation): boolean Match test applied to each operation
+---@return SBJ__Operation|nil # First matching operation, or nil when none matches
+local function findFirstOperation(operationBatches, predicate)
+  local found
 
-  forEachOperation(operationBatches, function(operation, operationBatch)
-    if foundOperation then return end
-    if operation.type == operationType and operation.template and operation.template.name == templateName then
-      foundOperation = operation
-      foundBatch = operationBatch
+  forEachOperation(operationBatches, function(operation)
+    if found then return end
+    if predicate(operation) then
+      found = operation
     end
   end)
 
-  if foundOperation then
-    return true, foundOperation, foundBatch
-  end
-  return false, nil, nil
+  return found
 end
 
----Find prefix match operation with the highest wave number
----Only executed operations are eligible as prefix bases.
----@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param prefix string Template name prefix ending with "/"
+---Test whether an operation carries the given template name and type
+---@param operation SBJ__Operation Operation to test
+---@param templateName string Exact template name to match
 ---@param operationType string Operation type to match
----@return boolean exists Whether a matching operation was found
----@return SBJ__Operation|nil operation Best matching operation
----@return SBJ__ReconTriggeredOperationBatch|nil operationBatch Parent batch
-local function findPrefixMatch(operationBatches, prefix, operationType)
-  local bestOperation, bestBatch
-  -- Parsing a batch timestamp costs an os.time/os.date/os.difftime round trip, so
-  -- bestTimestamp stays nil until a wave-number tie actually forces the comparison.
-  local bestWaveNumber, bestTimestamp = -1, nil
-
-  forEachOperation(operationBatches, function(operation, operationBatch)
-    if not operation.executed then
-      return
-    end
-    if operation.type ~= operationType or not operation.template or not operation.template.name then
-      return
-    end
-
-    local operationName = operation.template.name
-    if operationName:sub(1, #prefix) ~= prefix then
-      return
-    end
-
-    local waveNumber = tonumber(operationName:sub(#prefix + 1))
-    if not waveNumber then
-      return
-    end
-
-    if waveNumber > bestWaveNumber then
-      bestWaveNumber = waveNumber
-      bestTimestamp = nil
-      bestOperation = operation
-      bestBatch = operationBatch
-    elseif waveNumber == bestWaveNumber then
-      bestTimestamp = bestTimestamp or Utils.parseDatetimeToTimestamp(bestBatch.time)
-      local batchTimestamp = Utils.parseDatetimeToTimestamp(operationBatch.time)
-      if batchTimestamp > bestTimestamp then
-        bestTimestamp = batchTimestamp
-        bestOperation = operation
-        bestBatch = operationBatch
-      end
-    end
-  end)
-
-  if bestOperation then
-    return true, bestOperation, bestBatch
-  end
-  return false, nil, nil
+---@return boolean # True when both the type and the template name match
+local function matchesTemplate(operation, templateName, operationType)
+  return operation.type == operationType
+      and operation.template ~= nil
+      and operation.template.name == templateName
 end
 
 -- ============================================================================
@@ -197,38 +147,75 @@ function OperationScheduler.getMostRecentOperationsAndNextTime(operationBatches)
   return snapshot
 end
 
----Check if an operation with specific template name and type exists in triggered batches
----Supports exact match and prefix search (templateName ending with "/").
----@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param templateName string Template name to search for
----@param operationType string Operation type ("air" or "ground")
----@return boolean exists Whether the operation exists in the schedule
----@return SBJ__Operation|nil operation The operation object if found, nil otherwise
----@return SBJ__ReconTriggeredOperationBatch|nil operationBatch The parent batch if found
-function OperationScheduler.hasOperation(operationBatches, templateName, operationType)
-  if templateName:sub(-1) == "/" then
-    return findPrefixMatch(operationBatches, templateName, operationType)
-  end
-  return findExactMatch(operationBatches, templateName, operationType)
-end
-
----Check whether an unexecuted operation with the given template name and type already exists
+---Check whether the exact template name is already in the batches, executed or not
 ---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
 ---@param templateName string Exact template name to match
----@param operationType string Operation type to match ("air" or "ground")
----@return boolean # True if a matching unexecuted operation is already scheduled
-function OperationScheduler.hasPendingOperation(operationBatches, templateName, operationType)
-  local found = false
-  forEachOperation(operationBatches, function(operation)
-    if found then return end
-    if not operation.executed and
-        operation.type == operationType and
-        operation.template and
-        operation.template.name == templateName then
-      found = true
+---@param operationType string Operation type ("air" or "ground")
+---@return boolean # True when the operation has been scheduled at some point
+function OperationScheduler.isOperationScheduled(operationBatches, templateName, operationType)
+  return findFirstOperation(operationBatches, function(operation)
+    return matchesTemplate(operation, templateName, operationType)
+  end) ~= nil
+end
+
+---Check whether the exact template name is scheduled but has not executed yet
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param templateName string Exact template name to match
+---@param operationType string Operation type ("air" or "ground")
+---@return boolean # True when a matching unexecuted operation is already queued
+function OperationScheduler.isOperationPending(operationBatches, templateName, operationType)
+  return findFirstOperation(operationBatches, function(operation)
+    return not operation.executed and matchesTemplate(operation, templateName, operationType)
+  end) ~= nil
+end
+
+---Find the highest-numbered executed operation of a numbered series
+---Ties on wave number fall back to the later batch time.
+---@param operationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param seriesPrefix string Template name prefix ending with "/", e.g. "AIR/STRIKE/AB/W/"
+---@param operationType string Operation type ("air" or "ground")
+---@return SBJ__Operation|nil # Latest executed operation, or nil when the series has none
+function OperationScheduler.findLatestExecutedOperation(operationBatches, seriesPrefix, operationType)
+  local bestOperation, bestBatch
+  -- Parsing a batch timestamp costs an os.time/os.date/os.difftime round trip, so
+  -- bestTimestamp stays nil until a wave-number tie actually forces the comparison.
+  local bestWaveNumber, bestTimestamp = -1, nil
+
+  forEachOperation(operationBatches, function(operation, operationBatch)
+    if not operation.executed then
+      return
+    end
+    if operation.type ~= operationType or not operation.template or not operation.template.name then
+      return
+    end
+
+    local operationName = operation.template.name
+    if operationName:sub(1, #seriesPrefix) ~= seriesPrefix then
+      return
+    end
+
+    local waveNumber = tonumber(operationName:sub(#seriesPrefix + 1))
+    if not waveNumber then
+      return
+    end
+
+    if waveNumber > bestWaveNumber then
+      bestWaveNumber = waveNumber
+      bestTimestamp = nil
+      bestOperation = operation
+      bestBatch = operationBatch
+    elseif waveNumber == bestWaveNumber then
+      bestTimestamp = bestTimestamp or Utils.parseDatetimeToTimestamp(bestBatch.time)
+      local batchTimestamp = Utils.parseDatetimeToTimestamp(operationBatch.time)
+      if batchTimestamp > bestTimestamp then
+        bestTimestamp = batchTimestamp
+        bestOperation = operation
+        bestBatch = operationBatch
+      end
     end
   end)
-  return found
+
+  return bestOperation
 end
 
 -- ============================================================================
@@ -361,14 +348,14 @@ local function buildNextWaveOperation(strikeMapping, processingContext)
     }
   end
 
-  local exists, previousOperation = OperationScheduler.hasOperation(
+  local previousOperation = OperationScheduler.findLatestExecutedOperation(
     processingContext.reconTriggeredOperationBatches,
     baseName,
     strikeMapping.type
   )
-  -- Prefix matching only accepts executed operations, so the series is scheduled
+  -- Only executed operations qualify, so a nil here means the series is scheduled
   -- but has not fired yet; there is nothing to advance from.
-  if not exists or not previousOperation then
+  if not previousOperation then
     return nil, {
       tag = "SKIP",
       fields = {
@@ -400,9 +387,9 @@ local function buildNextWaveOperation(strikeMapping, processingContext)
   end
 
   -- Blocks a second pending copy of the same wave, which would double the strike
-  -- package. REUSED_CURRENT reuses the executed source's name, and hasPendingOperation
+  -- package. REUSED_CURRENT reuses the executed source's name, and isOperationPending
   -- ignores executed operations, so the wave still re-queues once the copy has fired.
-  if OperationScheduler.hasPendingOperation(
+  if OperationScheduler.isOperationPending(
         processingContext.reconTriggeredOperationBatches,
         nextOperation.template.name,
         strikeMapping.type
@@ -492,7 +479,7 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
         }
       })
       -- A mapping either opens its first wave or advances an existing series, never both.
-    elseif not OperationScheduler.hasOperation(
+    elseif not OperationScheduler.isOperationScheduled(
           processingContext.reconTriggeredOperationBatches,
           strikeMapping.name,
           strikeMapping.type
