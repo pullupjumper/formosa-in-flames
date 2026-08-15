@@ -1249,7 +1249,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field config SBJ__Config Configuration data
 ---@field reconContext SBJ__ReconContext Reconnaissance runtime context
 ---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@field LACMContext SBJ__LACMContext LACM context data
+---@field lacmContext SBJ__LACMContext LACM context data
 ---@field fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 
 ---Reconnaissance-Strike mapping entry

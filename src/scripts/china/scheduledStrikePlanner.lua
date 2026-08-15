@@ -30,7 +30,7 @@ if saveData.c.recon.enabled then
     config = config,
     reconContext = saveData.c.recon,
     reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches,
-    LACMContext = saveData.c.surface.lacm,
+    lacmContext = saveData.c.surface.lacm,
     fireSupportOnHold = saveData.c.amphibOps.fireSupportOnHold == true
   })
 

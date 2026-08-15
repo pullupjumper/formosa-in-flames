@@ -237,7 +237,7 @@ flowchart TD
 | `config` | `SBJ__Config` | 偵察設定、strike mappings 與後續任務模板 |
 | `reconContext` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
 | `reconTriggeredOperationBatches` | `SBJ__ReconTriggeredOperationBatch[]` | 已觸發的動態作戰批次，供 scheduler 去重與追加 |
-| `LACMContext` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
+| `lacmContext` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
 | `fireSupportOnHold` | `boolean` | 為保存彈藥而暫停 SRBM-driven mappings 時設為 `true` |
 
 ---

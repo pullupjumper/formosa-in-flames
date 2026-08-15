@@ -178,10 +178,10 @@ describe("Recon", function()
     return cfg
   end
 
-  ---Create a minimal LACMContext
+  ---Create a minimal LACM context.
   ---@param enabled? boolean
-  ---@return table
-  local function makeLACMContext(enabled)
+  ---@return SBJ__LACMContext
+  local function makeLacmContext(enabled)
     return { enabled = enabled or false, startTime = "2026-02-14 06:00:00" }
   end
 
@@ -316,12 +316,12 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("processQueue", function()
-    local config, reconTriggeredOperationBatches, LACMContext
+    local config, reconTriggeredOperationBatches, lacmContext
 
     before_each(function()
       config = makeConfig()
       reconTriggeredOperationBatches = {}
-      LACMContext = makeLACMContext()
+      lacmContext = makeLacmContext()
     end)
 
     ---Create a reconnaissance queue processing context
@@ -333,7 +333,7 @@ describe("Recon", function()
         config = config,
         reconContext = reconContext,
         reconTriggeredOperationBatches = reconTriggeredOperationBatches,
-        LACMContext = LACMContext,
+        lacmContext = lacmContext,
         fireSupportOnHold = fireSupportOnHold == true
       }
     end
@@ -1204,7 +1204,7 @@ describe("Recon", function()
         config = makeConfig(),
         reconContext = reconContext,
         reconTriggeredOperationBatches = {},
-        LACMContext = makeLACMContext(),
+        lacmContext = makeLacmContext(),
         fireSupportOnHold = false,
       })
 

@@ -459,7 +459,7 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Sits at mapping level, not inside the builder, so the first wave and every
     -- follow-on wave share one LACM check.
-    if strikeMapping.requiresLACM and not processingContext.LACMContext.enabled then
+    if strikeMapping.requiresLACM and not processingContext.lacmContext.enabled then
       table.insert(results, {
         tag = "SKIP",
         fields = {

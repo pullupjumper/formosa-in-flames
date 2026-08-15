@@ -111,11 +111,11 @@ flowchart TD
 
 ## 為什麼 LACM 閘門放在 mapping 迴圈層級
 
-帶 `requiresLACM = true` 的 mapping 只有在 `LACMContext.enabled == true` 時才處理，否則輸出 `[SKIP] reason=lacm_not_committed`。
+帶 `requiresLACM = true` 的 mapping 只有在 `lacmContext.enabled == true` 時才處理，否則輸出 `[SKIP] reason=lacm_not_committed`。
 
 閘門刻意放在 mapping 迴圈，**不放在建構函式內**。放在建構函式只擋得到首波：一旦首波已存在，流程走的是推進路徑，閘門完全不會被諮詢，後續波就繞過了限制。
 
-`LACMContext.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/scripts/china/scheduledStrikePlanner.lua`），因此齊射後閘門仍然放行。
+`lacmContext.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/scripts/china/scheduledStrikePlanner.lua`），因此齊射後閘門仍然放行。
 
 另有 `fireSupportOnHold == true` 時跳過所有 `GND/STRIKE/INFRA/*` mapping（`[HOLD] reason=fire_support_on_hold`），避免 SRBM 彈藥被重點基礎設施打擊消耗。
 
@@ -157,7 +157,7 @@ flowchart TD
 | `config` | 讀取 recon objective mappings 與兩張模板表 |
 | `reconContext` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
 | `reconTriggeredOperationBatches` | 查詢既有/待執行作戰，並在有新作戰時追加批次 |
-| `LACMContext` | 讀取 sticky 的 `enabled`，判斷帶 `requiresLACM` 的 mapping 是否可排程 |
+| `lacmContext` | 讀取 sticky 的 `enabled`，判斷帶 `requiresLACM` 的 mapping 是否可排程 |
 | `fireSupportOnHold` | 暫停 `GND/STRIKE/INFRA/*` mapping |
 
 ---
@@ -173,7 +173,7 @@ flowchart TD
 | `config` | `config.strikeInterval` | `air` 作戰的預設 `strikeInterval`；`ground` 固定為 `0` |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.applyMappings` 讀取；本模組不直接改寫 |
-| `saveData` | `saveData.c.surface.lacm` | 以 `LACMContext` 傳入，讀取 sticky 的 `enabled` |
+| `saveData` | `saveData.c.surface.lacm` | 以 `lacmContext` 傳入，讀取 sticky 的 `enabled` |
 | `saveData` | `saveData.c.amphibOps.fireSupportOnHold` | 以 `fireSupportOnHold` 傳入 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 report |
 
