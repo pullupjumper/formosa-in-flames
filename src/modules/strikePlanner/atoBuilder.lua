@@ -1,7 +1,6 @@
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local TankerMission = require("src.modules.strikePlanner.tankerMission")
@@ -25,7 +24,13 @@ local TIMING_LOG_ACTION = "Build ATO wave timing"
 local PROCESS_REASON = {
   MISSING_TEMPLATE = "missing_wave_template",
   NO_VALID_PACKAGES = "no_valid_packages",
-  INSERTION_FAILED = "insertion_failed"
+  INSERTION_FAILED = "insertion_failed",
+  OBSERVATION_WINDOW_EXPIRED = "observation_window_expired"
+}
+
+-- Reasons that keep an operation pending for a later tick inside the window.
+local RETRYABLE_REASON = {
+  [PROCESS_REASON.NO_VALID_PACKAGES] = true
 }
 
 -- ============================================================================
@@ -420,19 +425,6 @@ end
 -- Recon Schedule Orchestration
 -- ============================================================================
 
----Check whether recon trigger time is reached for processing
----@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
----@return boolean # True when current time is at or past trigger time
-local function isReconTriggered(operationBatch)
-  local scheduledTimestamp = Utils.parseDatetimeToTimestamp(operationBatch.time)
-
-  if operationBatch.delay then
-    scheduledTimestamp = scheduledTimestamp + operationBatch.delay
-  end
-
-  return GameUtils.isAfterStartTime(scheduledTimestamp)
-end
-
 ---Process single air operation: evaluate targets, validate packages, insert ATO wave
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
@@ -484,7 +476,8 @@ end
 -- ============================================================================
 
 ---Main processing function for Dynamic ATO Insertion
----Entry point for dynamic ATO system, validates configuration and processes air operations
+---Entry point for dynamic ATO system; retryable operations stay pending inside the
+---observation window, and are dropped from their batch once it expires.
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -494,7 +487,12 @@ function AtoBuilder.process(config, saveData, contacts)
     return false
   end
 
-  saveData.c.dynamicOperations.lastEvaluationTime = GameApi.ScenEdit_CurrentTime()
+  local currentTime = GameApi.ScenEdit_CurrentTime()
+  saveData.c.dynamicOperations.lastEvaluationTime = currentTime
+
+  if not currentTime then
+    return false
+  end
 
   local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
   if not reconTriggeredOperationBatches or #reconTriggeredOperationBatches == 0 then
@@ -506,6 +504,7 @@ function AtoBuilder.process(config, saveData, contacts)
     return false
   end
 
+  local windowSec = config.c.recon.observationWindowSec
   local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
   local timingReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, TIMING_LOG_SCOPE, TIMING_LOG_ACTION)
   local hasExecutedAny = false
@@ -513,21 +512,37 @@ function AtoBuilder.process(config, saveData, contacts)
   for _, batchedOp in ipairs(airBatchedOperations) do
     local operationBatch = batchedOp.operationBatch
     local operation = batchedOp.operation
+    local windowState = DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
-    if isReconTriggered(operationBatch) then
-      local outcome = processAirOperation(config, saveData, contacts, batchedOp)
-
-      if outcome.reason ~= PROCESS_REASON.MISSING_TEMPLATE then
-        DynamicState.markOperationExecuted(operationBatch, operation, true)
+    -- PRE_TRIGGER: silent skip, the operation is simply not due yet.
+    if windowState ~= DynamicState.OBSERVATION_STATE.PRE_TRIGGER then
+      ---@type SBJ__AirOperationProcessResult
+      local outcome
+      if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
+        outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
+      else
+        outcome = processAirOperation(config, saveData, contacts, batchedOp)
       end
-
-      hasExecutedAny = hasExecutedAny or outcome.success
 
       local fields = LogFormat.merge({
         operation = (operation.template and operation.template.name) or "unknown",
         batch = operationBatch.type .. "@" .. operationBatch.time
       }, outcome.fields)
       fields.reason = outcome.reason
+
+      if outcome.success then
+        DynamicState.markOperationExecuted(operationBatch, operation)
+        hasExecutedAny = true
+      elseif RETRYABLE_REASON[outcome.reason] then
+        -- Retryable operations stay pending inside the window and re-report the
+        -- blocking counters every tick, so the log shows what is holding them back.
+        fields.state = "observing"
+      else
+        -- Everything else, including an unknown reason, is dropped from the batch so
+        -- OperationScheduler re-opens the same wave instead of advancing past it.
+        DynamicState.abandonOperation(operationBatch, operation)
+        fields.state = "abandoned"
+      end
 
       opReport.add(outcome.tag, fields, outcome.details)
       timingReport.addAll(outcome.timing)

@@ -1,6 +1,14 @@
+local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 local DynamicState = {}
+
+---Observation window state of an operation inside its recon-triggered batch
+DynamicState.OBSERVATION_STATE = {
+  PRE_TRIGGER = "pre_trigger",
+  IN_WINDOW   = "in_window",
+  EXPIRED     = "expired",
+}
 
 -- ============================================================================
 -- Internal Helpers
@@ -50,6 +58,8 @@ end
 -- ============================================================================
 
 ---Check if all operations in a reconnaissance-triggered batch are completed
+---A batch emptied by DynamicState.abandonOperation counts as completed, so giving
+---up on the last operation still closes the batch.
 ---@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch with operations array
 ---@return boolean # Whether all operations are completed
 function DynamicState.checkOperationBatchCompleted(operationBatch)
@@ -81,6 +91,26 @@ function DynamicState.updateReconTriggeredOperationStatus(saveData)
   end
 end
 
+---Evaluate the observation window state of a recon-triggered operation batch
+---Window starts at operationBatch.time + operationBatch.delay and lasts windowSec seconds.
+---Shared by the air and ground builders so both re-evaluate on the same schedule.
+---@param currentTime integer Current scenario time in unix timestamp
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
+---@param windowSec number Observation window duration in seconds
+---@return string # Observation state from DynamicState.OBSERVATION_STATE
+function DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)
+  local triggerTime = Utils.parseDatetimeToTimestamp(operationBatch.time) + (operationBatch.delay or 0)
+
+  if currentTime < triggerTime then
+    return DynamicState.OBSERVATION_STATE.PRE_TRIGGER
+  end
+  if currentTime > triggerTime + windowSec then
+    return DynamicState.OBSERVATION_STATE.EXPIRED
+  end
+
+  return DynamicState.OBSERVATION_STATE.IN_WINDOW
+end
+
 -- ============================================================================
 -- Operation Filtering
 -- ============================================================================
@@ -109,14 +139,38 @@ function DynamicState.filterOperationsByType(operationBatches, operationType)
 end
 
 ---Mark operation as executed and update parent operation batch status
+---Executed means the operation plan was actually inserted; a failed operation is
+---dropped through DynamicState.abandonOperation instead of being marked.
 ---@param reconEntry SBJ__ReconTriggeredOperationBatch Parent operation batch
 ---@param operation SBJ__Operation Operation that was executed
----@param success boolean Whether the operation was successful
-function DynamicState.markOperationExecuted(reconEntry, operation, success)
+function DynamicState.markOperationExecuted(reconEntry, operation)
   operation.executed = true
-  operation.executionResult = success
 
   DynamicState.checkOperationBatchCompleted(reconEntry)
+end
+
+---Drop an operation the builder has given up on from its parent batch
+---Removing instead of marking keeps executed meaning "the plan was inserted", and
+---lets OperationScheduler re-open the same wave on the next reconnaissance.
+---@param reconEntry SBJ__ReconTriggeredOperationBatch Parent operation batch
+---@param operation SBJ__Operation Operation to drop
+---@return boolean # True when the operation was found and removed
+function DynamicState.abandonOperation(reconEntry, operation)
+  if not reconEntry.operations then
+    return false
+  end
+
+  -- Located by identity rather than a cached index: one pass may abandon several
+  -- operations of the same batch, and every removal shifts the ones behind it.
+  for index, candidate in ipairs(reconEntry.operations) do
+    if candidate == operation then
+      table.remove(reconEntry.operations, index)
+      DynamicState.checkOperationBatchCompleted(reconEntry)
+      return true
+    end
+  end
+
+  return false
 end
 
 -- ============================================================================

@@ -52,13 +52,6 @@ local LOG_ACTION = "Process operations"
 -- Stand-in counters for an outcome that never reached firing unit evaluation
 local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
----Observation window state for a ground operation in a recon-triggered batch
-local OBSERVATION_STATE = {
-  PRE_TRIGGER = "pre_trigger",
-  IN_WINDOW   = "in_window",
-  EXPIRED     = "expired",
-}
-
 ---@alias SBJ__FiringUnitStatusCounter table<string, number>
 
 -- ============================================================================
@@ -421,23 +414,6 @@ local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targets
   return { success = true, tag = "OK", fields = statusFields }
 end
 
----Evaluate observation window state for a ground operation
----Window starts at operationBatch.time + operationBatch.delay and lasts windowSec seconds.
----@param currentTime integer Current scenario time in unix timestamp
----@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
----@param windowSec number Observation window duration in seconds
----@return string # Observation state from OBSERVATION_STATE
-local function evaluateObservationWindow(currentTime, operationBatch, windowSec)
-  local triggerTime = Utils.parseDatetimeToTimestamp(operationBatch.time) + operationBatch.delay
-  if currentTime < triggerTime then
-    return OBSERVATION_STATE.PRE_TRIGGER
-  end
-  if currentTime > triggerTime + windowSec then
-    return OBSERVATION_STATE.EXPIRED
-  end
-  return OBSERVATION_STATE.IN_WINDOW
-end
-
 ---Process operation batch entry, get FSEM template and execute evaluation
 ---Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
 ---@param config SBJ__Config Global configuration table
@@ -479,7 +455,8 @@ end
 -- ============================================================================
 
 ---Process recon-triggered ground operations and dynamically insert FSEMs
----Retryable operations remain pending while targets or firing units are unavailable.
+---Retryable operations remain pending while targets or firing units are unavailable,
+---and are dropped from their batch once the observation window expires.
 ---@param config SBJ__Config Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
@@ -508,13 +485,13 @@ function FsemBuilder.execute(config, saveData, contacts)
   for _, batchedOp in ipairs(groundBatchedOperations) do
     local operationBatch = batchedOp.operationBatch
     local operation = batchedOp.operation
-    local windowState = evaluateObservationWindow(currentTime, operationBatch, windowSec)
+    local windowState = DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
     -- PRE_TRIGGER: silent skip, identical to legacy behavior before observation window.
-    if windowState ~= OBSERVATION_STATE.PRE_TRIGGER then
+    if windowState ~= DynamicState.OBSERVATION_STATE.PRE_TRIGGER then
       ---@type SBJ__OperationProcessResult
       local outcome
-      if windowState == OBSERVATION_STATE.EXPIRED then
+      if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
         outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
       else
         outcome = processGroundOperation(config, saveData, contacts, batchedOp)
@@ -527,16 +504,17 @@ function FsemBuilder.execute(config, saveData, contacts)
       fields.reason = outcome.reason
 
       if outcome.success then
-        DynamicState.markOperationExecuted(operationBatch, operation, true)
+        DynamicState.markOperationExecuted(operationBatch, operation)
         hasExecutedAny = true
       elseif RETRYABLE_REASON[outcome.reason] then
         -- Retryable operations stay pending inside the window and re-report the
         -- blocking counters every tick, so the log shows what is holding them back.
         fields.state = "observing"
       else
-        -- Everything else, including an unknown reason, is marked executed to
-        -- avoid infinite retry.
-        DynamicState.markOperationExecuted(operationBatch, operation, false)
+        -- Everything else, including an unknown reason, is dropped from the batch so
+        -- OperationScheduler re-opens the same wave instead of advancing past it.
+        DynamicState.abandonOperation(operationBatch, operation)
+        fields.state = "abandoned"
       end
 
       opReport.add(outcome.tag, fields, outcome.details)

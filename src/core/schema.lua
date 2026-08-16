@@ -239,7 +239,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
----@field observationWindowSec number Ground operation observation window in seconds (window starts at recon trigger time; ground operations re-evaluate targets every tick within this window before being marked executed)
+---@field observationWindowSec number Dynamic operation observation window in seconds, shared by air and ground (window starts at recon trigger time; operations re-evaluate every tick within it, and are dropped from their batch once it expires)
 
 ---Air package timing configuration
 ---@class SBJ__AirTimingConfig: table
@@ -1298,16 +1298,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Air operation definition for dynamic ATO insertion
 ---@class SBJ__AirOperation: table
 ---@field type "air" Operation type discriminator
----@field executed boolean Whether operation has been executed
+---@field executed boolean Whether the ATO wave was inserted into the plan; an operation given up on is removed from its batch instead of being marked, and insertion does not guarantee the package ever took off
 ---@field template SBJ__WaveTemplate ATO wave template
----@field executionResult? boolean Operation execution result (true for success, false for failure)
 
 ---Ground operation definition for dynamic fire support insertion
 ---@class SBJ__GroundOperation: table
 ---@field type "ground" Operation type discriminator
----@field executed boolean Whether operation has been executed
+---@field executed boolean Whether the FSEM was inserted into the plan; an operation given up on is removed from its batch instead of being marked, and insertion does not guarantee the tasks ever fired
 ---@field template SBJ__FireSupportExecutionMatrixTemplate FSEM template
----@field executionResult? boolean Operation execution result (true for success, false for failure)
 
 ---Operation definition for dynamic operations
 ---@alias SBJ__Operation SBJ__AirOperation|SBJ__GroundOperation

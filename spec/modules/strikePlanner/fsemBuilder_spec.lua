@@ -186,9 +186,10 @@ describe("FsemBuilder", function()
     end)
 
     -- Negative: template is missing
-    it("should mark operation executed and return false when template is missing", function()
+    it("should abandon the operation and return false when template is missing", function()
       local reconEntry = { time = "2026-02-14 00:00:00", delay = 0, type = "satellite" }
       local operation = { type = "ground", executed = false }
+      reconEntry.operations = { operation }
       local saveData = {
         c = {
           dynamicOperations = {
@@ -206,8 +207,10 @@ describe("FsemBuilder", function()
       markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
       assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-      assert.stub(markOperationExecutedStub).was.called(1)
-      assert.is_false(markOperationExecutedStub.calls[1].vals[3])
+      assert.stub(markOperationExecutedStub).was_not.called()
+      -- Dropped from the batch, so OperationScheduler re-opens this wave instead of
+      -- treating it as a completed predecessor.
+      assert.are.equal(0, #reconEntry.operations)
     end)
 
     -- ============================================================================
@@ -679,9 +682,10 @@ describe("FsemBuilder", function()
       end)
 
       -- Negative: window expired (current time past trigger + windowSec)
-      it("should mark operation executed=false and emit warning log when window expires", function()
+      it("should abandon the operation and emit warning log when window expires", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
+        reconEntry.operations = { operation }
         local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
 
         local config = makeConfig()
@@ -696,12 +700,15 @@ describe("FsemBuilder", function()
         markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
         assert.is_false(FsemBuilder.execute(config, saveData, {}))
-        assert.stub(markOperationExecutedStub).was.called(1)
-        assert.is_false(markOperationExecutedStub.calls[1].vals[3])
+        assert.stub(markOperationExecutedStub).was_not.called()
+        assert.are.equal(0, #reconEntry.operations)
+        -- Emptying the batch closes it, so it stops being scanned altogether
+        assert.is_true(reconEntry.executed)
         assert.stub(logStub).was.called(1)
         local logMessage = logStub.calls[1].vals[2]
         assert.truthy(logMessage:find("%[WARN%]"))
         assert.truthy(logMessage:find("reason=observation_window_expired"))
+        assert.truthy(logMessage:find("state=abandoned"))
       end)
 
       -- Negative: insufficient targets keeps operation pending (no markExecuted)
@@ -800,7 +807,6 @@ describe("FsemBuilder", function()
 
         assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
         assert.stub(markOperationExecutedStub).was.called(1)
-        assert.is_true(markOperationExecutedStub.calls[1].vals[3])
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
       end)
     end)

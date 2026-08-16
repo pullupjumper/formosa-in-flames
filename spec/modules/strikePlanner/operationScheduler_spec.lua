@@ -1,5 +1,6 @@
 -- OperationScheduler Unit Tests
 local OperationScheduler = require("src.modules.strikePlanner.operationScheduler")
+local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
@@ -721,6 +722,107 @@ describe("OperationScheduler", function()
       )
 
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "status=found_next"))
+    end)
+
+    -- ============================================================================
+    -- Abandoned operations (builders drop what they gave up on)
+    -- ============================================================================
+    --
+    -- These run against real batches instead of stubbed queries: the whole point is
+    -- that removing an operation is what lets the scheduler re-open its wave, and a
+    -- stubbed isOperationScheduled would hide exactly that.
+
+    describe("abandoned operations", function()
+      ---Create a batch holding one already-executed wave of the C2 series.
+      ---@param waveNumber integer
+      ---@param time string
+      ---@return table
+      local function makeExecutedWaveBatch(waveNumber, time)
+        return {
+          time = time,
+          type = "satellite",
+          delay = 0,
+          executed = true,
+          operations = {
+            {
+              type = "ground",
+              executed = true,
+              template = { name = "GND/STRIKE/C2/N/" .. waveNumber, fireSupportTasks = {} }
+            }
+          }
+        }
+      end
+
+      ---Run one scheduling pass for the C2 north mapping.
+      ---@param config SBJ__Config
+      ---@param operationBatches table[]
+      local function schedule(config, operationBatches)
+        OperationScheduler.schedule(
+          makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+          makeReconEntry({ reconObjectiveId = "C2_NORTH_TARGETING" })
+        )
+      end
+
+      -- Positive: a first wave that was given up on is opened again from config
+      it("should re-open the first wave after it is abandoned", function()
+        local config = makeConfig()
+        local operationBatches = {}
+
+        schedule(config, operationBatches)
+        assert.are.equal(1, #operationBatches)
+        local firstWave = operationBatches[1].operations[1]
+        assert.are.equal("GND/STRIKE/C2/N/1", firstWave.template.name)
+
+        DynamicState.abandonOperation(operationBatches[1], firstWave)
+
+        schedule(config, operationBatches)
+
+        assert.are.equal(2, #operationBatches)
+        assert.are.equal("GND/STRIKE/C2/N/1", operationBatches[2].operations[1].template.name)
+      end)
+
+      -- Negative: an operation still observing must not be queued a second time
+      it("should not re-open the first wave while it is still pending", function()
+        local config = makeConfig()
+        local operationBatches = {}
+
+        schedule(config, operationBatches)
+        schedule(config, operationBatches)
+
+        -- The pending wave has no executed predecessor to advance from, and it is
+        -- already scheduled, so this pass produces nothing at all.
+        assert.are.equal(1, #operationBatches)
+        assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "reason=no_executed_predecessor"))
+      end)
+
+      -- Positive: abandoning wave 3 regenerates wave 3, it does not advance to wave 4
+      it("should regenerate the same wave after a follow-on wave is abandoned", function()
+        local config = makeConfig()
+        config.c.fireSupportTaskTemplates.GND_STRIKE_C2_N_3 = { {
+          name = "FST-C2-3",
+          firingUnits = {},
+          missileSystem = "",
+          target = { list = {}, contactAge = 0, minTargetCount = 1 },
+        } }
+
+        local operationBatches = {
+          makeExecutedWaveBatch(1, "2026-02-14 06:00:00"),
+          makeExecutedWaveBatch(2, "2026-02-14 07:00:00")
+        }
+
+        schedule(config, operationBatches)
+        assert.are.equal(3, #operationBatches)
+        local thirdWave = operationBatches[3].operations[1]
+        assert.are.equal("GND/STRIKE/C2/N/3", thirdWave.template.name)
+
+        DynamicState.abandonOperation(operationBatches[3], thirdWave)
+
+        schedule(config, operationBatches)
+
+        assert.are.equal(4, #operationBatches)
+        -- Wave 2 is still the latest executed wave, so the series retries wave 3
+        assert.are.equal("GND/STRIKE/C2/N/3", operationBatches[4].operations[1].template.name)
+      end)
     end)
   end)
 
