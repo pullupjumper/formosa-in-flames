@@ -93,6 +93,22 @@ flowchart TD
 
 ---
 
+## 為什麼放棄的作戰是移除而不是標記
+
+`executed` 只有一個意思：**作戰計畫真的被插進去了**（ATO wave 或 FSEM）。兩個建構器在觀察窗逾時、缺模板或插入失敗時，會呼叫 `DynamicState.abandonOperation()` 把該筆作戰從 batch 移除，而不是標記成已執行。
+
+排程器的三個查詢因此不需要任何額外判斷就落在正確行為上：
+
+| 情形 | `isOperationScheduled` | `findLatestExecutedOperation` | 結果 |
+|---|---|---|---|
+| 首波被移除 | 判定沒排過 | 不影響 | `buildFirstWaveOperation` 重開首波 |
+| 第 N 波被移除（首波仍在） | 判定排過 | 最新仍是 `/N-1` | 重新產生 `/N`，不會跳到 `/N+1` |
+| 作戰仍在觀察窗內重試 | 判定排過 | 找不到已執行前導波 | `[SKIP] reason=no_executed_predecessor`，系列暫停等它打出去 |
+
+反過來說，如果失敗的作戰被標記成已執行留在 batch 裡，`findLatestExecutedOperation` 會把它當成合法的推進基準——第一波根本沒打成，第二波卻照排。這是這個模組最容易被忽略的失效模式，`spec/modules/strikePlanner/operationScheduler_spec.lua` 的「abandoned operations」測試群組就是用來釘住上表三列的。
+
+---
+
 ## 為什麼推導不出下一波時不排程
 
 `generateNextOperation` 的 `PARSE_ERROR`（名稱結尾不是 `/N`）與 `UNKNOWN_TYPE`（type 不在 `OPERATION_TYPE_TRAITS` 內）這兩種狀態下，它會回傳**來源 operation 的 deep copy**。

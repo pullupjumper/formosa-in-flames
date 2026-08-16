@@ -12,7 +12,7 @@
 
 模組以 observation window 控制重試行為。當情境時間進入 `operationBatch.time + operationBatch.delay` 到 `config.c.recon.observationWindowSec` 的區間後，operation 會每個 tick 重新評估目標與 firing units；若只是目標不足或發射單元暫不可用，operation 會保持 pending。
 
-成功建立 FSEM 時，模組會寫入 `saveData.c.ground.fireSupportPlan`，並透過 [dynamicState](dynamicState.md) 登記 generated ground operation 名稱。缺少 template、觀察窗逾時或未知失敗會標記 operation executed，避免無限重試。
+成功建立 FSEM 時，模組會寫入 `saveData.c.ground.fireSupportPlan`，並透過 [dynamicState](dynamicState.md) 登記 generated ground operation 名稱。缺少 template、觀察窗逾時或未知失敗則會把 operation 從 batch 移除，既避免無限重試，也讓 [operationScheduler](operationScheduler.md) 在下次偵察完成時重開同一波。`executed` 因此只代表「FSEM 真的插進計畫了」。
 
 ---
 
@@ -21,7 +21,7 @@
 | 相依 | 用途 |
 |---|---|
 | `src.modules.strikePlanner.targetingProcess` | 依 FST target template 與 contacts 產生可打擊目標 GUID 清單。 |
-| `src.modules.strikePlanner.dynamicState` | 篩選 ground operations、產生唯一 FSEM 名稱、登記 generated operation、標記 operation 結果。 |
+| `src.modules.strikePlanner.dynamicState` | 篩選 ground operations、判定觀察窗狀態、產生唯一 FSEM 名稱、登記 generated operation、標記或移除 operation。 |
 | `src.modules.missileSystem.init` | 透過 `isLowAmmo()` 檢查發射單元彈量是否低於門檻。 |
 | `src.utils.gameApi` | 取得目前情境時間、查詢實際 CMO unit。 |
 | `src.utils.utils` | `deepCopy()` template、解析偵察時間字串。 |
@@ -37,11 +37,12 @@
 | `FIRING_UNIT_STATUS` | enum table | firing unit 驗證狀態，value 採 lower snake case。 |
 | `FIRING_UNIT_STATUS_LOG_FIELD` | map table | 將 firing unit 狀態映射成 log 欄位。 |
 | `PROCESS_REASON` | enum table | 流程失敗原因：`missing_fsem_template`、`insufficient_targets`、`no_available_firing_units`、`no_valid_tasks`、`insertion_failed`、`observation_window_expired`。value 同時是 log 的 `reason=` 內容。 |
-| `RETRYABLE_REASON` | set table | 可重試 reason，`execute()` 不標記 executed 並附加 `state=observing`。 |
+| `RETRYABLE_REASON` | set table | 可重試 reason，`execute()` 保留 operation 在 batch 內並附加 `state=observing`。 |
 | `LOG_SCOPE`／`LOG_ACTION` | string | report 的 scope `dynamicGroundOperations` 與 action `Process operations`。 |
 | `NO_FIRING_UNITS_FIELDS` | table | 沒有 firing unit 計數可回報時的替代欄位 `firingUnits=none`。 |
-| `OBSERVATION_STATE` | enum table | 觀察窗狀態：`pre_trigger`、`in_window`、`expired`。 |
 | `SBJ__FiringUnitStatusCounter` | alias | `table<string, number>`，統計 firing unit 驗證結果。 |
+
+觀察窗狀態常數 `OBSERVATION_STATE` 與判定函數改由 [dynamicState](dynamicState.md) 提供，與 [atoBuilder](atoBuilder.md) 共用同一份實作。
 
 ---
 
@@ -49,16 +50,17 @@
 
 ### 觀察窗處理
 
-`evaluateObservationWindow(currentTime, operationBatch, windowSec)` 以 `operationBatch.time + operationBatch.delay` 計算觸發時間。`pre_trigger` 靜默略過；`in_window` 會嘗試建立 FSEM；`expired` 會呼叫 `markOperationExecuted(operationBatch, operation, false)` 並以 `reason = observation_window_expired` 輸出 `[WARN]`。
+`DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)` 以 `operationBatch.time + operationBatch.delay` 計算觸發時間。`pre_trigger` 靜默略過；`in_window` 會嘗試建立 FSEM；`expired` 會呼叫 `abandonOperation(operationBatch, operation)` 把 operation 移出 batch，並以 `reason = observation_window_expired`、`state = abandoned` 輸出 `[WARN]`。
 
 ```mermaid
 stateDiagram-v2
     [*] --> pre_trigger
     pre_trigger --> in_window : currentTime >= triggerTime
     in_window --> in_window : insufficient_targets / no_available_firing_units
-    in_window --> [*] : ok / missing_fsem_template / no_valid_tasks
+    in_window --> [*] : ok（標記 executed）
+    in_window --> [*] : missing_fsem_template / no_valid_tasks（移除）
     in_window --> expired : currentTime > triggerTime + windowSec
-    expired --> [*] : observation_window_expired
+    expired --> [*] : observation_window_expired（移除）
 ```
 
 ### 目標評估
@@ -91,17 +93,17 @@ FSEM 名稱由 `DynamicState.generateUniqueGroundOperationName()` 生成，會�
 
 `processGroundOperation()` 回傳 `SBJ__OperationProcessResult`（`success`、`tag`、`reason`、`fields`）；觀察窗逾時則由 `execute()` 直接組出 `tag = WARN`、`reason = observation_window_expired` 的同型結果，讓兩條路徑走同一個輸出流程。
 
-log tag 由產生分支直接寫進結果，不再經過 reason → tag 對照表。尚未進入 firing unit 驗證的分支自行決定要不要帶計數欄位：`missing_fsem_template` 與 `observation_window_expired` 不帶（log 行只有 `reason=`），`insufficient_targets` 帶 `firingUnits=none`，其餘帶完整 firing unit 計數。`RETRYABLE_REASON` 的 `state=observing` 由 `execute()` 在決定不標記 executed 的同一個分支加上，控制流程與 log 欄位共用一組判斷。
+log tag 由產生分支直接寫進結果，不再經過 reason → tag 對照表。尚未進入 firing unit 驗證的分支自行決定要不要帶計數欄位：`missing_fsem_template` 與 `observation_window_expired` 不帶（log 行只有 `reason=` 與 `state=`），`insufficient_targets` 帶 `firingUnits=none`，其餘帶完整 firing unit 計數。`state=observing` 與 `state=abandoned` 由 `execute()` 在決定保留或移除的同一個分支加上，控制流程與 log 欄位共用一組判斷。
 
 `execute()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)`，逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責。詳見 [logFormat](../logFormat.md)。
 
-| reason | Log tag | Logger | 是否標記 operation executed | 說明 |
+| reason | Log tag | Logger | operation 去向 | 說明 |
 |---|---|---|:-:|---|
-| `nil`（成功） | `[OK]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 是，`true` | FSEM 已插入 FSP。 |
-| `insufficient_targets`／`no_available_firing_units` | `[SKIP]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 否 | 保留在觀察窗內重試，附 `state=observing`。 |
-| `observation_window_expired` | `[WARN]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 是，`false` | 觀察窗逾時。 |
-| `missing_fsem_template` | `[ERROR]` | `Logger.error(...)` | 是，`false` | operation 缺少 FSEM template 或 `fireSupportTasks`。 |
-| `no_valid_tasks`／`insertion_failed` | `[FAIL]` | `Logger.error(...)` | 是，`false` | 有目標但無可用 FST，或插入 FSP 失敗。 |
+| `nil`（成功） | `[OK]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 標記 executed | FSEM 已插入 FSP。 |
+| `insufficient_targets`／`no_available_firing_units` | `[SKIP]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 保留重試 | 留在觀察窗內，附 `state=observing`。 |
+| `observation_window_expired` | `[WARN]` | `Logger.log(constants.TAGS.DYNAMIC_OPERATIONS, ...)` | 移除 | 觀察窗逾時，附 `state=abandoned`。 |
+| `missing_fsem_template` | `[ERROR]` | `Logger.error(...)` | 移除 | operation 缺少 FSEM template 或 `fireSupportTasks`。 |
+| `no_valid_tasks`／`insertion_failed` | `[FAIL]` | `Logger.error(...)` | 移除 | 有目標但無可用 FST，或插入 FSP 失敗。 |
 
 輸出範例：
 
@@ -123,7 +125,7 @@ flowchart TD
     LOOP["逐一處理 ground operation"]
     WINDOW["evaluateObservationWindow"]
     PRE["pre_trigger<br>靜默略過"]
-    EXPIRED["expired<br>markOperationExecuted(false)"]
+    EXPIRED["expired<br>abandonOperation"]
     PROCESS["processGroundOperation"]
     TEMPLATE{"template<br>存在?"}
     TARGETS["evaluateTargetsFromTemplate"]
@@ -132,9 +134,9 @@ flowchart TD
     BUILD["buildExecutableTasks"]
     TASK_OK{"#fireSupportTasks > 0?"}
     INSERT["insertMatrix<br>寫入 FSP + registerGeneratedOperation"]
-    OK["ok<br>markOperationExecuted(true)"]
+    OK["ok<br>markOperationExecuted"]
     WAIT["wait<br>保持 pending"]
-    FAIL["fail / missing_template<br>markOperationExecuted(false)"]
+    FAIL["fail / missing_template<br>abandonOperation"]
     LOG["operations.emit()"]
     RETURN["return hasExecutedAny"]
 
@@ -177,7 +179,6 @@ saveData.c
 │               └── Operation
 │                   ├── type: "ground"
 │                   ├── executed: boolean
-│                   ├── executionResult?: boolean
 │                   └── template: SBJ__FireSupportExecutionMatrixTemplate
 └── ground
     ├── fireSupportPlan: table<string, SBJ__FireSupportExecutionMatrix>
@@ -212,7 +213,8 @@ saveData.c
 | 讀取 | `saveData.c.ground[missileSystemLower].firingUnits[firingUnitName]` | 取得 firing unit runtime context。 |
 | 寫入 | `saveData.c.ground.fireSupportPlan[newMatrix.name]` | 插入新 FSEM。 |
 | 寫入 | `saveData.c.dynamicOperations.generatedOperations.ground[newMatrix.name]` | 登記 generated operation 名稱。 |
-| 寫入 | `operation.executed` / `operation.executionResult` | 記錄 operation 是否已完成與結果。 |
+| 寫入 | `operation.executed` | FSEM 成功插入時標記。 |
+| 寫入 | `operationBatch.operations` | 放棄的 operation 由 `abandonOperation()` 從陣列移除。 |
 | Game API | `GameApi.ScenEdit_CurrentTime()` | 取得觀察窗與 FSEM start time 基準。 |
 | Game API | `GameApi.ScenEdit_GetUnit(firingUnitName)` | 驗證 firing unit 實體是否仍存在。 |
 
@@ -230,7 +232,7 @@ saveData.c
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.recon.observationWindowSec` | ground operation 觀察窗長度；目前配置為 `30 * 60` 秒。 |
+| `config` | `config.c.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [atoBuilder](atoBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
 | `config` | `config.c.fireSupportTaskTemplates` | ground operation template 的上游來源，由 scheduler 掛入 `operation.template`。 |
 | `constants` | `constants.MISSILE_SYSTEM_STATE.HIDE` | firing unit 必須處於 HIDE 狀態才可被選用。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 動態地面作戰 summary log 的 tag。 |

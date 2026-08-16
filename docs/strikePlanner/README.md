@@ -267,7 +267,7 @@ flowchart BT
 | `config.c.ground.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
 | `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
 | `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
-| `config.c.recon.observationWindowSec` | ground operation 的觀測窗長度；由 `fsemBuilder` 消費 scheduler 建立的 ground operations 時使用 |
+| `config.c.recon.observationWindowSec` | 動態作戰的觀測窗長度；`atoBuilder` 與 `fsemBuilder` 共用，窗內重試、逾時把 operation 移出 batch |
 | `config.c.packageTemplates` | 空中打擊包模板；`operationScheduler` 建立 air operation template，`atoBuilder` 轉為 Wave |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板；`operationScheduler` 建立 ground operation template，`fsemBuilder` 轉為 FSEM |
 | `config.c.air.landBased.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
