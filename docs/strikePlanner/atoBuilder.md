@@ -102,8 +102,11 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 `validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選基地清單，依序尋找可用飛機。可用飛機由 `getBaseAircraftCapacity()` 計算，條件是基地 `embarkedUnits.Aircraft` 中的 aircraft `dbid` 符合 `roleData.unitDBID`，且 `aircraft.mission == ""` 或 `nil`。
 
+**帳本以 (基地, 機型) 為單位。** 預約 key 由 `reservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。這是必要的：把某基地的戰機全部訂走，不該讓同一基地的加油機看起來也沒了。
+
 ```text
-可用餘額 free = getBaseAircraftCapacity(baseGUID, unitDBID) - assignedAircraft[baseGUID]
+預約 key   = baseGUID .. "#" .. unitDBID
+可用餘額 free = getBaseAircraftCapacity(cache, baseGUID, unitDBID) - assignedAircraft[key]
 
 接受條件： free >= roleData.unitCount / 2
 預訂量：   free >= roleData.unitCount -> 預訂 roleData.unitCount
@@ -112,7 +115,15 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 當某候選基地通過半戰力門檻，模組會把 `roleData.baseGUID` 改寫為實際選定基地，並先把預訂量累加到 package 專用的暫存表。只有所有已設定角色都通過驗證時，暫存預約才會提交至 `assignedAircraft`；任一角色失敗時會丟棄整包暫存預約，避免未執行的 package 占用後續 package 的飛機。`roleData.unitCount` 不會因半戰力通過而改寫；實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
 
-`collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
+`collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的加油機或電戰機。
+
+### 基地容量快取
+
+`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getBaseAircraftCapacity()` 把結果存進 `process()` 建立的 `capacityCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
+
+快取的生命週期**剛好是一次 `process()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態（真正建立任務、指派飛機的是後續才跑的 [airTaskingOrder](airTaskingOrder.md)），而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `process()` 之間，每趟重建剛好涵蓋。
+
+因此 `capacityCache` **必須是 `process()` 的區域變數**。打包後模組 table 會變全域，把它提到 module scope 會讓快取跨 tick 存活、繼續計入已被摧毀的飛機。`atoBuilder_spec` 有一條「連續兩次 `process()` 應重讀基地」的測試專門釘住這點。
 
 若 tanker 的 `missionCreationParams` 使用陣列，建立 Wave 前會額外驗證陣列非空、任務名稱有效且不重複，以及 `unitCount` 可被任務數整除。機隊容量與預訂量仍使用 tanker 的總 `unitCount`，不會因任務拆分而重複計算。
 

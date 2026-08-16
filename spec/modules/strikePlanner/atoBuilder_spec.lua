@@ -149,8 +149,9 @@ describe("AtoBuilder", function()
 
   ---Stub aircraft availability. `bases` maps baseGUID to its embarked aircraft GUIDs.
   ---`aircraftFn` resolves individual aircraft units; defaults to dbid 100, unassigned.
+  ---@return luassert.spy # The ScenEdit_GetUnit stub, for counting base reads
   local function stubBases(bases, aircraftFn)
-    trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+    return trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if bases and bases[guid] then
         return { guid = guid, embarkedUnits = { Aircraft = bases[guid] } }
       end
@@ -159,6 +160,20 @@ describe("AtoBuilder", function()
       end
       return { dbid = 100, mission = nil }
     end))
+  end
+
+  ---Count how many times a base unit was read through the given ScenEdit_GetUnit stub.
+  ---@param getUnitStub luassert.spy
+  ---@param baseGUID string
+  ---@return integer
+  local function countBaseReads(getUnitStub, baseGUID)
+    local reads = 0
+    for _, call in ipairs(getUnitStub.calls) do
+      if call.vals[1] == baseGUID then
+        reads = reads + 1
+      end
+    end
+    return reads
   end
 
   ---Stub the DynamicState registration/marking calls for a successful insertion.
@@ -837,14 +852,14 @@ describe("AtoBuilder", function()
 
     local saveData = makeSaveData({ reconEntry }, {
       airTaskingOrder = {
-        -- Existing wave with 3 aircraft already assigned from BASE-1
+        -- Existing wave with 3 aircraft of the same type already assigned from BASE-1
         ["EXISTING-WAVE"] = {
           isActivated = true,
           hasLaunched = false,
           packages = {
             {
               hasLaunched = false,
-              striker = { baseGUID = "BASE-1", unitCount = 3 }
+              striker = { baseGUID = "BASE-1", unitCount = 3, unitDBID = 100 }
             }
           }
         }
@@ -877,7 +892,7 @@ describe("AtoBuilder", function()
           isActivated = true,
           hasLaunched = true,
           packages = {
-            { hasLaunched = true, striker = { baseGUID = "BASE-1", unitCount = 10 } }
+            { hasLaunched = true, striker = { baseGUID = "BASE-1", unitCount = 10, unitDBID = 100 } }
           }
         },
         -- Active but package already launched should NOT be counted
@@ -885,7 +900,7 @@ describe("AtoBuilder", function()
           isActivated = true,
           hasLaunched = false,
           packages = {
-            { hasLaunched = true, striker = { baseGUID = "BASE-1", unitCount = 10 } }
+            { hasLaunched = true, striker = { baseGUID = "BASE-1", unitCount = 10, unitDBID = 100 } }
           }
         }
       }
@@ -1277,7 +1292,7 @@ describe("AtoBuilder", function()
     local operation = makeAirOperation({
       name = "STRIKE/FALLBACK/TANKER",
       packages = { makeStrikePackage({
-        tanker = { baseGUID = "BASE-1", baseGUIDCandidates = { "BASE-2" }, unitCount = 2, unitDBID = 102 }
+        tanker = { baseGUID = "BASE-1", baseGUIDCandidates = { "BASE-2" }, unitCount = 4, unitDBID = 102 }
       }) }
     })
 
@@ -1286,11 +1301,12 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
-    -- BASE-1: 1 striker (dbid 100) + 1 tanker (dbid 102) -> tanker insufficient (need 2)
-    -- BASE-2: 2 tankers (dbid 102) -> tanker fallback satisfied
+    -- BASE-1: 1 striker (dbid 100) + 1 tanker (dbid 102); 1 tanker is below the
+    -- half-strength threshold of 2, and the striker booking must not be what decides it
+    -- BASE-2: 4 tankers (dbid 102) -> tanker fallback satisfied at full strength
     stubBases({
       ["BASE-1"] = { "AC-S1", "AC-T1" },
-      ["BASE-2"] = { "AC-T2", "AC-T3" }
+      ["BASE-2"] = { "AC-T2", "AC-T3", "AC-T4", "AC-T5" }
     }, function(guid)
       if guid == "AC-S1" then return { dbid = 100, mission = nil } end
       return { dbid = 102, mission = nil }
@@ -1315,7 +1331,7 @@ describe("AtoBuilder", function()
     local operation = makeAirOperation({
       name = "STRIKE/FALLBACK/JAMMER",
       packages = { makeStrikePackage({
-        jammer = { baseGUID = "BASE-1", baseGUIDCandidates = { "BASE-2" }, unitCount = 2, unitDBID = 103 }
+        jammer = { baseGUID = "BASE-1", baseGUIDCandidates = { "BASE-2" }, unitCount = 4, unitDBID = 103 }
       }) }
     })
 
@@ -1324,11 +1340,11 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
-    -- BASE-1: 1 striker + 1 jammer -> jammer insufficient (need 2)
-    -- BASE-2: 2 jammers -> jammer fallback satisfied
+    -- BASE-1: 1 striker + 1 jammer; 1 jammer is below the half-strength threshold of 2
+    -- BASE-2: 4 jammers -> jammer fallback satisfied at full strength
     stubBases({
       ["BASE-1"] = { "AC-S1", "AC-J1" },
-      ["BASE-2"] = { "AC-J2", "AC-J3" }
+      ["BASE-2"] = { "AC-J2", "AC-J3", "AC-J4", "AC-J5" }
     }, function(guid)
       if guid == "AC-S1" then return { dbid = 100, mission = nil } end
       return { dbid = 103, mission = nil }
@@ -1439,6 +1455,158 @@ describe("AtoBuilder", function()
     -- Package 1 reserved BASE-1 at half strength; package 2 must fall back to BASE-2
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-2", wave.packages[2].striker.baseGUID)
+  end)
+
+  -- ============================================================================
+  -- Per-Airframe Reservations
+  -- ============================================================================
+
+  -- Positive: bookings of one airframe type must not consume another type's aircraft
+  it("should book each airframe type separately within one package", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/AIRFRAME/1",
+      packages = { makeStrikePackage({
+        striker = makeStriker({ unitCount = 2 }),
+        tanker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 102 }
+      }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- BASE-1 holds exactly what the package asks for: 2 strikers and 2 tankers, all free
+    stubBases({ ["BASE-1"] = { "S1", "S2", "T1", "T2" } }, function(guid)
+      if guid == "S1" or guid == "S2" then return { dbid = 100, mission = nil } end
+      return { dbid = 102, mission = nil }
+    end)
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    stubDynamicStateSuccess("DYNAMIC/AIRFRAME/1")
+
+    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/AIRFRAME/1"]
+    assert.is_table(wave)
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-1", wave.packages[1].tanker.baseGUID)
+  end)
+
+  -- Positive: an existing wave's strikers must not make the same base's tankers look busy
+  it("should not let an existing wave's strikers block another airframe type", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/AIRFRAME/2",
+      packages = { makeStrikePackage({
+        striker = makeStriker({ unitCount = 2 }),
+        tanker = { baseGUID = "BASE-1", unitCount = 2, unitDBID = 102 }
+      }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry }, {
+      airTaskingOrder = {
+        -- An active wave already holds 3 of the 4 strikers at BASE-1
+        ["EXISTING-WAVE"] = {
+          isActivated = true,
+          hasLaunched = false,
+          packages = {
+            { hasLaunched = false, striker = { baseGUID = "BASE-1", unitCount = 3, unitDBID = 100 } }
+          }
+        }
+      }
+    })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- BASE-1: 4 strikers (3 booked, 1 free -> half strength of the required 2) and
+    -- 2 untouched tankers. The striker bookings must not spill onto the tankers.
+    stubBases({ ["BASE-1"] = { "S1", "S2", "S3", "S4", "T1", "T2" } }, function(guid)
+      if guid == "T1" or guid == "T2" then return { dbid = 102, mission = nil } end
+      return { dbid = 100, mission = nil }
+    end)
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoint").returns(nil))
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    stubDynamicStateSuccess("DYNAMIC/AIRFRAME/2")
+
+    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/AIRFRAME/2"]
+    assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
+    assert.are.equal("BASE-1", wave.packages[1].tanker.baseGUID)
+  end)
+
+  -- ============================================================================
+  -- Base Capacity Cache
+  -- ============================================================================
+
+  -- Positive: one pass reads each base once, however many roles and packages use it
+  it("should read a base only once per pass", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/CACHE/1",
+      packages = {
+        makeStrikePackage({
+          striker = makeStriker({ unitCount = 1 }),
+          escort = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 101, weaponDBID = 300 },
+          target = makeTarget({ objs = { { baseName = "FIRST", subTypes = { "Radar" } } } })
+        }),
+        makeStrikePackage({
+          striker = makeStriker({ unitCount = 1 }),
+          escort = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 101, weaponDBID = 300 },
+          target = makeTarget({ objs = { { baseName = "SECOND", subTypes = { "Radar" } } } })
+        })
+      }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+      return { targetConfig.objs[1].baseName }
+    end))
+    -- 2 packages x 2 roles all draw from BASE-1; without the cache that is 4 reads
+    local getUnitStub = stubBases({ ["BASE-1"] = { "S1", "S2", "E1", "E2" } }, function(guid)
+      if guid == "E1" or guid == "E2" then return { dbid = 101, mission = nil } end
+      return { dbid = 100, mission = nil }
+    end)
+    trackStub(stub(GameApi, "Tool_Range").returns(200))
+    trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
+    stubDynamicStateSuccess("DYNAMIC/CACHE/1")
+
+    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+
+    assert.are.equal(1, countBaseReads(getUnitStub, "BASE-1"))
+  end)
+
+  -- Boundary: the cache dies with the pass, so a later tick sees aircraft losses
+  it("should re-read a base on the next pass", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/CACHE/2",
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- Short of aircraft, so the operation stays queued and the second tick reprocesses it
+    local getUnitStub = stubBases({ ["BASE-1"] = { "AC-1" } })
+    trackStub(stub(DynamicState, "markOperationExecuted"))
+
+    AtoBuilder.process(makeConfig(), saveData, {})
+    AtoBuilder.process(makeConfig(), saveData, {})
+
+    -- A cache that outlived the pass would still read 1; aircraft destroyed between
+    -- ticks would then never be noticed.
+    assert.are.equal(2, countBaseReads(getUnitStub, "BASE-1"))
   end)
 
   -- ============================================================================
