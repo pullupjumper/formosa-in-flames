@@ -336,46 +336,22 @@ end
 
 ---Check if any UAV in the queue is already tracking the specified target
 ---A settled entry does not count: processQueue skips it, so its GUID is stale.
+---Public so callers can skip the side-wide aircraft sweep trackTarget needs; an
+---operation retrying inside its observation window asks this every tick.
 ---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
 ---@param targetGUID string Target contact GUID to check
 ---@return boolean # True if target is already being tracked by an active UAV
-local function isTargetAlreadyTracked(queue, targetGUID)
+function Recon.isTargetAlreadyTracked(queue, targetGUID)
   for _, entry in ipairs(queue) do
-    if entry.type == ENTRY_TYPE.UAV and entry.trackingTargetGUID == targetGUID
-        and entry.unitGUID and not entry.isFinished then
+    if entry.type == ENTRY_TYPE.UAV and
+        entry.trackingTargetGUID == targetGUID and
+        entry.unitGUID and
+        not entry.isFinished then
       local unit = GameApi.ScenEdit_GetUnit(entry.unitGUID)
       if unit then return true end
     end
   end
   return false
-end
-
----Find the closest available UAV of specified type within tracking distance
----@param sideUnits CMO__SideUnit[] Side units collection to search
----@param uavDBID number UAV platform database ID to filter by
----@param target CMO__Contact Target contact to measure distance from
----@return CMO__Unit|nil # Closest available UAV or nil if none found
-local function findClosestUAV(sideUnits, uavDBID, target)
-  local uav = nil
-  local minDistance = MAX_TRACKING_DISTANCE_NM
-
-  for _, sideUnit in ipairs(sideUnits) do
-    local candidate = GameApi.ScenEdit_GetUnit(sideUnit.guid)
-
-    if candidate and candidate.dbid == uavDBID and candidate.condition == "Airborne" then
-      local distance = GameApi.Tool_Range({
-        latitude = candidate.latitude,
-        longitude = candidate.longitude
-      }, target.guid)
-
-      if distance and distance < minDistance then
-        minDistance = distance
-        uav = candidate
-      end
-    end
-  end
-
-  return uav
 end
 
 ---Find a queue entry by its assigned unit GUID
@@ -389,6 +365,50 @@ local function findQueueEntryByUnitGUID(queue, unitGUID)
     end
   end
   return nil
+end
+
+---Check whether one UAV is already shadowing a target
+---A settled entry does not count, matching isTargetAlreadyTracked: its target is
+---no longer being watched, so the airframe is free to take a new one.
+---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
+---@param unitGUID string Unit GUID of the UAV to test
+---@return boolean # True when the UAV is committed to an active tracking target
+local function isUAVTracking(queue, unitGUID)
+  local entry = findQueueEntryByUnitGUID(queue, unitGUID)
+  return entry ~= nil and entry.trackingTargetGUID ~= nil and not entry.isFinished
+end
+
+---Find the closest available UAV of specified type within tracking distance
+---A UAV already shadowing another target is not available: assignTrackingMission
+---overwrites trackingTargetGUID outright, so picking one here would silently drop
+---the target it was watching.
+---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
+---@param sideUnits CMO__SideUnit[] Side units collection to search
+---@param uavDBID number UAV platform database ID to filter by
+---@param target CMO__Contact Target contact to measure distance from
+---@return CMO__Unit|nil # Closest available UAV or nil if none found
+local function findClosestUAV(queue, sideUnits, uavDBID, target)
+  local uav = nil
+  local minDistance = MAX_TRACKING_DISTANCE_NM
+
+  for _, sideUnit in ipairs(sideUnits) do
+    local candidate = GameApi.ScenEdit_GetUnit(sideUnit.guid)
+
+    if candidate and candidate.dbid == uavDBID and candidate.condition == "Airborne"
+        and not isUAVTracking(queue, candidate.guid) then
+      local distance = GameApi.Tool_Range({
+        latitude = candidate.latitude,
+        longitude = candidate.longitude
+      }, target.guid)
+
+      if distance and distance < minDistance then
+        minDistance = distance
+        uav = candidate
+      end
+    end
+  end
+
+  return uav
 end
 
 ---Assign a tracking mission to a queue entry
@@ -448,11 +468,11 @@ end
 ---@param target CMO__Contact Target contact to track
 ---@return boolean # True if UAV was assigned to track target, false otherwise
 function Recon.trackTarget(reconContext, sideUnits, uavDBID, target)
-  if isTargetAlreadyTracked(reconContext.queue, target.guid) then
+  if Recon.isTargetAlreadyTracked(reconContext.queue, target.guid) then
     return true
   end
 
-  local uav = findClosestUAV(sideUnits, uavDBID, target)
+  local uav = findClosestUAV(reconContext.queue, sideUnits, uavDBID, target)
   if not uav then
     Logger.log(constants.TAGS.RECON, LogFormat.line("SKIP", {
       scope = "targetTracking",

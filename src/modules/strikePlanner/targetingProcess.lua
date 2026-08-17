@@ -523,6 +523,10 @@ end
 -- ============================================================================
 
 ---Trigger reconnaissance tracking for a filter's results
+---Resolves the target before sweeping the side so a target that is already being
+---shadowed costs nothing: an operation retrying inside its observation window
+---reaches this every tick, and enumerating every friendly aircraft each time is
+---pure waste.
 ---@param opts SBJ__FilterParams Filter options with contacts and saveData
 ---@param filterName string Name of the filter that produced targets
 ---@param targetGUIDs string[] Array of target GUIDs from the filter
@@ -532,14 +536,18 @@ local function triggerReconTracking(opts, filterName, targetGUIDs)
     return
   end
 
+  local target = trackingConfig.getTarget(opts, targetGUIDs)
+  if not target then return end
+
+  if Recon.isTargetAlreadyTracked(opts.saveData.c.recon.queue, target.guid) then
+    return
+  end
+
   local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
   if not side then return end
 
   local filteredUnits = side:unitsBy(constants.UNIT_TYPES.AIRCRAFT)
   if not filteredUnits then return end
-
-  local target = trackingConfig.getTarget(opts, targetGUIDs)
-  if not target then return end
 
   Recon.trackTarget(opts.saveData.c.recon, filteredUnits, trackingConfig.platformDBID, target)
 end

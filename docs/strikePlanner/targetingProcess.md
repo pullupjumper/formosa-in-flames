@@ -104,6 +104,8 @@ flowchart TD
 | `findNavalTargets` | WZ-8 | 從 contacts 陣列中查找 |
 | `findRadioDirection` | BZK-005 | 透過 `ScenEdit_GetContact` 取得 |
 
+順序刻意是「先解析目標 → 問 `Recon.isTargetAlreadyTracked` → 才 `VP_GetSide` + `unitsBy`」。目標解析很便宜（查記憶體中的 contacts 或一次 `ScenEdit_GetContact`），側別飛機列舉則要對每一架做一次 `ScenEdit_GetUnit`。[atoBuilder](atoBuilder.md) 的作戰在觀察窗內是**每個 tick** 重新評估目標的，若把已在追蹤的情況留到 `trackTarget` 內部才短路，那趟列舉就白做了。
+
 ---
 
 ## 公開 API

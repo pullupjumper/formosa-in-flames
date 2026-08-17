@@ -112,9 +112,13 @@ flowchart TD
 
 ## 目標追蹤
 
-`Recon.trackTarget` 指派空中 UAV 追蹤特定目標（用於飛彈中途導引）：先確認目標未被追蹤（`isTargetAlreadyTracked`），找出 1,000nm 內最近的空中同型機（`findClosestUAV`），在佇列中找到它的 entry（`findQueueEntryByUnitGUID`），然後指派（`assignTrackingMission`）。
+`Recon.trackTarget` 指派空中 UAV 追蹤特定目標（用於飛彈中途導引）：先確認目標未被追蹤（`Recon.isTargetAlreadyTracked`），找出 1,000nm 內最近的**閒置**空中同型機（`findClosestUAV`），在佇列中找到它的 entry（`findQueueEntryByUnitGUID`），然後指派（`assignTrackingMission`）。
 
 > `isTargetAlreadyTracked` 必須排除 `isFinished == true` 的 entry。已結算的 entry 會被 `processUAVEntry` 直接跳過，若它殘留的 `trackingTargetGUID` 仍算數，該目標會被永久誤判為「已被追蹤」，再也不會指派新的 UAV。
+
+> `findClosestUAV` 必須排除**正在追蹤其他目標**的 UAV。`assignTrackingMission` 是無條件覆寫 `trackingTargetGUID`，而 `isTargetAlreadyTracked` 只保護「同一個目標不重複派」——保護不了「同一架機被搶走」。少了這道排除，兩個海上目標配一架空中 WZ-8 時，每個 tick 都會把它在兩者之間搶來搶去，先前那個目標被靜默放生，日誌上看起來卻是一連串正常的 `assign_tracking`。
+
+`isTargetAlreadyTracked` 是 public 的，因為 [targetingProcess](targetingProcess.md) 需要在列舉全側飛機之前先問一次——觀察窗內重試的作戰每個 tick 都會走到那裡。
 
 `updateTrackingCourse` 把航線換成**單一航點**（目標最新已知位置）。因為只有一個航點，UAV 抵達後航線才清空，下個 tick 才會再更新 —— 實際行為是尾隨目標的舊位置，而非連續導引。
 
@@ -226,7 +230,8 @@ flowchart TD
 |---|---|
 | `processQueue(processingContext)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8；建立後的任一步驟失敗會刪除該架無人機並回傳 `nil` |
-| `trackTarget(reconContext, sideUnits, uavDBID, target)` | 指派最近的空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
+| `trackTarget(reconContext, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
+| `isTargetAlreadyTracked(queue, targetGUID)` | 該目標是否已有未結算的 UAV entry 在追蹤；供呼叫端在昂貴的側別飛機列舉前先行短路 |
 | `insertEntry(reconContext, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil` |
 | `initQueue(reconConfig, reconContext)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
 

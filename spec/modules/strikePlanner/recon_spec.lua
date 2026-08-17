@@ -1151,6 +1151,131 @@ describe("Recon", function()
 
       assert.is_false(result)
     end)
+
+    -- Negative: a UAV shadowing another target must not be poached, however close it is
+    it("should not steal a UAV that is already tracking another target", function()
+      local busyUAV = makeUnit({
+        guid = "UAV-BUSY", dbid = UAVDBID, condition = "Airborne", latitude = 23.1, longitude = 119.1,
+      })
+      local freeUAV = makeUnit({
+        guid = "UAV-FREE", dbid = UAVDBID, condition = "Airborne", latitude = 28.0, longitude = 122.0,
+      })
+      local busyEntry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-BUSY",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-OTHER",
+      })
+      local freeEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-FREE" })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        if guid == "UAV-BUSY" then return busyUAV end
+        if guid == "UAV-FREE" then return freeUAV end
+        return nil
+      end))
+      -- The busy one is nearer, so distance alone would pick it
+      trackStub(stub(GameApi, "Tool_Range").invokes(function(pos)
+        if pos.latitude == 23.1 then return 10 end
+        return 100
+      end))
+
+      local units = { { guid = "UAV-BUSY" }, { guid = "UAV-FREE" } }
+      local reconContext = makeReconContext({ busyEntry, freeEntry })
+      local result = Recon.trackTarget(reconContext, units, UAVDBID, target)
+
+      assert.is_true(result)
+      -- The nearer UAV keeps the target it was already watching
+      assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
+      assert.are.equal("CONTACT-001", freeEntry.trackingTargetGUID)
+    end)
+
+    -- Negative: every airborne UAV is committed elsewhere
+    it("should return false when the only airborne UAV is already tracking", function()
+      local busyUAV = makeUnit({ guid = "UAV-BUSY", dbid = UAVDBID, condition = "Airborne" })
+      local busyEntry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-BUSY",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-OTHER",
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(busyUAV))
+      trackStub(stub(GameApi, "Tool_Range").returns(10))
+
+      local reconContext = makeReconContext({ busyEntry })
+      local result = Recon.trackTarget(reconContext, { { name = "", guid = "UAV-BUSY" } }, UAVDBID, target)
+
+      assert.is_false(result)
+      assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
+    end)
+
+    -- Boundary: a settled entry releases its UAV back into the pool
+    it("should reuse a UAV whose tracking entry has finished", function()
+      local settledUAV = makeUnit({ guid = "UAV-SETTLED", dbid = UAVDBID, condition = "Airborne" })
+      local settledEntry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-SETTLED",
+        isTracking = true,
+        trackingTargetGUID = "CONTACT-OTHER",
+        isFinished = true,
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(settledUAV))
+      trackStub(stub(GameApi, "Tool_Range").returns(10))
+
+      local reconContext = makeReconContext({ settledEntry })
+      local result = Recon.trackTarget(reconContext, { { name = "", guid = "UAV-SETTLED" } }, UAVDBID, target)
+
+      assert.is_true(result)
+      assert.are.equal("CONTACT-001", settledEntry.trackingTargetGUID)
+      assert.is_false(settledEntry.isFinished)
+    end)
+  end)
+
+  -- ============================================================================
+  -- isTargetAlreadyTracked
+  -- ============================================================================
+
+  describe("isTargetAlreadyTracked", function()
+    -- Positive: an active UAV shadowing the target
+    it("should report a target watched by an active UAV", function()
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-001",
+        trackingTargetGUID = "CONTACT-001",
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
+
+      assert.is_true(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
+    end)
+
+    -- Negative: nobody is watching that target
+    it("should report an untracked target", function()
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-001",
+        trackingTargetGUID = "CONTACT-OTHER",
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
+
+      assert.is_false(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
+    end)
+
+    -- Boundary: a settled entry no longer counts as watching
+    it("should not report a settled entry as tracking", function()
+      local entry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-001",
+        trackingTargetGUID = "CONTACT-001",
+        isFinished = true,
+      })
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
+
+      assert.is_false(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
+    end)
   end)
 
   -- ============================================================================

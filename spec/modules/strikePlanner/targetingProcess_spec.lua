@@ -1321,6 +1321,33 @@ describe("TargetingProcess", function()
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
+
+    -- Positive: a target already under a UAV's eye short-circuits before the side sweep,
+    -- which is what keeps an operation retrying inside its observation window cheap
+    it("should skip the side sweep when the target is already tracked", function()
+      local contact = makeContact({ guid = "ship-001", typed = 2 })
+      local opts = {
+        contacts = { contact },
+        saveData = makeSaveData({
+          recon = {
+            enabled = true,
+            queue = { {
+              type = "UAV",
+              unitGUID = "uav-001",
+              trackingTargetGUID = "ship-001",
+              isFinished = false,
+            } },
+          },
+        }),
+        task = makeTask(),
+      }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "uav-001" }))
+
+      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+
+      assert.stub(reconTrackTargetStub).was_not.called()
+      assert.stub(vpGetSideStub).was_not.called()
+    end)
   end)
 
   -- ============================================================================
