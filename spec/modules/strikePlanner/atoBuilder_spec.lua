@@ -17,6 +17,10 @@ local BaseConfig = require("src.core.config")
 -- pre-trigger or expired states stub the two values apart.
 
 describe("AtoBuilder", function()
+  -- The two reports AtoBuilder emits, told apart by scope rather than tag
+  local OPERATIONS_LOG_SCOPE = "dynamicAirOperations"
+  local TIMING_LOG_SCOPE = "dynamicAirTiming"
+
   ---@type luassert.spy[]
   local activeStubs
   ---@type luassert.spy
@@ -26,19 +30,35 @@ describe("AtoBuilder", function()
   ---@type luassert.spy
   local warnStub
 
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
+  ---Register a stub or spy so after_each reverts it
+  ---@param testDouble luassert.spy Stub or spy to track
+  ---@return luassert.spy # The same double, so calls can be chained inline
+  local function trackStub(testDouble)
+    table.insert(activeStubs, testDouble)
+    return testDouble
   end
 
+  before_each(function()
+    activeStubs = {}
+    logStub = trackStub(stub(Logger, "log"))
+    errorStub = trackStub(stub(Logger, "error"))
+    warnStub = trackStub(stub(Logger, "warn"))
+  end)
+
+  after_each(function()
+    for _, testDouble in ipairs(activeStubs) do
+      testDouble:revert()
+    end
+    activeStubs = {}
+  end)
+
   -- ============================================================================
-  -- Shared Mock Data Builders
+  -- Shared mock data builders
   -- ============================================================================
 
-  ---Create reconEntry with defaults: time="2026-02-14 00:00:00", delay=0, type="satellite"
+  ---Create a recon-triggered operation batch entry
+  ---@param overrides? table
+  ---@return table
   local function makeReconEntry(overrides)
     local entry = { time = "2026-02-14 00:00:00", delay = 0, type = "satellite" }
     if overrides then
@@ -47,7 +67,9 @@ describe("AtoBuilder", function()
     return entry
   end
 
-  ---Create a striker deployment descriptor with defaults; overrides replace fields.
+  ---Create a striker deployment descriptor
+  ---@param overrides? table
+  ---@return table
   local function makeStriker(overrides)
     local striker = { baseGUID = "BASE-1", unitCount = 1, unitDBID = 100, weaponDBID = 200 }
     if overrides then
@@ -56,7 +78,9 @@ describe("AtoBuilder", function()
     return striker
   end
 
-  ---Create a fixed HSINCHU/Radar target config with defaults; overrides replace fields.
+  ---Create a fixed HSINCHU/Radar target configuration
+  ---@param overrides? table
+  ---@return table
   local function makeTarget(overrides)
     local target = {
       objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } },
@@ -69,47 +93,57 @@ describe("AtoBuilder", function()
     return target
   end
 
-  ---Create a strike package template with defaults; overrides replace top-level fields.
+  ---Create a strike package template
+  ---@param overrides? table
+  ---@return table
   local function makeStrikePackage(overrides)
-    local pkg = {
+    local packageTemplate = {
       timeToReady = 5,
       striker = makeStriker(),
       target = makeTarget()
     }
     if overrides then
-      for k, v in pairs(overrides) do pkg[k] = v end
+      for k, v in pairs(overrides) do packageTemplate[k] = v end
     end
-    return pkg
+    return packageTemplate
   end
 
-  ---Create an air operation. Pass false for a templateless operation; otherwise a table of template overrides.
-  local function makeAirOperation(templateOverrides)
-    if templateOverrides == false then
-      return { type = "air", executed = false }
-    end
-    local template = {
+  ---Create an air operation carrying a wave template
+  ---@param overrides? table Wave template fields
+  ---@return table
+  local function makeAirOperation(overrides)
+    local waveTemplate = {
       name = "STRIKE/1",
       isFirstWave = true,
       strikeInterval = 0,
       packages = { makeStrikePackage() }
     }
-    if templateOverrides then
-      for k, v in pairs(templateOverrides) do template[k] = v end
+    if overrides then
+      for k, v in pairs(overrides) do waveTemplate[k] = v end
     end
-    return { type = "air", executed = false, template = template }
+    return { type = "air", executed = false, template = waveTemplate }
   end
 
-  ---Create full saveData structure for tests
-  local function makeSaveData(reconTriggeredOperationBatches, opts)
-    opts = opts or {}
+  ---Create an air operation with no wave template, which can never be executed
+  ---@return table
+  local function makeTemplatelessAirOperation()
+    return { type = "air", executed = false }
+  end
+
+  ---Create the full saveData structure AtoBuilder reads
+  ---@param operationBatches table[] Recon-triggered operation batches
+  ---@param overrides? table Optional airTaskingOrder, targetlist or generatedOperations
+  ---@return table
+  local function makeSaveData(operationBatches, overrides)
+    overrides = overrides or {}
     return {
       c = {
-        air = { airTaskingOrder = opts.airTaskingOrder or {} },
-        targetlist = opts.targetlist or {},
+        air = { airTaskingOrder = overrides.airTaskingOrder or {} },
+        targetlist = overrides.targetlist or {},
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperationBatches = reconTriggeredOperationBatches,
-          generatedOperations = opts.generatedOperations or { air = {}, ground = {} }
+          reconTriggeredOperationBatches = operationBatches,
+          generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
         }
       }
     }
@@ -122,10 +156,10 @@ describe("AtoBuilder", function()
   end
 
   -- ============================================================================
-  -- Shared Stub Helpers
+  -- Shared stub helpers
   -- ============================================================================
 
-  ---Stub current time and datetime parsing to the same fixed timestamp.
+  ---Stub current time and datetime parsing to the same fixed timestamp
   ---@param timestamp? integer Defaults to 1000
   local function stubClock(timestamp)
     timestamp = timestamp or 1000
@@ -133,8 +167,10 @@ describe("AtoBuilder", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(timestamp))
   end
 
-  ---Stub filterOperationsByType to yield a single recon-triggered operation.
+  ---Stub filterOperationsByType to yield a single recon-triggered operation
   ---The batch also gets a real operations array so abandonment can be asserted.
+  ---@param reconEntry table Batch owning the operation; mutated in place
+  ---@param operation table The single air operation the batch yields
   local function stubSingleOperation(reconEntry, operation)
     reconEntry.operations = { operation }
     trackStub(stub(DynamicState, "filterOperationsByType").returns({
@@ -142,30 +178,41 @@ describe("AtoBuilder", function()
     }))
   end
 
-  ---Stub target evaluation to return a fixed target list.
-  local function stubTargets(list)
-    trackStub(stub(TargetingProcess, "processTargets").returns(list or { "TGT-1" }))
+  ---Stub target evaluation to return a fixed target list
+  ---@param targets? string[] Defaults to a single "TGT-1"
+  local function stubTargets(targets)
+    trackStub(stub(TargetingProcess, "processTargets").returns(targets or { "TGT-1" }))
   end
 
-  ---Stub aircraft availability. `bases` maps baseGUID to its embarked aircraft GUIDs.
-  ---`aircraftFn` resolves individual aircraft units; defaults to dbid 100, unassigned.
+  ---Stub aircraft availability for every base and aircraft read in one pass
+  ---@param bases? table<string, string[]> Embarked aircraft GUIDs keyed by base GUID
+  ---@param aircraftResolver? fun(guid: string): table|nil Resolves a single aircraft; defaults to dbid 100, unassigned
   ---@return luassert.spy # The ScenEdit_GetUnit stub, for counting base reads
-  local function stubBases(bases, aircraftFn)
+  local function stubBases(bases, aircraftResolver)
     return trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if bases and bases[guid] then
         return { guid = guid, embarkedUnits = { Aircraft = bases[guid] } }
       end
-      if aircraftFn then
-        return aircraftFn(guid)
+      if aircraftResolver then
+        return aircraftResolver(guid)
       end
       return { dbid = 100, mission = nil }
     end))
   end
 
-  ---Count how many times a base unit was read through the given ScenEdit_GetUnit stub.
-  ---@param getUnitStub luassert.spy
-  ---@param baseGUID string
-  ---@return integer
+  ---Stub the DynamicState registration/marking calls for a successful insertion
+  ---@param waveName string Generated wave name
+  ---@return luassert.spy # The markOperationExecuted stub, for call assertions
+  local function stubDynamicStateSuccess(waveName)
+    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns(waveName))
+    trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    return trackStub(stub(DynamicState, "markOperationExecuted"))
+  end
+
+  ---Count how many times a base unit was read through the given ScenEdit_GetUnit stub
+  ---@param getUnitStub luassert.spy The stub returned by stubBases
+  ---@param baseGUID string GUID of the base to count reads for
+  ---@return integer # Number of reads of that base
   local function countBaseReads(getUnitStub, baseGUID)
     local reads = 0
     for _, call in ipairs(getUnitStub.calls) do
@@ -176,28 +223,32 @@ describe("AtoBuilder", function()
     return reads
   end
 
-  ---Stub the DynamicState registration/marking calls for a successful insertion.
-  ---@param waveName string Generated wave name
-  ---@return luassert.spy markExecuted The markOperationExecuted stub for call assertions
-  local function stubDynamicStateSuccess(waveName)
-    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns(waveName))
-    trackStub(stub(DynamicState, "registerGeneratedOperation"))
-    return trackStub(stub(DynamicState, "markOperationExecuted"))
+  ---Find a Logger.log call for the given report scope containing the text
+  ---Both reports share one tag, so the scope is what tells them apart.
+  ---@param logScope string Report scope, OPERATIONS_LOG_SCOPE or TIMING_LOG_SCOPE
+  ---@param text string Plain substring to search for in the message
+  ---@return boolean # Whether a matching call was found
+  local function hasLogCall(logScope, text)
+    for _, call in ipairs(logStub.calls) do
+      local message = call.vals[2]
+      if message and string.find(message, logScope, 1, true) and string.find(message, text, 1, true) then
+        return true
+      end
+    end
+    return false
   end
 
-  before_each(function()
-    activeStubs = {}
-    logStub = trackStub(stub(Logger, "log"))
-    errorStub = trackStub(stub(Logger, "error"))
-    warnStub = trackStub(stub(Logger, "warn"))
-  end)
-
-  after_each(function()
-    for _, s in ipairs(activeStubs) do
-      s:revert()
+  ---Find a Logger.error call containing the text
+  ---@param text string Plain substring to search for in the message
+  ---@return boolean # Whether a matching call was found
+  local function hasErrorCall(text)
+    for _, call in ipairs(errorStub.calls) do
+      if call.vals[1] and string.find(call.vals[1], text, 1, true) then
+        return true
+      end
     end
-    activeStubs = {}
-  end)
+    return false
+  end
 
   -- ============================================================================
   -- Positive: Configuration and Basic Flow
@@ -241,17 +292,17 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
     trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/SATELLITE/STRIKE/AB/1/1"))
-    local stubRegister = trackStub(stub(DynamicState, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local registerGeneratedOperationStub = trackStub(stub(DynamicState, "registerGeneratedOperation"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
-    assert.stub(stubRegister).was.called(1)
-    assert.are.equal("air", stubRegister.calls[1].vals[1])
-    assert.stub(stubMarkExecuted).was.called(1)
+    assert.stub(registerGeneratedOperationStub).was.called(1)
+    assert.are.equal("air", registerGeneratedOperationStub.calls[1].vals[1])
+    assert.stub(markOperationExecutedStub).was.called(1)
     -- calls[].vals holds deep copies, so the operation is matched by value
-    assert.are.same(operation, stubMarkExecuted.calls[1].vals[2])
+    assert.are.same(operation, markOperationExecutedStub.calls[1].vals[2])
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/AB/1/1"]
     assert.is_table(wave)
     assert.is_true(wave.isActivated)
@@ -287,18 +338,18 @@ describe("AtoBuilder", function()
     assert.are.equal(180, wave.strikeInterval)
 
     -- Verify package structure
-    local pkg = wave.packages[1]
-    assert.are.equal(8, pkg.timeToReady)
-    assert.is_false(pkg.hasLaunched)
-    assert.is_table(pkg.loadoutStatus)
-    assert.is_false(pkg.loadoutStatus.isLoadoutInitiated)
-    assert.is_nil(pkg.loadoutStatus.loadoutInitiatedTime)
-    assert.is_nil(pkg.loadoutStatus.expectedReadyTime)
-    assert.is_nil(pkg.loadoutStatus.loadoutStartTime)
+    local packageData = wave.packages[1]
+    assert.are.equal(8, packageData.timeToReady)
+    assert.is_false(packageData.hasLaunched)
+    assert.is_table(packageData.loadoutStatus)
+    assert.is_false(packageData.loadoutStatus.isLoadoutInitiated)
+    assert.is_nil(packageData.loadoutStatus.loadoutInitiatedTime)
+    assert.is_nil(packageData.loadoutStatus.expectedReadyTime)
+    assert.is_nil(packageData.loadoutStatus.loadoutStartTime)
 
     -- Timing is applied by PackageTiming (values verified in packageTiming_spec)
-    assert.is_string(pkg.striker.startTime)
-    assert.is_string(pkg.striker.endTime)
+    assert.is_string(packageData.striker.startTime)
+    assert.is_string(packageData.striker.endTime)
   end)
 
   -- ============================================================================
@@ -436,7 +487,7 @@ describe("AtoBuilder", function()
   it("should return true when at least one air operation is processed successfully", function()
     local reconEntry1 = makeReconEntry()
     local reconEntry2 = makeReconEntry({ time = "2026-02-14 01:00:00", type = "aircraft" })
-    local operation1 = makeAirOperation(false) -- No template => skipped
+    local operation1 = makeTemplatelessAirOperation()
     local operation2 = makeAirOperation({ name = "STRIKE/2", isFirstWave = false })
 
     local saveData = makeSaveData({ reconEntry1, reconEntry2 })
@@ -452,13 +503,13 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
     trackStub(stub(DynamicState, "registerGeneratedOperation"))
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
     -- markOperationExecuted called for operation2 (the one with template)
-    assert.stub(stubMarkExecuted).was.called(1)
+    assert.stub(markOperationExecutedStub).was.called(1)
   end)
 
   -- ============================================================================
@@ -549,12 +600,12 @@ describe("AtoBuilder", function()
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
-    local stubMarkExecuted = stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
+    local markOperationExecutedStub = stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_true(result)
-    assert.stub(stubMarkExecuted).was.called(1)
+    assert.stub(markOperationExecutedStub).was.called(1)
   end)
 
   -- ============================================================================
@@ -612,11 +663,11 @@ describe("AtoBuilder", function()
       }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-    local stubFilterOps = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
+    local filterOperationsByTypeStub = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
 
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
-    assert.stub(stubFilterOps).was.called(1)
-    assert.are.equal("air", stubFilterOps.calls[1].vals[2])
+    assert.stub(filterOperationsByTypeStub).was.called(1)
+    assert.are.equal("air", filterOperationsByTypeStub.calls[1].vals[2])
   end)
 
   -- ============================================================================
@@ -640,10 +691,10 @@ describe("AtoBuilder", function()
     -- parseDatetimeToTimestamp returns 50, plus delay 600 => window opens at 650 > 100
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
     stubSingleOperation(reconEntry, operation)
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
     -- Pre-trigger is a silent skip: the operation stays queued for a later tick
     assert.are.equal(1, #reconEntry.operations)
     assert.stub(logStub).was_not.called()
@@ -652,7 +703,7 @@ describe("AtoBuilder", function()
   -- Negative: operation has no template
   it("should not insert ATO wave when operation has no template", function()
     local reconEntry = makeReconEntry()
-    local operation = makeAirOperation(false)
+    local operation = makeTemplatelessAirOperation()
     local saveData = {
       c = {
         dynamicOperations = {
@@ -664,22 +715,21 @@ describe("AtoBuilder", function()
 
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
-    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     AtoBuilder.process(makeConfig(), saveData, {})
 
-    assert.stub(stubGenName).was_not.called()
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
     -- A templateless operation can never succeed, so it is dropped from the batch
     -- rather than marked; the scheduler then re-opens the wave from config.
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
     assert.are.equal(0, #reconEntry.operations)
     -- The reason token doubles as the control-flow sentinel, so pin it
     assert.stub(errorStub).was.called(1)
-    local errorMessage = errorStub.calls[1].vals[1]
-    assert.truthy(errorMessage:find("%[ERROR%]"))
-    assert.truthy(errorMessage:find("reason=missing_wave_template", 1, true))
-    assert.truthy(errorMessage:find("state=abandoned", 1, true))
+    assert.is_true(hasErrorCall("[ERROR]"))
+    assert.is_true(hasErrorCall("reason=missing_wave_template"))
+    assert.is_true(hasErrorCall("state=abandoned"))
   end)
 
   -- Negative: template resolved but its package array is missing
@@ -700,16 +750,15 @@ describe("AtoBuilder", function()
 
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
-    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     AtoBuilder.process(makeConfig(), saveData, {})
 
-    assert.stub(stubGenName).was_not.called()
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
     assert.stub(errorStub).was.called(1)
-    local errorMessage = errorStub.calls[1].vals[1]
-    assert.truthy(errorMessage:find("reason=missing_wave_template", 1, true))
+    assert.is_true(hasErrorCall("reason=missing_wave_template"))
   end)
 
   -- ============================================================================
@@ -723,7 +772,6 @@ describe("AtoBuilder", function()
       name = "STRIKE/AB/1",
       strikeInterval = 120,
       packages = { makeStrikePackage({
-        timeToReady = nil,
         striker = makeStriker({ unitCount = 2 }),
         target = makeTarget({ minTargetCount = 5 })
       }) }
@@ -735,13 +783,13 @@ describe("AtoBuilder", function()
     stubSingleOperation(reconEntry, operation)
     -- Returns only 1 target but minTargetCount = 5
     stubTargets({ "TGT-1" })
-    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     -- No valid packages => no ATO wave inserted
     assert.is_false(result)
-    assert.stub(stubGenName).was_not.called()
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
   end)
 
   -- Negative: insufficient aircraft at base
@@ -752,7 +800,6 @@ describe("AtoBuilder", function()
       isFirstWave = false,
       strikeInterval = 120,
       packages = { makeStrikePackage({
-        timeToReady = nil,
         striker = makeStriker({ unitCount = 4 })
       }) }
     })
@@ -800,7 +847,7 @@ describe("AtoBuilder", function()
   it("should reject package when target count is one below minTargetCount", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
-      packages = { makeStrikePackage({ timeToReady = nil, target = makeTarget({ minTargetCount = 3 }) }) }
+      packages = { makeStrikePackage({ target = makeTarget({ minTargetCount = 3 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry })
@@ -840,19 +887,19 @@ describe("AtoBuilder", function()
   end)
 
   -- ============================================================================
-  -- Boundary: Aircraft Assignment
+  -- Boundary: Aircraft Reservation
   -- ============================================================================
 
-  -- Boundary: assigned aircraft counted from existing ATO waves
-  it("should account for already assigned aircraft in existing ATO waves", function()
+  -- Boundary: aircraft reserved by existing ATO waves are counted
+  it("should account for aircraft already reserved by existing ATO waves", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
-      packages = { makeStrikePackage({ timeToReady = nil, striker = makeStriker({ unitCount = 4 }) }) }
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry }, {
       airTaskingOrder = {
-        -- Existing wave with 3 aircraft of the same type already assigned from BASE-1
+        -- Existing wave already holding 3 aircraft of the same type at BASE-1
         ["EXISTING-WAVE"] = {
           isActivated = true,
           hasLaunched = false,
@@ -869,7 +916,7 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
-    -- Base has 4 aircraft total available, 3 already assigned, needs 4 => 4-3=1 < half-strength threshold (2)
+    -- Base has 4 free, 3 reserved, needs 4 => 4-3=1 < the half-strength threshold of 2
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
@@ -879,7 +926,7 @@ describe("AtoBuilder", function()
   end)
 
   -- Boundary: launched wave packages not counted
-  it("should not count launched wave packages in assigned aircraft", function()
+  it("should not count launched wave packages as reserved", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 3 }) }) }
@@ -923,7 +970,7 @@ describe("AtoBuilder", function()
   it("should not count aircraft already on missions as available", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
-      packages = { makeStrikePackage({ timeToReady = nil, striker = makeStriker({ unitCount = 4 }) }) }
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry })
@@ -953,7 +1000,7 @@ describe("AtoBuilder", function()
   it("should return false when base has no embarked aircraft", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
-      packages = { makeStrikePackage({ timeToReady = nil, striker = makeStriker({ unitCount = 2 }) }) }
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 2 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry })
@@ -977,7 +1024,7 @@ describe("AtoBuilder", function()
   it("should fail aircraft validation when base unit not found", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
-      packages = { makeStrikePackage({ timeToReady = nil, striker = makeStriker({ baseGUID = "INVALID-BASE", unitCount = 2 }) }) }
+      packages = { makeStrikePackage({ striker = makeStriker({ baseGUID = "INVALID-BASE", unitCount = 2 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry })
@@ -1140,7 +1187,6 @@ describe("AtoBuilder", function()
     local operation = makeAirOperation({
       name = "STRIKE/FALLBACK/2",
       packages = { makeStrikePackage({
-        timeToReady = nil,
         striker = makeStriker({ baseGUIDCandidates = { "BASE-2", "BASE-3" }, unitCount = 4 })
       }) }
     })
@@ -1160,14 +1206,12 @@ describe("AtoBuilder", function()
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
-    assert.stub(logStub).was.called()
-    local logMessage = logStub.calls[1].vals[2]
     -- The rejected package is a detail row, so the rollup counts only the operation
-    assert.truthy(string.find(logMessage, "total=1 skip=1", 1, true))
-    assert.truthy(string.find(logMessage, "[SKIP] package=1 role=striker", 1, true))
-    assert.truthy(string.find(logMessage, "reason=insufficient_aircraft", 1, true))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "total=1 skip=1"))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "[SKIP] package=1 role=striker"))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "reason=insufficient_aircraft"))
     -- All three candidates hold 1 free aircraft against a required 4
-    assert.truthy(string.find(logMessage, "available=1 bases=3 required=4", 1, true))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "available=1 bases=3 required=4"))
   end)
 
   -- Positive: each role resolves its base independently within the same package
@@ -1394,12 +1438,155 @@ describe("AtoBuilder", function()
     assert.are.equal(4, wave.packages[1].striker.unitCount)
   end)
 
+  -- Boundary: the threshold comes from config, it is not baked into the validator
+  it("should reject a half-strength base when the configured ratio demands full strength", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/PARTIAL/4",
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+    local config = makeConfig()
+    config.c.air.minimumStrengthRatio = 1
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- 2 of the required 4: enough under the default 0.5, not enough at 1
+    stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+
+    assert.is_false(AtoBuilder.process(config, saveData, {}))
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
+  end)
+
+  -- Positive: lowering the ratio lets a thinner base through
+  it("should accept a base below half strength when the configured ratio allows it", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/PARTIAL/5",
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+    local config = makeConfig()
+    config.c.air.minimumStrengthRatio = 0.25
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- 1 of the required 4 is below the default 0.5 but clears 0.25
+    stubBases({ ["BASE-1"] = { "AC-1" } })
+    stubDynamicStateSuccess("DYNAMIC/PARTIAL/5")
+
+    assert.is_true(AtoBuilder.process(config, saveData, {}))
+    assert.are.equal("BASE-1", saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/5"].packages[1].striker.baseGUID)
+  end)
+
+  -- ============================================================================
+  -- Template Isolation
+  -- ============================================================================
+
+  -- Positive: the persisted template must survive a wave being built from it
+  it("should leave the operation template untouched when a wave is built", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/TEMPLATE/1",
+      packages = { makeStrikePackage({
+        striker = makeStriker({ baseGUIDCandidates = { "BASE-2" }, unitCount = 4 })
+      }) }
+    })
+    local templatePackage = operation.template.packages[1]
+
+    local saveData = makeSaveData({ reconEntry })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    -- Forces the striker onto the fallback base, so a leaked write would be visible
+    stubBases({
+      ["BASE-1"] = { "AC-1" },
+      ["BASE-2"] = { "AC-2", "AC-3", "AC-4", "AC-5" }
+    })
+    stubDynamicStateSuccess("DYNAMIC/TEMPLATE/1")
+
+    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+
+    local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TEMPLATE/1"]
+    assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
+    -- The next wave off this template must still start from the authored base and
+    -- an empty target list
+    assert.are.equal("BASE-1", templatePackage.striker.baseGUID)
+    assert.is_nil(templatePackage.target.list)
+  end)
+
+  -- Boundary: an operation that finds no targets must not pay for a template copy
+  it("should not copy the template when no package has targets", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      packages = { makeStrikePackage({ target = makeTarget({ minTargetCount = 5 }) }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+    -- Built before deepCopy is stubbed; makeConfig deep-copies the real config
+    local config = makeConfig()
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    local deepCopyStub = trackStub(stub(Utils, "deepCopy").invokes(function(value) return value end))
+
+    assert.is_false(AtoBuilder.process(config, saveData, {}))
+
+    -- The wave template copy sits behind the target gate; nothing else on this path
+    -- copies, so any call at all means it moved back in front of it
+    assert.stub(deepCopyStub).was_not.called()
+  end)
+
+  -- ============================================================================
+  -- Timing Report
+  -- ============================================================================
+
+  -- Negative: reconUAV has no package timing, so it must not appear in the report
+  it("should not emit timing rows for reconUAV", function()
+    local reconEntry = makeReconEntry()
+    local operation = makeAirOperation({
+      name = "STRIKE/TIMING/1",
+      packages = { makeStrikePackage({
+        reconUAV = {
+          type = "UAV",
+          templateId = "BZK005_RECON_1",
+          baseGUID = "BASE-9",
+          unitDBID = 900,
+          course = {},
+          speed = 300
+        }
+      }) }
+    })
+
+    local saveData = makeSaveData({ reconEntry })
+
+    stubClock(1000)
+    stubSingleOperation(reconEntry, operation)
+    stubTargets({ "TGT-1" })
+    stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
+    stubDynamicStateSuccess("DYNAMIC/TIMING/1")
+
+    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+
+    assert.is_true(hasLogCall(TIMING_LOG_SCOPE, "role=striker"))
+    -- PackageTiming never schedules reconUAV, so a row for it could only read unknown
+    assert.is_false(hasLogCall(TIMING_LOG_SCOPE, "reconUAV"))
+    assert.is_false(hasLogCall(TIMING_LOG_SCOPE, "unknown"))
+  end)
+
   -- Boundary: available strictly below the fractional half-strength threshold is rejected
   it("should reject when available aircraft are below the fractional half-strength threshold", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({
       name = "STRIKE/PARTIAL/2",
-      packages = { makeStrikePackage({ timeToReady = nil, striker = makeStriker({ unitCount = 3 }) }) }
+      packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 3 }) }) }
     })
 
     local saveData = makeSaveData({ reconEntry })
@@ -1409,12 +1596,12 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     -- required=3 -> threshold is 1.5; 1 available is below it (would wrongly pass if the threshold were floored to 1)
     stubBases({ ["BASE-1"] = { "AC-1" } })
-    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
-    assert.stub(stubGenName).was_not.called()
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
   end)
 
   -- Positive: a package accepted at half strength still reserves its base, forcing the next package to fall back
@@ -1541,7 +1728,7 @@ describe("AtoBuilder", function()
   end)
 
   -- ============================================================================
-  -- Base Capacity Cache
+  -- Free Aircraft Cache
   -- ============================================================================
 
   -- Positive: one pass reads each base once, however many roles and packages use it
@@ -1628,14 +1815,14 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     -- Only 1 of the 4 required aircraft is free, below the half-strength threshold
     stubBases({ ["BASE-1"] = { "AC-1" } })
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
 
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
     assert.are.equal(1, #reconEntry.operations)
     assert.is_false(operation.executed)
-    assert.truthy(logStub.calls[1].vals[2]:find("state=observing", 1, true))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "state=observing"))
   end)
 
   -- Positive: the aircraft come back mid-window and the retried operation launches
@@ -1651,24 +1838,24 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
-    local emptyBaseStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+    local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       if guid == "BASE-1" then
         return { guid = guid, embarkedUnits = { Aircraft = { "AC-1" } } }
       end
       return { dbid = 100, mission = nil }
     end))
-    local stubMarkExecuted = stubDynamicStateSuccess("DYNAMIC/WINDOW/2")
+    local markOperationExecutedStub = stubDynamicStateSuccess("DYNAMIC/WINDOW/2")
 
     -- Tick 1: not enough aircraft, operation stays queued
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
 
     -- Tick 2: the rest of the squadron is back on the ramp
-    emptyBaseStub:revert()
+    getUnitStub:revert()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
     assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
-    assert.stub(stubMarkExecuted).was.called(1)
+    assert.stub(markOperationExecutedStub).was.called(1)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/WINDOW/2"])
   end)
 
@@ -1684,19 +1871,18 @@ describe("AtoBuilder", function()
       .returns(1000 + config.c.recon.observationWindowSec + 1))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     stubSingleOperation(reconEntry, operation)
-    local stubGenName = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
-    local stubMarkExecuted = trackStub(stub(DynamicState, "markOperationExecuted"))
+    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
+    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
     assert.is_false(AtoBuilder.process(config, saveData, {}))
 
-    assert.stub(stubGenName).was_not.called()
-    assert.stub(stubMarkExecuted).was_not.called()
+    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
+    assert.stub(markOperationExecutedStub).was_not.called()
     -- Dropped from the batch, which also closes the emptied batch
     assert.are.equal(0, #reconEntry.operations)
     assert.is_true(reconEntry.executed)
-    local logMessage = logStub.calls[1].vals[2]
-    assert.truthy(logMessage:find("%[WARN%]"))
-    assert.truthy(logMessage:find("reason=observation_window_expired", 1, true))
-    assert.truthy(logMessage:find("state=abandoned", 1, true))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "[WARN]"))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "reason=observation_window_expired"))
+    assert.is_true(hasLogCall(OPERATIONS_LOG_SCOPE, "state=abandoned"))
   end)
 end)

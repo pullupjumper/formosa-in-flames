@@ -523,10 +523,7 @@ end
 -- ============================================================================
 
 ---Trigger reconnaissance tracking for a filter's results
----Resolves the target before sweeping the side so a target that is already being
----shadowed costs nothing: an operation retrying inside its observation window
----reaches this every tick, and enumerating every friendly aircraft each time is
----pure waste.
+---Resolves the target before sweeping the side; an already-shadowed one costs nothing.
 ---@param opts SBJ__FilterParams Filter options with contacts and saveData
 ---@param filterName string Name of the filter that produced targets
 ---@param targetGUIDs string[] Array of target GUIDs from the filter

@@ -254,6 +254,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
+---@field minimumStrengthRatio number Fraction of a role's requested aircraft a base must supply for the package to be dispatched; at or above it the package launches understrength rather than being skipped
 ---@field timing SBJ__AirTimingConfig Dynamic ATO timing and safety margins
 ---@field landBased { deployedACs: SBJ__AirbaseDeploymentDescriptor[], wpnNum?: number } Land-based aircraft deployment
 ---@field shipBased table Ship-based aircraft configuration (reserved)
@@ -1037,6 +1038,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammoBefore number Ammunition count before adjustment
 ---@field ammoAfter number Ammunition count after adjustment
 ---@field delta number Ammunition delta applied
+
+
+-- ============================================================================
+-- Air Operations Validation
+-- ============================================================================
+-- Aircraft validation context for air package processing
+
+---Aircraft validation context for package processing
+---Encapsulates aircraft reservations, available aircraft cache, and strength threshold
+---@class SBJ__AircraftValidationContext: table
+---@field reservedAircraft table<string, integer> Map of reservation key to reserved aircraft count; mutated on success
+---@field freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache keyed by base GUID, with per-DBID counts; mutated
+---@field minimumStrengthRatio number Fraction of the requested aircraft a base must supply to be accepted (0-1)
 
 
 -- ============================================================================

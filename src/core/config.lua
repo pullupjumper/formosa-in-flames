@@ -1017,13 +1017,13 @@ config.c.recon.strikeMappingsByReconObjective = {
     { name = "GND/ASUW/SHIP/E/1",      type = "ground" },
     { name = "GND/ASUW/SHIP/N/1",      type = "ground" },
     { name = "AIR/ASUW/SHIP/N/1",      type = "air" },
-    { name = "AIR/STRIKE/AB/E/1",      type = "air",    requiresLACM = true },
+    { name = "AIR/STRIKE/AB/E/1",      type = "air",   requiresLACM = true },
     { name = "AIR/STRIKE/AB/W/1",      type = "air" },
     { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" },
   },
   FIXED_SITE_TARGETING = {
     { name = "AIR/STRIKE/AB/W/1",        type = "air" },
-    { name = "AIR/STRIKE/AB/E/1",        type = "air",    requiresLACM = true },
+    { name = "AIR/STRIKE/AB/E/1",        type = "air",   requiresLACM = true },
     { name = "GND/STRIKE/HELIPAD/ALL/1", type = "ground" },
     { name = "GND/STRIKE/INFRA/ALL/1",   type = "ground" },
   },
@@ -1097,6 +1097,10 @@ config.c.recon.isTesting = true
 -- ============================================================================
 
 config.c.air = {}
+-- Fraction of a role's requested aircraft a base must be able to supply before the
+-- package is dispatched at all. Below it the package is skipped; at or above it the
+-- package launches understrength, since a half-strength strike beats none.
+config.c.air.minimumStrengthRatio = 0.5
 config.c.air.timing = {
   assignmentSafetyMargin = 5 * 60,
   flightTimeSafetyMargin = 5 * 60,

@@ -336,8 +336,6 @@ end
 
 ---Check if any UAV in the queue is already tracking the specified target
 ---A settled entry does not count: processQueue skips it, so its GUID is stale.
----Public so callers can skip the side-wide aircraft sweep trackTarget needs; an
----operation retrying inside its observation window asks this every tick.
 ---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
 ---@param targetGUID string Target contact GUID to check
 ---@return boolean # True if target is already being tracked by an active UAV
@@ -368,20 +366,17 @@ local function findQueueEntryByUnitGUID(queue, unitGUID)
 end
 
 ---Check whether one UAV is already shadowing a target
----A settled entry does not count, matching isTargetAlreadyTracked: its target is
----no longer being watched, so the airframe is free to take a new one.
+---A settled entry does not count: its airframe is free to take a new target.
 ---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
 ---@param unitGUID string Unit GUID of the UAV to test
 ---@return boolean # True when the UAV is committed to an active tracking target
-local function isUAVTracking(queue, unitGUID)
+local function isUAVAlreadyTracking(queue, unitGUID)
   local entry = findQueueEntryByUnitGUID(queue, unitGUID)
   return entry ~= nil and entry.trackingTargetGUID ~= nil and not entry.isFinished
 end
 
 ---Find the closest available UAV of specified type within tracking distance
----A UAV already shadowing another target is not available: assignTrackingMission
----overwrites trackingTargetGUID outright, so picking one here would silently drop
----the target it was watching.
+---A UAV shadowing another target is skipped: assignTrackingMission would drop it.
 ---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
 ---@param sideUnits CMO__SideUnit[] Side units collection to search
 ---@param uavDBID number UAV platform database ID to filter by
@@ -395,7 +390,7 @@ local function findClosestUAV(queue, sideUnits, uavDBID, target)
     local candidate = GameApi.ScenEdit_GetUnit(sideUnit.guid)
 
     if candidate and candidate.dbid == uavDBID and candidate.condition == "Airborne"
-        and not isUAVTracking(queue, candidate.guid) then
+        and not isUAVAlreadyTracking(queue, candidate.guid) then
       local distance = GameApi.Tool_Range({
         latitude = candidate.latitude,
         longitude = candidate.longitude

@@ -10,7 +10,6 @@ local constants = require("src.core.constants")
 local AtoBuilder = {}
 
 local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
-local ALL_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker", "reconUAV" }
 
 -- Scope and action values shared by every summary this module emits
 local LOG_SCOPE = "dynamicAirOperations"
@@ -38,8 +37,7 @@ local RETRYABLE_REASON = {
 -- ============================================================================
 
 ---Build the reservation ledger key pairing one base with one airframe type
----Reservations are per (base, DBID): committing every fighter at a base must not
----make its tankers look unavailable.
+---Keyed per (base, DBID) so booking a base's fighters cannot hide its tankers.
 ---@param baseGUID string GUID of the air base
 ---@param unitDBID number|nil Aircraft unit database ID
 ---@return string # Ledger key
@@ -47,52 +45,51 @@ local function reservationKey(baseGUID, unitDBID)
   return baseGUID .. "#" .. tostring(unitDBID)
 end
 
----Accumulate assigned aircraft counts for a single package's roles
+---Accumulate reserved aircraft counts for a single package's roles
 ---@param packageData SBJ__Package The package whose roles are counted
----@param assignedAircraft table<string, integer> Map of reservation key to assigned count; mutated in place
-local function accumulatePackageAircraft(packageData, assignedAircraft)
+---@param reservedAircraft table<string, integer> Map of reservation key to reserved count; mutated in place
+local function accumulatePackageAircraft(packageData, reservedAircraft)
   for _, role in ipairs(PACKAGE_ROLES) do
     local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
 
     if roleData then
       local key = reservationKey(roleData.baseGUID, roleData.unitDBID)
-      assignedAircraft[key] = (assignedAircraft[key] or 0) + (roleData.unitCount or 0)
+      reservedAircraft[key] = (reservedAircraft[key] or 0) + (roleData.unitCount or 0)
     end
   end
 end
 
----Accumulate assigned aircraft counts for the not-yet-launched packages of a wave
+---Accumulate reserved aircraft counts for the not-yet-launched packages of a wave
 ---@param wave SBJ__Wave The active ATO wave to inspect
----@param assignedAircraft table<string, integer> Map of reservation key to assigned count; mutated in place
-local function accumulateWaveAircraft(wave, assignedAircraft)
+---@param reservedAircraft table<string, integer> Map of reservation key to reserved count; mutated in place
+local function accumulateWaveAircraft(wave, reservedAircraft)
   for _, packageData in ipairs(wave.packages) do
     if not packageData.hasLaunched then
-      accumulatePackageAircraft(packageData, assignedAircraft)
+      accumulatePackageAircraft(packageData, reservedAircraft)
     end
   end
 end
 
----Collect all currently assigned aircraft from active ATO waves
----Counts aircraft already assigned to missions across all active ATO waves to prevent over-allocation
+---Collect the aircraft already committed by active ATO waves
+---Counts them so a new wave cannot book the same airframes twice.
 ---@param saveData SBJ__SaveData The persistent save data containing ATO wave information
----@return table<string, integer> # Map of reservation key to assigned aircraft count
-local function collectAssignedAircraft(saveData)
-  local assignedAircraft = {}
+---@return table<string, integer> # Map of reservation key to reserved aircraft count
+local function collectReservedAircraft(saveData)
+  local reservedAircraft = {}
 
   for _, wave in pairs(saveData.c.air.airTaskingOrder) do
     if wave.isActivated and not wave.hasLaunched then
-      accumulateWaveAircraft(wave, assignedAircraft)
+      accumulateWaveAircraft(wave, reservedAircraft)
     end
   end
 
-  return assignedAircraft
+  return reservedAircraft
 end
 
----Read one base's unassigned aircraft, counted per unit DBID
----One sweep answers every role: querying per DBID re-read the same embarked list
----once for each airframe type in the package.
+---Read one base's mission-free aircraft, counted per unit DBID
+---One sweep answers every role, instead of re-reading the list once per DBID.
 ---@param baseGUID string The GUID of the air base to read
----@return table<number, integer> # Unassigned aircraft count keyed by unit DBID
+---@return table<number, integer> # Mission-free aircraft count keyed by unit DBID
 local function readBaseFreeAircraft(baseGUID)
   local freeByDBID = {}
 
@@ -104,8 +101,8 @@ local function readBaseFreeAircraft(baseGUID)
   for _, aircraftGUID in ipairs(baseUnit.embarkedUnits.Aircraft) do
     local aircraft = GameApi.ScenEdit_GetUnit(aircraftGUID)
 
-    -- dbid is guarded because it becomes a table key here; the previous equality
-    -- check tolerated a nil the same way an index never would.
+    -- dbid is guarded because it becomes a table key here; the equality check it
+    -- replaced tolerated a nil the way an index never would.
     if aircraft and aircraft.dbid and (aircraft.mission == "" or aircraft.mission == nil) then
       freeByDBID[aircraft.dbid] = (freeByDBID[aircraft.dbid] or 0) + 1
     end
@@ -114,39 +111,39 @@ local function readBaseFreeAircraft(baseGUID)
   return freeByDBID
 end
 
----Get available aircraft count at a specific base for a specific unit type
+---Count the mission-free aircraft of one type at one base
 ---Reads each base once per pass; a base that cannot be resolved caches as empty.
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@param baseGUID string The GUID of the air base to check
 ---@param requiredUnitDBID number The required aircraft unit database ID (DBID) to filter by
----@return integer # Number of available unassigned aircraft of the specified type
-local function getBaseAircraftCapacity(capacityCache, baseGUID, requiredUnitDBID)
-  local freeByDBID = capacityCache[baseGUID]
+---@return integer # Mission-free aircraft of that type, before this pass's reservations
+local function getFreeAircraftCount(freeAircraftCache, baseGUID, requiredUnitDBID)
+  local freeByDBID = freeAircraftCache[baseGUID]
 
   if not freeByDBID then
     freeByDBID = readBaseFreeAircraft(baseGUID)
-    capacityCache[baseGUID] = freeByDBID
+    freeAircraftCache[baseGUID] = freeByDBID
   end
 
   return freeByDBID[requiredUnitDBID] or 0
 end
 
 ---Validate aircraft availability and resolve baseGUID via fallback candidates
----Mutates roleData.baseGUID and assignedAircraft when a candidate reaches half-strength.
+---Mutates roleData.baseGUID and context.reservedAircraft when a candidate clears the ratio.
 ---@param roleData SBJ__MissionDeploymentDescriptor Role configuration; mutated in place on success
 ---@param role string Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex integer Package index for error messages
----@param assignedAircraft table<string, integer> Map of reservation key to currently assigned aircraft count; mutated on success
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param context SBJ__AircraftValidationContext Aircraft validation state; mutated on success
 ---@return boolean success true if a base with sufficient aircraft was found
 ---@return table<string, any>|nil errorFields Log fields describing the best candidate on failure, nil on success
-local function validateAircraftRole(roleData, role, packageIndex, assignedAircraft, capacityCache)
+local function validateAircraftRole(roleData, role, packageIndex, context)
   if not roleData then
     return true, nil
   end
 
   local requiredCount = roleData.unitCount or 0
   local requiredUnitDBID = roleData.unitDBID
+  local minimumCount = requiredCount * context.minimumStrengthRatio
 
   local candidates = { roleData.baseGUID }
   if roleData.baseGUIDCandidates then
@@ -155,23 +152,23 @@ local function validateAircraftRole(roleData, role, packageIndex, assignedAircra
     end
   end
 
-  -- Best free count across every candidate; enough to explain the rejection
-  -- without embedding a per-base list inside one field value.
-  local bestAvailable = 0
+  local bestSpareCount = 0
   for _, baseGUID in ipairs(candidates) do
     local key = reservationKey(baseGUID, requiredUnitDBID)
-    local assignedCount = assignedAircraft[key] or 0
-    local availableCount = getBaseAircraftCapacity(capacityCache, baseGUID, requiredUnitDBID)
-    local freeCount = availableCount - assignedCount
+    local reservedCount = context.reservedAircraft[key] or 0
+    local freeAtBase = getFreeAircraftCount(context.freeAircraftCache, baseGUID, requiredUnitDBID)
+    local spareCount = freeAtBase - reservedCount
 
-    if freeCount >= requiredCount / 2 then
+    if spareCount >= minimumCount then
+      local reserveCount = math.min(spareCount, requiredCount)
+
       roleData.baseGUID = baseGUID
-      assignedAircraft[key] = assignedCount + (freeCount >= requiredCount and requiredCount or freeCount)
+      context.reservedAircraft[key] = reservedCount + reserveCount
       return true, nil
     end
 
-    if freeCount > bestAvailable then
-      bestAvailable = freeCount
+    if spareCount > bestSpareCount then
+      bestSpareCount = spareCount
     end
   end
 
@@ -179,7 +176,7 @@ local function validateAircraftRole(roleData, role, packageIndex, assignedAircra
     package = packageIndex,
     role = role,
     required = requiredCount,
-    available = bestAvailable,
+    available = bestSpareCount,
     bases = #candidates,
     reason = "insufficient_aircraft"
   }
@@ -242,36 +239,31 @@ end
 ---Commits staged aircraft reservations only when every configured role passes.
 ---@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
 ---@param packageIndex integer Index of the package for logging
----@param assignedAircraft table<string, integer> Map of reservation key to currently assigned aircraft count
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param context SBJ__AircraftValidationContext Aircraft validation state; mutated on success
 ---@return boolean success true if package is valid and can be executed
 ---@return table<string, any>|nil errorFields Validation log fields, nil on success
-local function validateIndividualPackage(packageData, packageIndex, assignedAircraft, capacityCache)
+local function validateIndividualPackage(packageData, packageIndex, context)
   local tankerValid, tankerError = validateTankerMissionConfig(packageData.tanker, packageIndex)
   if not tankerValid then
     return false, tankerError
   end
 
-  -- Only the reservations are staged. The capacity cache is shared across the whole
-  -- pass and never rolled back: it holds what the bases actually hold, which a
-  -- rejected package does not change.
-  local stagedAssignedAircraft = Utils.deepCopy(assignedAircraft)
+  local stagedReservations = Utils.deepCopy(context.reservedAircraft)
+  local validationCtx = {
+    reservedAircraft = stagedReservations,
+    freeAircraftCache = context.freeAircraftCache,
+    minimumStrengthRatio = context.minimumStrengthRatio
+  }
   for _, role in ipairs(PACKAGE_ROLES) do
-    local isValid, errorFields = validateAircraftRole(
-      packageData[role],
-      role,
-      packageIndex,
-      stagedAssignedAircraft,
-      capacityCache
-    )
+    local isValid, errorFields = validateAircraftRole(packageData[role], role, packageIndex, validationCtx)
 
     if not isValid then
       return false, errorFields
     end
   end
 
-  for key, assignedCount in pairs(stagedAssignedAircraft) do
-    assignedAircraft[key] = assignedCount
+  for key, reservedCount in pairs(stagedReservations) do
+    context.reservedAircraft[key] = reservedCount
   end
 
   return true, nil
@@ -316,13 +308,17 @@ end
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
 ---@return table<string, any> fields Package counters for the operation row
 ---@return SBJ__LogResult[] details One row per package rejected by validation
-local function buildExecutablePackages(config, saveData, waveTemplate, targetsByPackageIndex, capacityCache)
+local function buildExecutablePackages(config, saveData, waveTemplate, targetsByPackageIndex, freeAircraftCache)
   local validPackages = {}
-  local assignedAircraft = collectAssignedAircraft(saveData)
+  local context = {
+    reservedAircraft = collectReservedAircraft(saveData),
+    freeAircraftCache = freeAircraftCache,
+    minimumStrengthRatio = config.c.air.minimumStrengthRatio
+  }
   local totalTargets = 0
   local previousPackage = nil
   local details = {}
@@ -331,12 +327,7 @@ local function buildExecutablePackages(config, saveData, waveTemplate, targetsBy
     local packageTargets = targetsByPackageIndex[packageIndex]
 
     if packageTargets then
-      local isValid, errorFields = validateIndividualPackage(
-        packageTemplate,
-        packageIndex,
-        assignedAircraft,
-        capacityCache
-      )
+      local isValid, errorFields = validateIndividualPackage(packageTemplate, packageIndex, context)
 
       if isValid then
         packageTemplate.target.list = packageTargets
@@ -384,13 +375,14 @@ local function buildATOWave(waveTemplate, waveName, packages)
 end
 
 ---Collect package role timing results for the consolidated timing summary
+---reconUAV is excluded: PackageTiming never schedules it, so it would read unknown.
 ---@param wave SBJ__Wave Wave structure with calculated package timings
 ---@return SBJ__LogResult[] # One result per configured package role
 local function collectWaveTimingResults(wave)
   local timingResults = {}
 
   for packageIndex, packageData in ipairs(wave.packages) do
-    for _, role in ipairs(ALL_ROLES) do
+    for _, role in ipairs(PACKAGE_ROLES) do
       local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
 
       if roleData then
@@ -419,7 +411,7 @@ end
 ---@param waveTemplate SBJ__WaveTemplate Template defining ATO wave and package configurations
 ---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
 ---@param reconType string Reconnaissance type identifier used for wave naming
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
 local function createAndInsertATOWaveFromTemplate(
     config,
@@ -427,13 +419,13 @@ local function createAndInsertATOWaveFromTemplate(
     waveTemplate,
     targetsByPackageIndex,
     reconType,
-    capacityCache)
+    freeAircraftCache)
   local validPackages, fields, details = buildExecutablePackages(
     config,
     saveData,
     waveTemplate,
     targetsByPackageIndex,
-    capacityCache
+    freeAircraftCache
   )
 
   if #validPackages == 0 then
@@ -472,9 +464,9 @@ end
 ---@param saveData SBJ__SaveData Persistent save data containing ATO and target information
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Air operation paired with its parent batch
----@param capacityCache table<string, table<number, integer>> Pass-scoped base capacity cache; mutated
+---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
-local function processAirOperation(config, saveData, contacts, batchedOp, capacityCache)
+local function processAirOperation(config, saveData, contacts, batchedOp, freeAircraftCache)
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
@@ -488,7 +480,6 @@ local function processAirOperation(config, saveData, contacts, batchedOp, capaci
     return { success = false, tag = "FAIL", reason = PROCESS_REASON.INSERTION_FAILED }
   end
 
-  local waveTemplate = Utils.deepCopy(operation.template)
   local targetsByPackageIndex = evaluateTargetsFromTemplate(
     config,
     saveData,
@@ -501,9 +492,13 @@ local function processAirOperation(config, saveData, contacts, batchedOp, capaci
       success = false,
       tag = "SKIP",
       reason = PROCESS_REASON.NO_VALID_PACKAGES,
-      fields = { packages = string.format("0/%d", #waveTemplate.packages), targets = 0 }
+      fields = { packages = string.format("0/%d", #operation.template.packages), targets = 0 }
     }
   end
+
+  -- Copied behind the target gate: the build writes resolved targets and baseGUIDs
+  -- into the packages, and a retrying tick should not pay for a copy it discards.
+  local waveTemplate = Utils.deepCopy(operation.template)
 
   return createAndInsertATOWaveFromTemplate(
     config,
@@ -511,7 +506,7 @@ local function processAirOperation(config, saveData, contacts, batchedOp, capaci
     waveTemplate,
     targetsByPackageIndex,
     operationBatch.type,
-    capacityCache
+    freeAircraftCache
   )
 end
 
@@ -520,8 +515,7 @@ end
 -- ============================================================================
 
 ---Main processing function for Dynamic ATO Insertion
----Entry point for dynamic ATO system; retryable operations stay pending inside the
----observation window, and are dropped from their batch once it expires.
+---Retryable operations stay pending inside the observation window; expiry drops them.
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -553,11 +547,9 @@ function AtoBuilder.process(config, saveData, contacts)
   local timingReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, TIMING_LOG_SCOPE, TIMING_LOG_ACTION)
   local hasExecutedAny = false
 
-  -- Base capacities hold still for exactly one pass: nothing here writes game state,
-  -- and CMO does not advance the simulation while an event script runs. It must stay
-  -- a local -- a module-level table would survive into later ticks and keep counting
-  -- aircraft that have since been destroyed or assigned.
-  local capacityCache = {}
+  -- Must stay a local: base counts only hold still within one pass, so a module-level
+  -- table would keep counting aircraft destroyed or committed since an earlier tick.
+  local freeAircraftCache = {}
 
   for _, batchedOp in ipairs(airBatchedOperations) do
     local operationBatch = batchedOp.operationBatch
@@ -571,7 +563,7 @@ function AtoBuilder.process(config, saveData, contacts)
       if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
         outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
       else
-        outcome = processAirOperation(config, saveData, contacts, batchedOp, capacityCache)
+        outcome = processAirOperation(config, saveData, contacts, batchedOp, freeAircraftCache)
       end
 
       local fields = LogFormat.merge({

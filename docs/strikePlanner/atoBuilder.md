@@ -8,73 +8,104 @@
 
 ## 概述
 
-`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不直接建立 CMO mission，也不直接派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 找出尚未執行且已到觸發時間的 `air` operation，將其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，再寫入 `saveData.c.air.airTaskingOrder`。
+`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不建立 CMO mission，也不派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 找出尚未執行且已到觸發時間的 `air` operation，把其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，寫入 `saveData.c.air.airTaskingOrder`。真正建立任務、指派飛機的是後續 tick 才跑的 [airTaskingOrder](airTaskingOrder.md)。
 
-模組的主要流程分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
+模組的主要工作分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後委派 [packageTiming](packageTiming.md) 依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
 
-插入 Wave 後，模組會透過 [dynamicState](dynamicState.md) 登記 generated operation，避免後續 tick 產生同名任務。目標尚未偵測到或基地飛機暫時被占用時，operation 會留在觀察窗內等下一個 tick 重試；窗口逾時或遇上缺 template、ATO 尚未初始化這類不可重試的狀況，operation 會直接從 batch 移除，讓 [operationScheduler](operationScheduler.md) 在下次偵察完成時重開同一波。`executed` 因此只代表「Wave 真的插進計畫了」。
+插入 Wave 後會透過 [dynamicState](dynamicState.md) 登記 generated operation，避免後續 tick 產生同名任務。目標尚未偵測到或基地飛機暫時被占用時，operation 留在觀察窗內等下一個 tick 重試；窗口逾時或遇上缺 template、ATO 尚未初始化這類不可重試的狀況，operation 會直接從 batch 移除，讓 [operationScheduler](operationScheduler.md) 在下次偵察完成時重開同一波。
 
 ---
 
 ## 主要機制
 
-### 動態 ATO 生成流程
+### 主流程：前置檢查與 operation 調度
 
 ```mermaid
 flowchart TD
-    ENTRY["process(config, saveData, contacts)"]
+    ENTRY["AtoBuilder.process"]
     ENABLED{"dynamicOperations enabled?"}
-    EVAL_TIME["currentTime = ScenEdit_CurrentTime()<br/>lastEvaluationTime = currentTime"]
-    HAS_BATCH{"reconTriggeredOperationBatches 存在且非空?"}
+    STAMP["寫入 lastEvaluationTime"]
+    HAS_TIME{"ScenEdit_CurrentTime 有值?"}
+    HAS_BATCH{"reconTriggeredOperationBatches 非空?"}
     FILTER["filterOperationsByType(..., air)"]
     HAS_AIR{"有未執行 air operation?"}
     LOOP["逐一處理 air operation"]
-    WINDOW{"evaluateObservationWindow"}
-    TEMPLATE{"operation.template 存在?"}
-    TARGETS["evaluateTargetsFromTemplate<br/>TargetingProcess.processTargets()"]
-    HAS_TARGETS{"至少一個 package 目標足夠?"}
-    BUILD_PKGS["buildExecutablePackages<br/>機隊驗證 + 時序計算"]
-    HAS_PACKAGE{"validPackages > 0?"}
-    ATO_READY{"airTaskingOrder 已初始化?"}
-    NAME["generateUniqueAirOperationName"]
-    BUILD_WAVE["buildATOWave + collectWaveTimingResults"]
-    INSERT["寫入 airTaskingOrder<br/>registerGeneratedOperation"]
+    WINDOW["evaluateObservationWindow"]
+    EXPIRED["observation_window_expired"]
+    PROCESS["processAirOperation"]
+    DISPATCH{"outcome.success?"}
     MARK["markOperationExecuted"]
-    OBSERVE["保留在 batch 內<br/>state=observing"]
-    ABANDON["abandonOperation<br/>state=abandoned"]
+    RETRYABLE{"RETRYABLE_REASON 命中?"}
+    OBSERVE["state=observing"]
+    ABANDON["abandonOperation"]
+    ADD_ROW["opReport.add + timingReport.addAll"]
     NEXT["下一個 operation"]
-    LOGS["operations.emit() + timing.emit()"]
-    END_FALSE["return false"]
-    END_RESULT["return hasExecutedAny"]
+    EMIT["opReport.emit + timingReport.emit"]
+    RETURN["return hasExecutedAny"]
+    STOP["return false"]
 
     ENTRY --> ENABLED
-    ENABLED -->|否| END_FALSE
-    ENABLED -->|是| EVAL_TIME --> HAS_BATCH
-    HAS_BATCH -->|否| END_FALSE
+    ENABLED -->|否| STOP
+    ENABLED -->|是| STAMP --> HAS_TIME
+    HAS_TIME -->|否| STOP
+    HAS_TIME -->|是| HAS_BATCH
+    HAS_BATCH -->|否| STOP
     HAS_BATCH -->|是| FILTER --> HAS_AIR
-    HAS_AIR -->|否| END_FALSE
+    HAS_AIR -->|否| STOP
     HAS_AIR -->|是| LOOP --> WINDOW
     WINDOW -->|pre_trigger| NEXT
-    WINDOW -->|expired| ABANDON
-    WINDOW -->|in_window| TEMPLATE
-    TEMPLATE -->|否| ABANDON
-    TEMPLATE -->|是| TARGETS --> HAS_TARGETS
-    HAS_TARGETS -->|否| OBSERVE
-    HAS_TARGETS -->|是| BUILD_PKGS --> HAS_PACKAGE
-    HAS_PACKAGE -->|否| OBSERVE
-    HAS_PACKAGE -->|是| ATO_READY
-    ATO_READY -->|否| ABANDON
-    ATO_READY -->|是| NAME --> BUILD_WAVE --> INSERT --> MARK
-    MARK --> NEXT
-    OBSERVE --> NEXT
-    ABANDON --> NEXT
-    NEXT --> LOOP
-    LOOP --> LOGS --> END_RESULT
+    WINDOW -->|expired| EXPIRED --> DISPATCH
+    WINDOW -->|in_window| PROCESS --> DISPATCH
+    DISPATCH -->|是| MARK --> ADD_ROW
+    DISPATCH -->|否| RETRYABLE
+    RETRYABLE -->|是| OBSERVE --> ADD_ROW
+    RETRYABLE -->|否| ABANDON --> ADD_ROW
+    ADD_ROW --> NEXT --> EMIT --> RETURN
 ```
+
+`lastEvaluationTime` 在 enabled 檢查通過後**立刻**寫入，排在 `currentTime` 是否有值的檢查前面，所以後面三個 guard 就算提前 `return false`，它也已經被改過。寫進去的是 `ScenEdit_CurrentTime()` 的回傳值本身，取不到時就寫成 `nil`。
+
+`pre_trigger` 直接跳到下一個 operation，連 log 行都不加；`expired` 與 `in_window` 都會產生 `outcome`，之後共用同一段成功／重試／放棄的分派，因此逾時的 operation 是走 `RETRYABLE_REASON` 未命中的那條路被移除的。
+
+### 單一 operation：processAirOperation 的建構決策
+
+```mermaid
+flowchart TD
+    ENTRY["processAirOperation"]
+    TEMPLATE{"template.packages 存在?"}
+    ATO{"airTaskingOrder 已初始化?"}
+    TARGETS["evaluateTargetsFromTemplate"]
+    HAS_TARGETS{"targetsByPackageIndex 非空?"}
+    COPY["Utils.deepCopy(operation.template)"]
+    CREATE["createAndInsertATOWaveFromTemplate"]
+    BUILD["buildExecutablePackages"]
+    HAS_PKG{"validPackages 非空?"}
+    NAME["generateUniqueAirOperationName"]
+    WAVE["buildATOWave"]
+    INSERT["寫入 airTaskingOrder"]
+    REGISTER["registerGeneratedOperation"]
+    TIMING["collectWaveTimingResults"]
+    OK["success = true"]
+    ERR["missing_wave_template"]
+    FAIL["insertion_failed"]
+    SKIP["no_valid_packages"]
+
+    ENTRY --> TEMPLATE
+    TEMPLATE -->|否| ERR
+    TEMPLATE -->|是| ATO
+    ATO -->|否| FAIL
+    ATO -->|是| TARGETS --> HAS_TARGETS
+    HAS_TARGETS -->|否| SKIP
+    HAS_TARGETS -->|是| COPY --> CREATE --> BUILD --> HAS_PKG
+    HAS_PKG -->|否| SKIP
+    HAS_PKG -->|是| NAME --> WAVE --> INSERT --> REGISTER --> TIMING --> OK
+```
+
+四個出口節點就是 `reason` token 本身，對應的 tag 與後續處理見下方[結果分類與 log](#結果分類與-log)。`no_valid_packages` 有兩個來源——目標全數不足，以及目標夠但機隊驗證後一個 package 都留不下來——兩者回傳同一個 reason，也因此共用同一條重試路徑。
 
 ### 觀察窗與重試
 
-觸發時間到達後，operation 會進入 `config.c.recon.observationWindowSec` 長度的觀察窗，窗口起點是 `operationBatch.time + operationBatch.delay`。窗口狀態由 [dynamicState](dynamicState.md) 的 `evaluateObservationWindow()` 判定，air 與 ground 共用同一套判定與同一個設定值。
+觸發時間到達後，operation 進入 `config.c.recon.observationWindowSec` 長度的觀察窗，窗口起點是 `operationBatch.time + operationBatch.delay`。窗口狀態由 [dynamicState](dynamicState.md) 的 `evaluateObservationWindow()` 判定，air 與 ground 共用同一套判定與同一個設定值。
 
 | 狀態 | 行為 |
 |---|---|
@@ -82,15 +113,25 @@ flowchart TD
 | `in_window` | 每個 tick 重新評估目標與機隊；`no_valid_packages` 是唯一的可重試原因，operation 保持在 batch 內並記 `state=observing` |
 | `expired` | 以 `reason=observation_window_expired` 移除 operation |
 
-不可重試的失敗（缺 template、ATO 未初始化、未知原因）不等窗口逾時，當下就移除。移除而非標記，是為了讓排程器把同一波重新排一次，而不是把沒打成的波次當成推進基準跳過去；細節見 [operationScheduler](operationScheduler.md) 的排程不變式。
+### 為什麼失敗要移除 operation，而不是標記 executed
+
+不可重試的失敗（缺 template、ATO 未初始化、未知原因）不等窗口逾時，當下就呼叫 `DynamicState.abandonOperation()` 把 operation 從 batch 陣列移除。
+
+移除而非標記 `executed`，是為了讓排程器把同一波重新排一次，而不是把沒打成的波次當成推進基準跳過去。`executed` 因此有嚴格語義：**只代表「Wave 真的插進計畫了」**，不代表飛機起飛。細節見 [operationScheduler](operationScheduler.md) 的排程不變式。
+
+`abandonOperation()` 與 `markOperationExecuted()` 都會接著呼叫 `checkOperationBatchCompleted()`，所以整個 batch 的 `executed` 會在最後一個 operation 離開時自動翻轉。
 
 ### 目標評估與 package 篩選
 
-`evaluateTargetsFromTemplate()` 會依 `waveTemplate.packages` 順序處理每個 package，呼叫 `TargetingProcess.processTargets(config, saveData, contacts, packageData.target, waveTemplate.isFirstWave)` 取得候選目標。若目標數達到 `packageData.target.minTargetCount`，該 package index 會被記錄在 `targetsByPackageIndex`；若沒有設定 `minTargetCount`，預設需求為 1 個目標。
+`evaluateTargetsFromTemplate()` 依 `waveTemplate.packages` 順序處理每個 package，呼叫 `TargetingProcess.processTargets(config, saveData, contacts, packageData.target, waveTemplate.isFirstWave)` 取得候選目標。目標數達到 `packageData.target.minTargetCount` 時，該 package index 才會被記進 `targetsByPackageIndex`；沒有設定 `minTargetCount` 時預設需求為 1 個目標。
 
-`buildExecutablePackages()` 只會處理已通過目標門檻的 package。它會從 `operation.template` 的 deep copy 建立執行態 package，將 `package.target.list` 改成實際目標清單，並在機隊驗證成功後委派 [packageTiming](packageTiming.md) 的 `createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接使用「前一個有效 package」作為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
+`buildExecutablePackages()` 只處理已通過目標門檻的 package。它把 `package.target.list` 改成實際目標清單，並在機隊驗證成功後委派 `PackageTiming.createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接以「前一個**有效** package」為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
 
-驗證摘要會以 `packages=<有效>/<總數>` 與 `targets` 形式寫入 operation log 行。若 package 因機隊或加油機設定驗證失敗，該筆失敗會成為 operation 行底下縮排一層的 `[SKIP]` detail 行，列出 package、role、需求數、最佳候選基地的可用機數與嘗試過的基地數。detail 行跟隨父行進同一個 sink，但不計入 header 的 `total`，因此 `total` 恆等於本次處理的 operation 數。這能在 CMO console 或測試輸出直接辨識無有效 package 的原因，而不是只看到插入流程未執行。
+### 為什麼深拷貝擺在目標門檻之後
+
+上游模板會被同一系列的後續波次重複使用，而執行態的 `target.list` 與解析後的 `baseGUID` 絕不能寫回模板，所以 `processAirOperation()` 一定要 deep copy。
+
+但拷貝刻意擺在 `next(targetsByPackageIndex)` 檢查**後面**：沒有任何目標的 tick 完全不用付這個成本。觀察窗內重試的作戰每個 tick 都會走這條路，而其中多數 tick 就是因為還沒偵測到目標才在重試。`atoBuilder_spec` 有一條「should not copy the template when no package has targets」的測試釘住這個順序。
 
 ### 機隊資源驗證
 
@@ -100,52 +141,59 @@ flowchart TD
 striker -> escort -> wildWeasel -> jammer -> tanker
 ```
 
-`validateAircraftRole()` 會把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選基地清單，依序尋找可用飛機。可用飛機由 `getBaseAircraftCapacity()` 計算，條件是基地 `embarkedUnits.Aircraft` 中的 aircraft `dbid` 符合 `roleData.unitDBID`，且 `aircraft.mission == ""` 或 `nil`。
-
-**帳本以 (基地, 機型) 為單位。** 預約 key 由 `reservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。這是必要的：把某基地的戰機全部訂走，不該讓同一基地的加油機看起來也沒了。
+`validateAircraftRole()` 把 `roleData.baseGUID` 與 `roleData.baseGUIDCandidates` 串成候選基地清單，依序尋找可用飛機。可用飛機由 `getFreeAircraftCount()` 計算，條件是基地 `embarkedUnits.Aircraft` 中的 aircraft `dbid` 符合 `roleData.unitDBID`，且 `aircraft.mission == ""` 或 `nil`。
 
 ```text
-預約 key   = baseGUID .. "#" .. unitDBID
-可用餘額 free = getBaseAircraftCapacity(cache, baseGUID, unitDBID) - assignedAircraft[key]
+預約 key       = baseGUID .. "#" .. unitDBID
+可用餘額 spare = getFreeAircraftCount(cache, baseGUID, unitDBID) - reservedAircraft[key]
 
-接受條件： free >= roleData.unitCount / 2
-預訂量：   free >= roleData.unitCount -> 預訂 roleData.unitCount
-           free <  roleData.unitCount -> 預訂 free
+接受條件： spare >= roleData.unitCount * config.c.air.minimumStrengthRatio
+預訂量：   math.min(spare, roleData.unitCount)
 ```
 
-當某候選基地通過半戰力門檻，模組會把 `roleData.baseGUID` 改寫為實際選定基地，並先把預訂量累加到 package 專用的暫存表。只有所有已設定角色都通過驗證時，暫存預約才會提交至 `assignedAircraft`；任一角色失敗時會丟棄整包暫存預約，避免未執行的 package 占用後續 package 的飛機。`roleData.unitCount` 不會因半戰力通過而改寫；實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
+`minimumStrengthRatio` 決定「基地至少要能出幾成的兵才值得派」。低於門檻整個 package 跳過，達到門檻就以現有兵力出擊——半數兵力的打擊還是勝過不打。預設 `0.5`；調成 `1` 就是只接受滿編，調低則允許更零星的出擊。
 
-`collectAssignedAircraft()` 也會掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的加油機或電戰機。
+候選基地通過門檻時，模組把 `roleData.baseGUID` 改寫為實際選定基地，並把預訂量累加到 package 專用的暫存表。**只有所有已設定角色都通過驗證時**，暫存預約才會提交至 `reservedAircraft`；任一角色失敗就丟棄整包暫存，避免未執行的 package 占用後續 package 的飛機。`roleData.unitCount` 不會因未達滿編而改寫，實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
 
-### 基地容量快取
-
-`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getBaseAircraftCapacity()` 把結果存進 `process()` 建立的 `capacityCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
-
-快取的生命週期**剛好是一次 `process()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態（真正建立任務、指派飛機的是後續才跑的 [airTaskingOrder](airTaskingOrder.md)），而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `process()` 之間，每趟重建剛好涵蓋。
-
-因此 `capacityCache` **必須是 `process()` 的區域變數**。打包後模組 table 會變全域，把它提到 module scope 會讓快取跨 tick 存活、繼續計入已被摧毀的飛機。`atoBuilder_spec` 有一條「連續兩次 `process()` 應重讀基地」的測試專門釘住這點。
+`collectReservedAircraft()` 另外掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
 
 若 tanker 的 `missionCreationParams` 使用陣列，建立 Wave 前會額外驗證陣列非空、任務名稱有效且不重複，以及 `unitCount` 可被任務數整除。機隊容量與預訂量仍使用 tanker 的總 `unitCount`，不會因任務拆分而重複計算。
 
+### 為什麼預約帳本要以 (基地, 機型) 為 key
+
+預約 key 由 `reservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。單純以 baseGUID 記帳會出錯：把某基地的戰機全部訂走，不該讓同一基地的加油機或電戰機看起來也沒了。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的其他機型。
+
+### 為什麼快取只活一次 process()
+
+`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getFreeAircraftCount()` 把結果存進 `process()` 建立的 `freeAircraftCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
+
+快取的生命週期**剛好是一次 `process()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態，而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `process()` 之間，每趟重建剛好涵蓋。
+
+因此 `freeAircraftCache` **必須是 `process()` 的區域變數**。打包後模組 table 會變全域，把它提到 module scope 會讓快取跨 tick 存活、繼續計入已被摧毀的飛機。`atoBuilder_spec` 的「should read a base only once per pass」與「should re-read a base on the next pass」兩條測試分別釘住快取有效與快取不得跨 tick。
+
 ### 飛行時間與任務時序
 
-機隊驗證通過後，`buildExecutablePackages()` 會逐一委派 [packageTiming](packageTiming.md) 的 `createPackageWithTiming()`，以前一個有效 package 為時序基準計算各角色的 `startTime` / `timeOnStation` / `endTime`。飛行時間估算、支援角色戰術提前量、加油機受油協調，以及依 `timeToReady` 與 `strikeInterval` 的整組平移約束，皆封裝於該模組；本模組僅負責串接前後 package 並提供 `strikeInterval`。詳細時序演算法請參閱 [packageTiming](packageTiming.md)。
+機隊驗證通過後，`buildExecutablePackages()` 逐一委派 `PackageTiming.createPackageWithTiming()`，以前一個有效 package 為時序基準計算各角色的 `startTime` / `timeOnStation` / `endTime`。飛行時間估算、支援角色戰術提前量、加油機受油協調，以及依 `timeToReady` 與 `strikeInterval` 的整組平移約束，皆封裝於 [packageTiming](packageTiming.md)；本模組只負責串接前後 package 並提供 `strikeInterval`。
+
+timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻意不在其中：`PackageTiming` 不替它排時間，收進 timing log 只會得到一列 `unknown`，它的航程由 recon 佇列計時。`atoBuilder_spec` 有「should not emit timing rows for reconUAV」釘住這點。
 
 ### 結果分類與 log
 
-`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`，內含 `success`、`reason`、`tag`、`fields`、`details` 與 `timing`。`success` 與 `reason` 供 `AtoBuilder.process()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除；`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，log 行可以直接反查到產生它的分支。
+`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `AtoBuilder.process()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
 
 | reason | tag | 條件 | 後續處理 |
 |---|---|---|---|
-| `missing_wave_template` | `ERROR` | operation 缺少 `template` | 移除，附 `state=abandoned` |
+| `missing_wave_template` | `ERROR` | operation 缺 `template` 或 `template.packages` | 移除，附 `state=abandoned` |
 | `no_valid_packages` | `SKIP` | 目標不足或機隊驗證後沒有有效 package | 保留重試，附 `state=observing` |
 | `insertion_failed` | `FAIL` | `airTaskingOrder` 未初始化 | 移除，附 `state=abandoned` |
 | `observation_window_expired` | `WARN` | 觀察窗逾時 | 移除，附 `state=abandoned` |
 | `nil` | `OK` | Wave 成功插入 | 標記 executed，另外輸出 timing report |
 
-tag 由產生分支直接寫入結果，不再經過 reason → tag 對照表。`AtoBuilder.process()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+`RETRYABLE_REASON` 只收錄 `no_valid_packages`，其餘（含未預期的未知 reason）一律走移除路徑——預設保守，不讓沒對應到的失敗永遠卡在窗內。
 
-log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 report，tag 使用 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，因此歸屬清楚，且不計入 header 的 `total`（`total` 代表本次處理的 operation 數）：
+tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`AtoBuilder.process()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+
+log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都是 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，歸屬清楚且不計入 header 的 `total`：
 
 ```text
 [DYNAMIC_OPERATIONS] dynamicAirOperations: Process operations | total=2 ok=1 skip=1
@@ -155,45 +203,13 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩個 report，tag 使
     [SKIP] package=1 role=striker available=1 bases=3 required=4 reason=insufficient_aircraft
 ```
 
+`emit()` 會把 `FAIL` 與 `ERROR` 行拆到 error sink，其餘（`OK`／`SKIP`／`WARN`）留在 info sink，兩邊各自算 rollup。因此 `total` 是**該 sink 內的父行數**，不是本次處理的 operation 總數；只有在沒有 `FAIL`／`ERROR` 時兩者才相等。
+
 ---
 
-## saveData 結構
+## 型別與寫入副作用
 
-```text
-saveData.c
-├── dynamicOperations
-│   ├── enabled: boolean
-│   ├── lastEvaluationTime?: number
-│   ├── generatedOperations
-│   │   ├── air: table<string, boolean>
-│   │   └── ground: table<string, boolean>
-│   └── reconTriggeredOperationBatches: SBJ__ReconTriggeredOperationBatch[]
-│       └── ReconTriggeredOperationBatch
-│           ├── time: string
-│           ├── type: string
-│           ├── delay: number
-│           ├── executed: boolean
-│           └── operations: SBJ__Operation[]
-│               ├── type: "air"
-│               ├── executed: boolean
-│               └── template: SBJ__WaveTemplate
-└── air
-    └── airTaskingOrder: table<string, SBJ__Wave>
-        └── generated Wave
-            ├── name: string
-            ├── isActivated = true
-            ├── isFirstWave: boolean
-            ├── hasLaunched = false
-            ├── strikeInterval: number
-            └── packages: SBJ__Package[]
-                ├── timeToReady: number
-                ├── loadoutStatus: SBJ__LoadoutStatus
-                ├── hasLaunched = false
-                ├── striker / escort / wildWeasel / jammer / tanker
-                └── target.list: string[]
-```
-
-### 寫入與副作用
+本模組操作的型別（`SBJ__WaveTemplate`、`SBJ__Wave`、`SBJ__Package`、`SBJ__PackageTemplate`、`SBJ__MissionDeploymentDescriptor`、`SBJ__TankerMissionDeploymentDescriptor`、`SBJ__BatchedOperation`、`SBJ__AirOperationProcessResult`）欄位定義一律以 `src/core/schema.lua` 為準。
 
 | 路徑或 API | 行為 |
 |---|---|
@@ -202,33 +218,40 @@ saveData.c
 | `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicState.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
 | `operation.executed` | Wave 成功插入時由 `markOperationExecuted()` 標記。 |
 | `operationBatch.operations` | 放棄的 operation 由 `abandonOperation()` 從陣列移除。 |
-| `operationBatch.executed` | 當 batch 內所有 operation 都完成或被移除時由 `DynamicState.checkOperationBatchCompleted()` 更新。 |
+| `operationBatch.executed` | batch 內所有 operation 都完成或被移除時由 `checkOperationBatchCompleted()` 更新。 |
+| `roleData.baseGUID` | 機隊驗證選定候選基地時，就地改寫拷貝後的 package template。 |
+
+本模組**不寫任何遊戲狀態**，只透過 `GameApi.ScenEdit_GetUnit()` 讀取基地與掛載飛機。
 
 ---
 
-## local constants
+## Public API
 
-| 名稱 | 內容 | 用途 |
-|---|---|---|
-| `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | 機隊驗證與既有任務占用量統計。 |
-| `ALL_ROLES` | `PACKAGE_ROLES` 加上 `reconUAV` | timing log 收集。 |
-| `PROCESS_REASON` | `missing_wave_template`、`no_valid_packages`、`insertion_failed`、`observation_window_expired` | operation 處理失敗或略過原因，同時作為 log 的 `reason=` 值。 |
-| `RETRYABLE_REASON` | `no_valid_packages` | 觀察窗內保留重試、不移除 operation 的原因集合。 |
-| `LOG_SCOPE`／`LOG_ACTION` | `dynamicAirOperations`／`Process operations` | operation report 的 scope 與 action。 |
-| `TIMING_LOG_SCOPE`／`TIMING_LOG_ACTION` | `dynamicAirTiming`／`Build ATO wave timing` | timing report 的 scope 與 action。 |
+| 函數 | 參數 | 回傳 | 說明 |
+|---|---|---|---|
+| `AtoBuilder.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；至少成功插入一個 ATO Wave 時回傳 `true`。 |
+
+### 呼叫者與觸發方式
+
+| 呼叫者 | 觸發 |
+|---|---|
+| `StrikePlanner.processDynamicAirOperations()` | Strike Planner facade（`src/modules/strikePlanner/init.lua`），轉呼叫本模組 public API。 |
+| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 facade。 |
+| [airTaskingOrder](airTaskingOrder.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active Wave。 |
 
 ---
 
 ## config 與 constants 參考
 
+本模組直接讀取：
+
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
-| `config` | `config.c.air.timing` | 由 [packageTiming](packageTiming.md) 消費，計算支援角色戰術提前量、tanker 就位時間、巡航速度、無法解析航程時的 fallback、任務持續時間與安全裕度。 |
+| `config` | `config.c.air.minimumStrengthRatio` | 基地至少要能供應該角色幾成的請求架數才接受；預設 `0.5`。 |
 | `config` | `config.c.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [fsemBuilder](fsemBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
-| `config` | `config.c.packageTemplates` | 上游 [operationScheduler](operationScheduler.md) 的 air operation template 來源，動態 operation 最終會攜帶 `SBJ__WaveTemplate` 進入本模組。 |
-| `config` | `config.readytime` | Package template 必填的 `timeToReady` 來源，runtime 以秒為單位；本模組不提供 fallback。 |
-| `constants` | `constants.SIDES.ENEMY` | 讀取支援角色任務區 reference point。 |
-| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出 dynamic ATO 處理結果與 timing log。 |
+| `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 兩份 report 的 log tag。 |
+
+以下設定不由本模組讀取，但會影響它產出的 Wave：`config.c.packageTemplates`（[operationScheduler](operationScheduler.md) 據此建立 air operation template，最終攜帶 `SBJ__WaveTemplate` 進入本模組）、`config.c.air.timing` 與 package template 的 `timeToReady`（本模組把 `config` 原樣轉交 [packageTiming](packageTiming.md) 消費）。
 
 ---
 
@@ -239,28 +262,11 @@ saveData.c
 | `src.modules.strikePlanner.targetingProcess` | 依 target template、contacts 與 BDA 條件產生可打擊目標清單。 |
 | `src.modules.strikePlanner.dynamicState` | 篩選 air operations、判定觀察窗狀態、產生唯一 Wave 名稱、登記 generated operation、標記或移除 operation。 |
 | `src.modules.strikePlanner.packageTiming` | 機隊驗證後計算 package 內各角色時序、加油機受油協調與整組平移。 |
-| `src.modules.strikePlanner.tankerMission` | 正規化 tanker `missionCreationParams`，驗證多任務加油機設定。 |
-| `src.utils.gameApi` | 取得目前時間、基地/飛機/reference point、weapon DB 查詢與距離計算。 |
-| `src.utils.utils` | deep copy。 |
-| `src.utils.logger` | 輸出動態空中作戰結果與錯誤。 |
-| `src.utils.logFormat` | 產生一致的 key/value log entry 與 summary。 |
-| `src.core.constants` | 提供 side name 與 log tag。 |
-
----
-
-## Public API
-
-| 函數 | 參數 | 回傳 | 說明 |
-|---|---|---|---|
-| `AtoBuilder.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；若至少成功插入一個 ATO Wave，回傳 `true`。 |
-
-### 呼叫者與觸發方式
-
-| 呼叫者 | 觸發 |
-|---|---|
-| `StrikePlanner.processDynamicAirOperations(config, saveData, contacts)` | Strike Planner facade，轉呼叫本模組 public API。 |
-| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本在 `saveData.c.dynamicOperations.enabled` 為 true 時呼叫 `StrikePlanner.processDynamicAirOperations()`。 |
-| [airTaskingOrder](airTaskingOrder.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active Wave。 |
+| `src.modules.strikePlanner.tankerMission` | `normalizeCreationParams()` 正規化 tanker `missionCreationParams`，供多任務加油機設定驗證。 |
+| `src.utils.gameApi` | `ScenEdit_CurrentTime()` 取目前時間、`ScenEdit_GetUnit()` 讀基地與掛載飛機。 |
+| `src.utils.utils` | `deepCopy()`，用於模板拷貝與預約暫存。 |
+| `src.utils.logFormat` | `merge()` 合併欄位、`report()` 產生 operation 與 timing 兩份摘要。 |
+| `src.core.constants` | 提供 log tag。 |
 
 ---
 

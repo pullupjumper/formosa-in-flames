@@ -58,8 +58,7 @@ end
 -- ============================================================================
 
 ---Check if all operations in a reconnaissance-triggered batch are completed
----A batch emptied by DynamicState.abandonOperation counts as completed, so giving
----up on the last operation still closes the batch.
+---A batch emptied by DynamicState.abandonOperation counts as completed.
 ---@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch with operations array
 ---@return boolean # Whether all operations are completed
 function DynamicState.checkOperationBatchCompleted(operationBatch)
@@ -84,16 +83,15 @@ function DynamicState.updateReconTriggeredOperationStatus(saveData)
     return
   end
 
-  for _, reconEntry in ipairs(saveData.c.dynamicOperations.reconTriggeredOperationBatches) do
-    if not reconEntry.executed then
-      DynamicState.checkOperationBatchCompleted(reconEntry)
+  for _, operationBatch in ipairs(saveData.c.dynamicOperations.reconTriggeredOperationBatches) do
+    if not operationBatch.executed then
+      DynamicState.checkOperationBatchCompleted(operationBatch)
     end
   end
 end
 
 ---Evaluate the observation window state of a recon-triggered operation batch
----Window starts at operationBatch.time + operationBatch.delay and lasts windowSec seconds.
----Shared by the air and ground builders so both re-evaluate on the same schedule.
+---Opens at operationBatch.time + delay; air and ground builders share the schedule.
 ---@param currentTime integer Current scenario time in unix timestamp
 ---@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
 ---@param windowSec number Observation window duration in seconds
@@ -139,33 +137,31 @@ function DynamicState.filterOperationsByType(operationBatches, operationType)
 end
 
 ---Mark operation as executed and update parent operation batch status
----Executed means the operation plan was actually inserted; a failed operation is
----dropped through DynamicState.abandonOperation instead of being marked.
----@param reconEntry SBJ__ReconTriggeredOperationBatch Parent operation batch
+---Executed means the plan was inserted; failures go through abandonOperation instead.
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Parent operation batch
 ---@param operation SBJ__Operation Operation that was executed
-function DynamicState.markOperationExecuted(reconEntry, operation)
+function DynamicState.markOperationExecuted(operationBatch, operation)
   operation.executed = true
 
-  DynamicState.checkOperationBatchCompleted(reconEntry)
+  DynamicState.checkOperationBatchCompleted(operationBatch)
 end
 
 ---Drop an operation the builder has given up on from its parent batch
----Removing instead of marking keeps executed meaning "the plan was inserted", and
----lets OperationScheduler re-open the same wave on the next reconnaissance.
----@param reconEntry SBJ__ReconTriggeredOperationBatch Parent operation batch
+---Removing rather than marking lets OperationScheduler re-open the same wave later.
+---@param operationBatch SBJ__ReconTriggeredOperationBatch Parent operation batch
 ---@param operation SBJ__Operation Operation to drop
 ---@return boolean # True when the operation was found and removed
-function DynamicState.abandonOperation(reconEntry, operation)
-  if not reconEntry.operations then
+function DynamicState.abandonOperation(operationBatch, operation)
+  if not operationBatch.operations then
     return false
   end
 
   -- Located by identity rather than a cached index: one pass may abandon several
   -- operations of the same batch, and every removal shifts the ones behind it.
-  for index, candidate in ipairs(reconEntry.operations) do
+  for index, candidate in ipairs(operationBatch.operations) do
     if candidate == operation then
-      table.remove(reconEntry.operations, index)
-      DynamicState.checkOperationBatchCompleted(reconEntry)
+      table.remove(operationBatch.operations, index)
+      DynamicState.checkOperationBatchCompleted(operationBatch)
       return true
     end
   end
