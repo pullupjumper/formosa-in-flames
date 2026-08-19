@@ -942,6 +942,11 @@ config.c.ground.sam.firingUnits = {
 
 config.c.recon = {}
 config.c.recon.observationWindowSec = 30 * 60
+-- Active FSEMs older than this are retired by FsemBuilder so their firing units
+-- return to the assignable pool. Aligned with observationWindowSec (competing
+-- operations wait at most 30 min) and c.ground.srbm.contactAge (older targeting
+-- data is stale anyway); production templates deploy well inside this window.
+config.c.recon.fsemStaleAfterSec = 30 * 60
 config.c.recon.template = {
   BZK005_RECON_1 = {
     templateId = "BZK005_RECON_1",

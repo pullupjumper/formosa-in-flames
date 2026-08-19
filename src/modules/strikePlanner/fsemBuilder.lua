@@ -339,8 +339,9 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST fields
 ---@param matrixName string Generated unique matrix name
 ---@param fireSupportTasks SBJ__FireSupportTask[] Built task list for this matrix
+---@param matrixStartTime integer Matrix creation unix timestamp used for stale retirement
 ---@return SBJ__FireSupportExecutionMatrix # Matrix structure ready for insertion
-local function buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks)
+local function buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, matrixStartTime)
   ---@type SBJ__FireSupportExecutionMatrix
   local newMatrix = {
     name = matrixName,
@@ -349,6 +350,7 @@ local function buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTas
     isFirstWave = matrixTemplate.isFirstWave,
     allFiringUnitsInPosition = false,
     fireSupportTasks = fireSupportTasks,
+    createdAt = matrixStartTime,
     -- Ground dynamic FSP uses TOT-oriented execution; interval is intentionally disabled after generation.
     strikeInterval = 0
   }
@@ -400,7 +402,7 @@ local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targets
     }
   end
 
-  local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks)
+  local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, matrixStartTime)
 
   if not insertMatrix(saveData, newMatrix) then
     return {
@@ -451,6 +453,83 @@ local function processGroundOperation(config, saveData, contacts, batchedOp)
 end
 
 -- ============================================================================
+-- Stale Matrix Retirement
+-- ============================================================================
+
+-- States eligible for the stow countdown when a matrix is retired: units that
+-- were deployed toward (or reached) a firing point but never fired. HIDE units
+-- are already home and immediately re-assignable; RELOAD units are inside the
+-- reload pipeline, which already ends with a move back to the hide area.
+local STOW_ON_RETIRE_STATE = {
+  [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
+  [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
+}
+
+---Check whether an active matrix has exceeded the stale timeout
+---Matrices without createdAt (legacy saves) never go stale.
+---@param matrix SBJ__FireSupportExecutionMatrix Matrix to check
+---@param currentTime number Current unix timestamp
+---@param staleAfterSec number Stale timeout in seconds
+---@return boolean # True when the matrix age exceeds the timeout
+local function isMatrixStale(matrix, currentTime, staleAfterSec)
+  return matrix.createdAt ~= nil and (currentTime - matrix.createdAt) > staleAfterSec
+end
+
+---Start the stow countdown for deployed-but-unfired units of a retired task
+---SAM tasks are excluded by convention and existing countdowns are preserved,
+---so the missileSystem cycle sends the unit back to its hide area unchanged.
+---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
+---@param task SBJ__FireSupportTask Unfinished task from a retired matrix
+---@param currentTime number Current unix timestamp
+local function stowRetiredTaskFiringUnits(saveData, task, currentTime)
+  if not task.missileSystem or task.missileSystem == "SAM" or not task.firingUnits then
+    return
+  end
+
+  for _, firingUnit in ipairs(task.firingUnits) do
+    if firingUnit.name then
+      local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
+
+      if firingUnitCtx and not firingUnitCtx.stowStartTime and STOW_ON_RETIRE_STATE[firingUnitCtx.state] then
+        firingUnitCtx.stowStartTime = currentTime
+      end
+    end
+  end
+end
+
+---Retire active matrices that exceeded the stale timeout
+---Marking them finished releases their firing units to the assignable pool and
+---stops FireSupportPlan.strike from commanding them, avoiding double command.
+---@param saveData SBJ__SaveData Persistent save data with FSP structure
+---@param currentTime number Current unix timestamp
+---@param staleAfterSec number|nil Stale timeout in seconds, nil disables retirement
+---@param opReport SBJ__LogReport Report collector receiving one WARN row per retired matrix
+local function retireStaleMatrices(saveData, currentTime, staleAfterSec, opReport)
+  local fireSupportPlan = saveData.c.ground and saveData.c.ground.fireSupportPlan
+  if not staleAfterSec or not fireSupportPlan then
+    return
+  end
+
+  for _, matrix in pairs(fireSupportPlan) do
+    if not matrix.isFinished and matrix.isActivated and isMatrixStale(matrix, currentTime, staleAfterSec) then
+      matrix.isFinished = true
+
+      for _, task in ipairs(matrix.fireSupportTasks or {}) do
+        if not task.isFinished then
+          stowRetiredTaskFiringUnits(saveData, task, currentTime)
+        end
+      end
+
+      opReport.add("WARN", {
+        matrix = matrix.name,
+        reason = "fsem_stale_timeout",
+        ageSec = currentTime - matrix.createdAt
+      })
+    end
+  end
+end
+
+-- ============================================================================
 -- Public API
 -- ============================================================================
 
@@ -481,6 +560,10 @@ function FsemBuilder.execute(config, saveData, contacts)
   end
 
   local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
+
+  -- Release firing units held by stale matrices before evaluating this pass's
+  -- pending operations, so a starved operation can re-assign them in the same tick.
+  retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
 
   for _, batchedOp in ipairs(groundBatchedOperations) do
     local operationBatch = batchedOp.operationBatch

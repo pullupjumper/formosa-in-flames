@@ -240,6 +240,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
 ---@field observationWindowSec number Dynamic operation observation window in seconds, shared by air and ground (window starts at recon trigger time; operations re-evaluate every tick within it, and are dropped from their batch once it expires)
+---@field fsemStaleAfterSec number Age in seconds after which an active unfinished FSEM is retired by FsemBuilder, releasing its firing units back to the assignable pool
 
 ---Air package timing configuration
 ---@class SBJ__AirTimingConfig: table
@@ -1169,6 +1170,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isActivated boolean Whether FSEM is activated
 ---@field allFiringUnitsInPosition boolean Whether all firing units are in position
 ---@field isFinished boolean Whether FSEM is finished
+---@field createdAt? number Creation unix timestamp for stale retirement; nil on legacy saves (never stale)
 ---@field fireSupportTasks SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes

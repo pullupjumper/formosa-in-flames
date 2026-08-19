@@ -273,6 +273,24 @@ describe("FsemBuilder", function()
         assert.are.equal(0, fsem.strikeInterval)
       end)
 
+      -- Positive: createdAt stamped for stale retirement tracking
+      it("should stamp createdAt with matrix start time on new FSEM", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation()
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry } })
+
+        trackStub(stub(DynamicState, "filterOperationsByType").returns({
+          { operationBatch = reconEntry, operation = operation }
+        }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        FsemBuilder.execute(makeConfig(), saveData, {})
+
+        local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
+        assert.are.equal(1000, fsem.createdAt)
+      end)
+
       -- ============================================================================
       -- Target Evaluation
       -- ============================================================================
@@ -808,6 +826,261 @@ describe("FsemBuilder", function()
         assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
         assert.stub(markOperationExecutedStub).was.called(1)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
+      end)
+    end)
+
+    -- ============================================================================
+    -- Stale Matrix Retirement
+    -- ============================================================================
+
+    describe("stale matrix retirement", function()
+      ---Build an active unfinished matrix holding Battery-1 by default
+      ---@param overrides? table
+      ---@return table matrix
+      local function makeActiveMatrix(overrides)
+        overrides = overrides or {}
+        return {
+          name = overrides.name or "STALE-FSEM",
+          isActivated = true,
+          isFinished = false,
+          allFiringUnitsInPosition = false,
+          createdAt = overrides.createdAt,
+          fireSupportTasks = overrides.fireSupportTasks or {
+            {
+              name = "FST-HELD",
+              missileSystem = "SRBM",
+              isFinished = false,
+              firingUnits = { { name = "Battery-1" } }
+            }
+          }
+        }
+      end
+
+      ---Count entries of a map-shaped fireSupportPlan table
+      ---@param fireSupportPlan table<string, any>
+      ---@return integer count
+      local function countMatrices(fireSupportPlan)
+        local count = 0
+        for _ in pairs(fireSupportPlan) do
+          count = count + 1
+        end
+        return count
+      end
+
+      -- Boundary: age exactly at the threshold does not retire, units stay assigned
+      it("should keep matrix active and units assigned at exactly the stale boundary", function()
+        local config = makeConfig()
+        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec
+
+        local operation = makeOperation()
+        local reconEntry = makeReconEntry()
+        reconEntry.operations = { operation }
+        local matrix = makeActiveMatrix({ createdAt = 1000 })
+        local saveData = makeSaveData({
+          fireSupportPlan = { [matrix.name] = matrix },
+          reconTriggeredOperationBatches = { reconEntry }
+        })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(currentTime))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(currentTime))
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(matrix.isFinished)
+        -- Battery-1 still assigned: no new FSEM built, operation stays pending for retry
+        assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
+        assert.are.equal(1, #reconEntry.operations)
+      end)
+
+      -- Positive: stale FSEM retired and its units re-assigned end to end
+      it("should retire stale FSEM and let a new operation reuse its firing units", function()
+        local config = makeConfig()
+        local staleAfterSec = config.c.recon.fsemStaleAfterSec
+
+        local operation1 = makeOperation()
+        local operation2 = makeOperation()
+        local batch1 = makeReconEntry({ time = "BATCH-1" })
+        local batch2 = makeReconEntry({ time = "BATCH-2" })
+        batch1.operations = { operation1 }
+        batch2.operations = { operation2 }
+        local saveData = makeSaveData({ reconTriggeredOperationBatches = { batch1, batch2 } })
+
+        local triggerTimes = { ["BATCH-1"] = 1000, ["BATCH-2"] = 2000 }
+        local timeStub = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(timeStr)
+          return triggerTimes[timeStr]
+        end))
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        -- Tick 1: first operation builds an FSEM holding Battery-1
+        assert.is_true(FsemBuilder.execute(config, saveData, {}))
+        local firstFsem = saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-01"]
+        assert.is_table(firstFsem)
+        assert.are.equal(1000, firstFsem.createdAt)
+        assert.is_true(operation1.executed)
+
+        -- Tick 2 (not yet stale): competing operation stays blocked on Battery-1
+        timeStub.returns(1000 + staleAfterSec)
+        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(firstFsem.isFinished)
+        assert.is_nil(saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"])
+
+        -- Tick 3 (stale): FSEM retired, Battery-1 released and re-assigned
+        timeStub.returns(1000 + staleAfterSec + 1)
+        assert.is_true(FsemBuilder.execute(config, saveData, {}))
+        assert.is_true(firstFsem.isFinished)
+        assert.is_true(operation2.executed)
+        local secondFsem = saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"]
+        assert.is_table(secondFsem)
+        assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].firingUnits[1].name)
+
+        local retireLogMessage = logStub.calls[3].vals[2]
+        assert.truthy(retireLogMessage:find("%[WARN%]"))
+        assert.truthy(retireLogMessage:find("reason=fsem_stale_timeout"))
+        assert.truthy(retireLogMessage:find("ageSec=" .. (staleAfterSec + 1)))
+      end)
+
+      -- Negative: legacy matrix without createdAt never goes stale
+      it("should never retire matrices without createdAt", function()
+        local config = makeConfig()
+        local farFuture = 1000 + config.c.recon.fsemStaleAfterSec * 10
+
+        local operation = makeOperation()
+        local reconEntry = makeReconEntry()
+        reconEntry.operations = { operation }
+        local matrix = makeActiveMatrix({ createdAt = nil })
+        local saveData = makeSaveData({
+          fireSupportPlan = { [matrix.name] = matrix },
+          reconTriggeredOperationBatches = { reconEntry }
+        })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(farFuture))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(farFuture))
+        trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(matrix.isFinished)
+        assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
+      end)
+
+      -- Positive: retire starts the stow countdown only for deployed non-SAM units
+      it("should stamp stowStartTime on deployed units when retiring, skipping SAM and existing countdowns", function()
+        local config = makeConfig()
+        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec + 1
+
+        local operation = makeOperation()
+        local reconEntry = makeReconEntry()
+        reconEntry.operations = { operation }
+        local matrix = makeActiveMatrix({
+          createdAt = 1000,
+          fireSupportTasks = {
+            {
+              name = "FST-SRBM",
+              missileSystem = "SRBM",
+              isFinished = false,
+              firingUnits = {
+                { name = "Battery-S" },
+                { name = "Battery-R" },
+                { name = "Battery-H" },
+                { name = "Battery-P" }
+              }
+            },
+            {
+              name = "FST-SAM",
+              missileSystem = "SAM",
+              isFinished = false,
+              firingUnits = { { name = "Sam-1" } }
+            },
+            {
+              name = "FST-DONE",
+              missileSystem = "SRBM",
+              isFinished = true,
+              firingUnits = { { name = "Battery-F" } }
+            }
+          }
+        })
+        local saveData = makeSaveData({
+          fireSupportPlan = { [matrix.name] = matrix },
+          srbmFiringUnits = {
+            ["Battery-S"] = makeBatteryContext({ name = "Battery-S", state = constants.MISSILE_SYSTEM_STATE.STATIC }),
+            ["Battery-R"] = makeBatteryContext({
+              name = "Battery-R",
+              state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+            }),
+            ["Battery-H"] = makeBatteryContext({ name = "Battery-H", state = constants.MISSILE_SYSTEM_STATE.HIDE }),
+            ["Battery-P"] = makeBatteryContext({ name = "Battery-P", state = constants.MISSILE_SYSTEM_STATE.STATIC }),
+            ["Battery-F"] = makeBatteryContext({ name = "Battery-F", state = constants.MISSILE_SYSTEM_STATE.STATIC })
+          },
+          reconTriggeredOperationBatches = { reconEntry }
+        })
+        saveData.c.ground.srbm.firingUnits["Battery-P"].stowStartTime = 500
+        saveData.c.ground.sam = {
+          firingUnits = {
+            ["Sam-1"] = makeBatteryContext({ name = "Sam-1", state = constants.MISSILE_SYSTEM_STATE.STATIC })
+          }
+        }
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(currentTime))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(currentTime))
+        trackStub(stub(TargetingProcess, "processTargets").returns({}))
+
+        FsemBuilder.execute(config, saveData, {})
+
+        assert.is_true(matrix.isFinished)
+        local srbmUnits = saveData.c.ground.srbm.firingUnits
+        assert.are.equal(currentTime, srbmUnits["Battery-S"].stowStartTime)
+        assert.are.equal(currentTime, srbmUnits["Battery-R"].stowStartTime)
+        assert.is_nil(srbmUnits["Battery-H"].stowStartTime)
+        assert.are.equal(500, srbmUnits["Battery-P"].stowStartTime)
+        assert.is_nil(srbmUnits["Battery-F"].stowStartTime)
+        assert.is_nil(saveData.c.ground.sam.firingUnits["Sam-1"].stowStartTime)
+
+        local logMessage = logStub.calls[1].vals[2]
+        assert.truthy(logMessage:find("%[WARN%]"))
+        assert.truthy(logMessage:find("matrix=STALE%-FSEM"))
+        assert.truthy(logMessage:find("reason=fsem_stale_timeout"))
+      end)
+
+      -- Negative: retire pass tolerates saveData without ground context or plan
+      it("should not crash when saveData has no ground context or fireSupportPlan", function()
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
+        trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(100))
+        trackStub(stub(TargetingProcess, "processTargets").returns({}))
+
+        local operation = makeOperation()
+        local reconEntry = makeReconEntry()
+        reconEntry.operations = { operation }
+        local saveDataWithoutGround = {
+          c = {
+            dynamicOperations = {
+              enabled = true,
+              reconTriggeredOperationBatches = { reconEntry }
+            }
+          }
+        }
+
+        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithoutGround, {}))
+
+        local operation2 = makeOperation()
+        local reconEntry2 = makeReconEntry()
+        reconEntry2.operations = { operation2 }
+        local saveDataWithoutPlan = {
+          c = {
+            ground = { srbm = { firingUnits = {} } },
+            dynamicOperations = {
+              enabled = true,
+              reconTriggeredOperationBatches = { reconEntry2 }
+            }
+          }
+        }
+
+        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithoutPlan, {}))
       end)
     end)
   end)
