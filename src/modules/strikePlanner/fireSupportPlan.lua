@@ -47,11 +47,12 @@ end
 ---@param saveData SBJ__SaveData Saved game state
 ---@param task SBJ__FireSupportTask Fire Support Task containing missile system info
 ---@param firingUnit SBJ__FiringUnit Firing unit to deploy
----@return boolean # Returns true if unit is at firing point
+---@return boolean inPosition Whether the unit is at firing point
+---@return boolean unitMissing Whether the actual unit no longer exists in game
 local function deploySingleFiringUnit(saveData, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
   if not actualUnit then
-    return false
+    return false, true
   end
 
   local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
@@ -61,26 +62,44 @@ local function deploySingleFiringUnit(saveData, task, firingUnit)
     MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)
   end
 
-  return isFiringUnitAtFiringPoint(firingUnitCtx)
+  return isFiringUnitAtFiringPoint(firingUnitCtx), false
 end
 
 ---Deploy all firing units in a task and check if all are in position
+---Destroyed units are removed from the task; a task emptied this way is closed
+---so it never blocks the rest of the matrix waiting for a unit that cannot arrive.
 ---@param saveData SBJ__SaveData Saved game state
 ---@param task SBJ__FireSupportTask Fire Support Task containing firing units
----@return boolean allInPosition Whether all firing units are at firing point
+---@return boolean allInPosition Whether all surviving firing units are at firing point
 ---@return string[] notReadyNames Unit names not yet at firing point
+---@return string[] removedNames Destroyed unit names removed from the task
 local function deployTaskFiringUnits(saveData, task)
   local allInPosition = true
   local notReadyNames = {}
+  local removedNames = {}
 
-  for _, firingUnit in ipairs(task.firingUnits) do
-    if not deploySingleFiringUnit(saveData, task, firingUnit) then
+  -- Reverse iteration so table.remove never skips the next entry; names are
+  -- inserted at the head to preserve the original firing unit order in logs.
+  for i = #task.firingUnits, 1, -1 do
+    local firingUnit = task.firingUnits[i]
+    local inPosition, unitMissing = deploySingleFiringUnit(saveData, task, firingUnit)
+
+    if unitMissing then
+      table.remove(task.firingUnits, i)
+      table.insert(removedNames, 1, firingUnit.name or "unknown")
+    elseif not inPosition then
       allInPosition = false
-      table.insert(notReadyNames, firingUnit.name or "unknown")
+      table.insert(notReadyNames, 1, firingUnit.name or "unknown")
     end
   end
 
-  return allInPosition, notReadyNames
+  -- An emptied task is closed without counting as not-ready, so sibling tasks
+  -- in the same matrix can still reach allFiringUnitsInPosition and fire.
+  if #task.firingUnits == 0 then
+    task.isFinished = true
+  end
+
+  return allInPosition, notReadyNames, removedNames
 end
 
 -- ============================================================================
@@ -145,18 +164,32 @@ local function isMatrixFinished(matrix)
 end
 
 ---Process active matrix deployment phase
----Deploys firing units to firing points and tracks position status
+---Deploys firing units to firing points, tracks position status,
+---and aggregates destroyed units removed from tasks for logging
 ---@param saveData SBJ__SaveData Saved game state
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to process
 ---@return boolean allInPosition Whether all firing units across all tasks are in position
 ---@return {taskName: string, notReadyNames: string[]}[] pendingTasks Tasks with not-ready unit names
+---@return {taskName: string, removedNames: string[], taskClosed: boolean}[] cleanedTasks Tasks that lost destroyed units
 local function processActiveMatrix(saveData, matrix)
   local allInPosition = true
   local pendingTasks = {}
+  local cleanedTasks = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
     if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
-      local taskReady, notReadyNames = deployTaskFiringUnits(saveData, task)
+      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(saveData, task)
+
+      if #removedNames > 0 then
+        table.insert(cleanedTasks, {
+          taskName = task.name,
+          removedNames = removedNames,
+          -- deployTaskFiringUnits closes a task it emptied, so isFinished here
+          -- means every unit of the task was destroyed.
+          taskClosed = task.isFinished
+        })
+      end
+
       if not taskReady then
         allInPosition = false
         table.insert(pendingTasks, {
@@ -168,7 +201,7 @@ local function processActiveMatrix(saveData, matrix)
   end
 
   matrix.allFiringUnitsInPosition = allInPosition
-  return allInPosition, pendingTasks
+  return allInPosition, pendingTasks, cleanedTasks
 end
 
 -- ============================================================================
@@ -176,14 +209,14 @@ end
 -- ============================================================================
 
 ---Execute Fire Support Plan strikes for all active FSEMs
----Deploys firing units to firing points, executes strikes when ready, marks FSEMs as finished
+---Deploys firing units, removes destroyed ones, executes strikes when ready, marks FSEMs finished
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function FireSupportPlan.strike(saveData)
   local report = LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")
 
   for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
-      local allInPosition, pendingTasks = processActiveMatrix(saveData, matrix)
+      local allInPosition, pendingTasks, cleanedTasks = processActiveMatrix(saveData, matrix)
 
       local strikeResults = {}
       if allInPosition then
@@ -192,6 +225,16 @@ function FireSupportPlan.strike(saveData)
 
       if isMatrixFinished(matrix) then
         matrix.isFinished = true
+      end
+
+      for _, cleanedTask in ipairs(cleanedTasks) do
+        report.add("WARN", {
+          matrix = matrix.name,
+          task = cleanedTask.taskName,
+          action = "dead_unit_cleanup",
+          units = table.concat(cleanedTask.removedNames, ","),
+          taskClosed = cleanedTask.taskClosed
+        })
       end
 
       if #strikeResults > 0 then

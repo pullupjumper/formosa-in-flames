@@ -188,16 +188,22 @@ describe("FireSupportPlan", function()
       assert.is_true(matrix.allFiringUnitsInPosition)
     end)
 
-    -- Negative: unit not found
-    it("should set allFiringUnitsInPosition to false when unit not found", function()
+    -- Boundary: destroyed unit is removed and the emptied task closes (dead unit cleanup)
+    it("should remove destroyed unit, close emptied task and finish matrix", function()
       local saveData = makeSaveData({})
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
       FireSupportPlan.strike(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
-      assert.is_false(matrix.allFiringUnitsInPosition)
+      local task = matrix.fireSupportTasks[1]
+      assert.are.equal(0, #task.firingUnits)
+      assert.is_true(task.isFinished)
+      assert.is_true(matrix.allFiringUnitsInPosition)
+      assert.is_true(matrix.isFinished)
+      assert.stub(stubAttack).was_not.called()
     end)
 
     -- Negative: not HIDE state
@@ -269,6 +275,81 @@ describe("FireSupportPlan", function()
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
+    end)
+  end)
+
+  -- ============================================================================
+  -- Dead Unit Cleanup
+  -- ============================================================================
+
+  describe("dead unit cleanup", function()
+    -- Positive: destroyed unit removed while the survivor fires
+    it("should remove destroyed unit and let surviving unit fire", function()
+      local saveData = makeSaveData({
+        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+      })
+      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+        state = constants.MISSILE_SYSTEM_STATE.STATIC,
+        ammoThreshold = 40,
+        weaponDBID = 3104
+      }
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
+        return nil
+      end))
+      local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
+
+      FireSupportPlan.strike(saveData)
+
+      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local task = matrix.fireSupportTasks[1]
+      assert.are.same({ { name = "Battery-2" } }, task.firingUnits)
+      assert.is_true(matrix.allFiringUnitsInPosition)
+      assert.stub(stubAttack).was.called(1)
+      assert.are.same({ { name = "Battery-2" } }, stubAttack.calls[1].vals[1].firingUnits)
+      assert.is_true(task.isFinished)
+    end)
+
+    -- Positive: emptied task no longer blocks sibling task strikes in the same matrix
+    it("should not block sibling task strike when another task loses all units", function()
+      local saveData = makeSaveData({})
+      table.insert(saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
+        name = "FST-BETA",
+        missileSystem = "SRBM",
+        isFinished = false,
+        startTime = "2026-02-14 00:00:00",
+        firingUnits = { { name = "Battery-2" } },
+        target = {
+          list = { "TGT-9" },
+          objs = {},
+          areas = {},
+          minTargetCount = 1,
+          ammoPerTarget = 1
+        }
+      })
+      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+        state = constants.MISSILE_SYSTEM_STATE.STATIC,
+        ammoThreshold = 40,
+        weaponDBID = 3104
+      }
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
+        return nil
+      end))
+      local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(1))
+
+      FireSupportPlan.strike(saveData)
+
+      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      assert.is_true(matrix.fireSupportTasks[1].isFinished)
+      assert.is_true(matrix.fireSupportTasks[2].isFinished)
+      assert.stub(stubAttack).was.called(1)
+      assert.are.same({ { name = "Battery-2" } }, stubAttack.calls[1].vals[1].firingUnits)
+      assert.is_true(matrix.isFinished)
     end)
   end)
 
@@ -655,6 +736,77 @@ describe("FireSupportPlan", function()
       FireSupportPlan.strike(saveData)
 
       assert.stub(logStub).was_not.called()
+    end)
+
+    -- Positive: WARN dead_unit_cleanup carries removed unit names and closed-task flag
+    it("should log WARN dead_unit_cleanup with removed unit names and taskClosed", function()
+      local saveData = makeSaveData({})
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      trackStub(stub(AttackManager, "attackContacts").returns(0))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.stub(logStub).was.called(1)
+      local logMessage = logStub.calls[1].vals[2]
+      assert.is_truthy(string.find(logMessage, "%[WARN%]"))
+      assert.is_truthy(string.find(logMessage, "action=dead_unit_cleanup"))
+      assert.is_truthy(string.find(logMessage, "units=Battery%-1"))
+      assert.is_truthy(string.find(logMessage, "taskClosed=true"))
+    end)
+
+    -- Positive: taskClosed=false when survivors keep the task open after cleanup
+    it("should log taskClosed=false when surviving units remain after cleanup", function()
+      local saveData = makeSaveData({
+        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+      })
+      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+        state = constants.MISSILE_SYSTEM_STATE.STATIC,
+        ammoThreshold = 40,
+        weaponDBID = 3104
+      }
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
+        return nil
+      end))
+      trackStub(stub(AttackManager, "attackContacts").returns(0))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.stub(logStub).was.called(1)
+      local logMessage = logStub.calls[1].vals[2]
+      assert.is_truthy(string.find(logMessage, "action=dead_unit_cleanup"))
+      assert.is_truthy(string.find(logMessage, "units=Battery%-1"))
+      assert.is_truthy(string.find(logMessage, "taskClosed=false"))
+    end)
+
+    -- Regression: surviving multi-unit not-ready names keep the original order
+    it("should keep notReadyNames in original unit order for surviving units", function()
+      local saveData = makeSaveData({
+        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+      })
+      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+        state = constants.MISSILE_SYSTEM_STATE.HIDE,
+        ammoThreshold = 40,
+        weaponDBID = 3104
+      }
+
+      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        return { guid = "U-" .. name, name = name }
+      end))
+      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+      trackStub(stub(MissileSystem, "moveFromHideArea"))
+      trackStub(stub(MissileSystem, "moveToFiringPoint"))
+
+      FireSupportPlan.strike(saveData)
+
+      assert.stub(logStub).was.called(1)
+      local logMessage = logStub.calls[1].vals[2]
+      assert.is_truthy(string.find(logMessage, "%[SKIP%]"))
+      assert.is_truthy(string.find(logMessage, "units=Battery%-1,Battery%-2"))
     end)
   end)
 end)
