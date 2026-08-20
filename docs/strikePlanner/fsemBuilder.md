@@ -83,9 +83,24 @@ stateDiagram-v2
 | `bad_state` | firing unit context 的 `state ~= constants.MISSILE_SYSTEM_STATE.HIDE` | `firingBadState` |
 | `low_ammo` | `MissileSystem.isLowAmmo(actualUnit, ammoThreshold, weaponDBID)` 回傳 true | `firingLowAmmo` |
 
+### 為什麼快取只活一次 execute()
+
+`execute()` 在 `retireStaleMatrices()` 之後建立 `passContext`，內含兩個只活一趟的快取，逐層傳進 `processGroundOperation()` → `createAndInsertFSEMFromTemplate()` → `buildExecutableTasks()` → `selectAvailableFiringUnits()` → `validateFiringUnitStatus()`：
+
+| 欄位 | 內容 | 取代的行為 |
+|---|---|---|
+| `firingUnitCache` | `firingUnitName -> CMO__Unit \| false` | 每次驗證都直接呼叫 `GameApi.ScenEdit_GetUnit()`。該 API 對名稱查詢固定是兩次 CMO round-trip（先 `{guid=}` 再 `{unitname=}`），查無單位時還會 `error()` 並輸出一整段 stack trace。`false` 是刻意的 negative sentinel：`nil` 表示尚未查過，`false` 表示這趟查過且不存在，讓已被摧毀的發射旅在同一 tick 只噴一筆 error。 |
+| `assignedFiringUnitNames` | `collectAssignedFiringUnitNames(saveData)` 的結果 | 每個 operation 各自重掃一次整份 `fireSupportPlan`（該表只增不減）。現在整趟只掃一次，後續的 `markFiringUnitsAssigned()` 就地增量寫入同一張表，同 tick 內的跨 operation 防重與 `insertMatrix()` 先寫 FSP 的既有防護重疊而不衝突。 |
+
+seeding 順序有意義：`assignedFiringUnitNames` 必須在 `retireStaleMatrices()` **之後**才建立，否則被退役 matrix 釋放出來的發射單元在本 tick 仍會被視為已分配。
+
+快取的生命週期**剛好是一次 `execute()`**：本模組執行期間 CMO 模擬時間不前進，單位被摧毀、狀態轉換、彈量變化都發生在兩次 tick 之間，每趟重建剛好涵蓋。因此兩者**必須是 `execute()` 的區域變數**——打包後模組 table 會變全域，提到 module scope 會讓快取跨 tick 存活，把早已不存在的單位當成可用。`fsemBuilder_spec` 的「should look up each firing unit at most once per pass across FSTs」與「should share the firing unit cache and assignment map across operations in one pass」兩條測試釘住這個行為。
+
+檢查順序刻意維持「先 `GetUnit` 再 `state`」而非把便宜的 state 比較提前：把 state 提前雖然更省，但已被摧毀且非 `HIDE` 的單位會從 `unit_not_found` 變成 `bad_state`，丟失「這個旅已經沒了」的日誌訊號。重複成本改由快取消除。
+
 ### FSEM 組裝
 
-`buildExecutableTasks()` 是 FST 建構的 orchestration 層。它先收集已分配 firing unit 名稱，再依通過目標評估的 FST 選出可用 firing units，最後以 `Utils.deepCopy(taskTemplate)` 複製 template 並補上 runtime 欄位：`firingUnits`、`startTime`、`isFinished = false`、`target.list = targets`。
+`buildExecutableTasks()` 是 FST 建構的 orchestration 層。它依通過目標評估的 FST 選出可用 firing units（已分配名稱由 `passContext` 提供），最後以 `Utils.deepCopy(taskTemplate)` 複製 template 並補上 runtime 欄位：`firingUnits`、`startTime`、`isFinished = false`、`target.list = targets`。
 
 FSEM 名稱由 `DynamicState.generateUniqueGroundOperationName()` 生成，會同時檢查 `generatedOperations.ground` 與既有 `fireSupportPlan`。成功後 `insertMatrix()` 將 matrix 寫入 FSP，並呼叫 `registerGeneratedOperation("ground", newMatrix.name, saveData)`。
 

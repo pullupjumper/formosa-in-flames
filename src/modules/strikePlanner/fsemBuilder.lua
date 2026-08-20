@@ -54,6 +54,10 @@ local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
 ---@alias SBJ__FiringUnitStatusCounter table<string, number>
 
+---@class SBJ__FsemPassContext
+---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
+---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built
+
 -- ============================================================================
 -- Firing Unit Status
 -- ============================================================================
@@ -121,13 +125,14 @@ end
 ---@param saveData SBJ__SaveData Persistent save data containing FSP (Fire Support Plan) information
 ---@return table<string, boolean> # Map of firing unit name to true (assigned status)
 local function collectAssignedFiringUnitNames(saveData)
-  if not saveData.c.ground.fireSupportPlan then
+  local fireSupportPlan = saveData.c.ground and saveData.c.ground.fireSupportPlan
+  if not fireSupportPlan then
     return {}
   end
 
   local assignedFiringUnitNames = {}
 
-  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+  for _, matrix in pairs(fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated and matrix.fireSupportTasks then
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished and task.firingUnits then
@@ -155,19 +160,36 @@ local function getFiringUnitContext(saveData, missileSystem, firingUnitName)
   return missileSystemCtx and missileSystemCtx.firingUnits and missileSystemCtx.firingUnits[firingUnitName]
 end
 
+---Resolve a firing unit through the pass-scoped cache
+---GameApi.ScenEdit_GetUnit costs two CMO round-trips per name lookup and logs a full
+---stack trace when the unit is gone, so misses are cached as false to pay that once.
+---@param firingUnitCache table<string, CMO__Unit|false> Pass-scoped lookup cache; mutated
+---@param firingUnitName string Firing unit name to resolve
+---@return CMO__Unit|nil # Resolved unit, or nil when it no longer exists
+local function getCachedFiringUnit(firingUnitCache, firingUnitName)
+  local actualUnit = firingUnitCache[firingUnitName]
+
+  if actualUnit == nil then
+    actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName) or false
+    firingUnitCache[firingUnitName] = actualUnit
+  end
+
+  return actualUnit or nil
+end
+
 ---Validate individual firing unit status and readiness
 ---Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
----@param assignedFiringUnitNames table<string, boolean> Map of already assigned firing unit names
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit runtime context
 ---@return string # Firing unit status code from FIRING_UNIT_STATUS
-local function validateFiringUnitStatus(assignedFiringUnitNames, firingUnitCtx)
+local function validateFiringUnitStatus(passContext, firingUnitCtx)
   local firingUnitName = firingUnitCtx.name
 
-  if assignedFiringUnitNames[firingUnitName] then
+  if passContext.assignedFiringUnitNames[firingUnitName] then
     return FIRING_UNIT_STATUS.ASSIGNED
   end
 
-  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
+  local actualUnit = getCachedFiringUnit(passContext.firingUnitCache, firingUnitName)
   if not actualUnit then
     return FIRING_UNIT_STATUS.UNIT_NOT_FOUND
   end
@@ -188,11 +210,11 @@ end
 ---Select available firing units specified in template
 ---Filters battery list to only include unassigned batteries with valid status and ammunition
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
----@param assignedFiringUnitNames table<string, boolean> Map of already assigned firing unit names
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Counter for firing unit validation outcomes
 ---@param taskTemplate SBJ__FireSupportTaskTemplate FST template definition
 ---@return SBJ__FiringUnit[] # Array of available batteries ready for assignment
-local function selectAvailableFiringUnits(saveData, assignedFiringUnitNames, firingUnitStatusCounter, taskTemplate)
+local function selectAvailableFiringUnits(saveData, passContext, firingUnitStatusCounter, taskTemplate)
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
@@ -206,7 +228,7 @@ local function selectAvailableFiringUnits(saveData, assignedFiringUnitNames, fir
       if not firingUnitCtx then
         status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
       else
-        status = validateFiringUnitStatus(assignedFiringUnitNames, firingUnitCtx)
+        status = validateFiringUnitStatus(passContext, firingUnitCtx)
       end
     end
 
@@ -244,7 +266,9 @@ local function markFiringUnitsAssigned(assignedFiringUnitNames, availableFiringU
 end
 
 ---Insert new FSEM into existing FSP sequence
----Adds FSEM to the Fire Support Plan and registers it as a generated operation
+---Adds FSEM to the Fire Support Plan and registers it as a generated operation.
+---Coupled to markFiringUnitsAssigned: the pass-scoped assignment map is written while
+---tasks are built, so any future failing path here must roll those names back.
 ---@param saveData SBJ__SaveData Persistent save data with FSP structure
 ---@param newMatrix SBJ__FireSupportExecutionMatrix Complete FSEM with FSTs ready for execution
 ---@return boolean # True if FSEM was successfully inserted and registered
@@ -291,13 +315,13 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param targetsByTaskName table<string, string[]> Map of FST name to evaluated target GUID arrays
 ---@param matrixStartTime integer Matrix base start time in unix timestamp
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
 ---@return SBJ__FiringUnitStatusCounter firingUnitStatusCounter Firing unit status counter
 ---@return number unavailableFiringUnitTaskCount Number of evaluated tasks failed due to unavailable firing units
-local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskName, matrixStartTime)
+local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskName, matrixStartTime, passContext)
   local fireSupportTasks = {}
   local firingUnitStatusCounter = createFiringUnitStatusCounter()
-  local assignedFiringUnitNames = collectAssignedFiringUnitNames(saveData)
   local taskIndex = 0
   local unavailableFiringUnitTaskCount = 0
 
@@ -308,7 +332,7 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskName,
       taskIndex = taskIndex + 1
       local availableFiringUnits = selectAvailableFiringUnits(
         saveData,
-        assignedFiringUnitNames,
+        passContext,
         firingUnitStatusCounter,
         taskTemplate
       )
@@ -321,7 +345,7 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskName,
         task.startTime = buildTaskStartTime(matrixStartTime, matrixTemplate.strikeInterval, taskIndex)
         task.isFinished = false
         task.target.list = targets
-        markFiringUnitsAssigned(assignedFiringUnitNames, availableFiringUnits)
+        markFiringUnitsAssigned(passContext.assignedFiringUnitNames, availableFiringUnits)
         table.insert(fireSupportTasks, task)
       end
     end
@@ -377,15 +401,17 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param targetsByTaskName table<string, string[]> Map of FST name to evaluated target GUID arrays
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType)
+local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType, passContext)
   local matrixStartTime = GameApi.ScenEdit_CurrentTime()
   local matrixName = buildMatrixName(matrixTemplate, reconType, saveData)
   local fireSupportTasks, firingUnitStatusCounter, unavailableFiringUnitTaskCount = buildExecutableTasks(
     saveData,
     matrixTemplate,
     targetsByTaskName,
-    matrixStartTime
+    matrixStartTime,
+    passContext
   )
   local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
 
@@ -422,8 +448,9 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function processGroundOperation(config, saveData, contacts, batchedOp)
+local function processGroundOperation(config, saveData, contacts, batchedOp, passContext)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
@@ -449,7 +476,7 @@ local function processGroundOperation(config, saveData, contacts, batchedOp)
     }
   end
 
-  return createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType)
+  return createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskName, reconType, passContext)
 end
 
 -- ============================================================================
@@ -565,6 +592,16 @@ function FsemBuilder.execute(config, saveData, contacts)
   -- pending operations, so a starved operation can re-assign them in the same tick.
   retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
 
+  -- Must stay a local: both caches only hold still within one pass. Promoting them to
+  -- module scope would let them survive across ticks (the module table becomes a global
+  -- after bundling) and hand out units destroyed or committed since an earlier tick.
+  -- Seeded after retirement so units released by a retired matrix are assignable now.
+  ---@type SBJ__FsemPassContext
+  local passContext = {
+    firingUnitCache = {},
+    assignedFiringUnitNames = collectAssignedFiringUnitNames(saveData)
+  }
+
   for _, batchedOp in ipairs(groundBatchedOperations) do
     local operationBatch = batchedOp.operationBatch
     local operation = batchedOp.operation
@@ -577,7 +614,7 @@ function FsemBuilder.execute(config, saveData, contacts)
       if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
         outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
       else
-        outcome = processGroundOperation(config, saveData, contacts, batchedOp)
+        outcome = processGroundOperation(config, saveData, contacts, batchedOp, passContext)
       end
 
       local fields = LogFormat.merge({

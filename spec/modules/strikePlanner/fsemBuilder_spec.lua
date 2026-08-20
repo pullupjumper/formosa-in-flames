@@ -536,6 +536,83 @@ describe("FsemBuilder", function()
         assert.are.equal("FST-1", fsem.fireSupportTasks[1].name)
       end)
 
+      -- Pass-scoped cache: one CMO lookup per firing unit name within a single pass
+      it("should look up each firing unit at most once per pass across FSTs", function()
+        local reconEntry = makeReconEntry()
+        local operation = makeOperation({
+          fireSupportTasks = {
+            {
+              name = "FST-1",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            },
+            {
+              name = "FST-2",
+              missileSystem = "SRBM",
+              firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
+              target = { minTargetCount = 1, ammoPerTarget = 2 }
+            }
+          }
+        })
+        -- Battery-2 never becomes assigned, so without a cache it is re-queried by every FST.
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext(),
+            ["Battery-2"] = makeBatteryContext({
+              name = "Battery-2",
+              state = constants.MISSILE_SYSTEM_STATE.RELOAD
+            })
+          },
+          reconTriggeredOperationBatches = { reconEntry }
+        })
+
+        trackStub(stub(DynamicState, "filterOperationsByType").returns({
+          { operationBatch = reconEntry, operation = operation }
+        }))
+        local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+          return { guid = "U-" .. name, name = name }
+        end))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.are.equal(2, #getUnitStub.calls)
+      end)
+
+      -- Pass-scoped cache: assignment map is seeded once and shared across operations
+      it("should share the firing unit cache and assignment map across operations in one pass", function()
+        local reconEntry = makeReconEntry()
+        local firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        local firstOperation = makeOperation({ templateName = "TEST-OP/1", firingUnits = firingUnits })
+        local secondOperation = makeOperation({ templateName = "TEST-OP/2", firingUnits = firingUnits })
+        -- Battery-1 becomes assigned after the first operation; Battery-2 never does,
+        -- so only the shared cache keeps the second operation from re-querying it.
+        local saveData = makeSaveData({
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext(),
+            ["Battery-2"] = makeBatteryContext({
+              name = "Battery-2",
+              state = constants.MISSILE_SYSTEM_STATE.RELOAD
+            })
+          },
+          reconTriggeredOperationBatches = { reconEntry }
+        })
+
+        trackStub(stub(DynamicState, "filterOperationsByType").returns({
+          { operationBatch = reconEntry, operation = firstOperation },
+          { operationBatch = reconEntry, operation = secondOperation }
+        }))
+        local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+          return { guid = "U-" .. name, name = name }
+        end))
+        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
+
+        assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
+        -- Only the first operation gets Battery-1; the second sees it as already assigned.
+        assert.spy(markOperationExecutedStub).was.called(1)
+        assert.are.equal(2, #getUnitStub.calls)
+      end)
+
       -- Positive: strikeInterval applied to sequential FSTs
       it("should apply strikeInterval to sequential FST start times", function()
         local reconEntry = makeReconEntry()
