@@ -86,10 +86,10 @@ local function deployTaskFiringUnits(saveData, task)
 
     if unitMissing then
       table.remove(task.firingUnits, i)
-      table.insert(removedNames, 1, firingUnit.name or "unknown")
+      table.insert(removedNames, 1, firingUnit.name)
     elseif not inPosition then
       allInPosition = false
-      table.insert(notReadyNames, 1, firingUnit.name or "unknown")
+      table.insert(notReadyNames, 1, firingUnit.name)
     end
   end
 

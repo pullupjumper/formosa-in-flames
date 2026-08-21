@@ -273,7 +273,7 @@ describe("FsemBuilder", function()
       -- Firing Unit Validation
       -- ============================================================================
 
-      -- Negative: firing unit name is missing
+      -- Negative: nameless template entry resolves no context and is never assigned
       it("should not create FSEM when firing unit name is missing", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({ firingUnits = { {} } })

@@ -1145,6 +1145,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field contacts CMO__Contact[] Contact array
 
 ---Firing unit definition for fire support operations
+---Invariant: name is always present. FsemBuilder rejects an entry whose name does not
+---resolve to a runtime context, so downstream code indexes name without a nil guard.
 ---@class SBJ__FiringUnit: table
 ---@field name string Firing unit name
 ---@field weaponDBID number Firing unit weapon database ID

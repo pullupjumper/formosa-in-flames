@@ -7,9 +7,9 @@ local DynamicState = require("src.modules.strikePlanner.dynamicState")
 local constants = require("src.core.constants")
 
 local FsemBuilder = {}
+
 local FIRING_UNIT_STATUS = {
   AVAILABLE = "available",
-  MISSING_NAME = "missing_name",
   ASSIGNED = "assigned",
   UNIT_NOT_FOUND = "unit_not_found",
   CONTEXT_NOT_FOUND = "context_not_found",
@@ -17,25 +17,31 @@ local FIRING_UNIT_STATUS = {
   LOW_AMMO = "low_ammo"
 }
 
+-- Single source for the counter keys and the order they appear in a log row.
+local FIRING_UNIT_STATUS_ORDER = {
+  FIRING_UNIT_STATUS.AVAILABLE,
+  FIRING_UNIT_STATUS.ASSIGNED,
+  FIRING_UNIT_STATUS.UNIT_NOT_FOUND,
+  FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND,
+  FIRING_UNIT_STATUS.BAD_STATE,
+  FIRING_UNIT_STATUS.LOW_AMMO
+}
+
 local FIRING_UNIT_STATUS_LOG_FIELD = {
   [FIRING_UNIT_STATUS.AVAILABLE] = "firingAvailable",
-  [FIRING_UNIT_STATUS.MISSING_NAME] = "firingMissingName",
   [FIRING_UNIT_STATUS.ASSIGNED] = "firingAssigned",
   [FIRING_UNIT_STATUS.UNIT_NOT_FOUND] = "firingUnitNotFound",
   [FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND] = "firingContextNotFound",
   [FIRING_UNIT_STATUS.BAD_STATE] = "firingBadState",
-  [FIRING_UNIT_STATUS.LOW_AMMO] = "firingLowAmmo",
+  [FIRING_UNIT_STATUS.LOW_AMMO] = "firingLowAmmo"
 }
 
--- Failure reasons, written straight into reason=<token>. INSUFFICIENT_TARGETS
--- and NO_AVAILABLE_FIRING_UNITS also drive the retry decision in
--- FsemBuilder.execute, so a log line is always greppable back to its branch.
+-- Failure reasons written straight into reason=<token>. INSUFFICIENT_TARGETS and
+-- NO_AVAILABLE_FIRING_UNITS also drive the retry decision in FsemBuilder.execute.
 local PROCESS_REASON = {
-  MISSING_TEMPLATE = "missing_fsem_template",
   INSUFFICIENT_TARGETS = "insufficient_targets",
   NO_AVAILABLE_FIRING_UNITS = "no_available_firing_units",
   NO_VALID_TASKS = "no_valid_tasks",
-  INSERTION_FAILED = "insertion_failed",
   OBSERVATION_WINDOW_EXPIRED = "observation_window_expired"
 }
 
@@ -45,66 +51,54 @@ local RETRYABLE_REASON = {
   [PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS] = true
 }
 
--- Scope and action values shared by the info and error sinks of this module
 local LOG_SCOPE = "dynamicGroundOperations"
 local LOG_ACTION = "Process operations"
 
--- Stand-in counters for an outcome that never reached firing unit evaluation
+-- Stand-in counters for an outcome that never reached firing unit evaluation.
 local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
 -- ============================================================================
 -- Firing Unit Status
 -- ============================================================================
 
----Create a new status counter table initialized with zero counts for each firing unit status
----@return SBJ__FiringUnitStatusCounter # Status counter table for firing unit filtering
+---Create a firing unit status counter with every status zeroed
+---@return SBJ__FiringUnitStatusCounter # Zeroed status counter
 local function createFiringUnitStatusCounter()
-  return {
-    [FIRING_UNIT_STATUS.AVAILABLE] = 0,
-    [FIRING_UNIT_STATUS.MISSING_NAME] = 0,
-    [FIRING_UNIT_STATUS.ASSIGNED] = 0,
-    [FIRING_UNIT_STATUS.UNIT_NOT_FOUND] = 0,
-    [FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND] = 0,
-    [FIRING_UNIT_STATUS.BAD_STATE] = 0,
-    [FIRING_UNIT_STATUS.LOW_AMMO] = 0
-  }
+  local firingUnitStatusCounter = {}
+
+  for _, status in ipairs(FIRING_UNIT_STATUS_ORDER) do
+    firingUnitStatusCounter[status] = 0
+  end
+
+  return firingUnitStatusCounter
 end
 
----Increment the count for a specific firing unit status
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter table
----@param status string Firing unit status
-local function countFiringUnitStatus(firingUnitStatusCounter, status)
+---Increment the count for one firing unit status
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter; mutated
+---@param status string Firing unit status from FIRING_UNIT_STATUS
+local function incrementFiringUnitStatus(firingUnitStatusCounter, status)
   if firingUnitStatusCounter[status] ~= nil then
     firingUnitStatusCounter[status] = firingUnitStatusCounter[status] + 1
   end
 end
 
----Format status counter into log fields
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter table
+---Format a status counter into log fields, dropping zero counts
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter to format
 ---@return table<string, any> # Status log fields, firingUnits=none when nothing was counted
 local function formatFiringUnitStatusCounter(firingUnitStatusCounter)
-  local statusOrder = {
-    FIRING_UNIT_STATUS.AVAILABLE,
-    FIRING_UNIT_STATUS.MISSING_NAME,
-    FIRING_UNIT_STATUS.ASSIGNED,
-    FIRING_UNIT_STATUS.UNIT_NOT_FOUND,
-    FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND,
-    FIRING_UNIT_STATUS.BAD_STATE,
-    FIRING_UNIT_STATUS.LOW_AMMO
-  }
   local statusFields = {}
-  local hasCount = false
+  local hasAnyCount = false
 
-  for _, status in ipairs(statusOrder) do
+  for _, status in ipairs(FIRING_UNIT_STATUS_ORDER) do
     local count = firingUnitStatusCounter[status] or 0
     if count > 0 then
       statusFields[FIRING_UNIT_STATUS_LOG_FIELD[status]] = count
-      hasCount = true
+      hasAnyCount = true
     end
   end
 
-  if not hasCount then
-    return { firingUnits = "none" }
+  if not hasAnyCount then
+    return NO_FIRING_UNITS_FIELDS
   end
 
   return statusFields
@@ -114,10 +108,9 @@ end
 -- Firing Unit Availability
 -- ============================================================================
 
----Collect all currently assigned battery names from active FSEMs
----Scans all active FSEMs to identify batteries already assigned to prevent double allocation
----@param saveData SBJ__SaveData Persistent save data containing FSP (Fire Support Plan) information
----@return table<string, boolean> # Map of firing unit name to true (assigned status)
+---Collect firing unit names already committed to active FSEMs
+---@param saveData SBJ__SaveData Persistent save data containing the fire support plan
+---@return table<string, boolean> # Map of committed firing unit name to true
 local function collectAssignedFiringUnitNames(saveData)
   local assignedFiringUnitNames = {}
 
@@ -126,9 +119,7 @@ local function collectAssignedFiringUnitNames(saveData)
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
           for _, firingUnit in ipairs(task.firingUnits) do
-            if firingUnit.name then
-              assignedFiringUnitNames[firingUnit.name] = true
-            end
+            assignedFiringUnitNames[firingUnit.name] = true
           end
         end
       end
@@ -144,14 +135,14 @@ end
 ---@param firingUnitName string Firing unit name used as context key
 ---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
 local function getFiringUnitContext(saveData, missileSystem, firingUnitName)
-  local missileSystemLower = string.lower(missileSystem)
-  local missileSystemCtx = saveData.c.ground[missileSystemLower]
+  local missileSystemKey = string.lower(missileSystem)
+  local missileSystemCtx = saveData.c.ground[missileSystemKey]
   return missileSystemCtx and missileSystemCtx.firingUnits and missileSystemCtx.firingUnits[firingUnitName]
 end
 
 ---Resolve a firing unit through the pass-scoped cache
----GameApi.ScenEdit_GetUnit costs two CMO round-trips per name lookup and logs a full
----stack trace when the unit is gone, so misses are cached as false to pay that once.
+---ScenEdit_GetUnit costs two CMO round-trips per name and logs a full stack trace when
+---the unit is gone, so a miss is cached as false to pay that once per pass.
 ---@param firingUnitCache table<string, CMO__Unit|false> Pass-scoped lookup cache; mutated
 ---@param firingUnitName string Firing unit name to resolve
 ---@return CMO__Unit|nil # Resolved unit, or nil when it no longer exists
@@ -166,12 +157,11 @@ local function getCachedFiringUnit(firingUnitCache, firingUnitName)
   return actualUnit or nil
 end
 
----Validate individual firing unit status and readiness
----Checks if firing unit exists, is in HIDE state, and has sufficient ammunition
----@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
+---Validate one firing unit against assignment, existence, state and ammo
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit runtime context
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return string # Firing unit status code from FIRING_UNIT_STATUS
-local function validateFiringUnitStatus(passContext, firingUnitCtx)
+local function validateFiringUnitStatus(firingUnitCtx, passContext)
   local firingUnitName = firingUnitCtx.name
 
   if passContext.assignedFiringUnitNames[firingUnitName] then
@@ -183,45 +173,37 @@ local function validateFiringUnitStatus(passContext, firingUnitCtx)
     return FIRING_UNIT_STATUS.UNIT_NOT_FOUND
   end
 
-  local isInGoodState = firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE
-  if not isInGoodState then
+  if firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
     return FIRING_UNIT_STATUS.BAD_STATE
   end
 
-  local isLowAmmo = MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
-  if isLowAmmo then
+  if MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
     return FIRING_UNIT_STATUS.LOW_AMMO
   end
 
   return FIRING_UNIT_STATUS.AVAILABLE
 end
 
----Select available firing units specified in template
----Filters battery list to only include unassigned batteries with valid status and ammunition
+---Select the firing units of a task template that are free and ready to fire
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
----@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Counter for firing unit validation outcomes
 ---@param taskTemplate SBJ__FireSupportTaskTemplate FST template definition
----@return SBJ__FiringUnit[] # Array of available batteries ready for assignment
-local function selectAvailableFiringUnits(saveData, passContext, firingUnitStatusCounter, taskTemplate)
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Validation outcome counter; mutated
+---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
+---@return SBJ__FiringUnit[] # Firing units ready for assignment
+local function selectAvailableFiringUnits(saveData, taskTemplate, firingUnitStatusCounter, passContext)
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
-    local status
+    -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil context and
+    -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
+    local firingUnitCtx = getFiringUnitContext(saveData, taskTemplate.missileSystem, firingUnit.name)
+    local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
-    if not firingUnit.name then
-      status = FIRING_UNIT_STATUS.MISSING_NAME
-    else
-      local firingUnitCtx = getFiringUnitContext(saveData, taskTemplate.missileSystem, firingUnit.name)
-
-      if not firingUnitCtx then
-        status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
-      else
-        status = validateFiringUnitStatus(passContext, firingUnitCtx)
-      end
+    if firingUnitCtx then
+      status = validateFiringUnitStatus(firingUnitCtx, passContext)
     end
 
-    countFiringUnitStatus(firingUnitStatusCounter, status)
+    incrementFiringUnitStatus(firingUnitStatusCounter, status)
     if status == FIRING_UNIT_STATUS.AVAILABLE then
       table.insert(availableFiringUnits, firingUnit)
     end
@@ -231,35 +213,33 @@ local function selectAvailableFiringUnits(saveData, passContext, firingUnitStatu
 end
 
 -- ============================================================================
--- FSEM Construction
+-- Task Construction
 -- ============================================================================
 
----Build UTC start time string for one FST slot
----@param matrixStartTime integer Base matrix start time in unix timestamp
+---Build the UTC start time string for one FST firing slot
+---@param matrixStartTime integer Matrix base start time in unix timestamp
 ---@param strikeInterval integer Strike interval in seconds
----@param taskIndex integer Sequential task index within matrix
+---@param slotIndex integer Sequential firing slot within the matrix
 ---@return string # UTC datetime string for task start time
-local function buildTaskStartTime(matrixStartTime, strikeInterval, taskIndex)
-  return os.date(constants.DATE_FORMAT, matrixStartTime + (taskIndex * strikeInterval)) --[[@as string]]
+local function buildTaskStartTime(matrixStartTime, strikeInterval, slotIndex)
+  return os.date(constants.DATE_FORMAT, matrixStartTime + (slotIndex * strikeInterval)) --[[@as string]]
 end
 
----Mark newly assigned firing units to prevent duplicate allocation in current build cycle
----@param assignedFiringUnitNames table<string, boolean> Shared assigned unit name map
----@param availableFiringUnits SBJ__FiringUnit[] Available firing units selected for current task
+---Mark newly assigned firing units so a later task in the same pass cannot reuse them
+---@param assignedFiringUnitNames table<string, boolean> Shared assigned unit name map; mutated
+---@param availableFiringUnits SBJ__FiringUnit[] Firing units assigned to the current task
 local function markFiringUnitsAssigned(assignedFiringUnitNames, availableFiringUnits)
   for _, firingUnit in ipairs(availableFiringUnits) do
-    if firingUnit.name then
-      assignedFiringUnitNames[firingUnit.name] = true
-    end
+    assignedFiringUnitNames[firingUnit.name] = true
   end
 end
 
----Evaluate targets for all FSTs in a matrix template and count valid tasks
+---Evaluate targets for every FST in a matrix template and count the qualified ones
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate FSEM template to evaluate
----@return table<integer, string[]> targetsByTaskIndex Evaluated targets grouped by FST name
+---@return table<integer, string[]> targetsByTaskIndex Evaluated targets keyed by FST index
 ---@return number targetQualifiedTaskCount Number of task templates with enough targets
 local function evaluateTargetsFromTemplate(config, saveData, contacts, matrixTemplate)
   local targetsByTaskIndex = {}
@@ -285,39 +265,39 @@ local function evaluateTargetsFromTemplate(config, saveData, contacts, matrixTem
   return targetsByTaskIndex, targetQualifiedTaskCount
 end
 
----Build executable FSTs from evaluated targets with firing unit validation
----@param saveData SBJ__SaveData Persistent save data for FSP insertion
+---Build executable FSTs from evaluated targets and available firing units
+---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
----@param targetsByTaskIndex table<integer, string[]> Map of task index to evaluated target GUID arrays
+---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param matrixStartTime integer Matrix base start time in unix timestamp
 ---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
----@return SBJ__FiringUnitStatusCounter firingUnitStatusCounter Firing unit status counter
----@return number unavailableFiringUnitTaskCount Number of evaluated tasks failed due to unavailable firing units
+---@return SBJ__FiringUnitStatusCounter firingUnitStatusCounter Firing unit validation counts
+---@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
 local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex, matrixStartTime, passContext)
   local fireSupportTasks = {}
   local firingUnitStatusCounter = createFiringUnitStatusCounter()
-  local taskIndex = 0
-  local unavailableFiringUnitTaskCount = 0
+  local firingUnitBlockedTaskCount = 0
+  local slotIndex = 0
 
-  for index, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
-    local targets = targetsByTaskIndex[index]
+  for taskIndex, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
+    local targets = targetsByTaskIndex[taskIndex]
 
     if targets then
-      taskIndex = taskIndex + 1
+      slotIndex = slotIndex + 1
       local availableFiringUnits = selectAvailableFiringUnits(
         saveData,
-        passContext,
+        taskTemplate,
         firingUnitStatusCounter,
-        taskTemplate
+        passContext
       )
 
       if #availableFiringUnits == 0 then
-        unavailableFiringUnitTaskCount = unavailableFiringUnitTaskCount + 1
+        firingUnitBlockedTaskCount = firingUnitBlockedTaskCount + 1
       else
         local task = Utils.deepCopy(taskTemplate) --[[@as SBJ__FireSupportTask]]
         task.firingUnits = availableFiringUnits
-        task.startTime = buildTaskStartTime(matrixStartTime, matrixTemplate.strikeInterval, taskIndex)
+        task.startTime = buildTaskStartTime(matrixStartTime, matrixTemplate.strikeInterval, slotIndex)
         task.isFinished = false
         task.target.list = targets
         markFiringUnitsAssigned(passContext.assignedFiringUnitNames, availableFiringUnits)
@@ -326,47 +306,45 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex
     end
   end
 
-  return fireSupportTasks, firingUnitStatusCounter, unavailableFiringUnitTaskCount
+  return fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount
 end
 
 -- ============================================================================
--- Recon Schedule Orchestration
+-- Operation Processing
 -- ============================================================================
 
----Create actual FSEM from template and evaluation results
----Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
----@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST fields
+---Assemble the FSEM structure that gets written into the fire support plan
+---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param matrixName string Generated unique matrix name
 ---@param fireSupportTasks SBJ__FireSupportTask[] Built task list for this matrix
----@param matrixStartTime integer Matrix creation unix timestamp used for stale retirement
+---@param createdAt integer Creation unix timestamp used for stale retirement
 ---@return SBJ__FireSupportExecutionMatrix # Matrix structure ready for insertion
-local function buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, matrixStartTime)
+local function buildMatrix(matrixTemplate, matrixName, fireSupportTasks, createdAt)
   ---@type SBJ__FireSupportExecutionMatrix
-  local newMatrix = {
+  local matrix = {
     name = matrixName,
     isActivated = true,
     isFinished = false,
     isFirstWave = matrixTemplate.isFirstWave,
     allFiringUnitsInPosition = false,
     fireSupportTasks = fireSupportTasks,
-    createdAt = matrixStartTime,
+    createdAt = createdAt,
     -- Ground dynamic FSP uses TOT-oriented execution; interval is intentionally disabled after generation.
     strikeInterval = 0
   }
 
-  return newMatrix
+  return matrix
 end
 
----Create actual FSEM from template and evaluation results
----Constructs executable FSEM with FSTs, validates firing units, and inserts into FSP
+---Build an FSEM from the template and insert it into the fire support plan
 ---@param saveData SBJ__SaveData Persistent save data for FSP insertion
----@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
----@param targetsByTaskIndex table<integer, string[]> Map of task index to evaluated target GUID arrays
+---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
+---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
----@param currentTime integer Current game time in seconds
+---@param currentTime integer Current game time in unix timestamp
 ---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function createAndInsertFSEMFromTemplate(
+local function createAndInsertMatrixFromTemplate(
     saveData,
     matrixTemplate,
     targetsByTaskIndex,
@@ -374,7 +352,7 @@ local function createAndInsertFSEMFromTemplate(
     currentTime,
     passContext
 )
-  local fireSupportTasks, firingUnitStatusCounter, unavailableFiringUnitTaskCount = buildExecutableTasks(
+  local fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount = buildExecutableTasks(
     saveData,
     matrixTemplate,
     targetsByTaskIndex,
@@ -384,7 +362,7 @@ local function createAndInsertFSEMFromTemplate(
   local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
 
   if #fireSupportTasks == 0 then
-    local isRetryable = unavailableFiringUnitTaskCount > 0
+    local isRetryable = firingUnitBlockedTaskCount > 0
     return {
       success = false,
       tag = isRetryable and "SKIP" or "FAIL",
@@ -394,19 +372,18 @@ local function createAndInsertFSEMFromTemplate(
   end
 
   local matrixName = DynamicState.generateUniqueGroundOperationName(matrixTemplate.name, reconType, saveData)
-  local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, currentTime)
-  saveData.c.ground.fireSupportPlan[newMatrix.name] = newMatrix
-  DynamicState.registerGeneratedOperation("ground", newMatrix.name, saveData)
+  local matrix = buildMatrix(matrixTemplate, matrixName, fireSupportTasks, currentTime)
+  saveData.c.ground.fireSupportPlan[matrix.name] = matrix
+  DynamicState.registerGeneratedOperation("ground", matrix.name, saveData)
   return { success = true, tag = "OK", fields = statusFields }
 end
 
----Process operation batch entry, get FSEM template and execute evaluation
----Processes all FSTs in template, evaluates targets, and creates FSEM if valid targets exist
+---Evaluate one ground operation and insert its FSEM when targets and firing units allow
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
----@param currentTime integer Current game time in seconds
+---@param currentTime integer Current game time in unix timestamp
 ---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
 local function processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passContext)
@@ -431,7 +408,7 @@ local function processGroundOperation(config, saveData, contacts, batchedOp, cur
   end
 
   local matrixTemplate = Utils.deepCopy(operation.template)
-  return createAndInsertFSEMFromTemplate(
+  return createAndInsertMatrixFromTemplate(
     saveData,
     matrixTemplate,
     targetsByTaskIndex,
@@ -445,10 +422,9 @@ end
 -- Stale Matrix Retirement
 -- ============================================================================
 
--- States eligible for the stow countdown when a matrix is retired: units that
--- were deployed toward (or reached) a firing point but never fired. HIDE units
--- are already home and immediately re-assignable; RELOAD units are inside the
--- reload pipeline, which already ends with a move back to the hide area.
+-- States eligible for the stow countdown when a matrix is retired: units that were
+-- deployed toward (or reached) a firing point but never fired. HIDE units are already
+-- home, and the RELOAD pipeline already ends with a move back to the hide area.
 local STOW_ON_RETIRE_STATE = {
   [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
   [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
@@ -465,8 +441,8 @@ local function isMatrixStale(matrix, currentTime, staleAfterSec)
 end
 
 ---Start the stow countdown for deployed-but-unfired units of a retired task
----SAM tasks are excluded by convention and existing countdowns are preserved,
----so the missileSystem cycle sends the unit back to its hide area unchanged.
+---SAM tasks are excluded by convention and an existing countdown is preserved, so the
+---missileSystem cycle sends the unit back to its hide area unchanged.
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param task SBJ__FireSupportTask Unfinished task from a retired matrix
 ---@param currentTime integer Current unix timestamp
@@ -476,19 +452,17 @@ local function stowRetiredTaskFiringUnits(saveData, task, currentTime)
   end
 
   for _, firingUnit in ipairs(task.firingUnits) do
-    if firingUnit.name then
-      local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
+    local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
 
-      if firingUnitCtx and not firingUnitCtx.stowStartTime and STOW_ON_RETIRE_STATE[firingUnitCtx.state] then
-        firingUnitCtx.stowStartTime = currentTime
-      end
+    if firingUnitCtx and not firingUnitCtx.stowStartTime and STOW_ON_RETIRE_STATE[firingUnitCtx.state] then
+      firingUnitCtx.stowStartTime = currentTime
     end
   end
 end
 
 ---Retire active matrices that exceeded the stale timeout
----Marking them finished releases their firing units to the assignable pool and
----stops FireSupportPlan.strike from commanding them, avoiding double command.
+---Marking them finished releases their firing units to the assignable pool and stops
+---FireSupportPlan.strike from commanding them, avoiding double command.
 ---@param saveData SBJ__SaveData Persistent save data with FSP structure
 ---@param currentTime integer Current unix timestamp
 ---@param staleAfterSec number Stale timeout in seconds
@@ -564,7 +538,7 @@ function FsemBuilder.execute(config, saveData, contacts)
     local operation = batchedOp.operation
     local windowState = DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)
 
-    -- PRE_TRIGGER: silent skip, identical to legacy behavior before observation window.
+    -- PRE_TRIGGER: silent skip, the operation is simply not due yet.
     if windowState ~= DynamicState.OBSERVATION_STATE.PRE_TRIGGER then
       ---@type SBJ__OperationProcessResult
       local outcome
@@ -575,7 +549,7 @@ function FsemBuilder.execute(config, saveData, contacts)
       end
 
       local fields = LogFormat.merge({
-        operation = (operation.template and operation.template.name) or "unknown",
+        operation = operation.template.name,
         batch = operationBatch.type .. "@" .. operationBatch.time
       }, outcome.fields)
       fields.reason = outcome.reason
