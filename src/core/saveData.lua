@@ -342,7 +342,6 @@ saveData.u.sigint.transmissions = {}
 
 saveData.c.dynamicOperations = {}
 saveData.c.dynamicOperations.enabled = true
-saveData.c.dynamicOperations.lastEvaluationTime = nil
 saveData.c.dynamicOperations.generatedOperations = {
   air = {},   -- Track generated air operations
   ground = {} -- Track generated ground operations

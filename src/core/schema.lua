@@ -1309,7 +1309,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Dynamic operations context managing intelligence-driven adaptive strike planning
 ---@class SBJ__DynamicOperationsContext: table
 ---@field enabled boolean Whether dynamic operations system is enabled
----@field lastEvaluationTime? number Last evaluation timestamp (Unix time)
 ---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
 ---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
 
@@ -1621,3 +1620,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
 ---@field doctrine {id: string, weaponsFree: boolean}[] SAM system deployment configurations
+
+-- ============================================================================
+-- Ground Operations (Fire Support) - FSEM Builder
+-- ============================================================================
+-- Fire support execution matrix types for fsemBuilder module
+
+---Firing unit status counter tracking validation outcomes
+---@alias SBJ__FiringUnitStatusCounter table<string, number>
+
+---Pass-scoped caches for firing unit lookups within one execution pass
+---Caches are local to prevent cross-tick stale data while building FSEMs
+---@class SBJ__FsemPassContext
+---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
+---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built

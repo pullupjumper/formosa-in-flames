@@ -52,12 +52,6 @@ local LOG_ACTION = "Process operations"
 -- Stand-in counters for an outcome that never reached firing unit evaluation
 local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
----@alias SBJ__FiringUnitStatusCounter table<string, number>
-
----@class SBJ__FsemPassContext
----@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
----@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built
-
 -- ============================================================================
 -- Firing Unit Status
 -- ============================================================================
@@ -369,22 +363,28 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure and FST configurations
 ---@param targetsByTaskIndex table<integer, string[]> Map of task index to evaluated target GUID arrays
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
+---@param currentTime integer Current game time in seconds
 ---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskIndex, reconType, passContext)
-  local matrixStartTime = GameApi.ScenEdit_CurrentTime()
+local function createAndInsertFSEMFromTemplate(
+    saveData,
+    matrixTemplate,
+    targetsByTaskIndex,
+    reconType,
+    currentTime,
+    passContext
+)
   local fireSupportTasks, firingUnitStatusCounter, unavailableFiringUnitTaskCount = buildExecutableTasks(
     saveData,
     matrixTemplate,
     targetsByTaskIndex,
-    matrixStartTime,
+    currentTime,
     passContext
   )
   local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
 
   if #fireSupportTasks == 0 then
     local isRetryable = unavailableFiringUnitTaskCount > 0
-
     return {
       success = false,
       tag = isRetryable and "SKIP" or "FAIL",
@@ -394,7 +394,7 @@ local function createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targets
   end
 
   local matrixName = DynamicState.generateUniqueGroundOperationName(matrixTemplate.name, reconType, saveData)
-  local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, matrixStartTime)
+  local newMatrix = buildFireSupportMatrix(matrixTemplate, matrixName, fireSupportTasks, currentTime)
   saveData.c.ground.fireSupportPlan[newMatrix.name] = newMatrix
   DynamicState.registerGeneratedOperation("ground", newMatrix.name, saveData)
   return { success = true, tag = "OK", fields = statusFields }
@@ -406,15 +406,12 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
+---@param currentTime integer Current game time in seconds
 ---@param passContext SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function processGroundOperation(config, saveData, contacts, batchedOp, passContext)
+local function processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passContext)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
-
-  -- if not operation.template or not operation.template.fireSupportTasks then
-  --   return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
-  -- end
 
   local targetsByTaskIndex, targetQualifiedTaskCount = evaluateTargetsFromTemplate(
     config,
@@ -434,7 +431,14 @@ local function processGroundOperation(config, saveData, contacts, batchedOp, pas
   end
 
   local matrixTemplate = Utils.deepCopy(operation.template)
-  return createAndInsertFSEMFromTemplate(saveData, matrixTemplate, targetsByTaskIndex, reconType, passContext)
+  return createAndInsertFSEMFromTemplate(
+    saveData,
+    matrixTemplate,
+    targetsByTaskIndex,
+    reconType,
+    currentTime,
+    passContext
+  )
 end
 
 -- ============================================================================
@@ -453,7 +457,7 @@ local STOW_ON_RETIRE_STATE = {
 ---Check whether an active matrix has exceeded the stale timeout
 ---Matrices without createdAt (legacy saves) never go stale.
 ---@param matrix SBJ__FireSupportExecutionMatrix Matrix to check
----@param currentTime number Current unix timestamp
+---@param currentTime integer Current unix timestamp
 ---@param staleAfterSec number Stale timeout in seconds
 ---@return boolean # True when the matrix age exceeds the timeout
 local function isMatrixStale(matrix, currentTime, staleAfterSec)
@@ -465,7 +469,7 @@ end
 ---so the missileSystem cycle sends the unit back to its hide area unchanged.
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param task SBJ__FireSupportTask Unfinished task from a retired matrix
----@param currentTime number Current unix timestamp
+---@param currentTime integer Current unix timestamp
 local function stowRetiredTaskFiringUnits(saveData, task, currentTime)
   if not task.missileSystem or task.missileSystem == "SAM" or not task.firingUnits then
     return
@@ -486,7 +490,7 @@ end
 ---Marking them finished releases their firing units to the assignable pool and
 ---stops FireSupportPlan.strike from commanding them, avoiding double command.
 ---@param saveData SBJ__SaveData Persistent save data with FSP structure
----@param currentTime number Current unix timestamp
+---@param currentTime integer Current unix timestamp
 ---@param staleAfterSec number Stale timeout in seconds
 ---@param opReport SBJ__LogReport Report collector receiving one WARN row per retired matrix
 local function retireStaleMatrices(saveData, currentTime, staleAfterSec, opReport)
@@ -525,21 +529,21 @@ function FsemBuilder.execute(config, saveData, contacts)
     return false
   end
 
-  -- In this scenario runtime, ScenEdit_CurrentTime is guaranteed to return a valid unix timestamp.
-  local currentTime = GameApi.ScenEdit_CurrentTime()
-  local windowSec = config.c.recon.observationWindowSec
-  local hasExecutedAny = false
+  local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
+  if #reconTriggeredOperationBatches == 0 then
+    return false
+  end
 
-  local groundBatchedOperations = DynamicState.filterOperationsByType(
-    saveData.c.dynamicOperations.reconTriggeredOperationBatches,
-    "ground"
-  )
-
+  local groundBatchedOperations = DynamicState.filterOperationsByType(reconTriggeredOperationBatches, "ground")
   if #groundBatchedOperations == 0 then
     return false
   end
 
+  -- In this scenario runtime, ScenEdit_CurrentTime is guaranteed to return a valid unix timestamp.
+  local currentTime = GameApi.ScenEdit_CurrentTime()
+  local windowSec = config.c.recon.observationWindowSec
   local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
+  local hasExecutedAny = false
 
   -- Release firing units held by stale matrices before evaluating this pass's
   -- pending operations, so a starved operation can re-assign them in the same tick.
@@ -567,7 +571,7 @@ function FsemBuilder.execute(config, saveData, contacts)
       if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
         outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
       else
-        outcome = processGroundOperation(config, saveData, contacts, batchedOp, passContext)
+        outcome = processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passContext)
       end
 
       local fields = LogFormat.merge({

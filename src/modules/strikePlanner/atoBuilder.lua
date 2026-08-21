@@ -460,16 +460,6 @@ local function processAirOperation(config, saveData, contacts, batchedOp, freeAi
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
-  -- packages is required: buildExecutablePackages and evaluateTargetsFromTemplate
-  -- both iterate it unconditionally. Mirrors the FSEM-side guard in fsemBuilder.
-  -- if not operation.template or not operation.template.packages then
-  --   return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
-  -- end
-
-  -- if not saveData.c.air.airTaskingOrder then
-  --   return { success = false, tag = "FAIL", reason = PROCESS_REASON.INSERTION_FAILED }
-  -- end
-
   local targetsByPackageIndex = evaluateTargetsFromTemplate(
     config,
     saveData,
@@ -509,17 +499,10 @@ end
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
-function AtoBuilder.process(config, saveData, contacts)
+function AtoBuilder.execute(config, saveData, contacts)
   if not saveData.c.dynamicOperations.enabled then
     return false
   end
-
-  local currentTime = GameApi.ScenEdit_CurrentTime()
-  saveData.c.dynamicOperations.lastEvaluationTime = currentTime
-
-  -- if not currentTime then
-  --   return false
-  -- end
 
   local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
   if #reconTriggeredOperationBatches == 0 then
@@ -531,6 +514,7 @@ function AtoBuilder.process(config, saveData, contacts)
     return false
   end
 
+  local currentTime = GameApi.ScenEdit_CurrentTime()
   local windowSec = config.c.recon.observationWindowSec
   local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
   local timingReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, TIMING_LOG_SCOPE, TIMING_LOG_ACTION)

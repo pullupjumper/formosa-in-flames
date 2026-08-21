@@ -66,7 +66,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 function StrikePlanner.processDynamicAirOperations(config, saveData, contacts)
-  AtoBuilder.process(config, saveData, contacts)
+  AtoBuilder.execute(config, saveData, contacts)
 end
 
 ---Process active fire support plans, including deployment and strikes

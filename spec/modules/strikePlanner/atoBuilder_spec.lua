@@ -254,24 +254,6 @@ describe("AtoBuilder", function()
   -- Positive: Configuration and Basic Flow
   -- ============================================================================
 
-  -- Positive: lastEvaluationTime updated
-  it("should update lastEvaluationTime in saveData", function()
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = {}
-        }
-      }
-    }
-
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
-
-    AtoBuilder.process(makeConfig(), saveData, {})
-
-    assert.are.equal(5000, saveData.c.dynamicOperations.lastEvaluationTime)
-  end)
-
   -- Positive: successful ATO wave insertion with fixed targets
   it("should create and insert ATO wave for fixed target package", function()
     local reconEntry = makeReconEntry()
@@ -295,7 +277,7 @@ describe("AtoBuilder", function()
     local registerGeneratedOperationStub = trackStub(stub(DynamicState, "registerGeneratedOperation"))
     local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(registerGeneratedOperationStub).was.called(1)
@@ -326,7 +308,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    AtoBuilder.process(makeConfig(), saveData, {})
+    AtoBuilder.execute(makeConfig(), saveData, {})
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
 
@@ -381,7 +363,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3" } })
     stubDynamicStateSuccess("DYNAMIC/AIRCRAFT/ANTISHIP/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/AIRCRAFT/ANTISHIP/1/1"])
@@ -428,7 +410,7 @@ describe("AtoBuilder", function()
     })
     stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -474,7 +456,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-2"] = { "AC-1", "AC-2" } })
     stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"]
@@ -515,7 +497,7 @@ describe("AtoBuilder", function()
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
     assert.is_nil(saveData.c.air.airTaskingOrder["STRIKE/TANKER/INVALID-COUNT"])
@@ -549,7 +531,7 @@ describe("AtoBuilder", function()
     stubSingleOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -573,7 +555,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     local markOperationExecutedStub = stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.stub(markOperationExecutedStub).was.called(1)
@@ -590,7 +572,7 @@ describe("AtoBuilder", function()
         dynamicOperations = { enabled = false }
       }
     }
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
   end)
 
   -- Negative: reconTriggeredOperationBatches empty
@@ -602,7 +584,7 @@ describe("AtoBuilder", function()
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
   end)
 
   -- Negative: no air operations pending
@@ -618,7 +600,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     local filterOperationsByTypeStub = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
 
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
     assert.stub(filterOperationsByTypeStub).was.called(1)
     assert.are.equal("air", filterOperationsByTypeStub.calls[1].vals[2])
   end)
@@ -646,7 +628,7 @@ describe("AtoBuilder", function()
     stubSingleOperation(reconEntry, operation)
     local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
     assert.stub(markOperationExecutedStub).was_not.called()
     -- Pre-trigger is a silent skip: the operation stays queued for a later tick
     assert.are.equal(1, #reconEntry.operations)
@@ -677,7 +659,7 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- No valid packages => no ATO wave inserted
     assert.is_false(result)
@@ -704,7 +686,7 @@ describe("AtoBuilder", function()
     -- Base has only 1 aircraft; package requires 4 (below the half-strength threshold of 2)
     stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -729,7 +711,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     assert.are.equal(1, #saveData.c.air.airTaskingOrder["DYNAMIC/SATELLITE/STRIKE/1/1"].packages)
@@ -749,7 +731,7 @@ describe("AtoBuilder", function()
     -- Only 2 targets, minTargetCount = 3
     stubTargets({ "TGT-1", "TGT-2" })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -787,7 +769,7 @@ describe("AtoBuilder", function()
     -- Base has 4 free, 3 reserved, needs 4 => 4-3=1 < the half-strength threshold of 2
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- 4 available - 3 assigned = 1, below half-strength threshold (2) => fail
     assert.is_false(result)
@@ -828,7 +810,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
     stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- Launched waves not counted: 4 available - 0 assigned >= 3 required => pass
     assert.is_true(result)
@@ -854,7 +836,7 @@ describe("AtoBuilder", function()
       return nil
     end)
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- Only 1 available (AC-1), requires 4 => 1 < half-strength threshold (2) => fail
     assert.is_false(result)
@@ -883,7 +865,7 @@ describe("AtoBuilder", function()
       embarkedUnits = nil
     }))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -903,7 +885,7 @@ describe("AtoBuilder", function()
     -- Base not found
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
   end)
@@ -918,7 +900,7 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- No valid packages (empty) => no wave inserted
     assert.is_false(result)
@@ -941,7 +923,7 @@ describe("AtoBuilder", function()
     stubClock(1000)
     stubSingleOperation(reconEntry, operation)
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- Fixed path with no objs => empty targets => insufficient
     assert.is_false(result)
@@ -968,7 +950,7 @@ describe("AtoBuilder", function()
     stubClock(2000)
     stubSingleOperation(reconEntry, operation)
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- Unknown filter => no targets found => package invalid => false
     assert.is_false(result)
@@ -1001,7 +983,7 @@ describe("AtoBuilder", function()
     })
     stubDynamicStateSuccess("DYNAMIC/FALLBACK/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/1"]
@@ -1033,7 +1015,7 @@ describe("AtoBuilder", function()
       ["BASE-3"] = { "AC-3" }
     })
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
     -- The rejected package is a detail row, so the rollup counts only the operation
@@ -1073,7 +1055,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/FALLBACK/3")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/3"]
@@ -1113,7 +1095,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/TRANSACTION/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TRANSACTION/1"]
@@ -1150,7 +1132,7 @@ describe("AtoBuilder", function()
     })
     stubDynamicStateSuccess("DYNAMIC/FALLBACK/4")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/4"]
@@ -1190,7 +1172,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/FALLBACK/TANKER")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/TANKER"]
@@ -1228,7 +1210,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/FALLBACK/JAMMER")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/FALLBACK/JAMMER"]
@@ -1258,7 +1240,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     stubDynamicStateSuccess("DYNAMIC/PARTIAL/1")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/1"]
@@ -1287,7 +1269,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
-    assert.is_false(AtoBuilder.process(config, saveData, {}))
+    assert.is_false(AtoBuilder.execute(config, saveData, {}))
     assert.stub(generateUniqueAirOperationNameStub).was_not.called()
   end)
 
@@ -1310,7 +1292,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1" } })
     stubDynamicStateSuccess("DYNAMIC/PARTIAL/5")
 
-    assert.is_true(AtoBuilder.process(config, saveData, {}))
+    assert.is_true(AtoBuilder.execute(config, saveData, {}))
     assert.are.equal("BASE-1", saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/5"].packages[1].striker.baseGUID)
   end)
 
@@ -1341,7 +1323,7 @@ describe("AtoBuilder", function()
     })
     stubDynamicStateSuccess("DYNAMIC/TEMPLATE/1")
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/TEMPLATE/1"]
     assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
@@ -1367,7 +1349,7 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     local deepCopyStub = trackStub(stub(Utils, "deepCopy").invokes(function(value) return value end))
 
-    assert.is_false(AtoBuilder.process(config, saveData, {}))
+    assert.is_false(AtoBuilder.execute(config, saveData, {}))
 
     -- The wave template copy sits behind the target gate; nothing else on this path
     -- copies, so any call at all means it moved back in front of it
@@ -1403,7 +1385,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
     stubDynamicStateSuccess("DYNAMIC/TIMING/1")
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     assert.is_true(hasLogCall(TIMING_LOG_SCOPE, "role=striker"))
     -- PackageTiming never schedules reconUAV, so a row for it could only read unknown
@@ -1428,7 +1410,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1" } })
     local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_false(result)
     assert.stub(generateUniqueAirOperationNameStub).was_not.called()
@@ -1463,7 +1445,7 @@ describe("AtoBuilder", function()
     })
     stubDynamicStateSuccess("DYNAMIC/PARTIAL/3")
 
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
+    local result = AtoBuilder.execute(makeConfig(), saveData, {})
 
     assert.is_true(result)
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/PARTIAL/3"]
@@ -1504,7 +1486,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/AIRFRAME/1")
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/AIRFRAME/1"]
     assert.is_table(wave)
@@ -1550,7 +1532,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/AIRFRAME/2")
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     local wave = saveData.c.air.airTaskingOrder["DYNAMIC/AIRFRAME/2"]
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
@@ -1596,7 +1578,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
     stubDynamicStateSuccess("DYNAMIC/CACHE/1")
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     assert.are.equal(1, countBaseReads(getUnitStub, "BASE-1"))
   end)
@@ -1618,8 +1600,8 @@ describe("AtoBuilder", function()
     local getUnitStub = stubBases({ ["BASE-1"] = { "AC-1" } })
     trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    AtoBuilder.process(makeConfig(), saveData, {})
-    AtoBuilder.process(makeConfig(), saveData, {})
+    AtoBuilder.execute(makeConfig(), saveData, {})
+    AtoBuilder.execute(makeConfig(), saveData, {})
 
     -- A cache that outlived the pass would still read 1; aircraft destroyed between
     -- ticks would then never be noticed.
@@ -1647,7 +1629,7 @@ describe("AtoBuilder", function()
     stubBases({ ["BASE-1"] = { "AC-1" } })
     local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
 
     assert.stub(markOperationExecutedStub).was_not.called()
     assert.are.equal(1, #reconEntry.operations)
@@ -1677,14 +1659,14 @@ describe("AtoBuilder", function()
     local markOperationExecutedStub = stubDynamicStateSuccess("DYNAMIC/WINDOW/2")
 
     -- Tick 1: not enough aircraft, operation stays queued
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.execute(makeConfig(), saveData, {}))
     assert.stub(markOperationExecutedStub).was_not.called()
 
     -- Tick 2: the rest of the squadron is back on the ramp
     getUnitStub:revert()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    assert.is_true(AtoBuilder.process(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.execute(makeConfig(), saveData, {}))
     assert.stub(markOperationExecutedStub).was.called(1)
     assert.is_table(saveData.c.air.airTaskingOrder["DYNAMIC/WINDOW/2"])
   end)
@@ -1704,7 +1686,7 @@ describe("AtoBuilder", function()
     local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
     local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
-    assert.is_false(AtoBuilder.process(config, saveData, {}))
+    assert.is_false(AtoBuilder.execute(config, saveData, {}))
 
     assert.stub(generateUniqueAirOperationNameStub).was_not.called()
     assert.stub(markOperationExecutedStub).was_not.called()

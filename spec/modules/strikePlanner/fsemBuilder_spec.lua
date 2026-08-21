@@ -141,7 +141,7 @@ describe("FsemBuilder", function()
         c = {
           dynamicOperations = {
             enabled = true,
-            reconTriggeredOperationBatches = {}
+            reconTriggeredOperationBatches = { { type = "air" } }
           }
         }
       }

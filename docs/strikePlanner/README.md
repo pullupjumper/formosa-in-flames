@@ -79,7 +79,7 @@ flowchart TB
 
     subgraph 動態路徑["動態計畫路徑"]
         DFSP["fsemBuilder<br>.execute()"]
-        DATO["atoBuilder<br>.process()"]
+        DATO["atoBuilder<br>.execute()"]
         RECON["recon<br>.processQueue()"]
         RSCHED["operationScheduler<br>.schedule()"]
         FREDIR["frontlineRedirect<br>.evaluate/applyMappings()"]
@@ -123,8 +123,8 @@ flowchart LR
     RECON_COMPLETE["偵察完成"]
     SCHED["排程動態作戰<br>OperationScheduler.schedule"]
     RECON_SCHED["reconTriggeredOperationBatches<br>新增偵察觸發作戰批次"]
-    DFSP_EXEC["DynamicFSP.execute()"]
-    DATO_EXEC["DynamicATO.process()"]
+    DFSP_EXEC["FsemBuilder.execute()"]
+    DATO_EXEC["AtoBuilder.execute()"]
     FSP_INSERT["插入新 FSEM<br>至 fireSupportPlan"]
     ATO_INSERT["插入新 Wave<br>至 airTaskingOrder"]
     FSP_EXEC["FSP.strike() 執行"]
@@ -178,7 +178,6 @@ saveData.c
 ```
 saveData.c.dynamicOperations
 ├── enabled: boolean
-├── lastEvaluationTime: number
 ├── generatedOperations: SBJ__GeneratedOperationsTracker
 │   ├── air: table<string, boolean>
 │   └── ground: table<string, boolean>

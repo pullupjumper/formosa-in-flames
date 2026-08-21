@@ -22,9 +22,8 @@
 
 ```mermaid
 flowchart TD
-    ENTRY["AtoBuilder.process"]
+    ENTRY["AtoBuilder.execute"]
     ENABLED{"dynamicOperations enabled?"}
-    STAMP["寫入 lastEvaluationTime"]
     HAS_TIME{"ScenEdit_CurrentTime 有值?"}
     HAS_BATCH{"reconTriggeredOperationBatches 非空?"}
     FILTER["filterOperationsByType(..., air)"]
@@ -62,8 +61,6 @@ flowchart TD
     RETRYABLE -->|否| ABANDON --> ADD_ROW
     ADD_ROW --> NEXT --> EMIT --> RETURN
 ```
-
-`lastEvaluationTime` 在 enabled 檢查通過後**立刻**寫入，排在 `currentTime` 是否有值的檢查前面，所以後面三個 guard 就算提前 `return false`，它也已經被改過。寫進去的是 `ScenEdit_CurrentTime()` 的回傳值本身，取不到時就寫成 `nil`。
 
 `pre_trigger` 直接跳到下一個 operation，連 log 行都不加；`expired` 與 `in_window` 都會產生 `outcome`，之後共用同一段成功／重試／放棄的分派，因此逾時的 operation 是走 `RETRYABLE_REASON` 未命中的那條路被移除的。
 
@@ -163,13 +160,13 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 預約 key 由 `reservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。單純以 baseGUID 記帳會出錯：把某基地的戰機全部訂走，不該讓同一基地的加油機或電戰機看起來也沒了。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的其他機型。
 
-### 為什麼快取只活一次 process()
+### 為什麼快取只活一次 execute()
 
-`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getFreeAircraftCount()` 把結果存進 `process()` 建立的 `freeAircraftCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
+`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getFreeAircraftCount()` 把結果存進 `execute()` 建立的 `freeAircraftCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
 
-快取的生命週期**剛好是一次 `process()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態，而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `process()` 之間，每趟重建剛好涵蓋。
+快取的生命週期**剛好是一次 `execute()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態，而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `execute()` 之間，每趟重建剛好涵蓋。
 
-因此 `freeAircraftCache` **必須是 `process()` 的區域變數**。打包後模組 table 會變全域，把它提到 module scope 會讓快取跨 tick 存活、繼續計入已被摧毀的飛機。`atoBuilder_spec` 的「should read a base only once per pass」與「should re-read a base on the next pass」兩條測試分別釘住快取有效與快取不得跨 tick。
+因此 `freeAircraftCache` **必須是 `execute()` 的區域變數**。打包後模組 table 會變全域，把它提到 module scope 會讓快取跨 tick 存活、繼續計入已被摧毀的飛機。`atoBuilder_spec` 的「should read a base only once per pass」與「should re-read a base on the next pass」兩條測試分別釘住快取有效與快取不得跨 tick。
 
 ### 飛行時間與任務時序
 
@@ -179,7 +176,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 ### 結果分類與 log
 
-`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `AtoBuilder.process()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
+`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `AtoBuilder.execute()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
 
 | reason | tag | 條件 | 後續處理 |
 |---|---|---|---|
@@ -191,7 +188,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 `RETRYABLE_REASON` 只收錄 `no_valid_packages`，其餘（含未預期的未知 reason）一律走移除路徑——預設保守，不讓沒對應到的失敗永遠卡在窗內。
 
-tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`AtoBuilder.process()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`AtoBuilder.execute()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
 
 log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都是 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，歸屬清楚且不計入 header 的 `total`：
 
@@ -213,7 +210,6 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.dynamicOperations.lastEvaluationTime` | 每次 `process()` 通過 enabled 檢查後寫入目前 CMO 時間。 |
 | `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時寫入新的 `SBJ__Wave`。 |
 | `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicState.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
 | `operation.executed` | Wave 成功插入時由 `markOperationExecuted()` 標記。 |
@@ -229,7 +225,7 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `AtoBuilder.process(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；至少成功插入一個 ATO Wave 時回傳 `true`。 |
+| `AtoBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；至少成功插入一個 ATO Wave 時回傳 `true`。 |
 
 ### 呼叫者與觸發方式
 
