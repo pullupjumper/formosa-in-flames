@@ -9,7 +9,6 @@ local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
 local BaseConfig = require("src.core.config")
 
-
 describe("FsemBuilder", function()
   ---@type luassert.spy[]
   local activeStubs
@@ -17,81 +16,129 @@ describe("FsemBuilder", function()
   local logStub
   ---@type luassert.spy
   local errorStub
-  ---@type luassert.spy
-  local markOperationExecutedStub
-  ---@type luassert.spy
-  local registerGeneratedOperationStub
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
+  ---Register a stub or spy so after_each reverts it
+  ---@param testDouble luassert.spy Stub or spy to track
+  ---@return luassert.spy # The same double, so calls can be chained inline
+  local function trackStub(testDouble)
+    table.insert(activeStubs, testDouble)
+    return testDouble
   end
 
   -- ============================================================================
   -- Shared mock data builders
   -- ============================================================================
 
+  ---Create a mock firing unit battery context
+  ---@param overrides? table
+  ---@return table
   local function makeBatteryContext(overrides)
-    overrides = overrides or {}
-    return {
-      name = overrides.name or "Battery-1",
-      state = overrides.state or constants.MISSILE_SYSTEM_STATE.HIDE,
-      ammoThreshold = overrides.ammoThreshold or 40,
-      weaponDBID = overrides.weaponDBID or 3104
+    local context = {
+      name = "Battery-1",
+      state = constants.MISSILE_SYSTEM_STATE.HIDE,
+      ammoThreshold = 40,
+      weaponDBID = 3104
     }
+    if overrides then
+      for k, v in pairs(overrides) do context[k] = v end
+    end
+    return context
   end
 
+  ---Create a mock reconnaissance trigger entry
+  ---@param overrides? table
+  ---@return table
   local function makeReconEntry(overrides)
-    overrides = overrides or {}
-    return {
-      time = overrides.time or "2026-02-14 00:00:00",
-      delay = overrides.delay or 0,
-      type = overrides.type or "satellite"
+    local entry = {
+      time = "2026-02-14 00:00:00",
+      delay = 0,
+      type = "satellite"
     }
+    if overrides then
+      for k, v in pairs(overrides) do entry[k] = v end
+    end
+    return entry
   end
 
+  ---Create a mock strike operation with firing unit and target requirements
+  ---@param overrides? table
+  ---@return table
   local function makeOperation(overrides)
-    overrides = overrides or {}
-    return {
+    local operation = {
       type = "ground",
       executed = false,
       template = {
-        name = overrides.templateName or "TEST-OP/1",
-        isFirstWave = overrides.isFirstWave ~= nil and overrides.isFirstWave or true,
-        strikeInterval = overrides.strikeInterval or 60,
-        fireSupportTasks = overrides.fireSupportTasks or {
+        name = "TEST-OP/1",
+        isFirstWave = true,
+        strikeInterval = 60,
+        fireSupportTasks = {
           {
             name = "FST-TEST",
             missileSystem = "SRBM",
-            firingUnits = overrides.firingUnits or { { name = "Battery-1" } },
-            target = { minTargetCount = overrides.minTargetCount or 1, ammoPerTarget = 2 }
+            firingUnits = { { name = "Battery-1" } },
+            target = { minTargetCount = 1, ammoPerTarget = 2 }
           }
         }
       }
     }
+    if overrides then
+      if overrides.templateName then
+        operation.template.name = overrides.templateName
+      end
+      if overrides.isFirstWave ~= nil then
+        operation.template.isFirstWave = overrides.isFirstWave
+      end
+      if overrides.strikeInterval then
+        operation.template.strikeInterval = overrides.strikeInterval
+      end
+      if overrides.fireSupportTasks then
+        operation.template.fireSupportTasks = overrides.fireSupportTasks
+      end
+      if overrides.firingUnits then
+        operation.template.fireSupportTasks[1].firingUnits = overrides.firingUnits
+      end
+      if overrides.minTargetCount then
+        operation.template.fireSupportTasks[1].target.minTargetCount = overrides.minTargetCount
+      end
+    end
+    return operation
   end
 
+  ---Create a mock scenario save data with ground operations state
+  ---@param overrides? table
+  ---@return table
   local function makeSaveData(overrides)
-    overrides = overrides or {}
-    return {
+    local saveData = {
       c = {
-        ground = overrides.ground or {
-          fireSupportPlan = overrides.fireSupportPlan or {},
+        ground = {
+          fireSupportPlan = {},
           srbm = {
-            firingUnits = overrides.srbmFiringUnits or {
+            firingUnits = {
               ["Battery-1"] = makeBatteryContext()
             }
           }
         },
         dynamicOperations = {
           enabled = true,
-          reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches or {},
+          reconTriggeredOperationBatches = {},
           generatedOperations = { ground = {}, air = {} }
         }
       }
     }
+    if overrides then
+      if overrides.ground then
+        saveData.c.ground = overrides.ground
+      end
+      if overrides.fireSupportPlan then
+        saveData.c.ground.fireSupportPlan = overrides.fireSupportPlan
+      end
+      if overrides.srbmFiringUnits then
+        saveData.c.ground.srbm.firingUnits = overrides.srbmFiringUnits
+      end
+      if overrides.reconTriggeredOperationBatches then
+        saveData.c.dynamicOperations.reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches
+      end
+    end
+    return saveData
   end
 
   ---Create full typed config for FsemBuilder tests
@@ -140,16 +187,16 @@ describe("FsemBuilder", function()
       local saveData = makeSaveData({ reconTriggeredOperationBatches = { { type = "air" } } })
 
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
-      local stubFilterOps = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
+      local filterOpsStub = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
 
       assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-      assert.stub(stubFilterOps).was.called(1)
-      assert.are.equal("ground", stubFilterOps.calls[1].vals[2])
+      assert.stub(filterOpsStub).was.called(1)
+      assert.are.equal("ground", filterOpsStub.calls[1].vals[2])
     end)
 
     -- Negative: trigger time not reached
     it("should skip operation when trigger time has not been reached", function()
-      local reconEntry = { time = "2026-02-14 00:00:00", delay = 100, type = "satellite" }
+      local reconEntry = makeReconEntry({ time = "2026-02-14 00:00:00", delay = 100 })
       local operation = { type = "ground", executed = false }
       local saveData = {
         c = {
@@ -166,10 +213,10 @@ describe("FsemBuilder", function()
       trackStub(stub(DynamicState, "filterOperationsByType").returns({
         { operationBatch = reconEntry, operation = operation }
       }))
-      markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+      local markExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
       assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-      assert.stub(markOperationExecutedStub).was_not.called()
+      assert.stub(markExecutedStub).was_not.called()
     end)
 
     -- ============================================================================
@@ -177,6 +224,9 @@ describe("FsemBuilder", function()
     -- ============================================================================
 
     describe("with triggered ground operations", function()
+      local markOperationExecutedStub
+      local registerGeneratedOperationStub
+
       before_each(function()
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
@@ -689,6 +739,8 @@ describe("FsemBuilder", function()
     -- ============================================================================
 
     describe("observation window", function()
+      local markOperationExecutedStub
+
       -- Negative: pre-trigger (current time before reconEntry trigger time)
       it("should silently skip operations before observation window opens", function()
         local reconEntry = makeReconEntry()
@@ -821,18 +873,18 @@ describe("FsemBuilder", function()
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
         trackStub(stub(DynamicState, "generateUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
         trackStub(stub(DynamicState, "registerGeneratedOperation"))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        local markExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
 
         -- Tick 1: insufficient targets, stays pending
         assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-        assert.stub(markOperationExecutedStub).was_not.called()
+        assert.stub(markExecutedStub).was_not.called()
 
         -- Tick 2: targets accumulated, FSEM inserted
         processTargetsStub:revert()
         trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
 
         assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
-        assert.stub(markOperationExecutedStub).was.called(1)
+        assert.stub(markExecutedStub).was.called(1)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
       end)
     end)
@@ -842,18 +894,17 @@ describe("FsemBuilder", function()
     -- ============================================================================
 
     describe("stale matrix retirement", function()
-      ---Build an active unfinished matrix holding Battery-1 by default
+      ---Create an active unfinished fire support execution matrix (FSEM)
       ---@param overrides? table
-      ---@return table matrix
+      ---@return table
       local function makeActiveMatrix(overrides)
-        overrides = overrides or {}
-        return {
-          name = overrides.name or "STALE-FSEM",
+        local matrix = {
+          name = "STALE-FSEM",
           isActivated = true,
           isFinished = false,
           allFiringUnitsInPosition = false,
-          createdAt = overrides.createdAt,
-          fireSupportTasks = overrides.fireSupportTasks or {
+          createdAt = nil,
+          fireSupportTasks = {
             {
               name = "FST-HELD",
               missileSystem = "SRBM",
@@ -862,11 +913,15 @@ describe("FsemBuilder", function()
             }
           }
         }
+        if overrides then
+          for k, v in pairs(overrides) do matrix[k] = v end
+        end
+        return matrix
       end
 
-      ---Count entries of a map-shaped fireSupportPlan table
+      ---Count entries in a fire support plan map
       ---@param fireSupportPlan table<string, any>
-      ---@return integer count
+      ---@return integer # Number of matrices in the plan
       local function countMatrices(fireSupportPlan)
         local count = 0
         for _ in pairs(fireSupportPlan) do
@@ -916,7 +971,7 @@ describe("FsemBuilder", function()
         local saveData = makeSaveData({ reconTriggeredOperationBatches = { batch1, batch2 } })
 
         local triggerTimes = { ["BATCH-1"] = 1000, ["BATCH-2"] = 2000 }
-        local timeStub = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+        local currentTimeStub = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(timeStr)
           return triggerTimes[timeStr]
         end))
@@ -932,13 +987,13 @@ describe("FsemBuilder", function()
         assert.is_true(operation1.executed)
 
         -- Tick 2 (not yet stale): competing operation stays blocked on Battery-1
-        timeStub.returns(1000 + staleAfterSec)
+        currentTimeStub.returns(1000 + staleAfterSec)
         assert.is_false(FsemBuilder.execute(config, saveData, {}))
         assert.is_false(firstFsem.isFinished)
         assert.is_nil(saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"])
 
         -- Tick 3 (stale): FSEM retired, Battery-1 released and re-assigned
-        timeStub.returns(1000 + staleAfterSec + 1)
+        currentTimeStub.returns(1000 + staleAfterSec + 1)
         assert.is_true(FsemBuilder.execute(config, saveData, {}))
         assert.is_true(firstFsem.isFinished)
         assert.is_true(operation2.executed)
