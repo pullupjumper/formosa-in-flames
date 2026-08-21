@@ -379,7 +379,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field iads SBJ__IADSContext Integrated Air Defense System context
 ---@field commsJamming SBJ__CommsJammingContext Communications jamming context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
----@field ground SBJ__GroundForceContext Ground force systems context
+---@field ground SBJ__StrikingGroundForceContext Ground force systems context with fire support
 ---@field recon SBJ__ReconContext Reconnaissance operations context
 ---@field air SBJ__AirOperationsContext Air operations context
 ---@field amphibOps SBJ__AmphibOpsContext Amphibious operations context
@@ -972,8 +972,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammo SBJ__AmmoSubtotal Ammunition depots total (sum of context wpnCurrent/wpnDefault)
 ---@field total SBJ__AmmoSubtotal Combined total across firing + resupply + ammo
 
----Ground force context data structure
----Manages all ground-based weapon systems and fire support operations
+---Ground force context base - common missile systems for all ground operations
 ---@class SBJ__GroundForceContext: table
 ---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
@@ -982,8 +981,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
 ---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system (Optional)
----@field fireSupportPlan? table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices
----@field [SBJ__MissileSystemContext] SBJ__MissileSystemContext
+
+---Ground force context with fire support - for strike operations (China/Taiwan)
+---Extends base context with dynamic fire support execution matrices
+---@class SBJ__StrikingGroundForceContext: SBJ__GroundForceContext
+---@field fireSupportPlan table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices (always initialized)
 
 ---Unit property setting parameters for ground units
 ---@class SBJ__SetUnitPropertiesParams: table

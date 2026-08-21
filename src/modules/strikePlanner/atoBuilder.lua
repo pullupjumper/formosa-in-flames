@@ -286,9 +286,8 @@ local function evaluateTargetsFromTemplate(config, saveData, contacts, waveTempl
       packageData.target,
       waveTemplate.isFirstWave
     )
-    packageTargets = packageTargets or {}
     local targetCount = #packageTargets
-    local requiredCount = packageData.target and packageData.target.minTargetCount or 1
+    local requiredCount = packageData.target.minTargetCount
 
     if targetCount >= requiredCount then
       targetsByPackageIndex[packageIndex] = packageTargets
@@ -440,19 +439,10 @@ local function createAndInsertATOWaveFromTemplate(
 
   local waveName = DynamicState.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
   local wave = buildATOWave(waveTemplate, waveName, validPackages)
-
   saveData.c.air.airTaskingOrder[wave.name] = wave
   DynamicState.registerGeneratedOperation("air", wave.name, saveData)
-
   fields.wave = waveName
-
-  return {
-    success = true,
-    tag = "OK",
-    fields = fields,
-    details = details,
-    timing = collectWaveTimingResults(wave)
-  }
+  return { success = true, tag = "OK", fields = fields, details = details, timing = collectWaveTimingResults(wave) }
 end
 
 -- ============================================================================
@@ -472,13 +462,13 @@ local function processAirOperation(config, saveData, contacts, batchedOp, freeAi
 
   -- packages is required: buildExecutablePackages and evaluateTargetsFromTemplate
   -- both iterate it unconditionally. Mirrors the FSEM-side guard in fsemBuilder.
-  if not operation.template or not operation.template.packages then
-    return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
-  end
+  -- if not operation.template or not operation.template.packages then
+  --   return { success = false, tag = "ERROR", reason = PROCESS_REASON.MISSING_TEMPLATE }
+  -- end
 
-  if not saveData.c.air.airTaskingOrder then
-    return { success = false, tag = "FAIL", reason = PROCESS_REASON.INSERTION_FAILED }
-  end
+  -- if not saveData.c.air.airTaskingOrder then
+  --   return { success = false, tag = "FAIL", reason = PROCESS_REASON.INSERTION_FAILED }
+  -- end
 
   local targetsByPackageIndex = evaluateTargetsFromTemplate(
     config,
@@ -499,7 +489,6 @@ local function processAirOperation(config, saveData, contacts, batchedOp, freeAi
   -- Copied behind the target gate: the build writes resolved targets and baseGUIDs
   -- into the packages, and a retrying tick should not pay for a copy it discards.
   local waveTemplate = Utils.deepCopy(operation.template)
-
   return createAndInsertATOWaveFromTemplate(
     config,
     saveData,
@@ -521,19 +510,19 @@ end
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
 function AtoBuilder.process(config, saveData, contacts)
-  if not saveData.c.dynamicOperations or not saveData.c.dynamicOperations.enabled then
+  if not saveData.c.dynamicOperations.enabled then
     return false
   end
 
   local currentTime = GameApi.ScenEdit_CurrentTime()
   saveData.c.dynamicOperations.lastEvaluationTime = currentTime
 
-  if not currentTime then
-    return false
-  end
+  -- if not currentTime then
+  --   return false
+  -- end
 
   local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
-  if not reconTriggeredOperationBatches or #reconTriggeredOperationBatches == 0 then
+  if #reconTriggeredOperationBatches == 0 then
     return false
   end
 

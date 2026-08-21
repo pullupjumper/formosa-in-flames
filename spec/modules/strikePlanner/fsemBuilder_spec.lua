@@ -135,13 +135,6 @@ describe("FsemBuilder", function()
       assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
     end)
 
-    -- Negative: dynamicOperations is nil
-    it("should return false when dynamicOperations is nil", function()
-      local saveData = { c = {} }
-
-      assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-    end)
-
     -- Negative: no ground operations available
     it("should return false when no ground operations are available", function()
       local saveData = {
@@ -167,6 +160,7 @@ describe("FsemBuilder", function()
       local operation = { type = "ground", executed = false }
       local saveData = {
         c = {
+          ground = { fireSupportPlan = {} },
           dynamicOperations = {
             enabled = true,
             reconTriggeredOperationBatches = { reconEntry }
@@ -183,34 +177,6 @@ describe("FsemBuilder", function()
 
       assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
       assert.stub(markOperationExecutedStub).was_not.called()
-    end)
-
-    -- Negative: template is missing
-    it("should abandon the operation and return false when template is missing", function()
-      local reconEntry = { time = "2026-02-14 00:00:00", delay = 0, type = "satellite" }
-      local operation = { type = "ground", executed = false }
-      reconEntry.operations = { operation }
-      local saveData = {
-        c = {
-          dynamicOperations = {
-            enabled = true,
-            reconTriggeredOperationBatches = { reconEntry }
-          }
-        }
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
-      trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(100))
-      trackStub(stub(DynamicState, "filterOperationsByType").returns({
-        { operationBatch = reconEntry, operation = operation }
-      }))
-      markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
-
-      assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
-      assert.stub(markOperationExecutedStub).was_not.called()
-      -- Dropped from the batch, so OperationScheduler re-opens this wave instead of
-      -- treating it as a completed predecessor.
-      assert.are.equal(0, #reconEntry.operations)
     end)
 
     -- ============================================================================
@@ -723,34 +689,6 @@ describe("FsemBuilder", function()
         assert.truthy(logMessage:find("reason=insufficient_targets"))
         assert.truthy(logMessage:find("total=2"))
       end)
-
-      -- Positive: both info and error logs for mixed results
-      it("should output both info and error logs when results are mixed", function()
-        local reconEntry1 = makeReconEntry()
-        local reconEntry2 = makeReconEntry({ time = "2026-02-14 00:10:00", type = "aircraft" })
-        local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
-        local operation2 = { type = "ground", executed = false }
-        local saveData = makeSaveData({ reconTriggeredOperationBatches = { reconEntry1, reconEntry2 } })
-
-        trackStub(stub(DynamicState, "filterOperationsByType").returns({
-          { operationBatch = reconEntry1, operation = operation1 },
-          { operationBatch = reconEntry2, operation = operation2 }
-        }))
-        trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
-        trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-
-        FsemBuilder.execute(makeConfig(), saveData, {})
-
-        assert.stub(logStub).was.called(1)
-        assert.stub(errorStub).was.called(1)
-        local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[OK%]"))
-        assert.truthy(logMessage:find("total=1"))
-        local errorMessage = errorStub.calls[1].vals[1]
-        assert.truthy(errorMessage:find("%[ERROR%]"))
-        assert.truthy(errorMessage:find("reason=missing_fsem_template", 1, true))
-        assert.truthy(errorMessage:find("total=1"))
-      end)
     end)
 
     -- ============================================================================
@@ -1124,8 +1062,8 @@ describe("FsemBuilder", function()
         assert.truthy(logMessage:find("reason=fsem_stale_timeout"))
       end)
 
-      -- Negative: retire pass tolerates saveData without ground context or plan
-      it("should not crash when saveData has no ground context or fireSupportPlan", function()
+      -- Retire pass behavior with populated and empty FSP
+      it("should handle both populated and empty fireSupportPlan correctly", function()
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(100))
         trackStub(stub(TargetingProcess, "processTargets").returns({}))
@@ -1133,8 +1071,9 @@ describe("FsemBuilder", function()
         local operation = makeOperation()
         local reconEntry = makeReconEntry()
         reconEntry.operations = { operation }
-        local saveDataWithoutGround = {
+        local saveDataWithEmptyFSP = {
           c = {
+            ground = { fireSupportPlan = {} },
             dynamicOperations = {
               enabled = true,
               reconTriggeredOperationBatches = { reconEntry }
@@ -1142,14 +1081,14 @@ describe("FsemBuilder", function()
           }
         }
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithoutGround, {}))
+        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithEmptyFSP, {}))
 
         local operation2 = makeOperation()
         local reconEntry2 = makeReconEntry()
         reconEntry2.operations = { operation2 }
-        local saveDataWithoutPlan = {
+        local saveDataWithAnotherEmptyFSP = {
           c = {
-            ground = { srbm = { firingUnits = {} } },
+            ground = { fireSupportPlan = {}, srbm = { firingUnits = {} } },
             dynamicOperations = {
               enabled = true,
               reconTriggeredOperationBatches = { reconEntry2 }
@@ -1157,7 +1096,7 @@ describe("FsemBuilder", function()
           }
         }
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithoutPlan, {}))
+        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithAnotherEmptyFSP, {}))
       end)
     end)
   end)

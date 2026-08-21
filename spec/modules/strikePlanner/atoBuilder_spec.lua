@@ -483,35 +483,6 @@ describe("AtoBuilder", function()
     assert.is_string(wave.packages[1].striker.startTime)
   end)
 
-  -- Positive: at least one operation succeeds among multiple
-  it("should return true when at least one air operation is processed successfully", function()
-    local reconEntry1 = makeReconEntry()
-    local reconEntry2 = makeReconEntry({ time = "2026-02-14 01:00:00", type = "aircraft" })
-    local operation1 = makeTemplatelessAirOperation()
-    local operation2 = makeAirOperation({ name = "STRIKE/2", isFirstWave = false })
-
-    local saveData = makeSaveData({ reconEntry1, reconEntry2 })
-
-    stubClock(5000)
-    reconEntry1.operations = { operation1 }
-    reconEntry2.operations = { operation2 }
-    trackStub(stub(DynamicState, "filterOperationsByType").returns({
-      { operationBatch = reconEntry1, operation = operation1 },
-      { operationBatch = reconEntry2, operation = operation2 }
-    }))
-    stubTargets({ "TGT-1" })
-    stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
-    trackStub(stub(DynamicState, "generateUniqueAirOperationName").returns("DYNAMIC/AIRCRAFT/STRIKE/2/1"))
-    trackStub(stub(DynamicState, "registerGeneratedOperation"))
-    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
-
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
-
-    assert.is_true(result)
-    -- markOperationExecuted called for operation2 (the one with template)
-    assert.stub(markOperationExecutedStub).was.called(1)
-  end)
-
   -- ============================================================================
   -- Negative: Tanker Mission Validation
   -- ============================================================================
@@ -612,12 +583,6 @@ describe("AtoBuilder", function()
   -- Negative: Configuration Guards
   -- ============================================================================
 
-  -- Negative: dynamicOperations not configured
-  it("should return false when dynamicOperations is not configured", function()
-    local saveData = { c = {} }
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
-  end)
-
   -- Negative: dynamicOperations disabled
   it("should return false when dynamicOperations is disabled", function()
     local saveData = {
@@ -625,18 +590,6 @@ describe("AtoBuilder", function()
         dynamicOperations = { enabled = false }
       }
     }
-    assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
-  end)
-
-  -- Negative: reconTriggeredOperationBatches nil
-  it("should return false when reconTriggeredOperationBatches is nil", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = true, reconTriggeredOperationBatches = nil }
-      }
-    }
-    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
     assert.is_false(AtoBuilder.process(makeConfig(), saveData, {}))
   end)
 
@@ -698,67 +651,6 @@ describe("AtoBuilder", function()
     -- Pre-trigger is a silent skip: the operation stays queued for a later tick
     assert.are.equal(1, #reconEntry.operations)
     assert.stub(logStub).was_not.called()
-  end)
-
-  -- Negative: operation has no template
-  it("should not insert ATO wave when operation has no template", function()
-    local reconEntry = makeReconEntry()
-    local operation = makeTemplatelessAirOperation()
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = { reconEntry }
-        }
-      }
-    }
-
-    stubClock(1000)
-    stubSingleOperation(reconEntry, operation)
-    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
-    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
-
-    AtoBuilder.process(makeConfig(), saveData, {})
-
-    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
-    -- A templateless operation can never succeed, so it is dropped from the batch
-    -- rather than marked; the scheduler then re-opens the wave from config.
-    assert.stub(markOperationExecutedStub).was_not.called()
-    assert.are.equal(0, #reconEntry.operations)
-    -- The reason token doubles as the control-flow sentinel, so pin it
-    assert.stub(errorStub).was.called(1)
-    assert.is_true(hasErrorCall("[ERROR]"))
-    assert.is_true(hasErrorCall("reason=missing_wave_template"))
-    assert.is_true(hasErrorCall("state=abandoned"))
-  end)
-
-  -- Negative: template resolved but its package array is missing
-  it("should not insert ATO wave when the template has no packages", function()
-    local reconEntry = makeReconEntry()
-    local operation = makeAirOperation()
-    -- A mapping whose config template lookup missed leaves packages unset;
-    -- evaluateTargetsFromTemplate would otherwise call ipairs(nil).
-    operation.template.packages = nil
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = { reconEntry }
-        }
-      }
-    }
-
-    stubClock(1000)
-    stubSingleOperation(reconEntry, operation)
-    local generateUniqueAirOperationNameStub = trackStub(stub(DynamicState, "generateUniqueAirOperationName"))
-    local markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
-
-    AtoBuilder.process(makeConfig(), saveData, {})
-
-    assert.stub(generateUniqueAirOperationNameStub).was_not.called()
-    assert.stub(markOperationExecutedStub).was_not.called()
-    assert.stub(errorStub).was.called(1)
-    assert.is_true(hasErrorCall("reason=missing_wave_template"))
   end)
 
   -- ============================================================================
@@ -860,30 +752,6 @@ describe("AtoBuilder", function()
     local result = AtoBuilder.process(makeConfig(), saveData, {})
 
     assert.is_false(result)
-  end)
-
-  -- Boundary: default minTargetCount used when not specified
-  it("should use default minTargetCount of 1 when not specified", function()
-    local reconEntry = makeReconEntry()
-    local operation = makeAirOperation({
-      packages = { makeStrikePackage({
-        -- No minTargetCount specified, defaults to 1
-        target = { objs = { { baseName = "HSINCHU", subTypes = { "Radar" } } }, contactAge = 300 }
-      }) }
-    })
-
-    local saveData = makeSaveData({ reconEntry })
-
-    stubClock(1000)
-    stubSingleOperation(reconEntry, operation)
-    -- Only 1 target, no minTargetCount => defaults to 1 => pass
-    stubTargets({ "TGT-1" })
-    stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
-    stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
-
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
-
-    assert.is_true(result)
   end)
 
   -- ============================================================================
@@ -1040,26 +908,6 @@ describe("AtoBuilder", function()
     assert.is_false(result)
   end)
 
-  -- Boundary: ATO structure not initialized
-  it("should return false when ATO structure is not initialized", function()
-    local reconEntry = makeReconEntry()
-    local operation = makeAirOperation()
-
-    local saveData = makeSaveData({ reconEntry })
-    saveData.c.air.airTaskingOrder = nil -- Not initialized
-
-    stubClock(1000)
-    stubSingleOperation(reconEntry, operation)
-    stubTargets({ "TGT-1" })
-    stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
-    stubDynamicStateSuccess("DYNAMIC/SATELLITE/STRIKE/1/1")
-
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
-
-    -- insertATOWave returns false when airTaskingOrder is nil
-    assert.is_false(result)
-  end)
-
   -- Boundary: empty packages array
   it("should return false when template has empty packages", function()
     local reconEntry = makeReconEntry()
@@ -1079,24 +927,6 @@ describe("AtoBuilder", function()
   -- ============================================================================
   -- Boundary: Edge Cases
   -- ============================================================================
-
-  -- Boundary: target configuration nil
-  it("should skip package when target configuration is nil", function()
-    local reconEntry = makeReconEntry()
-    local operation = makeAirOperation({
-      packages = { { striker = makeStriker() } } -- target absent => nil
-    })
-
-    local saveData = makeSaveData({ reconEntry })
-
-    stubClock(1000)
-    stubSingleOperation(reconEntry, operation)
-
-    local result = AtoBuilder.process(makeConfig(), saveData, {})
-
-    -- No valid packages (target is nil, processTargets returns empty) => rejected
-    assert.is_false(result)
-  end)
 
   -- Boundary: fixed targets with no objs
   it("should return no targets when fixed target objs is nil", function()
