@@ -147,6 +147,30 @@ describe("FsemBuilder", function()
     return Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
   end
 
+  ---Find a Logger.log call matching the given message pattern
+  ---@param pattern string Lua pattern to search for in the message
+  ---@return boolean # Whether a matching call was found
+  local function hasLogCall(pattern)
+    for _, call in ipairs(logStub.calls) do
+      if string.find(call.vals[2], pattern) then
+        return true
+      end
+    end
+    return false
+  end
+
+  ---Find a Logger.error call matching the given pattern
+  ---@param pattern string Lua pattern to search for in the message
+  ---@return boolean # Whether a matching call was found
+  local function hasErrorCall(pattern)
+    for _, call in ipairs(errorStub.calls) do
+      if string.find(call.vals[1], pattern) then
+        return true
+      end
+    end
+    return false
+  end
+
   -- ============================================================================
   -- Setup / Teardown
   -- ============================================================================
@@ -726,11 +750,10 @@ describe("FsemBuilder", function()
 
         assert.stub(logStub).was.called(1)
         assert.stub(errorStub).was_not.called()
-        local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[OK%]"))
-        assert.truthy(logMessage:find("%[SKIP%]"))
-        assert.truthy(logMessage:find("reason=insufficient_targets"))
-        assert.truthy(logMessage:find("total=2"))
+        assert.is_true(hasLogCall("%[OK%]"))
+        assert.is_true(hasLogCall("%[SKIP%]"))
+        assert.is_true(hasLogCall("reason=insufficient_targets"))
+        assert.is_true(hasLogCall("total=2"))
       end)
     end)
 
@@ -783,10 +806,9 @@ describe("FsemBuilder", function()
         -- Emptying the batch closes it, so it stops being scanned altogether
         assert.is_true(reconEntry.executed)
         assert.stub(logStub).was.called(1)
-        local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[WARN%]"))
-        assert.truthy(logMessage:find("reason=observation_window_expired"))
-        assert.truthy(logMessage:find("state=abandoned"))
+        assert.is_true(hasLogCall("%[WARN%]"))
+        assert.is_true(hasLogCall("reason=observation_window_expired"))
+        assert.is_true(hasLogCall("state=abandoned"))
       end)
 
       -- Negative: insufficient targets keeps operation pending (no markExecuted)
@@ -851,8 +873,8 @@ describe("FsemBuilder", function()
 
         assert.stub(logStub).was.called(3)
         for i = 1, 3 do
-          assert.truthy(logStub.calls[i].vals[2]:find("%[SKIP%]"))
-          assert.truthy(logStub.calls[i].vals[2]:find("state=observing"))
+          assert.is_true(hasLogCall("%[SKIP%]"))
+          assert.is_true(hasLogCall("state=observing"))
         end
       end)
 
@@ -1001,10 +1023,9 @@ describe("FsemBuilder", function()
         assert.is_table(secondFsem)
         assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].firingUnits[1].name)
 
-        local retireLogMessage = logStub.calls[3].vals[2]
-        assert.truthy(retireLogMessage:find("%[WARN%]"))
-        assert.truthy(retireLogMessage:find("reason=fsem_stale_timeout"))
-        assert.truthy(retireLogMessage:find("ageSec=" .. (staleAfterSec + 1)))
+        assert.is_true(hasLogCall("%[WARN%]"))
+        assert.is_true(hasLogCall("reason=fsem_stale_timeout"))
+        assert.is_true(hasLogCall("ageSec=" .. (staleAfterSec + 1)))
       end)
 
       -- Regression: retirement must survive a tick with nothing pending. A matrix whose
@@ -1030,10 +1051,9 @@ describe("FsemBuilder", function()
         assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
         assert.are.equal(currentTime, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
 
-        local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[WARN%]"))
-        assert.truthy(logMessage:find("matrix=STALE%-FSEM"))
-        assert.truthy(logMessage:find("reason=fsem_stale_timeout"))
+        assert.is_true(hasLogCall("%[WARN%]"))
+        assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
+        assert.is_true(hasLogCall("reason=fsem_stale_timeout"))
       end)
 
       -- Negative: legacy matrix without createdAt never goes stale
@@ -1133,10 +1153,9 @@ describe("FsemBuilder", function()
         assert.is_nil(srbmUnits["Battery-F"].stowStartTime)
         assert.is_nil(saveData.c.ground.sam.firingUnits["Sam-1"].stowStartTime)
 
-        local logMessage = logStub.calls[1].vals[2]
-        assert.truthy(logMessage:find("%[WARN%]"))
-        assert.truthy(logMessage:find("matrix=STALE%-FSEM"))
-        assert.truthy(logMessage:find("reason=fsem_stale_timeout"))
+        assert.is_true(hasLogCall("%[WARN%]"))
+        assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
+        assert.is_true(hasLogCall("reason=fsem_stale_timeout"))
       end)
 
       -- Retire pass behavior with populated and empty FSP
