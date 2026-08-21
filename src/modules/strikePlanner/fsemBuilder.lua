@@ -517,9 +517,9 @@ end
 -- Public API
 -- ============================================================================
 
----Process recon-triggered ground operations and dynamically insert FSEMs
----Retryable operations remain pending while targets or firing units are unavailable,
----and are dropped from their batch once the observation window expires.
+---Retire stale FSEMs, then process recon-triggered ground operations and insert new FSEMs
+---Retirement runs on every enabled tick; retryable operations stay pending inside their
+---observation window and are dropped from their batch once it expires.
 ---@param config SBJ__Config Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
@@ -529,25 +529,25 @@ function FsemBuilder.execute(config, saveData, contacts)
     return false
   end
 
-  local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
-  if #reconTriggeredOperationBatches == 0 then
-    return false
-  end
+  local currentTime = GameApi.ScenEdit_CurrentTime()
+  local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
 
+  -- Retirement deliberately runs before the pending-operation early return. A matrix whose
+  -- targets are already gone never fires, so no task is ever marked finished and nothing
+  -- else releases its firing units; gating retirement on "another operation is waiting"
+  -- would leave those brigades deployed indefinitely on every quiet tick.
+  retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
+
+  local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
   local groundBatchedOperations = DynamicState.filterOperationsByType(reconTriggeredOperationBatches, "ground")
   if #groundBatchedOperations == 0 then
+    -- Retirement rows still have to reach the log on a tick with nothing to process.
+    opReport.emit()
     return false
   end
 
-  -- In this scenario runtime, ScenEdit_CurrentTime is guaranteed to return a valid unix timestamp.
-  local currentTime = GameApi.ScenEdit_CurrentTime()
   local windowSec = config.c.recon.observationWindowSec
-  local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
   local hasExecutedAny = false
-
-  -- Release firing units held by stale matrices before evaluating this pass's
-  -- pending operations, so a starved operation can re-assign them in the same tick.
-  retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
 
   -- Must stay a local: both caches only hold still within one pass. Promoting them to
   -- module scope would let them survive across ticks (the module table becomes a global

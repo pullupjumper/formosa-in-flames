@@ -137,14 +137,7 @@ describe("FsemBuilder", function()
 
     -- Negative: no ground operations available
     it("should return false when no ground operations are available", function()
-      local saveData = {
-        c = {
-          dynamicOperations = {
-            enabled = true,
-            reconTriggeredOperationBatches = { { type = "air" } }
-          }
-        }
-      }
+      local saveData = makeSaveData({ reconTriggeredOperationBatches = { { type = "air" } } })
 
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
       local stubFilterOps = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
@@ -957,6 +950,35 @@ describe("FsemBuilder", function()
         assert.truthy(retireLogMessage:find("%[WARN%]"))
         assert.truthy(retireLogMessage:find("reason=fsem_stale_timeout"))
         assert.truthy(retireLogMessage:find("ageSec=" .. (staleAfterSec + 1)))
+      end)
+
+      -- Regression: retirement must survive a tick with nothing pending. A matrix whose
+      -- targets vanished never fires, so no other path releases its firing units.
+      it("should retire stale FSEM even when no ground operation is pending", function()
+        local config = makeConfig()
+        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec + 1
+
+        local matrix = makeActiveMatrix({ createdAt = 1000 })
+        local saveData = makeSaveData({
+          fireSupportPlan = { [matrix.name] = matrix },
+          srbmFiringUnits = {
+            ["Battery-1"] = makeBatteryContext({ state = constants.MISSILE_SYSTEM_STATE.STATIC })
+          },
+          reconTriggeredOperationBatches = {}
+        })
+
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(currentTime))
+
+        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_true(matrix.isFinished)
+        -- Retired, not deleted: the matrix stays in the FSP for name uniqueness checks
+        assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
+        assert.are.equal(currentTime, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+
+        local logMessage = logStub.calls[1].vals[2]
+        assert.truthy(logMessage:find("%[WARN%]"))
+        assert.truthy(logMessage:find("matrix=STALE%-FSEM"))
+        assert.truthy(logMessage:find("reason=fsem_stale_timeout"))
       end)
 
       -- Negative: legacy matrix without createdAt never goes stale
