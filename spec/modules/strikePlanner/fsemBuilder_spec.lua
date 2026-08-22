@@ -159,18 +159,6 @@ describe("FsemBuilder", function()
     return false
   end
 
-  ---Find a Logger.error call matching the given pattern
-  ---@param pattern string Lua pattern to search for in the message
-  ---@return boolean # Whether a matching call was found
-  local function hasErrorCall(pattern)
-    for _, call in ipairs(errorStub.calls) do
-      if string.find(call.vals[1], pattern) then
-        return true
-      end
-    end
-    return false
-  end
-
   -- ============================================================================
   -- Setup / Teardown
   -- ============================================================================
