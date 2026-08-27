@@ -1,4 +1,4 @@
-import type { Airbase, Jammer, MissileSystems } from '@/types/setupMenu';
+import type { Airbase, Jammer, MissileSystems, AmphibiousLocation } from '@/types/setupMenu';
 
 // ============================================================================
 // JAMMERS DATA
@@ -404,3 +404,52 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
     ammunitions: {},
   },
 };
+
+// ============================================================================
+// AMPHIBIOUS LOCATION DATA
+// ============================================================================
+export const AMPHIBIOUS_LOCATION_DATA: AmphibiousLocation[] = [
+  {
+    name: 'Taoyuan',
+    waypoints: [
+      {
+        latitude: 30.1,
+        longitude: 122.3,
+      },
+      {
+        latitude: 27.0,
+        longitude: 121.5,
+      },
+      {
+        latitude: 25.09,
+        longitude: 121.24,
+      },
+    ],
+  },
+  {
+    name: 'Sishu',
+    waypoints: [
+      {
+        latitude: 25.3,
+        longitude: 119.5,
+      },
+      {
+        latitude: 23.31,
+        longitude: 120.18,
+      },
+    ],
+  },
+  {
+    name: 'Penghu',
+    waypoints: [
+      {
+        latitude: 23.78,
+        longitude: 117.84,
+      },
+      {
+        latitude: 23.53,
+        longitude: 119.55,
+      },
+    ],
+  },
+];

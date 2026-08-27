@@ -6,12 +6,20 @@ import type {
   DeployedMissileSystemData,
   Jammer,
   MissileSystems,
+  AmphibiousLocation,
 } from '@/types/setupMenu';
 import { CONFIG } from '@/types/setupMenu';
-import { AIRBASES_DATA, JAMMERS_DATA, MISSILE_SYSTEMS_DATA } from '@/data/setupMenuData';
+import {
+  AIRBASES_DATA,
+  JAMMERS_DATA,
+  MISSILE_SYSTEMS_DATA,
+  AMPHIBIOUS_LOCATION_DATA,
+} from '@/data/setupMenuData';
 import { AircraftTab } from './components/AircraftTab';
+import { MechanicsTab } from './components/MechanicsTab';
 import { JammersTab } from './components/JammersTab';
 import { MissileSystemsTab } from './components/MissileSystemsTab';
+import { OpordTab } from './components/OpordTab';
 import { SummaryTab } from './components/SummaryTab';
 
 // ============================================================================
@@ -23,6 +31,7 @@ declare global {
     __INJECT_AIRBASES__?: string;
     __INJECT_MISSILE_SYSTEMS__?: string;
     __INJECT_SIDE_NAME__?: string;
+    __INJECT_AMPHIBIOUS_LOCATIONS__?: string;
   }
 }
 
@@ -47,6 +56,10 @@ function loadInjectedData() {
       MISSILE_SYSTEMS_DATA
     ),
     sideName: window.__INJECT_SIDE_NAME__ || 'Taiwan',
+    amphibiousLocations: parseJSON<AmphibiousLocation[]>(
+      window.__INJECT_AMPHIBIOUS_LOCATIONS__,
+      AMPHIBIOUS_LOCATION_DATA
+    ),
   };
 }
 
@@ -54,6 +67,8 @@ function loadInjectedData() {
 // TAB CONFIGURATION
 // ============================================================================
 const TABS: { id: TabId; label: string }[] = [
+  { id: 'opord', label: 'OPORD' },
+  { id: 'mechanics', label: 'Game Mechanics' },
   { id: 'aircraft', label: 'Aircraft & Loadouts' },
   { id: 'jammers', label: 'GPS Jammers' },
   { id: 'missileSystems', label: 'Missile Systems' },
@@ -64,7 +79,7 @@ const TABS: { id: TabId; label: string }[] = [
 // MAIN COMPONENT
 // ============================================================================
 function SetupMenuPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('aircraft');
+  const [activeTab, setActiveTab] = useState<TabId>('opord');
   const [budget, setBudget] = useState<BudgetState>({
     current: CONFIG.INITIAL_SCORE,
     used: 0,
@@ -77,6 +92,7 @@ function SetupMenuPage() {
   const [injectedData] = useState(loadInjectedData);
   const [airbases, setAirbases] = useState(() => structuredClone(injectedData.airbases));
   const jammers = injectedData.jammers;
+  const amphibiousLocations = injectedData.amphibiousLocations;
   const missileSystems = injectedData.missileSystems;
   const sideName = injectedData.sideName;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
@@ -150,6 +166,8 @@ function SetupMenuPage() {
 
       {/* Content */}
       <div className="relative flex-1 overflow-hidden">
+        {activeTab === 'opord' && <OpordTab amphibiousLocations={amphibiousLocations} />}
+        {activeTab === 'mechanics' && <MechanicsTab />}
         {activeTab === 'aircraft' && (
           <AircraftTab
             airbases={airbases}

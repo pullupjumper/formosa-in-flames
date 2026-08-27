@@ -64,6 +64,7 @@ HTML_INJECTION_SPECS: Tuple[HtmlInjectionSpec, ...] = (
             "__INJECT_AIRBASES__",
             "__INJECT_MISSILE_SYSTEMS__",
             "__INJECT_SIDE_NAME__",
+            "__INJECT_AMPHIBIOUS_LOCATIONS__",
         ),
     ),
     HtmlInjectionSpec(
@@ -424,7 +425,7 @@ def inject_html_templates(content: str, src_dir: str) -> str:
             Remove JavaScript comments to avoid Lua parsing conflicts.
             Keeps code structure intact by preserving newlines.
             """
-            result = []
+            result: list[str] = []
             i = 0
             length = len(js_code)
             in_string = False

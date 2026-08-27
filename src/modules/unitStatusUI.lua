@@ -30,9 +30,9 @@ local function getState(state)
   return stateMap[state] or "UNKNOWN"
 end
 
----comment
----@param name string
----@return integer
+---Resolve a SAM system config key to its platform DBID
+---@param name string SAM system config key ('pac23', 'skybow3', 'tc2')
+---@return integer # Platform DBID, or 0 when the key is unknown
 local function getSAMDBID(name)
   local map = {
     ["pac23"] = constants.PLATFORMS.PAC3,
@@ -516,6 +516,43 @@ local function createDeployedAircraftDataString(config, sideName)
   return gKH.json.stringify(rows)
 end
 
+---Collect each amphibious operation's staging point and boat zone as a waypoint route
+---@param config SBJ__Config Configuration table
+---@return string # JSON formatted amphibious task force location data with coordinates
+local function createAmphibiousTaskForceLocationDataString(config)
+  local data = {}
+
+  for _, op in ipairs(config.c.amphibOps.operations) do
+    local item = { name = op.name, waypoints = {} }
+
+    local point = GameApi.ScenEdit_GetReferencePoint({
+      side = constants.SIDES.ENEMY,
+      name = op.from.areas[1].startingPoints.type075[1],
+    })
+
+    if point then
+      table.insert(item.waypoints, { latitude = point.latitude, longitude = point.longitude })
+    end
+
+    for _, opZone in ipairs(config.c.amphibOps.operationalZones) do
+      if op.name == opZone.name then
+        local destination = GameApi.ScenEdit_GetReferencePoint({
+          side = constants.SIDES.ENEMY,
+          name = opZone.boat.zone[1],
+        })
+
+        if destination then
+          table.insert(item.waypoints, { latitude = destination.latitude, longitude = destination.longitude })
+        end
+      end
+    end
+
+    table.insert(data, item)
+  end
+
+  return gKH.json.stringify(data)
+end
+
 ---Create comprehensive status UI with multi-tab military dashboard
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -597,13 +634,16 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   local gpsJammerDataString = createGnssJammerDataString(config, sideName)
   local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
   local missileSystemDataString = createMissileSystemDataString(config, sideName)
+  local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
+
   local HTMLTemplate = getSetupMenuTemplate()
   local msg = string.format(
     HTMLTemplate,
     gpsJammerDataString,
     deployedAircraftDataString,
     missileSystemDataString,
-    sideName
+    sideName,
+    amphibiousLocationsDataString
   )
 
   -- Display interactive setup dialog

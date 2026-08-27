@@ -151,7 +151,12 @@ export interface DeployedMissileSystem {
   openingAngle: number;
 }
 
-export type TabId = 'aircraft' | 'jammers' | 'missileSystems' | 'summary';
+export type TabId = 'opord' | 'mechanics' | 'aircraft' | 'jammers' | 'missileSystems' | 'summary';
+
+export interface AmphibiousLocation {
+  name: string;
+  waypoints: { latitude: number; longitude: number }[];
+}
 
 // Config constants
 export const CONFIG = {
