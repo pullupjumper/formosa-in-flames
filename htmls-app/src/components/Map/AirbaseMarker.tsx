@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { Airbase } from '@/types/setupMenu';
@@ -12,17 +13,25 @@ const airbaseIcon = L.icon({
 
 interface AirbaseMarkerProps {
   airbase: Airbase;
-  onClick?: () => void;
+  index: number;
+  onClick?: (index: number) => void;
 }
 
-export function AirbaseMarker({ airbase, onClick }: AirbaseMarkerProps) {
+export const AirbaseMarker = memo(function AirbaseMarker({
+  airbase,
+  index,
+  onClick,
+}: AirbaseMarkerProps) {
+  const eventHandlers = useMemo(
+    () => (onClick ? { click: () => onClick(index) } : undefined),
+    [onClick, index]
+  );
+
   return (
     <Marker
       position={[airbase.latitude, airbase.longitude]}
       icon={airbaseIcon}
-      eventHandlers={{
-        click: onClick,
-      }}
+      eventHandlers={eventHandlers}
     >
       <Popup>
         <div className="text-text-primary">
@@ -63,10 +72,11 @@ export function AirbaseMarker({ airbase, onClick }: AirbaseMarkerProps) {
       </Popup>
     </Marker>
   );
-}
+});
 
 interface AirbaseMarkersProps {
   airbases: Airbase[];
+  /** Must be referentially stable, otherwise every marker rebinds its listener */
   onAirbaseClick?: (index: number) => void;
 }
 
@@ -77,7 +87,8 @@ export function AirbaseMarkers({ airbases, onAirbaseClick }: AirbaseMarkersProps
         <AirbaseMarker
           key={airbase.baseGUID || index}
           airbase={airbase}
-          onClick={() => onAirbaseClick?.(index)}
+          index={index}
+          onClick={onAirbaseClick}
         />
       ))}
     </>

@@ -1,123 +1,104 @@
-import { useState } from 'react';
 import type { Airbase, BudgetState } from '@/types/setupMenu';
 import { CONFIG } from '@/types/setupMenu';
-import { BaseMap, AirbaseMarkers } from '@/components/Map';
 
-interface AircraftTabProps {
+// ============================================================================
+// AircraftPanel — sidebar panel for loadout budget and per-base editing
+// ============================================================================
+interface AircraftPanelProps {
   airbases: Airbase[];
   budget: BudgetState;
+  selectedBaseIndex: number | null;
   onSpendBudget: (amount?: number) => boolean;
   onRefundBudget: (amount?: number) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
-  sideName: string;
+  /** Routed to the shared status line instead of a modal alert */
+  onError: (message: string) => void;
 }
 
-export function AircraftTab({
+export function AircraftPanel({
   airbases,
   budget,
+  selectedBaseIndex,
   onSpendBudget,
   onRefundBudget,
   onUpdateAirbase,
-  sideName,
-}: AircraftTabProps) {
-  const [selectedBaseIndex, setSelectedBaseIndex] = useState<number | null>(null);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-
+  onError,
+}: AircraftPanelProps) {
   const percentage = (budget.current / budget.total) * 100;
   const selectedBase = selectedBaseIndex !== null ? airbases[selectedBaseIndex] : null;
 
-  const handleMapClick = (lat: number, lng: number) => {
-    setCoordinates({ lat, lng });
-  };
-
-  const handleAirbaseClick = (index: number) => {
-    setSelectedBaseIndex(index);
-  };
-
   return (
-    <div className="flex h-full">
-      {/* Map Container */}
-      <div className="flex-1">
-        <BaseMap onMapClick={handleMapClick} sideName={sideName}>
-          <AirbaseMarkers airbases={airbases} onAirbaseClick={handleAirbaseClick} />
-        </BaseMap>
+    <>
+      {/* Budget Section */}
+      <div className="mb-5 border-b border-dark-border pb-4">
+        <div className="mb-4 text-xs font-bold uppercase tracking-wide text-text-secondary">
+          Loadout Budget
+        </div>
+        <div className="mb-2">
+          <div className="mb-2 text-xs font-semibold">Remaining Budget</div>
+          <div
+            className={`mb-1 text-2xl font-bold ${
+              budget.current < 200
+                ? 'text-status-danger'
+                : budget.current < 400
+                  ? 'text-status-warning'
+                  : 'text-status-success'
+            }`}
+          >
+            {budget.current}
+          </div>
+          <div className="text-[11px] text-text-secondary">
+            Used: {budget.used} / Total: {budget.total}
+          </div>
+          <div className="mt-2 h-1 rounded-sm bg-dark-border">
+            <div
+              className={`h-full rounded-sm transition-[width] duration-300 ${
+                budget.current < 200
+                  ? 'bg-status-danger'
+                  : budget.current < 400
+                    ? 'bg-status-warning'
+                    : 'bg-status-success'
+              }`}
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Controls Panel */}
-      <div className="w-80 overflow-y-auto border-l border-dark-border bg-dark-panel p-4">
-        {/* Budget Section */}
-        <div className="mb-5 border-b border-dark-border pb-4">
-          <div className="mb-4 text-xs font-bold uppercase tracking-wide text-text-secondary">
-            Loadout Budget
-          </div>
-          <div className="mb-2">
-            <div className="mb-2 text-xs font-semibold">Remaining Budget</div>
-            <div
-              className={`mb-1 text-2xl font-bold ${
-                budget.current < 200
-                  ? 'text-status-danger'
-                  : budget.current < 400
-                    ? 'text-status-warning'
-                    : 'text-status-success'
-              }`}
-            >
-              {budget.current}
-            </div>
-            <div className="text-[11px] text-text-secondary">
-              Used: {budget.used} / Total: {budget.total}
-            </div>
-            <div className="mt-2 h-1 rounded-sm bg-dark-border">
-              <div
-                className={`h-full rounded-sm transition-[width] duration-300 ${
-                  budget.current < 200
-                    ? 'bg-status-danger'
-                    : budget.current < 400
-                      ? 'bg-status-warning'
-                      : 'bg-status-success'
-                }`}
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-          </div>
+      {/* Base Editor Section */}
+      <div className="mb-5">
+        <div className="mb-4 text-xs font-bold uppercase tracking-wide text-text-secondary">
+          Base Editor
         </div>
-
-        {/* Base Editor Section */}
-        <div className="mb-5">
-          <div className="mb-4 text-xs font-bold uppercase tracking-wide text-text-secondary">
-            Base Editor
-          </div>
-          {selectedBase ? (
-            <BaseEditor
-              base={selectedBase}
-              baseIndex={selectedBaseIndex!}
-              onSpendBudget={onSpendBudget}
-              onRefundBudget={onRefundBudget}
-              onUpdateAirbase={onUpdateAirbase}
-            />
-          ) : (
-            <div className="text-xs italic text-text-secondary">
-              Select an airbase on the map to edit loadouts
-            </div>
-          )}
-        </div>
-
-        {/* Coordinates Display */}
-        {coordinates && (
-          <div className="mt-5 font-mono text-[11px] text-text-secondary">
-            Latitude: {coordinates.lat.toFixed(6)}°, Longitude: {coordinates.lng.toFixed(6)}°
+        {selectedBase ? (
+          <BaseEditor
+            base={selectedBase}
+            baseIndex={selectedBaseIndex!}
+            onSpendBudget={onSpendBudget}
+            onRefundBudget={onRefundBudget}
+            onUpdateAirbase={onUpdateAirbase}
+            onError={onError}
+          />
+        ) : (
+          <div className="text-xs italic text-text-secondary">
+            Select an airbase on the map to edit loadouts
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
+// ============================================================================
+// BaseEditor
+// ============================================================================
 interface BaseEditorProps {
   base: Airbase;
   baseIndex: number;
   onSpendBudget: (amount?: number) => boolean;
   onRefundBudget: (amount?: number) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
+  onError: (message: string) => void;
 }
 
 function BaseEditor({
@@ -126,6 +107,7 @@ function BaseEditor({
   onSpendBudget,
   onRefundBudget,
   onUpdateAirbase,
+  onError,
 }: BaseEditorProps) {
   const adjustAircraft = (unitIndex: number, delta: number) => {
     const unit = base.embarkedUnits?.[unitIndex];
@@ -135,7 +117,7 @@ function BaseEditor({
     if (newNum < 0) return;
 
     if (delta > 0 && !onSpendBudget()) {
-      alert('Insufficient budget!');
+      onError('Warning: Insufficient budget');
       return;
     }
     if (delta < 0) onRefundBudget();
@@ -161,7 +143,7 @@ function BaseEditor({
     if (newNum < 0) return;
 
     if (delta > 0 && !onSpendBudget()) {
-      alert('Insufficient budget!');
+      onError('Warning: Insufficient budget');
       return;
     }
     if (delta < 0) onRefundBudget();
@@ -216,6 +198,9 @@ function BaseEditor({
   );
 }
 
+// ============================================================================
+// LoadoutControl
+// ============================================================================
 interface LoadoutControlProps {
   name: string;
   subtitle: string;

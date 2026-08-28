@@ -151,7 +151,7 @@ export interface DeployedMissileSystem {
   openingAngle: number;
 }
 
-export type TabId = 'opord' | 'mechanics' | 'aircraft' | 'jammers' | 'missileSystems' | 'summary';
+export type TabId = 'opord' | 'mechanics' | 'deployment' | 'summary';
 
 export interface AmphibiousLocation {
   name: string;

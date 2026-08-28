@@ -15,10 +15,8 @@ import {
   MISSILE_SYSTEMS_DATA,
   AMPHIBIOUS_LOCATION_DATA,
 } from '@/data/setupMenuData';
-import { AircraftTab } from './components/AircraftTab';
 import { MechanicsTab } from './components/MechanicsTab';
-import { JammersTab } from './components/JammersTab';
-import { MissileSystemsTab } from './components/MissileSystemsTab';
+import { DeploymentTab } from './components/DeploymentTab';
 import { OpordTab } from './components/OpordTab';
 import { SummaryTab } from './components/SummaryTab';
 
@@ -69,9 +67,7 @@ function loadInjectedData() {
 const TABS: { id: TabId; label: string }[] = [
   { id: 'opord', label: 'OPORD' },
   { id: 'mechanics', label: 'Game Mechanics' },
-  { id: 'aircraft', label: 'Aircraft & Loadouts' },
-  { id: 'jammers', label: 'GPS Jammers' },
-  { id: 'missileSystems', label: 'Missile Systems' },
+  { id: 'deployment', label: 'Deployment' },
   { id: 'summary', label: 'Summary' },
 ];
 
@@ -138,6 +134,32 @@ function SetupMenuPage() {
     setAirbases((prev) => prev.map((b, i) => (i === index ? updater(b) : b)));
   }, []);
 
+  // Deployment handlers — kept stable so DeploymentTab's memoized map layers are
+  // not invalidated by unrelated re-renders (e.g. budget edits)
+  const deployMissileSystem = useCallback((key: string, data: DeployedMissileSystemData) => {
+    setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
+  }, []);
+
+  const undeployMissileSystem = useCallback((key: string) => {
+    setDeployedMissileSystems((prev) => {
+      const next = new Map(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const deployJammer = useCallback((index: number, lat: number, lng: number) => {
+    setDeployedJammers((prev) => new Map(prev).set(index, { lat, lng }));
+  }, []);
+
+  const undeployJammer = useCallback((index: number) => {
+    setDeployedJammers((prev) => {
+      const next = new Map(prev);
+      next.delete(index);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex h-screen flex-col">
       {/* Top Bar */}
@@ -168,52 +190,23 @@ function SetupMenuPage() {
       <div className="relative flex-1 overflow-hidden">
         {activeTab === 'opord' && <OpordTab amphibiousLocations={amphibiousLocations} />}
         {activeTab === 'mechanics' && <MechanicsTab />}
-        {activeTab === 'aircraft' && (
-          <AircraftTab
+        {activeTab === 'deployment' && (
+          <DeploymentTab
+            missileSystems={missileSystems}
             airbases={airbases}
-            budget={budget}
-            onSpendBudget={spendBudget}
-            onRefundBudget={refundBudget}
-            onUpdateAirbase={updateAirbase}
-            sideName={sideName}
-          />
-        )}
-        {activeTab === 'jammers' && (
-          <JammersTab
             jammers={jammers}
-            airbases={airbases}
+            budget={budget}
+            deployedSystems={deployedMissileSystems}
             deployedJammers={deployedJammers}
             shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
             sideName={sideName}
-            onDeployJammer={(index, lat, lng) => {
-              setDeployedJammers((prev) => new Map(prev).set(index, { lat, lng }));
-            }}
-            onUndeployJammer={(index) => {
-              setDeployedJammers((prev) => {
-                const next = new Map(prev);
-                next.delete(index);
-                return next;
-              });
-            }}
-          />
-        )}
-        {activeTab === 'missileSystems' && (
-          <MissileSystemsTab
-            missileSystems={missileSystems}
-            airbases={airbases}
-            deployedSystems={deployedMissileSystems}
-            shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
-            sideName={sideName}
-            onDeploySystem={(key, data) => {
-              setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
-            }}
-            onUndeploySystem={(key) => {
-              setDeployedMissileSystems((prev) => {
-                const next = new Map(prev);
-                next.delete(key);
-                return next;
-              });
-            }}
+            onDeploySystem={deployMissileSystem}
+            onUndeploySystem={undeployMissileSystem}
+            onDeployJammer={deployJammer}
+            onUndeployJammer={undeployJammer}
+            onSpendBudget={spendBudget}
+            onRefundBudget={refundBudget}
+            onUpdateAirbase={updateAirbase}
           />
         )}
         {activeTab === 'summary' && (

@@ -1,72 +1,49 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import type { MissileSystems, Airbase, DeployedMissileSystemData } from '@/types/setupMenu';
+import type {
+  MissileSystems,
+  Airbase,
+  DeployedMissileSystemData,
+  Jammer,
+  BudgetState,
+} from '@/types/setupMenu';
 import {
   BaseMap,
   AirbaseMarkers,
   DeployedMissileSystems,
   MissileSystemPreview,
   AreaRelocatePreview,
+  DeployedJammers,
+  JammerRelocatePreview,
 } from '@/components/Map';
 import type { RelocatingArea, AreaType } from '@/components/Map';
+import { getWeaponSystemName, isPointInTaiwan, determineOpeningAngle } from '@/utils/map';
 import {
-  getWeaponSystemName,
-  isPointInTaiwan,
-  determineOpeningAngle,
-  checkPolygonInTaiwan,
-} from '@/utils/map';
-import {
-  generateUShapeVertices,
-  calculateMovementPaths,
   calculateBearing,
   generateSquareVerticesPublic,
-  generateShelterPoints,
-  chooseFpGateway,
-  chooseShrlGateway,
   checkSquaresOverlap,
 } from '@/utils/tacticalAreaGenerator';
-import type { Coordinate } from '@/utils/tacticalAreaGenerator';
+import {
+  AREA_CONFIG,
+  AREA_SQUARE_SIZE,
+  areAllPointsInPolygon,
+  buildMovementPaths,
+  buildShelterPlan,
+  generateDeploymentData,
+  generateOffsetsForAngle,
+  generateRotationPreview,
+  isValidAngle,
+} from '@/utils/missileDeployment';
+import type { DeploymentContext, OffsetVertex, PreviewOffsets } from '@/utils/missileDeployment';
+import { CollapsibleGroup } from './CollapsibleGroup';
+import { DeployableUnitCard } from './DeployableUnitCard';
+import { AircraftPanel } from './AircraftPanel';
 
 // ============================================================================
-// AREA CONFIG
+// UI CONSTANTS
 // ============================================================================
-const AREA_CONFIG = {
-  width: 1.5,
-  height: 1.5,
-  internalSquares: {
-    size: 0.2,
-    marginToWall: 0.1,
-    marginBetweenSquares: 0.5,
-  },
-  firePoints: {
-    radius: 3,
-    squareSize: 0.3,
-    count: 2,
-    angleRange: 90,
-    margin: 0.2,
-  },
-  ahaPoint: {
-    radius: 7,
-    squareSize: 0.3,
-  },
-  shelter: {
-    count: 2,
-    marginToWall: 0.1,
-    marginToAreas: 0.1,
-    marginBetweenPoints: 0.2,
-  },
-};
-
-const MOVEMENT_PATH_AVOIDANCE_MARGIN = 0.05;
-const DEFAULT_STATUS = 'Select a missile system unit then click on the map to deploy';
-
-type RelocatableSquareType = Exclude<AreaType, 'ushape'>;
-
-const AREA_SQUARE_SIZE: Record<RelocatableSquareType, number> = {
-  aha: AREA_CONFIG.ahaPoint.squareSize,
-  hide: AREA_CONFIG.internalSquares.size,
-  reload: AREA_CONFIG.internalSquares.size,
-  fp: AREA_CONFIG.firePoints.squareSize,
-};
+const DEFAULT_STATUS = 'Select a unit from the sidebar, then click on the map to deploy';
+const OUT_OF_BOUNDS_JAMMER = 'Warning: EW units can only be deployed on Taiwan mainland';
+const OUT_OF_BOUNDS_MISSILE = 'Warning: Missile systems can only be deployed on Taiwan mainland';
 
 const AREA_LABEL: Record<AreaType, string> = {
   ushape: 'U-Shape',
@@ -76,258 +53,69 @@ const AREA_LABEL: Record<AreaType, string> = {
   fp: 'Fire Point',
 };
 
-function createEmptyMovementPaths(): DeployedMissileSystemData['paths'] {
-  return {
-    FP: [],
-    HA: { waypoints: [] },
-    RL: [],
-    AHA: { waypoints: [] },
-    SHRL: { waypoints: [] },
-  };
-}
-
-const SHELTER_PLAN_MAX_ATTEMPTS = 50;
-
-interface DeploymentContext {
-  centerLat: number;
-  centerLng: number;
-  openingAngle: number;
-}
-
-interface ShelterPlan {
-  shelterPoints: { latitude: number; longitude: number }[];
-  fpGateway: Coordinate | null;
-  shrlGateway: Coordinate | null;
-}
-
-function buildShelterPoints(
-  centerLat: number,
-  centerLon: number,
-  openingAngle: number,
-  hideArea?: { latitude: number; longitude: number }[],
-  reloadArea?: { latitude: number; longitude: number }[]
-): { latitude: number; longitude: number }[] {
-  const avoidAreas: { latitude: number; longitude: number }[][] = [];
-  if (hideArea && hideArea.length === 4) avoidAreas.push(hideArea);
-  if (reloadArea && reloadArea.length === 4) avoidAreas.push(reloadArea);
-
-  return generateShelterPoints({
-    centerLat,
-    centerLon,
-    areaWidth: AREA_CONFIG.width,
-    areaHeight: AREA_CONFIG.height,
-    openingAngle,
-    avoidAreas,
-    count: AREA_CONFIG.shelter.count,
-    marginToWall: AREA_CONFIG.shelter.marginToWall,
-    marginToAreas: AREA_CONFIG.shelter.marginToAreas,
-    marginBetweenPoints: AREA_CONFIG.shelter.marginBetweenPoints,
-  });
-}
-
-/**
- * Generate shelter points that share BOTH the FP and SHRL gateways. Retries
- * shelter placement until both gateways succeed or we hit the attempt cap.
- */
-function buildShelterPlan(
-  centerLat: number,
-  centerLon: number,
-  openingAngle: number,
-  hideArea?: { latitude: number; longitude: number }[],
-  reloadArea?: { latitude: number; longitude: number }[]
-): ShelterPlan {
-  const hasValidAreas =
-    !!hideArea && hideArea.length === 4 && !!reloadArea && reloadArea.length === 4;
-
-  let lastShelters: { latitude: number; longitude: number }[] = [];
-
-  for (let attempt = 0; attempt < SHELTER_PLAN_MAX_ATTEMPTS; attempt++) {
-    const shelters = buildShelterPoints(centerLat, centerLon, openingAngle, hideArea, reloadArea);
-    lastShelters = shelters;
-    if (!hasValidAreas || shelters.length === 0) continue;
-
-    const fpGateway = chooseFpGateway({
-      uShapeCenterLat: centerLat,
-      uShapeCenterLon: centerLon,
-      openingAngle,
-      areaWidth: AREA_CONFIG.width,
-      areaHeight: AREA_CONFIG.height,
-      hideArea: hideArea!,
-      reloadArea: reloadArea!,
-      shelterPoints: shelters,
-      avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
-    });
-    if (!fpGateway) continue;
-
-    const shrlGateway = chooseShrlGateway({
-      hideArea: hideArea!,
-      reloadArea: reloadArea!,
-      shelterPoints: shelters,
-      avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
-    });
-    if (!shrlGateway) continue;
-
-    return { shelterPoints: shelters, fpGateway, shrlGateway };
-  }
-
-  return { shelterPoints: lastShelters, fpGateway: null, shrlGateway: null };
-}
-
-function resolveGateways(
-  tacticalAreas: DeployedMissileSystemData['tacticalAreas'],
-  context: DeploymentContext
-): { fpGateway: Coordinate | null; shrlGateway: Coordinate | null } {
-  if (
-    !tacticalAreas.hideArea ||
-    tacticalAreas.hideArea.length !== 4 ||
-    !tacticalAreas.reloadArea ||
-    tacticalAreas.reloadArea.length !== 4 ||
-    !tacticalAreas.shelterPoints ||
-    tacticalAreas.shelterPoints.length === 0
-  ) {
-    return { fpGateway: null, shrlGateway: null };
-  }
-
-  const fpGateway = chooseFpGateway({
-    uShapeCenterLat: context.centerLat,
-    uShapeCenterLon: context.centerLng,
-    openingAngle: context.openingAngle,
-    areaWidth: AREA_CONFIG.width,
-    areaHeight: AREA_CONFIG.height,
-    hideArea: tacticalAreas.hideArea,
-    reloadArea: tacticalAreas.reloadArea,
-    shelterPoints: tacticalAreas.shelterPoints,
-    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
-  });
-
-  const shrlGateway = chooseShrlGateway({
-    hideArea: tacticalAreas.hideArea,
-    reloadArea: tacticalAreas.reloadArea,
-    shelterPoints: tacticalAreas.shelterPoints,
-    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
-  });
-
-  return { fpGateway, shrlGateway };
-}
-
-function buildMovementPaths(
-  tacticalAreas: DeployedMissileSystemData['tacticalAreas'],
-  context: DeploymentContext
-): DeployedMissileSystemData['paths'] {
-  if (!tacticalAreas.ammoArea || !tacticalAreas.hideArea || !tacticalAreas.reloadArea) {
-    return createEmptyMovementPaths();
-  }
-
-  const { fpGateway, shrlGateway } = resolveGateways(tacticalAreas, context);
-
-  return calculateMovementPaths({
-    ammoArea: tacticalAreas.ammoArea,
-    hideArea: tacticalAreas.hideArea,
-    reloadArea: tacticalAreas.reloadArea,
-    firePoints: tacticalAreas.firePoints,
-    avoidanceMargin: MOVEMENT_PATH_AVOIDANCE_MARGIN,
-    fpGateway: fpGateway ?? undefined,
-    shrlGateway: shrlGateway ?? undefined,
-  });
-}
-
-function isValidAngle(angle: number): boolean {
-  return Number.isFinite(angle) && angle >= 0 && angle <= 359;
-}
-
-function isPointInPolygon(
-  point: { latitude: number; longitude: number },
-  polygon: { latitude: number; longitude: number }[]
-): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const yi = polygon[i].latitude;
-    const xi = polygon[i].longitude;
-    const yj = polygon[j].latitude;
-    const xj = polygon[j].longitude;
-    if (
-      yi > point.latitude !== yj > point.latitude &&
-      point.longitude < ((xj - xi) * (point.latitude - yi)) / (yj - yi) + xi
-    ) {
-      inside = !inside;
-    }
-  }
-  return inside;
-}
-
-function areAllPointsInPolygon(
-  points: { latitude: number; longitude: number }[],
-  polygon: { latitude: number; longitude: number }[]
-): boolean {
-  return points.every((point) => isPointInPolygon(point, polygon));
-}
-
 function formatAreaLabel(area: RelocatingArea): string {
   if (area.type !== 'fp') return AREA_LABEL[area.type];
   return `${AREA_LABEL.fp} ${(area.fpIndex ?? 0) + 1}`;
 }
 
-// ============================================================================
-// PREVIEW TYPES & CONSTANTS
-// ============================================================================
-interface OffsetVertex {
-  dLat: number;
-  dLng: number;
-}
-
-interface PreviewOffsets {
-  uShapeVertices: OffsetVertex[];
-  ammoArea: OffsetVertex[];
-  hideArea: OffsetVertex[];
-  reloadArea: OffsetVertex[];
-  firePoints: OffsetVertex[][];
-}
-
-const REF_CENTER = { lat: 23.8, lng: 121.0 };
-
-function resultToOffsets(
-  result: ReturnType<typeof generateUShapeVertices>,
-  refLat: number,
-  refLng: number
-): PreviewOffsets {
-  const toOffset = (c: { latitude: number; longitude: number }): OffsetVertex => ({
-    dLat: c.latitude - refLat,
-    dLng: c.longitude - refLng,
-  });
-  return {
-    uShapeVertices: result.uShapeVertices.map(toOffset),
-    ammoArea: (result.ammoArea ?? []).map(toOffset),
-    hideArea: (result.hideArea ?? []).map(toOffset),
-    reloadArea: (result.reloadArea ?? []).map(toOffset),
-    firePoints: (result.firePoints ?? []).map((fp) => fp.map(toOffset)),
-  };
-}
-
-interface MissileSystemsTabProps {
+interface DeploymentTabProps {
   missileSystems: MissileSystems;
   airbases: Airbase[];
+  jammers: Jammer[];
+  budget: BudgetState;
   deployedSystems: Map<string, DeployedMissileSystemData>;
+  deployedJammers: Map<number, { lat: number; lng: number }>;
   shouldValidateTaiwanBoundary: boolean;
   sideName: string;
   onDeploySystem: (key: string, data: DeployedMissileSystemData) => void;
   onUndeploySystem: (key: string) => void;
+  onDeployJammer: (index: number, lat: number, lng: number) => void;
+  onUndeployJammer: (index: number) => void;
+  onSpendBudget: (amount?: number) => boolean;
+  onRefundBudget: (amount?: number) => void;
+  onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
 }
 
-export function MissileSystemsTab({
+/**
+ * Jammer placement. Deploy and relocate share the same commit path
+ * (validate boundary, then onDeployJammer), so they are one mode.
+ */
+interface PlacingJammer {
+  index: number;
+  isRelocate: boolean;
+}
+
+type SidebarPanel = 'aircraft' | 'ground';
+
+const SIDEBAR_PANELS: { id: SidebarPanel; label: string }[] = [
+  { id: 'aircraft', label: 'Aircraft' },
+  { id: 'ground', label: 'Ground & EW' },
+];
+
+export function DeploymentTab({
   missileSystems,
   airbases,
+  jammers,
+  budget,
   deployedSystems,
+  deployedJammers,
   shouldValidateTaiwanBoundary,
   sideName,
   onDeploySystem,
   onUndeploySystem,
-}: MissileSystemsTabProps) {
+  onDeployJammer,
+  onUndeployJammer,
+  onSpendBudget,
+  onRefundBudget,
+  onUpdateAirbase,
+}: DeploymentTabProps) {
   const [selectedUnit, setSelectedUnit] = useState<{
     key: string;
     name: string;
     category: string;
   } | null>(null);
   const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState(DEFAULT_STATUS);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [previewOffsets, setPreviewOffsets] = useState<Record<number, PreviewOffsets> | null>(null);
@@ -339,9 +127,16 @@ export function MissileSystemsTab({
     center: { lat: number; lng: number };
   } | null>(null);
   const [rotationPreviewAngle, setRotationPreviewAngle] = useState<number | null>(null);
+  const [placingJammer, setPlacingJammer] = useState<PlacingJammer | null>(null);
+  const [expandedJammerIndex, setExpandedJammerIndex] = useState<number | null>(null);
+  const [jammersCollapsed, setJammersCollapsed] = useState(false);
+  const [sidebarPanel, setSidebarPanel] = useState<SidebarPanel>('aircraft');
+  const [selectedBaseIndex, setSelectedBaseIndex] = useState<number | null>(null);
   const lastMouseMoveRef = useRef(0);
 
   const categories = Object.keys(missileSystems);
+  const isMissileModeActive = Boolean(selectedUnit || relocatingArea || rotatingUnit);
+  const isPlacementActive = isMissileModeActive || placingJammer !== null;
 
   const getUnitInfo = useCallback(
     (unitKey: string) => {
@@ -357,7 +152,8 @@ export function MissileSystemsTab({
     [missileSystems]
   );
 
-  const generateDeploymentData = useCallback(
+  /** Injects the side's boundary rule into the pure generator */
+  const createDeployment = useCallback(
     (
       unitName: string,
       category: string,
@@ -366,96 +162,18 @@ export function MissileSystemsTab({
       angle: number,
       ahaRadiusOverride?: number,
       ahaCenterOverride?: { lat: number; lng: number }
-    ): DeployedMissileSystemData | null => {
-      try {
-        const areaConfig = {
-          centerLat: lat,
-          centerLon: lng,
-          openingAngle: angle,
-          ...AREA_CONFIG,
-          ahaPoint: {
-            ...AREA_CONFIG.ahaPoint,
-            radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-            ...(ahaCenterOverride
-              ? { center: { latitude: ahaCenterOverride.lat, longitude: ahaCenterOverride.lng } }
-              : {}),
-          },
-        };
-
-        // Outer retry: if buildShelterPlan can't converge on both gateways with
-        // this HA/RL layout, regenerate the U-shape (which re-randomizes HA/RL/FP)
-        // and try again. Shelter inner retry is bounded separately.
-        const OUTER_MAX = 50;
-        for (let attempt = 0; attempt < OUTER_MAX; attempt++) {
-          const result = generateUShapeVertices(areaConfig);
-
-          // Taiwan boundary is deterministic w.r.t. lat/lng/angle; no point retrying.
-          if (shouldValidateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
-            return null;
-          }
-
-          const plan = buildShelterPlan(lat, lng, angle, result.hideArea, result.reloadArea);
-          if (!plan.fpGateway || !plan.shrlGateway) {
-            continue;
-          }
-
-          const tacticalAreas = {
-            uShapeVertices: result.uShapeVertices,
-            ammoArea: result.ammoArea,
-            hideArea: result.hideArea,
-            reloadArea: result.reloadArea,
-            firePoints: result.firePoints,
-            shelterPoints: plan.shelterPoints,
-          };
-
-          return {
-            unitName,
-            category,
-            center: { lat, lng },
-            openingAngle: angle,
-            ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-            ...(ahaCenterOverride ? { ahaCenter: ahaCenterOverride } : {}),
-            tacticalAreas,
-            paths: buildMovementPaths(tacticalAreas, {
-              centerLat: lat,
-              centerLng: lng,
-              openingAngle: angle,
-            }),
-          };
-        }
-
-        console.error(
-          `generateDeploymentData: failed to find both gateways after ${OUTER_MAX} outer retries`
-        );
-        return null;
-      } catch (error) {
-        console.error('Error generating tactical areas:', error);
-        return null;
-      }
-    },
+    ): DeployedMissileSystemData | null =>
+      generateDeploymentData({
+        unitName,
+        category,
+        lat,
+        lng,
+        angle,
+        validateTaiwanBoundary: shouldValidateTaiwanBoundary,
+        ahaRadiusOverride,
+        ahaCenterOverride,
+      }),
     [shouldValidateTaiwanBoundary]
-  );
-
-  const generateOffsetsForAngle = useCallback(
-    (angle: number, ahaRadiusOverride?: number): PreviewOffsets | null => {
-      try {
-        const result = generateUShapeVertices({
-          centerLat: REF_CENTER.lat,
-          centerLon: REF_CENTER.lng,
-          ...AREA_CONFIG,
-          ahaPoint: {
-            ...AREA_CONFIG.ahaPoint,
-            radius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-          },
-          openingAngle: angle,
-        });
-        return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
-      } catch (error) {
-        console.error('Failed to generate offsets for angle:', angle, error);
-        return null;
-      }
-    },
-    []
   );
 
   // ============================================================================
@@ -476,7 +194,7 @@ export function MissileSystemsTab({
       const extraFields: Partial<DeployedMissileSystemData> = {};
 
       if (relocatingArea.type === 'ushape') {
-        const regenerated = generateDeploymentData(
+        const regenerated = createDeployment(
           deployment.unitName,
           deployment.category,
           lat,
@@ -597,7 +315,7 @@ export function MissileSystemsTab({
       setMousePosition(null);
       return true;
     },
-    [relocatingArea, deployedSystems, generateDeploymentData, onDeploySystem]
+    [relocatingArea, deployedSystems, createDeployment, onDeploySystem]
   );
 
   const handleAngleChange = useCallback(
@@ -606,7 +324,7 @@ export function MissileSystemsTab({
       if (!deployment) return;
 
       if (isValidAngle(newAngle)) {
-        const newData = generateDeploymentData(
+        const newData = createDeployment(
           deployment.unitName,
           deployment.category,
           deployment.center.lat,
@@ -628,13 +346,36 @@ export function MissileSystemsTab({
         }
       }
     },
-    [deployedSystems, generateDeploymentData, onDeploySystem]
+    [deployedSystems, createDeployment, onDeploySystem]
   );
 
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
       setCoordinates({ lat, lng });
       setExpandedUnitKey(null);
+      setExpandedJammerIndex(null);
+
+      // Jammer placement mode (deploy and relocate commit the same way)
+      if (placingJammer) {
+        const jammer = jammers[placingJammer.index];
+        if (!jammer) {
+          setPlacingJammer(null);
+          return;
+        }
+        if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+          setStatus(OUT_OF_BOUNDS_JAMMER);
+          return;
+        }
+        onDeployJammer(placingJammer.index, lat, lng);
+        setStatus(
+          placingJammer.isRelocate
+            ? `${jammer.name} relocated to ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
+            : `Done: ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
+        );
+        setPlacingJammer(null);
+        setMousePosition(null);
+        return;
+      }
 
       // Rotation mode
       if (rotatingUnit && rotationPreviewAngle !== null) {
@@ -660,16 +401,16 @@ export function MissileSystemsTab({
       }
 
       if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
-        setStatus('Warning: Missile systems can only be deployed on Taiwan mainland');
+        setStatus(OUT_OF_BOUNDS_MISSILE);
         return;
       }
 
       const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
 
       // Preview offsets pre-compute a specific HA/RL layout, but we need both
-      // FP and SHRL gateways to exist. Delegate to generateDeploymentData which
+      // FP and SHRL gateways to exist. Delegate to createDeployment which
       // has the outer retry loop that regenerates HA/RL when gateways fail.
-      const deployment = generateDeploymentData(
+      const deployment = createDeployment(
         selectedUnit.name,
         selectedUnit.category,
         lat,
@@ -679,7 +420,7 @@ export function MissileSystemsTab({
       if (!deployment) {
         setStatus(
           shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)
-            ? 'Warning: Missile systems can only be deployed on Taiwan mainland'
+            ? OUT_OF_BOUNDS_MISSILE
             : 'Warning: Failed to place tactical areas at this location'
         );
         return;
@@ -696,6 +437,9 @@ export function MissileSystemsTab({
       setMousePosition(null);
     },
     [
+      placingJammer,
+      jammers,
+      onDeployJammer,
       rotatingUnit,
       rotationPreviewAngle,
       handleAngleChange,
@@ -706,7 +450,7 @@ export function MissileSystemsTab({
       previewOffsets,
       shouldValidateTaiwanBoundary,
       previewAngle,
-      generateDeploymentData,
+      createDeployment,
       onDeploySystem,
     ]
   );
@@ -716,6 +460,7 @@ export function MissileSystemsTab({
       if (deployedSystems.has(unitKey)) {
         return;
       }
+      setPlacingJammer(null);
       setSelectedUnit({ key: unitKey, name: unitName, category });
       setPreviewAngle(null);
       setStatus(`${unitName} selected - Click map to deploy`);
@@ -728,21 +473,70 @@ export function MissileSystemsTab({
 
       setPreviewOffsets(offsets);
     },
-    [deployedSystems, generateOffsetsForAngle]
+    [deployedSystems]
   );
 
-  const handleCancelSelect = () => {
+  const clearMissileModes = useCallback(() => {
     setSelectedUnit(null);
     setPreviewOffsets(null);
     setPreviewAngle(null);
-    setMousePosition(null);
     setRelocatingArea(null);
     setRotatingUnit(null);
     setRotationPreviewAngle(null);
-    setStatus(DEFAULT_STATUS);
-  };
+  }, []);
 
-  // Refs for stable callbacks (avoid breaking MissileSystemMarker memo)
+  const handleCancelSelect = useCallback(() => {
+    clearMissileModes();
+    setPlacingJammer(null);
+    setMousePosition(null);
+    setStatus(DEFAULT_STATUS);
+  }, [clearMissileModes]);
+
+  const toggleCategory = useCallback(
+    (category: string) => {
+      const willCollapse = !collapsedCategories.has(category);
+
+      setCollapsedCategories((prev) => {
+        const next = new Set(prev);
+        if (willCollapse) next.add(category);
+        else next.delete(category);
+        return next;
+      });
+
+      if (!willCollapse) return;
+
+      // Collapsing hides the per-unit controls, so drop any pending sidebar
+      // state in this category that would otherwise become unreachable.
+      if (expandedUnitKey && deployedSystems.get(expandedUnitKey)?.category === category) {
+        setExpandedUnitKey(null);
+      }
+      if (selectedUnit?.category === category) {
+        setSelectedUnit(null);
+        setPreviewOffsets(null);
+        setPreviewAngle(null);
+        setMousePosition(null);
+        setStatus(DEFAULT_STATUS);
+      }
+    },
+    [collapsedCategories, expandedUnitKey, deployedSystems, selectedUnit]
+  );
+
+  const toggleJammers = useCallback(() => {
+    const willCollapse = !jammersCollapsed;
+    setJammersCollapsed(willCollapse);
+    if (!willCollapse) return;
+
+    // Same reasoning as toggleCategory: a pending selection would lose its
+    // Cancel button. Relocation is driven from the map, so it survives.
+    setExpandedJammerIndex(null);
+    if (placingJammer && !placingJammer.isRelocate) {
+      setPlacingJammer(null);
+      setMousePosition(null);
+      setStatus(DEFAULT_STATUS);
+    }
+  }, [jammersCollapsed, placingJammer]);
+
+  // Refs for stable callbacks (avoid breaking MissileSystemMarker/JammerMarker memo)
   const relocatingAreaRef = useRef(relocatingArea);
   useEffect(() => {
     relocatingAreaRef.current = relocatingArea;
@@ -751,8 +545,31 @@ export function MissileSystemsTab({
   useEffect(() => {
     deployedSystemsRef.current = deployedSystems;
   }, [deployedSystems]);
+  const placingJammerRef = useRef(placingJammer);
+  useEffect(() => {
+    placingJammerRef.current = placingJammer;
+  }, [placingJammer]);
+  const jammersRef = useRef(jammers);
+  useEffect(() => {
+    jammersRef.current = jammers;
+  }, [jammers]);
+  const isMissileModeActiveRef = useRef(isMissileModeActive);
+  useEffect(() => {
+    isMissileModeActiveRef.current = isMissileModeActive;
+  }, [isMissileModeActive]);
+  const isPlacementActiveRef = useRef(isPlacementActive);
+  useEffect(() => {
+    isPlacementActiveRef.current = isPlacementActive;
+  }, [isPlacementActive]);
 
+  // Cross-mode arbitration lives in these handlers, not in Leaflet hit-testing:
+  // react-leaflet only reads `interactive` when it constructs a layer, so
+  // toggling that prop on a mounted Polygon/Marker has no effect. A layer that
+  // owns the click also suppresses the map click, so the guards below just
+  // ignore the click rather than letting another mode hijack the session.
   const handleAreaClick = useCallback((area: RelocatingArea) => {
+    if (placingJammerRef.current) return;
+
     const current = relocatingAreaRef.current;
     // Toggle off if clicking the same area
     if (
@@ -778,6 +595,8 @@ export function MissileSystemsTab({
   }, []);
 
   const handleRotateClick = useCallback((unitKey: string) => {
+    if (placingJammerRef.current) return;
+
     const deployment = deployedSystemsRef.current.get(unitKey);
     if (!deployment) return;
 
@@ -792,20 +611,101 @@ export function MissileSystemsTab({
     );
   }, []);
 
-  useEffect(() => {
-    if (!relocatingArea && !rotatingUnit) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setRelocatingArea(null);
-        setRotatingUnit(null);
-        setRotationPreviewAngle(null);
-        setMousePosition(null);
-        setStatus(rotatingUnit ? 'Rotation cancelled' : 'Relocation cancelled');
+  // ============================================================================
+  // Jammer Handlers
+  // ============================================================================
+  const handleJammerSelect = useCallback(
+    (index: number) => {
+      if (deployedJammers.has(index)) {
+        setExpandedJammerIndex(expandedJammerIndex === index ? null : index);
+        return;
       }
+      clearMissileModes();
+      setMousePosition(null);
+      setPlacingJammer({ index, isRelocate: false });
+      setStatus(`${jammers[index]?.name ?? 'EW unit'} selected - Click map to deploy`);
+    },
+    [deployedJammers, expandedJammerIndex, clearMissileModes, jammers]
+  );
+
+  const handleJammerRelocateClick = useCallback((index: number) => {
+    if (isMissileModeActiveRef.current) return;
+
+    const current = placingJammerRef.current;
+    // Toggle off if clicking the same jammer
+    if (current?.index === index && current.isRelocate) {
+      setPlacingJammer(null);
+      setMousePosition(null);
+      setStatus('Relocation cancelled');
+      return;
+    }
+    setMousePosition(null);
+    setPlacingJammer({ index, isRelocate: true });
+    setStatus(
+      `Click on the map to relocate ${jammersRef.current[index]?.name ?? 'EW unit'}, or click it again / press ESC to cancel`
+    );
+  }, []);
+
+  const handleUndeployJammer = useCallback(
+    (index: number) => {
+      onUndeployJammer(index);
+      setExpandedJammerIndex(null);
+      setStatus(`${jammers[index]?.name ?? 'EW unit'} deployment cancelled`);
+    },
+    [onUndeployJammer, jammers]
+  );
+
+  // ============================================================================
+  // Aircraft Handlers
+  // ============================================================================
+  /**
+   * Selecting a base switches the sidebar to the aircraft panel. Guarded so a
+   * stray airbase click cannot swallow a pending deployment.
+   */
+  const handleAirbaseClick = useCallback((index: number) => {
+    if (isPlacementActiveRef.current) return;
+    setSelectedBaseIndex(index);
+    setSidebarPanel('aircraft');
+  }, []);
+
+  const handleAircraftError = useCallback((message: string) => {
+    setStatus(message);
+  }, []);
+
+  const handleSidebarPanelChange = useCallback(
+    (panel: SidebarPanel) => {
+      setSidebarPanel(panel);
+      // Leaving the ground panel would hide the Cancel controls of a pending
+      // sidebar selection, so drop it. Map-driven modes are left alone.
+      if (panel === 'aircraft') {
+        if (selectedUnit || (placingJammer && !placingJammer.isRelocate)) {
+          setSelectedUnit(null);
+          setPreviewOffsets(null);
+          setPreviewAngle(null);
+          setPlacingJammer(null);
+          setMousePosition(null);
+          setStatus(DEFAULT_STATUS);
+        }
+      }
+    },
+    [selectedUnit, placingJammer]
+  );
+
+  // ESC cancels whichever mode currently owns the map click
+  useEffect(() => {
+    if (!relocatingArea && !rotatingUnit && !placingJammer && !selectedUnit) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      clearMissileModes();
+      setPlacingJammer(null);
+      setMousePosition(null);
+      if (rotatingUnit) setStatus('Rotation cancelled');
+      else if (relocatingArea || placingJammer?.isRelocate) setStatus('Relocation cancelled');
+      else setStatus('Selection cancelled');
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [relocatingArea, rotatingUnit]);
+  }, [relocatingArea, rotatingUnit, placingJammer, selectedUnit, clearMissileModes]);
 
   const handleUndeploy = (unitKey: string, unitName: string) => {
     onUndeploySystem(unitKey);
@@ -814,7 +714,7 @@ export function MissileSystemsTab({
 
   const handleMouseMove = useCallback(
     (lat: number, lng: number) => {
-      if (!selectedUnit && !relocatingArea && !rotatingUnit) return;
+      if (!selectedUnit && !relocatingArea && !rotatingUnit && !placingJammer) return;
       const now = Date.now();
       if (now - lastMouseMoveRef.current < 50) return;
       lastMouseMoveRef.current = now;
@@ -828,7 +728,7 @@ export function MissileSystemsTab({
         setStatus(`Rotating: ${angle}° — Click to confirm. ESC to cancel`);
       }
     },
-    [selectedUnit, relocatingArea, rotatingUnit]
+    [selectedUnit, relocatingArea, rotatingUnit, placingJammer]
   );
 
   const previewData = useMemo(() => {
@@ -895,39 +795,27 @@ export function MissileSystemsTab({
     const deployment = deployedSystems.get(rotatingUnit.unitKey);
     if (!deployment) return null;
 
-    try {
-      const result = generateUShapeVertices({
-        centerLat: rotatingUnit.center.lat,
-        centerLon: rotatingUnit.center.lng,
-        ...AREA_CONFIG,
-        ahaPoint: {
-          ...AREA_CONFIG.ahaPoint,
-          radius: deployment.ahaRadius ?? AREA_CONFIG.ahaPoint.radius,
-          ...(deployment.ahaCenter
-            ? {
-                center: {
-                  latitude: deployment.ahaCenter.lat,
-                  longitude: deployment.ahaCenter.lng,
-                },
-              }
-            : {}),
-        },
-        openingAngle: rotationPreviewAngle,
-      });
+    const preview = generateRotationPreview(
+      rotatingUnit.center,
+      rotationPreviewAngle,
+      deployment.ahaRadius,
+      deployment.ahaCenter
+    );
+    if (!preview) return null;
 
-      return {
-        uShapeVertices: result.uShapeVertices,
-        ammoArea: result.ammoArea ?? [],
-        hideArea: result.hideArea ?? [],
-        reloadArea: result.reloadArea ?? [],
-        firePoints: deployment.tacticalAreas.firePoints ?? [],
-      };
-    } catch {
-      return null;
-    }
+    // Fire points are user-placed, so rotation leaves them where they are
+    return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [] };
   }, [rotatingUnit, rotationPreviewAngle, deployedSystems]);
 
-  const isInteractive = selectedUnit || relocatingArea || rotatingUnit;
+  const placingJammerUnit = placingJammer ? (jammers[placingJammer.index] ?? null) : null;
+  const isInteractive = isPlacementActive;
+
+  // The default hint is about placing units, which does not apply to the
+  // aircraft panel. Any real deployment result still shows through.
+  const displayStatus =
+    sidebarPanel === 'aircraft' && status === DEFAULT_STATUS
+      ? 'Select an airbase on the map to edit its loadouts'
+      : status;
 
   return (
     <div className="flex h-full">
@@ -939,7 +827,7 @@ export function MissileSystemsTab({
           cursorStyle={isInteractive ? 'crosshair' : undefined}
           sideName={sideName}
         >
-          <AirbaseMarkers airbases={airbases} />
+          <AirbaseMarkers airbases={airbases} onAirbaseClick={handleAirbaseClick} />
           <DeployedMissileSystems
             deployedSystems={deployedSystems}
             getUnitInfo={getUnitInfo}
@@ -948,6 +836,15 @@ export function MissileSystemsTab({
             relocatingArea={relocatingArea}
             rotatingUnitKey={rotatingUnit?.unitKey ?? null}
           />
+          <DeployedJammers
+            jammers={jammers}
+            deployedPositions={deployedJammers}
+            relocatingIndex={placingJammer?.isRelocate ? placingJammer.index : null}
+            onRelocateClick={handleJammerRelocateClick}
+          />
+          {placingJammerUnit && mousePosition && (
+            <JammerRelocatePreview radius={placingJammerUnit.radius} position={mousePosition} />
+          )}
           {relocatePreviewVertices && relocatingArea && (
             <AreaRelocatePreview
               vertices={relocatePreviewVertices}
@@ -978,119 +875,159 @@ export function MissileSystemsTab({
       </div>
 
       {/* Controls Panel */}
-      <div className="w-80 overflow-y-auto border-l border-dark-border bg-dark-panel p-4">
-        <div className="mb-4 text-xs font-bold uppercase tracking-wide text-text-secondary">
-          Missile System Deployment
+      <div className="flex w-80 flex-col border-l border-dark-border bg-dark-panel">
+        {/* Sidebar Sub-tabs */}
+        <div className="flex shrink-0 border-b border-dark-border">
+          {SIDEBAR_PANELS.map((panel) => (
+            <button
+              key={panel.id}
+              type="button"
+              aria-pressed={sidebarPanel === panel.id}
+              className={`flex-1 border-b-2 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                sidebarPanel === panel.id
+                  ? 'border-accent-blue bg-accent-blue/10 text-accent-blue'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+              onClick={() => handleSidebarPanelChange(panel.id)}
+            >
+              {panel.label}
+            </button>
+          ))}
         </div>
 
-        <div className="mb-4">
-          <div className="mb-2 text-xs font-semibold">Available Units</div>
-          {categories.length === 0 ? (
-            <div className="text-xs italic text-text-secondary">
-              No missile system units available
-            </div>
+        {/* Active Panel */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {sidebarPanel === 'aircraft' ? (
+            <AircraftPanel
+              airbases={airbases}
+              budget={budget}
+              selectedBaseIndex={selectedBaseIndex}
+              onSpendBudget={onSpendBudget}
+              onRefundBudget={onRefundBudget}
+              onUpdateAirbase={onUpdateAirbase}
+              onError={handleAircraftError}
+            />
           ) : (
-            <div className="space-y-2">
-              {categories.map((category) => {
-                const categoryData = missileSystems[category];
-                if (!categoryData?.firingUnits) return null;
-
-                const weaponName = getWeaponSystemName(category);
-
-                return (
-                  <div key={category}>
-                    {/* Category Header */}
-                    <div className="mb-2 border-l-[3px] border-accent-blue bg-accent-blue/15 px-2 py-2 text-xs font-bold text-accent-blue">
-                      {weaponName}
+            <div className="mb-4">
+              <div className="mb-2 text-xs font-semibold">Available Units</div>
+              <div className="space-y-2">
+                {/* GPS Jammers */}
+                <CollapsibleGroup
+                  title="GPS Jammers"
+                  deployedCount={deployedJammers.size}
+                  totalCount={jammers.length}
+                  collapsed={jammersCollapsed}
+                  onToggle={toggleJammers}
+                >
+                  {jammers.length === 0 ? (
+                    <div className="text-xs italic text-text-secondary">
+                      No jammer units available
                     </div>
-
-                    {/* Units */}
-                    {Object.entries(categoryData.firingUnits).map(([unitName, unit]) => {
-                      const unitKey = `${category}_${unitName}`;
-                      const isDeployed = deployedSystems.has(unitKey);
-                      const isSelected = selectedUnit?.key === unitKey;
-                      const isExpanded = expandedUnitKey === unitKey;
-                      const deployment = deployedSystems.get(unitKey);
-
+                  ) : (
+                    jammers.map((jammer, index) => {
+                      const deployment = deployedJammers.get(index);
                       return (
-                        <div
-                          key={unitKey}
-                          className={`mb-2 cursor-pointer rounded-sm border p-2.5 text-xs transition-colors ${
-                            isDeployed
-                              ? 'border-status-success border-l-4 bg-status-success/10'
-                              : isSelected
-                                ? 'border-accent-blue bg-accent-blue/20'
-                                : 'border-dark-border bg-dark-hover hover:bg-dark-border'
-                          }`}
-                          onClick={() => {
-                            if (isDeployed) {
-                              setExpandedUnitKey(isExpanded ? null : unitKey);
-                            } else {
-                              handleUnitSelect(unitKey, unit.name, category);
-                            }
-                          }}
-                        >
-                          <div className="mb-1 font-semibold">{unit.name}</div>
-                          <div className="text-text-secondary">
-                            <div>SYSTEM: {weaponName.split('(')[0].trim()}</div>
-                          </div>
-
-                          {isDeployed && deployment && (
-                            <div className="mt-2 rounded bg-status-success/10 p-1.5">
-                              <div className="text-[11px] text-status-success">
-                                ✓ Deployed | Angle: {deployment.openingAngle}°
-                              </div>
-                              {isExpanded && (
-                                <button
-                                  className="w-full rounded bg-status-danger px-2 py-1 text-[11px] font-semibold text-white hover:bg-red-700"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUndeploy(unitKey, unit.name);
-                                  }}
-                                >
-                                  Cancel Deployment
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {isSelected && !isDeployed && (
-                            <div className="mt-2 rounded bg-accent-blue/10 p-1.5">
-                              <div className="text-[11px] text-accent-blue">
-                                Click map to deploy
-                              </div>
-                              <button
-                                className="mt-2 w-full rounded bg-dark-border px-2 py-1 text-[11px] font-semibold text-text-secondary hover:bg-dark-hover"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCancelSelect();
-                                }}
-                              >
-                                Cancel Selection
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <DeployableUnitCard
+                          key={index}
+                          name={jammer.name}
+                          details={
+                            <>
+                              <div>ZONE: {jammer.zoneName}</div>
+                              <div>RANGE: {jammer.radius} NM</div>
+                            </>
+                          }
+                          deployedSummary={
+                            deployment
+                              ? `✓ Deployed at ${deployment.lat.toFixed(4)}°, ${deployment.lng.toFixed(4)}°`
+                              : null
+                          }
+                          isDeployed={deployment !== undefined}
+                          isSelected={placingJammer?.index === index && !placingJammer.isRelocate}
+                          isExpanded={expandedJammerIndex === index}
+                          onSelect={() => handleJammerSelect(index)}
+                          onCancelDeployment={() => handleUndeployJammer(index)}
+                          onCancelSelection={handleCancelSelect}
+                        />
                       );
-                    })}
+                    })
+                  )}
+                </CollapsibleGroup>
+
+                {/* Missile Systems */}
+                {categories.length === 0 ? (
+                  <div className="text-xs italic text-text-secondary">
+                    No missile system units available
                   </div>
-                );
-              })}
+                ) : (
+                  categories.map((category) => {
+                    const categoryData = missileSystems[category];
+                    if (!categoryData?.firingUnits) return null;
+
+                    const weaponName = getWeaponSystemName(category);
+                    const unitEntries = Object.entries(categoryData.firingUnits);
+                    const deployedCount = unitEntries.filter(([unitName]) =>
+                      deployedSystems.has(`${category}_${unitName}`)
+                    ).length;
+
+                    return (
+                      <CollapsibleGroup
+                        key={category}
+                        title={weaponName}
+                        deployedCount={deployedCount}
+                        totalCount={unitEntries.length}
+                        collapsed={collapsedCategories.has(category)}
+                        onToggle={() => toggleCategory(category)}
+                      >
+                        {unitEntries.map(([unitName, unit]) => {
+                          const unitKey = `${category}_${unitName}`;
+                          const deployment = deployedSystems.get(unitKey);
+                          const isExpanded = expandedUnitKey === unitKey;
+
+                          return (
+                            <DeployableUnitCard
+                              key={unitKey}
+                              name={unit.name}
+                              details={<div>SYSTEM: {weaponName.split('(')[0].trim()}</div>}
+                              deployedSummary={
+                                deployment
+                                  ? `✓ Deployed | Angle: ${deployment.openingAngle}°`
+                                  : null
+                              }
+                              isDeployed={deployment !== undefined}
+                              isSelected={selectedUnit?.key === unitKey}
+                              isExpanded={isExpanded}
+                              onSelect={() => {
+                                if (deployment) {
+                                  setExpandedUnitKey(isExpanded ? null : unitKey);
+                                } else {
+                                  handleUnitSelect(unitKey, unit.name, category);
+                                }
+                              }}
+                              onCancelDeployment={() => handleUndeploy(unitKey, unit.name)}
+                              onCancelSelection={handleCancelSelect}
+                            />
+                          );
+                        })}
+                      </CollapsibleGroup>
+                    );
+                  })
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Status */}
-        <div className="rounded-sm border border-dark-border bg-black/30 p-2.5 text-xs">
-          {status}
-        </div>
-
-        {/* Coordinates Display */}
-        {coordinates && (
-          <div className="mt-5 font-mono text-[11px] text-text-secondary">
-            Latitude: {coordinates.lat.toFixed(6)}°, Longitude: {coordinates.lng.toFixed(6)}°
+        {/* Status + Coordinates (shared across panels) */}
+        <div className="shrink-0 border-t border-dark-border p-4">
+          <div className="rounded-sm border border-dark-border bg-black/30 p-2.5 text-xs">
+            {displayStatus}
           </div>
-        )}
+          {coordinates && (
+            <div className="mt-3 font-mono text-[11px] text-text-secondary">
+              Latitude: {coordinates.lat.toFixed(6)}°, Longitude: {coordinates.lng.toFixed(6)}°
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
