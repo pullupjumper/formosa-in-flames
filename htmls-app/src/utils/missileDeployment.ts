@@ -8,6 +8,7 @@ import {
   chooseShrlGateway,
 } from '@/utils/tacticalAreaGenerator';
 import type { Coordinate } from '@/utils/tacticalAreaGenerator';
+import type { RandomSource } from '@/utils/random';
 
 /**
  * Domain layer over `tacticalAreaGenerator`: applies the project's AREA_CONFIG
@@ -103,6 +104,8 @@ export interface GenerateDeploymentParams {
   validateTaiwanBoundary: boolean;
   ahaRadiusOverride?: number;
   ahaCenterOverride?: { lat: number; lng: number };
+  /** Defaults to `Math.random`; pass a seeded source for reproducible output. */
+  rng?: RandomSource;
 }
 
 export interface RotationPreview {
@@ -158,8 +161,9 @@ function buildShelterPoints(
   centerLat: number,
   centerLon: number,
   openingAngle: number,
-  hideArea?: Coordinate[],
-  reloadArea?: Coordinate[]
+  hideArea: Coordinate[] | undefined,
+  reloadArea: Coordinate[] | undefined,
+  rng: RandomSource
 ): Coordinate[] {
   const avoidAreas: Coordinate[][] = [];
   if (hideArea && hideArea.length === 4) avoidAreas.push(hideArea);
@@ -176,6 +180,7 @@ function buildShelterPoints(
     marginToWall: AREA_CONFIG.shelter.marginToWall,
     marginToAreas: AREA_CONFIG.shelter.marginToAreas,
     marginBetweenPoints: AREA_CONFIG.shelter.marginBetweenPoints,
+    rng,
   });
 }
 
@@ -188,7 +193,8 @@ export function buildShelterPlan(
   centerLon: number,
   openingAngle: number,
   hideArea?: Coordinate[],
-  reloadArea?: Coordinate[]
+  reloadArea?: Coordinate[],
+  rng: RandomSource = Math.random
 ): ShelterPlan {
   const hasValidAreas =
     !!hideArea && hideArea.length === 4 && !!reloadArea && reloadArea.length === 4;
@@ -196,7 +202,14 @@ export function buildShelterPlan(
   let lastShelters: Coordinate[] = [];
 
   for (let attempt = 0; attempt < SHELTER_PLAN_MAX_ATTEMPTS; attempt++) {
-    const shelters = buildShelterPoints(centerLat, centerLon, openingAngle, hideArea, reloadArea);
+    const shelters = buildShelterPoints(
+      centerLat,
+      centerLon,
+      openingAngle,
+      hideArea,
+      reloadArea,
+      rng
+    );
     lastShelters = shelters;
     if (!hasValidAreas || shelters.length === 0) continue;
 
@@ -328,6 +341,7 @@ export function generateDeploymentData({
   validateTaiwanBoundary,
   ahaRadiusOverride,
   ahaCenterOverride,
+  rng = Math.random,
 }: GenerateDeploymentParams): DeployedMissileSystemData | null {
   try {
     const areaConfig = buildAreaConfig(lat, lng, angle, ahaRadiusOverride, ahaCenterOverride);
@@ -336,14 +350,14 @@ export function generateDeploymentData({
     // this HA/RL layout, regenerate the U-shape (which re-randomizes HA/RL/FP)
     // and try again. Shelter inner retry is bounded separately.
     for (let attempt = 0; attempt < DEPLOYMENT_MAX_ATTEMPTS; attempt++) {
-      const result = generateUShapeVertices(areaConfig);
+      const result = generateUShapeVertices(areaConfig, rng);
 
       // Taiwan boundary is deterministic w.r.t. lat/lng/angle; no point retrying.
       if (validateTaiwanBoundary && !checkPolygonInTaiwan(result.uShapeVertices)) {
         return null;
       }
 
-      const plan = buildShelterPlan(lat, lng, angle, result.hideArea, result.reloadArea);
+      const plan = buildShelterPlan(lat, lng, angle, result.hideArea, result.reloadArea, rng);
       if (!plan.fpGateway || !plan.shrlGateway) {
         continue;
       }
@@ -410,11 +424,13 @@ function resultToOffsets(
  */
 export function generateOffsetsForAngle(
   angle: number,
-  ahaRadiusOverride?: number
+  ahaRadiusOverride?: number,
+  rng: RandomSource = Math.random
 ): PreviewOffsets | null {
   try {
     const result = generateUShapeVertices(
-      buildAreaConfig(REF_CENTER.lat, REF_CENTER.lng, angle, ahaRadiusOverride)
+      buildAreaConfig(REF_CENTER.lat, REF_CENTER.lng, angle, ahaRadiusOverride),
+      rng
     );
     return resultToOffsets(result, REF_CENTER.lat, REF_CENTER.lng);
   } catch (error) {
@@ -428,11 +444,13 @@ export function generateRotationPreview(
   center: { lat: number; lng: number },
   angle: number,
   ahaRadius?: number,
-  ahaCenter?: { lat: number; lng: number }
+  ahaCenter?: { lat: number; lng: number },
+  rng: RandomSource = Math.random
 ): RotationPreview | null {
   try {
     const result = generateUShapeVertices(
-      buildAreaConfig(center.lat, center.lng, angle, ahaRadius, ahaCenter)
+      buildAreaConfig(center.lat, center.lng, angle, ahaRadius, ahaCenter),
+      rng
     );
     return {
       uShapeVertices: result.uShapeVertices,

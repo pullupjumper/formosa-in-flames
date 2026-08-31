@@ -3,6 +3,8 @@
  * Generates rectangular boundary areas, internal squares, fire points, and movement paths
  */
 
+import type { RandomSource } from '@/utils/random';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -142,10 +144,11 @@ function generateRandomSquareCenter(
   centerLon: number,
   maxOffsetX: number,
   maxOffsetY: number,
-  openingAngle: number
+  openingAngle: number,
+  rng: RandomSource
 ): Coordinate {
-  const offsetX = (Math.random() * 2 - 1) * maxOffsetX;
-  const offsetY = (Math.random() * 2 - 1) * maxOffsetY;
+  const offsetX = (rng() * 2 - 1) * maxOffsetX;
+  const offsetY = (rng() * 2 - 1) * maxOffsetY;
 
   const tempPos = getPointFromBearing(centerLat, centerLon, (90 + openingAngle) % 360, offsetX);
 
@@ -615,6 +618,7 @@ function generateInternalSquares(
   squareSize: number,
   areaWidth: number,
   areaHeight: number,
+  rng: RandomSource,
   marginToWall = 0.1,
   marginBetweenSquares = 0.1
 ): { hideArea: Coordinate[]; reloadArea: Coordinate[] } {
@@ -661,7 +665,8 @@ function generateInternalSquares(
         centerLon,
         maxOffsetX,
         maxOffsetY,
-        openingAngle
+        openingAngle,
+        rng
       );
 
       let overlap = false;
@@ -744,7 +749,8 @@ function generateFirePoints(
   openingAngle: number,
   margin: number,
   boundaryWidth: number,
-  boundaryHeight: number
+  boundaryHeight: number,
+  rng: RandomSource
 ): Coordinate[][] {
   const firePoints: { center: Coordinate; vertices: Coordinate[] }[] = [];
   const maxAttempts = 200;
@@ -759,7 +765,7 @@ function generateFirePoints(
     while (!validPosition && attempts < maxAttempts) {
       attempts++;
 
-      const randomAngle = (startAngle + Math.random() * angleRange) % 360;
+      const randomAngle = (startAngle + rng() * angleRange) % 360;
       const candidate = getPointFromBearing(centerLat, centerLon, randomAngle, radius);
 
       let valid = true;
@@ -853,6 +859,8 @@ export interface ShelterPointsConfig {
   marginToAreas?: number;
   marginBetweenPoints?: number;
   maxAttemptsPerPoint?: number;
+  /** Defaults to `Math.random`; pass a seeded source for reproducible output. */
+  rng?: RandomSource;
 }
 
 function getSquareHalfDiagonal(vertices: Coordinate[]): number {
@@ -882,6 +890,7 @@ export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[]
     marginToAreas = 0.1,
     marginBetweenPoints = 0.2,
     maxAttemptsPerPoint = 200,
+    rng = Math.random,
   } = config;
 
   const maxOffsetX = areaWidth / 2 - marginToWall;
@@ -908,7 +917,8 @@ export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[]
         centerLon,
         maxOffsetX,
         maxOffsetY,
-        openingAngle
+        openingAngle,
+        rng
       );
 
       const conflictsWithAreas = avoidInfo.some(
@@ -1153,7 +1163,10 @@ export function chooseShrlGateway(config: ShrlGatewayConfig): Coordinate | null 
 // Public API Functions
 // ============================================================================
 
-export function generateUShapeVertices(areaConfig: AreaConfig): GenerateResult {
+export function generateUShapeVertices(
+  areaConfig: AreaConfig,
+  rng: RandomSource = Math.random
+): GenerateResult {
   if (!areaConfig.centerLat) throw new Error('config.centerLat is required');
   if (!areaConfig.centerLon) throw new Error('config.centerLon is required');
   if (!areaConfig.width) throw new Error('config.width is required');
@@ -1194,6 +1207,7 @@ export function generateUShapeVertices(areaConfig: AreaConfig): GenerateResult {
       areaConfig.internalSquares.size,
       width,
       height,
+      rng,
       areaConfig.internalSquares.marginToWall,
       areaConfig.internalSquares.marginBetweenSquares
     );
@@ -1224,7 +1238,8 @@ export function generateUShapeVertices(areaConfig: AreaConfig): GenerateResult {
       openingAngle,
       areaConfig.firePoints.margin || 0.1,
       width,
-      height
+      height,
+      rng
     );
   }
 
