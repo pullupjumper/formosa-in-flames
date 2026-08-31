@@ -301,6 +301,32 @@ export const AIRBASES_DATA: Airbase[] = [
 // MISSILE SYSTEMS DATA (Simplified - only firingUnits for UI)
 // ============================================================================
 export const MISSILE_SYSTEMS_DATA: MissileSystems = {
+  sam: {
+    operationalAreas: {},
+    reloadTime: 600,
+    wpnDefault: 27,
+    firingUnits: {
+      '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {
+        dbid: 2446,
+        resupplyUnit: 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
+        guid: 'IC8B0X-0HN7SOIUF4D47',
+        ammoThreshold: 25,
+        weaponDBID: 1717,
+        name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+        operationalArea: {
+          RL: [],
+          FP: [],
+          AHA: [],
+          HA: [],
+        },
+        state: 3,
+        msg: 'Radio source, Bty',
+      },
+    },
+    resupplyUnits: {},
+    ammoThreshold: 25,
+    ammunitions: {},
+  },
   srbm: {
     operationalAreas: {},
     reloadTime: 600,

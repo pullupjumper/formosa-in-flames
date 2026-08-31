@@ -301,3 +301,10 @@ export const CONFIG = {
     WEAPON_RANGE: '#ff4444',
   },
 };
+
+export interface ForceImage {
+  url: string | null;
+  label: string;
+  width: number;
+  height: number;
+}

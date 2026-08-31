@@ -4,7 +4,7 @@ import L from 'leaflet';
 import type { LatLngExpression, LatLngTuple } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@components/Map/leaflet-dark.css';
-import type { AmphibiousLocation } from '@/types/setupMenu';
+import type { AmphibiousLocation, ForceImage } from '@/types/setupMenu';
 
 // ============================================================================
 // FORCE IMAGERY SLOTS
@@ -12,12 +12,6 @@ import type { AmphibiousLocation } from '@/types/setupMenu';
 // Drop a URL (or an injected data URI) in here and the map marker renders it;
 // until then a dashed placeholder box of the same size holds the layout.
 // ============================================================================
-interface ForceImage {
-  url: string | null;
-  label: string;
-  width: number;
-  height: number;
-}
 
 interface OpordTabProps {
   amphibiousLocations: AmphibiousLocation[];
@@ -44,7 +38,7 @@ function createForceIcon(image: ForceImage): L.DivIcon {
          font-size:10px;letter-spacing:1px;text-align:center">${image.label}<br/>IMAGE</div>`;
 
   return L.divIcon({
-    className: 'opord-force-icon',
+    className: '',
     html: `<div style="width:${image.width}px;height:${image.height}px">${inner}</div>`,
     iconSize: [image.width, image.height],
     iconAnchor: [image.width / 2, image.height / 2],

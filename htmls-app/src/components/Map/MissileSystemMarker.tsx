@@ -1,9 +1,10 @@
 import { memo, useMemo, useCallback } from 'react';
-import { Circle, CircleMarker, Polygon, Polyline, Popup, Tooltip } from 'react-leaflet';
+import { Circle, CircleMarker, Polygon, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { DeployedMissileSystemData } from '@/types/setupMenu';
 import { CONFIG } from '@/types/setupMenu';
+import type { ForceImage } from '@/types/setupMenu';
 import { getWeaponSystemName } from '@/utils/map';
 
 // ============================================================================
@@ -65,12 +66,6 @@ const PATH_OPTIONS_ROTATE_HANDLE = {
   fillOpacity: 1,
   weight: 2,
 };
-const PATH_OPTIONS_HIDE_CENTER = {
-  color: '#fff',
-  fillColor: COLORS.HIDE_AREA,
-  fillOpacity: 1,
-  weight: 2,
-};
 const PATH_OPTIONS_SHELTER = {
   color: '#fff',
   fillColor: COLORS.SHELTER,
@@ -90,6 +85,16 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
   fillColor: '#ff6b6b',
   fillOpacity: 1,
   weight: 2,
+};
+
+// ============================================================================
+// ICON
+// ============================================================================
+const MISSILE_ICON_URL = 'https://i.meee.com.tw/suDq81b.png';
+const SAM_ICON_URL = 'https://i.meee.com.tw/PCUEceO.png';
+const ICON_IMAGES: Record<string, ForceImage> = {
+  sam: { url: SAM_ICON_URL, label: 'SAM', width: 31.5, height: 18.75 },
+  ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 31.5, height: 18.75 },
 };
 
 // ============================================================================
@@ -132,6 +137,22 @@ function useTooltipAnchor(coords: { latitude: number; longitude: number }[] | un
     [anchor]
   );
   return refCallback;
+}
+
+function createIcon(images: Record<string, ForceImage>, category: string): L.DivIcon {
+  const image = category === 'sam' ? images.sam : images.ssm;
+  const inner = image.url
+    ? `<img src="${image.url}" alt="${image.label}" style="width:100%;height:100%;object-fit:contain" />`
+    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+       border:1px dashed #137cbd;background:rgba(19,124,189,0.12);color:#a7b6c2;
+       font-size:10px;letter-spacing:1px;text-align:center">${image.label}<br/>IMAGE</div>`;
+
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${image.width}px;height:${image.height}px">${inner}</div>`,
+    iconSize: [image.width, image.height],
+    iconAnchor: [image.width / 2, image.height / 2],
+  });
 }
 
 // ============================================================================
@@ -392,6 +413,8 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [hideCenter]
   );
 
+  const icon = useMemo(() => createIcon(ICON_IMAGES, category), [category]);
+
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {
     const weaponName = getWeaponSystemName(category);
@@ -490,15 +513,11 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 
           {/* Hide Area Center Marker */}
           {hideCenterLatLng && (
-            <CircleMarker
-              center={hideCenterLatLng}
-              radius={6}
-              pathOptions={PATH_OPTIONS_HIDE_CENTER}
-            >
+            <Marker position={hideCenterLatLng} icon={icon}>
               <Tooltip direction="top">
-                <strong>Hide Area Center</strong>
+                <strong>{unitName}</strong>
               </Tooltip>
-            </CircleMarker>
+            </Marker>
           )}
 
           {/* Weapon Range Circle (from hide area center) */}
