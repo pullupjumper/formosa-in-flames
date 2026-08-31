@@ -17,6 +17,7 @@ htmls-app/src/
 ├── types/          # TypeScript type definitions
 ├── utils/          # Utility functions
 ├── data/           # Static mock data for development
+├── test/           # Vitest global setup
 └── index.css       # Global styles + Tailwind @theme custom colors
 ```
 
@@ -40,10 +41,26 @@ npm run dev          # Development server
 npm run build        # Rebuild src/htmls only; full deployment uses bin/build.sh from project root
 npm run lint         # Run ESLint
 npm run format       # Format with Prettier
+npm test             # Run Vitest once (CI mode)
+npm run test:watch   # Run Vitest in watch mode
+```
+
+### Testing
+Vitest + Testing Library (`happy-dom` environment). `vitest.config.ts` is separate from `vite.config.ts` because the deployment build swaps `root` per page and adds Tailwind/singlefile; only the path aliases are shared.
+
+- Test files live next to their subject: `src/utils/map.test.ts`, `src/pages/setup-menu/hooks/useDeploymentState.test.ts`
+- Global setup lives in `src/test/setup.ts` (jest-dom matchers + auto cleanup)
+- Randomness: geometry generators take a `RandomSource` that defaults to `Math.random`. Tests pass `createSeededRandom(seed)` from `@/utils/random` so generated layouts are reproducible
+- What to test: pure utilities (`utils/`), geometry invariants (squares do not overlap, vertices stay inside the boundary), and hook state machines via `renderHook`
+- What not to test: Leaflet marker rendering, `src/data/` mock data, presentational-only components
+
+```bash
+npx vitest run src/utils/map.test.ts   # Single file
 ```
 
 ### Full Deployment Build
 From project root:
 ```bash
-bash bin/build.sh    # Builds htmls-app → src/htmls/*.html → slim/main.lua
+bash bin/build.sh      # Builds htmls-app → src/htmls/*.html → slim/main.lua
+bash bin/build.sh -t   # Same, but runs busted (Lua) and vitest (frontend) first
 ```

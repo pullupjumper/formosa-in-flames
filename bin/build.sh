@@ -15,7 +15,7 @@ while getopts "nlhtx:" opt; do
     x) EXCLUDE_PATTERNS+=("$OPTARG") ;;
     h)
       echo "用法: ./build.sh [-n] [-l] [-h] [-t] [-x pattern]"
-      echo "  -t  執行測試"
+      echo "  -t  執行測試 (Lua busted + 前端 vitest)"
       echo "  -n  跳過 npm run build (不重新打包前端)"
       echo "  -l  跳過 luamin (不壓縮 Lua 程式碼)"
       echo "  -x  排除要合併的 Lua 檔案（可重複指定，支援 glob）"
@@ -36,10 +36,17 @@ echo "--- 開始建置流程 ---"
 if [ "$RUN_TEST" = true ]; then
     echo "🧪 執行 Lua 單元測試 (Busted)..."
     if ! busted --lua=luajit spec; then
-        echo "❌ 測試未通過，停止打包流程！"
+        echo "❌ Lua 測試未通過，停止打包流程！"
         exit 1
     fi
-    echo "✅ 測試通過"
+    echo "✅ Lua 測試通過"
+
+    echo "🧪 執行前端單元測試 (Vitest)..."
+    if ! (cd htmls-app && npm test); then
+        echo "❌ 前端測試未通過，停止打包流程！"
+        exit 1
+    fi
+    echo "✅ 前端測試通過"
 fi
 
 # 步驟 1: NPM
