@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Table, Th, Td, Tr, EmptyRow, ProgressBar } from '@/components/Table';
 import { formatTimestamp, calculateProgress, isDataEmpty } from '@/utils/format';
+import { parseInjectedJSON } from '@/utils/inject';
 import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
 import type {
   SignalData,
@@ -30,49 +31,24 @@ declare global {
 // DATA LOADER
 // ============================================================================
 function loadInjectedData(): UnitStatusData {
-  const parseJSON = <T,>(str: string | undefined, fallback: T, name: string): T => {
-    // Debug log - remove in production
-    console.log(`[${name}] raw value:`, str);
-
-    if (!str) {
-      console.log(`[${name}] empty, using fallback`);
-      return fallback;
-    }
-
-    const trimmed = str.trim();
-    if (trimmed === '[]' || trimmed === '{}' || trimmed === '') {
-      console.log(`[${name}] empty array/object, using fallback`);
-      return fallback;
-    }
-
-    try {
-      const parsed = JSON.parse(trimmed) as T;
-      console.log(`[${name}] parsed successfully:`, parsed);
-      return parsed;
-    } catch (e) {
-      console.error(`[${name}] JSON parse error:`, e);
-      return fallback;
-    }
-  };
-
   return {
-    signals: parseJSON<SignalData[]>(
+    signals: parseInjectedJSON<SignalData[]>(
       window.__INJECT_SIGNALS__,
       UNIT_STATUS_DATA.signals,
       'SIGNALS'
     ),
-    launchers: parseJSON<MissileSystemData>(
+    launchers: parseInjectedJSON<MissileSystemData>(
       window.__INJECT_LAUNCHERS__,
       UNIT_STATUS_DATA.launchers,
       'LAUNCHERS'
     ),
-    c2: parseJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, 'C2'),
-    baseWeapons: parseJSON<Base[]>(
+    c2: parseInjectedJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, 'C2'),
+    baseWeapons: parseInjectedJSON<Base[]>(
       window.__INJECT_BASE_WEAPONS__,
       UNIT_STATUS_DATA.baseWeapons,
       'BASE_WEAPONS'
     ),
-    landingUnits: parseJSON<LandingUnitsData>(
+    landingUnits: parseInjectedJSON<LandingUnitsData>(
       window.__INJECT_LANDING_UNITS__,
       UNIT_STATUS_DATA.landingUnits,
       'LANDING_UNITS'

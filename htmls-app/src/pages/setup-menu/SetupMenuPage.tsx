@@ -9,6 +9,7 @@ import type {
   AmphibiousLocation,
 } from '@/types/setupMenu';
 import { CONFIG } from '@/types/setupMenu';
+import { parseInjectedJSON, readInjectedString } from '@/utils/inject';
 import {
   AIRBASES_DATA,
   JAMMERS_DATA,
@@ -37,26 +38,19 @@ declare global {
 // DATA LOADER
 // ============================================================================
 function loadInjectedData() {
-  const parseJSON = <T,>(str: string | undefined, fallback: T): T => {
-    if (!str || str === '[]' || str === '{}') return fallback;
-    try {
-      return JSON.parse(str) as T;
-    } catch {
-      return fallback;
-    }
-  };
-
   return {
-    airbases: parseJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA),
-    jammers: parseJSON<Jammer[]>(window.__INJECT_JAMMERS__, JAMMERS_DATA),
-    missileSystems: parseJSON<MissileSystems>(
+    airbases: parseInjectedJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA, 'AIRBASES'),
+    jammers: parseInjectedJSON<Jammer[]>(window.__INJECT_JAMMERS__, JAMMERS_DATA, 'JAMMERS'),
+    missileSystems: parseInjectedJSON<MissileSystems>(
       window.__INJECT_MISSILE_SYSTEMS__,
-      MISSILE_SYSTEMS_DATA
+      MISSILE_SYSTEMS_DATA,
+      'MISSILE_SYSTEMS'
     ),
-    sideName: window.__INJECT_SIDE_NAME__ || 'Taiwan',
-    amphibiousLocations: parseJSON<AmphibiousLocation[]>(
+    sideName: readInjectedString(window.__INJECT_SIDE_NAME__, 'Taiwan'),
+    amphibiousLocations: parseInjectedJSON<AmphibiousLocation[]>(
       window.__INJECT_AMPHIBIOUS_LOCATIONS__,
-      AMPHIBIOUS_LOCATION_DATA
+      AMPHIBIOUS_LOCATION_DATA,
+      'AMPHIBIOUS_LOCATIONS'
     ),
   };
 }
