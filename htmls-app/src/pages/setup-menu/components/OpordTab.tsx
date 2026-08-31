@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { LayersControl, MapContainer, Marker, Polyline, Circle, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
-import type { LatLngExpression, LatLngTuple } from 'leaflet';
+import type { LatLngExpression, LatLngTuple, PathOptions } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@components/Map/leaflet-dark.css';
 import type { AmphibiousLocation, ForceImage } from '@/types/setupMenu';
@@ -46,9 +46,9 @@ function createForceIcon(image: ForceImage): L.DivIcon {
 }
 
 /**
- * Return a copy of the route whose staging point is replaced by the runtime
- * position of the matching amphibious operation. Falls back to the static
- * route when the operation is absent from the injected data.
+ * Return the matching amphibious operation's runtime route as Leaflet tuples.
+ * Empty when the operation is missing from the injected data or carries no
+ * resolvable waypoints, so callers must guard before indexing into it.
  */
 function resolveAmphibiousRoute(locations: AmphibiousLocation[], name: string): LatLngTuple[] {
   const match = locations.find((location) => location.name === name);
@@ -65,6 +65,32 @@ const MAP_CENTER: LatLngExpression = [24.5, 120.5];
 const MAP_ZOOM = 7;
 const THREAT_MAP_CENTER: LatLngExpression = [25.5, 121.0];
 const THREAT_MAP_ZOOM = 5;
+
+const LANDING_ZONE_RADIUS_M = 20000;
+
+const LANDING_ZONE_THREAT: PathOptions = {
+  color: '#db3737',
+  fillColor: '#db3737',
+  fillOpacity: 0.25,
+  weight: 2,
+};
+const LANDING_ZONE_OUTLINE: PathOptions = {
+  color: '#ffffff',
+  fillOpacity: 0,
+  weight: 2,
+};
+const AXIS_AMPHIBIOUS: PathOptions = {
+  color: '#137cbd',
+  weight: 3,
+  opacity: 0.85,
+  dashArray: '10, 5',
+};
+const AXIS_CARRIER: PathOptions = {
+  color: '#db3737',
+  weight: 3,
+  opacity: 0.85,
+  dashArray: '10, 5',
+};
 
 const CSG_ROUTE: LatLngTuple[] = [
   [21.0, 122.0], // Bashi Channel entry
@@ -123,36 +149,9 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
 
             <Subsection title="1.b. Area of Operations.">
               <OpordMap>
-                <Circle
-                  center={routes.atf1[routes.atf1.length - 1]}
-                  radius={20000}
-                  pathOptions={{
-                    color: '#db3737',
-                    fillColor: '#db3737',
-                    fillOpacity: 0.25,
-                    weight: 2,
-                  }}
-                />
-                <Circle
-                  center={routes.atf2[routes.atf2.length - 1]}
-                  radius={20000}
-                  pathOptions={{
-                    color: '#db3737',
-                    fillColor: '#db3737',
-                    fillOpacity: 0.25,
-                    weight: 2,
-                  }}
-                />
-                <Circle
-                  center={routes.atf3[routes.atf3.length - 1]}
-                  radius={20000}
-                  pathOptions={{
-                    color: '#db3737',
-                    fillColor: '#db3737',
-                    fillOpacity: 0.25,
-                    weight: 2,
-                  }}
-                />
+                <LandingZone route={routes.atf1} pathOptions={LANDING_ZONE_THREAT} />
+                <LandingZone route={routes.atf2} pathOptions={LANDING_ZONE_THREAT} />
+                <LandingZone route={routes.atf3} pathOptions={LANDING_ZONE_THREAT} />
               </OpordMap>
               <MapCaption>Fig 1. Taiwan and Amphibious Approach Zones</MapCaption>
 
@@ -202,68 +201,17 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
 
               <OpordMap center={THREAT_MAP_CENTER} zoom={THREAT_MAP_ZOOM}>
                 {/* Carrier Strike Group */}
-                <Polyline
-                  positions={CSG_ROUTE}
-                  pathOptions={{
-                    color: '#db3737',
-                    weight: 3,
-                    opacity: 0.85,
-                    dashArray: '10, 5',
-                  }}
-                />
-                <Marker position={CSG_ROUTE[0]} icon={icons.csg} />
+                <ApproachAxis route={CSG_ROUTE} icon={icons.csg} pathOptions={AXIS_CARRIER} />
 
-                {/* Amphibious Task Force One */}
-                <Polyline
-                  positions={routes.atf1}
-                  pathOptions={{
-                    color: '#137cbd',
-                    weight: 3,
-                    opacity: 0.85,
-                    dashArray: '10, 5',
-                  }}
-                />
-                <Marker position={routes.atf1[0]} icon={icons.atf1} />
+                {/* Amphibious Task Forces One, Two and Three */}
+                <ApproachAxis route={routes.atf1} icon={icons.atf1} pathOptions={AXIS_AMPHIBIOUS} />
+                <ApproachAxis route={routes.atf2} icon={icons.atf2} pathOptions={AXIS_AMPHIBIOUS} />
+                <ApproachAxis route={routes.atf3} icon={icons.atf2} pathOptions={AXIS_AMPHIBIOUS} />
 
-                {/* Amphibious Task Force Two */}
-                <Polyline
-                  positions={routes.atf2}
-                  pathOptions={{
-                    color: '#137cbd',
-                    weight: 3,
-                    opacity: 0.85,
-                    dashArray: '10, 5',
-                  }}
-                />
-                <Marker position={routes.atf2[0]} icon={icons.atf2} />
-
-                {/* Amphibious Task Force Three */}
-                <Polyline
-                  positions={routes.atf3}
-                  pathOptions={{
-                    color: '#137cbd',
-                    weight: 3,
-                    opacity: 0.85,
-                    dashArray: '10, 5',
-                  }}
-                />
-                <Marker position={routes.atf3[0]} icon={icons.atf2} />
                 {/* Landing zones */}
-                <Circle
-                  center={routes.atf1[routes.atf1.length - 1]}
-                  radius={20000}
-                  pathOptions={{ color: '#ffffff', fillOpacity: 0, weight: 2 }}
-                />
-                <Circle
-                  center={routes.atf2[routes.atf2.length - 1]}
-                  radius={20000}
-                  pathOptions={{ color: '#ffffff', fillOpacity: 0, weight: 2 }}
-                />
-                <Circle
-                  center={routes.atf3[routes.atf3.length - 1]}
-                  radius={20000}
-                  pathOptions={{ color: '#ffffff', fillOpacity: 0, weight: 2 }}
-                />
+                <LandingZone route={routes.atf1} pathOptions={LANDING_ZONE_OUTLINE} />
+                <LandingZone route={routes.atf2} pathOptions={LANDING_ZONE_OUTLINE} />
+                <LandingZone route={routes.atf3} pathOptions={LANDING_ZONE_OUTLINE} />
               </OpordMap>
               <MapCaption>Fig 2. Red Offensive Axes and Landing Zones</MapCaption>
             </Subsection>
@@ -551,6 +499,39 @@ const TASKS: { title: string; items: string[] }[] = [
 // ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
+/**
+ * Ring around a route's destination. Renders nothing when the route resolved
+ * to no waypoints, since Leaflet throws on an undefined center.
+ */
+function LandingZone({ route, pathOptions }: { route: LatLngTuple[]; pathOptions: PathOptions }) {
+  const destination = route[route.length - 1];
+  if (!destination) return null;
+  return <Circle center={destination} radius={LANDING_ZONE_RADIUS_M} pathOptions={pathOptions} />;
+}
+
+/**
+ * Approach axis with its force marker at the staging point. Renders nothing
+ * when the route resolved to no waypoints.
+ */
+function ApproachAxis({
+  route,
+  icon,
+  pathOptions,
+}: {
+  route: LatLngTuple[];
+  icon: L.DivIcon;
+  pathOptions: PathOptions;
+}) {
+  const staging = route[0];
+  if (!staging) return null;
+  return (
+    <>
+      <Polyline positions={route} pathOptions={pathOptions} />
+      <Marker position={staging} icon={icon} />
+    </>
+  );
+}
+
 function Classification() {
   return (
     <div className="border border-dark-border bg-accent-blue px-2 py-1.5 text-center text-sm font-bold tracking-[3px] text-white">

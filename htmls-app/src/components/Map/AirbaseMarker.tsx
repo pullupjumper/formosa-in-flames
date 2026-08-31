@@ -6,8 +6,8 @@ import type { Airbase } from '@/types/setupMenu';
 // Airbase icon
 const airbaseIcon = L.icon({
   iconUrl: 'https://i.meee.com.tw/5afNBSQ.png',
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
   popupAnchor: [0, -10],
 });
 

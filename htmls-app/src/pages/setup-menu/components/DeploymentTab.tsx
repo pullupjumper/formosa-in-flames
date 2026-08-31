@@ -61,6 +61,8 @@ function formatAreaLabel(area: RelocatingArea): string {
 interface DeploymentTabProps {
   missileSystems: MissileSystems;
   airbases: Airbase[];
+  /** Untouched injected airbases, used as the budget floor. See AircraftPanel. */
+  baselineAirbases: Airbase[];
   jammers: Jammer[];
   budget: BudgetState;
   deployedSystems: Map<string, DeployedMissileSystemData>;
@@ -95,6 +97,7 @@ const SIDEBAR_PANELS: { id: SidebarPanel; label: string }[] = [
 export function DeploymentTab({
   missileSystems,
   airbases,
+  baselineAirbases,
   jammers,
   budget,
   deployedSystems,
@@ -318,33 +321,36 @@ export function DeploymentTab({
     [relocatingArea, deployedSystems, createDeployment, onDeploySystem]
   );
 
+  /**
+   * Re-generate the deployment at a new opening angle. Returns false when the
+   * angle is unusable — the rotated U-shape left the boundary, or no valid
+   * gateway was found — so the caller can keep the user in rotation mode.
+   */
   const handleAngleChange = useCallback(
-    (unitKey: string, newAngle: number) => {
+    (unitKey: string, newAngle: number): boolean => {
       const deployment = deployedSystems.get(unitKey);
-      if (!deployment) return;
+      if (!deployment || !isValidAngle(newAngle)) return false;
 
-      if (isValidAngle(newAngle)) {
-        const newData = createDeployment(
-          deployment.unitName,
-          deployment.category,
-          deployment.center.lat,
-          deployment.center.lng,
-          newAngle,
-          deployment.ahaRadius,
-          deployment.ahaCenter
-        );
+      const newData = createDeployment(
+        deployment.unitName,
+        deployment.category,
+        deployment.center.lat,
+        deployment.center.lng,
+        newAngle,
+        deployment.ahaRadius,
+        deployment.ahaCenter
+      );
+      if (!newData) return false;
 
-        if (newData) {
-          // Preserve existing fire points (like AHA)
-          newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
-          newData.paths = buildMovementPaths(newData.tacticalAreas, {
-            centerLat: deployment.center.lat,
-            centerLng: deployment.center.lng,
-            openingAngle: newAngle,
-          });
-          onDeploySystem(unitKey, newData);
-        }
-      }
+      // Preserve existing fire points (like AHA)
+      newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
+      newData.paths = buildMovementPaths(newData.tacticalAreas, {
+        centerLat: deployment.center.lat,
+        centerLng: deployment.center.lng,
+        openingAngle: newAngle,
+      });
+      onDeploySystem(unitKey, newData);
+      return true;
     },
     [deployedSystems, createDeployment, onDeploySystem]
   );
@@ -379,11 +385,15 @@ export function DeploymentTab({
 
       // Rotation mode
       if (rotatingUnit && rotationPreviewAngle !== null) {
-        handleAngleChange(rotatingUnit.unitKey, rotationPreviewAngle);
         const deployment = deployedSystems.get(rotatingUnit.unitKey);
-        setStatus(
-          `Angle set to ${rotationPreviewAngle}° for ${deployment?.unitName ?? rotatingUnit.unitKey}`
-        );
+        const label = deployment?.unitName ?? rotatingUnit.unitKey;
+        if (!handleAngleChange(rotatingUnit.unitKey, rotationPreviewAngle)) {
+          // Stay in rotation mode: the unit keeps its old angle and the user
+          // can sweep to another one without restarting.
+          setStatus(`Warning: ${rotationPreviewAngle}° leaves no valid layout for ${label}`);
+          return;
+        }
+        setStatus(`Angle set to ${rotationPreviewAngle}° for ${label}`);
         setRotatingUnit(null);
         setRotationPreviewAngle(null);
         setMousePosition(null);
@@ -418,9 +428,11 @@ export function DeploymentTab({
         autoAngle
       );
       if (!deployment) {
+        // The clicked point already passed the boundary check above, so the
+        // failure is the surrounding areas spilling out or no gateway fitting.
         setStatus(
-          shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)
-            ? OUT_OF_BOUNDS_MISSILE
+          shouldValidateTaiwanBoundary
+            ? 'Warning: Tactical areas extend past the coast, pick a point further inland'
             : 'Warning: Failed to place tactical areas at this location'
         );
         return;
@@ -455,14 +467,28 @@ export function DeploymentTab({
     ]
   );
 
+  const clearMissileModes = useCallback(() => {
+    setSelectedUnit(null);
+    setPreviewOffsets(null);
+    setPreviewAngle(null);
+    setRelocatingArea(null);
+    setRotatingUnit(null);
+    setRotationPreviewAngle(null);
+  }, []);
+
   const handleUnitSelect = useCallback(
     (unitKey: string, unitName: string, category: string) => {
       if (deployedSystems.has(unitKey)) {
         return;
       }
+      // handleMapClick resolves rotation and relocation ahead of selectedUnit,
+      // so a sidebar pick has to drop those modes first. Otherwise the next map
+      // click relocates the previously targeted unit instead of deploying this
+      // one. Mirrors handleJammerSelect.
+      clearMissileModes();
       setPlacingJammer(null);
+      setMousePosition(null);
       setSelectedUnit({ key: unitKey, name: unitName, category });
-      setPreviewAngle(null);
       setStatus(`${unitName} selected - Click map to deploy`);
 
       const offsets: Record<number, PreviewOffsets> = {};
@@ -473,17 +499,8 @@ export function DeploymentTab({
 
       setPreviewOffsets(offsets);
     },
-    [deployedSystems]
+    [deployedSystems, clearMissileModes]
   );
-
-  const clearMissileModes = useCallback(() => {
-    setSelectedUnit(null);
-    setPreviewOffsets(null);
-    setPreviewAngle(null);
-    setRelocatingArea(null);
-    setRotatingUnit(null);
-    setRotationPreviewAngle(null);
-  }, []);
 
   const handleCancelSelect = useCallback(() => {
     clearMissileModes();
@@ -650,9 +667,16 @@ export function DeploymentTab({
     (index: number) => {
       onUndeployJammer(index);
       setExpandedJammerIndex(null);
+      // The jammer commit path in handleMapClick calls onDeployJammer without
+      // checking that the unit is still deployed, so leaving this jammer in
+      // placement mode would resurrect it on the next map click.
+      if (placingJammer?.index === index) {
+        setPlacingJammer(null);
+        setMousePosition(null);
+      }
       setStatus(`${jammers[index]?.name ?? 'EW unit'} deployment cancelled`);
     },
-    [onUndeployJammer, jammers]
+    [onUndeployJammer, jammers, placingJammer]
   );
 
   // ============================================================================
@@ -675,20 +699,18 @@ export function DeploymentTab({
   const handleSidebarPanelChange = useCallback(
     (panel: SidebarPanel) => {
       setSidebarPanel(panel);
-      // Leaving the ground panel would hide the Cancel controls of a pending
-      // sidebar selection, so drop it. Map-driven modes are left alone.
-      if (panel === 'aircraft') {
-        if (selectedUnit || (placingJammer && !placingJammer.isRelocate)) {
-          setSelectedUnit(null);
-          setPreviewOffsets(null);
-          setPreviewAngle(null);
-          setPlacingJammer(null);
-          setMousePosition(null);
-          setStatus(DEFAULT_STATUS);
-        }
-      }
+      if (panel !== 'aircraft') return;
+      // The aircraft panel is driven by airbase clicks, which handleAirbaseClick
+      // suppresses while any placement mode is live. Map-driven modes therefore
+      // have to be cleared here too, or base selection is silently inert until
+      // the user happens to press ESC.
+      const hadPendingMode = isPlacementActive;
+      clearMissileModes();
+      setPlacingJammer(null);
+      setMousePosition(null);
+      if (hadPendingMode) setStatus(DEFAULT_STATUS);
     },
-    [selectedUnit, placingJammer]
+    [isPlacementActive, clearMissileModes]
   );
 
   // ESC cancels whichever mode currently owns the map click
@@ -803,9 +825,17 @@ export function DeploymentTab({
     );
     if (!preview) return null;
 
+    // Boundary check only. Gateway feasibility is resolved on commit, so a
+    // green preview is necessary but not sufficient — handleMapClick still
+    // reports a rejection.
+    const isValid =
+      !shouldValidateTaiwanBoundary ||
+      (preview.uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
+        preview.ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
+
     // Fire points are user-placed, so rotation leaves them where they are
-    return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [] };
-  }, [rotatingUnit, rotationPreviewAngle, deployedSystems]);
+    return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };
+  }, [rotatingUnit, rotationPreviewAngle, deployedSystems, shouldValidateTaiwanBoundary]);
 
   const placingJammerUnit = placingJammer ? (jammers[placingJammer.index] ?? null) : null;
   const isInteractive = isPlacementActive;
@@ -858,7 +888,7 @@ export function DeploymentTab({
               hideArea={rotationPreviewData.hideArea}
               reloadArea={rotationPreviewData.reloadArea}
               firePoints={rotationPreviewData.firePoints}
-              isValid={true}
+              isValid={rotationPreviewData.isValid}
             />
           )}
           {previewData && (
@@ -900,6 +930,7 @@ export function DeploymentTab({
           {sidebarPanel === 'aircraft' ? (
             <AircraftPanel
               airbases={airbases}
+              baselineAirbases={baselineAirbases}
               budget={budget}
               selectedBaseIndex={selectedBaseIndex}
               onSpendBudget={onSpendBudget}

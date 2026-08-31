@@ -6,6 +6,11 @@ import { CONFIG } from '@/types/setupMenu';
 // ============================================================================
 interface AircraftPanelProps {
   airbases: Airbase[];
+  /**
+   * Untouched injected airbases. Quantities present at scenario load were never
+   * charged, so they are the floor: only the part above them moves budget.
+   */
+  baselineAirbases: Airbase[];
   budget: BudgetState;
   selectedBaseIndex: number | null;
   onSpendBudget: (amount?: number) => boolean;
@@ -17,6 +22,7 @@ interface AircraftPanelProps {
 
 export function AircraftPanel({
   airbases,
+  baselineAirbases,
   budget,
   selectedBaseIndex,
   onSpendBudget,
@@ -73,6 +79,7 @@ export function AircraftPanel({
         {selectedBase ? (
           <BaseEditor
             base={selectedBase}
+            baseline={baselineAirbases[selectedBaseIndex!]}
             baseIndex={selectedBaseIndex!}
             onSpendBudget={onSpendBudget}
             onRefundBudget={onRefundBudget}
@@ -94,6 +101,8 @@ export function AircraftPanel({
 // ============================================================================
 interface BaseEditorProps {
   base: Airbase;
+  /** Same base as injected, before any player edits */
+  baseline: Airbase | undefined;
   baseIndex: number;
   onSpendBudget: (amount?: number) => boolean;
   onRefundBudget: (amount?: number) => void;
@@ -103,12 +112,30 @@ interface BaseEditorProps {
 
 function BaseEditor({
   base,
+  baseline,
   baseIndex,
   onSpendBudget,
   onRefundBudget,
   onUpdateAirbase,
   onError,
 }: BaseEditorProps) {
+  /**
+   * Move budget for a +/-1 quantity change. Stock up to `baselineNum` ships with
+   * the scenario and was never paid for, so only the part above it is charged or
+   * refunded. Returns false when the player cannot afford the increment.
+   */
+  const settleBudget = (newNum: number, baselineNum: number, delta: number): boolean => {
+    if (delta > 0 && newNum > baselineNum) {
+      if (!onSpendBudget()) {
+        onError('Warning: Insufficient budget');
+        return false;
+      }
+    } else if (delta < 0 && newNum >= baselineNum) {
+      onRefundBudget();
+    }
+    return true;
+  };
+
   const adjustAircraft = (unitIndex: number, delta: number) => {
     const unit = base.embarkedUnits?.[unitIndex];
     if (!unit?.loadouts?.[0]) return;
@@ -116,11 +143,8 @@ function BaseEditor({
     const newNum = unit.loadouts[0].num + delta;
     if (newNum < 0) return;
 
-    if (delta > 0 && !onSpendBudget()) {
-      onError('Warning: Insufficient budget');
-      return;
-    }
-    if (delta < 0) onRefundBudget();
+    const baselineNum = baseline?.embarkedUnits?.[unitIndex]?.loadouts?.[0]?.num ?? 0;
+    if (!settleBudget(newNum, baselineNum, delta)) return;
 
     onUpdateAirbase(baseIndex, (prev) => ({
       ...prev,
@@ -142,11 +166,8 @@ function BaseEditor({
     const newNum = loadout.num + delta;
     if (newNum < 0) return;
 
-    if (delta > 0 && !onSpendBudget()) {
-      onError('Warning: Insufficient budget');
-      return;
-    }
-    if (delta < 0) onRefundBudget();
+    const baselineNum = baseline?.loadouts?.[loadoutIndex]?.num ?? 0;
+    if (!settleBudget(newNum, baselineNum, delta)) return;
 
     onUpdateAirbase(baseIndex, (prev) => ({
       ...prev,

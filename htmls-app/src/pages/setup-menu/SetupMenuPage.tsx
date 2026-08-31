@@ -194,6 +194,7 @@ function SetupMenuPage() {
           <DeploymentTab
             missileSystems={missileSystems}
             airbases={airbases}
+            baselineAirbases={injectedData.airbases}
             jammers={jammers}
             budget={budget}
             deployedSystems={deployedMissileSystems}

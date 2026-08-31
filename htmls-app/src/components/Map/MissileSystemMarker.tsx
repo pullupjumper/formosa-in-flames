@@ -93,8 +93,8 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
 const MISSILE_ICON_URL = 'https://i.meee.com.tw/suDq81b.png';
 const SAM_ICON_URL = 'https://i.meee.com.tw/PCUEceO.png';
 const ICON_IMAGES: Record<string, ForceImage> = {
-  sam: { url: SAM_ICON_URL, label: 'SAM', width: 31.5, height: 18.75 },
-  ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 31.5, height: 18.75 },
+  sam: { url: SAM_ICON_URL, label: 'SAM', width: 25, height: 15 },
+  ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 25, height: 15 },
 };
 
 // ============================================================================

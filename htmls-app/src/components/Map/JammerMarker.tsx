@@ -6,8 +6,8 @@ import type { Jammer } from '@/types/setupMenu';
 // EW unit icon
 const ewIcon = L.icon({
   iconUrl: 'https://i.meee.com.tw/LO1UNjw.png',
-  iconSize: [31.5, 18.75],
-  iconAnchor: [31.5 / 2, 18.75 / 2],
+  iconSize: [25, 15],
+  iconAnchor: [25 / 2, 15 / 2],
   popupAnchor: [0, -15],
 });
 
