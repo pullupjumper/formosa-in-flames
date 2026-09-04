@@ -10,4 +10,4 @@ if not saveData then
 end
 
 UnitGenerator.addAircraft(config.c.air.landBased.deployedACs)
-UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+-- UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
