@@ -1,29 +1,36 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { MissileSystems, DeployedMissileSystemData, Jammer } from '@/types/setupMenu';
-import type { RelocatingArea, AreaType } from '@/components/Map';
-import { isPointInTaiwan, determineOpeningAngle } from '@/utils/map';
+import type { RelocatingArea } from '@/components/Map';
+import { isPointInTaiwan, determineOpeningAngle, parseUnitKey } from '@/utils/map';
+import { calculateBearing } from '@/utils/tacticalAreaGenerator';
 import {
-  calculateBearing,
-  generateSquareVerticesPublic,
-  checkSquaresOverlap,
-} from '@/utils/tacticalAreaGenerator';
-import {
-  AREA_CONFIG,
-  AREA_SQUARE_SIZE,
-  areAllPointsInPolygon,
   buildMovementPaths,
-  buildShelterPlan,
   generateDeploymentData,
   generateOffsetsForAngle,
-  generateRotationPreview,
   isValidAngle,
+  relocateArea,
 } from '@/utils/missileDeployment';
-import type { DeploymentContext, OffsetVertex, PreviewOffsets } from '@/utils/missileDeployment';
+import type { PreviewOffsets } from '@/utils/missileDeployment';
 import type { RandomSource } from '@/utils/random';
+import {
+  DEFAULT_STATUS,
+  IDLE_STATE,
+  OUT_OF_BOUNDS_JAMMER,
+  OUT_OF_BOUNDS_MISSILE,
+  cancellationMessage,
+  deploymentModeReducer,
+  describeRelocateFailure,
+  formatAreaLabel,
+  isMissileMode,
+  isPlacementMode,
+  isSameArea,
+} from './deploymentMode';
+import type { DeploymentMode, SelectedUnit } from './deploymentMode';
+import { useDeploymentPreviews } from './useDeploymentPreviews';
 
 /**
- * All interaction state for the Deployment tab: which mode owns the next map
- * click, what the hover preview shows, and the status line. Kept apart from
+ * Interaction state for the Deployment tab: which mode owns the next map click,
+ * what the hover preview shows, and the status line. Kept apart from
  * DeploymentTab's markup so the mode arbitration can be exercised without
  * mounting Leaflet.
  */
@@ -31,45 +38,12 @@ import type { RandomSource } from '@/utils/random';
 // ============================================================================
 // UI CONSTANTS
 // ============================================================================
-export const DEFAULT_STATUS = 'Select a unit from the sidebar, then click on the map to deploy';
-export const AIRCRAFT_PANEL_STATUS = 'Select an airbase on the map to edit its loadouts';
-
-const OUT_OF_BOUNDS_JAMMER = 'Warning: EW units can only be deployed on Taiwan mainland';
-const OUT_OF_BOUNDS_MISSILE = 'Warning: Missile systems can only be deployed on Taiwan mainland';
-
-export const AREA_LABEL: Record<AreaType, string> = {
-  ushape: 'U-Shape',
-  aha: 'AHA',
-  hide: 'Hide Area',
-  reload: 'Reload Area',
-  fp: 'Fire Point',
-};
-
-export function formatAreaLabel(area: RelocatingArea): string {
-  if (area.type !== 'fp') return AREA_LABEL[area.type];
-  return `${AREA_LABEL.fp} ${(area.fpIndex ?? 0) + 1}`;
-}
+/** Hover previews regenerate geometry, so cap them well below frame rate */
+const MOUSE_MOVE_THROTTLE_MS = 50;
 
 // ============================================================================
 // TYPES
 // ============================================================================
-/**
- * Jammer placement. Deploy and relocate share the same commit path
- * (validate boundary, then onDeployJammer), so they are one mode.
- */
-export interface PlacingJammer {
-  index: number;
-  isRelocate: boolean;
-}
-
-export type SidebarPanel = 'aircraft' | 'ground';
-
-export interface SelectedUnit {
-  key: string;
-  name: string;
-  category: string;
-}
-
 export interface UseDeploymentStateParams {
   missileSystems: MissileSystems;
   jammers: Jammer[];
@@ -102,40 +76,45 @@ export function useDeploymentState({
   onUndeployJammer,
   rng = Math.random,
 }: UseDeploymentStateParams) {
-  const [selectedUnit, setSelectedUnit] = useState<SelectedUnit | null>(null);
-  const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [{ mode, mousePosition }, dispatch] = useReducer(deploymentModeReducer, IDLE_STATE);
   const [status, setStatus] = useState(DEFAULT_STATUS);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-  const [previewOffsets, setPreviewOffsets] = useState<Record<number, PreviewOffsets> | null>(null);
-  const [previewAngle, setPreviewAngle] = useState<number | null>(null);
-  const [mousePosition, setMousePosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [relocatingArea, setRelocatingArea] = useState<RelocatingArea | null>(null);
-  const [rotatingUnit, setRotatingUnit] = useState<{
-    unitKey: string;
-    center: { lat: number; lng: number };
-  } | null>(null);
-  const [rotationPreviewAngle, setRotationPreviewAngle] = useState<number | null>(null);
-  const [placingJammer, setPlacingJammer] = useState<PlacingJammer | null>(null);
+
+  // Sidebar presentation state, independent of the mode machine
+  const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [expandedJammerIndex, setExpandedJammerIndex] = useState<number | null>(null);
   const [jammersCollapsed, setJammersCollapsed] = useState(false);
-  const [sidebarPanel, setSidebarPanel] = useState<SidebarPanel>('aircraft');
-  const [selectedBaseIndex, setSelectedBaseIndex] = useState<number | null>(null);
-  const lastMouseMoveRef = useRef(0);
 
-  const isMissileModeActive = Boolean(selectedUnit || relocatingArea || rotatingUnit);
-  const isPlacementActive = isMissileModeActive || placingJammer !== null;
+  const lastMouseMoveRef = useRef(0);
+  const isPlacementActive = isPlacementMode(mode);
+
+  // Marker layers are memoized, so their click handlers must keep a stable
+  // identity; they read the live values through these refs.
+  //
+  // Deliberately inlined rather than extracted into a `useLatestRef` helper:
+  // React Compiler only treats `useRef` itself as returning a stable value, so
+  // routing these through a custom hook makes the ref an inferred dependency of
+  // every `useCallback([], ...)` below and disables optimization for this file.
+  const modeRef = useRef<DeploymentMode>(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  const deployedSystemsRef = useRef(deployedSystems);
+  useEffect(() => {
+    deployedSystemsRef.current = deployedSystems;
+  }, [deployedSystems]);
+  const jammersRef = useRef(jammers);
+  useEffect(() => {
+    jammersRef.current = jammers;
+  }, [jammers]);
 
   const getUnitInfo = useCallback(
     (unitKey: string) => {
-      const [category, ...nameParts] = unitKey.split('_');
-      const unitName = nameParts.join('_');
-      const categoryData = missileSystems[category];
-      if (!categoryData?.firingUnits?.[unitName]) return null;
-      return {
-        name: categoryData.firingUnits[unitName].name,
-        category,
-      };
+      const { category, unitName } = parseUnitKey(unitKey);
+      const unit = missileSystems[category]?.firingUnits?.[unitName];
+      if (!unit) return null;
+      return { name: unit.name, category };
     },
     [missileSystems]
   );
@@ -165,155 +144,12 @@ export function useDeploymentState({
     [shouldValidateTaiwanBoundary, rng]
   );
 
-  // ============================================================================
-  // Area Relocation Logic
-  // ============================================================================
-  const applyAreaRelocation = useCallback(
-    (lat: number, lng: number) => {
-      if (!relocatingArea) return false;
-
-      const deployment = deployedSystems.get(relocatingArea.unitKey);
-      if (!deployment) {
-        setRelocatingArea(null);
-        return true;
-      }
-
-      const { tacticalAreas } = deployment;
-      const newTacticalAreas = { ...tacticalAreas };
-      const extraFields: Partial<DeployedMissileSystemData> = {};
-
-      if (relocatingArea.type === 'ushape') {
-        const regenerated = createDeployment(
-          deployment.unitName,
-          deployment.category,
-          lat,
-          lng,
-          deployment.openingAngle,
-          deployment.ahaRadius,
-          deployment.ahaCenter
-        );
-
-        if (!regenerated) {
-          setStatus('Warning: Failed to relocate U-Shape');
-          return true;
-        }
-
-        newTacticalAreas.uShapeVertices = regenerated.tacticalAreas.uShapeVertices;
-        newTacticalAreas.hideArea = regenerated.tacticalAreas.hideArea;
-        newTacticalAreas.reloadArea = regenerated.tacticalAreas.reloadArea;
-        newTacticalAreas.shelterPoints = regenerated.tacticalAreas.shelterPoints;
-        extraFields.center = { lat, lng };
-      } else {
-        const bearingToCenter = calculateBearing(
-          lat,
-          lng,
-          deployment.center.lat,
-          deployment.center.lng
-        );
-        const squareSize = AREA_SQUARE_SIZE[relocatingArea.type];
-        const newVertices = generateSquareVerticesPublic(lat, lng, squareSize, bearingToCenter);
-
-        // Validate hide/reload must be inside U-Shape boundary
-        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
-          const boundary = tacticalAreas.uShapeVertices;
-          if (boundary && boundary.length >= 3) {
-            const allInside = areAllPointsInPolygon(newVertices, boundary);
-            if (!allInside) {
-              setStatus('Warning: Must be within the boundary area');
-              return true;
-            }
-          }
-        }
-
-        // Validate hide/reload don't overlap with each other
-        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
-          const otherArea =
-            relocatingArea.type === 'hide' ? tacticalAreas.reloadArea : tacticalAreas.hideArea;
-          if (otherArea && otherArea.length === 4) {
-            const otherCenterLat = otherArea.reduce((sum, vertex) => sum + vertex.latitude, 0) / 4;
-            const otherCenterLon = otherArea.reduce((sum, vertex) => sum + vertex.longitude, 0) / 4;
-            if (
-              checkSquaresOverlap(
-                lat,
-                lng,
-                otherCenterLat,
-                otherCenterLon,
-                squareSize,
-                AREA_CONFIG.internalSquares.marginBetweenSquares
-              )
-            ) {
-              const otherLabel =
-                relocatingArea.type === 'hide' ? AREA_LABEL.reload : AREA_LABEL.hide;
-              setStatus(`Warning: Overlaps with ${otherLabel}, choose another location`);
-              return true;
-            }
-          }
-        }
-
-        // Build updated tactical areas — only replace the target area
-        switch (relocatingArea.type) {
-          case 'aha':
-            newTacticalAreas.ammoArea = newVertices;
-            extraFields.ahaCenter = { lat, lng };
-            break;
-          case 'hide':
-            newTacticalAreas.hideArea = newVertices;
-            break;
-          case 'reload':
-            newTacticalAreas.reloadArea = newVertices;
-            break;
-          case 'fp':
-            if (tacticalAreas.firePoints) {
-              const newFirePoints = [...tacticalAreas.firePoints];
-              newFirePoints[relocatingArea.fpIndex!] = newVertices;
-              newTacticalAreas.firePoints = newFirePoints;
-            }
-            break;
-        }
-
-        // Regenerate shelter points (with gateway validation) when HA/RL positions change
-        if (relocatingArea.type === 'hide' || relocatingArea.type === 'reload') {
-          const plan = buildShelterPlan(
-            deployment.center.lat,
-            deployment.center.lng,
-            deployment.openingAngle,
-            newTacticalAreas.hideArea,
-            newTacticalAreas.reloadArea,
-            rng
-          );
-          newTacticalAreas.shelterPoints = plan.shelterPoints;
-        }
-      }
-
-      // Recalculate paths with updated areas
-      const pathContext: DeploymentContext = {
-        centerLat: extraFields.center?.lat ?? deployment.center.lat,
-        centerLng: extraFields.center?.lng ?? deployment.center.lng,
-        openingAngle: deployment.openingAngle,
-      };
-      const paths = buildMovementPaths(newTacticalAreas, pathContext);
-      const label = formatAreaLabel(relocatingArea);
-
-      onDeploySystem(relocatingArea.unitKey, {
-        ...deployment,
-        ...extraFields,
-        tacticalAreas: newTacticalAreas,
-        paths,
-      });
-      setStatus(`${label} relocated for ${deployment.unitName}`);
-      setRelocatingArea(null);
-      setMousePosition(null);
-      return true;
-    },
-    [relocatingArea, deployedSystems, createDeployment, onDeploySystem, rng]
-  );
-
   /**
    * Re-generate the deployment at a new opening angle. Returns false when the
    * angle is unusable — the rotated U-shape left the boundary, or no valid
    * gateway was found — so the caller can keep the user in rotation mode.
    */
-  const handleAngleChange = useCallback(
+  const applyAngleChange = useCallback(
     (unitKey: string, newAngle: number): boolean => {
       const deployment = deployedSystems.get(unitKey);
       if (!deployment || !isValidAngle(newAngle)) return false;
@@ -342,78 +178,87 @@ export function useDeploymentState({
     [deployedSystems, createDeployment, onDeploySystem]
   );
 
-  const handleMapClick = useCallback(
-    (lat: number, lng: number) => {
-      setCoordinates({ lat, lng });
-      setExpandedUnitKey(null);
-      setExpandedJammerIndex(null);
+  // ============================================================================
+  // Commit Paths — one per mode, all reached from handleMapClick
+  // ============================================================================
+  const commitJammerPlacement = useCallback(
+    (index: number, isRelocate: boolean, lat: number, lng: number) => {
+      const jammer = jammers[index];
+      if (!jammer) {
+        dispatch({ type: 'reset' });
+        return;
+      }
+      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+        setStatus(OUT_OF_BOUNDS_JAMMER);
+        return;
+      }
+      onDeployJammer(index, lat, lng);
+      setStatus(
+        isRelocate
+          ? `${jammer.name} relocated to ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
+          : `Done: ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
+      );
+      dispatch({ type: 'reset' });
+    },
+    [jammers, shouldValidateTaiwanBoundary, onDeployJammer]
+  );
 
-      // Jammer placement mode (deploy and relocate commit the same way)
-      if (placingJammer) {
-        const jammer = jammers[placingJammer.index];
-        if (!jammer) {
-          setPlacingJammer(null);
-          return;
-        }
-        if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
-          setStatus(OUT_OF_BOUNDS_JAMMER);
-          return;
-        }
-        onDeployJammer(placingJammer.index, lat, lng);
-        setStatus(
-          placingJammer.isRelocate
-            ? `${jammer.name} relocated to ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
-            : `Done: ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
-        );
-        setPlacingJammer(null);
-        setMousePosition(null);
+  const commitRotation = useCallback(
+    (unitKey: string, angle: number) => {
+      const label = deployedSystems.get(unitKey)?.unitName ?? unitKey;
+      if (!applyAngleChange(unitKey, angle)) {
+        // Stay in rotation mode: the unit keeps its old angle and the user can
+        // sweep to another one without restarting.
+        setStatus(`Warning: ${angle}° leaves no valid layout for ${label}`);
+        return;
+      }
+      setStatus(`Angle set to ${angle}° for ${label}`);
+      dispatch({ type: 'reset' });
+    },
+    [deployedSystems, applyAngleChange]
+  );
+
+  const commitAreaRelocation = useCallback(
+    (area: RelocatingArea, lat: number, lng: number) => {
+      const deployment = deployedSystems.get(area.unitKey);
+      if (!deployment) {
+        dispatch({ type: 'reset' });
         return;
       }
 
-      // Rotation mode
-      if (rotatingUnit && rotationPreviewAngle !== null) {
-        const deployment = deployedSystems.get(rotatingUnit.unitKey);
-        const label = deployment?.unitName ?? rotatingUnit.unitKey;
-        if (!handleAngleChange(rotatingUnit.unitKey, rotationPreviewAngle)) {
-          // Stay in rotation mode: the unit keeps its old angle and the user
-          // can sweep to another one without restarting.
-          setStatus(`Warning: ${rotationPreviewAngle}° leaves no valid layout for ${label}`);
-          return;
-        }
-        setStatus(`Angle set to ${rotationPreviewAngle}° for ${label}`);
-        setRotatingUnit(null);
-        setRotationPreviewAngle(null);
-        setMousePosition(null);
+      const result = relocateArea({
+        deployment,
+        target: area,
+        lat,
+        lng,
+        validateTaiwanBoundary: shouldValidateTaiwanBoundary,
+        rng,
+      });
+      if (!result.ok) {
+        setStatus(describeRelocateFailure(result.failure));
         return;
       }
 
-      // Area relocation mode
-      if (relocatingArea) {
-        applyAreaRelocation(lat, lng);
-        return;
-      }
+      onDeploySystem(area.unitKey, result.data);
+      setStatus(`${formatAreaLabel(area)} relocated for ${deployment.unitName}`);
+      dispatch({ type: 'reset' });
+    },
+    [deployedSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
+  );
 
-      if (selectedUnit === null || !previewOffsets) {
-        return;
-      }
-
+  const commitDeployment = useCallback(
+    (unit: SelectedUnit, lat: number, lng: number) => {
       if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
         setStatus(OUT_OF_BOUNDS_MISSILE);
         return;
       }
 
-      const autoAngle = previewAngle ?? determineOpeningAngle(lat, lng);
+      const autoAngle = determineOpeningAngle(lat, lng);
 
       // Preview offsets pre-compute a specific HA/RL layout, but we need both
-      // FP and SHRL gateways to exist. Delegate to createDeployment which
-      // has the outer retry loop that regenerates HA/RL when gateways fail.
-      const deployment = createDeployment(
-        selectedUnit.name,
-        selectedUnit.category,
-        lat,
-        lng,
-        autoAngle
-      );
+      // FP and SHRL gateways to exist. Delegate to createDeployment which has
+      // the outer retry loop that regenerates HA/RL when gateways fail.
+      const deployment = createDeployment(unit.name, unit.category, lat, lng, autoAngle);
       if (!deployment) {
         // The clicked point already passed the boundary check above, so the
         // failure is the surrounding areas spilling out or no gateway fitting.
@@ -425,58 +270,70 @@ export function useDeploymentState({
         return;
       }
 
-      onDeploySystem(selectedUnit.key, deployment);
-
+      onDeploySystem(unit.key, deployment);
       setStatus(
-        `Done: ${selectedUnit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
+        `Done: ${unit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
       );
-      setSelectedUnit(null);
-      setPreviewOffsets(null);
-      setPreviewAngle(null);
-      setMousePosition(null);
+      dispatch({ type: 'reset' });
     },
-    [
-      placingJammer,
-      jammers,
-      onDeployJammer,
-      rotatingUnit,
-      rotationPreviewAngle,
-      handleAngleChange,
-      deployedSystems,
-      relocatingArea,
-      applyAreaRelocation,
-      selectedUnit,
-      previewOffsets,
-      shouldValidateTaiwanBoundary,
-      previewAngle,
-      createDeployment,
-      onDeploySystem,
-    ]
+    [shouldValidateTaiwanBoundary, createDeployment, onDeploySystem]
   );
 
-  const clearMissileModes = useCallback(() => {
-    setSelectedUnit(null);
-    setPreviewOffsets(null);
-    setPreviewAngle(null);
-    setRelocatingArea(null);
-    setRotatingUnit(null);
-    setRotationPreviewAngle(null);
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      setCoordinates({ lat, lng });
+      setExpandedUnitKey(null);
+      setExpandedJammerIndex(null);
+
+      switch (mode.kind) {
+        case 'idle':
+          return;
+        case 'placeJammer':
+          return commitJammerPlacement(mode.index, mode.isRelocate, lat, lng);
+        case 'rotate':
+          // No angle swept yet, so there is nothing to commit
+          if (mode.previewAngle === null) return;
+          return commitRotation(mode.unitKey, mode.previewAngle);
+        case 'relocateArea':
+          return commitAreaRelocation(mode.area, lat, lng);
+        case 'deploy':
+          return commitDeployment(mode.unit, lat, lng);
+      }
+    },
+    [mode, commitJammerPlacement, commitRotation, commitAreaRelocation, commitDeployment]
+  );
+
+  const handleMouseMove = useCallback((lat: number, lng: number) => {
+    const current = modeRef.current;
+    if (current.kind === 'idle') return;
+
+    const now = Date.now();
+    if (now - lastMouseMoveRef.current < MOUSE_MOVE_THROTTLE_MS) return;
+    lastMouseMoveRef.current = now;
+
+    if (current.kind !== 'rotate') {
+      dispatch({ type: 'hover', lat, lng });
+      return;
+    }
+
+    const angle = Math.round(calculateBearing(current.center.lat, current.center.lng, lat, lng));
+    dispatch({ type: 'hover', lat, lng, rotationAngle: angle });
+    setStatus(`Rotating: ${angle}° — Click to confirm. ESC to cancel`);
   }, []);
 
+  // ============================================================================
+  // Mode Entry — the reducer guarantees the previous mode is dropped
+  // ============================================================================
+  /**
+   * Sidebar click on a missile unit. A deployed unit has nothing left to arm,
+   * so the click toggles its card open — same split as `handleJammerSelect`.
+   */
   const handleUnitSelect = useCallback(
     (unitKey: string, unitName: string, category: string) => {
       if (deployedSystems.has(unitKey)) {
+        setExpandedUnitKey((current) => (current === unitKey ? null : unitKey));
         return;
       }
-      // handleMapClick resolves rotation and relocation ahead of selectedUnit,
-      // so a sidebar pick has to drop those modes first. Otherwise the next map
-      // click relocates the previously targeted unit instead of deploying this
-      // one. Mirrors handleJammerSelect.
-      clearMissileModes();
-      setPlacingJammer(null);
-      setMousePosition(null);
-      setSelectedUnit({ key: unitKey, name: unitName, category });
-      setStatus(`${unitName} selected - Click map to deploy`);
 
       const offsets: Record<number, PreviewOffsets> = {};
       const o90 = generateOffsetsForAngle(90, undefined, rng);
@@ -484,18 +341,120 @@ export function useDeploymentState({
       if (o90) offsets[90] = o90;
       if (o270) offsets[270] = o270;
 
-      setPreviewOffsets(offsets);
+      dispatch({ type: 'selectUnit', unit: { key: unitKey, name: unitName, category }, offsets });
+      setStatus(`${unitName} selected - Click map to deploy`);
     },
-    [deployedSystems, clearMissileModes, rng]
+    [deployedSystems, rng]
   );
 
   const handleCancelSelect = useCallback(() => {
-    clearMissileModes();
-    setPlacingJammer(null);
-    setMousePosition(null);
+    dispatch({ type: 'reset' });
     setStatus(DEFAULT_STATUS);
-  }, [clearMissileModes]);
+  }, []);
 
+  /** Drops a pending mode without overwriting a real result in the status line */
+  const clearPlacement = useCallback(() => {
+    if (modeRef.current.kind === 'idle') return;
+    dispatch({ type: 'reset' });
+    setStatus(DEFAULT_STATUS);
+  }, []);
+
+  // Cross-mode arbitration lives in these handlers, not in Leaflet hit-testing:
+  // react-leaflet only reads `interactive` when it constructs a layer, so
+  // toggling that prop on a mounted Polygon/Marker has no effect. A layer that
+  // owns the click also suppresses the map click, so the guards below just
+  // ignore the click rather than letting another mode hijack the session.
+  const handleAreaClick = useCallback((area: RelocatingArea) => {
+    const current = modeRef.current;
+    if (current.kind === 'placeJammer') return;
+
+    // Toggle off if clicking the same area
+    if (current.kind === 'relocateArea' && isSameArea(current.area, area)) {
+      dispatch({ type: 'reset' });
+      setStatus('Relocation cancelled');
+      return;
+    }
+
+    dispatch({ type: 'relocateArea', area });
+    setStatus(
+      `Click on the map to relocate ${formatAreaLabel(area)}, or click it again / press ESC to cancel`
+    );
+  }, []);
+
+  const handleRotateClick = useCallback((unitKey: string) => {
+    if (modeRef.current.kind === 'placeJammer') return;
+
+    const deployment = deployedSystemsRef.current.get(unitKey);
+    if (!deployment) return;
+
+    dispatch({ type: 'rotate', unitKey, center: deployment.center });
+    setStatus(
+      `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
+    );
+  }, []);
+
+  // ============================================================================
+  // Jammer Handlers
+  // ============================================================================
+  const handleJammerSelect = useCallback(
+    (index: number) => {
+      if (deployedJammers.has(index)) {
+        setExpandedJammerIndex((current) => (current === index ? null : index));
+        return;
+      }
+      dispatch({ type: 'placeJammer', index, isRelocate: false });
+      setStatus(`${jammers[index]?.name ?? 'EW unit'} selected - Click map to deploy`);
+    },
+    [deployedJammers, jammers]
+  );
+
+  const handleJammerRelocateClick = useCallback((index: number) => {
+    const current = modeRef.current;
+    if (isMissileMode(current)) return;
+
+    // Toggle off if clicking the same jammer
+    if (current.kind === 'placeJammer' && current.index === index && current.isRelocate) {
+      dispatch({ type: 'reset' });
+      setStatus('Relocation cancelled');
+      return;
+    }
+
+    dispatch({ type: 'placeJammer', index, isRelocate: true });
+    setStatus(
+      `Click on the map to relocate ${jammersRef.current[index]?.name ?? 'EW unit'}, or click it again / press ESC to cancel`
+    );
+  }, []);
+
+  const handleUndeployJammer = useCallback(
+    (index: number) => {
+      onUndeployJammer(index);
+      setExpandedJammerIndex(null);
+      // The jammer commit path calls onDeployJammer without checking that the
+      // unit is still deployed, so leaving this jammer in placement mode would
+      // resurrect it on the next map click.
+      if (mode.kind === 'placeJammer' && mode.index === index) {
+        dispatch({ type: 'reset' });
+      }
+      setStatus(`${jammers[index]?.name ?? 'EW unit'} deployment cancelled`);
+    },
+    [onUndeployJammer, jammers, mode]
+  );
+
+  const handleUndeploy = useCallback(
+    (unitKey: string, unitName: string) => {
+      onUndeploySystem(unitKey);
+      setStatus(`${unitName} deployment cancelled`);
+    },
+    [onUndeploySystem]
+  );
+
+  const handleAircraftError = useCallback((message: string) => {
+    setStatus(message);
+  }, []);
+
+  // ============================================================================
+  // Sidebar Collapse
+  // ============================================================================
   const toggleCategory = useCallback(
     (category: string) => {
       const willCollapse = !collapsedCategories.has(category);
@@ -514,15 +473,12 @@ export function useDeploymentState({
       if (expandedUnitKey && deployedSystems.get(expandedUnitKey)?.category === category) {
         setExpandedUnitKey(null);
       }
-      if (selectedUnit?.category === category) {
-        setSelectedUnit(null);
-        setPreviewOffsets(null);
-        setPreviewAngle(null);
-        setMousePosition(null);
+      if (mode.kind === 'deploy' && mode.unit.category === category) {
+        dispatch({ type: 'reset' });
         setStatus(DEFAULT_STATUS);
       }
     },
-    [collapsedCategories, expandedUnitKey, deployedSystems, selectedUnit]
+    [collapsedCategories, expandedUnitKey, deployedSystems, mode]
   );
 
   const toggleJammers = useCallback(() => {
@@ -530,335 +486,57 @@ export function useDeploymentState({
     setJammersCollapsed(willCollapse);
     if (!willCollapse) return;
 
+    setExpandedJammerIndex(null);
     // Same reasoning as toggleCategory: a pending selection would lose its
     // Cancel button. Relocation is driven from the map, so it survives.
-    setExpandedJammerIndex(null);
-    if (placingJammer && !placingJammer.isRelocate) {
-      setPlacingJammer(null);
-      setMousePosition(null);
+    if (mode.kind === 'placeJammer' && !mode.isRelocate) {
+      dispatch({ type: 'reset' });
       setStatus(DEFAULT_STATUS);
     }
-  }, [jammersCollapsed, placingJammer]);
+  }, [jammersCollapsed, mode]);
 
-  // Refs for stable callbacks (avoid breaking MissileSystemMarker/JammerMarker memo)
-  const relocatingAreaRef = useRef(relocatingArea);
+  // ESC cancels whichever mode currently owns the map click. Keyed on whether a
+  // mode is live rather than on `mode` itself, so sweeping a rotation angle does
+  // not re-register the listener on every mouse move.
   useEffect(() => {
-    relocatingAreaRef.current = relocatingArea;
-  }, [relocatingArea]);
-  const deployedSystemsRef = useRef(deployedSystems);
-  useEffect(() => {
-    deployedSystemsRef.current = deployedSystems;
-  }, [deployedSystems]);
-  const placingJammerRef = useRef(placingJammer);
-  useEffect(() => {
-    placingJammerRef.current = placingJammer;
-  }, [placingJammer]);
-  const jammersRef = useRef(jammers);
-  useEffect(() => {
-    jammersRef.current = jammers;
-  }, [jammers]);
-  const isMissileModeActiveRef = useRef(isMissileModeActive);
-  useEffect(() => {
-    isMissileModeActiveRef.current = isMissileModeActive;
-  }, [isMissileModeActive]);
-  const isPlacementActiveRef = useRef(isPlacementActive);
-  useEffect(() => {
-    isPlacementActiveRef.current = isPlacementActive;
-  }, [isPlacementActive]);
-
-  // Cross-mode arbitration lives in these handlers, not in Leaflet hit-testing:
-  // react-leaflet only reads `interactive` when it constructs a layer, so
-  // toggling that prop on a mounted Polygon/Marker has no effect. A layer that
-  // owns the click also suppresses the map click, so the guards below just
-  // ignore the click rather than letting another mode hijack the session.
-  const handleAreaClick = useCallback((area: RelocatingArea) => {
-    if (placingJammerRef.current) return;
-
-    const current = relocatingAreaRef.current;
-    // Toggle off if clicking the same area
-    if (
-      current &&
-      current.unitKey === area.unitKey &&
-      current.type === area.type &&
-      current.fpIndex === area.fpIndex
-    ) {
-      setRelocatingArea(null);
-      setMousePosition(null);
-      setStatus('Relocation cancelled');
-      return;
-    }
-    setRelocatingArea(area);
-    setSelectedUnit(null);
-    setPreviewOffsets(null);
-    setPreviewAngle(null);
-    setRotatingUnit(null);
-    setRotationPreviewAngle(null);
-
-    const label = formatAreaLabel(area);
-    setStatus(`Click on the map to relocate ${label}, or click it again / press ESC to cancel`);
-  }, []);
-
-  const handleRotateClick = useCallback((unitKey: string) => {
-    if (placingJammerRef.current) return;
-
-    const deployment = deployedSystemsRef.current.get(unitKey);
-    if (!deployment) return;
-
-    setRotatingUnit({ unitKey, center: deployment.center });
-    setRotationPreviewAngle(null);
-    setRelocatingArea(null);
-    setSelectedUnit(null);
-    setPreviewOffsets(null);
-    setPreviewAngle(null);
-    setStatus(
-      `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
-    );
-  }, []);
-
-  // ============================================================================
-  // Jammer Handlers
-  // ============================================================================
-  const handleJammerSelect = useCallback(
-    (index: number) => {
-      if (deployedJammers.has(index)) {
-        setExpandedJammerIndex(expandedJammerIndex === index ? null : index);
-        return;
-      }
-      clearMissileModes();
-      setMousePosition(null);
-      setPlacingJammer({ index, isRelocate: false });
-      setStatus(`${jammers[index]?.name ?? 'EW unit'} selected - Click map to deploy`);
-    },
-    [deployedJammers, expandedJammerIndex, clearMissileModes, jammers]
-  );
-
-  const handleJammerRelocateClick = useCallback((index: number) => {
-    if (isMissileModeActiveRef.current) return;
-
-    const current = placingJammerRef.current;
-    // Toggle off if clicking the same jammer
-    if (current?.index === index && current.isRelocate) {
-      setPlacingJammer(null);
-      setMousePosition(null);
-      setStatus('Relocation cancelled');
-      return;
-    }
-    setMousePosition(null);
-    setPlacingJammer({ index, isRelocate: true });
-    setStatus(
-      `Click on the map to relocate ${jammersRef.current[index]?.name ?? 'EW unit'}, or click it again / press ESC to cancel`
-    );
-  }, []);
-
-  const handleUndeployJammer = useCallback(
-    (index: number) => {
-      onUndeployJammer(index);
-      setExpandedJammerIndex(null);
-      // The jammer commit path in handleMapClick calls onDeployJammer without
-      // checking that the unit is still deployed, so leaving this jammer in
-      // placement mode would resurrect it on the next map click.
-      if (placingJammer?.index === index) {
-        setPlacingJammer(null);
-        setMousePosition(null);
-      }
-      setStatus(`${jammers[index]?.name ?? 'EW unit'} deployment cancelled`);
-    },
-    [onUndeployJammer, jammers, placingJammer]
-  );
-
-  // ============================================================================
-  // Aircraft Handlers
-  // ============================================================================
-  /**
-   * Selecting a base switches the sidebar to the aircraft panel. Guarded so a
-   * stray airbase click cannot swallow a pending deployment.
-   */
-  const handleAirbaseClick = useCallback((index: number) => {
-    if (isPlacementActiveRef.current) return;
-    setSelectedBaseIndex(index);
-    setSidebarPanel('aircraft');
-  }, []);
-
-  const handleAircraftError = useCallback((message: string) => {
-    setStatus(message);
-  }, []);
-
-  const handleSidebarPanelChange = useCallback(
-    (panel: SidebarPanel) => {
-      setSidebarPanel(panel);
-      if (panel !== 'aircraft') return;
-      // The aircraft panel is driven by airbase clicks, which handleAirbaseClick
-      // suppresses while any placement mode is live. Map-driven modes therefore
-      // have to be cleared here too, or base selection is silently inert until
-      // the user happens to press ESC.
-      const hadPendingMode = isPlacementActive;
-      clearMissileModes();
-      setPlacingJammer(null);
-      setMousePosition(null);
-      if (hadPendingMode) setStatus(DEFAULT_STATUS);
-    },
-    [isPlacementActive, clearMissileModes]
-  );
-
-  // ESC cancels whichever mode currently owns the map click
-  useEffect(() => {
-    if (!relocatingArea && !rotatingUnit && !placingJammer && !selectedUnit) return;
+    if (!isPlacementActive) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      clearMissileModes();
-      setPlacingJammer(null);
-      setMousePosition(null);
-      if (rotatingUnit) setStatus('Rotation cancelled');
-      else if (relocatingArea || placingJammer?.isRelocate) setStatus('Relocation cancelled');
-      else setStatus('Selection cancelled');
+      dispatch({ type: 'reset' });
+      setStatus(cancellationMessage(modeRef.current));
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [relocatingArea, rotatingUnit, placingJammer, selectedUnit, clearMissileModes]);
-
-  const handleUndeploy = useCallback(
-    (unitKey: string, unitName: string) => {
-      onUndeploySystem(unitKey);
-      setStatus(`${unitName} deployment cancelled`);
-    },
-    [onUndeploySystem]
-  );
-
-  const handleMouseMove = useCallback(
-    (lat: number, lng: number) => {
-      if (!selectedUnit && !relocatingArea && !rotatingUnit && !placingJammer) return;
-      const now = Date.now();
-      if (now - lastMouseMoveRef.current < 50) return;
-      lastMouseMoveRef.current = now;
-      setMousePosition({ lat, lng });
-
-      if (rotatingUnit) {
-        const angle = Math.round(
-          calculateBearing(rotatingUnit.center.lat, rotatingUnit.center.lng, lat, lng)
-        );
-        setRotationPreviewAngle(angle);
-        setStatus(`Rotating: ${angle}° — Click to confirm. ESC to cancel`);
-      }
-    },
-    [selectedUnit, relocatingArea, rotatingUnit, placingJammer]
-  );
+  }, [isPlacementActive]);
 
   // ============================================================================
-  // Derived Preview Data
+  // Derived Data
   // ============================================================================
-  const previewData = useMemo(() => {
-    if (!previewOffsets || !mousePosition) return null;
+  const { previewData, relocatePreviewVertices, rotationPreviewData } = useDeploymentPreviews({
+    mode,
+    mousePosition,
+    deployedSystems,
+    shouldValidateTaiwanBoundary,
+    rng,
+  });
 
-    const angle = previewAngle ?? determineOpeningAngle(mousePosition.lat, mousePosition.lng);
-    const offsets = previewOffsets[angle];
-    if (!offsets) return null;
-
-    const translate = (o: OffsetVertex) => ({
-      latitude: mousePosition.lat + o.dLat,
-      longitude: mousePosition.lng + o.dLng,
-    });
-
-    const uShapeVertices = offsets.uShapeVertices.map(translate);
-    const ammoArea = offsets.ammoArea.map(translate);
-    const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
-
-    const allVerticesInTaiwan =
-      !shouldValidateTaiwanBoundary ||
-      (uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-        firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude))) &&
-        ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
-
-    return {
-      uShapeVertices,
-      ammoArea,
-      hideArea: offsets.hideArea.map(translate),
-      reloadArea: offsets.reloadArea.map(translate),
-      firePoints,
-      isValid: allVerticesInTaiwan,
-    };
-  }, [previewOffsets, previewAngle, mousePosition, shouldValidateTaiwanBoundary]);
-
-  const relocatePreviewVertices = useMemo(() => {
-    if (!relocatingArea || !mousePosition) return null;
-    const deployment = deployedSystems.get(relocatingArea.unitKey);
-    if (!deployment) return null;
-
-    if (relocatingArea.type === 'ushape') {
-      return deployment.tacticalAreas.uShapeVertices.map((v) => ({
-        latitude: v.latitude + (mousePosition.lat - deployment.center.lat),
-        longitude: v.longitude + (mousePosition.lng - deployment.center.lng),
-      }));
-    }
-
-    const bearingToCenter = calculateBearing(
-      mousePosition.lat,
-      mousePosition.lng,
-      deployment.center.lat,
-      deployment.center.lng
-    );
-    const squareSize = AREA_SQUARE_SIZE[relocatingArea.type];
-    return generateSquareVerticesPublic(
-      mousePosition.lat,
-      mousePosition.lng,
-      squareSize,
-      bearingToCenter
-    );
-  }, [relocatingArea, mousePosition, deployedSystems]);
-
-  const rotationPreviewData = useMemo(() => {
-    if (!rotatingUnit || rotationPreviewAngle === null) return null;
-    const deployment = deployedSystems.get(rotatingUnit.unitKey);
-    if (!deployment) return null;
-
-    const preview = generateRotationPreview(
-      rotatingUnit.center,
-      rotationPreviewAngle,
-      deployment.ahaRadius,
-      deployment.ahaCenter,
-      rng
-    );
-    if (!preview) return null;
-
-    // Boundary check only. Gateway feasibility is resolved on commit, so a
-    // green preview is necessary but not sufficient — handleMapClick still
-    // reports a rejection.
-    const isValid =
-      !shouldValidateTaiwanBoundary ||
-      (preview.uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-        preview.ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
-
-    // Fire points are user-placed, so rotation leaves them where they are
-    return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };
-  }, [rotatingUnit, rotationPreviewAngle, deployedSystems, shouldValidateTaiwanBoundary, rng]);
-
-  const placingJammerUnit = placingJammer ? (jammers[placingJammer.index] ?? null) : null;
-
-  // The default hint is about placing units, which does not apply to the
-  // aircraft panel. Any real deployment result still shows through.
-  const displayStatus =
-    sidebarPanel === 'aircraft' && status === DEFAULT_STATUS ? AIRCRAFT_PANEL_STATUS : status;
+  const placingJammerUnit = mode.kind === 'placeJammer' ? (jammers[mode.index] ?? null) : null;
 
   return {
-    // State
-    selectedUnit,
-    expandedUnitKey,
-    setExpandedUnitKey,
-    collapsedCategories,
-    coordinates,
+    // Mode machine
+    mode,
     mousePosition,
-    relocatingArea,
-    rotatingUnit,
-    placingJammer,
+    isPlacementActive,
+    coordinates,
+    status,
+
+    // Sidebar
+    expandedUnitKey,
+    collapsedCategories,
     expandedJammerIndex,
     jammersCollapsed,
-    sidebarPanel,
-    selectedBaseIndex,
-    status,
-    displayStatus,
 
     // Derived
-    isMissileModeActive,
-    isPlacementActive,
     placingJammerUnit,
     previewData,
     relocatePreviewVertices,
@@ -870,6 +548,7 @@ export function useDeploymentState({
     handleMouseMove,
     handleUnitSelect,
     handleCancelSelect,
+    clearPlacement,
     handleUndeploy,
     toggleCategory,
     toggleJammers,
@@ -878,8 +557,6 @@ export function useDeploymentState({
     handleJammerSelect,
     handleJammerRelocateClick,
     handleUndeployJammer,
-    handleAirbaseClick,
     handleAircraftError,
-    handleSidebarPanelChange,
   };
 }

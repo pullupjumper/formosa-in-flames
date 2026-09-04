@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type {
   MissileSystems,
   Airbase,
@@ -5,21 +6,13 @@ import type {
   Jammer,
   BudgetState,
 } from '@/types/setupMenu';
-import {
-  BaseMap,
-  AirbaseMarkers,
-  DeployedMissileSystems,
-  MissileSystemPreview,
-  AreaRelocatePreview,
-  DeployedJammers,
-  JammerRelocatePreview,
-} from '@/components/Map';
-import { getWeaponSystemName } from '@/utils/map';
-import { CollapsibleGroup } from './CollapsibleGroup';
-import { DeployableUnitCard } from './DeployableUnitCard';
 import { AircraftPanel } from './AircraftPanel';
+import { DeploymentMap } from './DeploymentMap';
+import { GroundUnitsPanel } from './GroundUnitsPanel';
+import { buildMissileGroups } from '../missileGroups';
 import { useDeploymentState } from '../hooks/useDeploymentState';
-import type { SidebarPanel } from '../hooks/useDeploymentState';
+import { useAircraftPanel } from '../hooks/useAircraftPanel';
+import type { SidebarPanel } from '../hooks/useAircraftPanel';
 
 // ============================================================================
 // UI CONSTANTS
@@ -49,6 +42,10 @@ interface DeploymentTabProps {
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
 }
 
+/**
+ * Layout shell for the Deployment tab: map on the left, sidebar on the right.
+ * All interaction rules live in `useDeploymentState` / `useAircraftPanel`.
+ */
 export function DeploymentTab({
   missileSystems,
   airbases,
@@ -67,43 +64,7 @@ export function DeploymentTab({
   onRefundBudget,
   onUpdateAirbase,
 }: DeploymentTabProps) {
-  const {
-    selectedUnit,
-    expandedUnitKey,
-    setExpandedUnitKey,
-    collapsedCategories,
-    coordinates,
-    mousePosition,
-    relocatingArea,
-    rotatingUnit,
-    placingJammer,
-    expandedJammerIndex,
-    jammersCollapsed,
-    sidebarPanel,
-    selectedBaseIndex,
-    displayStatus,
-    isPlacementActive,
-    placingJammerUnit,
-    previewData,
-    relocatePreviewVertices,
-    rotationPreviewData,
-    getUnitInfo,
-    handleMapClick,
-    handleMouseMove,
-    handleUnitSelect,
-    handleCancelSelect,
-    handleUndeploy,
-    toggleCategory,
-    toggleJammers,
-    handleAreaClick,
-    handleRotateClick,
-    handleJammerSelect,
-    handleJammerRelocateClick,
-    handleUndeployJammer,
-    handleAirbaseClick,
-    handleAircraftError,
-    handleSidebarPanelChange,
-  } = useDeploymentState({
+  const deployment = useDeploymentState({
     missileSystems,
     jammers,
     deployedSystems,
@@ -114,65 +75,54 @@ export function DeploymentTab({
     onDeployJammer,
     onUndeployJammer,
   });
+  const { mode, isPlacementActive, coordinates, status } = deployment;
 
-  const categories = Object.keys(missileSystems);
-  const isInteractive = isPlacementActive;
+  const {
+    sidebarPanel,
+    selectedBaseIndex,
+    displayStatus,
+    handleAirbaseClick,
+    handleSidebarPanelChange,
+  } = useAircraftPanel({
+    status,
+    isPlacementActive,
+    onEnterPanel: deployment.clearPlacement,
+  });
+
+  // Narrow the active mode once, so the markup below stays declarative
+  const placingJammer = mode.kind === 'placeJammer' ? mode : null;
+  const missileGroups = useMemo(
+    () => buildMissileGroups(missileSystems, deployedSystems),
+    [missileSystems, deployedSystems]
+  );
 
   return (
     <div className="flex h-full">
       {/* Map Container */}
       <div className="flex-1">
-        <BaseMap
-          onMapClick={handleMapClick}
-          onMouseMove={isInteractive ? handleMouseMove : undefined}
-          cursorStyle={isInteractive ? 'crosshair' : undefined}
+        <DeploymentMap
           sideName={sideName}
-        >
-          <AirbaseMarkers airbases={airbases} onAirbaseClick={handleAirbaseClick} />
-          <DeployedMissileSystems
-            deployedSystems={deployedSystems}
-            getUnitInfo={getUnitInfo}
-            onAreaClick={handleAreaClick}
-            onRotateClick={handleRotateClick}
-            relocatingArea={relocatingArea}
-            rotatingUnitKey={rotatingUnit?.unitKey ?? null}
-          />
-          <DeployedJammers
-            jammers={jammers}
-            deployedPositions={deployedJammers}
-            relocatingIndex={placingJammer?.isRelocate ? placingJammer.index : null}
-            onRelocateClick={handleJammerRelocateClick}
-          />
-          {placingJammerUnit && mousePosition && (
-            <JammerRelocatePreview radius={placingJammerUnit.radius} position={mousePosition} />
-          )}
-          {relocatePreviewVertices && relocatingArea && (
-            <AreaRelocatePreview
-              vertices={relocatePreviewVertices}
-              areaType={relocatingArea.type}
-            />
-          )}
-          {rotationPreviewData && (
-            <MissileSystemPreview
-              uShapeVertices={rotationPreviewData.uShapeVertices}
-              ammoArea={rotationPreviewData.ammoArea}
-              hideArea={rotationPreviewData.hideArea}
-              reloadArea={rotationPreviewData.reloadArea}
-              firePoints={rotationPreviewData.firePoints}
-              isValid={rotationPreviewData.isValid}
-            />
-          )}
-          {previewData && (
-            <MissileSystemPreview
-              uShapeVertices={previewData.uShapeVertices}
-              ammoArea={previewData.ammoArea}
-              hideArea={previewData.hideArea}
-              reloadArea={previewData.reloadArea}
-              firePoints={previewData.firePoints}
-              isValid={previewData.isValid}
-            />
-          )}
-        </BaseMap>
+          airbases={airbases}
+          jammers={jammers}
+          deployedSystems={deployedSystems}
+          deployedJammers={deployedJammers}
+          isPlacementActive={isPlacementActive}
+          mousePosition={deployment.mousePosition}
+          relocatingArea={mode.kind === 'relocateArea' ? mode.area : null}
+          rotatingUnitKey={mode.kind === 'rotate' ? mode.unitKey : null}
+          relocatingJammerIndex={placingJammer?.isRelocate ? placingJammer.index : null}
+          placingJammerUnit={deployment.placingJammerUnit}
+          deployPreview={deployment.previewData}
+          rotationPreview={deployment.rotationPreviewData}
+          relocatePreviewVertices={deployment.relocatePreviewVertices}
+          getUnitInfo={deployment.getUnitInfo}
+          onMapClick={deployment.handleMapClick}
+          onMouseMove={deployment.handleMouseMove}
+          onAreaClick={deployment.handleAreaClick}
+          onRotateClick={deployment.handleRotateClick}
+          onAirbaseClick={handleAirbaseClick}
+          onJammerRelocateClick={deployment.handleJammerRelocateClick}
+        />
       </div>
 
       {/* Controls Panel */}
@@ -207,115 +157,29 @@ export function DeploymentTab({
               onSpendBudget={onSpendBudget}
               onRefundBudget={onRefundBudget}
               onUpdateAirbase={onUpdateAirbase}
-              onError={handleAircraftError}
+              onError={deployment.handleAircraftError}
             />
           ) : (
-            <div className="mb-4">
-              <div className="mb-2 text-xs font-semibold">Available Units</div>
-              <div className="space-y-2">
-                {/* GPS Jammers */}
-                <CollapsibleGroup
-                  title="GPS Jammers"
-                  deployedCount={deployedJammers.size}
-                  totalCount={jammers.length}
-                  collapsed={jammersCollapsed}
-                  onToggle={toggleJammers}
-                >
-                  {jammers.length === 0 ? (
-                    <div className="text-xs italic text-text-secondary">
-                      No jammer units available
-                    </div>
-                  ) : (
-                    jammers.map((jammer, index) => {
-                      const deployment = deployedJammers.get(index);
-                      return (
-                        <DeployableUnitCard
-                          key={index}
-                          name={jammer.name}
-                          details={
-                            <>
-                              <div>ZONE: {jammer.zoneName}</div>
-                              <div>RANGE: {jammer.radius} NM</div>
-                            </>
-                          }
-                          deployedSummary={
-                            deployment
-                              ? `✓ Deployed at ${deployment.lat.toFixed(4)}°, ${deployment.lng.toFixed(4)}°`
-                              : null
-                          }
-                          isDeployed={deployment !== undefined}
-                          isSelected={placingJammer?.index === index && !placingJammer.isRelocate}
-                          isExpanded={expandedJammerIndex === index}
-                          onSelect={() => handleJammerSelect(index)}
-                          onCancelDeployment={() => handleUndeployJammer(index)}
-                          onCancelSelection={handleCancelSelect}
-                        />
-                      );
-                    })
-                  )}
-                </CollapsibleGroup>
-
-                {/* Missile Systems */}
-                {categories.length === 0 ? (
-                  <div className="text-xs italic text-text-secondary">
-                    No missile system units available
-                  </div>
-                ) : (
-                  categories.map((category) => {
-                    const categoryData = missileSystems[category];
-                    if (!categoryData?.firingUnits) return null;
-
-                    const weaponName = getWeaponSystemName(category);
-                    const unitEntries = Object.entries(categoryData.firingUnits);
-                    const deployedCount = unitEntries.filter(([unitName]) =>
-                      deployedSystems.has(`${category}_${unitName}`)
-                    ).length;
-
-                    return (
-                      <CollapsibleGroup
-                        key={category}
-                        title={weaponName}
-                        deployedCount={deployedCount}
-                        totalCount={unitEntries.length}
-                        collapsed={collapsedCategories.has(category)}
-                        onToggle={() => toggleCategory(category)}
-                      >
-                        {unitEntries.map(([unitName, unit]) => {
-                          const unitKey = `${category}_${unitName}`;
-                          const deployment = deployedSystems.get(unitKey);
-                          const isExpanded = expandedUnitKey === unitKey;
-
-                          return (
-                            <DeployableUnitCard
-                              key={unitKey}
-                              name={unit.name}
-                              details={<div>SYSTEM: {weaponName.split('(')[0].trim()}</div>}
-                              deployedSummary={
-                                deployment
-                                  ? `✓ Deployed | Angle: ${deployment.openingAngle}°`
-                                  : null
-                              }
-                              isDeployed={deployment !== undefined}
-                              isSelected={selectedUnit?.key === unitKey}
-                              isExpanded={isExpanded}
-                              onSelect={() => {
-                                if (deployment) {
-                                  setExpandedUnitKey(isExpanded ? null : unitKey);
-                                } else {
-                                  handleUnitSelect(unitKey, unit.name, category);
-                                }
-                              }}
-                              onCancelDeployment={() => handleUndeploy(unitKey, unit.name)}
-                              onCancelSelection={handleCancelSelect}
-                            />
-                          );
-                        })}
-                      </CollapsibleGroup>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+            <GroundUnitsPanel
+              jammers={jammers}
+              deployedJammers={deployedJammers}
+              jammersCollapsed={deployment.jammersCollapsed}
+              expandedJammerIndex={deployment.expandedJammerIndex}
+              selectedJammerIndex={
+                placingJammer && !placingJammer.isRelocate ? placingJammer.index : null
+              }
+              missileGroups={missileGroups}
+              collapsedCategories={deployment.collapsedCategories}
+              expandedUnitKey={deployment.expandedUnitKey}
+              selectedUnitKey={mode.kind === 'deploy' ? mode.unit.key : null}
+              onToggleJammers={deployment.toggleJammers}
+              onJammerSelect={deployment.handleJammerSelect}
+              onUndeployJammer={deployment.handleUndeployJammer}
+              onToggleCategory={deployment.toggleCategory}
+              onUnitSelect={deployment.handleUnitSelect}
+              onUndeploy={deployment.handleUndeploy}
+              onCancelSelection={deployment.handleCancelSelect}
+            />
           )}
         </div>
 
