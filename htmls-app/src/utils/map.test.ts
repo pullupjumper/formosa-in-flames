@@ -3,6 +3,8 @@ import {
   isPointInTaiwan,
   determineOpeningAngle,
   getWeaponSystemName,
+  makeUnitKey,
+  parseUnitKey,
   calculateCenter,
   checkPolygonInTaiwan,
 } from '@/utils/map';
@@ -58,6 +60,25 @@ describe('getWeaponSystemName', () => {
 
   it('upper-cases an unknown category', () => {
     expect(getWeaponSystemName('foo')).toBe('FOO');
+  });
+});
+
+describe('unit keys', () => {
+  it('joins the category and the unit name', () => {
+    expect(makeUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
+  });
+
+  it('splits on the first separator only', () => {
+    expect(parseUnitKey('ascm_HF3_01')).toEqual({ category: 'ascm', unitName: 'HF3_01' });
+  });
+
+  it.each(['ascm_HF3_01', 'sam_TK3', 'mlrs_A_B_C'])('round-trips %s', (unitKey) => {
+    const { category, unitName } = parseUnitKey(unitKey);
+    expect(makeUnitKey(category, unitName)).toBe(unitKey);
+  });
+
+  it('yields an empty unit name when the key has no separator', () => {
+    expect(parseUnitKey('ascm')).toEqual({ category: 'ascm', unitName: '' });
   });
 });
 

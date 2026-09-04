@@ -12,6 +12,7 @@ import {
   generateRotationPreview,
   isPointInPolygon,
   isValidAngle,
+  relocateArea,
 } from '@/utils/missileDeployment';
 import { generateUShapeVertices, calculateDistance } from '@/utils/tacticalAreaGenerator';
 import type { Coordinate } from '@/utils/tacticalAreaGenerator';
@@ -347,6 +348,185 @@ describe('generateDeploymentData', () => {
 
     expect(data).toBeNull();
     expect(error).toHaveBeenCalled();
+  });
+});
+
+// ============================================================================
+// AREA RELOCATION
+// ============================================================================
+describe('relocateArea', () => {
+  /** Deterministic deployment used as the "before" state of every move */
+  function deployed() {
+    const data = generateDeploymentData({
+      unitName: 'HF3 Battery 1',
+      category: 'ascm',
+      lat: INLAND.lat,
+      lng: INLAND.lng,
+      angle: 90,
+      validateTaiwanBoundary: true,
+      rng: createSeededRandom(42),
+    });
+    if (!data) throw new Error('fixture deployment failed to generate');
+    return data;
+  }
+
+  /** Center of a 4-vertex square */
+  function centerOf(square: Coordinate[]) {
+    return {
+      lat: square.reduce((sum, v) => sum + v.latitude, 0) / 4,
+      lng: square.reduce((sum, v) => sum + v.longitude, 0) / 4,
+    };
+  }
+
+  function move(
+    deployment: ReturnType<typeof deployed>,
+    target: Parameters<typeof relocateArea>[0]['target'],
+    lat: number,
+    lng: number,
+    validateTaiwanBoundary = true
+  ) {
+    return relocateArea({
+      deployment,
+      target,
+      lat,
+      lng,
+      validateTaiwanBoundary,
+      rng: createSeededRandom(7),
+    });
+  }
+
+  it('moves the AHA square and records its new center', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.ahaCenter).toEqual({ lat: INLAND.lat + 0.05, lng: INLAND.lng + 0.05 });
+    expect(result.data.tacticalAreas.ammoArea).toHaveLength(4);
+    expect(result.data.tacticalAreas.ammoArea).not.toEqual(deployment.tacticalAreas.ammoArea);
+  });
+
+  it('leaves every other tactical area untouched', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { tacticalAreas: before } = deployment;
+    const { tacticalAreas: after } = result.data;
+    expect(after.uShapeVertices).toEqual(before.uShapeVertices);
+    expect(after.hideArea).toEqual(before.hideArea);
+    expect(after.reloadArea).toEqual(before.reloadArea);
+    expect(after.firePoints).toEqual(before.firePoints);
+    // AHA does not affect shelter placement, so those stay put too
+    expect(after.shelterPoints).toEqual(before.shelterPoints);
+  });
+
+  it('replaces only the addressed fire point', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'fp', fpIndex: 1 }, INLAND.lat + 0.02, INLAND.lng);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const before = deployment.tacticalAreas.firePoints!;
+    const after = result.data.tacticalAreas.firePoints!;
+    expect(after[0]).toEqual(before[0]);
+    expect(after[1]).not.toEqual(before[1]);
+  });
+
+  it('defaults a missing fire point index to the first', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'fp' }, INLAND.lat + 0.02, INLAND.lng);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const after = result.data.tacticalAreas.firePoints!;
+    expect(after).toHaveLength(deployment.tacticalAreas.firePoints!.length);
+    expect(after[0]).not.toEqual(deployment.tacticalAreas.firePoints![0]);
+  });
+
+  it('rejects a hide area pushed outside the U-Shape', () => {
+    const result = move(deployed(), { type: 'hide' }, INLAND.lat + 1, INLAND.lng + 1);
+
+    expect(result).toEqual({ ok: false, failure: { code: 'outside-boundary' } });
+  });
+
+  it('rejects a hide area dropped on top of the reload area', () => {
+    const deployment = deployed();
+    const onReload = centerOf(deployment.tacticalAreas.reloadArea!);
+    const result = move(deployment, { type: 'hide' }, onReload.lat, onReload.lng);
+
+    expect(result).toEqual({
+      ok: false,
+      failure: { code: 'overlaps-other-area', other: 'reload' },
+    });
+  });
+
+  it('names the hide area when the reload area is the one being moved', () => {
+    const deployment = deployed();
+    const onHide = centerOf(deployment.tacticalAreas.hideArea!);
+    const result = move(deployment, { type: 'reload' }, onHide.lat, onHide.lng);
+
+    expect(result).toEqual({ ok: false, failure: { code: 'overlaps-other-area', other: 'hide' } });
+  });
+
+  it('replans shelters when the hide area moves', () => {
+    const deployment = deployed();
+    // Nudge just far enough to change the layout without leaving the boundary
+    const from = centerOf(deployment.tacticalAreas.hideArea!);
+    const result = move(deployment, { type: 'hide' }, from.lat + 0.001, from.lng);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.tacticalAreas.shelterPoints).toBeDefined();
+    expect(result.data.tacticalAreas.hideArea).not.toEqual(deployment.tacticalAreas.hideArea);
+  });
+
+  it('regenerates the whole layout when the U-Shape moves', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'ushape' }, INLAND.lat + 0.05, INLAND.lng);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.center).toEqual({ lat: INLAND.lat + 0.05, lng: INLAND.lng });
+    expect(result.data.tacticalAreas.uShapeVertices).not.toEqual(
+      deployment.tacticalAreas.uShapeVertices
+    );
+    // AHA and fire points are user-placed, so the move leaves them alone
+    expect(result.data.tacticalAreas.ammoArea).toEqual(deployment.tacticalAreas.ammoArea);
+    expect(result.data.tacticalAreas.firePoints).toEqual(deployment.tacticalAreas.firePoints);
+  });
+
+  it('reports a U-Shape move that leaves the coast', () => {
+    const result = move(deployed(), { type: 'ushape' }, OFFSHORE.lat, OFFSHORE.lng);
+
+    expect(result).toEqual({ ok: false, failure: { code: 'ushape-generation-failed' } });
+  });
+
+  it('allows a U-Shape move offshore when the boundary rule is off', () => {
+    const result = move(deployed(), { type: 'ushape' }, OFFSHORE.lat, OFFSHORE.lng, false);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('recomputes the movement paths against the updated areas', () => {
+    const deployment = deployed();
+    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.paths).not.toEqual(deployment.paths);
+    expect(result.data.paths.AHA.waypoints.length).toBeGreaterThan(0);
+  });
+
+  it('never mutates the deployment it was given', () => {
+    const deployment = deployed();
+    const snapshot = structuredClone(deployment);
+    move(deployment, { type: 'hide' }, INLAND.lat + 1, INLAND.lng + 1);
+    move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng);
+    move(deployment, { type: 'ushape' }, INLAND.lat + 0.05, INLAND.lng);
+
+    expect(deployment).toEqual(snapshot);
   });
 });
 

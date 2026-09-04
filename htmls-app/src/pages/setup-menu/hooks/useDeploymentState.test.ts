@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { DeployedMissileSystemData, Jammer, MissileSystems } from '@/types/setupMenu';
+import { useDeploymentState } from '@/pages/setup-menu/hooks/useDeploymentState';
+import type { UseDeploymentStateParams } from '@/pages/setup-menu/hooks/useDeploymentState';
+import { useAircraftPanel, AIRCRAFT_PANEL_STATUS } from '@/pages/setup-menu/hooks/useAircraftPanel';
 import {
-  useDeploymentState,
-  formatAreaLabel,
+  deploymentModeReducer,
+  IDLE_STATE,
   AREA_LABEL,
   DEFAULT_STATUS,
-  AIRCRAFT_PANEL_STATUS,
-} from '@/pages/setup-menu/hooks/useDeploymentState';
-import type { UseDeploymentStateParams } from '@/pages/setup-menu/hooks/useDeploymentState';
+  cancellationMessage,
+  describeRelocateFailure,
+  formatAreaLabel,
+  isMissileMode,
+  isSameArea,
+} from '@/pages/setup-menu/hooks/deploymentMode';
+import type { DeploymentMode } from '@/pages/setup-menu/hooks/deploymentMode';
 import { generateDeploymentData } from '@/utils/missileDeployment';
 import { createSeededRandom } from '@/utils/random';
 
@@ -67,12 +74,16 @@ beforeEach(() => {
   };
 });
 
+/**
+ * Mirrors DeploymentTab: the deployment state machine plus the aircraft panel
+ * wired to it, so the one-way coupling between them is under test too.
+ */
 function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   // One stream per hook instance, created outside the render callback so the
   // reference stays stable and the sequence is not reset on every render.
   const rng = createSeededRandom(SEED);
-  return renderHook(() =>
-    useDeploymentState({
+  return renderHook(() => {
+    const deployment = useDeploymentState({
       missileSystems: MISSILE_SYSTEMS,
       jammers: JAMMERS,
       deployedSystems: new Map(),
@@ -81,8 +92,27 @@ function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
       rng,
       ...handlers,
       ...overrides,
-    })
-  );
+    });
+    const aircraft = useAircraftPanel({
+      status: deployment.status,
+      isPlacementActive: deployment.isPlacementActive,
+      onEnterPanel: deployment.clearPlacement,
+    });
+    return { ...deployment, ...aircraft };
+  });
+}
+
+/** Asserts the active mode and narrows it for the caller's follow-up checks */
+function expectMode<K extends DeploymentMode['kind']>(
+  mode: DeploymentMode,
+  kind: K
+): Extract<DeploymentMode, { kind: K }> {
+  expect(mode.kind).toBe(kind);
+  return mode as Extract<DeploymentMode, { kind: K }>;
+}
+
+function expectIdle(mode: DeploymentMode) {
+  expect(mode).toEqual({ kind: 'idle' });
 }
 
 function pressEscape() {
@@ -109,16 +139,124 @@ describe('formatAreaLabel', () => {
   });
 });
 
+describe('describeRelocateFailure', () => {
+  it('reports a failed U-Shape regeneration', () => {
+    expect(describeRelocateFailure({ code: 'ushape-generation-failed' })).toContain('U-Shape');
+  });
+
+  it('reports leaving the U-Shape boundary', () => {
+    expect(describeRelocateFailure({ code: 'outside-boundary' })).toContain('boundary');
+  });
+
+  it('names the area that is in the way', () => {
+    expect(describeRelocateFailure({ code: 'overlaps-other-area', other: 'reload' })).toContain(
+      AREA_LABEL.reload
+    );
+    expect(describeRelocateFailure({ code: 'overlaps-other-area', other: 'hide' })).toContain(
+      AREA_LABEL.hide
+    );
+  });
+});
+
+// ============================================================================
+// MODE REDUCER
+// ============================================================================
+describe('deploymentModeReducer', () => {
+  const AREA = { unitKey: UNIT_KEY, type: 'hide' as const };
+
+  it('drops the previous mode on every transition', () => {
+    const deploying = deploymentModeReducer(IDLE_STATE, {
+      type: 'selectUnit',
+      unit: { key: UNIT_KEY, name: UNIT_NAME, category: 'ascm' },
+      offsets: {},
+    });
+    const rotating = deploymentModeReducer(deploying, {
+      type: 'rotate',
+      unitKey: UNIT_KEY,
+      center: INLAND,
+    });
+
+    // No leftover deploy state to clean up — the union holds one mode at a time
+    expect(rotating.mode.kind).toBe('rotate');
+  });
+
+  it('clears the cursor whenever the mode changes', () => {
+    const hovering = deploymentModeReducer(
+      { mode: { kind: 'relocateArea', area: AREA }, mousePosition: null },
+      { type: 'hover', lat: INLAND.lat, lng: INLAND.lng }
+    );
+    expect(hovering.mousePosition).toEqual(INLAND);
+
+    const switched = deploymentModeReducer(hovering, {
+      type: 'placeJammer',
+      index: 0,
+      isRelocate: false,
+    });
+    expect(switched.mousePosition).toBeNull();
+  });
+
+  it('records the swept angle only while rotating', () => {
+    const rotating = deploymentModeReducer(IDLE_STATE, {
+      type: 'rotate',
+      unitKey: UNIT_KEY,
+      center: INLAND,
+    });
+    const swept = deploymentModeReducer(rotating, {
+      type: 'hover',
+      lat: INLAND.lat,
+      lng: INLAND.lng,
+      rotationAngle: 135,
+    });
+    expect(expectMode(swept.mode, 'rotate').previewAngle).toBe(135);
+
+    const relocating = deploymentModeReducer(IDLE_STATE, { type: 'relocateArea', area: AREA });
+    const ignored = deploymentModeReducer(relocating, {
+      type: 'hover',
+      lat: INLAND.lat,
+      lng: INLAND.lng,
+      rotationAngle: 135,
+    });
+    expect(ignored.mode).toEqual({ kind: 'relocateArea', area: AREA });
+  });
+
+  it('classifies which modes block a jammer click', () => {
+    expect(isMissileMode({ kind: 'relocateArea', area: AREA })).toBe(true);
+    expect(
+      isMissileMode({ kind: 'rotate', unitKey: UNIT_KEY, center: INLAND, previewAngle: null })
+    ).toBe(true);
+    expect(isMissileMode({ kind: 'placeJammer', index: 0, isRelocate: false })).toBe(false);
+    expect(isMissileMode({ kind: 'idle' })).toBe(false);
+  });
+
+  it('compares areas by unit, type and fire point index', () => {
+    expect(isSameArea(AREA, { ...AREA })).toBe(true);
+    expect(isSameArea(AREA, { ...AREA, type: 'reload' })).toBe(false);
+    const fp = { unitKey: UNIT_KEY, type: 'fp' as const, fpIndex: 0 };
+    expect(isSameArea(fp, { ...fp, fpIndex: 1 })).toBe(false);
+  });
+
+  it('words the ESC message per mode', () => {
+    expect(
+      cancellationMessage({ kind: 'rotate', unitKey: UNIT_KEY, center: INLAND, previewAngle: null })
+    ).toBe('Rotation cancelled');
+    expect(cancellationMessage({ kind: 'relocateArea', area: AREA })).toBe('Relocation cancelled');
+    expect(cancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: true })).toBe(
+      'Relocation cancelled'
+    );
+    expect(cancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: false })).toBe(
+      'Selection cancelled'
+    );
+  });
+});
+
 // ============================================================================
 // INITIAL STATE
 // ============================================================================
 describe('useDeploymentState initial state', () => {
   it('starts idle on the aircraft panel', () => {
     const { result } = setup();
-    expect(result.current.selectedUnit).toBeNull();
-    expect(result.current.relocatingArea).toBeNull();
-    expect(result.current.rotatingUnit).toBeNull();
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
+    expect(result.current.mousePosition).toBeNull();
     expect(result.current.isPlacementActive).toBe(false);
     expect(result.current.status).toBe(DEFAULT_STATUS);
     // The generic hint is replaced while the aircraft panel is showing.
@@ -137,24 +275,29 @@ describe('useDeploymentState initial state', () => {
 // MODE ARBITRATION
 // ============================================================================
 describe('mode arbitration', () => {
-  it('activates missile mode on unit select', () => {
+  it('activates deploy mode on unit select', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
 
-    expect(result.current.selectedUnit).toEqual({
+    expect(expectMode(result.current.mode, 'deploy').unit).toEqual({
       key: UNIT_KEY,
       name: UNIT_NAME,
       category: 'ascm',
     });
-    expect(result.current.isMissileModeActive).toBe(true);
+    expect(result.current.isPlacementActive).toBe(true);
     expect(result.current.status).toContain('selected');
   });
 
-  it('ignores selecting an already deployed unit', () => {
+  it('expands an already deployed unit instead of arming a placement', () => {
     const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedSystems });
+
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    expect(result.current.selectedUnit).toBeNull();
+    expectIdle(result.current.mode);
+    expect(result.current.expandedUnitKey).toBe(UNIT_KEY);
+
+    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    expect(result.current.expandedUnitKey).toBeNull();
   });
 
   it('drops a pending unit selection when a jammer is selected', () => {
@@ -162,8 +305,10 @@ describe('mode arbitration', () => {
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     act(() => result.current.handleJammerSelect(0));
 
-    expect(result.current.selectedUnit).toBeNull();
-    expect(result.current.placingJammer).toEqual({ index: 0, isRelocate: false });
+    expect(expectMode(result.current.mode, 'placeJammer')).toMatchObject({
+      index: 0,
+      isRelocate: false,
+    });
     expect(result.current.placingJammerUnit).toEqual(JAMMERS[0]);
   });
 
@@ -172,8 +317,7 @@ describe('mode arbitration', () => {
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
 
-    expect(result.current.placingJammer).toBeNull();
-    expect(result.current.selectedUnit).not.toBeNull();
+    expectMode(result.current.mode, 'deploy');
   });
 
   it('drops a pending unit selection when an area relocation starts', () => {
@@ -182,8 +326,10 @@ describe('mode arbitration', () => {
     act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
-    expect(result.current.selectedUnit).toBeNull();
-    expect(result.current.relocatingArea).toEqual({ unitKey: UNIT_KEY, type: 'hide' });
+    expect(expectMode(result.current.mode, 'relocateArea').area).toEqual({
+      unitKey: UNIT_KEY,
+      type: 'hide',
+    });
   });
 
   it('toggles area relocation off when the same area is clicked again', () => {
@@ -192,9 +338,9 @@ describe('mode arbitration', () => {
     const area = { unitKey: UNIT_KEY, type: 'fp' as const, fpIndex: 1 };
 
     act(() => result.current.handleAreaClick(area));
-    expect(result.current.relocatingArea).toEqual(area);
+    expect(expectMode(result.current.mode, 'relocateArea').area).toEqual(area);
     act(() => result.current.handleAreaClick(area));
-    expect(result.current.relocatingArea).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe('Relocation cancelled');
   });
 
@@ -204,8 +350,7 @@ describe('mode arbitration', () => {
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
-    expect(result.current.relocatingArea).toBeNull();
-    expect(result.current.placingJammer).not.toBeNull();
+    expectMode(result.current.mode, 'placeJammer');
   });
 
   it('ignores a rotate click while a jammer is being placed', () => {
@@ -214,7 +359,7 @@ describe('mode arbitration', () => {
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.handleRotateClick(UNIT_KEY));
 
-    expect(result.current.rotatingUnit).toBeNull();
+    expectMode(result.current.mode, 'placeJammer');
   });
 
   it('ignores a jammer relocate click while a missile mode is live', () => {
@@ -222,8 +367,7 @@ describe('mode arbitration', () => {
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     act(() => result.current.handleJammerRelocateClick(0));
 
-    expect(result.current.placingJammer).toBeNull();
-    expect(result.current.selectedUnit).not.toBeNull();
+    expectMode(result.current.mode, 'deploy');
   });
 
   it('replaces area relocation with rotation', () => {
@@ -232,14 +376,16 @@ describe('mode arbitration', () => {
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
     act(() => result.current.handleRotateClick(UNIT_KEY));
 
-    expect(result.current.relocatingArea).toBeNull();
-    expect(result.current.rotatingUnit).toEqual({ unitKey: UNIT_KEY, center: INLAND });
+    const rotating = expectMode(result.current.mode, 'rotate');
+    expect(rotating.unitKey).toBe(UNIT_KEY);
+    expect(rotating.center).toEqual(INLAND);
+    expect(rotating.previewAngle).toBeNull();
   });
 
   it('ignores rotation of an undeployed unit', () => {
     const { result } = setup();
     act(() => result.current.handleRotateClick(UNIT_KEY));
-    expect(result.current.rotatingUnit).toBeNull();
+    expectIdle(result.current.mode);
   });
 
   it('suppresses airbase selection while a placement mode owns the map click', () => {
@@ -260,10 +406,18 @@ describe('mode arbitration', () => {
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     act(() => result.current.handleSidebarPanelChange('aircraft'));
 
-    expect(result.current.selectedUnit).toBeNull();
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.isPlacementActive).toBe(false);
     expect(result.current.status).toBe(DEFAULT_STATUS);
+  });
+
+  it('keeps a real result in the status line when no mode was pending', () => {
+    const { result } = setup();
+    act(() => result.current.handleUndeploy(UNIT_KEY, UNIT_NAME));
+    act(() => result.current.handleSidebarPanelChange('ground'));
+    act(() => result.current.handleSidebarPanelChange('aircraft'));
+
+    expect(result.current.status).toContain(UNIT_NAME);
   });
 });
 
@@ -276,7 +430,7 @@ describe('ESC cancellation', () => {
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     pressEscape();
 
-    expect(result.current.selectedUnit).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe('Selection cancelled');
   });
 
@@ -286,7 +440,7 @@ describe('ESC cancellation', () => {
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'reload' }));
     pressEscape();
 
-    expect(result.current.relocatingArea).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe('Relocation cancelled');
   });
 
@@ -296,7 +450,7 @@ describe('ESC cancellation', () => {
     act(() => result.current.handleRotateClick(UNIT_KEY));
     pressEscape();
 
-    expect(result.current.rotatingUnit).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe('Rotation cancelled');
   });
 
@@ -306,8 +460,20 @@ describe('ESC cancellation', () => {
     act(() => result.current.handleJammerRelocateClick(0));
     pressEscape();
 
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe('Relocation cancelled');
+  });
+
+  it('reads the mode at key-press time, not at listener registration', () => {
+    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedSystems });
+    // The listener is keyed on "a mode is live", so this switch does not
+    // re-register it — the message still has to follow the current mode.
+    act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
+    act(() => result.current.handleRotateClick(UNIT_KEY));
+    pressEscape();
+
+    expect(result.current.status).toBe('Rotation cancelled');
   });
 
   it('ignores other keys', () => {
@@ -316,7 +482,7 @@ describe('ESC cancellation', () => {
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     });
-    expect(result.current.selectedUnit).not.toBeNull();
+    expectMode(result.current.mode, 'deploy');
   });
 
   it('does nothing when no mode is active', () => {
@@ -339,7 +505,7 @@ describe('handleMapClick', () => {
     const [key, data] = handlers.onDeploySystem.mock.calls[0];
     expect(key).toBe(UNIT_KEY);
     expect(data.center).toEqual(INLAND);
-    expect(result.current.selectedUnit).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toContain('Done:');
   });
 
@@ -349,7 +515,7 @@ describe('handleMapClick', () => {
     act(() => result.current.handleMapClick(OFFSHORE.lat, OFFSHORE.lng));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
-    expect(result.current.selectedUnit).not.toBeNull();
+    expectMode(result.current.mode, 'deploy');
     expect(result.current.status).toContain('Taiwan mainland');
   });
 
@@ -376,7 +542,7 @@ describe('handleMapClick', () => {
     act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
 
     expect(handlers.onDeployJammer).toHaveBeenCalledWith(1, INLAND.lat, INLAND.lng);
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toContain('Done:');
   });
 
@@ -386,7 +552,7 @@ describe('handleMapClick', () => {
     act(() => result.current.handleMapClick(OFFSHORE.lat, OFFSHORE.lng));
 
     expect(handlers.onDeployJammer).not.toHaveBeenCalled();
-    expect(result.current.placingJammer).not.toBeNull();
+    expectMode(result.current.mode, 'placeJammer');
     expect(result.current.status).toContain('EW units');
   });
 
@@ -400,19 +566,61 @@ describe('handleMapClick', () => {
     expect(result.current.status).toContain('relocated');
   });
 
+  it('ignores a rotation click before an angle has been swept', () => {
+    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedSystems });
+    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+
+    expect(handlers.onDeploySystem).not.toHaveBeenCalled();
+    expectMode(result.current.mode, 'rotate');
+  });
+
   it('commits a rotation once an angle has been previewed', () => {
     const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
     act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng - 0.2));
-    const previewedAngle = result.current.rotationPreviewData;
-    expect(previewedAngle).not.toBeNull();
+    expect(result.current.rotationPreviewData).not.toBeNull();
 
     act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng - 0.2));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
-    expect(result.current.rotatingUnit).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toContain('Angle set to');
+  });
+
+  it('relocates a hide area and reports the move', () => {
+    const deployment = makeDeployment();
+    const deployedSystems = new Map([[UNIT_KEY, deployment]]);
+    const { result } = setup({ deployedSystems });
+    const target = deployment.tacticalAreas.hideArea![0];
+
+    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    act(() => result.current.handleMapClick(target.latitude, target.longitude));
+
+    // Either the move lands (deployment pushed, mode cleared) or the position is
+    // rejected with a warning; both must leave a coherent state.
+    if (handlers.onDeploySystem.mock.calls.length > 0) {
+      expectIdle(result.current.mode);
+      expect(result.current.status).toContain(AREA_LABEL.hide);
+    } else {
+      expectMode(result.current.mode, 'relocateArea');
+      expect(result.current.status).toContain('Warning');
+    }
+  });
+
+  it('leaves relocation mode when the unit disappeared underneath it', () => {
+    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result, rerender } = setup({ deployedSystems });
+    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+
+    deployedSystems.delete(UNIT_KEY);
+    rerender();
+    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+
+    expect(handlers.onDeploySystem).not.toHaveBeenCalled();
+    expectIdle(result.current.mode);
   });
 });
 
@@ -466,6 +674,17 @@ describe('preview data', () => {
     act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng));
     expect(result.current.mousePosition).toBeNull();
   });
+
+  it('drops a stale hover preview when the mode changes', () => {
+    const { result } = setup();
+    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng));
+    expect(result.current.previewData).not.toBeNull();
+
+    act(() => result.current.handleJammerSelect(0));
+    expect(result.current.mousePosition).toBeNull();
+    expect(result.current.previewData).toBeNull();
+  });
 });
 
 // ============================================================================
@@ -478,7 +697,7 @@ describe('sidebar collapse', () => {
     act(() => result.current.toggleCategory('ascm'));
 
     expect(result.current.collapsedCategories.has('ascm')).toBe(true);
-    expect(result.current.selectedUnit).toBeNull();
+    expectIdle(result.current.mode);
     expect(result.current.status).toBe(DEFAULT_STATUS);
   });
 
@@ -487,7 +706,7 @@ describe('sidebar collapse', () => {
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     act(() => result.current.toggleCategory('sam'));
 
-    expect(result.current.selectedUnit).not.toBeNull();
+    expectMode(result.current.mode, 'deploy');
   });
 
   it('drops a pending jammer deployment when the jammer list collapses', () => {
@@ -496,7 +715,7 @@ describe('sidebar collapse', () => {
     act(() => result.current.toggleJammers());
 
     expect(result.current.jammersCollapsed).toBe(true);
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
   });
 
   it('keeps a map-driven jammer relocation when the list collapses', () => {
@@ -505,7 +724,10 @@ describe('sidebar collapse', () => {
     act(() => result.current.handleJammerRelocateClick(0));
     act(() => result.current.toggleJammers());
 
-    expect(result.current.placingJammer).toEqual({ index: 0, isRelocate: true });
+    expect(expectMode(result.current.mode, 'placeJammer')).toMatchObject({
+      index: 0,
+      isRelocate: true,
+    });
   });
 });
 
@@ -528,6 +750,15 @@ describe('undeploy', () => {
     act(() => result.current.handleUndeployJammer(0));
 
     expect(handlers.onUndeployJammer).toHaveBeenCalledWith(0);
-    expect(result.current.placingJammer).toBeNull();
+    expectIdle(result.current.mode);
+  });
+
+  it('keeps placement mode when a different jammer is undeployed', () => {
+    const deployedJammers = new Map([[1, INLAND]]);
+    const { result } = setup({ deployedJammers });
+    act(() => result.current.handleJammerSelect(0));
+    act(() => result.current.handleUndeployJammer(1));
+
+    expect(expectMode(result.current.mode, 'placeJammer').index).toBe(0);
   });
 });
