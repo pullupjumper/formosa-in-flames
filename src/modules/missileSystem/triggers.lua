@@ -293,6 +293,40 @@ local function addTriggerToEvent(opts)
   return false, "add_zone_failed"
 end
 
+---Remove bunkers from the operational area
+---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove bunkers from
+---@param sideName string Side name for cleanup operations
+---@return number removedBunkerCount Number of bunkers removed
+---@return boolean allSuccessful Whether all bunkers were successfully removed
+local function removeBunkers(operationalAreasToRemove, sideName)
+  local removedBunkerCount = 0
+  local allSuccessful = true
+
+  for _, operationalArea in ipairs(operationalAreasToRemove) do
+    local sideUnits = GameApi.VP_GetSide({ side = sideName }):unitsInArea({
+      Area = operationalArea.mask.area,
+      TargetFilter = {
+        TargetType = constants.UNIT_TYPES.FACILITY,
+        SpecificUnitClass = constants.PLATFORMS.BUILDING,
+        TargetSide = sideName,
+      },
+    })
+
+    if sideUnits then
+      for _, sideUnit in ipairs(sideUnits) do
+        local result = GameApi.ScenEdit_DeleteUnit({ guid = sideUnit.guid })
+        if result then
+          removedBunkerCount = removedBunkerCount + 1
+        else
+          allSuccessful = false
+        end
+      end
+    end
+  end
+
+  return removedBunkerCount, allSuccessful
+end
+
 ---Clean up existing zones and event triggers for missile system
 ---@param posTypes string[] Position types to clean up
 ---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove triggers for
@@ -303,6 +337,7 @@ end
 ---@return boolean zoneCleanupSuccessful Whether zone cleanup fully succeeded
 local function cleanupExistingTriggersAndZones(posTypes, operationalAreasToRemove, sideName)
   local eventNames = buildEventAndTriggerNames(sideName, posTypes)
+  removeBunkers(operationalAreasToRemove, sideName)
   local removedTriggerCount, triggerCleanupSuccessful =
       removeEventTriggers(eventNames, posTypes, operationalAreasToRemove, "UnitEntersArea")
   local removedZoneCount, zoneCleanupSuccessful = removeZones(posTypes, operationalAreasToRemove,

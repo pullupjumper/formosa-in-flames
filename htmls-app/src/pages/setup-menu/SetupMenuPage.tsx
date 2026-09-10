@@ -20,6 +20,8 @@ import { MechanicsTab } from './components/MechanicsTab';
 import { DeploymentTab } from './components/DeploymentTab';
 import { OpordTab } from './components/OpordTab';
 import { SummaryTab } from './components/SummaryTab';
+import { makeUnitKey } from '@/utils/map';
+import { calculateSquareCenter } from '@/utils/tacticalAreaGenerator';
 
 // ============================================================================
 // GLOBAL TYPE DECLARATION
@@ -153,6 +155,61 @@ function SetupMenuPage() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    for (const category of Object.keys(missileSystems)) {
+      const firingUnits = missileSystems[category]?.firingUnits;
+      if (!firingUnits) continue;
+
+      Object.entries(firingUnits).map(([unitName, unit]) => {
+        const unitKey = makeUnitKey(category, unitName);
+        const center = calculateSquareCenter(unit.operationalArea.uShapeVertices);
+        const tacticalAreas = {
+          uShapeVertices: unit.operationalArea.uShapeVertices,
+          ammoArea: unit.operationalArea.AHA[0].area,
+          hideArea: unit.operationalArea.HA[0].area,
+          reloadArea: unit.operationalArea.RL[0].area,
+          firePoints: unit.operationalArea.FP.map((position) => position.area),
+          shelterPoints: unit.operationalArea.shelterPoints,
+        };
+        const result = {
+          unitName: unitName,
+          category: category,
+          center: { lat: center.latitude, lng: center.longitude },
+          openingAngle: 0,
+          ahaRadius: 0,
+          ahaCenter: { lat: 0, lng: 0 },
+          tacticalAreas: tacticalAreas,
+          paths: {
+            FP: unit.operationalArea.FP.map((position) => {
+              return { waypoints: position.course };
+            }),
+            HA: {
+              waypoints: unit.operationalArea.RL[0].course.concat(
+                unit.operationalArea.HA[0].course
+              ),
+            },
+            AHA: {
+              waypoints: unit.operationalArea.RL[0].course.concat(
+                unit.operationalArea.AHA[0].course
+              ),
+            },
+            RL: unit.operationalArea.FP.map((position) => {
+              return {
+                waypoints: [position.course[position.course.length - 1]].concat(
+                  unit.operationalArea.RL[0].course
+                ),
+              };
+            }),
+            SHRL: { waypoints: unit.operationalArea.SHRL?.[0].course ?? [] },
+          },
+        };
+
+        setDeployedMissileSystems((prev) => new Map(prev).set(unitKey, result));
+        return result;
+      });
+    }
+  }, [missileSystems]);
 
   return (
     <div className="flex h-screen flex-col">

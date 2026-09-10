@@ -462,7 +462,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         <Tooltip direction="top">
           <strong>U-Shape Area</strong>
           <br />
-          {unitName}
+          {/*{unitName}*/}
         </Tooltip>
       </Polygon>
 
@@ -579,24 +579,44 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
       ))}
 
       {/* Movement Paths */}
-      {haPathPositions && <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA} />}
-      {ahaPathPositions && <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA} />}
+      {haPathPositions && (
+        <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA}>
+          <Tooltip direction="top">
+            <strong>RL → HA</strong>
+          </Tooltip>
+        </Polyline>
+      )}
+      {ahaPathPositions && (
+        <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA}>
+          <Tooltip direction="top">
+            <strong>RL → AHA</strong>
+          </Tooltip>
+        </Polyline>
+      )}
       {fpPathPositionsList.map(
         (positions, i) =>
           positions && (
-            <Polyline key={`path-fp-${i}`} positions={positions} pathOptions={PATH_OPTIONS_FP} />
+            <Polyline key={`path-fp-${i}`} positions={positions} pathOptions={PATH_OPTIONS_FP}>
+              <Tooltip direction="top">
+                <strong>HA → FP {i + 1}</strong>
+              </Tooltip>
+            </Polyline>
           )
       )}
       {rlPathPositionsList.map(
         (positions, i) =>
           positions && (
-            <Polyline key={`path-rl-${i}`} positions={positions} pathOptions={PATH_OPTIONS_RL} />
+            <Polyline key={`path-rl-${i}`} positions={positions} pathOptions={PATH_OPTIONS_RL}>
+              <Tooltip direction="top">
+                <strong>FP {i + 1} → RL </strong>
+              </Tooltip>
+            </Polyline>
           )
       )}
       {shrlPathPositions && (
         <Polyline positions={shrlPathPositions} pathOptions={PATH_OPTIONS_SHRL}>
           <Tooltip direction="top">
-            <strong>Shelter → Reload (SHRL)</strong>
+            <strong>Shelter → RL (SHRL)</strong>
           </Tooltip>
         </Polyline>
       )}

@@ -735,6 +735,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_EAJ
     } },
     mask = { area = constants.AREAS.MASK_EAJ },
+    shelterPoints = {
+      {
+        longitude = 119.030881748186,
+        latitude = 25.4028750053729
+      },
+      {
+        longitude = 119.030999346918,
+        latitude = 25.4097566458734
+      }
+    },
   },
   GMJ = {
     RL = { {
@@ -779,6 +789,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_GMJ
     } },
     mask = { area = constants.AREAS.MASK_GMJ },
+    shelterPoints = {
+      {
+        longitude = 119.632629381342,
+        latitude = 29.155250812633
+      },
+      {
+        longitude = 119.619332435829,
+        latitude = 29.1473990738211
+      }
+    },
   },
   GSU = {
     RL = { {
@@ -825,6 +845,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_GSU
     } },
     mask = { area = constants.AREAS.MASK_GSU },
+    shelterPoints = {
+      {
+        longitude = 117.313571671651,
+        latitude = 26.0518988889945
+      },
+      {
+        longitude = 117.309757836773,
+        latitude = 26.0617867851056
+      }
+    },
   },
   HMJ = {
     RL = { {
@@ -871,6 +901,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_HMJ
     } },
     mask = { area = constants.AREAS.MASK_HMJ },
+    shelterPoints = {
+      {
+        longitude = 113.681009707071,
+        latitude = 24.7512455912345
+      },
+      {
+        longitude = 113.696013190905,
+        latitude = 24.7491386480446
+      }
+    },
   },
   HUZ = {
     RL = { {
@@ -917,6 +957,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_HUZ
     } },
     mask = { area = constants.AREAS.MASK_HUZ },
+    shelterPoints = {
+      {
+        longitude = 115.963392699243,
+        latitude = 24.283447086661
+      },
+      {
+        longitude = 115.978806827399,
+        latitude = 24.2780587477469
+      }
+    },
   },
   IDC = {
     RL = { {
@@ -961,6 +1011,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_IDC
     } },
     mask = { area = constants.AREAS.MASK_IDC },
+    shelterPoints = {
+      {
+        longitude = 120.061728560279,
+        latitude = 26.9532655036565
+      },
+      {
+        longitude = 120.043291967665,
+        latitude = 26.9668318498882
+      }
+    },
   },
   IDP = {
     RL = { {
@@ -1005,6 +1065,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_IDP
     } },
     mask = { area = constants.AREAS.MASK_IDP },
+    shelterPoints = {
+      {
+        longitude = 114.962244729668,
+        latitude = 25.8921325873233
+      },
+      {
+        longitude = 114.956277339084,
+        latitude = 25.8934314400842
+      }
+    },
   },
   JUK = {
     RL = { {
@@ -1053,6 +1123,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_JUK
     } },
     mask = { area = constants.AREAS.MASK_JUK },
+    shelterPoints = {
+      {
+        longitude = 119.734708375806,
+        latitude = 25.4538575429102
+      },
+      {
+        longitude = 119.727390597605,
+        latitude = 25.4570770269728
+      }
+    },
   },
   KRO = {
     RL = { {
@@ -1097,6 +1177,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_KRO
     } },
     mask = { area = constants.AREAS.MASK_KRO },
+    shelterPoints = {
+      {
+        longitude = 117.971635761874,
+        latitude = 24.2223520173631
+      },
+      {
+        longitude = 117.957438886996,
+        latitude = 24.2335811741574
+      }
+    },
   },
   LPU = {
     RL = { {
@@ -1141,6 +1231,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_LPU
     } },
     mask = { area = constants.AREAS.MASK_LPU },
+    shelterPoints = {
+      {
+        longitude = 117.931262031046,
+        latitude = 24.5459157060344
+      },
+      {
+        longitude = 117.949836562546,
+        latitude = 24.5284534954051
+      }
+    },
   },
   OJM = {
     RL = { {
@@ -1185,6 +1285,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_OJM
     } },
     mask = { area = constants.AREAS.MASK_OJM },
+    shelterPoints = {
+      {
+        longitude = 118.248366764912,
+        latitude = 24.6595688272394
+      },
+      {
+        longitude = 118.243804965514,
+        latitude = 24.6478277702287
+      }
+    },
   },
   QXV = {
     RL = { {
@@ -1229,6 +1339,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_QXV
     } },
     mask = { area = constants.AREAS.MASK_QXV },
+    shelterPoints = {
+      {
+        longitude = 118.838416585785,
+        latitude = 24.9987417729724
+      },
+      {
+        longitude = 118.858176214795,
+        latitude = 25.0013969475859
+      }
+    },
   },
   RCU = {
     RL = { {
@@ -1275,6 +1395,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_RCU
     } },
     mask = { area = constants.AREAS.MASK_RCU },
+    shelterPoints = {
+      {
+        longitude = 119.768370093054,
+        latitude = 25.5742491655601
+      },
+      {
+        longitude = 119.758339185693,
+        latitude = 25.5608742123437
+      }
+    },
   },
   TXI = {
     RL = { {
@@ -1319,6 +1449,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_TXI
     } },
     mask = { area = constants.AREAS.MASK_TXI },
+    shelterPoints = {
+      {
+        longitude = 118.607662039762,
+        latitude = 24.7475276282932
+      },
+      {
+        longitude = 118.616436320509,
+        latitude = 24.7414724195179
+      }
+    },
   },
   URF = {
     RL = { {
@@ -1365,6 +1505,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_URF
     } },
     mask = { area = constants.AREAS.MASK_URF },
+    shelterPoints = {
+      {
+        longitude = 119.419232515597,
+        latitude = 25.6105892643984
+      },
+      {
+        longitude = 119.415743786686,
+        latitude = 25.6140092116752
+      }
+    },
   },
   WEP = {
     RL = { {
@@ -1409,6 +1559,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_WEP
     } },
     mask = { area = constants.AREAS.MASK_WEP },
+    shelterPoints = {
+      {
+        longitude = 121.517445520133,
+        latitude = 30.9111007105101
+      },
+      {
+        longitude = 121.525150893051,
+        latitude = 30.896718684844
+      }
+    },
   },
   XZL = {
     RL = { {
@@ -1455,6 +1615,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_XZL
     } },
     mask = { area = constants.AREAS.MASK_XZL },
+    shelterPoints = {
+      {
+        longitude = 117.916378342169,
+        latitude = 28.4869151507097
+      },
+      {
+        longitude = 117.920492146143,
+        latitude = 28.4865745915283
+      }
+    },
   },
   YMC = {
     RL = { {
@@ -1499,6 +1669,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_YMC
     } },
     mask = { area = constants.AREAS.MASK_YMC },
+    shelterPoints = {
+      {
+        longitude = 118.713004150244,
+        latitude = 24.7686438399246
+      },
+      {
+        longitude = 118.699752783608,
+        latitude = 24.7722777100362
+      }
+    },
   },
   ZWQ = {
     RL = { {
@@ -1543,6 +1723,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.RELOAD_POINT_ZWQ
     } },
     mask = { area = constants.AREAS.MASK_ZWQ },
+    shelterPoints = {
+      {
+        longitude = 109.462326372438,
+        latitude = 19.4768544815826
+      },
+      {
+        longitude = 109.451912101223,
+        latitude = 19.4625428343669
+      }
+    },
   },
 
   -- Taiwan
@@ -1584,6 +1774,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_AMG
     } },
     mask = { area = constants.AREAS.MASK_AMG },
+    shelterPoints = {
+      {
+        longitude = 120.526579687878,
+        latitude = 22.5974343422218
+      },
+      {
+        longitude = 120.527324970339,
+        latitude = 22.5824820522892
+      }
+    },
   },
   BPM = {
     RL = { {
@@ -1623,6 +1823,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_BPM
     } },
     mask = { area = constants.AREAS.MASK_BPM },
+    shelterPoints = {
+      {
+        longitude = 120.247997754514,
+        latitude = 22.9209104580623
+      },
+      {
+        longitude = 120.248766659046,
+        latitude = 22.9307432352423
+      }
+    },
   },
   CSC = {
     RL = { {
@@ -1662,6 +1872,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_CSC
     } },
     mask = { area = constants.AREAS.MASK_CSC },
+    shelterPoints = {
+      {
+        longitude = 121.489625398854,
+        latitude = 24.9957091318862
+      },
+      {
+        longitude = 121.494627253393,
+        latitude = 24.9911225811332
+      }
+    },
   },
   DJA = {
     RL = { {
@@ -1701,6 +1921,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_DJA
     } },
     mask = { area = constants.AREAS.MASK_DJA },
+    shelterPoints = {
+      {
+        longitude = 120.487615085472,
+        latitude = 22.6571550525052
+      },
+      {
+        longitude = 120.486728983526,
+        latitude = 22.6433341861557
+      }
+    },
   },
   DLF = {
     RL = { {
@@ -1740,6 +1970,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_DLF
     } },
     mask = { area = constants.AREAS.MASK_DLF },
+    shelterPoints = {
+      {
+        longitude = 121.253828213543,
+        latitude = 25.0543059845894
+      },
+      {
+        longitude = 121.259919723409,
+        latitude = 25.0567948561822
+      }
+    },
   },
   FMK = {
     RL = { {
@@ -1781,6 +2021,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_FMK
     } },
     mask = { area = constants.AREAS.MASK_FMK },
+    shelterPoints = {
+      {
+        longitude = 121.457638055728,
+        latitude = 25.1870781050883
+      },
+      {
+        longitude = 121.451003744888,
+        latitude = 25.1855308922544
+      }
+    },
   },
   FZM = {
     RL = { {
@@ -1820,6 +2070,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_FZM
     } },
     mask = { area = constants.AREAS.MASK_FZM },
+    shelterPoints = {
+      {
+        longitude = 120.215823233193,
+        latitude = 22.9970423501773
+      },
+      {
+        longitude = 120.211153228309,
+        latitude = 23.0036780278843
+      }
+    },
   },
   GRV = {
     RL = { {
@@ -1859,6 +2119,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_GRV
     } },
     mask = { area = constants.AREAS.MASK_GRV },
+    shelterPoints = {
+      {
+        longitude = 120.685530648623,
+        latitude = 24.1519236171786
+      },
+      {
+        longitude = 120.688318168892,
+        latitude = 24.1585213179636
+      }
+    },
   },
   IDW = {
     RL = { {
@@ -1898,6 +2168,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_IDW
     } },
     mask = { area = constants.AREAS.MASK_IDW },
+    shelterPoints = {
+      {
+        longitude = 120.641081273042,
+        latitude = 24.2026277269682
+      },
+      {
+        longitude = 120.631462963187,
+        latitude = 24.206784979624
+      }
+    },
   },
   IKJ = {
     RL = { {
@@ -1941,6 +2221,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_IKJ
     } },
     mask = { area = constants.AREAS.MASK_IKJ },
+    shelterPoints = {
+      {
+        longitude = 121.70444010735,
+        latitude = 24.6907574528242
+      },
+      {
+        longitude = 121.704027158908,
+        latitude = 24.6775399728467
+      }
+    },
   },
   LPK = {
     RL = { {
@@ -1980,6 +2270,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_LPK
     } },
     mask = { area = constants.AREAS.MASK_LPK },
+    shelterPoints = {
+      {
+        longitude = 120.690955207888,
+        latitude = 24.2625471611294
+      },
+      {
+        longitude = 120.680459970403,
+        latitude = 24.2640473509295
+      }
+    },
   },
   MAK = {
     RL = { {
@@ -2019,6 +2319,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_MAK
     } },
     mask = { area = constants.AREAS.MASK_MAK },
+    shelterPoints = {
+      {
+        longitude = 121.615808885612,
+        latitude = 24.0059226140298
+      },
+      {
+        longitude = 121.612468495473,
+        latitude = 23.9975542524589
+      }
+    },
   },
   NUJ = {
     RL = { {
@@ -2058,6 +2368,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_NUJ
     } },
     mask = { area = constants.AREAS.MASK_NUJ },
+    shelterPoints = {
+      {
+        longitude = 120.345350424474,
+        latitude = 22.684295119153
+      },
+      {
+        longitude = 120.349299027046,
+        latitude = 22.6966493278447
+      }
+    },
   },
   NVD = {
     RL = { {
@@ -2097,6 +2417,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_NVD
     } },
     mask = { area = constants.AREAS.MASK_NVD },
+    shelterPoints = {
+      {
+        longitude = 121.271803288726,
+        latitude = 24.951386598948
+      },
+      {
+        longitude = 121.279258080476,
+        latitude = 24.9433603147332
+      }
+    },
   },
   PDN = {
     RL = { {
@@ -2136,6 +2466,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_PDN
     } },
     mask = { area = constants.AREAS.MASK_PDN },
+    shelterPoints = {
+      {
+        longitude = 121.187315385317,
+        latitude = 25.0309765703453
+      },
+      {
+        longitude = 121.184075989324,
+        latitude = 25.0260978524175
+      }
+    },
   },
   PXV = {
     RL = { {
@@ -2175,6 +2515,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_PXV
     } },
     mask = { area = constants.AREAS.MASK_PXV },
+    shelterPoints = {
+      {
+        longitude = 121.135249817059,
+        latitude = 22.7572072667304
+      },
+      {
+        longitude = 121.134829734759,
+        latitude = 22.7657607554102
+      }
+    },
   },
   QPF = {
     RL = { {
@@ -2214,6 +2564,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_QPF
     } },
     mask = { area = constants.AREAS.MASK_QPF },
+    shelterPoints = {
+      {
+        longitude = 121.646708443769,
+        latitude = 25.1913856053901
+      },
+      {
+        longitude = 121.652834741017,
+        latitude = 25.1862423912358
+      }
+    },
   },
   QTZ = {
     RL = { {
@@ -2253,6 +2613,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_QTZ
     } },
     mask = { area = constants.AREAS.MASK_QTZ },
+    shelterPoints = {
+      {
+        longitude = 120.680806074056,
+        latitude = 24.240157540933
+      },
+      {
+        longitude = 120.669099924885,
+        latitude = 24.2300974493315
+      }
+    },
   },
   RHM = {
     RL = { {
@@ -2292,6 +2662,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_RHM
     } },
     mask = { area = constants.AREAS.MASK_RHM },
+    shelterPoints = {
+      {
+        longitude = 120.294678509805,
+        latitude = 23.0060661491806
+      },
+      {
+        longitude = 120.299413646424,
+        latitude = 23.0204009591851
+      }
+    },
   },
   SET = {
     RL = { {
@@ -2331,6 +2711,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_SET
     } },
     mask = { area = constants.AREAS.MASK_SET },
+    shelterPoints = {
+      {
+        longitude = 121.157913000723,
+        latitude = 24.9286696421704
+      },
+      {
+        longitude = 121.154249486357,
+        latitude = 24.9393669998576
+      }
+    },
   },
   SKB = {
     RL = { {
@@ -2370,6 +2760,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_SKB
     } },
     mask = { area = constants.AREAS.MASK_SKB },
+    shelterPoints = {
+      {
+        longitude = 121.127435827143,
+        latitude = 25.0194326154058
+      },
+      {
+        longitude = 121.131737481142,
+        latitude = 25.0238387709764
+      }
+    },
   },
   TGO = {
     RL = { {
@@ -2409,6 +2809,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_TGO
     } },
     mask = { area = constants.AREAS.MASK_TGO },
+    shelterPoints = {
+      {
+        longitude = 120.235151219592,
+        latitude = 22.9676408497001
+      },
+      {
+        longitude = 120.244483983391,
+        latitude = 22.9752333591429
+      }
+    },
   },
   UVY = {
     RL = { {
@@ -2450,6 +2860,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_UVY
     } },
     mask = { area = constants.AREAS.MASK_UVY },
+    shelterPoints = {
+      {
+        longitude = 120.981989873761,
+        latitude = 24.7989741145386
+      },
+      {
+        longitude = 120.974140144806,
+        latitude = 24.8024033207736
+      }
+    },
   },
   UYO = {
     RL = { {
@@ -2489,6 +2909,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_UYO
     } },
     mask = { area = constants.AREAS.MASK_UYO },
+    shelterPoints = {
+      {
+        longitude = 120.43656643122,
+        latitude = 23.4706829134947
+      },
+      {
+        longitude = 120.430782495108,
+        latitude = 23.4566476359903
+      }
+    },
   },
   XDY = {
     RL = { {
@@ -2528,6 +2958,16 @@ constants.OPERATIONAL_AREAS = {
       area = constants.AREAS.AMMO_HOLDING_AREA_XDY
     } },
     mask = { area = constants.AREAS.MASK_XDY },
+    shelterPoints = {
+      {
+        longitude = 121.555351428821,
+        latitude = 25.0496012070453
+      },
+      {
+        longitude = 121.544911000468,
+        latitude = 25.0471047177482
+      }
+    },
   },
 }
 

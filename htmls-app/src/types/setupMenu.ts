@@ -44,8 +44,9 @@ export interface CoursePoint {
 }
 
 export interface AreaDefinition {
-  course: CoursePoint[];
-  area: string[];
+  // course: CoursePoint[];
+  course: { latitude: number; longitude: number }[];
+  area: { latitude: number; longitude: number }[];
 }
 
 export interface OperationalArea {
@@ -53,6 +54,9 @@ export interface OperationalArea {
   FP: AreaDefinition[];
   AHA: AreaDefinition[];
   HA: AreaDefinition[];
+  SHRL: AreaDefinition[];
+  uShapeVertices: { latitude: number; longitude: number }[];
+  shelterPoints: { latitude: number; longitude: number }[];
 }
 
 export interface FiringUnit {
@@ -90,9 +94,9 @@ export interface MissileSystemCategory {
   reloadTime: number;
   wpnDefault: number;
   firingUnits: Record<string, FiringUnit>;
-  resupplyUnits: Record<string, ResupplyUnit>;
+  resupplyUnits?: Record<string, ResupplyUnit>;
   ammoThreshold: number;
-  ammunitions: Record<string, Ammunition>;
+  ammunitions?: Record<string, Ammunition>;
 }
 
 export type MissileSystems = Record<string, MissileSystemCategory>;

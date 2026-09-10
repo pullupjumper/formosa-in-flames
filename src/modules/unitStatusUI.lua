@@ -486,7 +486,54 @@ local function createMissileSystemDataString(config, sideName)
   local rows = {}
 
   for key, system in pairs(config[field].ground) do
-    rows[key] = system
+    ---@cast system SBJ__MissileSystemConfig
+    local copy = Utils.deepCopy(system)
+    copy.resupplyUnits = nil
+    copy.ammunitions = nil
+
+    for _, descriptor in pairs(copy.firingUnits) do
+      local uShapeVertices = {}
+
+      for _, attr in ipairs({ "HA", "FP", "RL", "AHA", "SHRL" }) do
+        ---@type SBJ__Position[]
+        local positions = descriptor.operationalArea[attr]
+
+        if positions then
+          for _, position in ipairs(positions) do
+            if position.area then
+              local vertices = {}
+              local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = position.area })
+
+              if points then
+                for _, point in ipairs(points) do
+                  table.insert(vertices, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
+                end
+              end
+
+              if #vertices > 0 then
+                position.area = vertices
+              end
+            end
+          end
+        end
+      end
+
+      local points = GameApi.ScenEdit_GetReferencePoints({
+        side = sideName, area = descriptor.operationalArea.mask.area
+      })
+
+      if points then
+        for _, point in ipairs(points) do
+          table.insert(uShapeVertices, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
+        end
+      end
+
+      if #uShapeVertices > 0 then
+        descriptor.operationalArea.uShapeVertices = uShapeVertices
+      end
+    end
+
+    rows[key] = copy
   end
 
   return gKH.json.stringify(rows)

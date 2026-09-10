@@ -160,7 +160,7 @@ function generateRandomSquareCenter(
   );
 }
 
-function calculateSquareCenter(vertices: Coordinate[]): Coordinate {
+export function calculateSquareCenter(vertices: Coordinate[]): Coordinate {
   if (vertices.length !== 4) {
     throw new Error('Square must have exactly 4 vertices');
   }

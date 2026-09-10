@@ -314,18 +314,95 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
         weaponDBID: 1717,
         name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
         operationalArea: {
-          RL: [],
-          FP: [],
-          AHA: [],
-          HA: [],
+          RL: [
+            {
+              course: [{ latitude: 23.963022356482984, longitude: 120.53858344139019 }],
+              area: [
+                { latitude: 23.961356812968535, longitude: 120.54040605885487 },
+                { latitude: 23.961356812968535, longitude: 120.53676082392549 },
+                { latitude: 23.96468789999743, longitude: 120.53676077682854 },
+                { latitude: 23.96468789999743, longitude: 120.54040610595182 },
+              ],
+            },
+          ],
+          FP: [
+            {
+              course: [
+                { latitude: 23.946720847060654, longitude: 120.52351359314495 },
+                { latitude: 23.925810998868357, longitude: 120.49152295884694 },
+              ],
+              area: [
+                { latitude: 23.925176455038955, longitude: 120.49532538653906 },
+                { latitude: 23.92233531417852, longitude: 120.49082880718687 },
+                { latitude: 23.926445497482927, longitude: 120.4877204937881 },
+                { latitude: 23.92928672877303, longitude: 120.49221714787369 },
+              ],
+            },
+            {
+              course: [
+                { latitude: 23.946720847060654, longitude: 120.52351359314495 },
+                { latitude: 23.935372343642182, longitude: 120.48586452509319 },
+              ],
+              area: [
+                { latitude: 23.934001272274976, longitude: 120.48942714400938 },
+                { latitude: 23.93211607921884, longitude: 120.48436450934267 },
+                { latitude: 23.936743381218047, longitude: 120.48230183049377 },
+                { latitude: 23.938628641856866, longitude: 120.48736461652692 },
+              ],
+            },
+          ],
+          AHA: [
+            {
+              course: [{ latitude: 23.95416361550089, longitude: 120.66407514630362 }],
+              area: [
+                { latitude: 23.95166530022992, longitude: 120.6668088670367 },
+                { latitude: 23.95166530022992, longitude: 120.66134142557051 },
+                { latitude: 23.956661930771855, longitude: 120.66134131965377 },
+                { latitude: 23.956661930771855, longitude: 120.66680897295345 },
+              ],
+            },
+          ],
+          HA: [
+            {
+              course: [{ latitude: 23.95115249996755, longitude: 120.53942497864303 }],
+              area: [
+                { latitude: 23.949486956453104, longitude: 120.54124742835427 },
+                { latitude: 23.949486956453104, longitude: 120.5376025289318 },
+                { latitude: 23.95281804348199, longitude: 120.53760248186548 },
+                { latitude: 23.95281804348199, longitude: 120.54124747542058 },
+              ],
+            },
+          ],
+          SHRL: [
+            {
+              course: [
+                { latitude: 23.963022191638004, longitude: 120.53144924355222 },
+                { latitude: 23.963022356482984, longitude: 120.53858344139019 },
+              ],
+              area: [
+                { latitude: 23.961356812968535, longitude: 120.54040605885487 },
+                { latitude: 23.961356812968535, longitude: 120.53676082392549 },
+                { latitude: 23.96468789999743, longitude: 120.53676077682854 },
+                { latitude: 23.96468789999743, longitude: 120.54040610595182 },
+              ],
+            },
+          ],
+          uShapeVertices: [
+            { latitude: 23.966707310096808, longitude: 120.55016922173337 },
+            { latitude: 23.941724157689617, longitude: 120.55016657380727 },
+            { latitude: 23.941724157689617, longitude: 120.52283147306775 },
+            { latitude: 23.966707310096808, longitude: 120.52282882514166 },
+          ],
+          shelterPoints: [
+            { latitude: 23.948770249240464, longitude: 120.54668912131177 },
+            { latitude: 23.943869164377904, longitude: 120.53845933003232 },
+          ],
         },
         state: 3,
         msg: 'Radio source, Bty',
       },
     },
-    resupplyUnits: {},
     ammoThreshold: 25,
-    ammunitions: {},
   },
   srbm: {
     operationalAreas: {},
@@ -340,18 +417,95 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
         weaponDBID: 1717,
         name: 'Rocket Arty Coy, 58th Arty Command',
         operationalArea: {
-          RL: [],
-          FP: [],
-          AHA: [],
-          HA: [],
+          RL: [
+            {
+              course: [{ latitude: 23.806603553624733, longitude: 120.4059782850404 }],
+              area: [
+                { latitude: 23.80493801011028, longitude: 120.40779870061961 },
+                { latitude: 23.80493801011028, longitude: 120.4041578694612 },
+                { latitude: 23.80826909713918, longitude: 120.40415782276673 },
+                { latitude: 23.80826909713918, longitude: 120.40779874731409 },
+              ],
+            },
+          ],
+          FP: [
+            {
+              course: [
+                { latitude: 23.79832944742452, longitude: 120.4026796129023 },
+                { latitude: 23.802577911741974, longitude: 120.3612365455408 },
+              ],
+              area: [
+                { latitude: 23.799876684564097, longitude: 120.36372560442521 },
+                { latitude: 23.800300517029257, longitude: 120.35828424328788 },
+                { latitude: 23.80527914704259, longitude: 120.3587473831287 },
+                { latitude: 23.804855298331958, longitude: 120.36418895132145 },
+              ],
+            },
+            {
+              course: [
+                { latitude: 23.79832944742452, longitude: 120.4026796129023 },
+                { latitude: 23.79298295201252, longitude: 120.36135442758274 },
+              ],
+              area: [
+                { latitude: 23.790766854389595, longitude: 120.36436171641414 },
+                { latitude: 23.790231213611374, longitude: 120.35893254388633 },
+                { latitude: 23.795199039396785, longitude: 120.35834703618046 },
+                { latitude: 23.795734700652314, longitude: 120.36377641385002 },
+              ],
+            },
+          ],
+          AHA: [
+            {
+              course: [{ latitude: 23.798277652191537, longitude: 120.54307198810082 }],
+              area: [
+                { latitude: 23.79577933692056, longitude: 120.5458024189589 },
+                { latitude: 23.79577933692056, longitude: 120.54034155724275 },
+                { latitude: 23.80077596746251, longitude: 120.54034145222829 },
+                { latitude: 23.80077596746251, longitude: 120.54580252397335 },
+              ],
+            },
+          ],
+          HA: [
+            {
+              course: [{ latitude: 23.806559362575843, longitude: 120.42303920983716 }],
+              area: [
+                { latitude: 23.804893819061395, longitude: 120.42485962479697 },
+                { latitude: 23.804893819061395, longitude: 120.42121879487733 },
+                { latitude: 23.80822490609029, longitude: 120.42121874818297 },
+                { latitude: 23.80822490609029, longitude: 120.4248596714913 },
+              ],
+            },
+          ],
+          SHRL: [
+            {
+              course: [
+                { latitude: 23.80944677778654, longitude: 120.40908603088032 },
+                { latitude: 23.806603553624733, longitude: 120.4059782850404 },
+              ],
+              area: [
+                { latitude: 23.80493801011028, longitude: 120.40779870061961 },
+                { latitude: 23.80493801011028, longitude: 120.4041578694612 },
+                { latitude: 23.80826909713918, longitude: 120.40415782276673 },
+                { latitude: 23.80826909713918, longitude: 120.40779874731409 },
+              ],
+            },
+          ],
+          uShapeVertices: [
+            { latitude: 23.810820965076836, longitude: 120.42930314935944 },
+            { latitude: 23.78583781266794, longitude: 120.42930052399022 },
+            { latitude: 23.78583781266794, longitude: 120.40199830413479 },
+            { latitude: 23.810820965076836, longitude: 120.40199567876557 },
+          ],
+          shelterPoints: [
+            { latitude: 23.801503300471502, longitude: 120.41353863214489 },
+            { latitude: 23.801672159940395, longitude: 120.41768774016136 },
+          ],
         },
         state: 3,
         msg: 'Radio source, Bty',
       },
     },
-    resupplyUnits: {},
     ammoThreshold: 25,
-    ammunitions: {},
   },
   ascm: {
     operationalAreas: {},
@@ -365,7 +519,91 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
         ammoThreshold: 25,
         weaponDBID: 1133,
         name: '1st Hai Feng Shore-based ASM MOB Sqn',
-        operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+        operationalArea: {
+          RL: [
+            {
+              course: [{ latitude: 23.679917918891974, longitude: 120.36842468141906 }],
+              area: [
+                { latitude: 23.678252375377525, longitude: 120.37024332748199 },
+                { latitude: 23.678252375377525, longitude: 120.36660603535613 },
+                { latitude: 23.68158346240643, longitude: 120.36660598898607 },
+                { latitude: 23.68158346240643, longitude: 120.37024337385202 },
+              ],
+            },
+          ],
+          FP: [
+            {
+              course: [
+                { latitude: 23.67251795084056, longitude: 120.35874632151304 },
+                { latitude: 23.65890263488067, longitude: 120.32107513473466 },
+              ],
+              area: [
+                { latitude: 23.657515300922565, longitude: 120.32462265266865 },
+                { latitude: 23.655653265493285, longitude: 120.31956055208894 },
+                { latitude: 23.660289935829223, longitude: 120.3175275415345 },
+                { latitude: 23.662152037277586, longitude: 120.32258979264651 },
+              ],
+            },
+            {
+              course: [
+                { latitude: 23.67251795084056, longitude: 120.35874632151304 },
+                { latitude: 23.702882348519097, longitude: 120.32469463038714 },
+              ],
+              area: [
+                { latitude: 23.69946175035845, longitude: 120.32566070671511 },
+                { latitude: 23.701997724000687, longitude: 120.32095889687774 },
+                { latitude: 23.706302988509798, longitude: 120.32372850341513 },
+                { latitude: 23.703766931207454, longitude: 120.3284304145406 },
+              ],
+            },
+          ],
+          AHA: [
+            {
+              course: [{ latitude: 23.677463081689957, longitude: 120.49900857387644 }],
+              area: [
+                { latitude: 23.674964766418974, longitude: 120.50173647433576 },
+                { latitude: 23.674964766418974, longitude: 120.49628067341712 },
+                { latitude: 23.67996139696094, longitude: 120.49628056909866 },
+                { latitude: 23.67996139696094, longitude: 120.50173657865425 },
+              ],
+            },
+          ],
+          HA: [
+            {
+              course: [{ latitude: 23.669039555413118, longitude: 120.38140924101904 }],
+              area: [
+                { latitude: 23.667374011898666, longitude: 120.38322773571016 },
+                { latitude: 23.667374011898666, longitude: 120.37959074632792 },
+                { latitude: 23.670705098927566, longitude: 120.37959069998568 },
+                { latitude: 23.670705098927566, longitude: 120.3832277820524 },
+              ],
+            },
+          ],
+          SHRL: [
+            {
+              course: [
+                { latitude: 23.683938889127205, longitude: 120.36842468141904 },
+                { latitude: 23.679917918891974, longitude: 120.36842468141906 },
+              ],
+              area: [
+                { latitude: 23.678252375377525, longitude: 120.37024332748199 },
+                { latitude: 23.678252375377525, longitude: 120.36660603535613 },
+                { latitude: 23.68158346240643, longitude: 120.36660598898607 },
+                { latitude: 23.68158346240643, longitude: 120.37024337385202 },
+              ],
+            },
+          ],
+          uShapeVertices: [
+            { latitude: 23.690006099372084, longitude: 120.38534517435718 },
+            { latitude: 23.66502294696188, longitude: 120.3853425663875 },
+            { latitude: 23.66502294696188, longitude: 120.35806563673752 },
+            { latitude: 23.690006099372084, longitude: 120.35806302876783 },
+          ],
+          shelterPoints: [
+            { latitude: 23.681035548170605, longitude: 120.3820677948902 },
+            { latitude: 23.685636542906167, longitude: 120.36564943890005 },
+          ],
+        },
         state: 3,
         msg: 'Radio source, Bty',
       },
@@ -425,9 +663,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
       //   msg: 'Radio source, Bty',
       // },
     },
-    resupplyUnits: {},
     ammoThreshold: 25,
-    ammunitions: {},
   },
 };
 

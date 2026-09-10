@@ -317,6 +317,16 @@ local function generateOpAreasCode(uniqueAreas, areaRefMap)
       end
     end
 
+    if opArea.shelterPoints and #opArea.shelterPoints > 0 then
+      opLines[#opLines + 1] = "    shelterPoints = {"
+
+      for _, point in ipairs(opArea.shelterPoints) do
+        opLines[#opLines + 1] = " { latitude = " ..
+            tostring(point.latitude) .. ", longitude = " .. tostring(point.longitude) .. " },"
+      end
+      opLines[#opLines + 1] = " },"
+    end
+
     opLines[#opLines + 1] = "  },"
   end
 
