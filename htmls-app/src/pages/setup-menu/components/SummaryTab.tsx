@@ -1,26 +1,18 @@
+import type { Coordinate } from '@/types/geo';
 import type {
   BudgetState,
   Airbase,
   Jammer,
   MissileSystems,
-  DeployedMissileSystemData,
+  MissileDeployment,
   MovementPaths,
 } from '@/types/setupMenu';
+import { getWeaponSystemName } from '@/utils/map';
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// EXPORT HELPERS
 // ============================================================================
-function getWeaponSystemName(category: string): string {
-  const names: Record<string, string> = {
-    srbm: 'Short-Range Ballistic Missile',
-    ascm: 'Anti-Ship Cruise Missile',
-  };
-  return names[category] || category.toUpperCase();
-}
-
-function trimLeadingWaypoint(
-  waypoints: { latitude: number; longitude: number }[]
-): { latitude: number; longitude: number }[] {
+function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
   return waypoints.length > 1 ? waypoints.slice(1) : waypoints;
 }
 
@@ -47,15 +39,24 @@ function normalizeExportPaths(paths: MovementPaths): MovementPaths {
   };
 }
 
+function formatPosition(position: Coordinate): string {
+  return `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`;
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
+interface CountedItem {
+  name: string;
+  count: number;
+}
+
 interface BaseStats {
   name: string;
   aircraft: number;
   loadouts: number;
-  aircraftDetails: { name: string; count: number }[];
-  loadoutDetails: { name: string; count: number }[];
+  aircraftDetails: CountedItem[];
+  loadoutDetails: CountedItem[];
 }
 
 interface SummaryTabProps {
@@ -63,8 +64,8 @@ interface SummaryTabProps {
   airbases: Airbase[];
   jammers: Jammer[];
   missileSystems: MissileSystems;
-  deployedJammers: Map<number, { lat: number; lng: number }>;
-  deployedMissileSystems: Map<string, DeployedMissileSystemData>;
+  deployedJammers: Map<number, Coordinate>;
+  deployedMissileSystems: Map<string, MissileDeployment>;
 }
 
 // ============================================================================
@@ -88,11 +89,11 @@ export function SummaryTab({
   airbases.forEach((base) => {
     let baseAircraft = 0;
     let baseLoadouts = 0;
-    const aircraftDetails: { name: string; count: number }[] = [];
-    const loadoutDetails: { name: string; count: number }[] = [];
+    const aircraftDetails: CountedItem[] = [];
+    const loadoutDetails: CountedItem[] = [];
 
     base.embarkedUnits?.forEach((unit) => {
-      const count = unit.loadouts?.reduce((sum, lo) => sum + lo.num, 0) || 0;
+      const count = unit.loadouts?.reduce((sum, loadout) => sum + loadout.num, 0) || 0;
       if (count > 0) {
         aircraftDetails.push({ name: unit.platformName, count });
         baseAircraft += count;
@@ -124,7 +125,7 @@ export function SummaryTab({
 
   // Calculate missile system totals
   const totalMissileUnits = Object.values(missileSystems).reduce(
-    (sum, cat) => sum + (cat.firingUnits ? Object.keys(cat.firingUnits).length : 0),
+    (sum, category) => sum + (category.firingUnits ? Object.keys(category.firingUnits).length : 0),
     0
   );
 
@@ -136,12 +137,12 @@ export function SummaryTab({
         remaining: budget.current,
       },
       airbases,
-      jammers: Array.from(deployedJammers.entries()).map(([index, deployment]) => {
+      jammers: Array.from(deployedJammers.entries()).map(([index, position]) => {
         const unit = jammers[index];
         return {
           zoneName: unit.zoneName,
           name: unit.name,
-          point: { latitude: deployment.lat, longitude: deployment.lng },
+          point: position,
           randomRadius: unit.randomRadius,
           radius: unit.radius,
         };
@@ -195,13 +196,13 @@ export function SummaryTab({
       {/* GPS Jammers */}
       <SummarySection title="GPS Jammers">
         <SummaryItem label="Deployed Units" value={`${deployedJammers.size} / ${jammers.length}`} />
-        {Array.from(deployedJammers.entries()).map(([index, deployment]) => {
+        {Array.from(deployedJammers.entries()).map(([index, position]) => {
           const unit = jammers[index];
           return (
             <DeployedUnitCard key={index}>
               <div className="mb-1.5 font-semibold text-white">{unit.name}</div>
               <div className="text-xs text-text-secondary">
-                Location: {deployment.lat.toFixed(6)}, {deployment.lng.toFixed(6)}
+                Location: {formatPosition(position)}
               </div>
               <div className="text-xs text-status-danger">Range: {unit.radius} NM</div>
             </DeployedUnitCard>
@@ -222,7 +223,7 @@ export function SummaryTab({
               <div className="mb-1.5 font-semibold text-white">{deployment.unitName}</div>
               <div className="mb-1 text-[11px] text-purple-400">{systemType}</div>
               <div className="text-xs text-text-secondary">
-                Center: {deployment.center.lat.toFixed(6)}, {deployment.center.lng.toFixed(6)}
+                Center: {formatPosition(deployment.center)}
               </div>
               <div className="text-xs text-text-secondary">Angle: {deployment.openingAngle}°</div>
             </DeployedUnitCard>
@@ -284,13 +285,13 @@ function BaseCard({ stat }: BaseCardProps) {
       {stat.aircraftDetails.length > 0 && (
         <div className="mt-2 border-t border-white/10 pt-2">
           <div className="mb-1.5 text-[11px] text-text-secondary">AIRCRAFT</div>
-          {stat.aircraftDetails.map((d) => (
+          {stat.aircraftDetails.map((detail) => (
             <div
-              key={d.name}
+              key={detail.name}
               className="flex justify-between border-b border-white/5 py-1 text-xs last:border-b-0"
             >
-              <span>{d.name}</span>
-              <span>x {d.count}</span>
+              <span>{detail.name}</span>
+              <span>x {detail.count}</span>
             </div>
           ))}
         </div>
@@ -299,13 +300,13 @@ function BaseCard({ stat }: BaseCardProps) {
       {stat.loadoutDetails.length > 0 && (
         <div className="mt-2 border-t border-white/10 pt-2">
           <div className="mb-1.5 text-[11px] text-text-secondary">AMMUNITION</div>
-          {stat.loadoutDetails.map((d) => (
+          {stat.loadoutDetails.map((detail) => (
             <div
-              key={d.name}
+              key={detail.name}
               className="flex justify-between border-b border-white/5 py-1 text-xs last:border-b-0"
             >
-              <span>{d.name}</span>
-              <span>x {d.count}</span>
+              <span>{detail.name}</span>
+              <span>x {detail.count}</span>
             </div>
           ))}
         </div>

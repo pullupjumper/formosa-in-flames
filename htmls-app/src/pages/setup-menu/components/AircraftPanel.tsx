@@ -1,5 +1,5 @@
 import type { Airbase, BudgetState } from '@/types/setupMenu';
-import { CONFIG } from '@/types/setupMenu';
+import { CONFIG } from '@/constants/setupMenu';
 
 // ============================================================================
 // AircraftPanel — sidebar panel for loadout budget and per-base editing
@@ -148,13 +148,15 @@ function BaseEditor({
 
     onUpdateAirbase(baseIndex, (prev) => ({
       ...prev,
-      embarkedUnits: prev.embarkedUnits?.map((u, i) =>
-        i === unitIndex
+      embarkedUnits: prev.embarkedUnits?.map((unit, index) =>
+        index === unitIndex
           ? {
-              ...u,
-              loadouts: u.loadouts?.map((lo, li) => (li === 0 ? { ...lo, num: newNum } : lo)),
+              ...unit,
+              loadouts: unit.loadouts?.map((loadout, loadoutIndex) =>
+                loadoutIndex === 0 ? { ...loadout, num: newNum } : loadout
+              ),
             }
-          : u
+          : unit
       ),
     }));
   };
@@ -171,7 +173,9 @@ function BaseEditor({
 
     onUpdateAirbase(baseIndex, (prev) => ({
       ...prev,
-      loadouts: prev.loadouts?.map((lo, i) => (i === loadoutIndex ? { ...lo, num: newNum } : lo)),
+      loadouts: prev.loadouts?.map((loadout, index) =>
+        index === loadoutIndex ? { ...loadout, num: newNum } : loadout
+      ),
     }));
   };
 
@@ -184,7 +188,7 @@ function BaseEditor({
         <div className="mb-4">
           <div className="mb-2 text-[11px] text-text-secondary">DEPLOYED AIRCRAFT</div>
           {base.embarkedUnits.map((unit, unitIndex) => {
-            const total = unit.loadouts?.reduce((sum, lo) => sum + lo.num, 0) || 0;
+            const total = unit.loadouts?.reduce((sum, loadout) => sum + loadout.num, 0) || 0;
             return (
               <LoadoutControl
                 key={unitIndex}

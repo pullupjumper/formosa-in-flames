@@ -67,13 +67,13 @@ const TABS = [
   { id: 'landing-units', label: 'Landing Units' },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type UnitStatusTabId = (typeof TABS)[number]['id'];
 
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 function UnitStatusPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('signal-data');
+  const [activeTab, setActiveTab] = useState<UnitStatusTabId>('signal-data');
   const [data] = useState(loadInjectedData);
 
   // Filter visible tabs based on data availability
@@ -363,10 +363,10 @@ function BaseWeaponsTable({ data }: BaseWeaponsTableProps) {
           <EmptyRow colSpan={3} message="No base weapons data available" />
         ) : (
           safeData.map((base) => {
-            const wpns = Array.isArray(base.wpns) ? base.wpns : [];
-            return wpns.map((weapon, index) => (
+            const weapons = Array.isArray(base.wpns) ? base.wpns : [];
+            return weapons.map((weapon, index) => (
               <Tr key={`${base.name}-${index}`}>
-                {index === 0 && <Td rowSpan={wpns.length || 1}>{base.name}</Td>}
+                {index === 0 && <Td rowSpan={weapons.length || 1}>{base.name}</Td>}
                 <Td>{weapon.name}</Td>
                 <Td className="text-right">{weapon.currWpn}</Td>
               </Tr>

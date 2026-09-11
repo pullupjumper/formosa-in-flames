@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
-import type { MissileSystems, DeployedMissileSystemData, Jammer } from '@/types/setupMenu';
+import type { Coordinate } from '@/types/geo';
+import type { MissileSystems, MissileDeployment, Jammer } from '@/types/setupMenu';
 import type { RelocatingArea } from '@/components/Map';
-import { isPointInTaiwan, determineOpeningAngle, parseUnitKey } from '@/utils/map';
+import { isPointInTaiwan } from '@/utils/geo';
+import { resolveOpeningAngle, parseUnitKey } from '@/utils/map';
 import { calculateBearing } from '@/utils/tacticalAreaGenerator';
 import {
   buildMovementPaths,
@@ -17,9 +19,9 @@ import {
   IDLE_STATE,
   OUT_OF_BOUNDS_JAMMER,
   OUT_OF_BOUNDS_MISSILE,
-  cancellationMessage,
+  formatCancellationMessage,
   deploymentModeReducer,
-  describeRelocateFailure,
+  formatRelocateFailure,
   formatAreaLabel,
   isMissileMode,
   isPlacementMode,
@@ -41,18 +43,23 @@ import { useDeploymentPreviews } from './useDeploymentPreviews';
 /** Hover previews regenerate geometry, so cap them well below frame rate */
 const MOUSE_MOVE_THROTTLE_MS = 50;
 
+/** Status-line rendering of a map position */
+function formatPosition(position: Coordinate): string {
+  return `${position.latitude.toFixed(4)}°, ${position.longitude.toFixed(4)}°`;
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
 export interface UseDeploymentStateParams {
   missileSystems: MissileSystems;
   jammers: Jammer[];
-  deployedSystems: Map<string, DeployedMissileSystemData>;
-  deployedJammers: Map<number, { lat: number; lng: number }>;
+  deployedSystems: Map<string, MissileDeployment>;
+  deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;
-  onDeploySystem: (key: string, data: DeployedMissileSystemData) => void;
+  onDeploySystem: (key: string, data: MissileDeployment) => void;
   onUndeploySystem: (key: string) => void;
-  onDeployJammer: (index: number, lat: number, lng: number) => void;
+  onDeployJammer: (index: number, position: Coordinate) => void;
   onUndeployJammer: (index: number) => void;
   /**
    * Defaults to `Math.random`. Pass a seeded source to make the generated
@@ -78,13 +85,13 @@ export function useDeploymentState({
 }: UseDeploymentStateParams) {
   const [{ mode, mousePosition }, dispatch] = useReducer(deploymentModeReducer, IDLE_STATE);
   const [status, setStatus] = useState(DEFAULT_STATUS);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordinates, setCoordinates] = useState<Coordinate | null>(null);
 
   // Sidebar presentation state, independent of the mode machine
   const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [expandedJammerIndex, setExpandedJammerIndex] = useState<number | null>(null);
-  const [jammersCollapsed, setJammersCollapsed] = useState(false);
+  const [isJammersCollapsed, setIsJammersCollapsed] = useState(false);
 
   const lastMouseMoveRef = useRef(0);
   const isPlacementActive = isPlacementMode(mode);
@@ -124,17 +131,15 @@ export function useDeploymentState({
     (
       unitName: string,
       category: string,
-      lat: number,
-      lng: number,
+      center: Coordinate,
       angle: number,
       ahaRadiusOverride?: number,
-      ahaCenterOverride?: { lat: number; lng: number }
-    ): DeployedMissileSystemData | null =>
+      ahaCenterOverride?: Coordinate
+    ): MissileDeployment | null =>
       generateDeploymentData({
         unitName,
         category,
-        lat,
-        lng,
+        center,
         angle,
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
         ahaRadiusOverride,
@@ -157,8 +162,7 @@ export function useDeploymentState({
       const newData = createDeployment(
         deployment.unitName,
         deployment.category,
-        deployment.center.lat,
-        deployment.center.lng,
+        deployment.center,
         newAngle,
         deployment.ahaRadius,
         deployment.ahaCenter
@@ -168,8 +172,7 @@ export function useDeploymentState({
       // Preserve existing fire points (like AHA)
       newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
       newData.paths = buildMovementPaths(newData.tacticalAreas, {
-        centerLat: deployment.center.lat,
-        centerLng: deployment.center.lng,
+        center: deployment.center,
         openingAngle: newAngle,
       });
       onDeploySystem(unitKey, newData);
@@ -182,21 +185,21 @@ export function useDeploymentState({
   // Commit Paths — one per mode, all reached from handleMapClick
   // ============================================================================
   const commitJammerPlacement = useCallback(
-    (index: number, isRelocate: boolean, lat: number, lng: number) => {
+    (index: number, isRelocate: boolean, position: Coordinate) => {
       const jammer = jammers[index];
       if (!jammer) {
         dispatch({ type: 'reset' });
         return;
       }
-      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(position)) {
         setStatus(OUT_OF_BOUNDS_JAMMER);
         return;
       }
-      onDeployJammer(index, lat, lng);
+      onDeployJammer(index, position);
       setStatus(
         isRelocate
-          ? `${jammer.name} relocated to ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
-          : `Done: ${jammer.name} deployed at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`
+          ? `${jammer.name} relocated to ${formatPosition(position)}`
+          : `Done: ${jammer.name} deployed at ${formatPosition(position)}`
       );
       dispatch({ type: 'reset' });
     },
@@ -219,7 +222,7 @@ export function useDeploymentState({
   );
 
   const commitAreaRelocation = useCallback(
-    (area: RelocatingArea, lat: number, lng: number) => {
+    (area: RelocatingArea, position: Coordinate) => {
       const deployment = deployedSystems.get(area.unitKey);
       if (!deployment) {
         dispatch({ type: 'reset' });
@@ -229,13 +232,12 @@ export function useDeploymentState({
       const result = relocateArea({
         deployment,
         target: area,
-        lat,
-        lng,
+        position,
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
         rng,
       });
       if (!result.ok) {
-        setStatus(describeRelocateFailure(result.failure));
+        setStatus(formatRelocateFailure(result.failure));
         return;
       }
 
@@ -247,18 +249,18 @@ export function useDeploymentState({
   );
 
   const commitDeployment = useCallback(
-    (unit: SelectedUnit, lat: number, lng: number) => {
-      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(lat, lng)) {
+    (unit: SelectedUnit, position: Coordinate) => {
+      if (shouldValidateTaiwanBoundary && !isPointInTaiwan(position)) {
         setStatus(OUT_OF_BOUNDS_MISSILE);
         return;
       }
 
-      const autoAngle = determineOpeningAngle(lat, lng);
+      const autoAngle = resolveOpeningAngle(position);
 
       // Preview offsets pre-compute a specific HA/RL layout, but we need both
       // FP and SHRL gateways to exist. Delegate to createDeployment which has
       // the outer retry loop that regenerates HA/RL when gateways fail.
-      const deployment = createDeployment(unit.name, unit.category, lat, lng, autoAngle);
+      const deployment = createDeployment(unit.name, unit.category, position, autoAngle);
       if (!deployment) {
         // The clicked point already passed the boundary check above, so the
         // failure is the surrounding areas spilling out or no gateway fitting.
@@ -271,17 +273,15 @@ export function useDeploymentState({
       }
 
       onDeploySystem(unit.key, deployment);
-      setStatus(
-        `Done: ${unit.name} deployed at ${lat.toFixed(4)}, ${lng.toFixed(4)}, Angle: ${autoAngle}`
-      );
+      setStatus(`Done: ${unit.name} deployed at ${formatPosition(position)}, Angle: ${autoAngle}`);
       dispatch({ type: 'reset' });
     },
     [shouldValidateTaiwanBoundary, createDeployment, onDeploySystem]
   );
 
   const handleMapClick = useCallback(
-    (lat: number, lng: number) => {
-      setCoordinates({ lat, lng });
+    (position: Coordinate) => {
+      setCoordinates(position);
       setExpandedUnitKey(null);
       setExpandedJammerIndex(null);
 
@@ -289,21 +289,21 @@ export function useDeploymentState({
         case 'idle':
           return;
         case 'placeJammer':
-          return commitJammerPlacement(mode.index, mode.isRelocate, lat, lng);
+          return commitJammerPlacement(mode.index, mode.isRelocate, position);
         case 'rotate':
           // No angle swept yet, so there is nothing to commit
           if (mode.previewAngle === null) return;
           return commitRotation(mode.unitKey, mode.previewAngle);
         case 'relocateArea':
-          return commitAreaRelocation(mode.area, lat, lng);
+          return commitAreaRelocation(mode.area, position);
         case 'deploy':
-          return commitDeployment(mode.unit, lat, lng);
+          return commitDeployment(mode.unit, position);
       }
     },
     [mode, commitJammerPlacement, commitRotation, commitAreaRelocation, commitDeployment]
   );
 
-  const handleMouseMove = useCallback((lat: number, lng: number) => {
+  const handleMouseMove = useCallback((position: Coordinate) => {
     const current = modeRef.current;
     if (current.kind === 'idle') return;
 
@@ -312,12 +312,12 @@ export function useDeploymentState({
     lastMouseMoveRef.current = now;
 
     if (current.kind !== 'rotate') {
-      dispatch({ type: 'hover', lat, lng });
+      dispatch({ type: 'hover', position });
       return;
     }
 
-    const angle = Math.round(calculateBearing(current.center.lat, current.center.lng, lat, lng));
-    dispatch({ type: 'hover', lat, lng, rotationAngle: angle });
+    const angle = Math.round(calculateBearing(current.center, position));
+    dispatch({ type: 'hover', position, rotationAngle: angle });
     setStatus(`Rotating: ${angle}° — Click to confirm. ESC to cancel`);
   }, []);
 
@@ -336,10 +336,10 @@ export function useDeploymentState({
       }
 
       const offsets: Record<number, PreviewOffsets> = {};
-      const o90 = generateOffsetsForAngle(90, undefined, rng);
-      const o270 = generateOffsetsForAngle(270, undefined, rng);
-      if (o90) offsets[90] = o90;
-      if (o270) offsets[270] = o270;
+      const offsetsAt90 = generateOffsetsForAngle(90, undefined, rng);
+      const offsetsAt270 = generateOffsetsForAngle(270, undefined, rng);
+      if (offsetsAt90) offsets[90] = offsetsAt90;
+      if (offsetsAt270) offsets[270] = offsetsAt270;
 
       dispatch({ type: 'selectUnit', unit: { key: unitKey, name: unitName, category }, offsets });
       setStatus(`${unitName} selected - Click map to deploy`);
@@ -482,8 +482,8 @@ export function useDeploymentState({
   );
 
   const toggleJammers = useCallback(() => {
-    const willCollapse = !jammersCollapsed;
-    setJammersCollapsed(willCollapse);
+    const willCollapse = !isJammersCollapsed;
+    setIsJammersCollapsed(willCollapse);
     if (!willCollapse) return;
 
     setExpandedJammerIndex(null);
@@ -493,17 +493,17 @@ export function useDeploymentState({
       dispatch({ type: 'reset' });
       setStatus(DEFAULT_STATUS);
     }
-  }, [jammersCollapsed, mode]);
+  }, [isJammersCollapsed, mode]);
 
   // ESC cancels whichever mode currently owns the map click. Keyed on whether a
   // mode is live rather than on `mode` itself, so sweeping a rotation angle does
   // not re-register the listener on every mouse move.
   useEffect(() => {
     if (!isPlacementActive) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
       dispatch({ type: 'reset' });
-      setStatus(cancellationMessage(modeRef.current));
+      setStatus(formatCancellationMessage(modeRef.current));
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -534,7 +534,7 @@ export function useDeploymentState({
     expandedUnitKey,
     collapsedCategories,
     expandedJammerIndex,
-    jammersCollapsed,
+    isJammersCollapsed,
 
     // Derived
     placingJammerUnit,

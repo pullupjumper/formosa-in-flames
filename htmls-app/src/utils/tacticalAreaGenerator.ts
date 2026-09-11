@@ -1,22 +1,19 @@
 /**
  * Tactical Area Generator
- * Generates rectangular boundary areas, internal squares, fire points, and movement paths
+ * Generates rectangular boundary areas, internal squares, fire points, and movement paths.
+ * All distances are nautical miles; every position is a `Coordinate`.
  */
 
+import type { Coordinate, MovementPath } from '@/types/geo';
 import type { RandomSource } from '@/utils/random';
+import { calculateCentroid } from '@/utils/geo';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface Coordinate {
-  latitude: number;
-  longitude: number;
-}
-
 export interface AreaConfig {
-  centerLat: number;
-  centerLon: number;
+  center: Coordinate;
   width: number;
   height: number;
   openingAngle: number;
@@ -35,7 +32,7 @@ export interface AreaConfig {
   ahaPoint?: {
     radius: number;
     squareSize: number;
-    center?: { latitude: number; longitude: number };
+    center?: Coordinate;
   };
 }
 
@@ -45,10 +42,10 @@ export interface PathConfig {
   reloadArea: Coordinate[];
   firePoints?: Coordinate[][];
   avoidanceMargin?: number;
-  /** Shared FP-path origin (e.g. result of chooseFpGateway). When provided,
+  /** Shared FP-path origin (e.g. result of selectFpGateway). When provided,
    *  FP path starts here and avoids [HA, RL]; otherwise legacy HA-origin + [AHA, RL]. */
   fpGateway?: Coordinate;
-  /** Shared shelter→RL gateway (e.g. result of chooseShrlGateway). When provided,
+  /** Shared shelter→RL gateway (e.g. result of selectShrlGateway). When provided,
    *  SHRL path starts here and goes to RL center, avoiding HA only. */
   shrlGateway?: Coordinate;
 }
@@ -62,11 +59,11 @@ export interface GenerateResult {
 }
 
 export interface PathResult {
-  FP: { waypoints: Coordinate[] }[];
-  HA: { waypoints: Coordinate[] };
-  RL: { waypoints: Coordinate[] }[];
-  AHA: { waypoints: Coordinate[] };
-  SHRL: { waypoints: Coordinate[] };
+  FP: MovementPath[];
+  HA: MovementPath;
+  RL: MovementPath[];
+  AHA: MovementPath;
+  SHRL: MovementPath;
 }
 
 // ============================================================================
@@ -83,65 +80,71 @@ function toDegrees(radians: number): number {
   return (radians * 180) / Math.PI;
 }
 
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
+/** Great-circle distance in nautical miles (haversine). */
+export function calculateDistance(from: Coordinate, to: Coordinate): number {
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2) +
+    Math.cos(toRadians(from.latitude)) *
+      Math.cos(toRadians(to.latitude)) *
+      Math.sin(longitudeDelta / 2) *
+      Math.sin(longitudeDelta / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return EARTH_RADIUS_NM * c;
 }
 
-export function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const dLon = toRadians(lon2 - lon1);
-  const lat1Rad = toRadians(lat1);
-  const lat2Rad = toRadians(lat2);
+/** Initial bearing from `from` to `to`, in degrees [0, 360). */
+export function calculateBearing(from: Coordinate, to: Coordinate): number {
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const fromLatitude = toRadians(from.latitude);
+  const toLatitude = toRadians(to.latitude);
 
-  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const y = Math.sin(longitudeDelta) * Math.cos(toLatitude);
   const x =
-    Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+    Math.cos(fromLatitude) * Math.sin(toLatitude) -
+    Math.sin(fromLatitude) * Math.cos(toLatitude) * Math.cos(longitudeDelta);
 
   const bearing = toDegrees(Math.atan2(y, x));
   return (bearing + 360) % 360;
 }
 
+/** Destination point `distance` NM from `origin` along `bearing` degrees. */
 export function getPointFromBearing(
-  lat: number,
-  lon: number,
+  origin: Coordinate,
   bearing: number,
   distance: number
 ): Coordinate {
   const bearingRad = toRadians(bearing);
-  const latRad = toRadians(lat);
-  const lonRad = toRadians(lon);
+  const latitudeRad = toRadians(origin.latitude);
+  const longitudeRad = toRadians(origin.longitude);
+  const angularDistance = distance / EARTH_RADIUS_NM;
 
-  const newLatRad = Math.asin(
-    Math.sin(latRad) * Math.cos(distance / EARTH_RADIUS_NM) +
-      Math.cos(latRad) * Math.sin(distance / EARTH_RADIUS_NM) * Math.cos(bearingRad)
+  const newLatitudeRad = Math.asin(
+    Math.sin(latitudeRad) * Math.cos(angularDistance) +
+      Math.cos(latitudeRad) * Math.sin(angularDistance) * Math.cos(bearingRad)
   );
 
-  const newLonRad =
-    lonRad +
+  const newLongitudeRad =
+    longitudeRad +
     Math.atan2(
-      Math.sin(bearingRad) * Math.sin(distance / EARTH_RADIUS_NM) * Math.cos(latRad),
-      Math.cos(distance / EARTH_RADIUS_NM) - Math.sin(latRad) * Math.sin(newLatRad)
+      Math.sin(bearingRad) * Math.sin(angularDistance) * Math.cos(latitudeRad),
+      Math.cos(angularDistance) - Math.sin(latitudeRad) * Math.sin(newLatitudeRad)
     );
 
   return {
-    latitude: toDegrees(newLatRad),
-    longitude: toDegrees(newLonRad),
+    latitude: toDegrees(newLatitudeRad),
+    longitude: toDegrees(newLongitudeRad),
   };
 }
 
 // ============================================================================
-// Helper Functions
+// Square Helpers
 // ============================================================================
 
 function generateRandomSquareCenter(
-  centerLat: number,
-  centerLon: number,
+  center: Coordinate,
   maxOffsetX: number,
   maxOffsetY: number,
   openingAngle: number,
@@ -150,157 +153,112 @@ function generateRandomSquareCenter(
   const offsetX = (rng() * 2 - 1) * maxOffsetX;
   const offsetY = (rng() * 2 - 1) * maxOffsetY;
 
-  const tempPos = getPointFromBearing(centerLat, centerLon, (90 + openingAngle) % 360, offsetX);
-
-  return getPointFromBearing(
-    tempPos.latitude,
-    tempPos.longitude,
-    (180 + openingAngle) % 360,
-    offsetY
-  );
+  const lateral = getPointFromBearing(center, (90 + openingAngle) % 360, offsetX);
+  return getPointFromBearing(lateral, (180 + openingAngle) % 360, offsetY);
 }
 
+/** Centroid of a 4-vertex square; throws on any other vertex count. */
 export function calculateSquareCenter(vertices: Coordinate[]): Coordinate {
   if (vertices.length !== 4) {
     throw new Error('Square must have exactly 4 vertices');
   }
-
-  let sumLat = 0;
-  let sumLon = 0;
-  for (const vertex of vertices) {
-    sumLat += vertex.latitude;
-    sumLon += vertex.longitude;
-  }
-
-  return {
-    latitude: sumLat / 4,
-    longitude: sumLon / 4,
-  };
+  return calculateCentroid(vertices);
 }
 
-export function checkSquaresOverlap(
-  center1Lat: number,
-  center1Lon: number,
-  center2Lat: number,
-  center2Lon: number,
+/** Mean of two adjacent edge lengths, i.e. the side of a generated square. */
+function estimateSquareSize(vertices: Coordinate[]): number {
+  const edgeA = calculateDistance(vertices[0], vertices[1]);
+  const edgeB = calculateDistance(vertices[1], vertices[2]);
+  return (edgeA + edgeB) / 2;
+}
+
+function getSquareHalfDiagonal(vertices: Coordinate[]): number {
+  return calculateDistance(calculateSquareCenter(vertices), vertices[0]);
+}
+
+export function doSquaresOverlap(
+  centerA: Coordinate,
+  centerB: Coordinate,
   squareSize: number,
   margin: number
 ): boolean {
-  const distance = calculateDistance(center1Lat, center1Lon, center2Lat, center2Lon);
-  return distance < squareSize + margin;
+  return calculateDistance(centerA, centerB) < squareSize + margin;
 }
 
-function checkPointInSquare(
-  pointLat: number,
-  pointLon: number,
+function isPointInSquare(
+  point: Coordinate,
   squareCenter: Coordinate,
   squareSize: number,
   margin: number
 ): boolean {
-  const distance = calculateDistance(
-    squareCenter.latitude,
-    squareCenter.longitude,
-    pointLat,
-    pointLon
-  );
   const halfSize = squareSize / 2 + margin;
-  return distance < halfSize;
+  return calculateDistance(squareCenter, point) < halfSize;
 }
 
-function generateSquareVertices(
-  centerLat: number,
-  centerLon: number,
+/** Four corners of a square, rotated by `rotationAngle` degrees. */
+export function generateSquareVertices(
+  center: Coordinate,
   size: number,
   rotationAngle: number
 ): Coordinate[] {
   const halfSize = size / 2;
-  const diagonalDist = Math.sqrt(2) * halfSize;
-  const vertices: Coordinate[] = [];
-
+  const diagonalDistance = Math.sqrt(2) * halfSize;
   const cornerAngles = [45, 135, 225, 315];
-  for (const cornerAngle of cornerAngles) {
-    const vertex = getPointFromBearing(
-      centerLat,
-      centerLon,
-      (cornerAngle + rotationAngle) % 360,
-      diagonalDist
-    );
-    vertices.push(vertex);
-  }
-
-  return vertices;
+  return cornerAngles.map((cornerAngle) =>
+    getPointFromBearing(center, (cornerAngle + rotationAngle) % 360, diagonalDistance)
+  );
 }
 
-function checkPathIntersectsSquare(
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number,
+function doesPathIntersectSquare(
+  start: Coordinate,
+  end: Coordinate,
   squareVertices: Coordinate[],
   margin: number
 ): boolean {
   const squareCenter = calculateSquareCenter(squareVertices);
+  const squareSize = estimateSquareSize(squareVertices);
 
-  const dist1 = calculateDistance(
-    squareVertices[0].latitude,
-    squareVertices[0].longitude,
-    squareVertices[1].latitude,
-    squareVertices[1].longitude
-  );
-  const dist2 = calculateDistance(
-    squareVertices[1].latitude,
-    squareVertices[1].longitude,
-    squareVertices[2].latitude,
-    squareVertices[2].longitude
-  );
-  const squareSize = (dist1 + dist2) / 2;
-
-  const numSamples = 10;
-  for (let i = 0; i <= numSamples; i++) {
-    const t = i / numSamples;
-    const sampleLat = startLat + t * (endLat - startLat);
-    const sampleLon = startLon + t * (endLon - startLon);
-
-    if (checkPointInSquare(sampleLat, sampleLon, squareCenter, squareSize, margin)) {
+  const sampleCount = 10;
+  for (let i = 0; i <= sampleCount; i++) {
+    const t = i / sampleCount;
+    const sample: Coordinate = {
+      latitude: start.latitude + t * (end.latitude - start.latitude),
+      longitude: start.longitude + t * (end.longitude - start.longitude),
+    };
+    if (isPointInSquare(sample, squareCenter, squareSize, margin)) {
       return true;
     }
   }
-
   return false;
 }
 
 function calculateSquareOffsetCorners(squareVertices: Coordinate[], offset: number): Coordinate[] {
   const squareCenter = calculateSquareCenter(squareVertices);
-  const offsetCorners: Coordinate[] = [];
+  const offsetDistance = offset * 1.2;
+  return squareVertices.map((vertex) =>
+    getPointFromBearing(vertex, calculateBearing(squareCenter, vertex), offsetDistance)
+  );
+}
 
-  for (const vertex of squareVertices) {
-    const bearing = calculateBearing(
-      squareCenter.latitude,
-      squareCenter.longitude,
-      vertex.latitude,
-      vertex.longitude
-    );
-
-    const offsetDist = offset * 1.2;
-    const offsetCorner = getPointFromBearing(
-      vertex.latitude,
-      vertex.longitude,
-      bearing,
-      offsetDist
-    );
-    offsetCorners.push(offsetCorner);
-  }
-
-  return offsetCorners;
+/** True when the segment crosses `square` while neither endpoint lies inside it. */
+function doesSegmentCrossSquare(
+  start: Coordinate,
+  end: Coordinate,
+  square: Coordinate[],
+  margin: number
+): boolean {
+  const squareCenter = calculateSquareCenter(square);
+  const squareSize = estimateSquareSize(square);
+  const startInside = isPointInSquare(start, squareCenter, squareSize, 0);
+  const endInside = isPointInSquare(end, squareCenter, squareSize, 0);
+  return !startInside && !endInside && doesPathIntersectSquare(start, end, square, margin);
 }
 
 function selectBestAvoidanceCornerPair(
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number,
+  start: Coordinate,
+  end: Coordinate,
   offsetCorners: Coordinate[],
-  allSquares: Coordinate[][],
+  otherSquares: Coordinate[][],
   margin: number
 ): [Coordinate | null, Coordinate | null] {
   if (offsetCorners.length !== 4) {
@@ -316,161 +274,24 @@ function selectBestAvoidanceCornerPair(
       [offsetCorners[(i + 1) % 4], offsetCorners[i]],
     ];
 
-    for (const pair of pairs) {
-      const [corner1, corner2] = pair;
-      let hasCollision = false;
+    for (const [cornerA, cornerB] of pairs) {
+      const legs: [Coordinate, Coordinate][] = [
+        [start, cornerA],
+        [cornerA, cornerB],
+        [cornerB, end],
+      ];
+      const hasCollision = legs.some(([legStart, legEnd]) =>
+        otherSquares.some((square) => doesSegmentCrossSquare(legStart, legEnd, square, margin))
+      );
+      if (hasCollision) continue;
 
-      for (const squareVertices of allSquares) {
-        const squareCenter = calculateSquareCenter(squareVertices);
-        const dist1 = calculateDistance(
-          squareVertices[0].latitude,
-          squareVertices[0].longitude,
-          squareVertices[1].latitude,
-          squareVertices[1].longitude
-        );
-        const dist2 = calculateDistance(
-          squareVertices[1].latitude,
-          squareVertices[1].longitude,
-          squareVertices[2].latitude,
-          squareVertices[2].longitude
-        );
-        const squareSize = (dist1 + dist2) / 2;
-
-        const startInSquare = checkPointInSquare(startLat, startLon, squareCenter, squareSize, 0);
-        const corner1InSquare = checkPointInSquare(
-          corner1.latitude,
-          corner1.longitude,
-          squareCenter,
-          squareSize,
-          0
-        );
-
-        if (
-          !startInSquare &&
-          !corner1InSquare &&
-          checkPathIntersectsSquare(
-            startLat,
-            startLon,
-            corner1.latitude,
-            corner1.longitude,
-            squareVertices,
-            margin
-          )
-        ) {
-          hasCollision = true;
-          break;
-        }
-      }
-
-      if (!hasCollision) {
-        for (const squareVertices of allSquares) {
-          const squareCenter = calculateSquareCenter(squareVertices);
-          const dist1 = calculateDistance(
-            squareVertices[0].latitude,
-            squareVertices[0].longitude,
-            squareVertices[1].latitude,
-            squareVertices[1].longitude
-          );
-          const dist2 = calculateDistance(
-            squareVertices[1].latitude,
-            squareVertices[1].longitude,
-            squareVertices[2].latitude,
-            squareVertices[2].longitude
-          );
-          const squareSize = (dist1 + dist2) / 2;
-
-          const corner1InSquare = checkPointInSquare(
-            corner1.latitude,
-            corner1.longitude,
-            squareCenter,
-            squareSize,
-            0
-          );
-          const corner2InSquare = checkPointInSquare(
-            corner2.latitude,
-            corner2.longitude,
-            squareCenter,
-            squareSize,
-            0
-          );
-
-          if (
-            !corner1InSquare &&
-            !corner2InSquare &&
-            checkPathIntersectsSquare(
-              corner1.latitude,
-              corner1.longitude,
-              corner2.latitude,
-              corner2.longitude,
-              squareVertices,
-              margin
-            )
-          ) {
-            hasCollision = true;
-            break;
-          }
-        }
-      }
-
-      if (!hasCollision) {
-        for (const squareVertices of allSquares) {
-          const squareCenter = calculateSquareCenter(squareVertices);
-          const dist1 = calculateDistance(
-            squareVertices[0].latitude,
-            squareVertices[0].longitude,
-            squareVertices[1].latitude,
-            squareVertices[1].longitude
-          );
-          const dist2 = calculateDistance(
-            squareVertices[1].latitude,
-            squareVertices[1].longitude,
-            squareVertices[2].latitude,
-            squareVertices[2].longitude
-          );
-          const squareSize = (dist1 + dist2) / 2;
-
-          const corner2InSquare = checkPointInSquare(
-            corner2.latitude,
-            corner2.longitude,
-            squareCenter,
-            squareSize,
-            0
-          );
-          const endInSquare = checkPointInSquare(endLat, endLon, squareCenter, squareSize, 0);
-
-          if (
-            !corner2InSquare &&
-            !endInSquare &&
-            checkPathIntersectsSquare(
-              corner2.latitude,
-              corner2.longitude,
-              endLat,
-              endLon,
-              squareVertices,
-              margin
-            )
-          ) {
-            hasCollision = true;
-            break;
-          }
-        }
-      }
-
-      if (!hasCollision) {
-        const dist1 = calculateDistance(startLat, startLon, corner1.latitude, corner1.longitude);
-        const dist2 = calculateDistance(
-          corner1.latitude,
-          corner1.longitude,
-          corner2.latitude,
-          corner2.longitude
-        );
-        const dist3 = calculateDistance(corner2.latitude, corner2.longitude, endLat, endLon);
-        const totalDist = dist1 + dist2 + dist3;
-
-        if (totalDist < minDistance) {
-          minDistance = totalDist;
-          bestPair = [corner1, corner2];
-        }
+      const totalDistance =
+        calculateDistance(start, cornerA) +
+        calculateDistance(cornerA, cornerB) +
+        calculateDistance(cornerB, end);
+      if (totalDistance < minDistance) {
+        minDistance = totalDistance;
+        bestPair = [cornerA, cornerB];
       }
     }
   }
@@ -483,21 +304,17 @@ function selectBestAvoidanceCornerPair(
 // ============================================================================
 
 function generatePathWithAvoidance(
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number,
+  start: Coordinate,
+  end: Coordinate,
   avoidanceMargin: number,
   avoidSquares: Coordinate[][]
 ): Coordinate[] {
-  const waypoints: Coordinate[] = [
-    { latitude: startLat, longitude: startLon },
-    { latitude: endLat, longitude: endLon },
-  ];
+  const waypoints: Coordinate[] = [{ ...start }, { ...end }];
 
   if (avoidSquares.length === 0) return waypoints;
 
   const maxIterations = 20;
+  const offsetMultipliers = [2.0, 2.5, 3.0, 3.5, 4.0, 5.0];
   let modified = true;
   let iteration = 0;
 
@@ -505,102 +322,40 @@ function generatePathWithAvoidance(
     modified = false;
     iteration++;
 
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      const segStart = waypoints[i];
-      const segEnd = waypoints[i + 1];
+    for (let i = 0; i < waypoints.length - 1 && !modified; i++) {
+      const segmentStart = waypoints[i];
+      const segmentEnd = waypoints[i + 1];
 
-      for (let squareIdx = 0; squareIdx < avoidSquares.length; squareIdx++) {
-        const squareVertices = avoidSquares[squareIdx];
-        const squareCenter = calculateSquareCenter(squareVertices);
-        const dist1 = calculateDistance(
-          squareVertices[0].latitude,
-          squareVertices[0].longitude,
-          squareVertices[1].latitude,
-          squareVertices[1].longitude
-        );
-        const dist2 = calculateDistance(
-          squareVertices[1].latitude,
-          squareVertices[1].longitude,
-          squareVertices[2].latitude,
-          squareVertices[2].longitude
-        );
-        const squareSize = (dist1 + dist2) / 2;
-
-        const startInSquare = checkPointInSquare(
-          segStart.latitude,
-          segStart.longitude,
-          squareCenter,
-          squareSize,
-          0
-        );
-        const endInSquare = checkPointInSquare(
-          segEnd.latitude,
-          segEnd.longitude,
-          squareCenter,
-          squareSize,
-          0
-        );
-
-        if (
-          !startInSquare &&
-          !endInSquare &&
-          checkPathIntersectsSquare(
-            segStart.latitude,
-            segStart.longitude,
-            segEnd.latitude,
-            segEnd.longitude,
-            squareVertices,
-            avoidanceMargin
-          )
-        ) {
-          let corner1: Coordinate | null = null;
-          let corner2: Coordinate | null = null;
-          const offsetMultipliers = [2.0, 2.5, 3.0, 3.5, 4.0, 5.0];
-
-          const otherSquares: Coordinate[][] = [];
-          for (let idx = 0; idx < avoidSquares.length; idx++) {
-            if (idx !== squareIdx) {
-              otherSquares.push(avoidSquares[idx]);
-            }
-          }
-
-          for (const multiplier of offsetMultipliers) {
-            const offsetDist = avoidanceMargin * multiplier;
-            const offsetCorners = calculateSquareOffsetCorners(squareVertices, offsetDist);
-
-            [corner1, corner2] = selectBestAvoidanceCornerPair(
-              segStart.latitude,
-              segStart.longitude,
-              segEnd.latitude,
-              segEnd.longitude,
-              offsetCorners,
-              otherSquares,
-              avoidanceMargin
-            );
-
-            if (corner1 && corner2) {
-              break;
-            }
-          }
-
-          if (corner1 && corner2) {
-            waypoints.splice(i + 1, 0, {
-              latitude: corner1.latitude,
-              longitude: corner1.longitude,
-            });
-            waypoints.splice(i + 2, 0, {
-              latitude: corner2.latitude,
-              longitude: corner2.longitude,
-            });
-
-            modified = true;
-            break;
-          }
+      for (let squareIndex = 0; squareIndex < avoidSquares.length; squareIndex++) {
+        const squareVertices = avoidSquares[squareIndex];
+        if (!doesSegmentCrossSquare(segmentStart, segmentEnd, squareVertices, avoidanceMargin)) {
+          continue;
         }
-      }
 
-      if (modified) {
-        break;
+        const otherSquares = avoidSquares.filter((_, index) => index !== squareIndex);
+        let cornerA: Coordinate | null = null;
+        let cornerB: Coordinate | null = null;
+
+        for (const multiplier of offsetMultipliers) {
+          const offsetCorners = calculateSquareOffsetCorners(
+            squareVertices,
+            avoidanceMargin * multiplier
+          );
+          [cornerA, cornerB] = selectBestAvoidanceCornerPair(
+            segmentStart,
+            segmentEnd,
+            offsetCorners,
+            otherSquares,
+            avoidanceMargin
+          );
+          if (cornerA && cornerB) break;
+        }
+
+        if (cornerA && cornerB) {
+          waypoints.splice(i + 1, 0, { ...cornerA }, { ...cornerB });
+          modified = true;
+          break;
+        }
       }
     }
   }
@@ -624,19 +379,7 @@ function generateInternalSquares(
 ): { hideArea: Coordinate[]; reloadArea: Coordinate[] } {
   const maxAttempts = 100;
   const halfSquare = squareSize / 2;
-
-  const centerLat =
-    (boundaryCorners[0].latitude +
-      boundaryCorners[1].latitude +
-      boundaryCorners[2].latitude +
-      boundaryCorners[3].latitude) /
-    4;
-  const centerLon =
-    (boundaryCorners[0].longitude +
-      boundaryCorners[1].longitude +
-      boundaryCorners[2].longitude +
-      boundaryCorners[3].longitude) /
-    4;
+  const boundaryCenter = calculateCentroid(boundaryCorners);
 
   const maxOffsetX = areaWidth / 2 - halfSquare - marginToWall;
   const maxOffsetY = areaHeight / 2 - halfSquare - marginToWall;
@@ -645,103 +388,63 @@ function generateInternalSquares(
     console.error(
       `Square size (${squareSize} nm) too large for boundary area (${areaWidth} x ${areaHeight} nm)`
     );
-    return {
-      hideArea: [],
-      reloadArea: [],
-    };
+    return { hideArea: [], reloadArea: [] };
   }
 
   const centers: Coordinate[] = [];
   const areaNames = ['hideArea', 'reloadArea'];
 
   for (let i = 0; i < 2; i++) {
-    let validCenter = false;
+    let isPlaced = false;
     let attempts = 0;
 
-    while (!validCenter && attempts < maxAttempts) {
+    while (!isPlaced && attempts < maxAttempts) {
       attempts++;
       const candidate = generateRandomSquareCenter(
-        centerLat,
-        centerLon,
+        boundaryCenter,
         maxOffsetX,
         maxOffsetY,
         openingAngle,
         rng
       );
 
-      let overlap = false;
-      for (const existingCenter of centers) {
-        if (
-          checkSquaresOverlap(
-            candidate.latitude,
-            candidate.longitude,
-            existingCenter.latitude,
-            existingCenter.longitude,
-            squareSize,
-            marginBetweenSquares
-          )
-        ) {
-          overlap = true;
-          break;
-        }
-      }
-
-      if (!overlap) {
+      const overlaps = centers.some((existing) =>
+        doSquaresOverlap(candidate, existing, squareSize, marginBetweenSquares)
+      );
+      if (!overlaps) {
         centers.push(candidate);
-        validCenter = true;
+        isPlaced = true;
       }
     }
 
-    if (!validCenter) {
+    if (!isPlaced) {
       console.error(`Failed to place ${areaNames[i]} after ${maxAttempts} attempts`);
     }
   }
 
-  const safeVertices = (index: number): Coordinate[] =>
-    centers[index]
-      ? generateSquareVertices(
-          centers[index].latitude,
-          centers[index].longitude,
-          squareSize,
-          openingAngle
-        )
-      : [];
+  const verticesAt = (index: number): Coordinate[] =>
+    centers[index] ? generateSquareVertices(centers[index], squareSize, openingAngle) : [];
 
-  return {
-    hideArea: safeVertices(0),
-    reloadArea: safeVertices(1),
-  };
+  return { hideArea: verticesAt(0), reloadArea: verticesAt(1) };
 }
 
 function generateAhaPosition(
-  centerLat: number,
-  centerLon: number,
+  center: Coordinate,
   radius: number,
   squareSize: number,
   openingAngle: number,
-  customCenter?: { latitude: number; longitude: number }
+  customCenter?: Coordinate
 ): Coordinate[] {
   if (customCenter) {
-    const bearingToCenter = calculateBearing(
-      customCenter.latitude,
-      customCenter.longitude,
-      centerLat,
-      centerLon
-    );
-    return generateSquareVertices(
-      customCenter.latitude,
-      customCenter.longitude,
-      squareSize,
-      bearingToCenter
-    );
+    const bearingToCenter = calculateBearing(customCenter, center);
+    return generateSquareVertices(customCenter, squareSize, bearingToCenter);
   }
-  const ahaCenter = getPointFromBearing(centerLat, centerLon, openingAngle, radius);
-  return generateSquareVertices(ahaCenter.latitude, ahaCenter.longitude, squareSize, openingAngle);
+  const ahaCenter = getPointFromBearing(center, openingAngle, radius);
+  return generateSquareVertices(ahaCenter, squareSize, openingAngle);
 }
 
 function generateFirePoints(
-  centerLat: number,
-  centerLon: number,
+  center: Coordinate,
   radius: number,
   squareSize: number,
   count: number,
@@ -755,92 +458,43 @@ function generateFirePoints(
   const firePoints: { center: Coordinate; vertices: Coordinate[] }[] = [];
   const maxAttempts = 200;
 
-  const boundaryMaxDist = Math.sqrt((boundaryWidth / 2) ** 2 + (boundaryHeight / 2) ** 2);
+  const boundaryMaxDistance = Math.sqrt((boundaryWidth / 2) ** 2 + (boundaryHeight / 2) ** 2);
   const startAngle = openingAngle + 180 - angleRange / 2;
+  const squareDiagonal = Math.sqrt(2) * (squareSize / 2);
+  const minSafeDistance = boundaryMaxDistance + squareDiagonal + margin;
 
   for (let i = 0; i < count; i++) {
-    let validPosition = false;
+    let isPlaced = false;
     let attempts = 0;
 
-    while (!validPosition && attempts < maxAttempts) {
+    while (!isPlaced && attempts < maxAttempts) {
       attempts++;
 
       const randomAngle = (startAngle + rng() * angleRange) % 360;
-      const candidate = getPointFromBearing(centerLat, centerLon, randomAngle, radius);
-
-      let valid = true;
+      const candidate = getPointFromBearing(center, randomAngle, radius);
 
       // Ensure fire point is outside the boundary rectangle
-      const distanceToCenter = calculateDistance(
-        centerLat,
-        centerLon,
-        candidate.latitude,
-        candidate.longitude
+      if (calculateDistance(center, candidate) < minSafeDistance) continue;
+
+      const overlaps = firePoints.some((existing) =>
+        doSquaresOverlap(candidate, existing.center, squareSize, margin)
       );
-      const halfSquare = squareSize / 2;
-      const squareDiagonal = Math.sqrt(2) * halfSquare;
-      const minSafeDistance = boundaryMaxDist + squareDiagonal + margin;
+      if (overlaps) continue;
 
-      if (distanceToCenter < minSafeDistance) {
-        valid = false;
-      }
-
-      if (valid) {
-        for (const existingFirePoint of firePoints) {
-          if (
-            checkSquaresOverlap(
-              candidate.latitude,
-              candidate.longitude,
-              existingFirePoint.center.latitude,
-              existingFirePoint.center.longitude,
-              squareSize,
-              margin
-            )
-          ) {
-            valid = false;
-            break;
-          }
-        }
-      }
-
-      if (valid) {
-        const bearingToCenter = calculateBearing(
-          candidate.latitude,
-          candidate.longitude,
-          centerLat,
-          centerLon
-        );
-
-        const vertices = generateSquareVertices(
-          candidate.latitude,
-          candidate.longitude,
-          squareSize,
-          bearingToCenter
-        );
-
-        firePoints.push({
-          center: candidate,
-          vertices: vertices,
-        });
-        validPosition = true;
-      }
+      const bearingToCenter = calculateBearing(candidate, center);
+      firePoints.push({
+        center: candidate,
+        vertices: generateSquareVertices(candidate, squareSize, bearingToCenter),
+      });
+      isPlaced = true;
     }
 
-    if (!validPosition) {
+    if (!isPlaced) {
       console.error(`Failed to place fire point ${i + 1}/${count} after ${maxAttempts} attempts`);
     }
   }
 
-  return firePoints.map((fp) => fp.vertices);
-}
-
-export function generateSquareVerticesPublic(
-  centerLat: number,
-  centerLon: number,
-  size: number,
-  rotationAngle: number
-): Coordinate[] {
-  return generateSquareVertices(centerLat, centerLon, size, rotationAngle);
+  return firePoints.map((firePoint) => firePoint.vertices);
 }
 
 // ============================================================================
@@ -848,8 +502,7 @@ export function generateSquareVerticesPublic(
 // ============================================================================
 
 export interface ShelterPointsConfig {
-  centerLat: number;
-  centerLon: number;
+  center: Coordinate;
   areaWidth: number;
   areaHeight: number;
   openingAngle: number;
@@ -863,24 +516,13 @@ export interface ShelterPointsConfig {
   rng?: RandomSource;
 }
 
-function getSquareHalfDiagonal(vertices: Coordinate[]): number {
-  const center = calculateSquareCenter(vertices);
-  return calculateDistance(
-    center.latitude,
-    center.longitude,
-    vertices[0].latitude,
-    vertices[0].longitude
-  );
-}
-
 /**
  * Generate random shelter coordinates inside the U-shape rectangle,
  * avoiding the supplied tactical squares (typically HA and RL).
  */
 export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[] {
   const {
-    centerLat,
-    centerLon,
+    center,
     areaWidth,
     areaHeight,
     openingAngle,
@@ -899,55 +541,42 @@ export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[]
     return [];
   }
 
-  const avoidInfo = avoidAreas
+  const exclusions = avoidAreas
     .filter((area) => area.length === 4)
     .map((area) => ({
       center: calculateSquareCenter(area),
-      exclusionRadius: getSquareHalfDiagonal(area) + marginToAreas,
+      radius: getSquareHalfDiagonal(area) + marginToAreas,
     }));
 
   const points: Coordinate[] = [];
 
   for (let i = 0; i < count; i++) {
-    let placed = false;
+    let isPlaced = false;
 
-    for (let attempt = 0; attempt < maxAttemptsPerPoint && !placed; attempt++) {
+    for (let attempt = 0; attempt < maxAttemptsPerPoint && !isPlaced; attempt++) {
       const candidate = generateRandomSquareCenter(
-        centerLat,
-        centerLon,
+        center,
         maxOffsetX,
         maxOffsetY,
         openingAngle,
         rng
       );
 
-      const conflictsWithAreas = avoidInfo.some(
-        ({ center, exclusionRadius }) =>
-          calculateDistance(
-            candidate.latitude,
-            candidate.longitude,
-            center.latitude,
-            center.longitude
-          ) < exclusionRadius
+      const conflictsWithAreas = exclusions.some(
+        (exclusion) => calculateDistance(candidate, exclusion.center) < exclusion.radius
       );
       if (conflictsWithAreas) continue;
 
       const conflictsWithShelters = points.some(
-        (existing) =>
-          calculateDistance(
-            candidate.latitude,
-            candidate.longitude,
-            existing.latitude,
-            existing.longitude
-          ) < marginBetweenPoints
+        (existing) => calculateDistance(candidate, existing) < marginBetweenPoints
       );
       if (conflictsWithShelters) continue;
 
       points.push(candidate);
-      placed = true;
+      isPlaced = true;
     }
 
-    if (!placed) {
+    if (!isPlaced) {
       console.error(
         `Failed to place shelter point ${i + 1}/${count} after ${maxAttemptsPerPoint} attempts`
       );
@@ -962,8 +591,7 @@ export function generateShelterPoints(config: ShelterPointsConfig): Coordinate[]
 // ============================================================================
 
 export interface GatewayConfig {
-  uShapeCenterLat: number;
-  uShapeCenterLon: number;
+  uShapeCenter: Coordinate;
   openingAngle: number;
   areaWidth: number;
   areaHeight: number;
@@ -980,10 +608,9 @@ export interface GatewayConfig {
  * shelter has line-of-sight to it without crossing HA or RL. Returns null when
  * no candidate satisfies the constraints.
  */
-export function chooseFpGateway(config: GatewayConfig): Coordinate | null {
+export function selectFpGateway(config: GatewayConfig): Coordinate | null {
   const {
-    uShapeCenterLat,
-    uShapeCenterLon,
+    uShapeCenter,
     openingAngle,
     areaWidth,
     areaHeight,
@@ -1002,57 +629,35 @@ export function chooseFpGateway(config: GatewayConfig): Coordinate | null {
   const backBearing = (openingAngle + 180) % 360;
   const rightBearing = (openingAngle + 90) % 360;
 
-  const avoidSquares = [hideArea, reloadArea].filter((a) => a.length === 4);
+  const avoidSquares = [hideArea, reloadArea].filter((area) => area.length === 4);
 
   const candidates: Coordinate[] = [];
   for (const backRatio of backOffsetRatios) {
-    const back = getPointFromBearing(
-      uShapeCenterLat,
-      uShapeCenterLon,
-      backBearing,
-      halfHeight * backRatio
-    );
-    for (const latRatio of lateralOffsetRatios) {
-      if (latRatio === 0) {
+    const back = getPointFromBearing(uShapeCenter, backBearing, halfHeight * backRatio);
+    for (const lateralRatio of lateralOffsetRatios) {
+      if (lateralRatio === 0) {
         candidates.push(back);
         continue;
       }
-      const bearing = latRatio > 0 ? rightBearing : (rightBearing + 180) % 360;
-      candidates.push(
-        getPointFromBearing(back.latitude, back.longitude, bearing, halfWidth * Math.abs(latRatio))
-      );
+      const bearing = lateralRatio > 0 ? rightBearing : (rightBearing + 180) % 360;
+      candidates.push(getPointFromBearing(back, bearing, halfWidth * Math.abs(lateralRatio)));
     }
   }
 
   for (const candidate of candidates) {
-    const blockedByArea = avoidSquares.some((square) => {
-      const center = calculateSquareCenter(square);
-      return (
-        calculateDistance(
-          candidate.latitude,
-          candidate.longitude,
-          center.latitude,
-          center.longitude
-        ) <
+    const isBlockedByArea = avoidSquares.some(
+      (square) =>
+        calculateDistance(candidate, calculateSquareCenter(square)) <
         getSquareHalfDiagonal(square) + avoidanceMargin
-      );
-    });
-    if (blockedByArea) continue;
+    );
+    if (isBlockedByArea) continue;
 
-    const allVisible = shelterPoints.every((shelter) =>
+    const isVisibleFromAllShelters = shelterPoints.every((shelter) =>
       avoidSquares.every(
-        (square) =>
-          !checkPathIntersectsSquare(
-            shelter.latitude,
-            shelter.longitude,
-            candidate.latitude,
-            candidate.longitude,
-            square,
-            avoidanceMargin
-          )
+        (square) => !doesPathIntersectSquare(shelter, candidate, square, avoidanceMargin)
       )
     );
-    if (!allVisible) continue;
+    if (!isVisibleFromAllShelters) continue;
 
     return candidate;
   }
@@ -1080,7 +685,7 @@ export interface ShrlGatewayConfig {
  * (a) candidate is not inside HA, (b) every shelter reaches it without crossing
  * HA, and (c) the candidate → reload-center line does not cross HA.
  */
-export function chooseShrlGateway(config: ShrlGatewayConfig): Coordinate | null {
+export function selectShrlGateway(config: ShrlGatewayConfig): Coordinate | null {
   const {
     hideArea,
     reloadArea,
@@ -1094,64 +699,42 @@ export function chooseShrlGateway(config: ShrlGatewayConfig): Coordinate | null 
     return null;
   }
 
-  const rlCenter = calculateSquareCenter(reloadArea);
-  const rlHalfDiag = getSquareHalfDiagonal(reloadArea);
+  const reloadCenter = calculateSquareCenter(reloadArea);
+  const reloadHalfDiagonal = getSquareHalfDiagonal(reloadArea);
   const hideCenter = calculateSquareCenter(hideArea);
-  const hideHalfDiag = getSquareHalfDiagonal(hideArea);
+  const hideHalfDiagonal = getSquareHalfDiagonal(hideArea);
 
   const candidates: Coordinate[] = [];
   for (const offset of ringOffsets) {
-    const radius = rlHalfDiag + offset;
+    const radius = reloadHalfDiagonal + offset;
     for (let angle = 0; angle < 360; angle += angularStepDegrees) {
-      candidates.push(getPointFromBearing(rlCenter.latitude, rlCenter.longitude, angle, radius));
+      candidates.push(getPointFromBearing(reloadCenter, angle, radius));
     }
   }
 
   for (const candidate of candidates) {
-    const insideHide =
-      calculateDistance(
-        candidate.latitude,
-        candidate.longitude,
-        hideCenter.latitude,
-        hideCenter.longitude
-      ) <
-      hideHalfDiag + avoidanceMargin;
-    if (insideHide) continue;
+    const isInsideHide =
+      calculateDistance(candidate, hideCenter) < hideHalfDiagonal + avoidanceMargin;
+    if (isInsideHide) continue;
 
-    const gatewayToRlBlocked = checkPathIntersectsSquare(
-      candidate.latitude,
-      candidate.longitude,
-      rlCenter.latitude,
-      rlCenter.longitude,
+    const isGatewayToReloadBlocked = doesPathIntersectSquare(
+      candidate,
+      reloadCenter,
       hideArea,
       avoidanceMargin
     );
-    if (gatewayToRlBlocked) continue;
+    if (isGatewayToReloadBlocked) continue;
 
     // Every shelter → gateway line must clear both HA and RL. RL is the final
     // destination but only the last leg (gateway → RL center) is allowed to
     // enter it — earlier legs crossing RL would mean the vehicle passes through
     // the reload area just to reach the gateway, which is semantically wrong.
-    const allShelterVisible = shelterPoints.every(
+    const isVisibleFromAllShelters = shelterPoints.every(
       (shelter) =>
-        !checkPathIntersectsSquare(
-          shelter.latitude,
-          shelter.longitude,
-          candidate.latitude,
-          candidate.longitude,
-          hideArea,
-          avoidanceMargin
-        ) &&
-        !checkPathIntersectsSquare(
-          shelter.latitude,
-          shelter.longitude,
-          candidate.latitude,
-          candidate.longitude,
-          reloadArea,
-          avoidanceMargin
-        )
+        !doesPathIntersectSquare(shelter, candidate, hideArea, avoidanceMargin) &&
+        !doesPathIntersectSquare(shelter, candidate, reloadArea, avoidanceMargin)
     );
-    if (!allShelterVisible) continue;
+    if (!isVisibleFromAllShelters) continue;
 
     return candidate;
   }
@@ -1167,38 +750,27 @@ export function generateUShapeVertices(
   areaConfig: AreaConfig,
   rng: RandomSource = Math.random
 ): GenerateResult {
-  if (!areaConfig.centerLat) throw new Error('config.centerLat is required');
-  if (!areaConfig.centerLon) throw new Error('config.centerLon is required');
+  if (!areaConfig.center?.latitude) throw new Error('config.center.latitude is required');
+  if (!areaConfig.center?.longitude) throw new Error('config.center.longitude is required');
   if (!areaConfig.width) throw new Error('config.width is required');
   if (!areaConfig.height) throw new Error('config.height is required');
   if (areaConfig.openingAngle === undefined) throw new Error('config.openingAngle is required');
 
-  const result: GenerateResult = {
-    uShapeVertices: [],
-  };
-
-  const { centerLat, centerLon, width, height, openingAngle } = areaConfig;
+  const { center, width, height, openingAngle } = areaConfig;
 
   const halfWidth = width / 2;
   const halfHeight = height / 2;
 
-  const outerDiagonalDist = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
+  const outerDiagonalDistance = Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
   const baseAngle = toDegrees(Math.atan2(halfWidth, halfHeight));
-
   const outerAngles = [360 - baseAngle, baseAngle, 180 - baseAngle, 180 + baseAngle];
 
-  const outerCorners: Coordinate[] = [];
-  for (let i = 0; i < 4; i++) {
-    outerCorners[i] = getPointFromBearing(
-      centerLat,
-      centerLon,
-      (outerAngles[i] + openingAngle) % 360,
-      outerDiagonalDist
-    );
-  }
-
   // Boundary is a simple quadrilateral (4 vertices)
-  result.uShapeVertices = [outerCorners[0], outerCorners[1], outerCorners[2], outerCorners[3]];
+  const outerCorners = outerAngles.map((outerAngle) =>
+    getPointFromBearing(center, (outerAngle + openingAngle) % 360, outerDiagonalDistance)
+  );
+
+  const result: GenerateResult = { uShapeVertices: outerCorners };
 
   if (areaConfig.internalSquares) {
     const internalSquares = generateInternalSquares(
@@ -1211,15 +783,13 @@ export function generateUShapeVertices(
       areaConfig.internalSquares.marginToWall,
       areaConfig.internalSquares.marginBetweenSquares
     );
-
     result.hideArea = internalSquares.hideArea;
     result.reloadArea = internalSquares.reloadArea;
   }
 
   if (areaConfig.ahaPoint) {
     result.ammoArea = generateAhaPosition(
-      centerLat,
-      centerLon,
+      center,
       areaConfig.ahaPoint.radius,
       areaConfig.ahaPoint.squareSize,
       openingAngle,
@@ -1229,8 +799,7 @@ export function generateUShapeVertices(
 
   if (areaConfig.firePoints) {
     result.firePoints = generateFirePoints(
-      centerLat,
-      centerLon,
+      center,
       areaConfig.firePoints.radius,
       areaConfig.firePoints.squareSize,
       areaConfig.firePoints.count,
@@ -1260,72 +829,43 @@ export function calculateMovementPaths(pathConfig: PathConfig): PathResult {
     SHRL: { waypoints: [] },
   };
 
-  const ammoCtr = calculateSquareCenter(pathConfig.ammoArea);
-  const hideCtr = calculateSquareCenter(pathConfig.hideArea);
-  const reloadCtr = calculateSquareCenter(pathConfig.reloadArea);
+  const ammoCenter = calculateSquareCenter(pathConfig.ammoArea);
+  const hideCenter = calculateSquareCenter(pathConfig.hideArea);
+  const reloadCenter = calculateSquareCenter(pathConfig.reloadArea);
 
   // HA: reload -> hide, avoid ammo
-  paths.HA.waypoints = generatePathWithAvoidance(
-    reloadCtr.latitude,
-    reloadCtr.longitude,
-    hideCtr.latitude,
-    hideCtr.longitude,
-    avoidanceMargin,
-    [pathConfig.ammoArea]
-  );
+  paths.HA.waypoints = generatePathWithAvoidance(reloadCenter, hideCenter, avoidanceMargin, [
+    pathConfig.ammoArea,
+  ]);
 
   // AHA: reload -> ammo, avoid hide
-  paths.AHA.waypoints = generatePathWithAvoidance(
-    reloadCtr.latitude,
-    reloadCtr.longitude,
-    ammoCtr.latitude,
-    ammoCtr.longitude,
-    avoidanceMargin,
-    [pathConfig.hideArea]
-  );
+  paths.AHA.waypoints = generatePathWithAvoidance(reloadCenter, ammoCenter, avoidanceMargin, [
+    pathConfig.hideArea,
+  ]);
 
-  // FP: gateway (or hide center fallback) -> fire points.
-  // When fpGateway is supplied we assume shelter vehicles will prepend their own
-  // position, so the shared path must avoid HA and RL. Without a gateway we fall
-  // back to the legacy HA-origin behaviour.
   if (pathConfig.firePoints) {
-    const fpOrigin = pathConfig.fpGateway ?? hideCtr;
+    // FP: gateway (or hide center fallback) -> fire points.
+    // When fpGateway is supplied we assume shelter vehicles will prepend their own
+    // position, so the shared path must avoid HA and RL. Without a gateway we fall
+    // back to the legacy HA-origin behaviour.
+    const fpOrigin = pathConfig.fpGateway ?? hideCenter;
     const fpAvoid = pathConfig.fpGateway
       ? [pathConfig.hideArea, pathConfig.reloadArea]
       : [pathConfig.ammoArea, pathConfig.reloadArea];
 
-    for (let i = 0; i < pathConfig.firePoints.length; i++) {
-      const firePoint = pathConfig.firePoints[i];
-      const fpCtr = calculateSquareCenter(firePoint);
-      paths.FP[i] = {
-        waypoints: generatePathWithAvoidance(
-          fpOrigin.latitude,
-          fpOrigin.longitude,
-          fpCtr.latitude,
-          fpCtr.longitude,
-          avoidanceMargin,
-          fpAvoid
-        ),
+    pathConfig.firePoints.forEach((firePoint, index) => {
+      const firePointCenter = calculateSquareCenter(firePoint);
+      paths.FP[index] = {
+        waypoints: generatePathWithAvoidance(fpOrigin, firePointCenter, avoidanceMargin, fpAvoid),
       };
-    }
-  }
-
-  // RL: fire points -> reload, avoid ammo & hide
-  if (pathConfig.firePoints) {
-    for (let i = 0; i < pathConfig.firePoints.length; i++) {
-      const firePoint = pathConfig.firePoints[i];
-      const fpCtr = calculateSquareCenter(firePoint);
-      paths.RL[i] = {
-        waypoints: generatePathWithAvoidance(
-          fpCtr.latitude,
-          fpCtr.longitude,
-          reloadCtr.latitude,
-          reloadCtr.longitude,
-          avoidanceMargin,
-          [pathConfig.ammoArea, pathConfig.hideArea]
-        ),
+      // RL: fire points -> reload, avoid ammo & hide
+      paths.RL[index] = {
+        waypoints: generatePathWithAvoidance(firePointCenter, reloadCenter, avoidanceMargin, [
+          pathConfig.ammoArea,
+          pathConfig.hideArea,
+        ]),
       };
-    }
+    });
   }
 
   // SHRL: shelter-gateway -> reload, avoid HA only.
@@ -1333,10 +873,8 @@ export function calculateMovementPaths(pathConfig: PathConfig): PathResult {
   // the gateway must stay in the waypoint list so the approach stays HA-clear.
   if (pathConfig.shrlGateway) {
     paths.SHRL.waypoints = generatePathWithAvoidance(
-      pathConfig.shrlGateway.latitude,
-      pathConfig.shrlGateway.longitude,
-      reloadCtr.latitude,
-      reloadCtr.longitude,
+      pathConfig.shrlGateway,
+      reloadCenter,
       avoidanceMargin,
       [pathConfig.hideArea]
     );

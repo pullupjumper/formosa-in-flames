@@ -1,4 +1,5 @@
 import type { RelocatingArea, AreaType } from '@/components/Map';
+import type { Coordinate } from '@/types/geo';
 import type { PreviewOffsets, RelocateFailure } from '@/utils/missileDeployment';
 
 /**
@@ -16,34 +17,29 @@ export interface SelectedUnit {
   category: string;
 }
 
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
-
 export type DeploymentMode =
   | { kind: 'idle' }
   /** A sidebar unit is armed; `offsets` drives the hover preview */
   | { kind: 'deploy'; unit: SelectedUnit; offsets: Record<number, PreviewOffsets> }
   | { kind: 'relocateArea'; area: RelocatingArea }
-  | { kind: 'rotate'; unitKey: string; center: LatLng; previewAngle: number | null }
+  | { kind: 'rotate'; unitKey: string; center: Coordinate; previewAngle: number | null }
   /** Deploy and relocate share the same commit path, so they are one mode */
   | { kind: 'placeJammer'; index: number; isRelocate: boolean };
 
 export interface DeploymentModeState {
   mode: DeploymentMode;
   /** Cursor position feeding the hover preview; every transition clears it */
-  mousePosition: LatLng | null;
+  mousePosition: Coordinate | null;
 }
 
 export type DeploymentAction =
   | { type: 'reset' }
   | { type: 'selectUnit'; unit: SelectedUnit; offsets: Record<number, PreviewOffsets> }
   | { type: 'relocateArea'; area: RelocatingArea }
-  | { type: 'rotate'; unitKey: string; center: LatLng }
+  | { type: 'rotate'; unitKey: string; center: Coordinate }
   | { type: 'placeJammer'; index: number; isRelocate: boolean }
   /** `rotationAngle` is ignored unless the rotate mode is active */
-  | { type: 'hover'; lat: number; lng: number; rotationAngle?: number };
+  | { type: 'hover'; position: Coordinate; rotationAngle?: number };
 
 // ============================================================================
 // REDUCER
@@ -85,7 +81,7 @@ export function deploymentModeReducer(
       };
 
     case 'hover': {
-      const mousePosition = { lat: action.lat, lng: action.lng };
+      const mousePosition = action.position;
       if (state.mode.kind !== 'rotate') return { ...state, mousePosition };
       return {
         mode: { ...state.mode, previewAngle: action.rotationAngle ?? null },
@@ -136,7 +132,7 @@ export function formatAreaLabel(area: RelocatingArea): string {
 }
 
 /** Turn a rejection from `relocateArea` into the status line */
-export function describeRelocateFailure(failure: RelocateFailure): string {
+export function formatRelocateFailure(failure: RelocateFailure): string {
   switch (failure.code) {
     case 'ushape-generation-failed':
       return 'Warning: Failed to relocate U-Shape';
@@ -148,7 +144,7 @@ export function describeRelocateFailure(failure: RelocateFailure): string {
 }
 
 /** Status line shown when ESC drops the given mode */
-export function cancellationMessage(mode: DeploymentMode): string {
+export function formatCancellationMessage(mode: DeploymentMode): string {
   switch (mode.kind) {
     case 'rotate':
       return 'Rotation cancelled';

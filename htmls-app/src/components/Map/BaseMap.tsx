@@ -8,6 +8,8 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
+import type { Coordinate } from '@/types/geo';
+import { fromLeafletLatLng, toLeafletLatLng } from '@/utils/geo';
 import 'leaflet/dist/leaflet.css';
 import './leaflet-dark.css';
 
@@ -19,8 +21,8 @@ const DEFAULT_ZOOM = 8;
 
 interface BaseMapProps {
   children?: React.ReactNode;
-  onMapClick?: (lat: number, lng: number) => void;
-  onMouseMove?: (lat: number, lng: number) => void;
+  onMapClick?: (position: Coordinate) => void;
+  onMouseMove?: (position: Coordinate) => void;
   cursorStyle?: string;
   className?: string;
   sideName?: string;
@@ -77,22 +79,26 @@ export function BaseMap({
 }
 
 interface MapClickHandlerProps {
-  onClick: (lat: number, lng: number) => void;
+  onClick: (position: Coordinate) => void;
 }
 
 function MapClickHandler({ onClick }: MapClickHandlerProps) {
   useMapEvents({
-    click: (e) => {
-      onClick(e.latlng.lat, e.latlng.lng);
+    click: (event) => {
+      onClick(fromLeafletLatLng(event.latlng));
     },
   });
   return null;
 }
 
-function MapMouseMoveHandler({ onMouseMove }: { onMouseMove: (lat: number, lng: number) => void }) {
+interface MapMouseMoveHandlerProps {
+  onMouseMove: (position: Coordinate) => void;
+}
+
+function MapMouseMoveHandler({ onMouseMove }: MapMouseMoveHandlerProps) {
   useMapEvents({
-    mousemove: (e) => {
-      onMouseMove(e.latlng.lat, e.latlng.lng);
+    mousemove: (event) => {
+      onMouseMove(fromLeafletLatLng(event.latlng));
     },
   });
   return null;
@@ -128,29 +134,37 @@ function MapResizeHandler() {
 }
 
 // ============================================================================
-// CoordinateSearch — input box on the map to jump to a lat,lng
+// CoordinateSearch — input box on the map to jump to a "latitude, longitude"
 // ============================================================================
+const PIN_PATH_OPTIONS = {
+  color: '#fff',
+  fillColor: '#137cbd',
+  fillOpacity: 1,
+  weight: 2,
+};
+
 function CoordinateSearch() {
   const map = useMap();
   const [value, setValue] = useState('');
-  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [pin, setPin] = useState<Coordinate | null>(null);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
+    (event: React.FormEvent) => {
+      event.preventDefault();
       const trimmed = value.trim();
       if (!trimmed) return;
 
-      // Accept "lat, lng" or "lat lng"
+      // Accept "latitude, longitude" or "latitude longitude"
       const parts = trimmed.split(/[,\s]+/).filter(Boolean);
       if (parts.length < 2) return;
 
-      const lat = parseFloat(parts[0]);
-      const lng = parseFloat(parts[1]);
-      if (isNaN(lat) || isNaN(lng)) return;
+      const latitude = parseFloat(parts[0]);
+      const longitude = parseFloat(parts[1]);
+      if (isNaN(latitude) || isNaN(longitude)) return;
 
-      map.setView([lat, lng], map.getZoom(), { animate: true });
-      setPin({ lat, lng });
+      const target: Coordinate = { latitude, longitude };
+      map.setView(toLeafletLatLng(target), map.getZoom(), { animate: true });
+      setPin(target);
       setValue('');
     },
     [value, map]
@@ -175,7 +189,7 @@ function CoordinateSearch() {
           <input
             type="text"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(event) => setValue(event.target.value)}
             placeholder="lat, lng"
             style={{
               width: 200,
@@ -208,17 +222,12 @@ function CoordinateSearch() {
       {/* Pin marker */}
       {pin && (
         <CircleMarker
-          center={[pin.lat, pin.lng]}
+          center={toLeafletLatLng(pin)}
           radius={7}
-          pathOptions={{
-            color: '#fff',
-            fillColor: '#137cbd',
-            fillOpacity: 1,
-            weight: 2,
-          }}
+          pathOptions={PIN_PATH_OPTIONS}
           eventHandlers={{
-            click: (e) => {
-              e.originalEvent.stopPropagation();
+            click: (event) => {
+              event.originalEvent.stopPropagation();
               clearPin();
             },
           }}

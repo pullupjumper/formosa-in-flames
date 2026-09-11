@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { DeployedMissileSystemData, Jammer, MissileSystems } from '@/types/setupMenu';
+import type { Coordinate } from '@/types/geo';
+import type { MissileDeployment, Jammer, MissileSystems } from '@/types/setupMenu';
 import { useDeploymentState } from '@/pages/setup-menu/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/setup-menu/hooks/useDeploymentState';
 import { useAircraftPanel, AIRCRAFT_PANEL_STATUS } from '@/pages/setup-menu/hooks/useAircraftPanel';
@@ -9,8 +10,8 @@ import {
   IDLE_STATE,
   AREA_LABEL,
   DEFAULT_STATUS,
-  cancellationMessage,
-  describeRelocateFailure,
+  formatCancellationMessage,
+  formatRelocateFailure,
   formatAreaLabel,
   isMissileMode,
   isSameArea,
@@ -22,8 +23,8 @@ import { createSeededRandom } from '@/utils/random';
 // ============================================================================
 // FIXTURES
 // ============================================================================
-const INLAND = { lat: 23.9, lng: 120.75 };
-const OFFSHORE = { lat: 23.9, lng: 118.5 };
+const INLAND: Coordinate = { latitude: 23.9, longitude: 120.75 };
+const OFFSHORE: Coordinate = { latitude: 23.9, longitude: 118.5 };
 
 /** Fixed so the rejection-sampled layouts are identical on every run. */
 const SEED = 42;
@@ -44,12 +45,11 @@ const JAMMERS = [
   { zoneName: 'Z2', name: 'EW South', randomRadius: 5, radius: 50 },
 ] as Jammer[];
 
-function makeDeployment(): DeployedMissileSystemData {
+function makeDeployment(): MissileDeployment {
   const data = generateDeploymentData({
     unitName: UNIT_NAME,
     category: 'ascm',
-    lat: INLAND.lat,
-    lng: INLAND.lng,
+    center: INLAND,
     angle: 90,
     validateTaiwanBoundary: true,
     rng: createSeededRandom(SEED),
@@ -139,20 +139,20 @@ describe('formatAreaLabel', () => {
   });
 });
 
-describe('describeRelocateFailure', () => {
+describe('formatRelocateFailure', () => {
   it('reports a failed U-Shape regeneration', () => {
-    expect(describeRelocateFailure({ code: 'ushape-generation-failed' })).toContain('U-Shape');
+    expect(formatRelocateFailure({ code: 'ushape-generation-failed' })).toContain('U-Shape');
   });
 
   it('reports leaving the U-Shape boundary', () => {
-    expect(describeRelocateFailure({ code: 'outside-boundary' })).toContain('boundary');
+    expect(formatRelocateFailure({ code: 'outside-boundary' })).toContain('boundary');
   });
 
   it('names the area that is in the way', () => {
-    expect(describeRelocateFailure({ code: 'overlaps-other-area', other: 'reload' })).toContain(
+    expect(formatRelocateFailure({ code: 'overlaps-other-area', other: 'reload' })).toContain(
       AREA_LABEL.reload
     );
-    expect(describeRelocateFailure({ code: 'overlaps-other-area', other: 'hide' })).toContain(
+    expect(formatRelocateFailure({ code: 'overlaps-other-area', other: 'hide' })).toContain(
       AREA_LABEL.hide
     );
   });
@@ -183,7 +183,7 @@ describe('deploymentModeReducer', () => {
   it('clears the cursor whenever the mode changes', () => {
     const hovering = deploymentModeReducer(
       { mode: { kind: 'relocateArea', area: AREA }, mousePosition: null },
-      { type: 'hover', lat: INLAND.lat, lng: INLAND.lng }
+      { type: 'hover', position: INLAND }
     );
     expect(hovering.mousePosition).toEqual(INLAND);
 
@@ -203,8 +203,7 @@ describe('deploymentModeReducer', () => {
     });
     const swept = deploymentModeReducer(rotating, {
       type: 'hover',
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      position: INLAND,
       rotationAngle: 135,
     });
     expect(expectMode(swept.mode, 'rotate').previewAngle).toBe(135);
@@ -212,8 +211,7 @@ describe('deploymentModeReducer', () => {
     const relocating = deploymentModeReducer(IDLE_STATE, { type: 'relocateArea', area: AREA });
     const ignored = deploymentModeReducer(relocating, {
       type: 'hover',
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      position: INLAND,
       rotationAngle: 135,
     });
     expect(ignored.mode).toEqual({ kind: 'relocateArea', area: AREA });
@@ -237,13 +235,20 @@ describe('deploymentModeReducer', () => {
 
   it('words the ESC message per mode', () => {
     expect(
-      cancellationMessage({ kind: 'rotate', unitKey: UNIT_KEY, center: INLAND, previewAngle: null })
+      formatCancellationMessage({
+        kind: 'rotate',
+        unitKey: UNIT_KEY,
+        center: INLAND,
+        previewAngle: null,
+      })
     ).toBe('Rotation cancelled');
-    expect(cancellationMessage({ kind: 'relocateArea', area: AREA })).toBe('Relocation cancelled');
-    expect(cancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: true })).toBe(
+    expect(formatCancellationMessage({ kind: 'relocateArea', area: AREA })).toBe(
       'Relocation cancelled'
     );
-    expect(cancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: false })).toBe(
+    expect(formatCancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: true })).toBe(
+      'Relocation cancelled'
+    );
+    expect(formatCancellationMessage({ kind: 'placeJammer', index: 0, isRelocate: false })).toBe(
       'Selection cancelled'
     );
   });
@@ -499,7 +504,7 @@ describe('handleMapClick', () => {
   it('deploys the selected unit on an inland click', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
     const [key, data] = handlers.onDeploySystem.mock.calls[0];
@@ -512,7 +517,7 @@ describe('handleMapClick', () => {
   it('refuses an offshore click and keeps the unit selected', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMapClick(OFFSHORE.lat, OFFSHORE.lng));
+    act(() => result.current.handleMapClick(OFFSHORE));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expectMode(result.current.mode, 'deploy');
@@ -522,14 +527,14 @@ describe('handleMapClick', () => {
   it('allows an offshore click when the boundary rule is off', () => {
     const { result } = setup({ shouldValidateTaiwanBoundary: false });
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMapClick(OFFSHORE.lat, OFFSHORE.lng));
+    act(() => result.current.handleMapClick(OFFSHORE));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
   });
 
   it('does nothing when no mode owns the click', () => {
     const { result } = setup();
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expect(handlers.onDeployJammer).not.toHaveBeenCalled();
@@ -539,9 +544,9 @@ describe('handleMapClick', () => {
   it('deploys a jammer and leaves placement mode', () => {
     const { result } = setup();
     act(() => result.current.handleJammerSelect(1));
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
-    expect(handlers.onDeployJammer).toHaveBeenCalledWith(1, INLAND.lat, INLAND.lng);
+    expect(handlers.onDeployJammer).toHaveBeenCalledWith(1, INLAND);
     expectIdle(result.current.mode);
     expect(result.current.status).toContain('Done:');
   });
@@ -549,7 +554,7 @@ describe('handleMapClick', () => {
   it('refuses an offshore jammer placement', () => {
     const { result } = setup();
     act(() => result.current.handleJammerSelect(1));
-    act(() => result.current.handleMapClick(OFFSHORE.lat, OFFSHORE.lng));
+    act(() => result.current.handleMapClick(OFFSHORE));
 
     expect(handlers.onDeployJammer).not.toHaveBeenCalled();
     expectMode(result.current.mode, 'placeJammer');
@@ -560,9 +565,9 @@ describe('handleMapClick', () => {
     const deployedJammers = new Map([[0, OFFSHORE]]);
     const { result } = setup({ deployedJammers });
     act(() => result.current.handleJammerRelocateClick(0));
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
-    expect(handlers.onDeployJammer).toHaveBeenCalledWith(0, INLAND.lat, INLAND.lng);
+    expect(handlers.onDeployJammer).toHaveBeenCalledWith(0, INLAND);
     expect(result.current.status).toContain('relocated');
   });
 
@@ -570,7 +575,7 @@ describe('handleMapClick', () => {
     const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expectMode(result.current.mode, 'rotate');
@@ -580,10 +585,10 @@ describe('handleMapClick', () => {
     const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
-    act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng - 0.2));
+    act(() => result.current.handleMouseMove({ ...INLAND, longitude: INLAND.longitude - 0.2 }));
     expect(result.current.rotationPreviewData).not.toBeNull();
 
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng - 0.2));
+    act(() => result.current.handleMapClick({ ...INLAND, longitude: INLAND.longitude - 0.2 }));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
     expectIdle(result.current.mode);
@@ -597,7 +602,7 @@ describe('handleMapClick', () => {
     const target = deployment.tacticalAreas.hideArea![0];
 
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
-    act(() => result.current.handleMapClick(target.latitude, target.longitude));
+    act(() => result.current.handleMapClick(target));
 
     // Either the move lands (deployment pushed, mode cleared) or the position is
     // rejected with a warning; both must leave a coherent state.
@@ -617,7 +622,7 @@ describe('handleMapClick', () => {
 
     deployedSystems.delete(UNIT_KEY);
     rerender();
-    act(() => result.current.handleMapClick(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expectIdle(result.current.mode);
@@ -637,21 +642,21 @@ describe('preview data', () => {
   it('translates the precomputed offsets to the cursor', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMouseMove(INLAND));
 
     const preview = result.current.previewData!;
     expect(preview.uShapeVertices).toHaveLength(4);
     expect(preview.isValid).toBe(true);
     for (const vertex of preview.uShapeVertices) {
-      expect(Math.abs(vertex.latitude - INLAND.lat)).toBeLessThan(0.1);
-      expect(Math.abs(vertex.longitude - INLAND.lng)).toBeLessThan(0.1);
+      expect(Math.abs(vertex.latitude - INLAND.latitude)).toBeLessThan(0.1);
+      expect(Math.abs(vertex.longitude - INLAND.longitude)).toBeLessThan(0.1);
     }
   });
 
   it('marks an offshore preview invalid without blocking it', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMouseMove(OFFSHORE.lat, OFFSHORE.lng));
+    act(() => result.current.handleMouseMove(OFFSHORE));
 
     expect(result.current.previewData!.isValid).toBe(false);
   });
@@ -660,25 +665,25 @@ describe('preview data', () => {
     const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedSystems });
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
-    act(() => result.current.handleMouseMove(INLAND.lat + 0.01, INLAND.lng));
+    act(() => result.current.handleMouseMove({ ...INLAND, latitude: INLAND.latitude + 0.01 }));
 
     const vertices = result.current.relocatePreviewVertices!;
     expect(vertices).toHaveLength(4);
     for (const vertex of vertices) {
-      expect(vertex.latitude).toBeCloseTo(INLAND.lat + 0.01, 2);
+      expect(vertex.latitude).toBeCloseTo(INLAND.latitude + 0.01, 2);
     }
   });
 
   it('ignores mouse movement when no mode is active', () => {
     const { result } = setup();
-    act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMouseMove(INLAND));
     expect(result.current.mousePosition).toBeNull();
   });
 
   it('drops a stale hover preview when the mode changes', () => {
     const { result } = setup();
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleMouseMove(INLAND.lat, INLAND.lng));
+    act(() => result.current.handleMouseMove(INLAND));
     expect(result.current.previewData).not.toBeNull();
 
     act(() => result.current.handleJammerSelect(0));
@@ -714,7 +719,7 @@ describe('sidebar collapse', () => {
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.toggleJammers());
 
-    expect(result.current.jammersCollapsed).toBe(true);
+    expect(result.current.isJammersCollapsed).toBe(true);
     expectIdle(result.current.mode);
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { DeployedMissileSystemData, MissileSystems } from '@/types/setupMenu';
+import type { MissileDeployment, MissileSystems } from '@/types/setupMenu';
 import { buildMissileGroups } from '@/pages/setup-menu/missileGroups';
 
 // ============================================================================
@@ -16,8 +16,8 @@ const MISSILE_SYSTEMS = {
   empty: {},
 } as unknown as MissileSystems;
 
-function deployedAt(angle: number): DeployedMissileSystemData {
-  return { openingAngle: angle } as DeployedMissileSystemData;
+function deployedAt(angle: number): MissileDeployment {
+  return { openingAngle: angle } as MissileDeployment;
 }
 
 // ============================================================================

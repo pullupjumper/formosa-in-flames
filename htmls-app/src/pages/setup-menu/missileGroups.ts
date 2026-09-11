@@ -1,4 +1,4 @@
-import type { MissileSystems, DeployedMissileSystemData } from '@/types/setupMenu';
+import type { MissileSystems, MissileDeployment } from '@/types/setupMenu';
 import { getWeaponSystemName, makeUnitKey } from '@/utils/map';
 
 /**
@@ -33,7 +33,7 @@ export interface MissileGroup {
 // ============================================================================
 export function buildMissileGroups(
   missileSystems: MissileSystems,
-  deployedSystems: Map<string, DeployedMissileSystemData>
+  deployedSystems: Map<string, MissileDeployment>
 ): MissileGroup[] {
   const groups: MissileGroup[] = [];
 

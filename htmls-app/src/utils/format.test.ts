@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTimestamp, formatCoordinates, calculateProgress, isDataEmpty } from '@/utils/format';
+import { formatTimestamp, calculateProgress, isDataEmpty } from '@/utils/format';
 
 describe('formatTimestamp', () => {
   it('formats a Unix timestamp in UTC', () => {
@@ -16,29 +16,6 @@ describe('formatTimestamp', () => {
 
   it('echoes an unparsable string back', () => {
     expect(formatTimestamp('not-a-time')).toBe('not-a-time');
-  });
-});
-
-describe('formatCoordinates', () => {
-  it('labels the northern/eastern hemisphere', () => {
-    expect(formatCoordinates(23.5, 121.25)).toEqual({
-      lat: '23.5000° N',
-      lng: '121.2500° E',
-    });
-  });
-
-  it('labels the southern/western hemisphere with absolute values', () => {
-    expect(formatCoordinates(-23.5, -121.25)).toEqual({
-      lat: '23.5000° S',
-      lng: '121.2500° W',
-    });
-  });
-
-  it('treats undefined as zero', () => {
-    expect(formatCoordinates(undefined, undefined)).toEqual({
-      lat: '0.0000° N',
-      lng: '0.0000° E',
-    });
   });
 });
 

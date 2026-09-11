@@ -3,39 +3,35 @@ import {
   AREA_CONFIG,
   REF_CENTER,
   AREA_SQUARE_SIZE,
-  areAllPointsInPolygon,
   buildMovementPaths,
   buildShelterPlan,
   createEmptyMovementPaths,
   generateDeploymentData,
   generateOffsetsForAngle,
   generateRotationPreview,
-  isPointInPolygon,
   isValidAngle,
   relocateArea,
 } from '@/utils/missileDeployment';
 import { generateUShapeVertices, calculateDistance } from '@/utils/tacticalAreaGenerator';
-import type { Coordinate } from '@/utils/tacticalAreaGenerator';
+import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';
+import type { Coordinate } from '@/types/geo';
 import { createSeededRandom } from '@/utils/random';
 
 // ============================================================================
 // FIXTURES
 // ============================================================================
 /** Inland point that clears the Taiwan boundary check for a whole U-shape */
-const INLAND = { lat: 23.9, lng: 120.75 };
+const INLAND: Coordinate = { latitude: 23.9, longitude: 120.75 };
 /** Well out in the strait, so every boundary check fails */
-const OFFSHORE = { lat: 23.9, lng: 118.5 };
+const OFFSHORE: Coordinate = { latitude: 23.9, longitude: 118.5 };
 
-const SQUARE: Coordinate[] = [
-  { latitude: 24, longitude: 120 },
-  { latitude: 24, longitude: 121 },
-  { latitude: 25, longitude: 121 },
-  { latitude: 25, longitude: 120 },
-];
+function shifted(base: Coordinate, latitudeDelta: number, longitudeDelta: number): Coordinate {
+  return { latitude: base.latitude + latitudeDelta, longitude: base.longitude + longitudeDelta };
+}
 
-function layoutAt(lat: number, lng: number, angle: number, seed: number) {
+function layoutAt(center: Coordinate, angle: number, seed: number) {
   return generateUShapeVertices(
-    { centerLat: lat, centerLon: lng, openingAngle: angle, ...AREA_CONFIG },
+    { center, openingAngle: angle, ...AREA_CONFIG },
     createSeededRandom(seed)
   );
 }
@@ -54,45 +50,6 @@ describe('isValidAngle', () => {
 
   it.each([-1, 360, 361, NaN, Infinity, -Infinity])('rejects %o', (angle) => {
     expect(isValidAngle(angle)).toBe(false);
-  });
-});
-
-describe('isPointInPolygon', () => {
-  it('accepts an interior point', () => {
-    expect(isPointInPolygon({ latitude: 24.5, longitude: 120.5 }, SQUARE)).toBe(true);
-  });
-
-  it('rejects an exterior point', () => {
-    expect(isPointInPolygon({ latitude: 24.5, longitude: 121.5 }, SQUARE)).toBe(false);
-    expect(isPointInPolygon({ latitude: 26, longitude: 120.5 }, SQUARE)).toBe(false);
-  });
-
-  it('is consistent on the shared edge of two adjacent polygons', () => {
-    // Ray casting is half-open, so a point on the shared boundary must belong
-    // to exactly one of the two squares - never both, never neither.
-    const right: Coordinate[] = [
-      { latitude: 24, longitude: 121 },
-      { latitude: 24, longitude: 122 },
-      { latitude: 25, longitude: 122 },
-      { latitude: 25, longitude: 121 },
-    ];
-    const onEdge = { latitude: 24.5, longitude: 121 };
-    expect(Number(isPointInPolygon(onEdge, SQUARE)) + Number(isPointInPolygon(onEdge, right))).toBe(
-      1
-    );
-  });
-});
-
-describe('areAllPointsInPolygon', () => {
-  it('requires every point to be inside', () => {
-    const inside = { latitude: 24.5, longitude: 120.5 };
-    const outside = { latitude: 24.5, longitude: 121.5 };
-    expect(areAllPointsInPolygon([inside, inside], SQUARE)).toBe(true);
-    expect(areAllPointsInPolygon([inside, outside], SQUARE)).toBe(false);
-  });
-
-  it('is vacuously true for an empty list', () => {
-    expect(areAllPointsInPolygon([], SQUARE)).toBe(true);
   });
 });
 
@@ -122,10 +79,9 @@ describe('AREA_SQUARE_SIZE', () => {
 // ============================================================================
 describe('buildShelterPlan', () => {
   it('resolves both gateways for a normal layout', () => {
-    const layout = layoutAt(INLAND.lat, INLAND.lng, 90, 42);
+    const layout = layoutAt(INLAND, 90, 42);
     const plan = buildShelterPlan(
-      INLAND.lat,
-      INLAND.lng,
+      INLAND,
       90,
       layout.hideArea,
       layout.reloadArea,
@@ -138,16 +94,9 @@ describe('buildShelterPlan', () => {
   });
 
   it('is reproducible for a given seed', () => {
-    const layout = layoutAt(INLAND.lat, INLAND.lng, 90, 7);
+    const layout = layoutAt(INLAND, 90, 7);
     const run = () =>
-      buildShelterPlan(
-        INLAND.lat,
-        INLAND.lng,
-        90,
-        layout.hideArea,
-        layout.reloadArea,
-        createSeededRandom(7)
-      );
+      buildShelterPlan(INLAND, 90, layout.hideArea, layout.reloadArea, createSeededRandom(7));
     expect(run()).toEqual(run());
   });
 
@@ -155,10 +104,9 @@ describe('buildShelterPlan', () => {
     ['hideArea missing', false],
     ['reloadArea missing', true],
   ])('gives up without gateways when %s', (_label, keepHide) => {
-    const layout = layoutAt(INLAND.lat, INLAND.lng, 90, 3);
+    const layout = layoutAt(INLAND, 90, 3);
     const plan = buildShelterPlan(
-      INLAND.lat,
-      INLAND.lng,
+      INLAND,
       90,
       keepHide ? layout.hideArea : undefined,
       keepHide ? undefined : layout.reloadArea,
@@ -172,10 +120,9 @@ describe('buildShelterPlan', () => {
   });
 
   it('rejects a degenerate area that is not a quadrilateral', () => {
-    const layout = layoutAt(INLAND.lat, INLAND.lng, 90, 3);
+    const layout = layoutAt(INLAND, 90, 3);
     const plan = buildShelterPlan(
-      INLAND.lat,
-      INLAND.lng,
+      INLAND,
       90,
       layout.hideArea!.slice(0, 3),
       layout.reloadArea,
@@ -192,19 +139,14 @@ describe('buildShelterPlan', () => {
 describe('buildMovementPaths', () => {
   it('returns empty paths when an area is missing', () => {
     expect(
-      buildMovementPaths({ uShapeVertices: [] } as never, {
-        centerLat: INLAND.lat,
-        centerLng: INLAND.lng,
-        openingAngle: 90,
-      })
+      buildMovementPaths({ uShapeVertices: [] } as never, { center: INLAND, openingAngle: 90 })
     ).toEqual(createEmptyMovementPaths());
   });
 
   it('builds FP paths for a complete deployment', () => {
-    const layout = layoutAt(INLAND.lat, INLAND.lng, 90, 42);
+    const layout = layoutAt(INLAND, 90, 42);
     const plan = buildShelterPlan(
-      INLAND.lat,
-      INLAND.lng,
+      INLAND,
       90,
       layout.hideArea,
       layout.reloadArea,
@@ -220,7 +162,7 @@ describe('buildMovementPaths', () => {
         firePoints: layout.firePoints,
         shelterPoints: plan.shelterPoints,
       },
-      { centerLat: INLAND.lat, centerLng: INLAND.lng, openingAngle: 90 }
+      { center: INLAND, openingAngle: 90 }
     );
 
     expect(paths.FP).toHaveLength(AREA_CONFIG.firePoints.count);
@@ -242,15 +184,14 @@ describe('generateDeploymentData', () => {
   it('produces a complete deployment inland', () => {
     const data = generateDeploymentData({
       ...baseParams,
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      center: INLAND,
       rng: createSeededRandom(42),
     });
 
     expect(data).not.toBeNull();
     expect(data!.unitName).toBe('HF3_01');
     expect(data!.category).toBe('ascm');
-    expect(data!.center).toEqual({ lat: INLAND.lat, lng: INLAND.lng });
+    expect(data!.center).toEqual(INLAND);
     expect(data!.openingAngle).toBe(90);
     expect(data!.ahaRadius).toBe(AREA_CONFIG.ahaPoint.radius);
     expect(data!.ahaCenter).toBeUndefined();
@@ -263,8 +204,7 @@ describe('generateDeploymentData', () => {
   it('keeps HA, RL and shelters inside the generated boundary', () => {
     const data = generateDeploymentData({
       ...baseParams,
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      center: INLAND,
       rng: createSeededRandom(11),
     })!;
     const { uShapeVertices, hideArea, reloadArea, shelterPoints } = data.tacticalAreas;
@@ -277,8 +217,7 @@ describe('generateDeploymentData', () => {
   it('rejects an offshore location when the boundary check is on', () => {
     const data = generateDeploymentData({
       ...baseParams,
-      lat: OFFSHORE.lat,
-      lng: OFFSHORE.lng,
+      center: OFFSHORE,
       rng: createSeededRandom(1),
     });
     expect(data).toBeNull();
@@ -288,19 +227,17 @@ describe('generateDeploymentData', () => {
     const data = generateDeploymentData({
       ...baseParams,
       validateTaiwanBoundary: false,
-      lat: OFFSHORE.lat,
-      lng: OFFSHORE.lng,
+      center: OFFSHORE,
       rng: createSeededRandom(1),
     });
     expect(data).not.toBeNull();
   });
 
   it('honours the AHA radius and center overrides', () => {
-    const ahaCenterOverride = { lat: INLAND.lat + 0.05, lng: INLAND.lng + 0.05 };
+    const ahaCenterOverride = shifted(INLAND, 0.05, 0.05);
     const data = generateDeploymentData({
       ...baseParams,
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      center: INLAND,
       ahaRadiusOverride: 4,
       ahaCenterOverride,
       rng: createSeededRandom(42),
@@ -309,29 +246,15 @@ describe('generateDeploymentData', () => {
     expect(data.ahaRadius).toBe(4);
     expect(data.ahaCenter).toEqual(ahaCenterOverride);
 
-    const ammoCenter = data.tacticalAreas.ammoArea!.reduce(
-      (acc, v) => ({
-        latitude: acc.latitude + v.latitude / 4,
-        longitude: acc.longitude + v.longitude / 4,
-      }),
-      { latitude: 0, longitude: 0 }
-    );
-    expect(
-      calculateDistance(
-        ammoCenter.latitude,
-        ammoCenter.longitude,
-        ahaCenterOverride.lat,
-        ahaCenterOverride.lng
-      )
-    ).toBeLessThan(1e-4);
+    const ammoCenter = calculateCentroid(data.tacticalAreas.ammoArea!);
+    expect(calculateDistance(ammoCenter, ahaCenterOverride)).toBeLessThan(1e-4);
   });
 
   it('is reproducible for a given seed', () => {
     const run = () =>
       generateDeploymentData({
         ...baseParams,
-        lat: INLAND.lat,
-        lng: INLAND.lng,
+        center: INLAND,
         rng: createSeededRandom(2024),
       });
     expect(run()).toEqual(run());
@@ -341,8 +264,8 @@ describe('generateDeploymentData', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const data = generateDeploymentData({
       ...baseParams,
-      lat: 0, // generateUShapeVertices rejects a falsy centerLat
-      lng: INLAND.lng,
+      // generateUShapeVertices rejects a falsy center latitude
+      center: { latitude: 0, longitude: INLAND.longitude },
       rng: createSeededRandom(1),
     });
 
@@ -360,8 +283,7 @@ describe('relocateArea', () => {
     const data = generateDeploymentData({
       unitName: 'HF3 Battery 1',
       category: 'ascm',
-      lat: INLAND.lat,
-      lng: INLAND.lng,
+      center: INLAND,
       angle: 90,
       validateTaiwanBoundary: true,
       rng: createSeededRandom(42),
@@ -370,26 +292,16 @@ describe('relocateArea', () => {
     return data;
   }
 
-  /** Center of a 4-vertex square */
-  function centerOf(square: Coordinate[]) {
-    return {
-      lat: square.reduce((sum, v) => sum + v.latitude, 0) / 4,
-      lng: square.reduce((sum, v) => sum + v.longitude, 0) / 4,
-    };
-  }
-
   function move(
     deployment: ReturnType<typeof deployed>,
     target: Parameters<typeof relocateArea>[0]['target'],
-    lat: number,
-    lng: number,
+    position: Coordinate,
     validateTaiwanBoundary = true
   ) {
     return relocateArea({
       deployment,
       target,
-      lat,
-      lng,
+      position,
       validateTaiwanBoundary,
       rng: createSeededRandom(7),
     });
@@ -397,18 +309,19 @@ describe('relocateArea', () => {
 
   it('moves the AHA square and records its new center', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+    const target = shifted(INLAND, 0.05, 0.05);
+    const result = move(deployment, { type: 'aha' }, target);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.ahaCenter).toEqual({ lat: INLAND.lat + 0.05, lng: INLAND.lng + 0.05 });
+    expect(result.data.ahaCenter).toEqual(target);
     expect(result.data.tacticalAreas.ammoArea).toHaveLength(4);
     expect(result.data.tacticalAreas.ammoArea).not.toEqual(deployment.tacticalAreas.ammoArea);
   });
 
   it('leaves every other tactical area untouched', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+    const result = move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0.05));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -424,7 +337,7 @@ describe('relocateArea', () => {
 
   it('replaces only the addressed fire point', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'fp', fpIndex: 1 }, INLAND.lat + 0.02, INLAND.lng);
+    const result = move(deployment, { type: 'fp', fpIndex: 1 }, shifted(INLAND, 0.02, 0));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -436,7 +349,7 @@ describe('relocateArea', () => {
 
   it('defaults a missing fire point index to the first', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'fp' }, INLAND.lat + 0.02, INLAND.lng);
+    const result = move(deployment, { type: 'fp' }, shifted(INLAND, 0.02, 0));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -446,15 +359,15 @@ describe('relocateArea', () => {
   });
 
   it('rejects a hide area pushed outside the U-Shape', () => {
-    const result = move(deployed(), { type: 'hide' }, INLAND.lat + 1, INLAND.lng + 1);
+    const result = move(deployed(), { type: 'hide' }, shifted(INLAND, 1, 1));
 
     expect(result).toEqual({ ok: false, failure: { code: 'outside-boundary' } });
   });
 
   it('rejects a hide area dropped on top of the reload area', () => {
     const deployment = deployed();
-    const onReload = centerOf(deployment.tacticalAreas.reloadArea!);
-    const result = move(deployment, { type: 'hide' }, onReload.lat, onReload.lng);
+    const onReload = calculateCentroid(deployment.tacticalAreas.reloadArea!);
+    const result = move(deployment, { type: 'hide' }, onReload);
 
     expect(result).toEqual({
       ok: false,
@@ -464,8 +377,8 @@ describe('relocateArea', () => {
 
   it('names the hide area when the reload area is the one being moved', () => {
     const deployment = deployed();
-    const onHide = centerOf(deployment.tacticalAreas.hideArea!);
-    const result = move(deployment, { type: 'reload' }, onHide.lat, onHide.lng);
+    const onHide = calculateCentroid(deployment.tacticalAreas.hideArea!);
+    const result = move(deployment, { type: 'reload' }, onHide);
 
     expect(result).toEqual({ ok: false, failure: { code: 'overlaps-other-area', other: 'hide' } });
   });
@@ -473,8 +386,8 @@ describe('relocateArea', () => {
   it('replans shelters when the hide area moves', () => {
     const deployment = deployed();
     // Nudge just far enough to change the layout without leaving the boundary
-    const from = centerOf(deployment.tacticalAreas.hideArea!);
-    const result = move(deployment, { type: 'hide' }, from.lat + 0.001, from.lng);
+    const from = calculateCentroid(deployment.tacticalAreas.hideArea!);
+    const result = move(deployment, { type: 'hide' }, shifted(from, 0.001, 0));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -484,11 +397,12 @@ describe('relocateArea', () => {
 
   it('regenerates the whole layout when the U-Shape moves', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'ushape' }, INLAND.lat + 0.05, INLAND.lng);
+    const target = shifted(INLAND, 0.05, 0);
+    const result = move(deployment, { type: 'ushape' }, target);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.center).toEqual({ lat: INLAND.lat + 0.05, lng: INLAND.lng });
+    expect(result.data.center).toEqual(target);
     expect(result.data.tacticalAreas.uShapeVertices).not.toEqual(
       deployment.tacticalAreas.uShapeVertices
     );
@@ -498,20 +412,20 @@ describe('relocateArea', () => {
   });
 
   it('reports a U-Shape move that leaves the coast', () => {
-    const result = move(deployed(), { type: 'ushape' }, OFFSHORE.lat, OFFSHORE.lng);
+    const result = move(deployed(), { type: 'ushape' }, OFFSHORE);
 
     expect(result).toEqual({ ok: false, failure: { code: 'ushape-generation-failed' } });
   });
 
   it('allows a U-Shape move offshore when the boundary rule is off', () => {
-    const result = move(deployed(), { type: 'ushape' }, OFFSHORE.lat, OFFSHORE.lng, false);
+    const result = move(deployed(), { type: 'ushape' }, OFFSHORE, false);
 
     expect(result.ok).toBe(true);
   });
 
   it('recomputes the movement paths against the updated areas', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng + 0.05);
+    const result = move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0.05));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -522,9 +436,9 @@ describe('relocateArea', () => {
   it('never mutates the deployment it was given', () => {
     const deployment = deployed();
     const snapshot = structuredClone(deployment);
-    move(deployment, { type: 'hide' }, INLAND.lat + 1, INLAND.lng + 1);
-    move(deployment, { type: 'aha' }, INLAND.lat + 0.05, INLAND.lng);
-    move(deployment, { type: 'ushape' }, INLAND.lat + 0.05, INLAND.lng);
+    move(deployment, { type: 'hide' }, shifted(INLAND, 1, 1));
+    move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0));
+    move(deployment, { type: 'ushape' }, shifted(INLAND, 0.05, 0));
 
     expect(deployment).toEqual(snapshot);
   });
@@ -539,10 +453,16 @@ describe('generateOffsetsForAngle', () => {
     expect(offsets.uShapeVertices).toHaveLength(4);
     expect(offsets.firePoints).toHaveLength(AREA_CONFIG.firePoints.count);
 
-    const layout = layoutAt(REF_CENTER.lat, REF_CENTER.lng, 90, 5);
+    const layout = layoutAt(REF_CENTER, 90, 5);
     offsets.uShapeVertices.forEach((offset, index) => {
-      expect(offset.dLat).toBeCloseTo(layout.uShapeVertices[index].latitude - REF_CENTER.lat, 10);
-      expect(offset.dLng).toBeCloseTo(layout.uShapeVertices[index].longitude - REF_CENTER.lng, 10);
+      expect(offset.latitudeDelta).toBeCloseTo(
+        layout.uShapeVertices[index].latitude - REF_CENTER.latitude,
+        10
+      );
+      expect(offset.longitudeDelta).toBeCloseTo(
+        layout.uShapeVertices[index].longitude - REF_CENTER.longitude,
+        10
+      );
     });
   });
 
@@ -576,7 +496,7 @@ describe('generateRotationPreview', () => {
 
   it('returns null on an invalid center without logging', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(generateRotationPreview({ lat: 0, lng: 0 }, 90)).toBeNull();
+    expect(generateRotationPreview({ latitude: 0, longitude: 0 }, 90)).toBeNull();
     expect(error).not.toHaveBeenCalled();
   });
 });

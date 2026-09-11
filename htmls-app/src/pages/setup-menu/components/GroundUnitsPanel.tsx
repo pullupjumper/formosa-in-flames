@@ -1,16 +1,16 @@
+import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/setupMenu';
 import { CollapsibleGroup } from './CollapsibleGroup';
 import { DeployableUnitCard } from './DeployableUnitCard';
 import type { MissileGroup } from '../missileGroups';
-import type { LatLng } from '../hooks/deploymentMode';
 
 // ============================================================================
 // GroundUnitsPanel — sidebar list of jammers and missile systems
 // ============================================================================
 interface GroundUnitsPanelProps {
   jammers: Jammer[];
-  deployedJammers: Map<number, LatLng>;
-  jammersCollapsed: boolean;
+  deployedJammers: Map<number, Coordinate>;
+  isJammersCollapsed: boolean;
   expandedJammerIndex: number | null;
   /** Jammer index armed for a fresh deployment, null while relocating or idle */
   selectedJammerIndex: number | null;
@@ -33,7 +33,7 @@ interface GroundUnitsPanelProps {
 export function GroundUnitsPanel({
   jammers,
   deployedJammers,
-  jammersCollapsed,
+  isJammersCollapsed,
   expandedJammerIndex,
   selectedJammerIndex,
   missileGroups,
@@ -56,7 +56,7 @@ export function GroundUnitsPanel({
           title="GPS Jammers"
           deployedCount={deployedJammers.size}
           totalCount={jammers.length}
-          collapsed={jammersCollapsed}
+          isCollapsed={isJammersCollapsed}
           onToggle={onToggleJammers}
         >
           {jammers.length === 0 ? (
@@ -76,7 +76,7 @@ export function GroundUnitsPanel({
                   }
                   deployedSummary={
                     deployment
-                      ? `✓ Deployed at ${deployment.lat.toFixed(4)}°, ${deployment.lng.toFixed(4)}°`
+                      ? `✓ Deployed at ${deployment.latitude.toFixed(4)}°, ${deployment.longitude.toFixed(4)}°`
                       : null
                   }
                   isDeployed={deployment !== undefined}
@@ -102,7 +102,7 @@ export function GroundUnitsPanel({
               title={group.weaponName}
               deployedCount={group.deployedCount}
               totalCount={group.units.length}
-              collapsed={collapsedCategories.has(group.category)}
+              isCollapsed={collapsedCategories.has(group.category)}
               onToggle={() => onToggleCategory(group.category)}
             >
               {group.units.map((unit) => (

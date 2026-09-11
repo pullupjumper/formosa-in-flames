@@ -1,14 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { Coordinate } from '@/types/geo';
 import type {
   Airbase,
   BudgetState,
-  TabId,
-  DeployedMissileSystemData,
+  SetupMenuTabId,
+  MissileDeployment,
   Jammer,
   MissileSystems,
   AmphibiousLocation,
 } from '@/types/setupMenu';
-import { CONFIG } from '@/types/setupMenu';
+import { CONFIG } from '@/constants/setupMenu';
 import { parseInjectedJSON, readInjectedString } from '@/utils/inject';
 import {
   AIRBASES_DATA,
@@ -21,7 +22,7 @@ import { DeploymentTab } from './components/DeploymentTab';
 import { OpordTab } from './components/OpordTab';
 import { SummaryTab } from './components/SummaryTab';
 import { makeUnitKey } from '@/utils/map';
-import { calculateSquareCenter } from '@/utils/tacticalAreaGenerator';
+import { calculateCentroid } from '@/utils/geo';
 
 // ============================================================================
 // GLOBAL TYPE DECLARATION
@@ -57,10 +58,57 @@ function loadInjectedData() {
   };
 }
 
+/**
+ * Rebuild the map-side deployment for a firing unit that the scenario already
+ * placed, so pre-existing units render exactly like player-placed ones.
+ */
+function buildInjectedDeployments(missileSystems: MissileSystems): Map<string, MissileDeployment> {
+  const deployments = new Map<string, MissileDeployment>();
+
+  for (const category of Object.keys(missileSystems)) {
+    const firingUnits = missileSystems[category]?.firingUnits;
+    if (!firingUnits) continue;
+
+    for (const [unitName, unit] of Object.entries(firingUnits)) {
+      const { operationalArea } = unit;
+      const reloadCourse = operationalArea.RL[0].course;
+      const tacticalAreas = {
+        uShapeVertices: operationalArea.uShapeVertices,
+        ammoArea: operationalArea.AHA[0].area,
+        hideArea: operationalArea.HA[0].area,
+        reloadArea: operationalArea.RL[0].area,
+        firePoints: operationalArea.FP.map((position) => position.area),
+        shelterPoints: operationalArea.shelterPoints,
+      };
+
+      deployments.set(makeUnitKey(category, unitName), {
+        unitName,
+        category,
+        center: calculateCentroid(operationalArea.uShapeVertices),
+        openingAngle: 0,
+        ahaRadius: 0,
+        ahaCenter: { latitude: 0, longitude: 0 },
+        tacticalAreas,
+        paths: {
+          FP: operationalArea.FP.map((position) => ({ waypoints: position.course })),
+          HA: { waypoints: reloadCourse.concat(operationalArea.HA[0].course) },
+          AHA: { waypoints: reloadCourse.concat(operationalArea.AHA[0].course) },
+          RL: operationalArea.FP.map((position) => ({
+            waypoints: [position.course[position.course.length - 1]].concat(reloadCourse),
+          })),
+          SHRL: { waypoints: operationalArea.SHRL?.[0].course ?? [] },
+        },
+      });
+    }
+  }
+
+  return deployments;
+}
+
 // ============================================================================
 // TAB CONFIGURATION
 // ============================================================================
-const TABS: { id: TabId; label: string }[] = [
+const TABS: { id: SetupMenuTabId; label: string }[] = [
   { id: 'opord', label: 'OPORD' },
   { id: 'mechanics', label: 'Game Mechanics' },
   { id: 'deployment', label: 'Deployment' },
@@ -71,7 +119,7 @@ const TABS: { id: TabId; label: string }[] = [
 // MAIN COMPONENT
 // ============================================================================
 function SetupMenuPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('opord');
+  const [activeTab, setActiveTab] = useState<SetupMenuTabId>('opord');
   const [budget, setBudget] = useState<BudgetState>({
     current: CONFIG.INITIAL_SCORE,
     used: 0,
@@ -88,12 +136,12 @@ function SetupMenuPage() {
   const missileSystems = injectedData.missileSystems;
   const sideName = injectedData.sideName;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
-  const [deployedJammers, setDeployedJammers] = useState<Map<number, { lat: number; lng: number }>>(
-    new Map()
+  const [deployedJammers, setDeployedJammers] = useState<Map<number, Coordinate>>(new Map());
+  // Units the scenario already placed start out deployed; the injected payload
+  // is read once, so seeding state here replaces a setState-in-effect.
+  const [deployedMissileSystems, setDeployedMissileSystems] = useState(() =>
+    buildInjectedDeployments(missileSystems)
   );
-  const [deployedMissileSystems, setDeployedMissileSystems] = useState<
-    Map<string, DeployedMissileSystemData>
-  >(new Map());
 
   // Budget handlers
   const spendBudget = useCallback((amount: number = CONFIG.LOADOUT_COST): boolean => {
@@ -127,12 +175,12 @@ function SetupMenuPage() {
   }, []);
 
   const updateAirbase = useCallback((index: number, updater: (base: Airbase) => Airbase) => {
-    setAirbases((prev) => prev.map((b, i) => (i === index ? updater(b) : b)));
+    setAirbases((prev) => prev.map((base, i) => (i === index ? updater(base) : base)));
   }, []);
 
   // Deployment handlers — kept stable so DeploymentTab's memoized map layers are
   // not invalidated by unrelated re-renders (e.g. budget edits)
-  const deployMissileSystem = useCallback((key: string, data: DeployedMissileSystemData) => {
+  const deployMissileSystem = useCallback((key: string, data: MissileDeployment) => {
     setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
   }, []);
 
@@ -144,8 +192,8 @@ function SetupMenuPage() {
     });
   }, []);
 
-  const deployJammer = useCallback((index: number, lat: number, lng: number) => {
-    setDeployedJammers((prev) => new Map(prev).set(index, { lat, lng }));
+  const deployJammer = useCallback((index: number, position: Coordinate) => {
+    setDeployedJammers((prev) => new Map(prev).set(index, position));
   }, []);
 
   const undeployJammer = useCallback((index: number) => {
@@ -155,61 +203,6 @@ function SetupMenuPage() {
       return next;
     });
   }, []);
-
-  useEffect(() => {
-    for (const category of Object.keys(missileSystems)) {
-      const firingUnits = missileSystems[category]?.firingUnits;
-      if (!firingUnits) continue;
-
-      Object.entries(firingUnits).map(([unitName, unit]) => {
-        const unitKey = makeUnitKey(category, unitName);
-        const center = calculateSquareCenter(unit.operationalArea.uShapeVertices);
-        const tacticalAreas = {
-          uShapeVertices: unit.operationalArea.uShapeVertices,
-          ammoArea: unit.operationalArea.AHA[0].area,
-          hideArea: unit.operationalArea.HA[0].area,
-          reloadArea: unit.operationalArea.RL[0].area,
-          firePoints: unit.operationalArea.FP.map((position) => position.area),
-          shelterPoints: unit.operationalArea.shelterPoints,
-        };
-        const result = {
-          unitName: unitName,
-          category: category,
-          center: { lat: center.latitude, lng: center.longitude },
-          openingAngle: 0,
-          ahaRadius: 0,
-          ahaCenter: { lat: 0, lng: 0 },
-          tacticalAreas: tacticalAreas,
-          paths: {
-            FP: unit.operationalArea.FP.map((position) => {
-              return { waypoints: position.course };
-            }),
-            HA: {
-              waypoints: unit.operationalArea.RL[0].course.concat(
-                unit.operationalArea.HA[0].course
-              ),
-            },
-            AHA: {
-              waypoints: unit.operationalArea.RL[0].course.concat(
-                unit.operationalArea.AHA[0].course
-              ),
-            },
-            RL: unit.operationalArea.FP.map((position) => {
-              return {
-                waypoints: [position.course[position.course.length - 1]].concat(
-                  unit.operationalArea.RL[0].course
-                ),
-              };
-            }),
-            SHRL: { waypoints: unit.operationalArea.SHRL?.[0].course ?? [] },
-          },
-        };
-
-        setDeployedMissileSystems((prev) => new Map(prev).set(unitKey, result));
-        return result;
-      });
-    }
-  }, [missileSystems]);
 
   return (
     <div className="flex h-screen flex-col">

@@ -1,5 +1,5 @@
-import type { Airbase, DeployedMissileSystemData, Jammer } from '@/types/setupMenu';
-import type { Coordinate } from '@/utils/tacticalAreaGenerator';
+import type { Coordinate } from '@/types/geo';
+import type { Airbase, MissileDeployment, Jammer } from '@/types/setupMenu';
 import {
   BaseMap,
   AirbaseMarkers,
@@ -11,7 +11,6 @@ import {
 } from '@/components/Map';
 import type { RelocatingArea } from '@/components/Map';
 import type { DeploymentPreview } from '../hooks/useDeploymentPreviews';
-import type { LatLng } from '../hooks/deploymentMode';
 
 // ============================================================================
 // DeploymentMap — the map layer stack for the Deployment tab
@@ -20,12 +19,12 @@ interface DeploymentMapProps {
   sideName: string;
   airbases: Airbase[];
   jammers: Jammer[];
-  deployedSystems: Map<string, DeployedMissileSystemData>;
-  deployedJammers: Map<number, LatLng>;
+  deployedSystems: Map<string, MissileDeployment>;
+  deployedJammers: Map<number, Coordinate>;
 
   /** True while some mode owns the next map click; drives cursor and hover */
   isPlacementActive: boolean;
-  mousePosition: LatLng | null;
+  mousePosition: Coordinate | null;
 
   /** Area currently armed for relocation, highlighted on the map */
   relocatingArea: RelocatingArea | null;
@@ -40,8 +39,8 @@ interface DeploymentMapProps {
   relocatePreviewVertices: Coordinate[] | null;
 
   getUnitInfo: (unitKey: string) => { name: string; category: string } | null;
-  onMapClick: (lat: number, lng: number) => void;
-  onMouseMove: (lat: number, lng: number) => void;
+  onMapClick: (position: Coordinate) => void;
+  onMouseMove: (position: Coordinate) => void;
   onAreaClick: (area: RelocatingArea) => void;
   onRotateClick: (unitKey: string) => void;
   onAirbaseClick: (index: number) => void;

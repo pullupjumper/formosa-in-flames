@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import type { DeployedMissileSystemData } from '@/types/setupMenu';
-import { isPointInTaiwan, determineOpeningAngle } from '@/utils/map';
-import { calculateBearing, generateSquareVerticesPublic } from '@/utils/tacticalAreaGenerator';
-import type { Coordinate } from '@/utils/tacticalAreaGenerator';
+import type { Coordinate } from '@/types/geo';
+import type { MissileDeployment } from '@/types/setupMenu';
+import { areAllPointsInTaiwan, translateCoordinate } from '@/utils/geo';
+import { resolveOpeningAngle } from '@/utils/map';
+import { calculateBearing, generateSquareVertices } from '@/utils/tacticalAreaGenerator';
 import { AREA_SQUARE_SIZE, generateRotationPreview } from '@/utils/missileDeployment';
-import type { OffsetVertex } from '@/utils/missileDeployment';
 import type { RandomSource } from '@/utils/random';
-import type { DeploymentMode, LatLng } from './deploymentMode';
+import type { DeploymentMode } from './deploymentMode';
 
 /**
  * Everything the map draws while a mode is pending. Pure derivations of the
@@ -28,8 +28,8 @@ export interface DeploymentPreview {
 
 export interface UseDeploymentPreviewsParams {
   mode: DeploymentMode;
-  mousePosition: LatLng | null;
-  deployedSystems: Map<string, DeployedMissileSystemData>;
+  mousePosition: Coordinate | null;
+  deployedSystems: Map<string, MissileDeployment>;
   shouldValidateTaiwanBoundary: boolean;
   rng: RandomSource;
 }
@@ -48,24 +48,22 @@ export function useDeploymentPreviews({
   const previewData = useMemo<DeploymentPreview | null>(() => {
     if (mode.kind !== 'deploy' || !mousePosition) return null;
 
-    const angle = determineOpeningAngle(mousePosition.lat, mousePosition.lng);
+    const angle = resolveOpeningAngle(mousePosition);
     const offsets = mode.offsets[angle];
     if (!offsets) return null;
 
-    const translate = (offset: OffsetVertex): Coordinate => ({
-      latitude: mousePosition.lat + offset.dLat,
-      longitude: mousePosition.lng + offset.dLng,
-    });
+    const translate = (offset: Parameters<typeof translateCoordinate>[1]): Coordinate =>
+      translateCoordinate(mousePosition, offset);
 
     const uShapeVertices = offsets.uShapeVertices.map(translate);
     const ammoArea = offsets.ammoArea.map(translate);
-    const firePoints = offsets.firePoints.map((fp) => fp.map(translate));
+    const firePoints = offsets.firePoints.map((firePoint) => firePoint.map(translate));
 
-    const allVerticesInTaiwan =
+    const isValid =
       !shouldValidateTaiwanBoundary ||
-      (uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-        firePoints.every((fp) => fp.every((v) => isPointInTaiwan(v.latitude, v.longitude))) &&
-        ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
+      (areAllPointsInTaiwan(uShapeVertices) &&
+        areAllPointsInTaiwan(ammoArea) &&
+        firePoints.every(areAllPointsInTaiwan));
 
     return {
       uShapeVertices,
@@ -73,7 +71,7 @@ export function useDeploymentPreviews({
       hideArea: offsets.hideArea.map(translate),
       reloadArea: offsets.reloadArea.map(translate),
       firePoints,
-      isValid: allVerticesInTaiwan,
+      isValid,
     };
   }, [mode, mousePosition, shouldValidateTaiwanBoundary]);
 
@@ -85,24 +83,17 @@ export function useDeploymentPreviews({
     if (!deployment) return null;
 
     if (mode.area.type === 'ushape') {
-      return deployment.tacticalAreas.uShapeVertices.map((v) => ({
-        latitude: v.latitude + (mousePosition.lat - deployment.center.lat),
-        longitude: v.longitude + (mousePosition.lng - deployment.center.lng),
-      }));
+      const offset = {
+        latitudeDelta: mousePosition.latitude - deployment.center.latitude,
+        longitudeDelta: mousePosition.longitude - deployment.center.longitude,
+      };
+      return deployment.tacticalAreas.uShapeVertices.map((vertex) =>
+        translateCoordinate(vertex, offset)
+      );
     }
 
-    const bearingToCenter = calculateBearing(
-      mousePosition.lat,
-      mousePosition.lng,
-      deployment.center.lat,
-      deployment.center.lng
-    );
-    return generateSquareVerticesPublic(
-      mousePosition.lat,
-      mousePosition.lng,
-      AREA_SQUARE_SIZE[mode.area.type],
-      bearingToCenter
-    );
+    const bearingToCenter = calculateBearing(mousePosition, deployment.center);
+    return generateSquareVertices(mousePosition, AREA_SQUARE_SIZE[mode.area.type], bearingToCenter);
   }, [mode, mousePosition, deployedSystems]);
 
   /** Rotation: regenerate the layout at the swept angle */
@@ -125,8 +116,7 @@ export function useDeploymentPreviews({
     // rejects the angle when no gateway fits.
     const isValid =
       !shouldValidateTaiwanBoundary ||
-      (preview.uShapeVertices.every((v) => isPointInTaiwan(v.latitude, v.longitude)) &&
-        preview.ammoArea.every((v) => isPointInTaiwan(v.latitude, v.longitude)));
+      (areAllPointsInTaiwan(preview.uShapeVertices) && areAllPointsInTaiwan(preview.ammoArea));
 
     // Fire points are user-placed, so rotation leaves them where they are
     return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };

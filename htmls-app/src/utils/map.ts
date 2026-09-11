@@ -1,43 +1,22 @@
-import { CONFIG } from '@/types/setupMenu';
+import type { Coordinate } from '@/types/geo';
+import { CONFIG } from '@/constants/setupMenu';
 
 /**
- * Check if a point is inside Taiwan boundary using ray casting algorithm
+ * Suggest which way a U-shape should open at a position: toward the coast the
+ * unit is closest to, using a rough north-south ridge line as the divider.
  */
-export function isPointInTaiwan(lat: number, lng: number): boolean {
-  let inside = false;
-  const x = lng;
-  const y = lat;
-  const boundary = CONFIG.TAIWAN_BOUNDARY;
+export function resolveOpeningAngle(point: Coordinate): number {
+  const { latitude, longitude } = point;
+  let ridgeLongitude: number;
+  if (latitude >= 25) ridgeLongitude = 121.5;
+  else if (latitude >= 24) ridgeLongitude = 121.0 + (latitude - 24) * 0.5;
+  else if (latitude >= 23) ridgeLongitude = 120.8 + (latitude - 23) * 0.2;
+  else ridgeLongitude = 120.8;
 
-  for (let i = 0, j = boundary.length - 1; i < boundary.length; j = i++) {
-    const xi = boundary[i][1];
-    const yi = boundary[i][0];
-    const xj = boundary[j][1];
-    const yj = boundary[j][0];
-
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-      inside = !inside;
-    }
-  }
-  return inside;
+  return longitude < ridgeLongitude ? 90 : 270;
 }
 
-/**
- * Determine suggested opening angle based on position
- */
-export function determineOpeningAngle(lat: number, lng: number): number {
-  let centerLng: number;
-  if (lat >= 25) centerLng = 121.5;
-  else if (lat >= 24) centerLng = 121.0 + (lat - 24) * 0.5;
-  else if (lat >= 23) centerLng = 120.8 + (lat - 23) * 0.2;
-  else centerLng = 120.8;
-
-  return lng < centerLng ? 90 : 270;
-}
-
-/**
- * Get weapon system display name
- */
+/** Weapon system display name for a category key. */
 export function getWeaponSystemName(category: string): string {
   return CONFIG.WEAPON_NAMES[category] || category.toUpperCase();
 }
@@ -57,23 +36,4 @@ export function makeUnitKey(category: string, unitName: string): string {
 export function parseUnitKey(unitKey: string): { category: string; unitName: string } {
   const [category, ...nameParts] = unitKey.split('_');
   return { category, unitName: nameParts.join('_') };
-}
-
-/**
- * Calculate center point of polygon vertices
- */
-export function calculateCenter(vertices: { latitude: number; longitude: number }[]): {
-  lat: number;
-  lng: number;
-} {
-  const lat = vertices.reduce((sum, v) => sum + v.latitude, 0) / vertices.length;
-  const lng = vertices.reduce((sum, v) => sum + v.longitude, 0) / vertices.length;
-  return { lat, lng };
-}
-
-/**
- * Check if all vertices of a polygon are within Taiwan boundary
- */
-export function checkPolygonInTaiwan(vertices: { latitude: number; longitude: number }[]): boolean {
-  return vertices.every((v) => isPointInTaiwan(v.latitude, v.longitude));
 }

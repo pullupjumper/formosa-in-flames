@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
+import type { Coordinate } from '@/types/geo';
 import type {
   MissileSystems,
   Airbase,
-  DeployedMissileSystemData,
+  MissileDeployment,
   Jammer,
   BudgetState,
 } from '@/types/setupMenu';
@@ -29,13 +30,13 @@ interface DeploymentTabProps {
   baselineAirbases: Airbase[];
   jammers: Jammer[];
   budget: BudgetState;
-  deployedSystems: Map<string, DeployedMissileSystemData>;
-  deployedJammers: Map<number, { lat: number; lng: number }>;
+  deployedSystems: Map<string, MissileDeployment>;
+  deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;
   sideName: string;
-  onDeploySystem: (key: string, data: DeployedMissileSystemData) => void;
+  onDeploySystem: (key: string, data: MissileDeployment) => void;
   onUndeploySystem: (key: string) => void;
-  onDeployJammer: (index: number, lat: number, lng: number) => void;
+  onDeployJammer: (index: number, position: Coordinate) => void;
   onUndeployJammer: (index: number) => void;
   onSpendBudget: (amount?: number) => boolean;
   onRefundBudget: (amount?: number) => void;
@@ -163,7 +164,7 @@ export function DeploymentTab({
             <GroundUnitsPanel
               jammers={jammers}
               deployedJammers={deployedJammers}
-              jammersCollapsed={deployment.jammersCollapsed}
+              isJammersCollapsed={deployment.isJammersCollapsed}
               expandedJammerIndex={deployment.expandedJammerIndex}
               selectedJammerIndex={
                 placingJammer && !placingJammer.isRelocate ? placingJammer.index : null
@@ -190,7 +191,8 @@ export function DeploymentTab({
           </div>
           {coordinates && (
             <div className="mt-3 font-mono text-[11px] text-text-secondary">
-              Latitude: {coordinates.lat.toFixed(6)}°, Longitude: {coordinates.lng.toFixed(6)}°
+              Latitude: {coordinates.latitude.toFixed(6)}°, Longitude:{' '}
+              {coordinates.longitude.toFixed(6)}°
             </div>
           )}
         </div>

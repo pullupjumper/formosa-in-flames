@@ -2,9 +2,10 @@ import { memo, useMemo } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { Airbase } from '@/types/setupMenu';
+import { toLeafletLatLng } from '@/utils/geo';
 
 // Airbase icon
-const airbaseIcon = L.icon({
+const AIRBASE_ICON = L.icon({
   iconUrl: 'https://i.meee.com.tw/5afNBSQ.png',
   iconSize: [16, 16],
   iconAnchor: [8, 8],
@@ -28,11 +29,7 @@ export const AirbaseMarker = memo(function AirbaseMarker({
   );
 
   return (
-    <Marker
-      position={[airbase.latitude, airbase.longitude]}
-      icon={airbaseIcon}
-      eventHandlers={eventHandlers}
-    >
+    <Marker position={toLeafletLatLng(airbase)} icon={AIRBASE_ICON} eventHandlers={eventHandlers}>
       <Popup>
         <div className="text-text-primary">
           <strong className="text-status-success">{airbase.name}</strong>
@@ -47,10 +44,10 @@ export const AirbaseMarker = memo(function AirbaseMarker({
           {airbase.embarkedUnits && airbase.embarkedUnits.length > 0 && (
             <div className="mt-3">
               <div className="font-semibold">Deployed Aircraft</div>
-              {airbase.embarkedUnits.map((unit, i) => {
-                const count = unit.loadouts?.reduce((s, lo) => s + lo.num, 0) || 0;
+              {airbase.embarkedUnits.map((unit, unitIndex) => {
+                const count = unit.loadouts?.reduce((sum, loadout) => sum + loadout.num, 0) || 0;
                 return (
-                  <div key={i}>
+                  <div key={unitIndex}>
                     {unit.platformName} x {count}
                   </div>
                 );
@@ -61,9 +58,9 @@ export const AirbaseMarker = memo(function AirbaseMarker({
           {airbase.loadouts && airbase.loadouts.length > 0 && (
             <div className="mt-3">
               <div className="font-semibold">Ammunition Storage</div>
-              {airbase.loadouts.map((lo, i) => (
-                <div key={i}>
-                  {lo.name} x {lo.num}
+              {airbase.loadouts.map((loadout, loadoutIndex) => (
+                <div key={loadoutIndex}>
+                  {loadout.name} x {loadout.num}
                 </div>
               ))}
             </div>
