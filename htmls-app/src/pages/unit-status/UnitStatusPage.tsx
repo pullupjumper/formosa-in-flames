@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { Table, Th, Td, Tr, EmptyRow, ProgressBar } from '@/components/Table';
 import { formatTimestamp, calculateProgress, isDataEmpty } from '@/utils/format';
 import { parseInjectedJSON } from '@/utils/inject';
@@ -98,42 +99,22 @@ function UnitStatusPage() {
   const displayTabs = visibleTabs.length > 0 ? visibleTabs : TABS;
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Top Bar */}
-      <div className="flex h-12.5 items-center justify-between border-b border-dark-border bg-dark-panel px-5">
-        <div className="text-sm font-medium text-text-secondary">
-          <span className="text-text-primary">UNIT STATUS</span> / DASHBOARD
-        </div>
+    <PageShell
+      title="UNIT STATUS"
+      subtitle="DASHBOARD"
+      tabs={displayTabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      contentClassName="flex-1 overflow-auto p-5"
+    >
+      <div className="overflow-x-auto rounded-sm border border-dark-border bg-dark-panel">
+        {activeTab === 'signal-data' && <SignalDataTable data={data.signals} />}
+        {activeTab === 'mobile-launchers' && <MobileLaunchersTable data={data.launchers} />}
+        {activeTab === 'c2-nodes' && <C2NodesTable data={data.c2} />}
+        {activeTab === 'base-weapons' && <BaseWeaponsTable data={data.baseWeapons} />}
+        {activeTab === 'landing-units' && <LandingUnitsTable data={data.landingUnits} />}
       </div>
-
-      {/* Tab Container */}
-      <div className="flex border-b border-dark-border bg-dark-bg px-5">
-        {displayTabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`border-b-[3px] px-4 py-3 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
-              activeTab === tab.id
-                ? 'border-accent-blue text-accent-blue'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-5">
-        <div className="overflow-x-auto rounded-sm border border-dark-border bg-dark-panel">
-          {activeTab === 'signal-data' && <SignalDataTable data={data.signals} />}
-          {activeTab === 'mobile-launchers' && <MobileLaunchersTable data={data.launchers} />}
-          {activeTab === 'c2-nodes' && <C2NodesTable data={data.c2} />}
-          {activeTab === 'base-weapons' && <BaseWeaponsTable data={data.baseWeapons} />}
-          {activeTab === 'landing-units' && <LandingUnitsTable data={data.landingUnits} />}
-        </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

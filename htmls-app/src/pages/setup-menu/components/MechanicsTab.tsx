@@ -1,3 +1,16 @@
+import {
+  Section,
+  SubTitle,
+  Paragraph,
+  List,
+  Panel,
+  Term,
+  Screenshot,
+  Figure,
+  DocTable,
+  DocTd,
+} from '@/components/Doc';
+
 // ============================================================================
 // GAME MECHANICS -- PLAYER BRIEFING
 // Short, action-oriented tips shown before the scenario starts.
@@ -216,94 +229,16 @@ export function MechanicsTab() {
 // ============================================================================
 function PositionTable() {
   return (
-    <div className="my-2.5 overflow-x-auto">
-      <table className="w-full border-collapse text-xs">
-        <thead>
-          <tr>
-            {['Position', 'Name', 'What you use it for'].map((head) => (
-              <th
-                key={head}
-                className="border border-dark-border bg-dark-bg px-2 py-1.5 text-left font-semibold text-text-primary"
-              >
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {POSITIONS.map((position) => (
-            <tr key={position.code}>
-              <td
-                className="border border-dark-border px-2 py-1.5 font-semibold"
-                style={{ color: position.color }}
-              >
-                {position.code}
-              </td>
-              <td className="border border-dark-border px-2 py-1.5 text-text-primary">
-                {position.name}
-              </td>
-              <td className="border border-dark-border px-2 py-1.5 text-text-secondary">
-                {position.usage}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ============================================================================
-// PRESENTATION HELPERS
-// ============================================================================
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-6">
-      <div className="mb-2.5 border-b border-dark-border pb-2 text-base font-semibold uppercase tracking-wide text-accent-blue">
-        {title}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function SubTitle({ children }: { children: React.ReactNode }) {
-  return <div className="mb-1.5 text-[13px] font-semibold text-text-primary">{children}</div>;
-}
-
-function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className="my-2 text-[13px] leading-relaxed text-text-secondary">{children}</p>;
-}
-
-function List({ children }: { children: React.ReactNode }) {
-  return (
-    <ul className="my-1.5 ml-6 list-disc space-y-1 text-[13px] leading-relaxed text-text-secondary">
-      {children}
-    </ul>
-  );
-}
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="my-2.5 rounded-sm border border-dark-border bg-black/30 p-3">{children}</div>
-  );
-}
-
-function Term({ children }: { children: React.ReactNode }) {
-  return <span className="font-semibold text-text-primary">{children}</span>;
-}
-
-function Screenshot({ src, alt }: { src: string; alt: string }) {
-  return <img src={src} alt={alt} className="block w-full" />;
-}
-
-function Figure({ caption, children }: { caption: string; children: React.ReactNode }) {
-  return (
-    <div className="my-4">
-      <div className="overflow-hidden rounded-sm border border-dark-border bg-dark-bg">
-        {children}
-      </div>
-      <div className="mb-2.5 mt-1.5 text-center text-xs italic text-text-secondary">{caption}</div>
-    </div>
+    <DocTable headers={['Position', 'Name', 'What you use it for']}>
+      {POSITIONS.map((position) => (
+        <tr key={position.code}>
+          <DocTd className="font-semibold" style={{ color: position.color }}>
+            {position.code}
+          </DocTd>
+          <DocTd className="text-text-primary">{position.name}</DocTd>
+          <DocTd>{position.usage}</DocTd>
+        </tr>
+      ))}
+    </DocTable>
   );
 }

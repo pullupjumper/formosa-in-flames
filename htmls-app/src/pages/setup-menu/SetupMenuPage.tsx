@@ -17,6 +17,7 @@ import {
   MISSILE_SYSTEMS_DATA,
   AMPHIBIOUS_LOCATION_DATA,
 } from '@/data/setupMenuData';
+import { PageShell, type PageTab } from '@/components/PageShell';
 import { MechanicsTab } from './components/MechanicsTab';
 import { DeploymentTab } from './components/DeploymentTab';
 import { OpordTab } from './components/OpordTab';
@@ -108,7 +109,7 @@ function buildInjectedDeployments(missileSystems: MissileSystems): Map<string, M
 // ============================================================================
 // TAB CONFIGURATION
 // ============================================================================
-const TABS: { id: SetupMenuTabId; label: string }[] = [
+const TABS: PageTab<SetupMenuTabId>[] = [
   { id: 'opord', label: 'OPORD' },
   { id: 'mechanics', label: 'Game Mechanics' },
   { id: 'deployment', label: 'Deployment' },
@@ -205,67 +206,46 @@ function SetupMenuPage() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Top Bar */}
-      <div className="flex h-12.5 items-center justify-between border-b border-dark-border bg-dark-panel px-5">
-        <div className="text-sm font-medium text-text-secondary">
-          <span className="text-text-primary">{sideName.toUpperCase()}</span> / DEPLOYMENT PLANNING
-        </div>
-      </div>
-
-      {/* Tab Container */}
-      <div className="flex border-b border-dark-border bg-dark-bg px-5">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`border-b-[3px] px-4 py-3 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
-              activeTab === tab.id
-                ? 'border-accent-blue text-accent-blue'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="relative flex-1 overflow-hidden">
-        {activeTab === 'opord' && <OpordTab amphibiousLocations={amphibiousLocations} />}
-        {activeTab === 'mechanics' && <MechanicsTab />}
-        {activeTab === 'deployment' && (
-          <DeploymentTab
-            missileSystems={missileSystems}
-            airbases={airbases}
-            baselineAirbases={injectedData.airbases}
-            jammers={jammers}
-            budget={budget}
-            deployedSystems={deployedMissileSystems}
-            deployedJammers={deployedJammers}
-            shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
-            sideName={sideName}
-            onDeploySystem={deployMissileSystem}
-            onUndeploySystem={undeployMissileSystem}
-            onDeployJammer={deployJammer}
-            onUndeployJammer={undeployJammer}
-            onSpendBudget={spendBudget}
-            onRefundBudget={refundBudget}
-            onUpdateAirbase={updateAirbase}
-          />
-        )}
-        {activeTab === 'summary' && (
-          <SummaryTab
-            budget={budget}
-            airbases={airbases}
-            jammers={jammers}
-            missileSystems={missileSystems}
-            deployedJammers={deployedJammers}
-            deployedMissileSystems={deployedMissileSystems}
-          />
-        )}
-      </div>
-    </div>
+    <PageShell
+      title={sideName.toUpperCase()}
+      subtitle="DEPLOYMENT PLANNING"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    >
+      {activeTab === 'opord' && <OpordTab amphibiousLocations={amphibiousLocations} />}
+      {activeTab === 'mechanics' && <MechanicsTab />}
+      {activeTab === 'deployment' && (
+        <DeploymentTab
+          missileSystems={missileSystems}
+          airbases={airbases}
+          baselineAirbases={injectedData.airbases}
+          jammers={jammers}
+          budget={budget}
+          deployedSystems={deployedMissileSystems}
+          deployedJammers={deployedJammers}
+          shouldValidateTaiwanBoundary={shouldValidateTaiwanBoundary}
+          sideName={sideName}
+          onDeploySystem={deployMissileSystem}
+          onUndeploySystem={undeployMissileSystem}
+          onDeployJammer={deployJammer}
+          onUndeployJammer={undeployJammer}
+          onSpendBudget={spendBudget}
+          onRefundBudget={refundBudget}
+          onUpdateAirbase={updateAirbase}
+        />
+      )}
+      {activeTab === 'summary' && (
+        <SummaryTab
+          budget={budget}
+          airbases={airbases}
+          jammers={jammers}
+          missileSystems={missileSystems}
+          deployedJammers={deployedJammers}
+          deployedMissileSystems={deployedMissileSystems}
+        />
+      )}
+    </PageShell>
   );
 }
 

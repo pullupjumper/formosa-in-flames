@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 
 interface DoctrineEntry {
   id: string;
@@ -38,42 +39,35 @@ function EmconSettingPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Top Bar */}
-      <div className="flex h-12.5 items-center justify-between border-b border-dark-border bg-dark-panel px-5">
-        <div className="text-sm font-medium text-text-secondary">
-          <span className="text-text-primary">Weapons Doctrine</span>
+    <PageShell
+      title="Weapons Doctrine"
+      contentClassName="flex flex-1 items-start justify-center overflow-auto p-5"
+    >
+      <div className="w-full max-w-100 rounded-sm border border-dark-border bg-dark-panel p-6 shadow-lg">
+        <h2 className="mb-5 border-b border-dark-border pb-2.5 text-lg font-semibold text-text-primary">
+          SAM Systems Doctrine
+        </h2>
+        <div className="space-y-4">
+          {doctrine.map((entry) => (
+            <DoctrineItem
+              key={entry.id}
+              id={entry.id}
+              label={entry.label}
+              weaponsFree={entry.weaponsFree}
+              onChange={() => handleToggle(entry.id)}
+            />
+          ))}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex flex-1 items-start justify-center overflow-auto p-5">
-        <div className="w-full max-w-100 rounded-sm border border-dark-border bg-dark-panel p-6 shadow-lg">
-          <h2 className="mb-5 border-b border-dark-border pb-2.5 text-lg font-semibold text-text-primary">
-            SAM Systems Doctrine
-          </h2>
-          <div className="space-y-4">
-            {doctrine.map((entry) => (
-              <DoctrineItem
-                key={entry.id}
-                id={entry.id}
-                label={entry.label}
-                weaponsFree={entry.weaponsFree}
-                onChange={() => handleToggle(entry.id)}
-              />
-            ))}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            className="mt-6 w-full rounded-sm bg-accent-blue px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-accent-blue-hover"
-            onClick={handleSubmit}
-          >
-            Submit Configuration
-          </button>
-        </div>
+        {/* Submit Button */}
+        <button
+          className="mt-6 w-full rounded-sm bg-accent-blue px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-accent-blue-hover"
+          onClick={handleSubmit}
+        >
+          Submit Configuration
+        </button>
       </div>
-    </div>
+    </PageShell>
   );
 }
 

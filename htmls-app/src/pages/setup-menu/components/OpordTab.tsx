@@ -5,6 +5,18 @@ import type { LatLngExpression, LatLngTuple, PathOptions } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '@components/Map/leaflet-dark.css';
 import type { AmphibiousLocation, ForceImage } from '@/types/setupMenu';
+import {
+  Section,
+  Subsection,
+  SubTitle,
+  Paragraph,
+  Indent,
+  List,
+  Panel,
+  Caption,
+  DocTable,
+  DocTd,
+} from '@/components/Doc';
 
 // ============================================================================
 // FORCE IMAGERY SLOTS
@@ -153,7 +165,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
                 <LandingZone route={routes.atf2} pathOptions={LANDING_ZONE_THREAT} />
                 <LandingZone route={routes.atf3} pathOptions={LANDING_ZONE_THREAT} />
               </OpordMap>
-              <MapCaption>Fig 1. Taiwan and Amphibious Approach Zones</MapCaption>
+              <Caption>Fig 1. Taiwan and Amphibious Approach Zones</Caption>
 
               <Indent>
                 <SubTitle>1.b.1. Primary Landing Zones.</SubTitle>
@@ -213,7 +225,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
                 <LandingZone route={routes.atf2} pathOptions={LANDING_ZONE_OUTLINE} />
                 <LandingZone route={routes.atf3} pathOptions={LANDING_ZONE_OUTLINE} />
               </OpordMap>
-              <MapCaption>Fig 2. Red Offensive Axes and Landing Zones</MapCaption>
+              <Caption>Fig 2. Red Offensive Axes and Landing Zones</Caption>
             </Subsection>
 
             <Subsection title="1.d. Friendly Forces.">
@@ -540,68 +552,6 @@ function Classification() {
   );
 }
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function Section({ title, children }: SectionProps) {
-  return (
-    <section className="mb-6">
-      <div className="mb-2.5 border-b border-dark-border pb-2 text-base font-semibold uppercase tracking-wide text-accent-blue">
-        {title}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-interface SubsectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function Subsection({ title, children }: SubsectionProps) {
-  return (
-    <div className="mb-4 ml-5">
-      <SubTitle>{title}</SubTitle>
-      {children}
-    </div>
-  );
-}
-
-function SubTitle({ children }: { children: React.ReactNode }) {
-  return <div className="mb-1.5 text-[13px] font-semibold text-text-primary">{children}</div>;
-}
-
-function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className="my-2 text-[13px] leading-relaxed text-text-secondary">{children}</p>;
-}
-
-function Indent({ children }: { children: React.ReactNode }) {
-  return <div className="ml-5 mt-3">{children}</div>;
-}
-
-function List({ children }: { children: React.ReactNode }) {
-  return (
-    <ul className="my-1.5 ml-6 list-disc space-y-1 text-[13px] leading-relaxed text-text-secondary">
-      {children}
-    </ul>
-  );
-}
-
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="my-2.5 rounded-sm border border-dark-border bg-black/30 p-3">{children}</div>
-  );
-}
-
-function MapCaption({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-2.5 mt-1.5 text-center text-xs italic text-text-secondary">{children}</div>
-  );
-}
-
 function OpordMap({
   children,
   center = MAP_CENTER,
@@ -651,39 +601,15 @@ function OpordMap({
 
 function OrderOfBattleTable() {
   return (
-    <div className="my-2.5 overflow-x-auto">
-      <table className="w-full border-collapse text-xs">
-        <thead>
-          <tr>
-            {['Force Element', 'Composition', 'Role', 'Staging Area'].map((head) => (
-              <th
-                key={head}
-                className="border border-dark-border bg-dark-bg px-2 py-1.5 text-left font-semibold text-text-primary"
-              >
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {ORDER_OF_BATTLE.map((row) => (
-            <tr key={row.element}>
-              <td className="border border-dark-border px-2 py-1.5 text-text-primary">
-                {row.element}
-              </td>
-              <td className="border border-dark-border px-2 py-1.5 text-text-secondary">
-                {row.composition}
-              </td>
-              <td className="border border-dark-border px-2 py-1.5 text-text-secondary">
-                {row.role}
-              </td>
-              <td className="border border-dark-border px-2 py-1.5 text-text-secondary">
-                {row.staging}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DocTable headers={['Force Element', 'Composition', 'Role', 'Staging Area']}>
+      {ORDER_OF_BATTLE.map((row) => (
+        <tr key={row.element}>
+          <DocTd className="text-text-primary">{row.element}</DocTd>
+          <DocTd>{row.composition}</DocTd>
+          <DocTd>{row.role}</DocTd>
+          <DocTd>{row.staging}</DocTd>
+        </tr>
+      ))}
+    </DocTable>
   );
 }
