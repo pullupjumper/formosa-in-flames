@@ -33,3 +33,15 @@ export function readInjectedString(raw: string | undefined, fallback: string): s
   const trimmed = raw?.trim();
   return trimmed ? trimmed : fallback;
 }
+
+/**
+ * Hand a payload back to the CMO host. `UI_CallAdvancedHTMLDialog` returns the
+ * value of every named `<input>` in the page, so writing the hidden input is
+ * the only channel from the page to Lua.
+ */
+export function writeHostInput(inputId: string, payload: unknown): boolean {
+  const input = document.getElementById(inputId) as HTMLInputElement | null;
+  if (!input) return false;
+  input.value = JSON.stringify(payload);
+  return true;
+}

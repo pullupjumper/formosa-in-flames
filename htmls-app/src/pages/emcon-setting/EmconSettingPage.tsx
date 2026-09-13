@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PageShell } from '@/components/PageShell';
+import { writeHostInput } from '@/utils/inject';
 
 interface DoctrineEntry {
   id: string;
@@ -29,11 +30,7 @@ function EmconSettingPage() {
         weaponsFree: entry.weaponsFree,
       })),
     };
-    const jsonString = JSON.stringify(exportData);
-    const emconDataInput = document.getElementById('emconData') as HTMLInputElement | null;
-    if (emconDataInput) {
-      emconDataInput.value = jsonString;
-    }
+    writeHostInput('emconData', exportData);
     console.log('Doctrine Configuration:', exportData);
     alert('Doctrine configuration submitted');
   };

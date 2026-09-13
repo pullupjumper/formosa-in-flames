@@ -38,8 +38,7 @@ interface DeploymentTabProps {
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
   onUndeployJammer: (index: number) => void;
-  onSpendBudget: (amount?: number) => boolean;
-  onRefundBudget: (amount?: number) => void;
+  onBudgetChange: (next: BudgetState) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
 }
 
@@ -61,8 +60,7 @@ export function DeploymentTab({
   onUndeploySystem,
   onDeployJammer,
   onUndeployJammer,
-  onSpendBudget,
-  onRefundBudget,
+  onBudgetChange,
   onUpdateAirbase,
 }: DeploymentTabProps) {
   const deployment = useDeploymentState({
@@ -155,8 +153,7 @@ export function DeploymentTab({
               baselineAirbases={baselineAirbases}
               budget={budget}
               selectedBaseIndex={selectedBaseIndex}
-              onSpendBudget={onSpendBudget}
-              onRefundBudget={onRefundBudget}
+              onBudgetChange={onBudgetChange}
               onUpdateAirbase={onUpdateAirbase}
               onError={deployment.handleAircraftError}
             />

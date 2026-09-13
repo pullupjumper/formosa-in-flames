@@ -5,39 +5,10 @@ import type {
   Jammer,
   MissileSystems,
   MissileDeployment,
-  MovementPaths,
 } from '@/types/setupMenu';
 import { getWeaponSystemName } from '@/utils/map';
-
-// ============================================================================
-// EXPORT HELPERS
-// ============================================================================
-function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
-  return waypoints.length > 1 ? waypoints.slice(1) : waypoints;
-}
-
-function normalizeExportPaths(paths: MovementPaths): MovementPaths {
-  return {
-    // FP paths start at the shared gateway (not the vehicle's position);
-    // the gateway is an intermediate waypoint every shelter must pass through
-    // to stay clear of HA/RL, so keep the full waypoint list intact.
-    FP: paths.FP.map((path) => ({ ...path })),
-    HA: {
-      ...paths.HA,
-      waypoints: trimLeadingWaypoint(paths.HA.waypoints),
-    },
-    RL: paths.RL.map((path) => ({
-      ...path,
-      waypoints: trimLeadingWaypoint(path.waypoints),
-    })),
-    AHA: {
-      ...paths.AHA,
-      waypoints: trimLeadingWaypoint(paths.AHA.waypoints),
-    },
-    // SHRL follows the same model as FP: gateway is a real waypoint, not origin.
-    SHRL: { ...paths.SHRL },
-  };
-}
+import { toSetupResult } from '@/utils/setupMenuPayload';
+import { writeHostInput } from '@/utils/inject';
 
 function formatPosition(position: Coordinate): string {
   return `${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`;
@@ -130,39 +101,15 @@ export function SummaryTab({
   );
 
   const handleExport = () => {
-    const exportData = {
-      budget: {
-        initial: budget.total,
-        used: budget.used,
-        remaining: budget.current,
-      },
+    const result = toSetupResult({
+      budget,
       airbases,
-      jammers: Array.from(deployedJammers.entries()).map(([index, position]) => {
-        const unit = jammers[index];
-        return {
-          zoneName: unit.zoneName,
-          name: unit.name,
-          point: position,
-          randomRadius: unit.randomRadius,
-          radius: unit.radius,
-        };
-      }),
-      missileSystems: Array.from(deployedMissileSystems.entries()).map(([key, data]) => ({
-        key,
-        unitname: data.unitName,
-        category: data.category,
-        center: data.center,
-        openingAngle: data.openingAngle,
-        tacticalAreas: data.tacticalAreas,
-        paths: normalizeExportPaths(data.paths),
-      })),
-    };
-    const jsonString = JSON.stringify(exportData, null, 2);
-    const summaryInput = document.getElementById('summaryData') as HTMLInputElement | null;
-    if (summaryInput) {
-      summaryInput.value = jsonString;
-    }
-    console.log('Export data:', exportData);
+      jammers,
+      deployedJammers,
+      deployedMissileSystems,
+    });
+    writeHostInput('summaryData', result);
+    console.log('Export data:', result);
     alert('Configuration exported to console');
   };
 

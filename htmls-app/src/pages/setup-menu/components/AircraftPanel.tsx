@@ -1,5 +1,6 @@
 import type { Airbase, BudgetState } from '@/types/setupMenu';
 import { CONFIG } from '@/constants/setupMenu';
+import { settleQuantityChange } from '@/utils/budgetLedger';
 
 // ============================================================================
 // AircraftPanel — sidebar panel for loadout budget and per-base editing
@@ -13,8 +14,7 @@ interface AircraftPanelProps {
   baselineAirbases: Airbase[];
   budget: BudgetState;
   selectedBaseIndex: number | null;
-  onSpendBudget: (amount?: number) => boolean;
-  onRefundBudget: (amount?: number) => void;
+  onBudgetChange: (next: BudgetState) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
   /** Routed to the shared status line instead of a modal alert */
   onError: (message: string) => void;
@@ -25,8 +25,7 @@ export function AircraftPanel({
   baselineAirbases,
   budget,
   selectedBaseIndex,
-  onSpendBudget,
-  onRefundBudget,
+  onBudgetChange,
   onUpdateAirbase,
   onError,
 }: AircraftPanelProps) {
@@ -81,8 +80,8 @@ export function AircraftPanel({
             base={selectedBase}
             baseline={baselineAirbases[selectedBaseIndex!]}
             baseIndex={selectedBaseIndex!}
-            onSpendBudget={onSpendBudget}
-            onRefundBudget={onRefundBudget}
+            budget={budget}
+            onBudgetChange={onBudgetChange}
             onUpdateAirbase={onUpdateAirbase}
             onError={onError}
           />
@@ -104,8 +103,8 @@ interface BaseEditorProps {
   /** Same base as injected, before any player edits */
   baseline: Airbase | undefined;
   baseIndex: number;
-  onSpendBudget: (amount?: number) => boolean;
-  onRefundBudget: (amount?: number) => void;
+  budget: BudgetState;
+  onBudgetChange: (next: BudgetState) => void;
   onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
   onError: (message: string) => void;
 }
@@ -114,25 +113,24 @@ function BaseEditor({
   base,
   baseline,
   baseIndex,
-  onSpendBudget,
-  onRefundBudget,
+  budget,
+  onBudgetChange,
   onUpdateAirbase,
   onError,
 }: BaseEditorProps) {
-  /**
-   * Move budget for a +/-1 quantity change. Stock up to `baselineNum` ships with
-   * the scenario and was never paid for, so only the part above it is charged or
-   * refunded. Returns false when the player cannot afford the increment.
-   */
+  /** Apply the ledger rule; false when the player cannot afford the increment. */
   const settleBudget = (newNum: number, baselineNum: number, delta: number): boolean => {
-    if (delta > 0 && newNum > baselineNum) {
-      if (!onSpendBudget()) {
-        onError('Warning: Insufficient budget');
-        return false;
-      }
-    } else if (delta < 0 && newNum >= baselineNum) {
-      onRefundBudget();
+    const result = settleQuantityChange(budget, {
+      newNum,
+      baselineNum,
+      delta,
+      cost: CONFIG.LOADOUT_COST,
+    });
+    if (!result.ok) {
+      onError('Warning: Insufficient budget');
+      return false;
     }
+    if (result.next !== budget) onBudgetChange(result.next);
     return true;
   };
 

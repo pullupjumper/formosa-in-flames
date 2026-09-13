@@ -108,6 +108,43 @@ export interface SetupMenuData {
   airbases: Airbase[];
   jammers: Jammer[];
   missileSystems: MissileSystems;
+  sideName: string;
+  amphibiousLocations: AmphibiousLocation[];
+}
+
+// ============================================================================
+// HOST RESULT (what `summaryData` sends back to unitStatusUI.lua)
+// Field names mirror `SBJ__SetupResult` in schema.lua and must not change.
+// ============================================================================
+export interface BudgetResult {
+  initial: number;
+  used: number;
+  remaining: number;
+}
+
+export interface JammerResult {
+  zoneName: string;
+  name: string;
+  point: Coordinate;
+  randomRadius: number;
+  radius: number;
+}
+
+export interface MissileSystemResult {
+  key: string;
+  unitname: string;
+  category: string;
+  center: Coordinate;
+  openingAngle: number;
+  tacticalAreas: TacticalAreas;
+  paths: MovementPaths;
+}
+
+export interface SetupResult {
+  budget: BudgetResult;
+  airbases: Airbase[];
+  jammers: JammerResult[];
+  missileSystems: MissileSystemResult[];
 }
 
 // ============================================================================
@@ -143,7 +180,9 @@ export interface MissileDeployment {
   category: string;
   center: Coordinate;
   openingAngle: number;
-  ahaRadius: number;
+  /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
+  ahaRadius?: number;
+  /** Where the AHA square sits; set by hand-relocation or scenario placement. */
   ahaCenter?: Coordinate;
   tacticalAreas: TacticalAreas;
   paths: MovementPaths;
