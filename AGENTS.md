@@ -1,6 +1,6 @@
-# AGENTS.md
+# CLAUDE.md
 
-This file provides guidance to coding agents when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -23,9 +23,6 @@ bash bin/build.sh
 bash bin/build.sh -t
 ```
 
-### Development Mode
-Set `config.isDevMode = true` in `src/core/config.lua` for development features including console logging.
-
 ## Architecture Overview
 
 ### Core System Design
@@ -35,37 +32,10 @@ The project uses a **modular event-driven architecture** centered around `src/co
 
 ### Key Architectural Patterns
 
-**API Abstraction Layer**: All CMO game API calls are wrapped in `src/utils/gameApi.lua` with comprehensive error handling and retry logic. The metatable's `__index` method intercepts all API calls and wraps them in `Utils.safeCall()`, providing centralized error handling with automatic logging through the bilingual `Logger` module. Never call raw `ScenEdit_*` functions directly - always use the `GameAPI.*` wrappers.
-
-**Type Safety**: Extensive use of LuaLS annotations with project-specific type prefixes:
-- `SBJ__*` for project-specific types
-- `CMO__*` for game API types
-- All public functions must have `---@param` and `---@return` annotations
-
-**Annotation Standards**:
-
-```lua
----Function description (maximum 2 lines)
----@param name type Description
----@param optional? type Optional parameter description
----@return type # Description (single return)
----@return type varName Description (multiple returns)
-```
-
-- Use `---Description` (no space after `---`), start with uppercase letter
-- Single return uses `#` separator; multiple returns include variable names
-- Use semantic variable names (`success`, `count`, `error`), avoid Lua keywords
-
-**Configuration Management**:
-The project uses a two-tier configuration system:
-
-- **`config.*`** (`src/core/config.lua`): Runtime parameters that may need tuning (weapon defaults, timing, tactical settings)
-- **`constants.*`** (`src/core/constants.lua`): Immutable identifiers (platform DBIDs, base GUIDs, weapon IDs, area definitions)
-
-**Best Practices**:
-- Use `config.*` for values that control gameplay behavior and may need adjustment
-- Use `constants.*` for immutable identifiers that reference game database entries
-- Never hardcode DBIDs, GUIDs, or coordinates directly in logic
+- **API Abstraction**: All CMO game API calls use `src/utils/gameApi.lua` wrappers. Never call raw `ScenEdit_*` functions directly.
+- **Type Safety**: Use LuaLS annotations (`---@param`, `---@return`) with prefixes `SBJ__*` (project types) and `CMO__*` (game API types).
+- **Config vs Constants**: Use `config.*` for gameplay values that may need adjustment; use `constants.*` for immutable identifiers (DBIDs, GUIDs, area definitions).
+- **No Hardcoding**: Never hardcode DBIDs, GUIDs, or coordinates directly in logic.
 
 ### Module Organization
 
@@ -108,40 +78,6 @@ Common event usage:
 
 ## htmls-app (React UI)
 
-The `htmls-app/` directory contains React-based UI panels for CMO's embedded browser. Build output goes to `src/htmls/*.html`; deployment injection is handled by `bin/build.sh`.
+`htmls-app/` holds the React panels shown in CMO's embedded browser. `bin/build.sh` builds them into `src/htmls/*.html`, which `unitStatusUI.lua` fills via `window.__INJECT_*__` placeholders.
 
-### Tech Stack
-React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Uses `vite-plugin-singlefile` to bundle into single HTML files. ESLint 9 + Prettier for code quality.
-
-### Project Structure
-```
-htmls-app/src/
-├── components/     # Shared components
-├── pages/          # Each page has its own main.tsx entry point
-├── types/          # TypeScript type definitions
-├── utils/          # Utility functions
-├── data/           # Static mock data for development
-└── index.css       # Global styles + Tailwind @theme custom colors
-```
-
-### Code Style
-- Function components + React Hooks only (no class components)
-- Props defined with `interface`, named `{ComponentName}Props`
-- Use `import type { ... }` for type imports
-- Path aliases: `@/`, `@components/`, `@pages/`, `@utils/`, `@types/`
-- Section separators: `// ============================================================================`
-- State management: React built-in Hooks only (no external state libraries)
-- Styling: Tailwind utility classes only; custom colors defined in `index.css` `@theme`
-- Utility functions: Pure functions with named exports and JSDoc comments
-
-### Data Flow
-HTML pages use `window.__INJECT_*__` placeholders. `unitStatusUI.lua` fills them with runtime JSON via `string.format`; during frontend development they fall back to mock data from `src/data/`.
-
-### Build Commands
-```bash
-cd htmls-app
-npm run dev          # Development server
-npm run build        # Rebuild src/htmls only; full deployment uses bin/build.sh
-npm run lint         # Run ESLint
-npm run format       # Format with Prettier
-```
+When working inside `htmls-app/`, read `htmls-app/CLAUDE-FRONTEND.md` first — it owns the tech stack, code style, naming conventions, data flow, and test guidance for the frontend.

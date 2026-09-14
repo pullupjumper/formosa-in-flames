@@ -10,33 +10,25 @@ The `htmls-app/` directory contains React-based UI panels for CMO's embedded bro
 React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Uses `vite-plugin-singlefile` to bundle into single HTML files. ESLint 9 + Prettier for code quality.
 
 ### Project Structure
-```
-htmls-app/src/
-├── components/     # Shared components
-├── pages/          # Each page has its own main.tsx entry point
-├── types/          # TypeScript type definitions (types only; geo.ts owns Coordinate)
-├── constants/      # Runtime constants (CONFIG, Taiwan boundary)
-├── utils/          # Utility functions (geo.ts owns every coordinate helper)
-├── data/           # Static mock data for development
-├── test/           # Vitest global setup
-└── index.css       # Global styles + Tailwind @theme custom colors
-```
+- `types/` — type definitions only (values live in `constants/`)
+- `pages/` — each page has its own `main.tsx` entry point
+- `components/` — shared React components
+- `utils/` — utility functions (e.g., `geo.ts` owns all coordinate helpers)
+- `constants/` — runtime constants and CONFIG objects
+- `data/` — mock data for development
+- `index.css` — Tailwind @theme custom colors
 
 ### Code Style
-- Function components + React Hooks only (no class components)
-- Props defined with `interface`, named `{ComponentName}Props`
-- Use `import type { ... }` for type imports
+- Function components + React Hooks only (no class components, no external state libraries)
+- Styling: Tailwind utility classes only; custom colors in `index.css` `@theme`
 - Path aliases: `@/`, `@components/`, `@pages/`, `@utils/`, `@types/`
-- Section separators: `// ============================================================================`
-- State management: React built-in Hooks only (no external state libraries)
-- Styling: Tailwind utility classes only; custom colors defined in `index.css` `@theme`
-- Utility functions: Pure functions with named exports and JSDoc comments
-- Naming: see the [Naming](#naming) section below
+- Utility functions: Pure functions with named exports
+- Naming: see [Naming](#naming) section
 
 ### Data Flow
-HTML pages use `window.__INJECT_*__` placeholders. `unitStatusUI.lua` fills them with runtime JSON via `string.format`; during frontend development they fall back to mock data from `src/data/`.
+HTML pages use `window.__INJECT_*__` placeholders filled by `unitStatusUI.lua` with runtime JSON. During development, mock data in `src/data/` provides fallbacks.
 
-Field names on injected payload types (`Airbase`, `Jammer`, `OperationalArea`, `wpnCurrent`, `OODADetection`, ...) are dictated by the Lua side and must not be renamed; wrap them at the type layer if a better name is needed.
+**Important**: Lua field names on injected payload types (`Airbase`, `Jammer`, `OODADetection`, etc.) are immutable. If a better name is needed, wrap at the type layer.
 
 ### Build Commands
 ```bash
@@ -50,24 +42,11 @@ npm run test:watch   # Run Vitest in watch mode
 ```
 
 ### Testing
-Vitest + Testing Library (`happy-dom` environment). `vitest.config.ts` is separate from `vite.config.ts` because the deployment build swaps `root` per page and adds Tailwind/singlefile; only the path aliases are shared.
-
+Vitest + Testing Library (`happy-dom` environment).
 - Test files live next to their subject: `src/utils/geo.test.ts`, `src/pages/setup-menu/hooks/useDeploymentState.test.ts`
-- Global setup lives in `src/test/setup.ts` (jest-dom matchers + auto cleanup)
-- Randomness: geometry generators take a `RandomSource` that defaults to `Math.random`. Tests pass `createSeededRandom(seed)` from `@/utils/random` so generated layouts are reproducible
-- What to test: pure utilities (`utils/`), geometry invariants (squares do not overlap, vertices stay inside the boundary), and hook state machines via `renderHook`
-- What not to test: Leaflet marker rendering, `src/data/` mock data, presentational-only components
-
-```bash
-npx vitest run src/utils/geo.test.ts   # Single file
-```
-
-### Full Deployment Build
-From project root:
-```bash
-bash bin/build.sh      # Builds htmls-app → src/htmls/*.html → slim/main.lua
-bash bin/build.sh -t   # Same, but runs busted (Lua) and vitest (frontend) first
-```
+- Randomness: Use `createSeededRandom(seed)` from `@/utils/random` so tests are reproducible
+- What to test: pure utilities, geometry invariants, hook state machines
+- What not to test: Leaflet rendering, mock data, presentational-only components
 
 ## Naming
 
