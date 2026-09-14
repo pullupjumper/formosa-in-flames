@@ -1,7 +1,7 @@
 import type { Coordinate } from '@/types/geo';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { getAreaLabel } from '@/constants/deployment';
-import type { PreviewOffsets, RelocateFailure } from '@/utils/missileDeployment';
+import type { PreviewOffsets, RelocateFailure } from '@/utils/deploymentGeometry';
 
 /**
  * The Deployment tab's map click has exactly one owner at a time. Modelling

@@ -17,7 +17,7 @@ import {
 } from '@/pages/setup-menu/hooks/deploymentMode';
 import type { DeploymentMode } from '@/pages/setup-menu/hooks/deploymentMode';
 import { getAreaLabel } from '@/constants/deployment';
-import { generateDeploymentData } from '@/utils/missileDeployment';
+import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { createSeededRandom } from '@/utils/random';
 
 // ============================================================================

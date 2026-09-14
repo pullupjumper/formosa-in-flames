@@ -58,7 +58,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 |---|---|---|
 | React component | `PascalCase.tsx` | `DeploymentMap.tsx` |
 | Hook | `useX.ts` | `useDeploymentState.ts` |
-| utils / types / data / constants | `camelCase.ts` | `missileDeployment.ts`, `geo.ts` |
+| utils / types / data / constants | `camelCase.ts` | `geo.ts`, `deploymentGeometry/` (a folder with an `index.ts` for a multi-file module) |
 | Page directory | `kebab-case/` | `pages/setup-menu/` |
 | Test | `*.test.ts` next to its subject | `utils/geo.test.ts` |
 

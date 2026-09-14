@@ -6,7 +6,7 @@ import {
   toSetupResult,
 } from '@/utils/setupMenuPayload';
 import { createBudgetState } from '@/utils/budgetLedger';
-import { generateDeploymentData } from '@/utils/missileDeployment';
+import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
 import { MISSILE_SYSTEMS_DATA, JAMMERS_DATA } from '@/data/setupMenuData';

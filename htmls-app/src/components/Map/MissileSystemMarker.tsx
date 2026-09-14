@@ -11,7 +11,7 @@ import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
 import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
 import { createImageIcon } from './icons';
-import type { DeploymentPreview } from '@/utils/missileDeployment';
+import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 
 // ============================================================================
 // COLORS

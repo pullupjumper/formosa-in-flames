@@ -2,16 +2,15 @@ import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment, Jammer } from '@/types/setupMenu';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
-import { isPointInTaiwan } from '@/utils/geo';
+import { calculateBearing, isPointInTaiwan } from '@/utils/geo';
 import { resolveOpeningAngle } from '@/utils/map';
-import { calculateBearing } from '@/utils/tacticalAreaGenerator';
 import {
   generateDeploymentData,
   generateOffsetsForAngle,
   relocateArea,
   rotateDeployment,
-} from '@/utils/missileDeployment';
-import type { PreviewOffsets } from '@/utils/missileDeployment';
+} from '@/utils/deploymentGeometry';
+import type { PreviewOffsets } from '@/utils/deploymentGeometry';
 import type { RandomSource } from '@/utils/random';
 import {
   DEFAULT_STATUS,

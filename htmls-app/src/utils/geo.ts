@@ -19,6 +19,78 @@ export function nauticalMilesToMeters(nauticalMiles: number): number {
 }
 
 // ============================================================================
+// GREAT-CIRCLE MATH (nautical miles, degrees)
+// ============================================================================
+const EARTH_RADIUS_NM = 3440.065;
+
+function toRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+function toDegrees(radians: number): number {
+  return (radians * 180) / Math.PI;
+}
+
+/** Great-circle distance in nautical miles (haversine). */
+export function calculateDistance(from: Coordinate, to: Coordinate): number {
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const a =
+    Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2) +
+    Math.cos(toRadians(from.latitude)) *
+      Math.cos(toRadians(to.latitude)) *
+      Math.sin(longitudeDelta / 2) *
+      Math.sin(longitudeDelta / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_RADIUS_NM * c;
+}
+
+/** Initial bearing from `from` to `to`, in degrees [0, 360). */
+export function calculateBearing(from: Coordinate, to: Coordinate): number {
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const fromLatitude = toRadians(from.latitude);
+  const toLatitude = toRadians(to.latitude);
+
+  const y = Math.sin(longitudeDelta) * Math.cos(toLatitude);
+  const x =
+    Math.cos(fromLatitude) * Math.sin(toLatitude) -
+    Math.sin(fromLatitude) * Math.cos(toLatitude) * Math.cos(longitudeDelta);
+
+  const bearing = toDegrees(Math.atan2(y, x));
+  return (bearing + 360) % 360;
+}
+
+/** Destination point `distance` NM from `origin` along `bearing` degrees. */
+export function getPointFromBearing(
+  origin: Coordinate,
+  bearing: number,
+  distance: number
+): Coordinate {
+  const bearingRad = toRadians(bearing);
+  const latitudeRad = toRadians(origin.latitude);
+  const longitudeRad = toRadians(origin.longitude);
+  const angularDistance = distance / EARTH_RADIUS_NM;
+
+  const newLatitudeRad = Math.asin(
+    Math.sin(latitudeRad) * Math.cos(angularDistance) +
+      Math.cos(latitudeRad) * Math.sin(angularDistance) * Math.cos(bearingRad)
+  );
+
+  const newLongitudeRad =
+    longitudeRad +
+    Math.atan2(
+      Math.sin(bearingRad) * Math.sin(angularDistance) * Math.cos(latitudeRad),
+      Math.cos(angularDistance) - Math.sin(latitudeRad) * Math.sin(newLatitudeRad)
+    );
+
+  return {
+    latitude: toDegrees(newLatitudeRad),
+    longitude: toDegrees(newLongitudeRad),
+  };
+}
+
+// ============================================================================
 // GEOMETRY
 // ============================================================================
 /** Arithmetic mean of the vertices; good enough for the small squares here. */

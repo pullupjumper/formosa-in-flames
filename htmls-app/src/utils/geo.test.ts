@@ -3,7 +3,10 @@ import {
   NM_TO_METERS,
   areAllPointsInPolygon,
   areAllPointsInTaiwan,
+  calculateBearing,
   calculateCentroid,
+  calculateDistance,
+  getPointFromBearing,
   fromLeafletLatLng,
   isPointInPolygon,
   isPointInTaiwan,
@@ -26,6 +29,58 @@ describe('nauticalMilesToMeters', () => {
   it('uses the international nautical mile', () => {
     expect(NM_TO_METERS).toBe(1852);
     expect(nauticalMilesToMeters(2)).toBe(3704);
+  });
+});
+
+const CENTER: Coordinate = { latitude: 23.8, longitude: 121.0 };
+
+function at(latitude: number, longitude: number): Coordinate {
+  return { latitude, longitude };
+}
+
+describe('calculateDistance', () => {
+  it('is zero for identical points', () => {
+    expect(calculateDistance(CENTER, CENTER)).toBe(0);
+  });
+
+  it('matches one nautical mile per latitude minute', () => {
+    expect(calculateDistance(CENTER, at(23.8 + 1 / 60, 121))).toBeCloseTo(1, 2);
+  });
+
+  it('is symmetric', () => {
+    const forward = calculateDistance(at(23.8, 121), at(24.2, 120.6));
+    const backward = calculateDistance(at(24.2, 120.6), at(23.8, 121));
+    expect(forward).toBeCloseTo(backward, 10);
+  });
+});
+
+describe('calculateBearing', () => {
+  it.each([
+    ['north', 24.0, 121.0, 0],
+    ['east', 23.8, 121.2, 90],
+    ['south', 23.6, 121.0, 180],
+    ['west', 23.8, 120.8, 270],
+  ])('reports %s', (_label, latitude, longitude, expected) => {
+    expect(calculateBearing(CENTER, at(latitude, longitude))).toBeCloseTo(expected, 1);
+  });
+
+  it('always returns a value in [0, 360)', () => {
+    for (let i = 0; i < 360; i += 7) {
+      const point = getPointFromBearing(CENTER, i, 2);
+      const bearing = calculateBearing(CENTER, point);
+      expect(bearing).toBeGreaterThanOrEqual(0);
+      expect(bearing).toBeLessThan(360);
+    }
+  });
+});
+
+describe('getPointFromBearing', () => {
+  it('round-trips through calculateDistance/calculateBearing', () => {
+    for (const bearing of [0, 37, 123, 271, 359]) {
+      const point = getPointFromBearing(CENTER, bearing, 3);
+      expect(calculateDistance(CENTER, point)).toBeCloseTo(3, 6);
+      expect(calculateBearing(CENTER, point)).toBeCloseTo(bearing, 4);
+    }
   });
 });
 

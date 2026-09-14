@@ -2,16 +2,16 @@ import { useMemo } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment } from '@/types/setupMenu';
 import { resolveOpeningAngle } from '@/utils/map';
-import { previewDeployment, previewRelocation, previewRotation } from '@/utils/missileDeployment';
-import type { DeploymentPreview } from '@/utils/missileDeployment';
+import { previewDeployment, previewRelocation, previewRotation } from '@/utils/deploymentGeometry';
+import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 import type { RandomSource } from '@/utils/random';
 import type { DeploymentMode } from './deploymentMode';
 
-export type { DeploymentPreview } from '@/utils/missileDeployment';
+export type { DeploymentPreview } from '@/utils/deploymentGeometry';
 
 /**
  * Everything the map draws while a mode is pending. Thin memo wrappers over
- * the preview verbs in `missileDeployment`; no geometry lives here.
+ * the preview verbs in `deploymentGeometry`; no geometry lives here.
  */
 
 export interface UseDeploymentPreviewsParams {
