@@ -7,3 +7,5 @@ export {
   MissileSystemPreview,
   AreaRelocatePreview,
 } from './MissileSystemMarker';
+export { MapShell, TacticalPolygon, RangeCircle } from './primitives';
+export { createImageIcon } from './icons';

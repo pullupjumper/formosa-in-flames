@@ -6,11 +6,10 @@ import { isPointInTaiwan } from '@/utils/geo';
 import { resolveOpeningAngle } from '@/utils/map';
 import { calculateBearing } from '@/utils/tacticalAreaGenerator';
 import {
-  buildMovementPaths,
   generateDeploymentData,
   generateOffsetsForAngle,
-  isValidAngle,
   relocateArea,
+  rotateDeployment,
 } from '@/utils/missileDeployment';
 import type { PreviewOffsets } from '@/utils/missileDeployment';
 import type { RandomSource } from '@/utils/random';
@@ -121,22 +120,13 @@ export function useDeploymentState({
 
   /** Injects the side's boundary rule into the pure generator */
   const createDeployment = useCallback(
-    (
-      unitName: string,
-      category: string,
-      center: Coordinate,
-      angle: number,
-      ahaRadiusOverride?: number,
-      ahaCenterOverride?: Coordinate
-    ): MissileDeployment | null =>
+    (unitName: string, category: string, center: Coordinate, angle: number) =>
       generateDeploymentData({
         unitName,
         category,
         center,
         angle,
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
-        ahaRadiusOverride,
-        ahaCenterOverride,
         rng,
       }),
     [shouldValidateTaiwanBoundary, rng]
@@ -150,28 +140,20 @@ export function useDeploymentState({
   const applyAngleChange = useCallback(
     (unitKey: string, newAngle: number): boolean => {
       const deployment = deployedSystems.get(unitKey);
-      if (!deployment || !isValidAngle(newAngle)) return false;
+      if (!deployment) return false;
 
-      const newData = createDeployment(
-        deployment.unitName,
-        deployment.category,
-        deployment.center,
-        newAngle,
-        deployment.ahaRadius,
-        deployment.ahaCenter
-      );
-      if (!newData) return false;
-
-      // Preserve existing fire points (like AHA)
-      newData.tacticalAreas.firePoints = deployment.tacticalAreas.firePoints;
-      newData.paths = buildMovementPaths(newData.tacticalAreas, {
-        center: deployment.center,
-        openingAngle: newAngle,
+      const rotated = rotateDeployment({
+        deployment,
+        angle: newAngle,
+        validateTaiwanBoundary: shouldValidateTaiwanBoundary,
+        rng,
       });
-      onDeploySystem(unitKey, newData);
+      if (!rotated) return false;
+
+      onDeploySystem(unitKey, rotated);
       return true;
     },
-    [deployedSystems, createDeployment, onDeploySystem]
+    [deployedSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
   );
 
   // ============================================================================

@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { LayersControl, MapContainer, Marker, Polyline, Circle, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
-import type { LatLngExpression, LatLngTuple, PathOptions } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import '@components/Map/leaflet-dark.css';
+import { Marker, Polyline, Circle } from 'react-leaflet';
+import type { LatLngTuple, PathOptions } from 'leaflet';
+import type { Coordinate } from '@/types/geo';
 import type { AmphibiousLocation, ForceImage } from '@/types/setupMenu';
+import { MapShell, createImageIcon } from '@/components/Map';
 import {
   Section,
   Subsection,
@@ -39,25 +38,6 @@ const FORCE_IMAGES: Record<'atf1' | 'atf2' | 'csg', ForceImage> = {
 };
 
 /**
- * Build a Leaflet divIcon that either shows the force image or a placeholder
- * box occupying the exact same footprint.
- */
-function createForceIcon(image: ForceImage): L.DivIcon {
-  const inner = image.url
-    ? `<img src="${image.url}" alt="${image.label}" style="width:100%;height:100%;object-fit:contain" />`
-    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;
-         border:1px dashed #137cbd;background:rgba(19,124,189,0.12);color:#a7b6c2;
-         font-size:10px;letter-spacing:1px;text-align:center">${image.label}<br/>IMAGE</div>`;
-
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:${image.width}px;height:${image.height}px">${inner}</div>`,
-    iconSize: [image.width, image.height],
-    iconAnchor: [image.width / 2, image.height / 2],
-  });
-}
-
-/**
  * Return the matching amphibious operation's runtime route as Leaflet tuples.
  * Empty when the operation is missing from the injected data or carries no
  * resolvable waypoints, so callers must guard before indexing into it.
@@ -73,9 +53,9 @@ function resolveAmphibiousRoute(locations: AmphibiousLocation[], name: string): 
 // ============================================================================
 // Fig 1 frames Taiwan only; Fig 2 must also cover Zhoushan (30.1N) and the
 // Bashi Channel (21.0N), so it uses a wider, northward-shifted view.
-const MAP_CENTER: LatLngExpression = [24.5, 120.5];
+const MAP_CENTER: Coordinate = { latitude: 24.5, longitude: 120.5 };
 const MAP_ZOOM = 7;
-const THREAT_MAP_CENTER: LatLngExpression = [25.5, 121.0];
+const THREAT_MAP_CENTER: Coordinate = { latitude: 25.5, longitude: 121.0 };
 const THREAT_MAP_ZOOM = 5;
 
 const LANDING_ZONE_RADIUS_M = 20000;
@@ -115,9 +95,9 @@ const CSG_ROUTE: LatLngTuple[] = [
 export function OpordTab({ amphibiousLocations }: OpordTabProps) {
   const icons = useMemo(
     () => ({
-      atf1: createForceIcon(FORCE_IMAGES.atf1),
-      atf2: createForceIcon(FORCE_IMAGES.atf2),
-      csg: createForceIcon(FORCE_IMAGES.csg),
+      atf1: createImageIcon(FORCE_IMAGES.atf1),
+      atf2: createImageIcon(FORCE_IMAGES.atf2),
+      csg: createImageIcon(FORCE_IMAGES.csg),
     }),
     []
   );
@@ -558,43 +538,14 @@ function OpordMap({
   zoom = MAP_ZOOM,
 }: {
   children: React.ReactNode;
-  center?: LatLngExpression;
+  center?: Coordinate;
   zoom?: number;
 }) {
   return (
     <div className="my-4 h-100 overflow-hidden rounded-sm border border-dark-border">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom={false}
-        className="h-full w-full"
-        style={{ background: '#10161a' }}
-      >
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer name="Dark">
-            <TileLayer
-              attribution="&copy; OpenStreetMap, &copy; CARTO"
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Terrain">
-            <TileLayer
-              attribution="&copy; Esri"
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer checked name="Satellite">
-            <TileLayer
-              attribution="&copy; Esri, Maxar, Earthstar Geographics"
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
+      <MapShell center={center} zoom={zoom} scrollWheelZoom={false}>
         {children}
-      </MapContainer>
+      </MapShell>
     </div>
   );
 }

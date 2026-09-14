@@ -1,22 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
-import {
-  CircleMarker,
-  LayersControl,
-  MapContainer,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from 'react-leaflet';
-import type { LatLngExpression } from 'leaflet';
+import { CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import type { Coordinate } from '@/types/geo';
 import { fromLeafletLatLng, toLeafletLatLng } from '@/utils/geo';
-import 'leaflet/dist/leaflet.css';
-import './leaflet-dark.css';
+import { MapShell } from './primitives';
 
 // Taiwan center coordinates
-const TAIWAN_CENTER: LatLngExpression = [23.8, 121.0];
+const TAIWAN_CENTER: Coordinate = { latitude: 23.8, longitude: 121.0 };
 // Fujian coast — China side deployment area, across the strait from Taiwan
-const FUJIAN_COAST_CENTER: LatLngExpression = [25.3, 119.2];
+const FUJIAN_COAST_CENTER: Coordinate = { latitude: 25.3, longitude: 119.2 };
 const DEFAULT_ZOOM = 8;
 
 interface BaseMapProps {
@@ -39,42 +30,14 @@ export function BaseMap({
   // China side plans its deployment from the Fujian coast; everyone else starts on Taiwan
   const center = sideName === 'China' ? FUJIAN_COAST_CENTER : TAIWAN_CENTER;
   return (
-    <MapContainer
-      center={center}
-      zoom={sideName === 'China' ? 5 : DEFAULT_ZOOM}
-      className={`h-full w-full ${className}`}
-      style={{ background: '#10161a' }}
-    >
-      <LayersControl position="topright">
-        <LayersControl.BaseLayer name="Dark">
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-            maxZoom={18}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="Terrain">
-          <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={18}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer checked name="Satellite">
-          <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={18}
-          />
-        </LayersControl.BaseLayer>
-      </LayersControl>
+    <MapShell center={center} zoom={sideName === 'China' ? 5 : DEFAULT_ZOOM} className={className}>
       {onMapClick && <MapClickHandler onClick={onMapClick} />}
       {onMouseMove && <MapMouseMoveHandler onMouseMove={onMouseMove} />}
       {cursorStyle && <MapCursorStyle cursor={cursorStyle} />}
       <MapResizeHandler />
       <CoordinateSearch />
       {children}
-    </MapContainer>
+    </MapShell>
   );
 }
 

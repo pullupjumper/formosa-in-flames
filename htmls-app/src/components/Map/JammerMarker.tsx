@@ -1,9 +1,10 @@
 import { memo, useMemo, useCallback } from 'react';
-import { Marker, Circle, Tooltip } from 'react-leaflet';
+import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/setupMenu';
-import { nauticalMilesToMeters, toLeafletLatLng } from '@/utils/geo';
+import { toLeafletLatLng } from '@/utils/geo';
+import { RangeCircle } from './primitives';
 
 // EW unit icon
 const EW_ICON = L.icon({
@@ -13,31 +14,7 @@ const EW_ICON = L.icon({
   popupAnchor: [0, -15],
 });
 
-const PATH_OPTIONS_RANGE = {
-  color: '#ff6b6b',
-  fillColor: '#ff6b6b',
-  fillOpacity: 0.01,
-  weight: 1.5,
-  opacity: 0.25,
-  dashArray: '5, 10',
-};
-
-const PATH_OPTIONS_RANGE_RELOCATING = {
-  color: '#ff6b6b',
-  fillColor: '#ff6b6b',
-  fillOpacity: 0.01,
-  weight: 1.5,
-  opacity: 0.15,
-  dashArray: '6, 4',
-};
-
-const PATH_OPTIONS_RANGE_PREVIEW = {
-  color: '#ff6b6b',
-  fillColor: '#ff6b6b',
-  fillOpacity: 0.05,
-  weight: 2,
-  dashArray: '6, 4',
-};
+const JAMMER_RANGE_COLOR = '#ff6b6b';
 
 interface JammerMarkerProps {
   jammer: Jammer;
@@ -54,9 +31,6 @@ export const JammerMarker = memo(function JammerMarker({
   isRelocating = false,
   onRelocateClick,
 }: JammerMarkerProps) {
-  const radiusMeters = nauticalMilesToMeters(jammer.radius);
-  const center = toLeafletLatLng(position);
-
   const handleClick = useCallback(() => {
     onRelocateClick?.(index);
   }, [onRelocateClick, index]);
@@ -68,14 +42,14 @@ export const JammerMarker = memo(function JammerMarker({
 
   return (
     <>
-      <Circle
-        center={center}
-        radius={radiusMeters}
-        interactive={false}
-        pathOptions={isRelocating ? PATH_OPTIONS_RANGE_RELOCATING : PATH_OPTIONS_RANGE}
+      <RangeCircle
+        center={position}
+        radiusNm={jammer.radius}
+        color={JAMMER_RANGE_COLOR}
+        variant={isRelocating ? 'relocating' : 'range'}
       />
       <Marker
-        position={center}
+        position={toLeafletLatLng(position)}
         icon={EW_ICON}
         eventHandlers={eventHandlers}
         opacity={isRelocating ? 0.5 : 1}
@@ -99,18 +73,20 @@ interface JammerRelocatePreviewProps {
 }
 
 export function JammerRelocatePreview({ radius, position }: JammerRelocatePreviewProps) {
-  const radiusMeters = nauticalMilesToMeters(radius);
-  const center = toLeafletLatLng(position);
-
   return (
     <>
-      <Circle
-        center={center}
-        radius={radiusMeters}
-        interactive={false}
-        pathOptions={PATH_OPTIONS_RANGE_PREVIEW}
+      <RangeCircle
+        center={position}
+        radiusNm={radius}
+        color={JAMMER_RANGE_COLOR}
+        variant="preview"
       />
-      <Marker position={center} icon={EW_ICON} interactive={false} opacity={0.6} />
+      <Marker
+        position={toLeafletLatLng(position)}
+        icon={EW_ICON}
+        interactive={false}
+        opacity={0.6}
+      />
     </>
   );
 }

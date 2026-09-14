@@ -1,7 +1,12 @@
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
 import type { MissileDeployment, MovementPaths, TacticalAreas } from '@/types/setupMenu';
 import type { AreaType, RelocatingArea, SquareAreaType } from '@/types/deployment';
-import { areAllPointsInPolygon, areAllPointsInTaiwan, calculateCentroid } from '@/utils/geo';
+import {
+  areAllPointsInPolygon,
+  areAllPointsInTaiwan,
+  calculateCentroid,
+  translateCoordinate,
+} from '@/utils/geo';
 import {
   generateUShapeVertices,
   calculateMovementPaths,
@@ -99,6 +104,8 @@ export interface GenerateDeploymentParams {
   validateTaiwanBoundary: boolean;
   ahaRadiusOverride?: number;
   ahaCenterOverride?: Coordinate;
+  /** Keep these fire points instead of generating new ones (rotation) */
+  firePointsOverride?: Coordinate[][];
   /** Defaults to `Math.random`; pass a seeded source for reproducible output. */
   rng?: RandomSource;
 }
@@ -319,6 +326,7 @@ export function generateDeploymentData({
   validateTaiwanBoundary,
   ahaRadiusOverride,
   ahaCenterOverride,
+  firePointsOverride,
   rng = Math.random,
 }: GenerateDeploymentParams): MissileDeployment | null {
   try {
@@ -345,7 +353,7 @@ export function generateDeploymentData({
         ammoArea: result.ammoArea,
         hideArea: result.hideArea,
         reloadArea: result.reloadArea,
-        firePoints: result.firePoints,
+        firePoints: firePointsOverride ?? result.firePoints,
         shelterPoints: plan.shelterPoints,
       };
 
@@ -599,4 +607,124 @@ export function generateRotationPreview(
   } catch {
     return null;
   }
+}
+
+// ============================================================================
+// ROTATION
+// ============================================================================
+export interface RotateDeploymentParams {
+  deployment: MissileDeployment;
+  angle: number;
+  validateTaiwanBoundary: boolean;
+  rng?: RandomSource;
+}
+
+/**
+ * Re-generate a deployed unit at a new opening angle. Fire points and the AHA
+ * are user-placed, so they stay where they are; paths are rebuilt once against
+ * the kept fire points. Null when the angle is unusable (out of range, the
+ * rotated U-shape leaves the boundary, or no gateway fits).
+ */
+export function rotateDeployment({
+  deployment,
+  angle,
+  validateTaiwanBoundary,
+  rng = Math.random,
+}: RotateDeploymentParams): MissileDeployment | null {
+  if (!isValidAngle(angle)) return null;
+  return generateDeploymentData({
+    unitName: deployment.unitName,
+    category: deployment.category,
+    center: deployment.center,
+    angle,
+    validateTaiwanBoundary,
+    ahaRadiusOverride: deployment.ahaRadius,
+    ahaCenterOverride: deployment.ahaCenter,
+    firePointsOverride: deployment.tacticalAreas.firePoints,
+    rng,
+  });
+}
+
+// ============================================================================
+// PREVIEW VERBS — what the map draws while a mode is pending
+// ============================================================================
+/** Everything a hover preview needs; boundary check only, gateways resolve on commit */
+export interface DeploymentPreview {
+  uShapeVertices: Coordinate[];
+  ammoArea: Coordinate[];
+  hideArea: Coordinate[];
+  reloadArea: Coordinate[];
+  firePoints: Coordinate[][];
+  isValid: boolean;
+}
+
+/** New deployment: translate a precomputed offset layout to the cursor */
+export function previewDeployment(
+  offsets: PreviewOffsets,
+  cursor: Coordinate,
+  validateTaiwanBoundary: boolean
+): DeploymentPreview {
+  const translate = (offset: CoordinateOffset): Coordinate => translateCoordinate(cursor, offset);
+
+  const uShapeVertices = offsets.uShapeVertices.map(translate);
+  const ammoArea = offsets.ammoArea.map(translate);
+  const firePoints = offsets.firePoints.map((firePoint) => firePoint.map(translate));
+
+  const isValid =
+    !validateTaiwanBoundary ||
+    (areAllPointsInTaiwan(uShapeVertices) &&
+      areAllPointsInTaiwan(ammoArea) &&
+      firePoints.every(areAllPointsInTaiwan));
+
+  return {
+    uShapeVertices,
+    ammoArea,
+    hideArea: offsets.hideArea.map(translate),
+    reloadArea: offsets.reloadArea.map(translate),
+    firePoints,
+    isValid,
+  };
+}
+
+/** Area relocation: the U-shape translates as a whole, a single square re-squares at the cursor */
+export function previewRelocation(
+  deployment: MissileDeployment,
+  target: RelocateTarget,
+  cursor: Coordinate
+): Coordinate[] {
+  if (target.type === 'ushape') {
+    const offset: CoordinateOffset = {
+      latitudeDelta: cursor.latitude - deployment.center.latitude,
+      longitudeDelta: cursor.longitude - deployment.center.longitude,
+    };
+    return deployment.tacticalAreas.uShapeVertices.map((vertex) =>
+      translateCoordinate(vertex, offset)
+    );
+  }
+
+  const bearingToCenter = calculateBearing(cursor, deployment.center);
+  return generateSquareVertices(cursor, AREA_SQUARE_SIZE[target.type], bearingToCenter);
+}
+
+/** Rotation: regenerate the layout at the swept angle, fire points kept */
+export function previewRotation(
+  deployment: MissileDeployment,
+  angle: number,
+  validateTaiwanBoundary: boolean,
+  rng: RandomSource = Math.random
+): DeploymentPreview | null {
+  const preview = generateRotationPreview(
+    deployment.center,
+    angle,
+    deployment.ahaRadius,
+    deployment.ahaCenter,
+    rng
+  );
+  if (!preview) return null;
+
+  const isValid =
+    !validateTaiwanBoundary ||
+    (areAllPointsInTaiwan(preview.uShapeVertices) && areAllPointsInTaiwan(preview.ammoArea));
+
+  return { ...preview, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };
 }

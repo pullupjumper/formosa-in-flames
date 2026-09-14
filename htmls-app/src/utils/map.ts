@@ -28,3 +28,17 @@ export function getWeaponSystemName(category: string): string {
 export function makeUnitKey(category: string, unitName: string): string {
   return `${category}_${unitName}`;
 }
+
+/**
+ * Whether a click on a tactical area should do anything: nothing while another
+ * area is armed for relocation, everything when idle.
+ */
+export function canInteractArea(
+  hasHandler: boolean,
+  isAnyRelocating: boolean,
+  isThisAreaRelocating: boolean
+): boolean {
+  if (!hasHandler) return false;
+  if (!isAnyRelocating) return true;
+  return isThisAreaRelocating;
+}

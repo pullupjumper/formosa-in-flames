@@ -1,72 +1,52 @@
 import { memo, useMemo, useCallback } from 'react';
-import { Circle, CircleMarker, Polygon, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
+import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, ForceImage } from '@/types/setupMenu';
+import type { MissileDeployment, ForceImage, TacticalAreas } from '@/types/setupMenu';
+import type { AreaType, RelocatingArea } from '@/types/deployment';
 import { CONFIG } from '@/constants/setupMenu';
 import { getAreaColor } from '@/constants/deployment';
-import type { AreaType, RelocatingArea } from '@/types/deployment';
-import { getWeaponSystemName } from '@/utils/map';
-import { calculateCentroid, nauticalMilesToMeters, toLeafletPositions } from '@/utils/geo';
+import { canInteractArea, getWeaponSystemName } from '@/utils/map';
+import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
+import { TacticalPolygon, RangeCircle } from './primitives';
+import { createImageIcon } from './icons';
+import type { DeploymentPreview } from '@/utils/missileDeployment';
 
 // ============================================================================
 // COLORS
 // ============================================================================
-const COLORS = {
-  USHAPE: getAreaColor('ushape'),
-  AMMO_AREA: getAreaColor('aha'),
-  HIDE_AREA: getAreaColor('hide'),
-  RELOAD_AREA: getAreaColor('reload'),
-  FIRE_POINT: getAreaColor('fp'),
-  WEAPON_RANGE: '#ff4444',
-  SHELTER: '#c084fc',
-  PATH_HA: getAreaColor('hide'),
-  PATH_AHA: getAreaColor('aha'),
-  PATH_FP: getAreaColor('fp'),
-  PATH_RL: getAreaColor('reload'),
-  PATH_SHRL: '#c084fc',
-};
+const WEAPON_RANGE_COLOR = '#ff4444';
+const SHELTER_COLOR = '#c084fc';
 
 // ============================================================================
 // Static pathOptions (never re-created)
 // ============================================================================
-const PATH_OPTIONS_HA = { color: COLORS.PATH_HA, weight: 2, opacity: 0.7, dashArray: '5, 5' };
-const PATH_OPTIONS_AHA = { color: COLORS.PATH_AHA, weight: 2, opacity: 0.7, dashArray: '5, 5' };
-const PATH_OPTIONS_FP = { color: COLORS.PATH_FP, weight: 2, opacity: 0.7, dashArray: '5, 5' };
-const PATH_OPTIONS_RL = { color: COLORS.PATH_RL, weight: 2, opacity: 0.7, dashArray: '5, 5' };
-const PATH_OPTIONS_SHRL = { color: COLORS.PATH_SHRL, weight: 2, opacity: 0.7, dashArray: '2, 6' };
-const PATH_OPTIONS_RANGE = {
-  color: COLORS.WEAPON_RANGE,
-  fillColor: COLORS.WEAPON_RANGE,
-  fillOpacity: 0.01,
-  weight: 1.5,
-  opacity: 0.25,
-  dashArray: '5, 10',
+const PATH_OPTIONS_HA = { color: getAreaColor('hide'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_AHA = { color: getAreaColor('aha'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_FP = { color: getAreaColor('fp'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_RL = {
+  color: getAreaColor('reload'),
+  weight: 2,
+  opacity: 0.7,
+  dashArray: '5, 5',
 };
+const PATH_OPTIONS_SHRL = { color: SHELTER_COLOR, weight: 2, opacity: 0.7, dashArray: '2, 6' };
 const PATH_OPTIONS_ROTATE_HANDLE = {
   color: '#fff',
-  fillColor: COLORS.USHAPE,
+  fillColor: getAreaColor('ushape'),
   fillOpacity: 1,
   weight: 2,
 };
 const PATH_OPTIONS_SHELTER = {
   color: '#fff',
-  fillColor: COLORS.SHELTER,
+  fillColor: SHELTER_COLOR,
   fillOpacity: 0.9,
   weight: 1.5,
 };
-const PATH_OPTIONS_FALLBACK_RANGE = {
-  color: '#ff4444',
-  fillColor: '#ff4444',
-  fillOpacity: 0.01,
-  weight: 1.5,
-  opacity: 0.25,
-  dashArray: '5, 10',
-};
 const PATH_OPTIONS_FALLBACK_MARKER = {
   color: '#fff',
-  fillColor: '#ff6b6b',
+  fillColor: getAreaColor('ushape'),
   fillOpacity: 1,
   weight: 2,
 };
@@ -82,51 +62,24 @@ const ICON_IMAGES: Record<string, ForceImage> = {
 };
 
 // ============================================================================
-// Helper Functions
+// AREA TABLE — the four single polygons; fire points are indexed separately
 // ============================================================================
-/**
- * Anchor a polygon's tooltip at its top edge (max latitude) rather than its
- * geometric center, so the label does not cover the shape.
- */
-function calculateTooltipAnchor(vertices: Coordinate[] | undefined): L.LatLng | null {
-  if (!vertices || vertices.length < 3) return null;
-  const center = calculateCentroid(vertices);
-  const maxLatitude = Math.max(...vertices.map((vertex) => vertex.latitude));
-  return L.latLng(maxLatitude, center.longitude);
+interface SingleArea {
+  type: Exclude<AreaType, 'fp'>;
+  field: keyof Pick<TacticalAreas, 'uShapeVertices' | 'ammoArea' | 'hideArea' | 'reloadArea'>;
+  label: string;
 }
 
-/** Ref callback that overrides Leaflet's `getCenter` with the tooltip anchor. */
-function createAnchorRef(anchor: L.LatLng | null) {
-  return (node: L.Polygon | null) => {
-    if (node && anchor) {
-      node.getCenter = () => anchor;
-    }
-  };
-}
-
-function useTooltipAnchorRef(vertices: Coordinate[] | undefined) {
-  return useMemo(() => createAnchorRef(calculateTooltipAnchor(vertices)), [vertices]);
-}
+const SINGLE_AREAS: readonly SingleArea[] = [
+  { type: 'ushape', field: 'uShapeVertices', label: 'U-Shape Area' },
+  { type: 'aha', field: 'ammoArea', label: 'Ammo Holding Area (AHA)' },
+  { type: 'hide', field: 'hideArea', label: 'Hide Area (HA)' },
+  { type: 'reload', field: 'reloadArea', label: 'Reload Area (RL)' },
+];
 
 /** Leaflet positions for a path, or null when it has fewer than two waypoints */
 function toPathPositions(waypoints: Coordinate[] | undefined): LatLngExpression[] | null {
   return waypoints && waypoints.length > 1 ? toLeafletPositions(waypoints) : null;
-}
-
-function createIcon(images: Record<string, ForceImage>, category: string): L.DivIcon {
-  const image = category === 'sam' ? images.sam : images.ssm;
-  const inner = image.url
-    ? `<img src="${image.url}" alt="${image.label}" style="width:100%;height:100%;object-fit:contain" />`
-    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;
-       border:1px dashed #137cbd;background:rgba(19,124,189,0.12);color:#a7b6c2;
-       font-size:10px;letter-spacing:1px;text-align:center">${image.label}<br/>IMAGE</div>`;
-
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:${image.width}px;height:${image.height}px">${inner}</div>`,
-    iconSize: [image.width, image.height],
-    iconAnchor: [image.width / 2, image.height / 2],
-  });
 }
 
 // ============================================================================
@@ -155,48 +108,21 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 }: MissileSystemMarkerProps) {
   const { unitName, category, tacticalAreas, paths } = data;
   const rangeNm = CONFIG.WEAPON_RANGES[category] || 100;
-  const radiusMeters = nauticalMilesToMeters(rangeNm);
-
-  const ushapePolygonRef = useTooltipAnchorRef(tacticalAreas.uShapeVertices);
-  const ahaPolygonRef = useTooltipAnchorRef(tacticalAreas.ammoArea);
-  const hidePolygonRef = useTooltipAnchorRef(tacticalAreas.hideArea);
-  const reloadPolygonRef = useTooltipAnchorRef(tacticalAreas.reloadArea);
-
-  const firePointPolygonRefs = useMemo(
-    () =>
-      (tacticalAreas.firePoints ?? []).map((firePoint) =>
-        createAnchorRef(calculateTooltipAnchor(firePoint))
-      ),
-    [tacticalAreas.firePoints]
-  );
-
-  // Relocating state for this unit
-  const isThisUnit = relocatingArea?.unitKey === unitKey;
 
   const isAreaRelocating = useCallback(
     (type: AreaType, fpIndex?: number) =>
-      isThisUnit &&
-      relocatingArea?.type === type &&
-      (type !== 'fp' || relocatingArea?.fpIndex === fpIndex),
-    [isThisUnit, relocatingArea?.type, relocatingArea?.fpIndex]
+      relocatingArea?.unitKey === unitKey &&
+      relocatingArea.type === type &&
+      (type !== 'fp' || relocatingArea.fpIndex === fpIndex),
+    [relocatingArea, unitKey]
   );
 
-  const canInteractArea = useCallback(
-    (type: AreaType, fpIndex?: number) => {
-      if (!onAreaClick) return false;
-      if (!isAnyRelocating) return true;
-      return isAreaRelocating(type, fpIndex);
-    },
-    [onAreaClick, isAnyRelocating, isAreaRelocating]
-  );
-
-  const handleAreaClick = useCallback(
-    (event: L.LeafletMouseEvent, type: AreaType, fpIndex?: number) => {
-      event.originalEvent.stopImmediatePropagation?.();
-      event.originalEvent.stopPropagation();
-      onAreaClick?.({ unitKey, type, fpIndex });
-    },
-    [onAreaClick, unitKey]
+  const areaClickHandler = useCallback(
+    (type: AreaType, fpIndex?: number) =>
+      canInteractArea(Boolean(onAreaClick), isAnyRelocating, isAreaRelocating(type, fpIndex))
+        ? () => onAreaClick?.({ unitKey, type, fpIndex })
+        : undefined,
+    [onAreaClick, isAnyRelocating, isAreaRelocating, unitKey]
   );
 
   const handleRotateClick = useCallback(
@@ -207,129 +133,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     },
     [onRotateClick, unitKey]
   );
-
-  // Memoized pathOptions that change with relocating state
-  const ushapePathOptions = useMemo(() => {
-    const relocating = isAreaRelocating('ushape');
-    return {
-      color: COLORS.USHAPE,
-      fillColor: COLORS.USHAPE,
-      fillOpacity: relocating ? 0.08 : 0.15,
-      weight: 2,
-      dashArray: relocating ? '6, 4' : undefined,
-    };
-  }, [isAreaRelocating]);
-
-  const ahaPathOptions = useMemo(() => {
-    const relocating = isAreaRelocating('aha');
-    return {
-      color: COLORS.AMMO_AREA,
-      fillColor: COLORS.AMMO_AREA,
-      fillOpacity: relocating ? 0.1 : 0.3,
-      weight: 2,
-      dashArray: relocating ? '6, 4' : undefined,
-    };
-  }, [isAreaRelocating]);
-
-  const hidePathOptions = useMemo(() => {
-    const relocating = isAreaRelocating('hide');
-    return {
-      color: COLORS.HIDE_AREA,
-      fillColor: COLORS.HIDE_AREA,
-      fillOpacity: relocating ? 0.1 : 0.3,
-      weight: 2,
-      dashArray: relocating ? '6, 4' : undefined,
-    };
-  }, [isAreaRelocating]);
-
-  const reloadPathOptions = useMemo(() => {
-    const relocating = isAreaRelocating('reload');
-    return {
-      color: COLORS.RELOAD_AREA,
-      fillColor: COLORS.RELOAD_AREA,
-      fillOpacity: relocating ? 0.1 : 0.3,
-      weight: 2,
-      dashArray: relocating ? '6, 4' : undefined,
-    };
-  }, [isAreaRelocating]);
-
-  const firePointPathOptions = useMemo(
-    () =>
-      (tacticalAreas.firePoints ?? []).map((_firePoint, index) => {
-        const relocating = isAreaRelocating('fp', index);
-        return {
-          color: COLORS.FIRE_POINT,
-          fillColor: COLORS.FIRE_POINT,
-          fillOpacity: relocating ? 0.1 : 0.3,
-          weight: 2,
-          dashArray: relocating ? '6, 4' : undefined,
-        };
-      }),
-    [tacticalAreas.firePoints, isAreaRelocating]
-  );
-
-  // Memoized eventHandlers
-  const ushapeEventHandlers = useMemo(
-    () =>
-      canInteractArea('ushape')
-        ? { click: (event: L.LeafletMouseEvent) => handleAreaClick(event, 'ushape') }
-        : undefined,
-    [canInteractArea, handleAreaClick]
-  );
-  const ahaEventHandlers = useMemo(
-    () =>
-      canInteractArea('aha')
-        ? { click: (event: L.LeafletMouseEvent) => handleAreaClick(event, 'aha') }
-        : undefined,
-    [canInteractArea, handleAreaClick]
-  );
-  const hideEventHandlers = useMemo(
-    () =>
-      canInteractArea('hide')
-        ? { click: (event: L.LeafletMouseEvent) => handleAreaClick(event, 'hide') }
-        : undefined,
-    [canInteractArea, handleAreaClick]
-  );
-  const reloadEventHandlers = useMemo(
-    () =>
-      canInteractArea('reload')
-        ? { click: (event: L.LeafletMouseEvent) => handleAreaClick(event, 'reload') }
-        : undefined,
-    [canInteractArea, handleAreaClick]
-  );
-  const firePointEventHandlers = useMemo(
-    () =>
-      (tacticalAreas.firePoints ?? []).map((_firePoint, index) =>
-        canInteractArea('fp', index)
-          ? { click: (event: L.LeafletMouseEvent) => handleAreaClick(event, 'fp', index) }
-          : undefined
-      ),
-    [tacticalAreas.firePoints, canInteractArea, handleAreaClick]
-  );
-
   const rotateEventHandlers = useMemo(() => ({ click: handleRotateClick }), [handleRotateClick]);
-
-  // Memoized positions
-  const ushapePositions = useMemo(
-    () => toLeafletPositions(tacticalAreas.uShapeVertices ?? []),
-    [tacticalAreas.uShapeVertices]
-  );
-  const ahaPositions = useMemo(
-    () => toLeafletPositions(tacticalAreas.ammoArea ?? []),
-    [tacticalAreas.ammoArea]
-  );
-  const hidePositions = useMemo(
-    () => toLeafletPositions(tacticalAreas.hideArea ?? []),
-    [tacticalAreas.hideArea]
-  );
-  const reloadPositions = useMemo(
-    () => toLeafletPositions(tacticalAreas.reloadArea ?? []),
-    [tacticalAreas.reloadArea]
-  );
-  const firePointPositions = useMemo(
-    () => (tacticalAreas.firePoints ?? []).map(toLeafletPositions),
-    [tacticalAreas.firePoints]
-  );
 
   // Path positions (null when the path has fewer than two waypoints)
   const haPathPositions = useMemo(() => toPathPositions(paths.HA?.waypoints), [paths.HA]);
@@ -345,32 +149,31 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   const shrlPathPositions = useMemo(() => toPathPositions(paths.SHRL?.waypoints), [paths.SHRL]);
 
   // Hide area center anchors the unit marker and its weapon range circle
-  const hideCenterLatLng = useMemo<LatLngExpression | null>(() => {
-    if (!tacticalAreas.hideArea || tacticalAreas.hideArea.length === 0) return null;
-    const center = calculateCentroid(tacticalAreas.hideArea);
-    return [center.latitude, center.longitude];
-  }, [tacticalAreas.hideArea]);
+  const hideCenter = useMemo<Coordinate | null>(
+    () => (tacticalAreas.hideArea?.length ? calculateCentroid(tacticalAreas.hideArea) : null),
+    [tacticalAreas.hideArea]
+  );
 
-  const icon = useMemo(() => createIcon(ICON_IMAGES, category), [category]);
+  const icon = useMemo(
+    () => createImageIcon(category === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm),
+    [category]
+  );
 
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {
-    const weaponName = getWeaponSystemName(category);
-    const center: LatLngExpression = [data.center.latitude, data.center.longitude];
     return (
       <>
-        <Circle
-          center={center}
-          radius={radiusMeters}
-          interactive={false}
-          pathOptions={PATH_OPTIONS_FALLBACK_RANGE}
-        />
-        <CircleMarker center={center} radius={8} pathOptions={PATH_OPTIONS_FALLBACK_MARKER}>
+        <RangeCircle center={data.center} radiusNm={rangeNm} color={WEAPON_RANGE_COLOR} />
+        <CircleMarker
+          center={toLeafletLatLng(data.center)}
+          radius={8}
+          pathOptions={PATH_OPTIONS_FALLBACK_MARKER}
+        >
           <Popup>
             <div className="text-text-primary">
               <strong>{unitName}</strong>
               <br />
-              <span className="text-text-secondary">{weaponName}</span>
+              <span className="text-text-secondary">{getWeaponSystemName(category)}</span>
               <br />
               <br />
               Lat: {data.center.latitude.toFixed(6)}°
@@ -389,25 +192,21 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 
   return (
     <>
-      {/* U-Shape */}
-      <Polygon
-        ref={ushapePolygonRef}
-        positions={ushapePositions}
-        interactive={canInteractArea('ushape')}
-        pathOptions={ushapePathOptions}
-        eventHandlers={ushapeEventHandlers}
-      >
-        <Tooltip direction="top">
-          <strong>U-Shape Area</strong>
-          <br />
-          {/*{unitName}*/}
-        </Tooltip>
-      </Polygon>
+      {SINGLE_AREAS.map(({ type, field, label }) => (
+        <TacticalPolygon
+          key={type}
+          type={type}
+          vertices={tacticalAreas[field]}
+          isRelocating={isAreaRelocating(type)}
+          tooltip={<strong>{label}</strong>}
+          onClick={areaClickHandler(type)}
+        />
+      ))}
 
       {/* Rotation Handle */}
-      {onRotateClick && !isAnyRelocating && !isRotating && tacticalAreas.uShapeVertices[0] && (
+      {onRotateClick && !isAnyRelocating && !isRotating && (
         <CircleMarker
-          center={ushapePositions[0]}
+          center={toLeafletLatLng(tacticalAreas.uShapeVertices[0])}
           radius={5}
           pathOptions={PATH_OPTIONS_ROTATE_HANDLE}
           eventHandlers={rotateEventHandlers}
@@ -416,93 +215,35 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         </CircleMarker>
       )}
 
-      {/* Ammo Area */}
-      {ahaPositions.length > 0 && (
-        <Polygon
-          ref={ahaPolygonRef}
-          positions={ahaPositions}
-          interactive={canInteractArea('aha')}
-          pathOptions={ahaPathOptions}
-          eventHandlers={ahaEventHandlers}
-        >
-          <Tooltip direction="top">
-            <strong>Ammo Holding Area (AHA)</strong>
-          </Tooltip>
-        </Polygon>
-      )}
-
-      {/* Hide Area */}
-      {hidePositions.length > 0 && (
+      {/* Unit marker and weapon range, anchored on the hide area */}
+      {hideCenter && (
         <>
-          <Polygon
-            ref={hidePolygonRef}
-            positions={hidePositions}
-            interactive={canInteractArea('hide')}
-            pathOptions={hidePathOptions}
-            eventHandlers={hideEventHandlers}
-          >
+          <Marker position={toLeafletLatLng(hideCenter)} icon={icon}>
             <Tooltip direction="top">
-              <strong>Hide Area (HA)</strong>
+              <strong>{unitName}</strong>
             </Tooltip>
-          </Polygon>
-
-          {/* Hide Area Center Marker */}
-          {hideCenterLatLng && (
-            <Marker position={hideCenterLatLng} icon={icon}>
-              <Tooltip direction="top">
-                <strong>{unitName}</strong>
-              </Tooltip>
-            </Marker>
-          )}
-
-          {/* Weapon Range Circle (from hide area center) */}
-          {hideCenterLatLng && (
-            <Circle
-              center={hideCenterLatLng}
-              radius={radiusMeters}
-              interactive={false}
-              pathOptions={PATH_OPTIONS_RANGE}
-            />
-          )}
+          </Marker>
+          <RangeCircle center={hideCenter} radiusNm={rangeNm} color={WEAPON_RANGE_COLOR} />
         </>
       )}
 
-      {/* Reload Area */}
-      {reloadPositions.length > 0 && (
-        <Polygon
-          ref={reloadPolygonRef}
-          positions={reloadPositions}
-          interactive={canInteractArea('reload')}
-          pathOptions={reloadPathOptions}
-          eventHandlers={reloadEventHandlers}
-        >
-          <Tooltip direction="top">
-            <strong>Reload Area (RL)</strong>
-          </Tooltip>
-        </Polygon>
-      )}
-
       {/* Fire Points */}
-      {firePointPositions.map((positions, index) => (
-        <Polygon
+      {(tacticalAreas.firePoints ?? []).map((firePoint, index) => (
+        <TacticalPolygon
           key={`fp-${index}`}
-          ref={firePointPolygonRefs[index]}
-          positions={positions}
-          interactive={canInteractArea('fp', index)}
-          pathOptions={firePointPathOptions[index]}
-          eventHandlers={firePointEventHandlers[index]}
-        >
-          <Tooltip direction="top">
-            <strong>Fire Point {index + 1}</strong>
-          </Tooltip>
-        </Polygon>
+          type="fp"
+          vertices={firePoint}
+          isRelocating={isAreaRelocating('fp', index)}
+          tooltip={<strong>Fire Point {index + 1}</strong>}
+          onClick={areaClickHandler('fp', index)}
+        />
       ))}
 
       {/* Shelter Points */}
       {(tacticalAreas.shelterPoints ?? []).map((point, index) => (
         <CircleMarker
           key={`shelter-${index}`}
-          center={[point.latitude, point.longitude]}
+          center={toLeafletLatLng(point)}
           radius={4}
           interactive={false}
           pathOptions={PATH_OPTIONS_SHELTER}
@@ -600,15 +341,6 @@ export function DeployedMissileSystems({
 // ============================================================================
 // MissileSystemPreview Component
 // ============================================================================
-interface MissileSystemPreviewProps {
-  uShapeVertices: Coordinate[];
-  ammoArea: Coordinate[];
-  hideArea: Coordinate[];
-  reloadArea: Coordinate[];
-  firePoints: Coordinate[][];
-  isValid: boolean;
-}
-
 export function MissileSystemPreview({
   uShapeVertices,
   ammoArea,
@@ -616,81 +348,25 @@ export function MissileSystemPreview({
   reloadArea,
   firePoints,
   isValid,
-}: MissileSystemPreviewProps) {
-  const invalidColor = '#ff4444';
-  const dashArray = '6, 4';
-  const color = (validColor: string) => (isValid ? validColor : invalidColor);
-
+}: DeploymentPreview) {
   return (
     <>
-      {uShapeVertices.length > 0 && (
-        <Polygon
-          positions={toLeafletPositions(uShapeVertices)}
-          interactive={false}
-          pathOptions={{
-            color: color(COLORS.USHAPE),
-            fillColor: color(COLORS.USHAPE),
-            fillOpacity: isValid ? 0.1 : 0.08,
-            weight: 2,
-            dashArray,
-          }}
-        />
-      )}
-
-      {ammoArea.length > 0 && (
-        <Polygon
-          positions={toLeafletPositions(ammoArea)}
-          interactive={false}
-          pathOptions={{
-            color: color(COLORS.AMMO_AREA),
-            fillColor: color(COLORS.AMMO_AREA),
-            fillOpacity: isValid ? 0.15 : 0.1,
-            weight: 1.5,
-            dashArray,
-          }}
-        />
-      )}
-
-      {hideArea.length > 0 && (
-        <Polygon
-          positions={toLeafletPositions(hideArea)}
-          interactive={false}
-          pathOptions={{
-            color: color(COLORS.HIDE_AREA),
-            fillColor: color(COLORS.HIDE_AREA),
-            fillOpacity: isValid ? 0.15 : 0.1,
-            weight: 1.5,
-            dashArray,
-          }}
-        />
-      )}
-
-      {reloadArea.length > 0 && (
-        <Polygon
-          positions={toLeafletPositions(reloadArea)}
-          interactive={false}
-          pathOptions={{
-            color: color(COLORS.RELOAD_AREA),
-            fillColor: color(COLORS.RELOAD_AREA),
-            fillOpacity: isValid ? 0.15 : 0.1,
-            weight: 1.5,
-            dashArray,
-          }}
-        />
-      )}
-
+      <TacticalPolygon
+        type="ushape"
+        variant="preview"
+        vertices={uShapeVertices}
+        isValid={isValid}
+      />
+      <TacticalPolygon type="aha" variant="preview" vertices={ammoArea} isValid={isValid} />
+      <TacticalPolygon type="hide" variant="preview" vertices={hideArea} isValid={isValid} />
+      <TacticalPolygon type="reload" variant="preview" vertices={reloadArea} isValid={isValid} />
       {firePoints.map((firePoint, index) => (
-        <Polygon
+        <TacticalPolygon
           key={`preview-fp-${index}`}
-          positions={toLeafletPositions(firePoint)}
-          interactive={false}
-          pathOptions={{
-            color: color(COLORS.FIRE_POINT),
-            fillColor: color(COLORS.FIRE_POINT),
-            fillOpacity: isValid ? 0.15 : 0.1,
-            weight: 1.5,
-            dashArray,
-          }}
+          type="fp"
+          variant="preview"
+          vertices={firePoint}
+          isValid={isValid}
         />
       ))}
     </>
@@ -706,19 +382,5 @@ interface AreaRelocatePreviewProps {
 }
 
 export function AreaRelocatePreview({ vertices, areaType }: AreaRelocatePreviewProps) {
-  if (vertices.length === 0) return null;
-  const areaColor = getAreaColor(areaType);
-  return (
-    <Polygon
-      positions={toLeafletPositions(vertices)}
-      interactive={false}
-      pathOptions={{
-        color: areaColor,
-        fillColor: areaColor,
-        fillOpacity: 0.15,
-        weight: 2,
-        dashArray: '6, 4',
-      }}
-    />
-  );
+  return <TacticalPolygon type={areaType} variant="relocate-preview" vertices={vertices} />;
 }

@@ -11,6 +11,9 @@ import {
   generateRotationPreview,
   isValidAngle,
   relocateArea,
+  rotateDeployment,
+  previewRelocation,
+  previewDeployment,
 } from '@/utils/missileDeployment';
 import { generateUShapeVertices, calculateDistance } from '@/utils/tacticalAreaGenerator';
 import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';
@@ -498,5 +501,111 @@ describe('generateRotationPreview', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(generateRotationPreview({ latitude: 0, longitude: 0 }, 90)).toBeNull();
     expect(error).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================================================
+// VERBS: rotate / preview
+// ============================================================================
+describe('rotateDeployment', () => {
+  function place(seed: number) {
+    const rng = createSeededRandom(seed);
+    const deployment = generateDeploymentData({
+      unitName: 'u',
+      category: 'ascm',
+      center: INLAND,
+      angle: 90,
+      validateTaiwanBoundary: false,
+      rng,
+    });
+    expect(deployment).not.toBeNull();
+    return { deployment: deployment!, rng };
+  }
+
+  it('keeps the fire points and routes every FP path to them', () => {
+    const { deployment, rng } = place(3);
+    const rotated = rotateDeployment({
+      deployment,
+      angle: 270,
+      validateTaiwanBoundary: false,
+      rng,
+    });
+    expect(rotated).not.toBeNull();
+    expect(rotated!.openingAngle).toBe(270);
+    expect(rotated!.tacticalAreas.firePoints).toBe(deployment.tacticalAreas.firePoints);
+
+    rotated!.paths.FP.forEach((path, index) => {
+      const end = path.waypoints[path.waypoints.length - 1];
+      const firePoint = rotated!.tacticalAreas.firePoints![index];
+      expect(areAllPointsInPolygon([end], firePoint)).toBe(true);
+    });
+  });
+
+  it('keeps a hand-placed AHA in place', () => {
+    const { deployment, rng } = place(5);
+    const moved = relocateArea({
+      deployment,
+      target: { type: 'aha' },
+      position: { latitude: INLAND.latitude + 0.05, longitude: INLAND.longitude + 0.05 },
+      validateTaiwanBoundary: false,
+      rng,
+    });
+    expect(moved.ok).toBe(true);
+    if (!moved.ok) return;
+
+    const rotated = rotateDeployment({
+      deployment: moved.data,
+      angle: 180,
+      validateTaiwanBoundary: false,
+      rng,
+    });
+    expect(rotated).not.toBeNull();
+    expect(calculateCentroid(rotated!.tacticalAreas.ammoArea!)).toEqual(
+      calculateCentroid(moved.data.tacticalAreas.ammoArea!)
+    );
+  });
+
+  it('rejects an out-of-range angle', () => {
+    const { deployment, rng } = place(7);
+    expect(
+      rotateDeployment({ deployment, angle: 400, validateTaiwanBoundary: false, rng })
+    ).toBeNull();
+  });
+
+  it('relocating the U-shape leaves the AHA where it was', () => {
+    const { deployment, rng } = place(9);
+    const moved = relocateArea({
+      deployment,
+      target: { type: 'ushape' },
+      position: { latitude: INLAND.latitude + 0.02, longitude: INLAND.longitude },
+      validateTaiwanBoundary: false,
+      rng,
+    });
+    expect(moved.ok).toBe(true);
+    if (!moved.ok) return;
+    expect(moved.data.tacticalAreas.ammoArea).toEqual(deployment.tacticalAreas.ammoArea);
+  });
+
+  it('previewRelocation of the U-shape is a pure translation', () => {
+    const { deployment } = place(11);
+    const cursor = { latitude: INLAND.latitude + 0.1, longitude: INLAND.longitude - 0.1 };
+    const vertices = previewRelocation(deployment, { type: 'ushape' }, cursor);
+    vertices.forEach((vertex, index) => {
+      const original = deployment.tacticalAreas.uShapeVertices[index];
+      expect(vertex.latitude - original.latitude).toBeCloseTo(0.1, 9);
+      expect(vertex.longitude - original.longitude).toBeCloseTo(-0.1, 9);
+    });
+  });
+
+  it('previewDeployment translates offsets onto the cursor', () => {
+    const offsets = generateOffsetsForAngle(90, undefined, createSeededRandom(13))!;
+    const preview = previewDeployment(offsets, INLAND, false);
+    expect(preview.isValid).toBe(true);
+    preview.uShapeVertices.forEach((vertex, index) => {
+      expect(vertex.latitude).toBeCloseTo(
+        INLAND.latitude + offsets.uShapeVertices[index].latitudeDelta,
+        9
+      );
+    });
   });
 });
