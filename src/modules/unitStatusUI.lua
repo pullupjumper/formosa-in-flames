@@ -43,7 +43,7 @@ local function getSAMDBID(name)
 end
 
 ---Transform deployed missile system configuration into operational area data structure
----@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
+---@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__TacticalAreas, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
 ---@return SBJ__OperationalArea # Operational area data structure
 local function transformData(missileSystem)
   local operationalArea = {

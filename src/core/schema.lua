@@ -1542,37 +1542,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- ============================================================================
 -- Types for generating tactical area layouts (U-shaped areas, fire points, etc.)
 
----Internal squares configuration for U-shaped area
----Defines three functional zones inside U-shaped tactical area (ammo, hide, reload)
----@class SBJ__UShapeInternalSquaresConfig: table
----@field size number Square size in nautical miles
----@field marginToWall? number Safety margin between squares and U-shape walls (default: 0.1 nm)
----@field marginBetweenSquares? number Safety margin between squares (default: 0.1 nm)
-
----Fire points configuration for U-shaped area
----Defines fire point positions on circle perimeter around U-shaped area
----@class SBJ__UShapeFirePointsConfig: table
----@field radius number Radius of circle for fire point placement in nautical miles
----@field squareSize number Size of fire point squares in nautical miles
----@field count number Number of fire points to generate
----@field angleRange? number Angular range for placement in degrees, 360=full circle (default: 360)
----@field margin? number Safety margin between fire points in nautical miles (default: 0.1 nm)
-
----U-shaped tactical area configuration
----Complete configuration for generating U-shaped area with optional internal zones and fire points
----@class SBJ__UShapeAreaConfig: table
----@field centerLat number Center latitude in degrees
----@field centerLon number Center longitude in degrees
----@field thickness number Wall thickness in nautical miles
----@field width number Total width of the shape in nautical miles
----@field height number Total height of the shape in nautical miles
----@field openingAngle number Opening direction in degrees (0=North, 90=East, 180=South, 270=West)
----@field internalSquares? SBJ__UShapeInternalSquaresConfig Optional internal functional zones configuration
----@field firePoints? SBJ__UShapeFirePointsConfig Optional fire points configuration
-
----U-shaped area generation result
+---Tactical area generation result
 ---Contains all generated vertices for U-shape, internal zones, and fire points
----@class SBJ__UShapeAreaResult: table
+---@class SBJ__TacticalAreas: table
 ---@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
 ---@field ammoArea? CMO__Location[] Ammo holding area vertices (4 points) if internal squares configured
 ---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
@@ -1589,21 +1561,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__MovementPath: table
 ---@field waypoints SBJ__PathWaypoint[] Array of waypoints forming the path
 
----Movement path calculation configuration
----Parameters for calculating tactical movement paths with U-shape avoidance
----@class SBJ__MovementPathsConfig: table
----@field centerLat number U-shape center latitude in degrees
----@field centerLon number U-shape center longitude in degrees
----@field width number U-shape width in nautical miles
----@field height number U-shape height in nautical miles
----@field thickness number U-shape wall thickness in nautical miles
----@field openingAngle number U-shape opening direction in degrees (0=North, 90=East, 180=South, 270=West)
----@field ammoArea CMO__Location[] Ammo holding area vertices (4 points)
----@field hideArea CMO__Location[] Hide area vertices (4 points)
----@field reloadArea CMO__Location[] Reload area vertices (4 points)
----@field firePoints? table<integer, CMO__Location[]> Fire point areas array, each with 4 vertices (optional)
----@field avoidanceMargin? number Safety margin for U-shape avoidance in nautical miles (default: 0.3)
-
 ---Movement paths configuration for tactical area
 ---Maps path types to their waypoint arrays
 ---@class SBJ__MovementPaths: table
@@ -1617,7 +1574,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__SetupResult: table
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
----@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__UShapeAreaResult, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
+---@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__TacticalAreas, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
 
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table

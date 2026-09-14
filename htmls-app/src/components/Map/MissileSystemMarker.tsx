@@ -9,7 +9,7 @@ import { CONFIG } from '@/constants/setupMenu';
 import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
-import { TacticalPolygon, RangeCircle } from './primitives';
+import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
 import { createImageIcon } from './icons';
 import type { DeploymentPreview } from '@/utils/missileDeployment';
 
@@ -56,9 +56,13 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
 // ============================================================================
 const MISSILE_ICON_URL = 'https://i.meee.com.tw/suDq81b.png';
 const SAM_ICON_URL = 'https://i.meee.com.tw/PCUEceO.png';
+const ATP_ICON_URL = 'https://i.meee.com.tw/t9aLh0K.png';
+const MSL_ICON_URL = 'https://i.meee.com.tw/lrsJGwE.png';
 const ICON_IMAGES: Record<string, ForceImage> = {
   sam: { url: SAM_ICON_URL, label: 'SAM', width: 25, height: 15 },
   ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 25, height: 15 },
+  atp: { url: ATP_ICON_URL, label: 'ATP', width: 25, height: 15 },
+  msl: { url: MSL_ICON_URL, label: 'MSL', width: 25, height: 15 },
 };
 
 // ============================================================================
@@ -239,63 +243,74 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         />
       ))}
 
-      {/* Shelter Points */}
-      {(tacticalAreas.shelterPoints ?? []).map((point, index) => (
-        <CircleMarker
-          key={`shelter-${index}`}
-          center={toLeafletLatLng(point)}
-          radius={4}
-          interactive={false}
-          pathOptions={PATH_OPTIONS_SHELTER}
-        >
-          <Tooltip direction="top">
-            <strong>Shelter {index + 1}</strong>
-          </Tooltip>
-        </CircleMarker>
-      ))}
+      {/* Detail layers: sub-pixel at low zoom, and the bulk of the draw cost */}
+      <ZoomGate minZoom={DETAIL_MIN_ZOOM}>
+        {/* Shelter Points */}
+        {(tacticalAreas.shelterPoints ?? []).map((point, index) => (
+          <CircleMarker
+            key={`shelter-${index}`}
+            center={toLeafletLatLng(point)}
+            radius={4}
+            interactive={false}
+            pathOptions={PATH_OPTIONS_SHELTER}
+          >
+            <Tooltip direction="top">
+              <strong>Shelter {index + 1}</strong>
+            </Tooltip>
+          </CircleMarker>
+        ))}
 
-      {/* Movement Paths */}
-      {haPathPositions && (
-        <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA}>
-          <Tooltip direction="top">
-            <strong>RL → HA</strong>
-          </Tooltip>
-        </Polyline>
-      )}
-      {ahaPathPositions && (
-        <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA}>
-          <Tooltip direction="top">
-            <strong>RL → AHA</strong>
-          </Tooltip>
-        </Polyline>
-      )}
-      {firePointPathPositions.map(
-        (positions, index) =>
-          positions && (
-            <Polyline key={`path-fp-${index}`} positions={positions} pathOptions={PATH_OPTIONS_FP}>
-              <Tooltip direction="top">
-                <strong>HA → FP {index + 1}</strong>
-              </Tooltip>
-            </Polyline>
-          )
-      )}
-      {reloadPathPositions.map(
-        (positions, index) =>
-          positions && (
-            <Polyline key={`path-rl-${index}`} positions={positions} pathOptions={PATH_OPTIONS_RL}>
-              <Tooltip direction="top">
-                <strong>FP {index + 1} → RL </strong>
-              </Tooltip>
-            </Polyline>
-          )
-      )}
-      {shrlPathPositions && (
-        <Polyline positions={shrlPathPositions} pathOptions={PATH_OPTIONS_SHRL}>
-          <Tooltip direction="top">
-            <strong>Shelter → RL (SHRL)</strong>
-          </Tooltip>
-        </Polyline>
-      )}
+        {/* Movement Paths */}
+        {haPathPositions && (
+          <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA}>
+            <Tooltip direction="top">
+              <strong>RL → HA</strong>
+            </Tooltip>
+          </Polyline>
+        )}
+        {ahaPathPositions && (
+          <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA}>
+            <Tooltip direction="top">
+              <strong>RL → AHA</strong>
+            </Tooltip>
+          </Polyline>
+        )}
+        {firePointPathPositions.map(
+          (positions, index) =>
+            positions && (
+              <Polyline
+                key={`path-fp-${index}`}
+                positions={positions}
+                pathOptions={PATH_OPTIONS_FP}
+              >
+                <Tooltip direction="top">
+                  <strong>HA → FP {index + 1}</strong>
+                </Tooltip>
+              </Polyline>
+            )
+        )}
+        {reloadPathPositions.map(
+          (positions, index) =>
+            positions && (
+              <Polyline
+                key={`path-rl-${index}`}
+                positions={positions}
+                pathOptions={PATH_OPTIONS_RL}
+              >
+                <Tooltip direction="top">
+                  <strong>FP {index + 1} → RL </strong>
+                </Tooltip>
+              </Polyline>
+            )
+        )}
+        {shrlPathPositions && (
+          <Polyline positions={shrlPathPositions} pathOptions={PATH_OPTIONS_SHRL}>
+            <Tooltip direction="top">
+              <strong>Shelter → RL (SHRL)</strong>
+            </Tooltip>
+          </Polyline>
+        )}
+      </ZoomGate>
     </>
   );
 });

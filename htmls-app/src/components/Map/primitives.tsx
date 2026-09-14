@@ -1,5 +1,14 @@
-import { useMemo, type ReactNode } from 'react';
-import { Circle, LayersControl, MapContainer, Polygon, TileLayer, Tooltip } from 'react-leaflet';
+import { useMemo, useState, type ReactNode } from 'react';
+import {
+  Circle,
+  LayersControl,
+  MapContainer,
+  Polygon,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 import L from 'leaflet';
 import type { Coordinate } from '@/types/geo';
 import type { AreaType } from '@/types/deployment';
@@ -42,6 +51,11 @@ export function MapShell({
       center={toLeafletLatLng(center)}
       zoom={zoom}
       scrollWheelZoom={scrollWheelZoom}
+      // Canvas renderer: every vector path draws into one <canvas> instead of
+      // one SVG node each. With 20+ deployed systems (~18 paths apiece, mostly
+      // dashed) the SVG renderer makes zoom/pan visibly stutter in CMO's
+      // embedded browser.
+      preferCanvas
       className={`h-full w-full ${className}`}
       style={{ background: '#10161a' }}
     >
@@ -71,6 +85,30 @@ export function MapShell({
       {children}
     </MapContainer>
   );
+}
+
+// ============================================================================
+// ZoomGate — mount children only once the map is zoomed in far enough
+// ============================================================================
+/**
+ * Zoom level below which per-unit detail (movement paths, shelter points,
+ * weapon range) is hidden. Tactical squares are ~370 m across, so anything
+ * finer than the area outlines is sub-pixel noise before this level.
+ */
+export const DETAIL_MIN_ZOOM = 11;
+
+interface ZoomGateProps {
+  minZoom: number;
+  children: ReactNode;
+}
+
+export function ZoomGate({ minZoom, children }: ZoomGateProps) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(() => map.getZoom());
+  useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  });
+  return zoom >= minZoom ? <>{children}</> : null;
 }
 
 // ============================================================================
