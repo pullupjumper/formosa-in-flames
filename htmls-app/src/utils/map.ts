@@ -28,12 +28,3 @@ export function getWeaponSystemName(category: string): string {
 export function makeUnitKey(category: string, unitName: string): string {
   return `${category}_${unitName}`;
 }
-
-/**
- * Inverse of `makeUnitKey`. Only the first segment is the category, so unit
- * names containing underscores round-trip unchanged.
- */
-export function parseUnitKey(unitKey: string): { category: string; unitName: string } {
-  const [category, ...nameParts] = unitKey.split('_');
-  return { category, unitName: nameParts.join('_') };
-}

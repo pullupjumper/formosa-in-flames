@@ -7,4 +7,3 @@ export {
   MissileSystemPreview,
   AreaRelocatePreview,
 } from './MissileSystemMarker';
-export type { RelocatingArea, AreaType } from './MissileSystemMarker';

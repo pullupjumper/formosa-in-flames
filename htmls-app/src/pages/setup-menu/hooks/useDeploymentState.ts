@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileSystems, MissileDeployment, Jammer } from '@/types/setupMenu';
-import type { RelocatingArea } from '@/components/Map';
+import type { MissileDeployment, Jammer } from '@/types/setupMenu';
+import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { isPointInTaiwan } from '@/utils/geo';
-import { resolveOpeningAngle, parseUnitKey } from '@/utils/map';
+import { resolveOpeningAngle } from '@/utils/map';
 import { calculateBearing } from '@/utils/tacticalAreaGenerator';
 import {
   buildMovementPaths,
@@ -26,8 +26,13 @@ import {
   isMissileMode,
   isPlacementMode,
   isSameArea,
+  selectRelocatingArea,
+  selectRotatingUnitKey,
+  selectSelectedUnitKey,
+  selectSelectedJammerIndex,
+  selectRelocatingJammerIndex,
 } from './deploymentMode';
-import type { DeploymentMode, SelectedUnit } from './deploymentMode';
+import type { DeploymentMode } from './deploymentMode';
 import { useDeploymentPreviews } from './useDeploymentPreviews';
 
 /**
@@ -52,7 +57,6 @@ function formatPosition(position: Coordinate): string {
 // TYPES
 // ============================================================================
 export interface UseDeploymentStateParams {
-  missileSystems: MissileSystems;
   jammers: Jammer[];
   deployedSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
@@ -72,7 +76,6 @@ export interface UseDeploymentStateParams {
 // HOOK
 // ============================================================================
 export function useDeploymentState({
-  missileSystems,
   jammers,
   deployedSystems,
   deployedJammers,
@@ -115,16 +118,6 @@ export function useDeploymentState({
   useEffect(() => {
     jammersRef.current = jammers;
   }, [jammers]);
-
-  const getUnitInfo = useCallback(
-    (unitKey: string) => {
-      const { category, unitName } = parseUnitKey(unitKey);
-      const unit = missileSystems[category]?.firingUnits?.[unitName];
-      if (!unit) return null;
-      return { name: unit.name, category };
-    },
-    [missileSystems]
-  );
 
   /** Injects the side's boundary rule into the pure generator */
   const createDeployment = useCallback(
@@ -522,6 +515,13 @@ export function useDeploymentState({
 
   const placingJammerUnit = mode.kind === 'placeJammer' ? (jammers[mode.index] ?? null) : null;
 
+  // View model: components read these instead of pattern-matching `mode`
+  const relocatingArea = selectRelocatingArea(mode);
+  const rotatingUnitKey = selectRotatingUnitKey(mode);
+  const selectedUnitKey = selectSelectedUnitKey(mode);
+  const selectedJammerIndex = selectSelectedJammerIndex(mode);
+  const relocatingJammerIndex = selectRelocatingJammerIndex(mode);
+
   return {
     // Mode machine
     mode,
@@ -537,11 +537,15 @@ export function useDeploymentState({
     isJammersCollapsed,
 
     // Derived
+    relocatingArea,
+    rotatingUnitKey,
+    selectedUnitKey,
+    selectedJammerIndex,
+    relocatingJammerIndex,
     placingJammerUnit,
     previewData,
     relocatePreviewVertices,
     rotationPreviewData,
-    getUnitInfo,
 
     // Handlers
     handleMapClick,

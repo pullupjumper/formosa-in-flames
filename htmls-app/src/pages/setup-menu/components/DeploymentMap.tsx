@@ -9,7 +9,7 @@ import {
   DeployedJammers,
   JammerRelocatePreview,
 } from '@/components/Map';
-import type { RelocatingArea } from '@/components/Map';
+import type { RelocatingArea } from '@/types/deployment';
 import type { DeploymentPreview } from '../hooks/useDeploymentPreviews';
 
 // ============================================================================
@@ -38,7 +38,6 @@ interface DeploymentMapProps {
   rotationPreview: DeploymentPreview | null;
   relocatePreviewVertices: Coordinate[] | null;
 
-  getUnitInfo: (unitKey: string) => { name: string; category: string } | null;
   onMapClick: (position: Coordinate) => void;
   onMouseMove: (position: Coordinate) => void;
   onAreaClick: (area: RelocatingArea) => void;
@@ -62,7 +61,6 @@ export function DeploymentMap({
   deployPreview,
   rotationPreview,
   relocatePreviewVertices,
-  getUnitInfo,
   onMapClick,
   onMouseMove,
   onAreaClick,
@@ -80,7 +78,6 @@ export function DeploymentMap({
       <AirbaseMarkers airbases={airbases} onAirbaseClick={onAirbaseClick} />
       <DeployedMissileSystems
         deployedSystems={deployedSystems}
-        getUnitInfo={getUnitInfo}
         onAreaClick={onAreaClick}
         onRotateClick={onRotateClick}
         relocatingArea={relocatingArea}

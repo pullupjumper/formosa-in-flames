@@ -1,14 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, Jammer, MissileSystems } from '@/types/setupMenu';
+import type { MissileDeployment, Jammer } from '@/types/setupMenu';
 import { useDeploymentState } from '@/pages/setup-menu/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/setup-menu/hooks/useDeploymentState';
 import { useAircraftPanel, AIRCRAFT_PANEL_STATUS } from '@/pages/setup-menu/hooks/useAircraftPanel';
 import {
   deploymentModeReducer,
   IDLE_STATE,
-  AREA_LABEL,
   DEFAULT_STATUS,
   formatCancellationMessage,
   formatRelocateFailure,
@@ -17,6 +16,7 @@ import {
   isSameArea,
 } from '@/pages/setup-menu/hooks/deploymentMode';
 import type { DeploymentMode } from '@/pages/setup-menu/hooks/deploymentMode';
+import { getAreaLabel } from '@/constants/deployment';
 import { generateDeploymentData } from '@/utils/missileDeployment';
 import { createSeededRandom } from '@/utils/random';
 
@@ -31,14 +31,6 @@ const SEED = 42;
 
 const UNIT_KEY = 'ascm_HF3_01';
 const UNIT_NAME = 'HF3 Battery 1';
-
-const MISSILE_SYSTEMS = {
-  ascm: {
-    firingUnits: {
-      HF3_01: { name: UNIT_NAME },
-    },
-  },
-} as unknown as MissileSystems;
 
 const JAMMERS = [
   { zoneName: 'Z1', name: 'EW North', randomRadius: 5, radius: 50 },
@@ -84,7 +76,6 @@ function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   const rng = createSeededRandom(SEED);
   return renderHook(() => {
     const deployment = useDeploymentState({
-      missileSystems: MISSILE_SYSTEMS,
       jammers: JAMMERS,
       deployedSystems: new Map(),
       deployedJammers: new Map(),
@@ -126,7 +117,7 @@ function pressEscape() {
 // ============================================================================
 describe('formatAreaLabel', () => {
   it.each(['ushape', 'aha', 'hide', 'reload'] as const)('uses the plain label for %s', (type) => {
-    expect(formatAreaLabel({ unitKey: UNIT_KEY, type })).toBe(AREA_LABEL[type]);
+    expect(formatAreaLabel({ unitKey: UNIT_KEY, type })).toBe(getAreaLabel(type));
   });
 
   it('numbers fire points from 1', () => {
@@ -150,10 +141,10 @@ describe('formatRelocateFailure', () => {
 
   it('names the area that is in the way', () => {
     expect(formatRelocateFailure({ code: 'overlaps-other-area', other: 'reload' })).toContain(
-      AREA_LABEL.reload
+      getAreaLabel('reload')
     );
     expect(formatRelocateFailure({ code: 'overlaps-other-area', other: 'hide' })).toContain(
-      AREA_LABEL.hide
+      getAreaLabel('hide')
     );
   });
 });
@@ -266,13 +257,6 @@ describe('useDeploymentState initial state', () => {
     expect(result.current.status).toBe(DEFAULT_STATUS);
     // The generic hint is replaced while the aircraft panel is showing.
     expect(result.current.displayStatus).toBe(AIRCRAFT_PANEL_STATUS);
-  });
-
-  it('resolves a unit key back to its name and category', () => {
-    const { result } = setup();
-    expect(result.current.getUnitInfo(UNIT_KEY)).toEqual({ name: UNIT_NAME, category: 'ascm' });
-    expect(result.current.getUnitInfo('ascm_UNKNOWN')).toBeNull();
-    expect(result.current.getUnitInfo('nosuch_HF3_01')).toBeNull();
   });
 });
 
@@ -608,7 +592,7 @@ describe('handleMapClick', () => {
     // rejected with a warning; both must leave a coherent state.
     if (handlers.onDeploySystem.mock.calls.length > 0) {
       expectIdle(result.current.mode);
-      expect(result.current.status).toContain(AREA_LABEL.hide);
+      expect(result.current.status).toContain(getAreaLabel('hide'));
     } else {
       expectMode(result.current.mode, 'relocateArea');
       expect(result.current.status).toContain('Warning');

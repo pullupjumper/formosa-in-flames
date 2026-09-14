@@ -64,7 +64,6 @@ export function DeploymentTab({
   onUpdateAirbase,
 }: DeploymentTabProps) {
   const deployment = useDeploymentState({
-    missileSystems,
     jammers,
     deployedSystems,
     deployedJammers,
@@ -74,7 +73,7 @@ export function DeploymentTab({
     onDeployJammer,
     onUndeployJammer,
   });
-  const { mode, isPlacementActive, coordinates, status } = deployment;
+  const { isPlacementActive, coordinates, status } = deployment;
 
   const {
     sidebarPanel,
@@ -88,8 +87,6 @@ export function DeploymentTab({
     onEnterPanel: deployment.clearPlacement,
   });
 
-  // Narrow the active mode once, so the markup below stays declarative
-  const placingJammer = mode.kind === 'placeJammer' ? mode : null;
   const missileGroups = useMemo(
     () => buildMissileGroups(missileSystems, deployedSystems),
     [missileSystems, deployedSystems]
@@ -107,14 +104,13 @@ export function DeploymentTab({
           deployedJammers={deployedJammers}
           isPlacementActive={isPlacementActive}
           mousePosition={deployment.mousePosition}
-          relocatingArea={mode.kind === 'relocateArea' ? mode.area : null}
-          rotatingUnitKey={mode.kind === 'rotate' ? mode.unitKey : null}
-          relocatingJammerIndex={placingJammer?.isRelocate ? placingJammer.index : null}
+          relocatingArea={deployment.relocatingArea}
+          rotatingUnitKey={deployment.rotatingUnitKey}
+          relocatingJammerIndex={deployment.relocatingJammerIndex}
           placingJammerUnit={deployment.placingJammerUnit}
           deployPreview={deployment.previewData}
           rotationPreview={deployment.rotationPreviewData}
           relocatePreviewVertices={deployment.relocatePreviewVertices}
-          getUnitInfo={deployment.getUnitInfo}
           onMapClick={deployment.handleMapClick}
           onMouseMove={deployment.handleMouseMove}
           onAreaClick={deployment.handleAreaClick}
@@ -163,13 +159,11 @@ export function DeploymentTab({
               deployedJammers={deployedJammers}
               isJammersCollapsed={deployment.isJammersCollapsed}
               expandedJammerIndex={deployment.expandedJammerIndex}
-              selectedJammerIndex={
-                placingJammer && !placingJammer.isRelocate ? placingJammer.index : null
-              }
+              selectedJammerIndex={deployment.selectedJammerIndex}
               missileGroups={missileGroups}
               collapsedCategories={deployment.collapsedCategories}
               expandedUnitKey={deployment.expandedUnitKey}
-              selectedUnitKey={mode.kind === 'deploy' ? mode.unit.key : null}
+              selectedUnitKey={deployment.selectedUnitKey}
               onToggleJammers={deployment.toggleJammers}
               onJammerSelect={deployment.handleJammerSelect}
               onUndeployJammer={deployment.handleUndeployJammer}

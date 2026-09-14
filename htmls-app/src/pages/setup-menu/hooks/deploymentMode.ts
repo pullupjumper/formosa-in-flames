@@ -1,5 +1,6 @@
-import type { RelocatingArea, AreaType } from '@/components/Map';
 import type { Coordinate } from '@/types/geo';
+import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
+import { getAreaLabel } from '@/constants/deployment';
 import type { PreviewOffsets, RelocateFailure } from '@/utils/missileDeployment';
 
 /**
@@ -11,12 +12,6 @@ import type { PreviewOffsets, RelocateFailure } from '@/utils/missileDeployment'
 // ============================================================================
 // TYPES
 // ============================================================================
-export interface SelectedUnit {
-  key: string;
-  name: string;
-  category: string;
-}
-
 export type DeploymentMode =
   | { kind: 'idle' }
   /** A sidebar unit is armed; `offsets` drives the hover preview */
@@ -109,6 +104,32 @@ export function isSameArea(a: RelocatingArea, b: RelocatingArea): boolean {
 }
 
 // ============================================================================
+// SELECTORS — what the map and sidebar need to draw, without knowing the union
+// ============================================================================
+export function selectRelocatingArea(mode: DeploymentMode): RelocatingArea | null {
+  return mode.kind === 'relocateArea' ? mode.area : null;
+}
+
+export function selectRotatingUnitKey(mode: DeploymentMode): string | null {
+  return mode.kind === 'rotate' ? mode.unitKey : null;
+}
+
+/** Sidebar unit armed for a fresh deployment */
+export function selectSelectedUnitKey(mode: DeploymentMode): string | null {
+  return mode.kind === 'deploy' ? mode.unit.key : null;
+}
+
+/** Jammer armed for a fresh deployment (not a relocation) */
+export function selectSelectedJammerIndex(mode: DeploymentMode): number | null {
+  return mode.kind === 'placeJammer' && !mode.isRelocate ? mode.index : null;
+}
+
+/** Jammer being moved on the map */
+export function selectRelocatingJammerIndex(mode: DeploymentMode): number | null {
+  return mode.kind === 'placeJammer' && mode.isRelocate ? mode.index : null;
+}
+
+// ============================================================================
 // STATUS VOCABULARY
 // ============================================================================
 export const DEFAULT_STATUS = 'Select a unit from the sidebar, then click on the map to deploy';
@@ -117,18 +138,10 @@ export const OUT_OF_BOUNDS_JAMMER = 'Warning: EW units can only be deployed on T
 export const OUT_OF_BOUNDS_MISSILE =
   'Warning: Missile systems can only be deployed on Taiwan mainland';
 
-export const AREA_LABEL: Record<AreaType, string> = {
-  ushape: 'U-Shape',
-  aha: 'AHA',
-  hide: 'Hide Area',
-  reload: 'Reload Area',
-  fp: 'Fire Point',
-};
-
 /** Fire points are numbered in the UI, every other area has a fixed label */
 export function formatAreaLabel(area: RelocatingArea): string {
-  if (area.type !== 'fp') return AREA_LABEL[area.type];
-  return `${AREA_LABEL.fp} ${(area.fpIndex ?? 0) + 1}`;
+  if (area.type !== 'fp') return getAreaLabel(area.type);
+  return `${getAreaLabel('fp')} ${(area.fpIndex ?? 0) + 1}`;
 }
 
 /** Turn a rejection from `relocateArea` into the status line */
@@ -139,7 +152,7 @@ export function formatRelocateFailure(failure: RelocateFailure): string {
     case 'outside-boundary':
       return 'Warning: Must be within the boundary area';
     case 'overlaps-other-area':
-      return `Warning: Overlaps with ${AREA_LABEL[failure.other]}, choose another location`;
+      return `Warning: Overlaps with ${getAreaLabel(failure.other)}, choose another location`;
   }
 }
 

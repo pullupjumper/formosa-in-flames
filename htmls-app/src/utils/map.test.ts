@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveOpeningAngle, getWeaponSystemName, makeUnitKey, parseUnitKey } from '@/utils/map';
+import { resolveOpeningAngle, getWeaponSystemName, makeUnitKey } from '@/utils/map';
 
 describe('resolveOpeningAngle', () => {
   const at = (latitude: number, longitude: number) => resolveOpeningAngle({ latitude, longitude });
@@ -41,18 +41,5 @@ describe('getWeaponSystemName', () => {
 describe('unit keys', () => {
   it('joins the category and the unit name', () => {
     expect(makeUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
-  });
-
-  it('splits on the first separator only', () => {
-    expect(parseUnitKey('ascm_HF3_01')).toEqual({ category: 'ascm', unitName: 'HF3_01' });
-  });
-
-  it.each(['ascm_HF3_01', 'sam_TK3', 'mlrs_A_B_C'])('round-trips %s', (unitKey) => {
-    const { category, unitName } = parseUnitKey(unitKey);
-    expect(makeUnitKey(category, unitName)).toBe(unitKey);
-  });
-
-  it('yields an empty unit name when the key has no separator', () => {
-    expect(parseUnitKey('ascm')).toEqual({ category: 'ascm', unitName: '' });
   });
 });

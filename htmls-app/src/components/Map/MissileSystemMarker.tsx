@@ -5,44 +5,27 @@ import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment, ForceImage } from '@/types/setupMenu';
 import { CONFIG } from '@/constants/setupMenu';
+import { getAreaColor } from '@/constants/deployment';
+import type { AreaType, RelocatingArea } from '@/types/deployment';
 import { getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, nauticalMilesToMeters, toLeafletPositions } from '@/utils/geo';
-
-// ============================================================================
-// Types
-// ============================================================================
-export type AreaType = 'ushape' | 'aha' | 'hide' | 'reload' | 'fp';
-
-export interface RelocatingArea {
-  unitKey: string;
-  type: AreaType;
-  fpIndex?: number;
-}
 
 // ============================================================================
 // COLORS
 // ============================================================================
 const COLORS = {
-  USHAPE: '#ff6b6b',
-  AMMO_AREA: '#ffd93d',
-  HIDE_AREA: '#6bcb77',
-  RELOAD_AREA: '#4d96ff',
-  FIRE_POINT: '#ff922b',
+  USHAPE: getAreaColor('ushape'),
+  AMMO_AREA: getAreaColor('aha'),
+  HIDE_AREA: getAreaColor('hide'),
+  RELOAD_AREA: getAreaColor('reload'),
+  FIRE_POINT: getAreaColor('fp'),
   WEAPON_RANGE: '#ff4444',
   SHELTER: '#c084fc',
-  PATH_HA: '#6bcb77',
-  PATH_AHA: '#ffd93d',
-  PATH_FP: '#ff922b',
-  PATH_RL: '#4d96ff',
+  PATH_HA: getAreaColor('hide'),
+  PATH_AHA: getAreaColor('aha'),
+  PATH_FP: getAreaColor('fp'),
+  PATH_RL: getAreaColor('reload'),
   PATH_SHRL: '#c084fc',
-};
-
-const AREA_TYPE_COLOR: Record<AreaType, string> = {
-  ushape: COLORS.USHAPE,
-  aha: COLORS.AMMO_AREA,
-  hide: COLORS.HIDE_AREA,
-  reload: COLORS.RELOAD_AREA,
-  fp: COLORS.FIRE_POINT,
 };
 
 // ============================================================================
@@ -581,7 +564,6 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 // ============================================================================
 interface DeployedMissileSystemsProps {
   deployedSystems: Map<string, MissileDeployment>;
-  getUnitInfo: (unitKey: string) => { name: string; category: string } | null;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   relocatingArea?: RelocatingArea | null;
@@ -725,7 +707,7 @@ interface AreaRelocatePreviewProps {
 
 export function AreaRelocatePreview({ vertices, areaType }: AreaRelocatePreviewProps) {
   if (vertices.length === 0) return null;
-  const areaColor = AREA_TYPE_COLOR[areaType];
+  const areaColor = getAreaColor(areaType);
   return (
     <Polygon
       positions={toLeafletPositions(vertices)}

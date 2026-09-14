@@ -1,5 +1,6 @@
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
 import type { MissileDeployment, MovementPaths, TacticalAreas } from '@/types/setupMenu';
+import type { AreaType, RelocatingArea, SquareAreaType } from '@/types/deployment';
 import { areAllPointsInPolygon, areAllPointsInTaiwan, calculateCentroid } from '@/utils/geo';
 import {
   generateUShapeVertices,
@@ -61,9 +62,7 @@ const DEPLOYMENT_MAX_ATTEMPTS = 50;
 /** Fixed reference point used to precompute angle-specific preview offsets */
 export const REF_CENTER: Coordinate = { latitude: 23.8, longitude: 121.0 };
 
-export type RelocatableSquareType = 'aha' | 'hide' | 'reload' | 'fp';
-
-export const AREA_SQUARE_SIZE: Record<RelocatableSquareType, number> = {
+export const AREA_SQUARE_SIZE: Record<SquareAreaType, number> = {
   aha: AREA_CONFIG.ahaPoint.squareSize,
   hide: AREA_CONFIG.internalSquares.size,
   reload: AREA_CONFIG.internalSquares.size,
@@ -112,16 +111,10 @@ export interface RotationPreview {
 }
 
 /** The U-shape moves the whole deployment; the other types move one square. */
-export type RelocateTargetType = 'ushape' | RelocatableSquareType;
+export type RelocateTargetType = AreaType;
 
-/**
- * Structural subset of the map layer's `RelocatingArea`, so this module stays
- * free of component imports.
- */
-export interface RelocateTarget {
-  type: RelocateTargetType;
-  fpIndex?: number;
-}
+/** Which area to move; the unit is already known from `deployment`. */
+export type RelocateTarget = Omit<RelocatingArea, 'unitKey'>;
 
 /** Machine-readable rejection; callers own the user-facing wording. */
 export type RelocateFailure =
@@ -461,7 +454,7 @@ function validateInternalSquare(
 /** Move one square, leaving every other tactical area untouched */
 function buildSquareUpdate(
   deployment: MissileDeployment,
-  type: RelocatableSquareType,
+  type: SquareAreaType,
   fpIndex: number,
   position: Coordinate,
   rng: RandomSource
