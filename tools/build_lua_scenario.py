@@ -11,6 +11,7 @@ import fnmatch
 import os
 import re
 import shutil
+import sys
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
@@ -25,6 +26,42 @@ INIT_ACTION_NAME_PATTERN = re.compile(r'["\']([^"\']+)["\']')
 INIT_SPECIAL_ACTION_PATTERN = re.compile(
     r'\{\s*path\s*=\s*["\']([^"\']+)["\']\s*,\s*actionName\s*=\s*["\']([^"\']+)["\']\s*\}\s*,?'
 )
+
+
+# =============================================================================
+# LOGGING
+# 預設只印階段摘要與警告；--verbose 才印每個檔案的細節。
+# 縮排配合 bin/build.sh 的「▶ [n/5] 階段」標題，Python 這邊全部縮兩格。
+# =============================================================================
+
+VERBOSE = False
+_USE_COLOR = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+
+
+def _c(code: str, text: str) -> str:
+    return f"\033[{code}m{text}\033[0m" if _USE_COLOR else text
+
+
+def info(msg: str) -> None:
+    print(f"  {msg}")
+
+
+def detail(msg: str) -> None:
+    if VERBOSE:
+        print(_c("2", f"    {msg}"))
+
+
+def warn(msg: str) -> None:
+    print(_c("33", f"  ⚠ {msg}"))
+
+
+def error(msg: str) -> None:
+    print(_c("31", f"  ✗ {msg}"))
+
+
+def summary(label: str, value: str) -> None:
+    """Aligned `label  value` summary line."""
+    print(f"  {_c('2', f'{label:<9}')}{value}")
 
 
 @dataclass(frozen=True)
@@ -246,8 +283,8 @@ def promote_local_table_to_global(lines: List[str], table_name: str) -> List[str
                     1
                 ) + match_local_decl.group(2)
                 break
-    except re.error as error:
-        print(f"Skipping module rename for '{table_name}' due to regex error: {error}")
+    except re.error as err:
+        warn(f"skipped module rename for {table_name} (regex error: {err})")
 
     return updated_lines
 
@@ -297,8 +334,6 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
     processed_count = 0
     error_count = 0
 
-    print(f"🧹 Cleaning Lua files from '{src_dir}' to '{slim_dir}'...")
-
     for root, _, files in os.walk(src_dir):
         for file_name in files:
             if file_name.endswith(".lua"):
@@ -341,24 +376,23 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
                     write_text_file(output_file_path, processed_content)
 
                     if require_count_before > 0:
-                        print(
-                            f"  ✓ {relative_path} (removed {require_count_before - require_count_after}/{require_count_before} require statements)"
+                        detail(
+                            f"✓ {relative_path}  (removed require {require_count_before - require_count_after}/{require_count_before})"
                         )
                     else:
-                        print(f"  ✓ {relative_path}")
+                        detail(f"✓ {relative_path}")
                     processed_count += 1
 
                 except Exception as e:
-                    print(f"  ✗ Error processing file {input_file_path}: {e}")
+                    error(f"{relative_path}: {e}")
                     error_count += 1
 
+    summary("clean", f"{src_dir} → {slim_dir}  {processed_count} files")
+
     # Special post-processing: inject scripts into init.lua
-    print("\n" + "=" * 70)
     init_lua_path = os.path.join(slim_dir, "core", "init.lua")
     if os.path.exists(init_lua_path):
         try:
-            print("🔧 Post-processing init.lua with script injection...")
-
             # Step 1: Load all processed event scripts
             scripts_mapping = load_scripts_mapping(slim_dir)
 
@@ -366,7 +400,7 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
             init_content = read_text_file(init_lua_path)
 
             # Step 2: Inject event scripts into initEventActions
-            modified_init_content = inject_scripts_into_init(
+            modified_init_content, events_stat = inject_scripts_into_init(
                 init_content, scripts_mapping
             )
 
@@ -374,19 +408,19 @@ def clean_lua_files(src_dir: str, slim_dir: str) -> Tuple[int, int]:
             special_actions_mapping = load_special_actions_mapping(slim_dir)
 
             # Step 4: Inject special action scripts into initSpecialActions
-            modified_init_content = inject_special_actions_into_init(
+            modified_init_content, specials_stat = inject_special_actions_into_init(
                 modified_init_content, special_actions_mapping
             )
 
             # Write back to init.lua
             write_text_file(init_lua_path, modified_init_content)
 
-            print("✅ init.lua post-processing completed")
+            summary("inject", f"event scripts {events_stat} · special actions {specials_stat}")
         except Exception as e:
-            print(f"❌ Error post-processing init.lua: {e}")
+            error(f"init.lua post-processing failed: {e}")
             error_count += 1
     else:
-        print(f"⚠️ Warning: init.lua not found at {init_lua_path}")
+        warn(f"init.lua not found: {init_lua_path}")
 
     return processed_count, error_count
 
@@ -508,13 +542,13 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                     # Remove JS comments to avoid Lua parsing issues
                     js_content = remove_js_comments(js_content)
 
-                    print(f"    ✓ Injected {src} into HTML (comments removed)")
+                    detail(f"✓ HTML ← {src}  (JS comments stripped)")
                     return f"<script>\n{js_content}\n  </script>"
                 except Exception as e:
-                    print(f"    ✗ Error reading {src}: {e}")
+                    error(f"failed to read {src}: {e}")
                     return match.group(0)
             else:
-                print(f"    ⚠️ Local JS file not found: {js_path}")
+                warn(f"local JS not found: {js_path}")
                 return match.group(0)
 
         return re.sub(script_pattern, replace_script, html_content)
@@ -567,21 +601,21 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                 )
 
                 if new_content != lua_content:
-                    print(
-                        f"    ✓ Injected {spec.html_filename} into {spec.function_name} (long string level: {level})"
+                    detail(
+                        f"✓ {spec.function_name} ← {spec.html_filename}  (level {level})"
                     )
                     return new_content
                 else:
-                    print(
-                        f"    ⚠️ Could not find function {spec.function_name} to inject {spec.html_filename}"
+                    warn(
+                        f"{spec.function_name} not found, cannot inject {spec.html_filename}"
                     )
                     return lua_content
 
             except Exception as e:
-                print(f"    ✗ Error injecting {spec.html_filename}: {e}")
+                error(f"failed to inject {spec.html_filename}: {e}")
                 return lua_content
         else:
-            print(f"    ⚠️ HTML file not found: {html_path}")
+            warn(f"HTML not found: {html_path}")
             return lua_content
 
     for spec in HTML_INJECTION_SPECS:
@@ -600,10 +634,8 @@ def load_scripts_mapping(slim_dir: str) -> Dict[str, str]:
     scripts_dir = os.path.join(slim_dir, "scripts")
 
     if not os.path.exists(scripts_dir):
-        print(f"⚠️ Warning: Scripts directory '{scripts_dir}' does not exist")
+        warn(f"scripts directory not found: {scripts_dir}")
         return scripts_mapping
-
-    print(f"📜 Loading script files from '{scripts_dir}'...")
 
     for root, _, files in os.walk(scripts_dir):
         for file_name in files:
@@ -618,11 +650,10 @@ def load_scripts_mapping(slim_dir: str) -> Dict[str, str]:
                 try:
                     content = read_text_file(script_path)
                     scripts_mapping[action_name] = content
-                    print(f"  ✓ Loaded {action_name}")
+                    detail(f"loaded {action_name}")
                 except Exception as e:
-                    print(f"  ✗ Error loading {action_name}: {e}")
+                    error(f"failed to load {action_name}: {e}")
 
-    print(f"📊 Total scripts loaded: {len(scripts_mapping)}")
     return scripts_mapping
 
 
@@ -640,13 +671,9 @@ def load_special_actions_mapping(slim_dir: str) -> Dict[str, str]:
         os.path.join(slim_dir, "scripts", "taiwan", "specialActions"),
     ]
 
-    print("📜 Loading special action script files...")
-
     for special_dir in special_actions_dirs:
         if not os.path.exists(special_dir):
-            print(
-                f"⚠️ Warning: Special actions directory '{special_dir}' does not exist"
-            )
+            warn(f"specialActions directory not found: {special_dir}")
             continue
 
         for file_name in os.listdir(special_dir):
@@ -660,11 +687,10 @@ def load_special_actions_mapping(slim_dir: str) -> Dict[str, str]:
                 try:
                     content = read_text_file(script_path)
                     special_actions_mapping[action_path] = content
-                    print(f"  ✓ Loaded {action_path}")
+                    detail(f"loaded {action_path}")
                 except Exception as e:
-                    print(f"  ✗ Error loading {action_path}: {e}")
+                    error(f"failed to load {action_path}: {e}")
 
-    print(f"📊 Total special action scripts loaded: {len(special_actions_mapping)}")
     return special_actions_mapping
 
 
@@ -898,22 +924,21 @@ def group_files_by_priority(file_paths: List[str]) -> Dict[int, List[str]]:
     return priority_groups
 
 
-def inject_scripts_into_init(init_content: str, scripts_mapping: Dict[str, str]) -> str:
+def inject_scripts_into_init(
+    init_content: str, scripts_mapping: Dict[str, str]
+) -> Tuple[str, str]:
     """
     Inject script contents into init.lua's initEventActions function.
     Expands the for loop and replaces each ScriptText = [[]] with actual content
+    Returns (modified_content, "injected/total" summary string)
     """
     if not scripts_mapping:
-        print("⚠️ No scripts to inject")
-        return init_content
-
-    print("💉 Injecting scripts into init.lua...")
+        warn("no event scripts to inject")
+        return init_content, "0/0"
 
     # Parse actionNames table and extract all action names
     action_names = parse_init_action_names(init_content)
     lines = init_content.split("\n")
-
-    print(f"📋 Found {len(action_names)} action names in init.lua")
 
     # Now replace the entire for loop with expanded ScenEdit_SetAction calls
     result_lines = []
@@ -950,12 +975,12 @@ def inject_scripts_into_init(init_content: str, scripts_mapping: Dict[str, str])
                     _, _, level = build_lua_long_string(
                         strip_script_for_injection(script_content)
                     )
-                    print(f"  ✓ Injected {action_name} (long string level: {level})")
+                    detail(f"✓ {action_name}  (level {level})")
                 else:
                     result_lines.append(
                         render_event_action_update(indent_str, action_name, None)
                     )
-                    print(f"  ⚠️ Script not found for action: {action_name}")
+                    warn(f"event script not found: {action_name}")
 
             # After injecting scripts, i now points to the line after 'for loop's end'
             # which is initEventActions' end. We need to continue processing from there.
@@ -967,29 +992,24 @@ def inject_scripts_into_init(init_content: str, scripts_mapping: Dict[str, str])
 
         i += 1
 
-    print(f"📊 Total scripts injected: {injected_count}/{len(action_names)}")
-
-    return "\n".join(result_lines)
+    return "\n".join(result_lines), f"{injected_count}/{len(action_names)}"
 
 
 def inject_special_actions_into_init(
     init_content: str, special_actions_mapping: Dict[str, str]
-) -> str:
+) -> Tuple[str, str]:
     """
     Inject special action script contents into init.lua's initSpecialActions function.
     Expands the for loop and replaces each ScriptText = [[]] with actual content
+    Returns (modified_content, "injected/total" summary string)
     """
     if not special_actions_mapping:
-        print("⚠️ No special action scripts to inject")
-        return init_content
-
-    print("💉 Injecting special action scripts into init.lua...")
+        warn("no special action scripts to inject")
+        return init_content, "0/0"
 
     # Parse actions table and extract all action entries
     actions = parse_init_special_actions(init_content)
     lines = init_content.split("\n")
-
-    print(f"📋 Found {len(actions)} special actions in init.lua")
 
     # Now replace the entire for loop with expanded ScenEdit_SetSpecialAction calls
     result_lines = []
@@ -1027,14 +1047,14 @@ def inject_special_actions_into_init(
                     _, _, level = build_lua_long_string(
                         strip_script_for_injection(script_content)
                     )
-                    print(
-                        f"  ✓ Injected {script_path} (side: {extract_side_name(script_path)}, action: {action_entry.action_name}, level: {level})"
+                    detail(
+                        f"✓ {script_path}  ({extract_side_name(script_path)} · {action_entry.action_name} · level {level})"
                     )
                 else:
                     result_lines.extend(
                         render_special_action_update(indent_str, action_entry, None)
                     )
-                    print(f"  ⚠️ Script not found for special action: {script_path}")
+                    warn(f"special action script not found: {script_path}")
 
             # After injecting scripts, i now points to the line after 'for loop's end'
             # Decrement i so that the outer loop's i += 1 will process the current line
@@ -1045,9 +1065,7 @@ def inject_special_actions_into_init(
 
         i += 1
 
-    print(f"📊 Total special action scripts injected: {injected_count}/{len(actions)}")
-
-    return "\n".join(result_lines)
+    return "\n".join(result_lines), f"{injected_count}/{len(actions)}"
 
 
 # =============================================================================
@@ -1067,7 +1085,7 @@ def read_file_content(file_path: str) -> str:
         content = read_text_file(file_path).strip()
         return content
     except Exception as e:
-        print(f"Error reading file {file_path}: {e}")
+        error(f"failed to read {file_path}: {e}")
         return ""
 
 
@@ -1106,7 +1124,7 @@ def analyze_file_dependencies(
                     dependencies.add(normalized_path)
 
     except Exception as e:
-        print(f"Warning: Could not analyze dependencies for {src_file_path}: {e}")
+        warn(f"could not analyze dependencies: {src_file_path}: {e}")
 
     return dependencies
 
@@ -1181,7 +1199,6 @@ def build_dependency_graph(
     dependency_graph = {}
     standalone_count = 0
 
-    print(f"📊 Analyzing dependencies · {len(files)} files\n")
     for rel_path, full_path in files.items():
         dependencies = analyze_file_dependencies(full_path, slim_dir, src_dir)
         # Only keep dependencies that exist in our file list
@@ -1191,17 +1208,16 @@ def build_dependency_graph(
         if valid_dependencies:
             ordered_deps = sorted(valid_dependencies)
             dep_count = len(ordered_deps)
-            noun = "dep" if dep_count == 1 else "deps"
-            print(f"  {rel_path}  ({dep_count} {noun})")
+            detail(f"{rel_path}  ({dep_count} deps)")
             for index, dep in enumerate(ordered_deps):
                 branch = "└─" if index == dep_count - 1 else "├─"
-                print(f"    {branch} {dep}")
+                detail(f"  {branch} {dep}")
         else:
             standalone_count += 1
-            print(f"  {rel_path}  (no deps)")
+            detail(f"{rel_path}  (no deps)")
 
     with_deps_count = len(files) - standalone_count
-    print(f"\n  {with_deps_count} with deps · {standalone_count} standalone")
+    summary("deps", f"{with_deps_count} with deps · {standalone_count} standalone")
 
     return dependency_graph
 
@@ -1246,7 +1262,7 @@ def topological_sort(dependency_graph: Dict[str, Set[str]]) -> List[str]:
     # Check for circular dependencies
     if len(result) != len(all_files):
         remaining = all_files - set(result)
-        print(f"⚠️ Warning: Circular dependencies detected in: {remaining}")
+        warn(f"circular dependencies detected: {', '.join(sorted(remaining))}")
         # Add remaining files in arbitrary order
         result.extend(remaining)
 
@@ -1310,16 +1326,13 @@ def merge_lua_files(
     """
 
     if not os.path.exists(slim_dir):
-        print(f"❌ Error: Slim directory '{slim_dir}' does not exist")
+        error(f"slim directory not found: {slim_dir}")
         return False, 0
 
     if not os.path.exists(src_dir):
-        print(
-            f"⚠️ Warning: Source directory '{src_dir}' does not exist - dependency analysis may be limited"
-        )
+        warn(f"src directory {src_dir} not found, dependency analysis may be incomplete")
 
     # Collect all Lua files
-    print("📁 Collecting Lua files...")
     files = collect_all_lua_files(slim_dir, skip_schema)
 
     normalized_patterns = [
@@ -1334,29 +1347,21 @@ def merge_lua_files(
         del files[rel_path]
 
     if normalized_patterns:
-        print(
-            "🚫 Exclude patterns: "
-            + ", ".join(normalized_patterns)
-        )
-        print(f"🚫 Excluded files: {len(excluded_paths)}")
+        summary("exclude", f"{len(excluded_paths)} files  ({', '.join(normalized_patterns)})")
         for rel_path in excluded_paths:
-            print(f"  - {rel_path}")
-
-    print(f"Found {len(files)} Lua files")
+            detail(f"- {rel_path}")
 
     if not files:
-        print("❌ No Lua files found to merge")
+        error("no Lua files to merge")
         return False, 0
 
     # Sort files with dependency analysis
-    print("\n🔀 Sorting files by dependencies...")
     sorted_files = sort_files_with_dependencies(files, slim_dir, src_dir)
 
     # Merge files
     merged_content = []
     processed_files = []
 
-    print(f"\n🔨 Merging {len(sorted_files)} files...")
     for file_rel_path in sorted_files:
         file_path = files[file_rel_path]
         content = read_file_content(file_path)
@@ -1371,9 +1376,9 @@ def merge_lua_files(
             merged_content.append("end")
             merged_content.append("")  # Add blank line
             processed_files.append(file_rel_path)
-            print(f"  ✓ {file_rel_path}")
+            detail(f"✓ {file_rel_path}")
         else:
-            print(f"  ✗ {file_rel_path} (empty or unreadable)")
+            warn(f"{file_rel_path} is empty or unreadable, skipped")
 
     # Write merged content to output file
     if merged_content:
@@ -1392,18 +1397,18 @@ def merge_lua_files(
 
             write_text_file(output_file, final_content)
 
-            print(
-                f"\n✅ Successfully merged {len(processed_files)} files into '{output_file}'"
+            summary(
+                "merge",
+                f"{len(processed_files)} files → {output_file}  ({len(final_content):,} chars)",
             )
-            print(f"📄 Output file size: {len(final_content):,} characters")
 
             return True, len(processed_files)
 
         except Exception as e:
-            print(f"❌ Error writing output file: {e}")
+            error(f"failed to write output file: {e}")
             return False, 0
     else:
-        print("❌ No content to merge")
+        error("nothing to merge")
         return False, 0
 
 
@@ -1420,45 +1425,31 @@ def build_scenario(args) -> bool:
     slim_dir = args.slim_dir
     output_file = args.output
 
-    print("🚀 Starting Lua scenario build process...")
-    print(f"📂 Source directory: {src_dir}")
-    print(f"📂 Slim directory: {slim_dir}")
-    print(f"📄 Output file: {output_file}")
-    print("=" * 70)
-
     total_success = True
 
     # Step 1: Clean (if requested)
     if args.clean or args.build:
         if not os.path.exists(src_dir):
-            print(f"❌ Error: Source directory '{src_dir}' does not exist")
+            error(f"src directory not found: {src_dir}")
             return False
 
         # Keep slim_dir itself so IDE file watchers do not lose the directory.
         if args.build and os.path.exists(slim_dir):
-            print(f"🗑️ Clearing existing slim directory contents: {slim_dir}")
             clear_directory_contents(slim_dir)
 
-        processed_count, error_count = clean_lua_files(src_dir, slim_dir)
-
-        print("\n📊 Cleaning Results:")
-        print(f"  ✅ Successfully processed: {processed_count} files")
-        print(f"  ❌ Errors: {error_count} files")
+        _, error_count = clean_lua_files(src_dir, slim_dir)
 
         if error_count > 0:
-            print("⚠️ Some files had errors during cleaning")
+            error(f"clean stage failed for {error_count} file(s)")
             total_success = False
 
     # Step 2: Merge (if requested)
     if args.merge or args.build:
         if not os.path.exists(slim_dir):
-            print(
-                f"❌ Error: Slim directory '{slim_dir}' does not exist. Run with --clean first."
-            )
+            error(f"slim directory {slim_dir} not found, run --clean-only first")
             return False
 
-        print("\n" + "=" * 70)
-        merge_success, merged_count = merge_lua_files(
+        merge_success, _ = merge_lua_files(
             slim_dir,
             output_file,
             src_dir,
@@ -1466,24 +1457,8 @@ def build_scenario(args) -> bool:
             args.exclude,
         )
 
-        print("\n📊 Merging Results:")
-        print(f"  ✅ Files merged: {merged_count}")
-        print(f"  📄 Output: {output_file}")
-
         if not merge_success:
             total_success = False
-
-    print("\n" + "=" * 70)
-    if total_success:
-        print("🎉 Build completed successfully!")
-        if args.build:
-            print("📝 Full build process (clean + merge) completed")
-        elif args.clean:
-            print("🧹 Cleaning process completed")
-        elif args.merge:
-            print("🔨 Merging process completed")
-    else:
-        print("💥 Build completed with errors!")
 
     return total_success
 
@@ -1548,8 +1523,17 @@ Examples:
             "Example: --exclude 'modules/debug.lua' --exclude 'modules/test/*.lua'"
         ),
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print per-file details (default: summary only)",
+    )
 
     args = parser.parse_args()
+
+    global VERBOSE
+    VERBOSE = args.verbose
 
     # Handle mode logic
     if args.clean:
