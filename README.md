@@ -1,157 +1,65 @@
 # Formosa in Flames
 
-A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait conflict, written in Lua. The project models large-scale multi-faction operations — **China (PLA)**, **Taiwan (ROC)**, and **United States** — with fully scripted air operations, electronic warfare, amphibious assault, ballistic/cruise missile employment, and integrated air defense.
+A **Command: Modern Operations (CMO)** scenario simulating a Taiwan Strait conflict (PLA / Taiwan / US), scripted in Lua with an embedded React UI.
 
-## Features
-
-- **Modular, event-driven architecture** orchestrated from `src/core/init.lua`.
-- **Strike Planner** — ATO/FSP execution, recon-triggered operation scheduling, dynamic ATO/FSEM builders, and targeting pipelines.
-- **Electronic Warfare** — GNSS jamming, communications jamming, and SIGINT.
-- **Amphibious Landing Operations** — assault waves, logistics, unloading, ship movement.
-- **Missile System** — TEL concealment, deployment cycles, movement, ammo, and trigger management.
-- **Integrated Air Defense (IADS)**, attack manager, unit generator, runway damage/repair, bearing-only launch.
-- **Embedded React UI** bundled to single-file HTMLs for CMO's in-game browser.
-
-## Repository Layout
-
-```
-.
-├── src/
-│   ├── core/           # init, config, constants, schema, saveData
-│   ├── utils/          # gameApi, gameUtils, utils, logger
-│   ├── modules/
-│   │   ├── strikePlanner/   # ATO/FSP execution, recon, dynamic operation builders, targeting
-│   │   ├── ew/              # GNSS/comms jamming, SIGINT
-│   │   ├── landingOps/      # amphibious assault, logistics, ship movement
-│   │   ├── missileSystem/   # TEL management
-│   │   └── *.lua            # IADS, attackManager, unitGenerator, ...
-│   ├── scripts/        # Event handlers by faction: china/, taiwan/, us/, score/
-│   └── htmls/          # Built single-file HTML UIs (output of htmls-app build)
-├── htmls-app/          # React 19 + TS + Vite source for the in-game UI
-├── spec/               # busted unit tests
-├── docs/               # Per-module architecture docs
-├── tools/              # build_lua_scenario.py — Lua bundler for CMO
-├── bin/                # build.sh
-├── slim/               # Processed/flattened deployment output
-├── references/         # Reference materials
-├── CLAUDE.md           # Guidance for Claude Code
-└── AGENTS.md
-```
-
-## Requirements
-
-- **Command: Modern Operations** (host simulation)
-- **LuaJIT** and **[busted](https://lunarmodules.github.io/busted/)** for running tests
-- **Python 3** for the Lua bundler
-- **Node.js** (with `npm`) for `htmls-app/`
-
-## Build & Deploy
-
-`bin/build.sh` runs the full deployment chain end-to-end:
+## Quick Start
 
 ```bash
-bash bin/build.sh         # UI build → Lua inject/merge → minify
-bash bin/build.sh -t      # run busted tests first
-bash bin/build.sh -n      # skip the htmls-app (npm) build
-bash bin/build.sh -l      # skip luamin minification
+# 1. Tools (WSL2 / Ubuntu)
+sudo apt install luajit luarocks
+luarocks --local install busted                    # add ~/.luarocks/bin to PATH
+python3 -m pip install --user lz4 cryptography     # add --break-system-packages on Debian/Ubuntu
+npm install -g luamin
+(cd htmls-app && npm install)
+
+# 2. Point the build at your scenario
+#    edit SCEN_PATH at the top of bin/build.sh (or pass -s each run)
+
+# 3. Build and deploy — close the scenario in CMO first, reload after
+bash bin/build.sh
 ```
 
-Steps: **(1)** optional tests → **(2)** `npm run build` in `htmls-app/` (single-file HTMLs to `src/htmls/`) → **(3)** `tools/build_lua_scenario.py` flattens `require`s, cleans modules, and embeds the built HTML into `unitStatusUI.lua` → **(4)** `luamin` minifies.
+`build.sh` builds the UI, bundles the Lua, minifies it, and **overwrites the `.scen` file in place**. A backup is kept as `<name>.scen.bak` (only the latest).
 
-To run only the Lua bundling step (assumes `src/htmls/` is already built):
+### build.sh flags
+
+```
+-s <scen>   target scen file (default: SCEN_PATH in the script)
+-t          run busted + vitest first
+-n          skip npm build
+-l          skip luamin
+-i          skip scen injection (only produce slim/)
+-x <glob>   exclude Lua files from the merge (repeatable)
+```
+
+### Run pieces by hand
 
 ```bash
-python3 tools/build_lua_scenario.py
+busted --lua=luajit spec                                       # Lua tests
+(cd htmls-app && npm run dev)                                  # UI dev server with mock data
+python3 tools/build_lua_scenario.py                            # bundle only -> slim/main.lua, slim/_main.lua
+python3 tools/cmo_scen_v5_decoder.py decode <scen>             # dump <scen>.decoded.xml
+python3 tools/cmo_scen_v5_decoder.py inject <scen> --in-place  # inject slim/_main.lua, keep .bak
 ```
 
-Output lands in `slim/` — `main.lua` (readable) and `_main.lua` (minified); paste the chosen one into the CMO scenario's Lua editor.
+## Layout
 
-## Testing
-
-```bash
-busted --lua=luajit spec
+```
+src/core/       init, config, constants, saveData
+src/utils/      gameApi (all CMO calls go through here), utils, logger
+src/modules/    strikePlanner/, ew/, landingOps/, missileSystem/, IADS, ...
+src/scripts/    CMO event handlers by faction: china/, taiwan/, us/, score/
+src/htmls/      built single-file HTMLs (output of htmls-app)
+htmls-app/      React 19 + Vite source for in-game panels
+spec/           busted tests, mirrors src/modules/
+docs/           per-module architecture docs
+tools/          build_lua_scenario.py (bundler), cmo_scen_v5_decoder.py (scen decrypt/inject)
+slim/           bundled output: main.lua (readable), _main.lua (minified)
 ```
 
-Tests live under `spec/modules/` mirroring `src/modules/`.
+## Rules of the Road
 
-## Architectural Conventions
+- **Never call `ScenEdit_*` directly.** Use `GameAPI.*` (`src/utils/gameApi.lua`); it wraps every call with retries and logging.
+- **UI data flow:** Lua fills `__INJECT_*__` placeholders in the built HTML, then opens it with `UI_CallAdvancedHTMLDialog`. In `npm run dev` those globals are absent and pages fall back to mock data in `htmls-app/src/data/`.
 
-### API Abstraction
-
-All CMO API access goes through `src/utils/gameApi.lua`. Its metatable wraps every call in `Utils.safeCall()` with retries and bilingual logging.
-
-> **Never** call raw `ScenEdit_*` functions directly — always use `GameAPI.*`.
-
-### Two-Tier Configuration
-
-| Layer       | File                       | Purpose                                                         |
-| ----------- | -------------------------- | --------------------------------------------------------------- |
-| `config.*`  | `src/core/config.lua`      | Runtime-tunable parameters (weapon counts, timing, tactics)     |
-| `constants.*` | `src/core/constants.lua` | Immutable identifiers (DBIDs, base GUIDs, weapon IDs, areas)    |
-
-Faction-scoped sub-namespaces: `.c` (China), `.t` (Taiwan), `.u` (US), `.s` (score/shared). Never hardcode DBIDs, GUIDs, or coordinates in logic.
-
-### Type Annotations (LuaLS)
-
-- `SBJ__*` — project-specific types
-- `CMO__*` — game API types
-- All public functions require `---@param` / `---@return` annotations
-
-```lua
----Short description (≤ 2 lines)
----@param name type Description
----@param optional? type Optional parameter
----@return type # Description (single return)
----@return type varName Description (multiple returns)
-```
-
-### Event System
-
-Scripts in `src/scripts/{faction}/{feature}/` are bound to CMO events:
-
-| Event                  | Usage                                                  |
-| ---------------------- | ------------------------------------------------------ |
-| Scen Loaded            | One-time init via `src/core/init.lua`                  |
-| Regular Time           | 1- or 5-minute periodic ticks                          |
-| Unit Remains in Area   | Re-fires every 5 min while units occupy an area        |
-| Unit Enters Area       | Area-entry trigger                                     |
-| Unit Destroyed         | Loss accounting, scoring, cascading logic              |
-| Unit Damaged           | Damage reactions                                       |
-| Unit Base Status       | Base state transitions                                 |
-
-## htmls-app (In-Game UI)
-
-`htmls-app/` is **not a standalone website** — it is the React source for the scenario's **custom in-game UI panels**. Each page is bundled into a single self-contained HTML file, embedded into the Lua scenario, and rendered inside CMO through its `UI_CallAdvancedHTMLDialog` browser dialog. Panels are triggered by **Special Actions** registered in `src/core/init.lua`.
-
-**Stack:** React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet.
-
-### Panels
-
-Each page lives in `src/pages/<page>/` with its own `index.html` + `main.tsx` entry and builds to `src/htmls/<page>.html`:
-
-| Page            | In-game role                                                                   | Data injected at runtime |
-| --------------- | ----------------------------------------------------------------------------- | ------------------------ |
-| `setup-menu`    | Pre-game deployment menu — aircraft / jammers / missile systems / summary tabs | `__INJECT_JAMMERS__`, `__INJECT_AIRBASES__`, `__INJECT_MISSILE_SYSTEMS__`, `__INJECT_SIDE_NAME__` |
-| `unit-status`   | Live status dashboard — signals, launchers, C2, base weapons, landing units   | `__INJECT_SIGNALS__`, `__INJECT_LAUNCHERS__`, `__INJECT_C2__`, `__INJECT_BASE_WEAPONS__`, `__INJECT_LANDING_UNITS__` |
-| `emcon-setting` | EMCON / weapon-control-status configuration                                   | — |
-
-### Build → Embed → Render pipeline
-
-1. **Build** — `npm run build` (`scripts/build.js`) builds each page in turn (`BUILD_PAGE=<page> vite build`), inlining all JS/CSS via `vite-plugin-singlefile`, and emits `src/htmls/<page>.html`.
-2. **Embed** — `tools/build_lua_scenario.py` reads `src/htmls/*.html`, inlines any remaining local JS, strips JS comments (to avoid Lua parse conflicts), and embeds each HTML as the return value of a template function in `src/modules/unitStatusUI.lua` (`getSetupMenuTemplate`, `getHTMLTemplate`, `getWCSSettingTemplate`).
-3. **Render** — at runtime `unitStatusUI.lua` substitutes the `__INJECT_*__` placeholders with live game JSON, then calls `GameApi.UI_CallAdvancedHTMLDialog(...)` to show the panel inside CMO.
-
-> The full chain is orchestrated by `bin/build.sh` (UI build → Lua inject/merge → minify). If you run `tools/build_lua_scenario.py` on its own, rebuild `htmls-app` first — the bundler embeds whatever currently sits in `src/htmls/`.
-
-### Development
-
-```bash
-cd htmls-app
-npm install
-npm run dev       # live dev server
-npm run build     # emit single-file HTMLs to ../src/htmls/
-npm run lint
-npm run format
-```
-
-In `dev` the `window.__INJECT_*__` globals are absent, so each page falls back to mock data in `src/data/` — letting you iterate on the UI outside CMO.
+See `AGENTS.md` and `docs/` for module-level detail.

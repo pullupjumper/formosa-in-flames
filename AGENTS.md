@@ -16,11 +16,15 @@ busted --lua=luajit spec
 
 ### Build and Deployment
 ```bash
-# Full deployment build: UI build -> Lua flatten/inject -> minify
+# Full deployment build: UI build -> Lua flatten/inject -> minify -> inject into .scen (in place, keeps .bak)
 bash bin/build.sh
 
 # Run tests before deployment build
 bash bin/build.sh -t
+
+# Target a specific scen / skip scen injection
+bash bin/build.sh -s path/to.scen
+bash bin/build.sh -i
 ```
 
 ## Architecture Overview
@@ -58,7 +62,7 @@ See `docs/` for detailed module architecture documentation.
 
 CMO cannot run this project directly from modular Lua source because runtime Lua module/filesystem APIs such as normal `require` are unavailable or restricted. Treat `src/` as development source only; CMO deployment must use the generated single-file output.
 
-Use `bash bin/build.sh` for deployment builds. It optionally runs busted tests with `-t`, builds `htmls-app` pages into `src/htmls/*.html`, runs `tools/build_lua_scenario.py`, then writes `slim/main.lua` and minifies or copies it to `slim/_main.lua`.
+Use `bash bin/build.sh` for deployment builds. It optionally runs busted tests with `-t`, builds `htmls-app` pages into `src/htmls/*.html`, runs `tools/build_lua_scenario.py`, writes `slim/main.lua`, minifies or copies it to `slim/_main.lua`, then runs `tools/cmo_scen_v5_decoder.py inject --in-place` to replace the `main.lua` `<ScriptText>` inside the encrypted `.scen` (path from `SCEN_PATH` in the script or `-s`; previous file kept as `.scen.bak`). Needs Python `lz4` and `cryptography`.
 
 `tools/build_lua_scenario.py` strips project-local `require` lines, comments, and module-level `return`; promotes module table declarations when needed; orders `core/`, `utils/`, and `modules/` by priority plus source `require` dependency analysis; injects `src/htmls/*.html` into `unitStatusUI.lua`; and expands `src/core/init.lua` event/special-action loops by embedding processed `src/scripts/**` as CMO `ScriptText`.
 
