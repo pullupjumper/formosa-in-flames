@@ -61,8 +61,8 @@ const MSL_ICON_URL = 'https://i.meee.com.tw/lrsJGwE.png';
 const ICON_IMAGES: Record<string, ForceImage> = {
   sam: { url: SAM_ICON_URL, label: 'SAM', width: 25, height: 15 },
   ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 25, height: 15 },
-  atp: { url: ATP_ICON_URL, label: 'ATP', width: 25, height: 15 },
-  msl: { url: MSL_ICON_URL, label: 'MSL', width: 25, height: 15 },
+  atp: { url: ATP_ICON_URL, label: 'ATP', width: 25 * 1.5, height: 15 * 1.5 },
+  msl: { url: MSL_ICON_URL, label: 'MSL', width: 25 * 1.3, height: 15 * 1.3 },
 };
 
 // ============================================================================
@@ -158,6 +158,16 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.hideArea]
   );
 
+  const ahaCenter = useMemo<Coordinate | null>(
+    () => (tacticalAreas.ammoArea?.length ? calculateCentroid(tacticalAreas.ammoArea) : null),
+    [tacticalAreas.ammoArea]
+  );
+
+  const reloadCenter = useMemo<Coordinate | null>(
+    () => (tacticalAreas.reloadArea?.length ? calculateCentroid(tacticalAreas.reloadArea) : null),
+    [tacticalAreas.reloadArea]
+  );
+
   const icon = useMemo(
     () => createImageIcon(category === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm),
     [category]
@@ -228,6 +238,21 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
             </Tooltip>
           </Marker>
           <RangeCircle center={hideCenter} radiusNm={rangeNm} color={WEAPON_RANGE_COLOR} />
+        </>
+      )}
+
+      {ahaCenter && (
+        <>
+          <Marker position={toLeafletLatLng(ahaCenter)} icon={createImageIcon(ICON_IMAGES.atp)} />
+        </>
+      )}
+
+      {reloadCenter && (
+        <>
+          <Marker
+            position={toLeafletLatLng(reloadCenter)}
+            icon={createImageIcon(ICON_IMAGES.msl)}
+          />
         </>
       )}
 
