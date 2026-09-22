@@ -89,7 +89,7 @@
 | context 物件 | `xxxCtx`（見下） |
 
 - `params` 與 `opts` 的分別：
-  - `params`：必填輸入包成的 table，欄位大多沒有預設值，缺了函式無法執行。型別用 `SBJ__XxxParams`。例：`GameUtils.generateLocations(params)`。
+  - `params`：必填輸入包成的 table，欄位大多沒有預設值，缺了函式無法執行。型別用 `SBJ__XxxParams`。例：`GameUtils.buildLocations(params)`。
   - `opts`：選填設定包成的 table，欄位大多有預設值，整個傳 `nil` 也能跑。型別用 `SBJ__XxxOpts`。例：`GameUtils.createMission(side, name, type, opts, emcon)`。
   - 參數名與型別後綴要一致：`opts` 配 `Opts`，`params` 配 `Params`。
 - context 參數統一用 `Ctx` 後綴：`systemCtx`、`firingUnitCtx`、`resupplyUnitCtx`。
@@ -118,7 +118,7 @@
 | `Context` | 執行期傳遞的 context 物件 | `SBJ__ReconContext` | |
 | `State` | 存進 `saveData`、會被改寫的狀態 | `SBJ__ReconRunState` | 現有 `Batch`（`ReconTriggeredOperationBatch`）、`Tracker`（`GeneratedOperationsTracker`）、`Status`（`LoadoutStatus`、`UnitStatus`、`WeaponStatus`）刻意保留原名，新型別才用 `State` |
 | `Params` | 必填輸入 table | `SBJ__LinearPlacementParams` | `Mode`（`AreaMode`，`side`、`shape`、`distance` 必填） |
-| `Opts` | 選填輸入 table | `SBJ__FilterOpts` | `Mode`（`AreaMode`，是 `newArea` 的參數）、`Behavior`（`MoveToPositionBehavior`，是腳本傳入的開關） |
+| `Opts` | 選填輸入 table | `SBJ__FilterOpts` | `Behavior`（`MoveToPositionBehavior`，是腳本傳入的開關） |
 | `Result` | 函式回傳結果 | `SBJ__LogResult` | `Summary`（`AirbaseAttritionSummary`，有 `@return`）、`Report`（`AmmoInventoryReport`，有 `@return`）、`Counter`（`FiringUnitStatusCounter`，是計數結果） |
 | `Entry` | 清單或結果裡的一筆 | `SBJ__RunwayEntry` | `Detail`（`AirbaseAttritionDetail`，是 Summary 裡每架機型一筆）、`Subtotal`（`AmmoSubtotal`，是 Report 裡每類一筆）、`Param`（`TargetQueryParam`，是 config 目標清單裡一筆，不是函式參數） |
 | `Type` | 字串列舉的 `---@alias` | `SBJ__OperationType`（`"air"\|"ground"`） | |
