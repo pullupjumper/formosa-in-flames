@@ -418,7 +418,7 @@ describe("LandingOps Coordinator", function()
     local MissileSystem = require("src.modules.missileSystem.init")
 
     ---@param totalPercentage number
-    ---@return SBJ__AmmoInventoryReport
+    ---@return SBJ__AmmoInventoryResult
     local function makeReport(totalPercentage)
       return {
         firing   = { current = 0, max = 0, percentage = 0 },

@@ -125,7 +125,7 @@ end
 ---@param baseLocationMap table<string, CMO__Location> Map of base locations
 ---@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
----@param patterns SBJ__AirfieldPatterns Airfield pattern configuration
+---@param patterns SBJ__AirfieldPatternConfig Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findAirfieldTarget(description, baseLocationMap, guid, threshold, patterns)
   local isAirfieldFacility =
@@ -161,7 +161,7 @@ end
 ---@param portLocationMap table<string, CMO__Location> Map of port locations
 ---@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
----@param patterns SBJ__PortPatterns Port pattern configuration
+---@param patterns SBJ__PortPatternConfig Port pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findPortTarget(description, portLocationMap, guid, threshold, patterns)
   if string.find(description, patterns.pierPattern) then
@@ -183,7 +183,7 @@ end
 ---Match contact against standalone target patterns (Radar, SAM, ASM, C2)
 ---@param description string Contact type description
 ---@param guid string Contact GUID
----@param patterns SBJ__TargetCategoryPatterns Target category patterns configuration
+---@param patterns SBJ__TargetCategoryPatternConfig Target category patterns configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findStandaloneTarget(description, guid, patterns)
   for _, rule in ipairs(STANDALONE_TARGET_RULES) do
@@ -492,7 +492,7 @@ end
 
 ---Filter targets by type and base name
 ---@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
----@param queryParams SBJ__TargetQueryParam[] Array of query parameters with baseName (optional) and subTypes (array)
+---@param queryParams SBJ__TargetQueryEntry[] Array of query parameters with baseName (optional) and subTypes (array)
 ---@return string[] # Array of target GUIDs matching query criteria
 function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
   local selectedTargetlist = {}

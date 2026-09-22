@@ -56,7 +56,7 @@ flowchart TD
 | `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | 轉呼叫 `Movement.moveToFiringPoint` |
 | `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 轉呼叫 `Concealment.moveFromHideArea` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 轉呼叫 `Ammo.isLowAmmo` |
-| `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryReport` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
+| `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryResult` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
 | `process` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
 | `processSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 轉呼叫 `Context.processSupplyAssetDestruction` |
 | `initEventTriggers` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | 轉呼叫 `Triggers.initEventTriggers` |

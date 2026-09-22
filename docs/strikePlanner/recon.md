@@ -17,7 +17,7 @@ recon 模組管理偵察佇列中所有 UAV、衛星與 SIGINT 任務的完整�
 
 [airbaseAttrition](airbaseAttrition.md) 是 `frontlineRedirect` 的下游統計工具，recon 不直接呼叫。
 
-偵察 entry 有 template → plan → entry 三層形態，定義在 `src/core/schema.lua`（`SBJ__ReconUAVTemplate` / `SBJ__ReconUAVPlan` / `SBJ__ReconUAVEntry`，被動偵察對應 `SBJ__ReconPassivePlan` / `SBJ__ReconPassiveEntry`）。分界是 `SBJ__ReconRunState` 這個 mixin：`Recon.initQueue` 深拷貝 `config.c.recon.queue` 並補上 run-state 旗標，plan 就成為 entry。
+偵察 entry 有 template → plan → entry 三層形態，定義在 `src/core/schema.lua`（`SBJ__ReconUAVTemplate` / `SBJ__ReconUAVDescriptor` / `SBJ__ReconUAVEntry`，被動偵察對應 `SBJ__ReconPassiveDescriptor` / `SBJ__ReconPassiveEntry`）。分界是 `SBJ__ReconRunState` 這個 mixin：`Recon.initQueue` 深拷貝 `config.c.recon.queue` 並補上 run-state 旗標，plan 就成為 entry。
 
 ---
 

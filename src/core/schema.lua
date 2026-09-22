@@ -128,7 +128,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field launchSLCM { startTime: string } SLCM launch start time
 
 ---SIGINT detection formula constants
----@class SBJ__SIGINTFormulaConstants: table
+---@class SBJ__SIGINTFormulaConfig: table
 ---@field decayRate number Decay rate coefficient for probability calculation
 ---@field power number Power factor for distance calculation
 ---@field baseCoefficient number Base coefficient for signal deviation
@@ -153,13 +153,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field maxRange number Maximum detection range (nautical miles)
 ---@field detectionThreshold number Distance threshold for guaranteed detection (nautical miles)
 ---@field maxDetectionRange number[] Range [min, max] for random maximum detection distance
----@field formulaConstants SBJ__SIGINTFormulaConstants Detection formula constants
+---@field formulaConstants SBJ__SIGINTFormulaConfig Detection formula constants
 ---@field defaultDisplay SBJ__SIGINTDisplayConfig Default display configuration
 ---@field minPolygonPoints integer Minimum polygon points for area validation
 ---@field detectionSkipProbability number Probability to skip detection check for performance (0-1)
 
 ---Aircraft communications default values
----@class SBJ__AircraftCommsDefaults: table
+---@class SBJ__AircraftCommsConfig: table
 ---@field commsLevel number Default communications level
 ---@field commsBase number Default communications base level
 ---@field commsThreshold number Communications threshold for RTB trigger
@@ -180,7 +180,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field cooldownTime { min: number, max: number } Cooldown time range
 ---@field randomVariance table<string, { min: number, max: number }> Random variance by distance
 ---@field mode string Jamming mode ('omnidirectional' or 'directional')
----@field aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
+---@field aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
 
 ---GNSS jammer weapon configuration
 ---@class SBJ__GNSSJammedWeapon: table
@@ -235,7 +235,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
 ---@field template table<string, SBJ__ReconUAVTemplate> Reconnaissance templates indexed by template name
----@field queue SBJ__ReconQueuePlan[] Reconnaissance queue as authored in config; initQueue turns each plan into its SBJ__ReconQueueEntry form
+---@field queue SBJ__ReconQueueDescriptor[] Reconnaissance queue as authored in config; initQueue turns each plan into its SBJ__ReconQueueEntry form
 ---@field strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
@@ -452,7 +452,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Ship formation specification - defines a single ship's configuration within a formation
 ---Used to specify ship positioning, armament, and embarked units in naval groups
----@class SBJ__ShipFormationSpec: table
+---@class SBJ__ShipFormationDescriptor: table
 ---@field dbid number Ship platform database ID
 ---@field unitname string Ship unit name
 ---@field distance number Distance from formation center (nautical miles)
@@ -467,7 +467,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field heading number Formation heading angle
 ---@field groupName string Ship group name
 ---@field sideName string Side name (e.g., 'China', 'Taiwan')
----@field shipTypes SBJ__ShipFormationSpec[] Array of ship configurations to create
+---@field shipTypes SBJ__ShipFormationDescriptor[] Array of ship configurations to create
 
 ---@alias SBJ__AmphibiousShipType
 ---| '"type075"'
@@ -538,14 +538,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field longitude? number Airbase longitude coordinate (optional)
 
 ---Per-DBID attrition detail for an airbase
----@class SBJ__AirbaseAttritionDetail: table
+---@class SBJ__AirbaseAttritionEntry: table
 ---@field dbid number Aircraft DBID
 ---@field expected integer Planned aircraft count
 ---@field current integer Current aircraft count
 ---@field loss integer Attrition count (expected - current)
 
 ---Per-airbase attrition summary
----@class SBJ__AirbaseAttritionBaseSummary: table
+---@class SBJ__AirbaseAttritionBaseEntry: table
 ---@field baseName string Queried base name
 ---@field baseGUID string|nil Base GUID in deployment descriptor
 ---@field expectedTotal integer Planned aircraft total
@@ -553,16 +553,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field lossTotal integer Attrition total
 ---@field attritionPct number Attrition percentage (0-100)
 ---@field isDestroyed boolean Whether the airbase unit has been destroyed (entire wing loses combat capability)
----@field details SBJ__AirbaseAttritionDetail[] DBID-level attrition details
+---@field details SBJ__AirbaseAttritionEntry[] DBID-level attrition details
 
 ---Aggregated attrition summary for multiple airbases
----@class SBJ__AirbaseAttritionSummary: table
+---@class SBJ__AirbaseAttritionResult: table
 ---@field queriedBaseNames string[] Queried base names
 ---@field expectedTotal integer Planned aircraft total across all found bases
 ---@field currentTotal integer Current aircraft total across all found bases
 ---@field lossTotal integer Attrition total across all found bases
 ---@field attritionPct number Aggregated attrition percentage (0-100)
----@field bases SBJ__AirbaseAttritionBaseSummary[] Per-airbase summaries
+---@field bases SBJ__AirbaseAttritionBaseEntry[] Per-airbase summaries
 ---@field missingBases string[] Queried base names not found in deployment descriptors
 
 -- ============================================================================
@@ -743,7 +743,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Formation settings for amphibious operation layouts
 ---Defines spacing and movement parameters for amphibious assault ship formations
 ---Used internally for calculating ship positions during landing operations
----@class SBJ__AmphibiousFormationSettings: table
+---@class SBJ__AmphibiousFormationConfig: table
 ---@field distanceBetweenLSTAndLPDArea number Distance between LST and LPD staging areas
 ---@field horizontalDistance number Horizontal spacing between ships in formation
 ---@field verticalDistance number Vertical spacing between ships in formation
@@ -756,7 +756,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
----@class SBJ__FleetComposition: table
+---@class SBJ__FleetCompositionConfig: table
 ---@field type075 integer Number of Type 075 amphibious assault ships
 ---@field type071 integer Number of Type 071 amphibious transport docks
 ---@field type076 integer Number of Type 076 amphibious assault ships
@@ -772,7 +772,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__OperationAreaDescriptor: table
 ---@field startingPoints { type075: string[], type071?: string[] } Starting point reference points (type071 used at destination only)
 ---@field heading SBJ__FormationHeading Formation heading angle
----@field shipCounts SBJ__FleetComposition Ship quantity configuration
+---@field shipCounts SBJ__FleetCompositionConfig Ship quantity configuration
 
 ---Departure descriptor for amphibious operation origin
 ---@class SBJ__DepartureDescriptor: table
@@ -805,7 +805,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargoMap table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartime table<string, number[]> Mission start times by type (seconds)
----@field formationSettings SBJ__AmphibiousFormationSettings Ship formation layout configuration
+---@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
 ---@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
@@ -874,7 +874,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- Launcher and Transporter-Erector-Launcher (TEL) systems for launcher module
 
 ---Area mode parameters for defining operational areas
----@class SBJ__AreaMode: table
+---@class SBJ__AreaParams: table
 ---@field side string Side name
 ---@field shape string Area shape type
 ---@field distance number Distance parameter
@@ -960,17 +960,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field test? table Test data structure (optional)
 
 ---Ammunition subtotal with current/max counts and usage percentage
----@class SBJ__AmmoSubtotal: table
+---@class SBJ__AmmoSubtotalEntry: table
 ---@field current number Current ammunition count
 ---@field max number Maximum ammunition count
 ---@field percentage integer Usage percentage (current/max * 100), rounded to nearest integer; 0 when max is 0
 
 ---Ammunition inventory report aggregating firing/resupply/ammo subtotals and overall total
----@class SBJ__AmmoInventoryReport: table
----@field firing SBJ__AmmoSubtotal Firing units total (queried from live game state)
----@field resupply SBJ__AmmoSubtotal Resupply units total (sum of context wpnCurrent/wpnDefault)
----@field ammo SBJ__AmmoSubtotal Ammunition depots total (sum of context wpnCurrent/wpnDefault)
----@field total SBJ__AmmoSubtotal Combined total across firing + resupply + ammo
+---@class SBJ__AmmoInventoryResult: table
+---@field firing SBJ__AmmoSubtotalEntry Firing units total (queried from live game state)
+---@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of context wpnCurrent/wpnDefault)
+---@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context wpnCurrent/wpnDefault)
+---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
 
 ---Ground force context base - common missile systems for all ground operations
 ---@class SBJ__GroundForceContext: table
@@ -1007,7 +1007,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field useLastCourse boolean? Whether to use the last waypoint in course
 
 ---Behavior switches for UnitEntersArea move-to-position flow
----@class SBJ__MoveToPositionBehavior: table
+---@class SBJ__MoveToPositionOpts: table
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
@@ -1019,7 +1019,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field event CMO__Event Event payload from CMO
 ---@field isAuto boolean Whether the flow runs in automatic mode
 ---@field contacts CMO__Contact[]|nil Current side contacts used for drop-contact handling
----@field behavior SBJ__MoveToPositionBehavior|nil Optional behavior switches for side-specific differences
+---@field behavior SBJ__MoveToPositionOpts|nil Optional behavior switches for side-specific differences
 
 ---Options for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
@@ -1061,7 +1061,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- Strike planning and targeting types for strikePlanner module
 
 ---Airfield pattern configuration for target matching
----@class SBJ__AirfieldPatterns: table
+---@class SBJ__AirfieldPatternConfig: table
 ---@field runwayPattern string Lua pattern for runway matching (e.g., "Runway %(%d+m%)")
 ---@field taxiwayPattern string Lua pattern for taxiway matching
 ---@field shelterPattern string Lua pattern for aircraft shelter matching
@@ -1072,19 +1072,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammoRevetmentPattern string Lua pattern for ammunition revetment matching
 
 ---Port pattern configuration for target matching
----@class SBJ__PortPatterns: table
+---@class SBJ__PortPatternConfig: table
 ---@field pierPattern string Lua pattern for pier matching
 
 ---Radar pattern configuration for target matching
----@class SBJ__RadarPatterns: table
+---@class SBJ__RadarPatternConfig: table
 ---@field radarPattern string Lua pattern for radar facility matching
 
 ---SAM pattern configuration for target matching
----@class SBJ__SAMPatterns: table
+---@class SBJ__SAMPatternConfig: table
 ---@field skyBowPattern string Lua pattern for Sky Bow SAM system matching
 
 ---ASM pattern configuration for target matching
----@class SBJ__ASMPatterns: table
+---@class SBJ__ASMPatternConfig: table
 ---@field asmPattern string Lua pattern for anti-ship missile system matching
 
 ---C2 pattern configuration for target matching
@@ -1092,12 +1092,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hengshanPattern string Lua pattern for Hengshan command center matching
 
 ---Target category patterns configuration
----@class SBJ__TargetCategoryPatterns: table
----@field airfield SBJ__AirfieldPatterns Airfield-related patterns
----@field port SBJ__PortPatterns Port-related patterns
----@field radar SBJ__RadarPatterns Radar facility patterns
----@field sam SBJ__SAMPatterns SAM system patterns
----@field asm SBJ__ASMPatterns ASM system patterns
+---@class SBJ__TargetCategoryPatternConfig: table
+---@field airfield SBJ__AirfieldPatternConfig Airfield-related patterns
+---@field port SBJ__PortPatternConfig Port-related patterns
+---@field radar SBJ__RadarPatternConfig Radar facility patterns
+---@field sam SBJ__SAMPatternConfig SAM system patterns
+---@field asm SBJ__ASMPatternConfig ASM system patterns
 ---@field c2 SBJ__C2Patterns Command and control patterns
 
 ---Target scanning configuration for contact categorization
@@ -1105,7 +1105,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field distanceThreshold number Maximum distance threshold in nautical miles for base/port proximity matching
 ---@field taiwanAirBases string[] Array of Taiwan airbase names to scan for
 ---@field taiwanPorts string[] Array of Taiwan port names to scan for
----@field targetCategories SBJ__TargetCategoryPatterns Pattern configurations for each target category
+---@field targetCategories SBJ__TargetCategoryPatternConfig Pattern configurations for each target category
 
 ---Target entry representing a scanned and categorized target
 ---@class SBJ__TargetEntry: table
@@ -1115,13 +1115,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field subType string Target sub-type description (e.g., "Runway (3000m)", "Shelter", "Pier", "Radar")
 
 ---Target query parameter for filtering targets by base name and facility sub-types
----@class SBJ__TargetQueryParam: table
+---@class SBJ__TargetQueryEntry: table
 ---@field baseName? string Base name pattern for matching (optional, if omitted matches all)
 ---@field subTypes string[] Array of facility sub-type patterns to match
 
 ---Target template for strike planning
 ---@class SBJ__TargetTemplate: table
----@field objs? SBJ__TargetQueryParam[] Target query parameters (for fixed targets, optional)
+---@field objs? SBJ__TargetQueryEntry[] Target query parameters (for fixed targets, optional)
 ---@field areas? string[][] Operation areas
 ---@field filterNames? string[] Filter function names (for dynamic targets, optional)
 ---@field contactAge number Contact valid time (seconds)
@@ -1211,7 +1211,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Execution state attached when a queue plan is initialized
 ---Both flags are always present on a queued entry, which is what separates
----SBJ__ReconQueueEntry from SBJ__ReconQueuePlan.
+---SBJ__ReconQueueEntry from SBJ__ReconQueueDescriptor.
 ---@class SBJ__ReconRunState: table
 ---@field isFinished boolean Whether the mission has settled
 ---@field hasScheduledOperations boolean Whether follow-on operations were queued; never cleared, unlike isFinished
@@ -1231,28 +1231,28 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---UAV blueprint plus resolved timings, as authored directly in config.c.recon.queue
 ---Recon.addEntry produces this shape too, by computing the timings from the course.
----@class SBJ__ReconUAVPlan: SBJ__ReconUAVTemplate
+---@class SBJ__ReconUAVDescriptor: SBJ__ReconUAVTemplate
 ---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
 ---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
 
 ---UAV plan once queued, with execution state attached by initQueue
----@class SBJ__ReconUAVEntry: SBJ__ReconUAVPlan, SBJ__ReconRunState
+---@class SBJ__ReconUAVEntry: SBJ__ReconUAVDescriptor, SBJ__ReconRunState
 ---@field hasLaunched boolean Whether the launch phase has run
 ---@field unitGUID? string Unit being monitored: the launched aircraft, or the WZ-8 it released
 ---@field trackingTargetGUID? string Target contact GUID being shadowed
 
 ---Satellite or SIGINT pass as authored in config.c.recon.queue
 ---These have no launch phase, so the plan needs nothing beyond its objective and timing.
----@class SBJ__ReconPassivePlan: table
+---@class SBJ__ReconPassiveDescriptor: table
 ---@field type "satellite"|"SIGINT" Platform discriminator
 ---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings
 ---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"
 
 ---Satellite or SIGINT pass once queued
----@class SBJ__ReconPassiveEntry: SBJ__ReconPassivePlan, SBJ__ReconRunState
+---@class SBJ__ReconPassiveEntry: SBJ__ReconPassiveDescriptor, SBJ__ReconRunState
 
 ---Union of what config.c.recon.queue holds before initQueue runs
----@alias SBJ__ReconQueuePlan SBJ__ReconUAVPlan|SBJ__ReconPassivePlan
+---@alias SBJ__ReconQueueDescriptor SBJ__ReconUAVDescriptor|SBJ__ReconPassiveDescriptor
 
 ---Union of every queued reconnaissance entry
 ---@alias SBJ__ReconQueueEntry SBJ__ReconUAVEntry|SBJ__ReconPassiveEntry
@@ -1422,15 +1422,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field detectionCount number Number of times this transmission has been detected
 ---@field confidence number Confidence level/reliability of the detection
 
----Enhanced SIGINT display data configuration
----@class SBJ__SIGINTDisplayData: table
----@field R? number Red value (default: 255)
----@field G? number Green value (default: 255)
----@field B? number Blue value (default: 255)
----@field lifeTime? number Display time in seconds (default: 4)
----@field fontSize? number Font size (default: 16)
----@field showConfidence? boolean Whether to show confidence level
-
 ---SIGINT context managing all transmission tracking
 ---@class SBJ__SIGINTContext: table
 ---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
@@ -1585,7 +1576,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- Fire support execution matrix types for fsemBuilder module
 
 ---Firing unit status counter tracking validation outcomes
----@alias SBJ__FiringUnitStatusCounter table<string, number>
+---@alias SBJ__FiringUnitStatusResult table<string, number>
 
 ---Pass-scoped caches for firing unit lookups within one execution pass
 ---Caches are local to prevent cross-tick stale data while building FSEMs

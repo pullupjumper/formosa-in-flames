@@ -506,7 +506,7 @@ end
 ---Scans all aircraft on the side and creates contexts for electronic warfare aircraft
 ---@param commsJammingCtx SBJ__CommsJammingContext Jamming context where jammer contexts will be stored
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
----@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
+---@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
 function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 

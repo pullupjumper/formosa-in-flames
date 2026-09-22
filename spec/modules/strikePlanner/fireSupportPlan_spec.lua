@@ -95,7 +95,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -107,7 +107,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -117,7 +117,7 @@ describe("FireSupportPlan", function()
     it("should handle empty fireSupportPlan without errors", function()
       local saveData = { c = { ground = { fireSupportPlan = {} } } }
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.are.same({}, saveData.c.ground.fireSupportPlan)
     end)
@@ -134,7 +134,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -146,7 +146,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubGetUnit).was_not.called()
     end)
@@ -168,7 +168,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "moveFromHideArea"))
       local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubMove).was.called(1)
     end)
@@ -182,7 +182,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.allFiringUnitsInPosition)
@@ -195,7 +195,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
@@ -216,7 +216,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(AttackManager, "attackContacts").returns(0))
       local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubMove).was_not.called()
     end)
@@ -231,7 +231,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "isLowAmmo").returns(true))
       local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubMove).was_not.called()
     end)
@@ -244,7 +244,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
@@ -271,7 +271,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "moveFromHideArea"))
       trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
@@ -301,7 +301,7 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
@@ -342,7 +342,7 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(1))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.fireSupportTasks[1].isFinished)
@@ -366,7 +366,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same({ "TGT-1", "TGT-2" }, stubAttack.calls[1].vals[1].contacts)
@@ -393,7 +393,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same(firingUnits, stubAttack.calls[1].vals[1].firingUnits)
@@ -407,7 +407,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local task = saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.is_false(task.isFinished)
@@ -425,7 +425,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubAttack).was.called_with({
         contacts = {},
@@ -446,7 +446,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "moveToFiringPoint"))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(stubAttack).was_not.called()
     end)
@@ -466,7 +466,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.are.equal(5000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -492,7 +492,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.is_nil(saveData.c.ground.sam.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -506,7 +506,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.is_nil(saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -521,7 +521,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.are.equal(1000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -547,7 +547,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
       assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-2"].stowStartTime)
@@ -569,7 +569,7 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
@@ -579,7 +579,7 @@ describe("FireSupportPlan", function()
     it("should mark matrix finished when tasks were already finished before strike", function()
       local saveData = makeSaveData({ taskFinished = true })
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
@@ -609,7 +609,7 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.isFinished)
@@ -651,7 +651,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.is_true(saveData.c.ground.fireSupportPlan["FSEM-1"].isFinished)
       assert.is_false(saveData.c.ground.fireSupportPlan["FSEM-2"].isFinished)
@@ -671,7 +671,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       assert.are.equal("ground", logStub.calls[1].vals[1])
@@ -692,7 +692,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "moveFromHideArea"))
       trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -707,7 +707,7 @@ describe("FireSupportPlan", function()
     it("should log completion without strike info when tasks were pre-finished", function()
       local saveData = makeSaveData({ taskFinished = true })
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -720,7 +720,7 @@ describe("FireSupportPlan", function()
     it("should not log when no active matrices exist", function()
       local saveData = { c = { ground = { fireSupportPlan = {} } } }
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was_not.called()
     end)
@@ -733,7 +733,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was_not.called()
     end)
@@ -745,7 +745,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -773,7 +773,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -801,7 +801,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "moveFromHideArea"))
       trackStub(stub(MissileSystem, "moveToFiringPoint"))
 
-      FireSupportPlan.strike(saveData)
+      FireSupportPlan.process(saveData)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]

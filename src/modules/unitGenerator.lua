@@ -182,7 +182,7 @@ end
 ---@param position CMO__Location Position
 ---@param areaDescriptor SBJ__OperationAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
----@param shipSettings SBJ__AmphibiousFormationSettings Amphibious layout configuration
+---@param shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
 ---@param cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@param shipType SBJ__AmphibiousShipType Ship type
 local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoMap, shipType)
@@ -252,7 +252,7 @@ end
 ---Get SAG formation configuration
 ---@param sagDescriptor SBJ__SAGDescriptor Configuration object
 ---@param sideName string Side name ('China' | 'Taiwan')
----@return SBJ__ShipFormationSpec[] # Ship formation specification list
+---@return SBJ__ShipFormationDescriptor[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == constants.SIDES.ENEMY then
     return {
@@ -314,7 +314,7 @@ end
 
 ---Get CSG formation configuration
 ---@param csgDescriptor SBJ__CSGDescriptor Configuration object
----@return SBJ__ShipFormationSpec[] # CSG ship formation specification list
+---@return SBJ__ShipFormationDescriptor[] # CSG ship formation specification list
 local function getCSGShipConfiguration(csgDescriptor)
   return {
     {
@@ -738,7 +738,7 @@ end
 
 ---Initialize aircraft units for Taiwan air operations
 ---@param context SBJ__LandBasedPlatformContext Land-based platform context to store aircraft and AEW data
----@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
+---@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
 ---@return boolean # Whether initialization was successful
 function UnitGenerator.initAircraftContexts(context, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)

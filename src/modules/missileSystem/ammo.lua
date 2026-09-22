@@ -110,7 +110,7 @@ end
 ---Sum ammunition across all firing units of a missile system by querying live game state
 ---@param firingUnitMap table<string, SBJ__FiringUnitContext> Firing unit contexts keyed by name
 ---@param sideName string Side name for ScenEdit_GetUnit lookup
----@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
+---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countFiringUnits(firingUnitMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
@@ -138,7 +138,7 @@ end
 
 ---Sum ammunition across context-tracked units (resupply trucks or ammo depots)
 ---@param contextMap table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext> Contexts with wpnCurrent/wpnDefault
----@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
+---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countContextUnits(contextMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
@@ -154,7 +154,7 @@ end
 ---Calculate ammunition inventory across firing units, resupply units, and ammo depots
 ---@param systemCtx SBJ__MissileSystemContext Missile system runtime context
 ---@param sideName string Side name used to resolve firing units in game state
----@return SBJ__AmmoInventoryReport # Inventory report with subtotals and percentages
+---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function Ammo.getInventory(systemCtx, sideName)
   local firing = countFiringUnits(systemCtx.firingUnits, sideName)
   local resupply = countContextUnits(systemCtx.resupplyUnits)

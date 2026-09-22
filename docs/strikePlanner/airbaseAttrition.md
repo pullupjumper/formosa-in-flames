@@ -8,7 +8,7 @@
 
 ## 概述
 
-`airbaseAttrition` 是 Strike Planner 的機場戰損統計模組。呼叫端傳入 `config.c.air.landBased.deployedACs` 與要查詢的基地名稱清單，模組會回傳每個基地以及整體的 `SBJ__AirbaseAttritionSummary`。
+`airbaseAttrition` 是 Strike Planner 的機場戰損統計模組。呼叫端傳入 `config.c.air.landBased.deployedACs` 與要查詢的基地名稱清單，模組會回傳每個基地以及整體的 `SBJ__AirbaseAttritionResult`。
 
 此模組的核心語意是「可作戰戰力 = 飛機本身存活 + 母基地存活」。飛機即使已經起飛，只要其 `aircraft.base.guid` 仍指向存活基地，仍會被計入 `currentTotal`；若母基地已不存在，該基地聯隊會被視為整體失能。
 
@@ -76,13 +76,13 @@ flowchart TD
 ## 回傳結構
 
 ```
-SBJ__AirbaseAttritionSummary
+SBJ__AirbaseAttritionResult
 ├── queriedBaseNames: string[]
 ├── expectedTotal: number
 ├── currentTotal: number
 ├── lossTotal: number
 ├── attritionPct: number
-├── bases: SBJ__AirbaseAttritionBaseSummary[]
+├── bases: SBJ__AirbaseAttritionBaseEntry[]
 │   └── BaseSummary
 │       ├── baseName: string
 │       ├── baseGUID: string
@@ -91,7 +91,7 @@ SBJ__AirbaseAttritionSummary
 │       ├── lossTotal: number
 │       ├── attritionPct: number
 │       ├── isDestroyed: boolean
-│       └── details: SBJ__AirbaseAttritionDetail[]
+│       └── details: SBJ__AirbaseAttritionEntry[]
 │           └── { dbid, expected, current, loss }
 └── missingBases: string[]
 ```
@@ -127,7 +127,7 @@ SBJ__AirbaseAttritionSummary
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `calculate(deployments, baseNames, side?)` | `SBJ__AirbaseDeploymentDescriptor[]`, `string[]`, `string|nil` | `SBJ__AirbaseAttritionSummary` | 彙整指定基地的計畫駐機、現存可作戰飛機、損失數與 attrition 百分比；`side` 預設為 `constants.SIDES.ENEMY` |
+| `calculate(deployments, baseNames, side?)` | `SBJ__AirbaseDeploymentDescriptor[]`, `string[]`, `string|nil` | `SBJ__AirbaseAttritionResult` | 彙整指定基地的計畫駐機、現存可作戰飛機、損失數與 attrition 百分比；`side` 預設為 `constants.SIDES.ENEMY` |
 
 ---
 

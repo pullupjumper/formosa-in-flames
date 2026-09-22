@@ -89,7 +89,7 @@ end
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
 ---@param systemCtx SBJ__MissileSystemContext Missile system runtime context
 ---@param sideName string Side name used to resolve firing units in game state
----@return SBJ__AmmoInventoryReport # Inventory report with subtotals and percentages
+---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function MissileSystem.getAmmoInventory(systemCtx, sideName)
   return Ammo.getInventory(systemCtx, sideName)
 end
@@ -162,9 +162,9 @@ function MissileSystem.initMissileSystemContexts(groundForceCfg, groundForceCtx)
 end
 
 ---Normalize behavior options with default values
----@param behavior SBJ__MoveToPositionBehavior|nil Optional behavior configuration
+---@param behavior SBJ__MoveToPositionOpts|nil Optional behavior configuration
 ---@param unitSide string Unit side name used as default lookup side
----@return SBJ__MoveToPositionBehavior # Resolved behavior object
+---@return SBJ__MoveToPositionOpts # Resolved behavior object
 local function resolveBehavior(behavior, unitSide)
   if behavior then
     return behavior
@@ -196,7 +196,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration, unused here
+---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
 local function processFiringPoint(systemName, systemCtx, unit, isAuto, behavior)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
@@ -216,7 +216,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
+---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
 local function processHideArea(systemName, systemCtx, unit, isAuto, behavior)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
@@ -250,7 +250,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
+---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
 local function processReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, behavior)
   -- Pass false instead of isAuto so a firing unit drifting through RL during repositioning is not halted.
@@ -304,7 +304,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration
+---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
 local function processReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
   local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
@@ -349,7 +349,7 @@ end
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param isAuto boolean Whether the action is in automatic mode
----@param behavior SBJ__MoveToPositionBehavior Side-specific behavior configuration, unused here
+---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
 local function processAmmoHoldingArea(systemName, systemCtx, unit, isAuto, behavior)
   local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
@@ -376,7 +376,7 @@ end
 ---Position handlers keyed by the token extracted from the event trigger.
 ---Every entry takes the same arguments so the dispatch site never has to know
 ---which of them a given handler actually uses.
----@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, isAuto: boolean, behavior: SBJ__MoveToPositionBehavior): SBJ__LogResult|nil>
+---@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, isAuto: boolean, behavior: SBJ__MoveToPositionOpts): SBJ__LogResult|nil>
 local POSITION_HANDLERS = {
   [constants.POSITION_TYPES.FIRING_POINT]      = processFiringPoint,
   [constants.POSITION_TYPES.HIDE_AREA]         = processHideArea,

@@ -446,7 +446,7 @@ end
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context to populate with recon aircraft
 ---@param sideName string Side name to scan for reconnaissance aircraft
----@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
+---@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
 ---@return number # Number of reconnaissance aircraft initialized
 function Sigint.initReconAircraftContexts(sigintCtx, sideName, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)

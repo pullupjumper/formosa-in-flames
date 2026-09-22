@@ -88,7 +88,7 @@ firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
 
 ### Consolidated Logging
 
-`strike()` 建立單一 `LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")`，各分支直接 `report.add(tag, fields)`，結尾 `report.emit()`。沒有中介的結果陣列，也沒有 outcome → tag 對照表。詳見 [logFormat](../logFormat.md)。
+`process()` 建立單一 `LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")`，各分支直接 `report.add(tag, fields)`，結尾 `report.emit()`。沒有中介的結果陣列，也沒有 outcome → tag 對照表。詳見 [logFormat](../logFormat.md)。
 
 | 情境 | tag | 欄位 |
 |---|---|---|
@@ -111,7 +111,7 @@ firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
 
 ```mermaid
 flowchart TD
-    START["FireSupportPlan.strike(saveData)"]
+    START["FireSupportPlan.process(saveData)"]
     LOOP["遍歷 saveData.c.ground.fireSupportPlan"]
     ACTIVE{"FSEM isActivated<br/>且未 isFinished?"}
     PROCESS["processActiveMatrix()"]
@@ -203,10 +203,10 @@ saveData.c.ground
 
 | 路徑 | 操作 | 說明 |
 |---|---|---|
-| `saveData.c.ground.fireSupportPlan` | read | `strike()` 遍歷所有 FSEM。 |
+| `saveData.c.ground.fireSupportPlan` | read | `process()` 遍歷所有 FSEM。 |
 | `matrix.allFiringUnitsInPosition` | write | `processActiveMatrix()` 寫入部署階段結果。 |
 | `task.isFinished` | write | `startFireSupportTasks()` 在成功發射後標記完成。 |
-| `matrix.isFinished` | write | `strike()` 在所有 FST 完成後標記 FSEM 完成。 |
+| `matrix.isFinished` | write | `process()` 在所有 FST 完成後標記 FSEM 完成。 |
 | `task.target.list` | read | `startFireSupportTasks()` 交給 `AttackManager.attackContacts()` 作為目標 GUID 清單。 |
 | `saveData.c.ground.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
 
@@ -242,7 +242,7 @@ saveData.c.ground
 
 | 函式 | 參數 | 回傳 | 副作用 |
 |---|---|---|---|
-| `FireSupportPlan.strike(saveData)` | `SBJ__SaveData` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan report。 |
+| `FireSupportPlan.process(saveData)` | `SBJ__SaveData` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan report。 |
 
 ### 上游呼叫
 

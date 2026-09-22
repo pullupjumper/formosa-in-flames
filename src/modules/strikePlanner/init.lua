@@ -47,7 +47,7 @@ end
 
 ---Select target GUIDs by base and subtype criteria
 ---@param targetlist SBJ__TargetEntry[] Target list entries
----@param queryParams SBJ__TargetQueryParam[] Filter query parameters
+---@param queryParams SBJ__TargetQueryEntry[] Filter query parameters
 ---@return string[] # Array of matching target GUIDs
 function StrikePlanner.findTargetGUIDsByBaseAndSubtype(targetlist, queryParams)
   return TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
@@ -72,7 +72,7 @@ end
 ---Process active fire support plans, including deployment and strikes
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
 function StrikePlanner.processActiveFireSupportPlans(saveData)
-  FireSupportPlan.strike(saveData)
+  FireSupportPlan.process(saveData)
 end
 
 ---Process active air tasking order waves and strike packages

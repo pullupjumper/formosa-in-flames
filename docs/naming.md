@@ -112,12 +112,12 @@
 
 | 後綴 | 意思 | 例 | 取代掉的舊字 |
 |---|---|---|---|
-| `Config` | `config.lua` 裡的設定區塊 | `SBJ__ReconConfig` | `Settings`（`AmphibiousFormationSettings`）、`Defaults`（`AircraftCommsDefaults`）、`Constants`（`SIGINTFormulaConstants`）、`DisplayData`（`SIGINTDisplayData`，內容是 RGB 與字型）、`Patterns`（`AirfieldPatterns` 等六個，是 Lua pattern 字串常數，不會被實例化）、`Composition`（`FleetComposition`，是各型船數量） |
-| `Descriptor` | config 裡「描述要建什麼」的一筆資料 | `SBJ__SAGDescriptor` | `Spec`（`ShipFormationSpec`，描述要建的船） |
+| `Config` | `config.lua` 裡的設定區塊 | `SBJ__ReconConfig` | `Settings`（`AmphibiousFormationSettings`）、`Defaults`（`AircraftCommsDefaults`）、`Constants`（`SIGINTFormulaConstants`）、`Patterns`（`AirfieldPatterns` 等六個，是 Lua pattern 字串常數，不會被實例化）、`Composition`（`FleetComposition`，是各型船數量） |
+| `Descriptor` | config 裡「描述要建什麼」的一筆資料 | `SBJ__SAGDescriptor` | `Spec`（`ShipFormationSpec`，描述要建的船）、`Plan`（`ReconUAVPlan`、`ReconPassivePlan`，是 config 裡寫的偵察排程；執行狀態另在 `ReconRunState`） |
 | `Template` | config 裡可被實例化的樣板 | `SBJ__PackageTemplate` | |
 | `Context` | 執行期傳遞的 context 物件 | `SBJ__ReconContext` | |
-| `State` | 存進 `saveData`、會被改寫的狀態 | `SBJ__ReconRunState` | `Plan`（`ReconUAVPlan`，有 `hasLaunched` 旗標）、`Batch`（`ReconTriggeredOperationBatch`，有 `executed` 旗標）、`Tracker`（`GeneratedOperationsTracker`）、`Status`（`LoadoutStatus`、`UnitStatus`、`WeaponStatus`，都是會變的計數與時間戳） |
-| `Params` | 必填輸入 table | `SBJ__LinearPlacementParams` | |
+| `State` | 存進 `saveData`、會被改寫的狀態 | `SBJ__ReconRunState` | 現有 `Batch`（`ReconTriggeredOperationBatch`）、`Tracker`（`GeneratedOperationsTracker`）、`Status`（`LoadoutStatus`、`UnitStatus`、`WeaponStatus`）刻意保留原名，新型別才用 `State` |
+| `Params` | 必填輸入 table | `SBJ__LinearPlacementParams` | `Mode`（`AreaMode`，`side`、`shape`、`distance` 必填） |
 | `Opts` | 選填輸入 table | `SBJ__FilterOpts` | `Mode`（`AreaMode`，是 `newArea` 的參數）、`Behavior`（`MoveToPositionBehavior`，是腳本傳入的開關） |
 | `Result` | 函式回傳結果 | `SBJ__LogResult` | `Summary`（`AirbaseAttritionSummary`，有 `@return`）、`Report`（`AmmoInventoryReport`，有 `@return`）、`Counter`（`FiringUnitStatusCounter`，是計數結果） |
 | `Entry` | 清單或結果裡的一筆 | `SBJ__RunwayEntry` | `Detail`（`AirbaseAttritionDetail`，是 Summary 裡每架機型一筆）、`Subtotal`（`AmmoSubtotal`，是 Report 裡每類一筆）、`Param`（`TargetQueryParam`，是 config 目標清單裡一筆，不是函式參數） |

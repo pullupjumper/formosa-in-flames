@@ -167,19 +167,19 @@ end
 
 ---Create a reference point area in the specified shape (circle or square)
 ---@param position CMO__Location Center position for the area
----@param mode SBJ__AreaMode Area configuration (shape, side, distance, etc.)
+---@param params SBJ__AreaParams Area configuration (shape, side, distance, etc.)
 ---@return table<integer, CMO__ReferencePoint>|boolean # Array of reference point names forming the area, or false if creation fails
-function GameUtils.createArea(position, mode)
-  local side = mode.side
-  local shape = mode.shape
+function GameUtils.createArea(position, params)
+  local side = params.side
+  local shape = params.shape
   if side == nil or shape == nil then return false end
-  local name = (mode.name or "RP")
-  local bear_offset = (mode.bear_offset or 0)
+  local name = (params.name or "RP")
+  local bear_offset = (params.bear_offset or 0)
   local rpTable = {}
   local a = 1
   --Circle
   if shape == "circle" then
-    local distance = mode.distance
+    local distance = params.distance
     for i = 0, 359, 45 do
       local location = GameApi.World_GetPointFromBearing({
         latitude = position.latitude,
@@ -202,7 +202,7 @@ function GameUtils.createArea(position, mode)
       end
     end
   elseif shape == "square" then
-    local distance = mode.distance
+    local distance = params.distance
     for i = 0, 3 do
       local b = 45 + (90 * i) + bear_offset
       local location = GameApi.World_GetPointFromBearing({

@@ -377,7 +377,7 @@ end
 
 ---Calculate starting points for all ship types from two reference points
 ---@param area SBJ__OperationAreaDescriptor Area configuration with startingPointMap, heading
----@param formationSettings SBJ__AmphibiousFormationSettings Formation distance settings
+---@param formationSettings SBJ__AmphibiousFormationConfig Formation distance settings
 ---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function calculateStartingPoints(area, formationSettings)

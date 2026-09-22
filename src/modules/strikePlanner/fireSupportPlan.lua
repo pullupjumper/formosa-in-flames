@@ -211,7 +211,7 @@ end
 ---Execute Fire Support Plan strikes for all active FSEMs
 ---Deploys firing units, removes destroyed ones, executes strikes when ready, marks FSEMs finished
 ---@param saveData SBJ__SaveData Saved game state containing FSEMs
-function FireSupportPlan.strike(saveData)
+function FireSupportPlan.process(saveData)
   local report = LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")
 
   for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do

@@ -40,7 +40,7 @@ flowchart LR
 
     AD --> INV
     RU --> INV
-    TEL --> INV[getInventory<br>SBJ__AmmoInventoryReport]
+    TEL --> INV[getInventory<br>SBJ__AmmoInventoryResult]
 ```
 
 ---
@@ -53,7 +53,7 @@ flowchart LR
 | `reloadUnit` | `unit, weaponDBID, resupplyUnitCtx` | `integer` | 單一 unit 裝填，回傳裝填量 |
 | `reloadFiringUnit` | `firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName` | `integer` | 機動車組裝填，回傳總裝填量 |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 低彈量判定 |
-| `getInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryReport` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
+| `getInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
 
 ---
 

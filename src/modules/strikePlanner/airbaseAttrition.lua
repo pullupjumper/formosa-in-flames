@@ -13,7 +13,7 @@ local AirbaseAttrition = {}
 ---@param deployments SBJ__AirbaseDeploymentDescriptor[] Airbase deployment descriptors
 ---@param baseNames string[] Airbase names to query (empty array yields a zero summary)
 ---@param side? string Side name to enumerate aircraft from (default: constants.SIDES.ENEMY)
----@return SBJ__AirbaseAttritionSummary # Per-base details and overall attrition summary
+---@return SBJ__AirbaseAttritionResult # Per-base details and overall attrition summary
 function AirbaseAttrition.calculate(deployments, baseNames, side)
   side = side or constants.SIDES.ENEMY
 
@@ -27,7 +27,7 @@ function AirbaseAttrition.calculate(deployments, baseNames, side)
     end
   end
 
-  ---@type SBJ__AirbaseAttritionSummary
+  ---@type SBJ__AirbaseAttritionResult
   local summary = {
     queriedBaseNames = Utils.deepCopy(baseNames),
     expectedTotal = 0,

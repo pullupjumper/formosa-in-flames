@@ -62,7 +62,7 @@ local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 -- ============================================================================
 
 ---Create a firing unit status counter with every status zeroed
----@return SBJ__FiringUnitStatusCounter # Zeroed status counter
+---@return SBJ__FiringUnitStatusResult # Zeroed status counter
 local function createFiringUnitStatusCounter()
   local firingUnitStatusCounter = {}
 
@@ -74,7 +74,7 @@ local function createFiringUnitStatusCounter()
 end
 
 ---Increment the count for one firing unit status
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter; mutated
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusResult Status counter; mutated
 ---@param status string Firing unit status from FIRING_UNIT_STATUS
 local function updateFiringUnitStatus(firingUnitStatusCounter, status)
   if firingUnitStatusCounter[status] ~= nil then
@@ -83,7 +83,7 @@ local function updateFiringUnitStatus(firingUnitStatusCounter, status)
 end
 
 ---Format a status counter into log fields, dropping zero counts
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter to format
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusResult Status counter to format
 ---@return table<string, any> # Status log fields, firingUnits=none when nothing was counted
 local function formatFiringUnitStatusCounter(firingUnitStatusCounter)
   local statusFields = {}
@@ -187,7 +187,7 @@ end
 ---Select the firing units of a task template that are free and ready to fire
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param taskTemplate SBJ__FireSupportTaskTemplate FST template definition
----@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Validation outcome counter; mutated
+---@param firingUnitStatusCounter SBJ__FiringUnitStatusResult Validation outcome counter; mutated
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FiringUnit[] # Firing units ready for assignment
 local function filterAvailableFiringUnits(saveData, taskTemplate, firingUnitStatusCounter, passCtx)
@@ -272,7 +272,7 @@ end
 ---@param matrixStartTime integer Matrix base start time in unix timestamp
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
----@return SBJ__FiringUnitStatusCounter firingUnitStatusCounter Firing unit validation counts
+---@return SBJ__FiringUnitStatusResult firingUnitStatusCounter Firing unit validation counts
 ---@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
 local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex, matrixStartTime, passCtx)
   local fireSupportTasks = {}
