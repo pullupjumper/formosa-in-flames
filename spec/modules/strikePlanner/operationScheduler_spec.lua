@@ -251,7 +251,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
       -- C/1 has already executed, so its mapping advances instead of opening a wave
       stubExecutedSeries("GND/STRIKE/C2/C/1", "ground")
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/C/2" } }, "FOUND_NEXT"
       ))
 
@@ -337,7 +337,7 @@ describe("OperationScheduler", function()
       -- Both stubs are load-bearing: without them the mapping falls through to the
       -- first-wave path and stops on a missing template, passing for the wrong reason.
       stubExecutedSeries("AIR/STRIKE/AB/E/1", "air")
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "air", executed = false, template = { name = "AIR/STRIKE/AB/E/1" } }, "REUSED_CURRENT"
       ))
 
@@ -521,7 +521,7 @@ describe("OperationScheduler", function()
         }
       }
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
@@ -551,7 +551,7 @@ describe("OperationScheduler", function()
       }
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- No /2 template exists, so the scheduler falls back to the already-executed /1
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
       ))
 
@@ -580,7 +580,7 @@ describe("OperationScheduler", function()
         }
       }
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
       ))
 
@@ -594,7 +594,7 @@ describe("OperationScheduler", function()
     end)
 
     -- Regression: repeated recon completions must not stack identical pending waves.
-    -- Runs the real query/generateNextOperation path; before the fix this reached 3.
+    -- Runs the real query/buildNextOperation path; before the fix this reached 3.
     it("should keep a single pending copy across repeated recon completions", function()
       local config = makeConfig()
       config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
@@ -687,12 +687,12 @@ describe("OperationScheduler", function()
     end)
 
     -- Negative: an underivable next wave must not re-queue the already-executed source
-    it("should warn instead of scheduling when generateNextOperation cannot derive a next wave", function()
+    it("should warn instead of scheduling when buildNextOperation cannot derive a next wave", function()
       local config = makeConfig()
       local operationBatches = {}
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
       -- PARSE_ERROR hands back a copy of the source operation; scheduling it would duplicate the wave
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "PARSE_ERROR"
       ))
 
@@ -712,7 +712,7 @@ describe("OperationScheduler", function()
       local config = makeConfig()
       local operationBatches = {}
       stubExecutedSeries("GND/STRIKE/C2/N/1", "ground")
-      trackStub(stub(OperationScheduler, "generateNextOperation").returns(
+      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
         { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
       ))
 
@@ -1292,10 +1292,10 @@ describe("OperationScheduler", function()
     end)
 
     -- ============================================================================
-    -- generateNextOperation
+    -- buildNextOperation
     -- ============================================================================
 
-    describe("generateNextOperation", function()
+    describe("buildNextOperation", function()
       -- Positive: finds next air template
       it("should find next air template and increment number", function()
         local operation = makeOperation({
@@ -1315,7 +1315,7 @@ describe("OperationScheduler", function()
           }
         }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("AIR/STRIKE/AB/W/2", nextOperation.template.name)
         assert.are.equal("air", nextOperation.type)
@@ -1345,7 +1345,7 @@ describe("OperationScheduler", function()
           }
         }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("INFRASTRUCTURE/2", nextOperation.template.name)
         assert.are.equal("ground", nextOperation.type)
@@ -1371,7 +1371,7 @@ describe("OperationScheduler", function()
           c = { packageTemplates = { STRIKE_AB_100 = { { striker = {} } } } }
         }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("STRIKE/AB/100", nextOperation.template.name)
         assert.are.equal("FOUND_NEXT", status)
@@ -1391,7 +1391,7 @@ describe("OperationScheduler", function()
         })
         local config = { c = { packageTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("AIR/STRIKE/AB/W/5", nextOperation.template.name)
         assert.are.equal(originalPackages, nextOperation.template.packages)
@@ -1411,7 +1411,7 @@ describe("OperationScheduler", function()
         })
         local config = { c = { fireSupportTaskTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("ANTISHIP/3", nextOperation.template.name)
         assert.are.equal(originalTasks, nextOperation.template.fireSupportTasks)
@@ -1426,7 +1426,7 @@ describe("OperationScheduler", function()
         })
         local config = { c = { packageTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal("air", nextOperation.type)
         assert.is_not.equal(operation, nextOperation)
@@ -1441,7 +1441,7 @@ describe("OperationScheduler", function()
         })
         local config = { c = { packageTemplates = {}, fireSupportTaskTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.is_not.equal(operation, nextOperation)
         assert.are.equal("UNKNOWN_TYPE", status)
@@ -1461,7 +1461,7 @@ describe("OperationScheduler", function()
           c = { fireSupportTaskTemplates = { INFRASTRUCTURE_2 = { { name = "FST" } } } }
         }
 
-        local nextOperation, status = OperationScheduler.generateNextOperation(operation, config)
+        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
 
         assert.are.equal(0, nextOperation.template.strikeInterval)
         assert.are.equal("FOUND_NEXT", status)

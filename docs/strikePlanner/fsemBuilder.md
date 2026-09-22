@@ -22,7 +22,7 @@
 
 ```mermaid
 flowchart TD
-    ENTRY(["FsemBuilder.execute"])
+    ENTRY(["FsemBuilder.build"])
     ENABLED{"enabled?"}
     OFF(["return false"])
     RETIRE["retireStaleMatrices"]
@@ -32,7 +32,7 @@ flowchart TD
     WINDOW{"觀察窗狀態"}
     PROCESS["processGroundOperation"]
     INSERTED{"FSEM 已插入?"}
-    EXEC["markOperationExecuted"]
+    EXEC["setOperationExecuted"]
     RETRYABLE{"reason 可重試?"}
     ABANDON["abandonOperation"]
     NEXT["下一筆"]
@@ -76,12 +76,12 @@ flowchart TD
 
 ### 為什麼快取只活一次 execute()
 
-`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `selectAvailableFiringUnits()` → `validateFiringUnitStatus()`，內含兩個只活一趟的快取：
+`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `validateFiringUnitStatus()`，內含兩個只活一趟的快取：
 
 | 欄位 | 取代的行為 |
 |---|---|
 | `firingUnitCache` | 每次驗證都直接呼叫 `GameApi.ScenEdit_GetUnit()`。該 API 對名稱查詢固定是兩次 CMO round-trip（先 `{guid=}` 再 `{unitname=}`），查無單位時還會 `error()` 並輸出一整段 stack trace。`false` 是刻意的 negative sentinel：`nil` 表示尚未查過，`false` 表示這趟查過且不存在，讓已被摧毀的發射旅在同一 tick 只噴一筆 error。 |
-| `assignedFiringUnitNames` | 每個 operation 各自重掃一次整份 `fireSupportPlan`（該表只增不減）。改成整趟只掃一次，後續 `markFiringUnitsAssigned()` 就地增量寫入同一張表，同 tick 內的跨 operation 防重與「先寫 FSP 再登記 generated operation」的既有防護重疊而不衝突。 |
+| `assignedFiringUnitNames` | 每個 operation 各自重掃一次整份 `fireSupportPlan`（該表只增不減）。改成整趟只掃一次，後續 `setFiringUnitsAssigned()` 就地增量寫入同一張表，同 tick 內的跨 operation 防重與「先寫 FSP 再登記 generated operation」的既有防護重疊而不衝突。 |
 
 快取的生命週期**剛好是一次 `execute()`**：本模組執行期間 CMO 模擬時間不前進，單位被摧毀、狀態轉換、彈量變化都發生在兩次 tick 之間，每趟重建剛好涵蓋。
 
@@ -95,7 +95,7 @@ flowchart TD
 
 ### Firing unit 驗證與日誌欄位
 
-`selectAvailableFiringUnits()` 逐一驗證 `taskTemplate.firingUnits`，把結果累計進 `SBJ__FiringUnitStatusCounter`，`formatFiringUnitStatusCounter()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `firingUnits=none`。
+`filterAvailableFiringUnits()` 逐一驗證 `taskTemplate.firingUnits`，把結果累計進 `SBJ__FiringUnitStatusCounter`，`formatFiringUnitStatusCounter()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `firingUnits=none`。
 
 看到這些欄位時的判讀方向：
 
@@ -187,8 +187,8 @@ SAM 任務依慣例排除在 stow 之外。
 | `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
 | `saveData.c.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
 | `saveData.c.ground[<missileSystem>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
-| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 透過 `DynamicState.registerGeneratedOperation("ground", ...)` 登記。 |
-| `operation.executed` | FSEM 成功插入時由 `markOperationExecuted()` 標記。 |
+| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 透過 `DynamicState.addGeneratedOperation("ground", ...)` 登記。 |
+| `operation.executed` | FSEM 成功插入時由 `setOperationExecuted()` 標記。 |
 | `operationBatch.operations` | 放棄的 operation 由 `abandonOperation()` 從陣列移除。 |
 | `operationBatch.executed` | batch 內所有 operation 都完成或被移除時由 `checkOperationBatchCompleted()` 更新。 |
 
@@ -200,7 +200,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `FsemBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 退役過期 FSEM，再處理落在觀察窗內的未執行 ground operations；至少成功插入一個 FSEM 時回傳 `true`。退役本身不影響回傳值。 |
+| `FsemBuilder.build(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 退役過期 FSEM，再處理落在觀察窗內的未執行 ground operations；至少成功插入一個 FSEM 時回傳 `true`。退役本身不影響回傳值。 |
 
 ### 呼叫者與觸發方式
 

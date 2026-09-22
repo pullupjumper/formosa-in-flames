@@ -45,7 +45,7 @@ end
 ---Transform deployed missile system configuration into operational area data structure
 ---@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__TacticalAreas, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
 ---@return SBJ__OperationalArea # Operational area data structure
-local function transformData(missileSystem)
+local function normalizeData(missileSystem)
   local operationalArea = {
     RL = {},
     FP = {},
@@ -54,7 +54,7 @@ local function transformData(missileSystem)
     SHRL = {},
     uShapeVertices = missileSystem.tacticalAreas.uShapeVertices,
     shelterPoints = missileSystem.tacticalAreas.shelterPoints,
-    name = "#" .. Utils.randomTxt(3)
+    name = "#" .. Utils.buildRandomText(3)
   }
 
   for index, firePoint in ipairs(missileSystem.paths.FP) do
@@ -207,7 +207,7 @@ local function getWCSSettingTemplate()
 end
 
 ---Display HTML dialog for EMCON settings configuration
-function UnitStatusUI.wcsSettingTable()
+function UnitStatusUI.buildWcsSettingTable()
   local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
@@ -748,7 +748,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
           local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitname])
           local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
           local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
-          local operationalArea = transformData(missileSystem)
+          local operationalArea = normalizeData(missileSystem)
           table.insert(operationalAreasToRemove, firingUnitdescriptor.operationalArea)
           firingUnitdescriptor.operationalArea = operationalArea
           resupplyUnitDescriptor.operationalArea = operationalArea

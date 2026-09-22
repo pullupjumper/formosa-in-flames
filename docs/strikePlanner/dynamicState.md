@@ -36,7 +36,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `markOperationExecuted(reconEntry, operation)` | 標記單一作戰的計畫已插入，並自動檢查父批次完成狀態 |
+| `setOperationExecuted(reconEntry, operation)` | 標記單一作戰的計畫已插入，並自動檢查父批次完成狀態 |
 | `abandonOperation(reconEntry, operation)` | 把放棄的作戰從 batch 移除（以 identity 比對），並檢查父批次完成狀態 |
 | `checkOperationBatchCompleted(reconEntry)` | 檢查批次內所有 operations 是否都已完成；operations 被清空的 batch 也視為完成 |
 | `updateReconTriggeredOperationStatus(saveData)` | 批次更新所有偵察觸發作戰批次完成狀態 |
@@ -91,9 +91,9 @@ DYNAMIC/{RECON_TYPE}/{OPERATION_TYPE}/{SEQUENCE}
 
 | 函數 | 檢查範圍 |
 |---|---|
-| `generateUniqueAirOperationName` | `generatedOperations.air` + `airTaskingOrder` |
-| `generateUniqueGroundOperationName` | `generatedOperations.ground` + `fireSupportPlan` |
-| `registerGeneratedOperation` | 將名稱登記至 `generatedOperations` |
+| `buildUniqueAirOperationName` | `generatedOperations.air` + `airTaskingOrder` |
+| `buildUniqueGroundOperationName` | `generatedOperations.ground` + `fireSupportPlan` |
+| `addGeneratedOperation` | 將名稱登記至 `generatedOperations` |
 
 ---
 
@@ -105,11 +105,11 @@ DYNAMIC/{RECON_TYPE}/{OPERATION_TYPE}/{SEQUENCE}
 | `updateReconTriggeredOperationStatus(saveData)` | 更新所有偵察觸發作戰批次完成狀態 |
 | `evaluateObservationWindow(currentTime, operationBatch, windowSec)` | 判定作戰所處的觀察窗狀態 |
 | `filterOperationsByType(reconTriggeredOperationBatches, operationType)` | 依類型篩選未執行的作戰 |
-| `markOperationExecuted(reconEntry, operation)` | 標記作戰計畫已插入 |
+| `setOperationExecuted(reconEntry, operation)` | 標記作戰計畫已插入 |
 | `abandonOperation(reconEntry, operation)` | 將放棄的作戰從批次移除 |
-| `generateUniqueAirOperationName(operationType, reconType, saveData)` | 生成唯一空中作戰名稱 |
-| `generateUniqueGroundOperationName(operationType, reconType, saveData)` | 生成唯一地面作戰名稱 |
-| `registerGeneratedOperation(operationType, operationName, saveData)` | 登記已生成的作戰名稱 |
+| `buildUniqueAirOperationName(operationType, reconType, saveData)` | 生成唯一空中作戰名稱 |
+| `buildUniqueGroundOperationName(operationType, reconType, saveData)` | 生成唯一地面作戰名稱 |
+| `addGeneratedOperation(operationType, operationName, saveData)` | 登記已生成的作戰名稱 |
 
 `OBSERVATION_STATE` 常數表（`pre_trigger`／`in_window`／`expired`）也由本模組匯出，供兩個建構器比對窗口狀態。
 

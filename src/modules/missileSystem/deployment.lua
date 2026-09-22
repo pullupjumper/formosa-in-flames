@@ -48,7 +48,7 @@ end
 ---@param systemName string Missile system name
 ---@param role string Unit role
 ---@return SBJ__LogResult[] # Failure log rows
-local function cleanupAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, systemName, role)
+local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, systemName, role)
   local entries = {}
   local context = { system = systemName, role = role, unit = addedUnit.name, guid = addedUnit.guid }
   local cleared = GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
@@ -155,7 +155,7 @@ local function addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
 
   local expected = resupplyDescriptor.unitCount
   local size = #haPosition.course
-  local unitType = GameUtils.extractUnitType(descriptor.name)
+  local unitType = GameUtils.resolveUnitType(descriptor.name)
   local created = 0
   local entries = {}
 
@@ -215,7 +215,7 @@ local function addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
         end
       end
 
-      local cleanupEntries = cleanupAndRedistributeWeapons(
+      local cleanupEntries = removeAndRedistributeWeapons(
         addedUnit,
         Shared.normalizeWeaponDBIDs(descriptor.weaponDBID),
         sideName,
@@ -262,7 +262,7 @@ local function addResupplyUnit(systemName, descriptor, sideName)
 
   local expected = descriptor.unitCount
   local size = #descriptor.operationalArea.RL[1].course
-  local unitType = GameUtils.extractUnitType(descriptor.name)
+  local unitType = GameUtils.resolveUnitType(descriptor.name)
   local restStr = descriptor.name:match("Ammo Sec(.*)") or (", " .. descriptor.name)
   local created = 0
   local entries = {}

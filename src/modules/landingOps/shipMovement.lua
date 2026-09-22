@@ -220,7 +220,7 @@ end
 ---@param speed number Ship speed
 ---@param isTesting boolean Testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function matchAndMoveShip(unit, result, speed, isTesting)
+local function moveMatchingShip(unit, result, speed, isTesting)
   for _, entry in ipairs(SHIP_TYPE_DBIDS) do
     if unit.dbid == entry.dbid then
       if entry.key == "type071" then
@@ -247,7 +247,7 @@ end
 ---@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function handleSAG(descriptor, isTesting)
+local function processSAG(descriptor, isTesting)
   local anchorageArea = descriptor.to and descriptor.to.anchorageArea
   if not anchorageArea or #anchorageArea == 0 then
     return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_area_missing" } }
@@ -416,11 +416,11 @@ end
 ---@param startingPointMap table<string, CMO__Location> Starting points per ship type
 ---@param area SBJ__OperationAreaDescriptor Area configuration with heading and shipCounts
 ---@param horizontalDistance number Horizontal spacing
-local function generateAllShipLocations(opResult, startingPointMap, area, horizontalDistance)
+local function buildAllShipLocations(opResult, startingPointMap, area, horizontalDistance)
   for _, entry in ipairs(ALL_RESULT_KEYS) do
-    Utils.insertList(
+    Utils.addAll(
       opResult[entry.key].locations,
-      GameUtils.generateLocations({
+      GameUtils.buildLocations({
         initialLocation = startingPointMap[entry.key],
         num = area.shipCounts[entry.key],
         bearing = area.heading.horizontal,
@@ -448,7 +448,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
         return false
       end
 
-      generateAllShipLocations(
+      buildAllShipLocations(
         calculationResult[operation.name].result,
         startingPointMap, area,
         formationSettings.horizontalDistance
@@ -488,14 +488,14 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit and unit:inArea(operation.from.stagingArea) then
-      table.insert(results, matchAndMoveShip(unit, result, formationSettings.shipSpeed, isTesting))
+      table.insert(results, moveMatchingShip(unit, result, formationSettings.shipSpeed, isTesting))
     end
   end
 
   for _, sagName in ipairs(operation.sagNames) do
     local descriptor = amphibOpsConfig.sag[sagName]
     if descriptor then
-      table.insert(results, handleSAG(descriptor, isTesting))
+      table.insert(results, processSAG(descriptor, isTesting))
     else
       table.insert(results, { tag = "SKIP", fields = { sag = sagName, reason = "sag_descriptor_not_found" } })
     end

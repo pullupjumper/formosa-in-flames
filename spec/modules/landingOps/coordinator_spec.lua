@@ -302,7 +302,7 @@ describe("LandingOps Coordinator", function()
     it("should advance Taoyuan without queueing a recon UAV when no satellite gap exists", function()
       local config = makeConfig()
       local saveData = makeSaveData()
-      -- Drop the satellite pass so Recon.insertEntry has no window to anchor.
+      -- Drop the satellite pass so Recon.addEntry has no window to anchor.
       saveData.c.recon.queue = {}
 
       saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL

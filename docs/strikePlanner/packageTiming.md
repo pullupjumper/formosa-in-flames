@@ -28,8 +28,8 @@ flowchart TD
     READY["earliestAllowedTakeoff = currentTime + timeToReady + assignmentSafetyMargin<br/>readinessShift = earliestAllowedTakeoff - getEarliestTakeoff"]
     PREV{"previousPackage 存在?"}
     INTERVAL["intervalShift = previousTOT + strikeInterval - strikerTOT"]
-    SHIFT["scheduleShift = max(0, readinessShift, intervalShift)<br/>shiftRoleTimings"]
-    APPLY["applyRoleTiming<br/>逐一寫回 startTime / timeOnStation / endTime"]
+    SHIFT["scheduleShift = max(0, readinessShift, intervalShift)<br/>updateRoleTimings"]
+    APPLY["setRoleTiming<br/>逐一寫回 startTime / timeOnStation / endTime"]
     LOADOUT["重設 loadoutStatus 與 hasLaunched = false"]
     RET["return packageData (SBJ__Package)"]
 
@@ -63,8 +63,8 @@ conservativeFlightTime = (estimated or fallback) + flightTimeSafetyMargin
 
 | 角色 | 估算函式 | 估算方式 | fallback |
 |---|---|---|---|
-| `striker` | `estimateStrikerFlightTime` | striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程 | `unresolvedFlightTime.striker` |
-| 其他角色 | `estimateSupportRoleFlightTime` | 角色基地到任務區的最長航程 | `unresolvedFlightTime.support` |
+| `striker` | `calculateStrikerFlightTime` | striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程 | `unresolvedFlightTime.striker` |
+| 其他角色 | `calculateSupportRoleFlightTime` | 角色基地到任務區的最長航程 | `unresolvedFlightTime.support` |
 
 任務區座標由 `getMissionZonePoint()` 取得：先讀 `missionCreationParams.opts.PatrolZone`，不存在則用 `opts.Zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取第一個 zone 座標。多任務 tanker 會計算所有可解析 zone 的航程並採用**最長**飛行時間。距離換算時間時，`tanker` 使用 `cruiseSpeed.tanker`，其餘角色使用 `cruiseSpeed.combatAircraft`：
 
@@ -115,7 +115,7 @@ flowchart TD
     ZONE["getMissionZonePoint(tankerMissionParams)"]
     DIST{"receiver 基地到加油區距離可解析?"}
     ARR["arrival = receiverStart + transit + safetyMargin"]
-    EARLIER["selectEarlierArrival<br/>保留最早到場時間"]
+    EARLIER["findEarlierArrival<br/>保留最早到場時間"]
     OUT["回傳最早 receiver 到場時間 (或 nil)"]
 
     START --> ROLE --> LIST
@@ -136,19 +136,19 @@ flowchart TD
 
 ```text
 readinessShift = (currentTime + timeToReady + assignmentSafetyMargin) - getEarliestTakeoff(roleTimings)
-intervalShift  = previousPackage 存在時 : inferStrikerTimeOnTarget(previous) + strikeInterval - strikerTOT
+intervalShift  = previousPackage 存在時 : calculateStrikerTimeOnTarget(previous) + strikeInterval - strikerTOT
                  previousPackage 不存在時 : 0
 
 scheduleShift = max(0, readinessShift, intervalShift)
 ```
 
-`shiftRoleTimings()` 只在 `scheduleShift > 0` 時對每個角色的 `startTime`、`endTime` 與（若存在）`timeOnStation` 一致加上位移，確保角色間相對關係不變。`readinessShift` 保證最早起飛不早於掛載就緒與 assign 安全裕度；`intervalShift` 保證本 package 的 striker TOT 至少落在前一個有效 package 之後 `strikeInterval` 秒。前一包若為 TakeOffTime 模式，其 TOT 由起飛時間加航程反推。
+`updateRoleTimings()` 只在 `scheduleShift > 0` 時對每個角色的 `startTime`、`endTime` 與（若存在）`timeOnStation` 一致加上位移，確保角色間相對關係不變。`readinessShift` 保證最早起飛不早於掛載就緒與 assign 安全裕度；`intervalShift` 保證本 package 的 striker TOT 至少落在前一個有效 package 之後 `strikeInterval` 秒。前一包若為 TakeOffTime 模式，其 TOT 由起飛時間加航程反推。
 
 ---
 
 ### 輸出寫回
 
-`applyRoleTiming()` 依 `PACKAGE_ROLES` 逐一把計算出的時間戳格式化寫回 descriptor：
+`setRoleTiming()` 依 `PACKAGE_ROLES` 逐一把計算出的時間戳格式化寫回 descriptor：
 
 - `startTime` / `endTime`：以 `os.date(constants.DATE_FORMAT, ...)` 寫入 UTC 字串。
 - `timeOnStation`：TOS 模式寫入 UTC 字串；TakeOffTime 模式清為 `nil`。
@@ -174,7 +174,7 @@ scheduleShift = max(0, readinessShift, intervalShift)
 
 | 名稱 | 內容 | 用途 |
 |---|---|---|
-| `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | `applyRoleTiming` 寫回時序時的角色列舉順序。 |
+| `PACKAGE_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer`、`tanker` | `setRoleTiming` 寫回時序時的角色列舉順序。 |
 | `TANKER_RECEIVER_ROLES` | `striker`、`escort`、`wildWeasel`、`jammer` | 計算受油機到加油區最早到場時間的掃描範圍。 |
 
 ---

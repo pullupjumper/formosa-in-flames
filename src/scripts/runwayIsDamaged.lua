@@ -12,7 +12,7 @@ if saveData == nil then
 end
 
 if unit then
-  RunwayRepairment.whenRunwayIsDamaged(saveData, unit.side, unit)
+  RunwayRepairment.processRunwayDamage(saveData, unit.side, unit)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

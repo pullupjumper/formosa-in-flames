@@ -26,7 +26,7 @@ end
 ---Falls back to the uppercased reconType when the source is not mapped.
 ---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
 ---@return string # Short uppercase source code (e.g., "SAT", "UAV", "SIGINT")
-local function abbreviateReconSource(reconType)
+local function formatReconSource(reconType)
   return constants.RECON_SOURCE_ABBREVIATIONS[reconType] or string.upper(reconType)
 end
 
@@ -40,8 +40,8 @@ end
 ---@param registrySet table<string, boolean> Generated operations registrySet to check
 ---@param existingPlan table<string, any>|nil Existing plan table to check for conflicts
 ---@return string # Generated unique operation name
-local function generateUniqueOperationName(templateName, reconType, registrySet, existingPlan)
-  local instancePrefix = templateName .. "/DYN-" .. abbreviateReconSource(reconType) .. "-"
+local function buildUniqueOperationName(templateName, reconType, registrySet, existingPlan)
+  local instancePrefix = templateName .. "/DYN-" .. formatReconSource(reconType) .. "-"
   local sequence = 1
 
   local operationName
@@ -141,7 +141,7 @@ end
 ---Executed means the plan was inserted; failures go through abandonOperation instead.
 ---@param operationBatch SBJ__ReconTriggeredOperationBatch Parent operation batch
 ---@param operation SBJ__Operation Operation that was executed
-function DynamicState.markOperationExecuted(operationBatch, operation)
+function DynamicState.setOperationExecuted(operationBatch, operation)
   operation.executed = true
 
   DynamicState.checkOperationBatchCompleted(operationBatch)
@@ -179,9 +179,9 @@ end
 ---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
 ---@param saveData SBJ__SaveData Game save data
 ---@return string # Generated unique operation name (e.g. "AIR/STRIKE/AB/W/2/DYN-SAT-01")
-function DynamicState.generateUniqueAirOperationName(templateName, reconType, saveData)
+function DynamicState.buildUniqueAirOperationName(templateName, reconType, saveData)
   ensureGeneratedOperations(saveData)
-  return generateUniqueOperationName(
+  return buildUniqueOperationName(
     templateName, reconType,
     saveData.c.dynamicOperations.generatedOperations.air,
     saveData.c.air.airTaskingOrder
@@ -193,9 +193,9 @@ end
 ---@param reconType string Reconnaissance source (e.g., "satellite", "UAV", "SIGINT")
 ---@param saveData SBJ__SaveData Game save data
 ---@return string # Generated unique operation name (e.g. "GND/STRIKE/INFRA/ALL/1/DYN-SAT-01")
-function DynamicState.generateUniqueGroundOperationName(templateName, reconType, saveData)
+function DynamicState.buildUniqueGroundOperationName(templateName, reconType, saveData)
   ensureGeneratedOperations(saveData)
-  return generateUniqueOperationName(
+  return buildUniqueOperationName(
     templateName, reconType,
     saveData.c.dynamicOperations.generatedOperations.ground,
     saveData.c.ground.fireSupportPlan
@@ -206,7 +206,7 @@ end
 ---@param operationType string "air" or "ground"
 ---@param operationName string The generated operation name
 ---@param saveData SBJ__SaveData Game save data
-function DynamicState.registerGeneratedOperation(operationType, operationName, saveData)
+function DynamicState.addGeneratedOperation(operationType, operationName, saveData)
   ensureGeneratedOperations(saveData)
   saveData.c.dynamicOperations.generatedOperations[operationType][operationName] = true
 end

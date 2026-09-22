@@ -12,7 +12,7 @@ local FrontlineRedirect = {}
 ---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list (not mutated)
 ---@param rules SBJ__StrikeMappingRewriteRule[] Rewrite rules
 ---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
-function FrontlineRedirect.rewriteMappings(strikeMappings, rules)
+function FrontlineRedirect.buildRewrittenMappings(strikeMappings, rules)
   local result = Utils.deepCopy(strikeMappings)
 
   for _, mapping in ipairs(result) do
@@ -31,11 +31,11 @@ end
 ---@param reconCtx SBJ__ReconContext Reconnaissance context
 ---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list
 ---@return SBJ__ReconStrikeMapping[] # Original or rewritten mappings
-function FrontlineRedirect.applyMappings(config, reconCtx, strikeMappings)
+function FrontlineRedirect.updateMappings(config, reconCtx, strikeMappings)
   if reconCtx.frontlineRedirected and
       config.c.recon.frontlineRedirect and
       config.c.recon.frontlineRedirect.mappings then
-    return FrontlineRedirect.rewriteMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
+    return FrontlineRedirect.buildRewrittenMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
   end
 
   return strikeMappings

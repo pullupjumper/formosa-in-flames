@@ -26,9 +26,9 @@ ACV（兩棲步兵戰鬥車）發射是兩棲突擊的核心。系統從 LST/渡
 flowchart TD
     START["launchACV(params)"]
     CHECK{船艦存在<br>且未被擊毀?}
-    LOCS["generateLocations<br>計算編隊位置"]
-    DELETE["deleteCargoByPriority<br>依優先序刪除貨物"]
-    SPAWN["spawnSingleACV<br>生成 ZBD-05 / ZTD-05"]
+    LOCS["buildLocations<br>計算編隊位置"]
+    DELETE["removeCargoByPriority<br>依優先序刪除貨物"]
+    SPAWN["createSingleACV<br>生成 ZBD-05 / ZTD-05"]
     DOCTRINE["設定 Doctrine<br>關閉自動迴避"]
     COURSE["設定航向<br>全速前進"]
     COUNT["回傳釋放數量"]
@@ -45,7 +45,7 @@ flowchart TD
 | 1 | ZBD-05 | `constants.PLATFORMS.ZBD05` | 兩棲步兵戰鬥車 |
 | 2 | ZTD-05 | `constants.PLATFORMS.ZTD05` | 兩棲突擊車 |
 
-`deleteCargoByPriority` 依序嘗試刪除各型 ACV，以 `remaining` 計數器確保不超過總需求數。
+`removeCargoByPriority` 依序嘗試刪除各型 ACV，以 `remaining` 計數器確保不超過總需求數。
 
 ### 釋放腳本觸發
 
@@ -153,7 +153,7 @@ flowchart TD
 
 ## 相關模組
 
-- [amphibiousLogistics](amphibiousLogistics.md) — `launchACV` 呼叫 `AmphibiousLogistics.deleteCargo` 刪除貨物
+- [amphibiousLogistics](amphibiousLogistics.md) — `launchACV` 呼叫 `AmphibiousLogistics.removeCargo` 刪除貨物
 - [secondWaveUnloading](secondWaveUnloading.md) — 後續階段：灘頭建立後啟動第二波卸載
 - [shipMovement](shipMovement.md) — 前置階段：艦隊佈陣
 - [系統架構](README.md)

@@ -167,7 +167,7 @@ end
 ---@param ship CMO__Unit Ship to extract cargo from
 ---@param num number Maximum number of items to extract
 ---@return { guid: string, dbid: number, name: string, type: number }[] # Extracted cargo items
-local function extractCargoItems(ship, num)
+local function resolveCargoItems(ship, num)
   local cargoItems = {}
   local count = 0
 
@@ -189,7 +189,7 @@ end
 ---@param location CMO__Location Spawn coordinates
 ---@param index integer Position in the offload sequence
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function spawnOffloadedVehicle(ship, item, location, index)
+local function createOffloadedVehicle(ship, item, location, index)
   ship:deleteUnitCargo(item.guid)
   local unitType = CARGO_TYPE_MAP[item.type] or DEFAULT_CARGO_TYPE
 
@@ -221,11 +221,11 @@ end
 ---@param locations CMO__Location[] Spawn coordinates aligned with cargoItems
 ---@return integer|nil count Vehicles offloaded, nil when a spawn failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function spawnOffloadedVehicles(ship, cargoItems, locations)
+local function createOffloadedVehicles(ship, cargoItems, locations)
   local results = {}
 
   for index, item in ipairs(cargoItems) do
-    local result = spawnOffloadedVehicle(ship, item, locations[index], index)
+    local result = createOffloadedVehicle(ship, item, locations[index], index)
     table.insert(results, result)
 
     if result.tag == "FAIL" then
@@ -344,7 +344,7 @@ function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
 
-  local acvLocations = GameUtils.generateLocations({
+  local acvLocations = GameUtils.buildLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -352,8 +352,8 @@ function SecondWaveUnloading.offloadVehicles(params)
     firstDistance = params.firstDistance
   })
 
-  local cargoItems = extractCargoItems(ship, params.num)
-  local count, results = spawnOffloadedVehicles(ship, cargoItems, acvLocations)
+  local cargoItems = resolveCargoItems(ship, params.num)
+  local count, results = createOffloadedVehicles(ship, cargoItems, acvLocations)
 
   local report = LogFormat.report(
     constants.TAGS.SECOND_WAVE_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")

@@ -81,7 +81,7 @@ flowchart TD
 2. 透過 `createCargoProxy` 在目標載具或建築物上建立對應 cargo proxy
 3. 對 cargo proxy 執行 `stripCargoProxyMounts`：清空彈匣並移除原有 mounts
 4. 將來源單位的 mounts 複製到 cargo proxy，並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
-5. 執行 `syncWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
+5. 執行 `updateWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
 6. 複製群組名稱與單位名稱後，刪除原始來源單位
 
 ### 武器同步規則
@@ -133,7 +133,7 @@ flowchart TD
 | `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
 | `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
 | `updateCargo(fromUnit, toUnit, cargoItem)` | 單筆貨物從來源轉移至目標 |
-| `deleteCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
+| `removeCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
 | `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單位 |
 | `loadCargo(base, unitCtx, sideName)` | 將地面單位轉為 cargo proxy 並載入目標載具或建築物 |
 
@@ -167,6 +167,6 @@ flowchart TD
 ## 相關模組
 
 - [shipMovement](shipMovement.md) — 前置階段：艦隊移動至錨泊區
-- [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 釋放時呼叫 `deleteCargo`
+- [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 釋放時呼叫 `removeCargo`
 - `assignMission` — `transferAndAssign` 呼叫 `AssignMission.assignEmbarkedUnitsToMissions`
 - [系統架構](README.md)

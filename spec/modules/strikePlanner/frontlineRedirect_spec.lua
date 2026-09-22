@@ -157,7 +157,7 @@ describe("FrontlineRedirect", function()
   -- Mapping Rewrite
   -- ============================================================================
 
-  describe("rewriteMappings", function()
+  describe("buildRewrittenMappings", function()
     -- Positive: matching prefixes are rewritten on a copied mapping list.
     it("should rewrite only mappings matching prefix and type", function()
       local mappings = {
@@ -169,7 +169,7 @@ describe("FrontlineRedirect", function()
         { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       }
 
-      local result = FrontlineRedirect.rewriteMappings(mappings, rules)
+      local result = FrontlineRedirect.buildRewrittenMappings(mappings, rules)
 
       assert.are.equal("AIR/STRIKE/AB/W/AAR/1", result[1].name)
       assert.are.equal("AIR/STRIKE/AB/E/1", result[2].name)
@@ -178,13 +178,13 @@ describe("FrontlineRedirect", function()
     end)
   end)
 
-  describe("applyMappings", function()
+  describe("updateMappings", function()
     -- Positive: active sticky redirect applies configured rewrites.
     it("should apply configured mapping rewrites when redirect is active", function()
       local cfg = makeConfig()
       local mappings = { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
 
-      local result = FrontlineRedirect.applyMappings(cfg, makeReconContext({ frontlineRedirected = true }), mappings)
+      local result = FrontlineRedirect.updateMappings(cfg, makeReconContext({ frontlineRedirected = true }), mappings)
 
       assert.are.equal("AIR/STRIKE/AB/W/AAR/1", result[1].name)
       assert.are.equal("AIR/STRIKE/AB/W/1", mappings[1].name)
@@ -195,7 +195,7 @@ describe("FrontlineRedirect", function()
       local cfg = makeConfig()
       local mappings = { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
 
-      local result = FrontlineRedirect.applyMappings(cfg, makeReconContext(), mappings)
+      local result = FrontlineRedirect.updateMappings(cfg, makeReconContext(), mappings)
 
       assert.are.equal(mappings, result)
       assert.are.equal("AIR/STRIKE/AB/W/1", result[1].name)

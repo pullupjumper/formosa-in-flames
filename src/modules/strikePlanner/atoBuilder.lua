@@ -41,19 +41,19 @@ local RETRYABLE_REASON = {
 ---@param baseGUID string GUID of the air base
 ---@param unitDBID number|nil Aircraft unit database ID
 ---@return string # Ledger key
-local function reservationKey(baseGUID, unitDBID)
+local function buildReservationKey(baseGUID, unitDBID)
   return baseGUID .. "#" .. tostring(unitDBID)
 end
 
 ---Accumulate reserved aircraft counts for a single package's roles
 ---@param packageData SBJ__Package The package whose roles are counted
 ---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
-local function accumulatePackageAircraft(packageData, reservedAircraftMap)
+local function addPackageAircraft(packageData, reservedAircraftMap)
   for _, role in ipairs(PACKAGE_ROLES) do
     local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
 
     if roleData then
-      local key = reservationKey(roleData.baseGUID, roleData.unitDBID)
+      local key = buildReservationKey(roleData.baseGUID, roleData.unitDBID)
       reservedAircraftMap[key] = (reservedAircraftMap[key] or 0) + (roleData.unitCount or 0)
     end
   end
@@ -62,10 +62,10 @@ end
 ---Accumulate reserved aircraft counts for the not-yet-launched packages of a wave
 ---@param wave SBJ__Wave The active ATO wave to inspect
 ---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
-local function accumulateWaveAircraft(wave, reservedAircraftMap)
+local function addWaveAircraft(wave, reservedAircraftMap)
   for _, packageData in ipairs(wave.packages) do
     if not packageData.hasLaunched then
-      accumulatePackageAircraft(packageData, reservedAircraftMap)
+      addPackageAircraft(packageData, reservedAircraftMap)
     end
   end
 end
@@ -79,7 +79,7 @@ local function collectReservedAircraft(saveData)
 
   for _, wave in pairs(saveData.c.air.airTaskingOrder) do
     if wave.isActivated and not wave.hasLaunched then
-      accumulateWaveAircraft(wave, reservedAircraftMap)
+      addWaveAircraft(wave, reservedAircraftMap)
     end
   end
 
@@ -90,7 +90,7 @@ end
 ---One sweep answers every role, instead of re-reading the list once per DBID.
 ---@param baseGUID string The GUID of the air base to read
 ---@return table<number, integer> # Mission-free aircraft count keyed by unit DBID
-local function readBaseFreeAircraft(baseGUID)
+local function getBaseFreeAircraft(baseGUID)
   local freeByDBID = {}
 
   local baseUnit = GameApi.ScenEdit_GetUnit(baseGUID)
@@ -121,7 +121,7 @@ local function getFreeAircraftCount(freeAircraftCache, baseGUID, requiredUnitDBI
   local freeByDBID = freeAircraftCache[baseGUID]
 
   if not freeByDBID then
-    freeByDBID = readBaseFreeAircraft(baseGUID)
+    freeByDBID = getBaseFreeAircraft(baseGUID)
     freeAircraftCache[baseGUID] = freeByDBID
   end
 
@@ -154,7 +154,7 @@ local function validateAircraftRole(roleData, role, packageIndex, context)
 
   local bestSpareCount = 0
   for _, baseGUID in ipairs(candidates) do
-    local key = reservationKey(baseGUID, requiredUnitDBID)
+    local key = buildReservationKey(baseGUID, requiredUnitDBID)
     local reservedCount = context.reservedAircraft[key] or 0
     local freeAtBase = getFreeAircraftCount(context.freeAircraftCache, baseGUID, requiredUnitDBID)
     local spareCount = freeAtBase - reservedCount
@@ -437,10 +437,10 @@ local function createAndInsertATOWaveFromTemplate(
     }
   end
 
-  local waveName = DynamicState.generateUniqueAirOperationName(waveTemplate.name, reconType, saveData)
+  local waveName = DynamicState.buildUniqueAirOperationName(waveTemplate.name, reconType, saveData)
   local wave = buildATOWave(waveTemplate, waveName, validPackages)
   saveData.c.air.airTaskingOrder[wave.name] = wave
-  DynamicState.registerGeneratedOperation("air", wave.name, saveData)
+  DynamicState.addGeneratedOperation("air", wave.name, saveData)
   fields.wave = waveName
   return { success = true, tag = "OK", fields = fields, details = details, timing = collectWaveTimingResults(wave) }
 end
@@ -499,7 +499,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
-function AtoBuilder.execute(config, saveData, contacts)
+function AtoBuilder.build(config, saveData, contacts)
   if not saveData.c.dynamicOperations.enabled then
     return false
   end
@@ -546,7 +546,7 @@ function AtoBuilder.execute(config, saveData, contacts)
       fields.reason = outcome.reason
 
       if outcome.success then
-        DynamicState.markOperationExecuted(operationBatch, operation)
+        DynamicState.setOperationExecuted(operationBatch, operation)
         hasExecutedAny = true
       elseif RETRYABLE_REASON[outcome.reason] then
         -- Retryable operations stay pending inside the window and re-report the

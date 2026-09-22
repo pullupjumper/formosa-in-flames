@@ -74,7 +74,7 @@ end
 ---@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[] List of GNSS-guided weapon configurations
 ---@param dbid number Weapon database ID to match
 ---@return SBJ__GNSSJammedWeapon|nil # Matched weapon config or nil
-local function matchGnssGuidedWeapon(gnssGuidedWeapons, dbid)
+local function findGnssGuidedWeapon(gnssGuidedWeapons, dbid)
   for _, wpn in ipairs(gnssGuidedWeapons) do
     if dbid == wpn.dbid then
       return wpn
@@ -137,13 +137,13 @@ end
 ---@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[] List of GNSS-guided weapon configs
 ---@return string status JAMMING_RESULT enum value
 ---@return string message Human-readable description
-local function attemptJamming(gnssGuidedWeapons)
+local function rollJamming(gnssGuidedWeapons)
   local weaponUnit, resolveStatus = resolveWeapon()
   if not weaponUnit then
     return resolveStatus or GNSS_JAMMING_RESULT.NO_WEAPON, "No weapon unit found"
   end
 
-  local weaponConfig = matchGnssGuidedWeapon(gnssGuidedWeapons, weaponUnit.dbid)
+  local weaponConfig = findGnssGuidedWeapon(gnssGuidedWeapons, weaponUnit.dbid)
   if not weaponConfig then
     return GNSS_JAMMING_RESULT.NOT_GUIDED, weaponUnit.name
   end
@@ -186,7 +186,7 @@ end
 local function createJammingZone(unit, descriptor, point, sideName, enemySideName)
   GameApi.ScenEdit_SetEMCON("Unit", unit.guid, "OECM=Active")
 
-  local area = GameUtils.newArea(point, {
+  local area = GameUtils.createArea(point, {
     side = sideName,
     shape = "circle",
     distance = descriptor.radius
@@ -201,11 +201,11 @@ local function createJammingZone(unit, descriptor, point, sideName, enemySideNam
     area = area
   })
 
-  GameUtils.unitEntersAreaEvent(
+  GameUtils.setUnitEntersAreaEvent(
     descriptor.zoneName,
     { TargetSide = enemySideName, TargetType = TARGET_TYPE_WEAPON },
     area,
-    "GnssJamming.jamming(config, \\\"" .. sideName .. "\\\")",
+    "GnssJamming.processJamming(config, \\\"" .. sideName .. "\\\")",
     "add",
     false,
     true,
@@ -222,7 +222,7 @@ end
 ---@param sideName string Side name
 ---@param zoneName string Zone description for event removal
 ---@return boolean # Whether cleanup was successful
-local function cleanupZoneResources(sideObj, zone, sideName, zoneName)
+local function removeZoneResources(sideObj, zone, sideName, zoneName)
   local myz = sideObj:getstandardzone(zone.guid)
   if not myz then
     return false
@@ -233,7 +233,7 @@ local function cleanupZoneResources(sideObj, zone, sideName, zoneName)
   end
 
   GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, { Description = myz.description })
-  GameUtils.unitEntersAreaEvent(zoneName, {}, {}, "", "remove", false, false, false)
+  GameUtils.setUnitEntersAreaEvent(zoneName, {}, {}, "", "remove", false, false, false)
 
   return true
 end
@@ -242,7 +242,7 @@ end
 ---Delete a jammer unit by name
 ---@param unitName string Unit name to delete
 ---@param sideName string Side name that owns the unit
-local function deleteJammerUnit(unitName, sideName)
+local function removeJammerUnit(unitName, sideName)
   GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = unitName })
 end
 
@@ -256,12 +256,12 @@ end
 ---@param config SBJ__Config Configuration object containing GNSS jamming settings
 ---@param sideName string Enemy side name whose weapons are being jammed
 ---@return boolean # Whether jamming was successfully applied
-function GnssJamming.jamming(config, sideName)
+function GnssJamming.processJamming(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local side = sideConfig.field
   local gnssGuidedWeapons = config[side].gnssJamming.gnssGuidedWeapons
 
-  local status, message = attemptJamming(gnssGuidedWeapons)
+  local status, message = rollJamming(gnssGuidedWeapons)
   local tag = GNSS_RESULT_TAGS[status] or "OK"
   local resultFields = formatGnssResult(status, message)
 
@@ -377,8 +377,8 @@ function GnssJamming.removeJammers(jammerDescriptorMap, sideName)
   for _, zone in ipairs(sideObj.standardzones) do
     for _, descriptor in pairs(jammerDescriptorMap) do
       if zone.description == descriptor.zoneName then
-        if cleanupZoneResources(sideObj, zone, sideName, descriptor.zoneName) then
-          deleteJammerUnit(descriptor.name, sideName)
+        if removeZoneResources(sideObj, zone, sideName, descriptor.zoneName) then
+          removeJammerUnit(descriptor.name, sideName)
           removedCount = removedCount + 1
           report.add("OK", { jammer = descriptor.name, zone = descriptor.zoneName })
         else
@@ -412,7 +412,7 @@ function GnssJamming.removeJammingZoneByName(jammerDescriptorMap, sideName, name
 
   for _, zone in ipairs(sideObj.standardzones) do
     if zone.description == descriptor.zoneName then
-      local success = cleanupZoneResources(sideObj, zone, sideName, descriptor.zoneName)
+      local success = removeZoneResources(sideObj, zone, sideName, descriptor.zoneName)
 
       Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.line(success and "OK" or "FAIL", {
         zone = descriptor.zoneName,

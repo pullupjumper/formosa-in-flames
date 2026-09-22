@@ -12,7 +12,7 @@
 
 `Cycle.process` 是模組對外唯一進入點，內部分別跑 `processFiringUnits` 與 `processResupplyUnits`，逐一處理該飛彈系統中的所有機動發射車與彈藥補給車。
 
-對機動發射車而言，流程拆成兩段：先用 `triggerReloadMovement` 判定是否要從 STATIC 起跑（受 stow 等待時間管制），再用 `completeFiringUnitReload` 在 RELOAD 狀態下判定是否可以收尾。對彈藥補給車則對應 `triggerResupplyMovement` 與 `completeResupplyUnitTransload`，差別在於它的觸發條件是「彈量歸零且仍在作戰區」，並且不需要 stow 等待。
+對機動發射車而言，流程拆成兩段：先用 `startReloadMovement` 判定是否要從 STATIC 起跑（受 stow 等待時間管制），再用 `completeFiringUnitReload` 在 RELOAD 狀態下判定是否可以收尾。對彈藥補給車則對應 `startResupplyMovement` 與 `completeResupplyUnitTransload`，差別在於它的觸發條件是「彈量歸零且仍在作戰區」，並且不需要 stow 等待。
 
 本模組只負責流程編排與條件判斷，實際動作（移動、武器管制、卸載／裝載、隱蔽）委派給 `Movement`、`Meeting`、`Ammo`、`Concealment`。`isAuto` 控制電腦控制陣營與玩家控制陣營的差異：只有 `isAuto=true` 才會主動驅動 stow 倒數與後續機動，但「完成再裝填」這段在兩種模式下都會執行。
 
@@ -22,7 +22,7 @@
 
 ### Stow 等待視窗（新）
 
-`triggerReloadMovement` 在機動發射車目前是 `STATIC` 且 `isAuto=true` 時才會運作，並引入 `firingUnitCtx.stowStartTime` 作為倒數起點：
+`startReloadMovement` 在機動發射車目前是 `STATIC` 且 `isAuto=true` 時才會運作，並引入 `firingUnitCtx.stowStartTime` 作為倒數起點：
 
 - 觸發來源有兩個：
   - 低於 `ammoThreshold`（由 `Ammo.isLowAmmo` 判定）
@@ -50,7 +50,7 @@
 
 ### 彈藥補給車的二級補給
 
-`triggerResupplyMovement` 與 `completeResupplyUnitTransload` 與機動發射車對稱，但流程較精簡：
+`startResupplyMovement` 與 `completeResupplyUnitTransload` 與機動發射車對稱，但流程較精簡：
 
 - 觸發條件：自動模式 + `STATIC` + `wpnCurrent == 0` + 仍位於 `operationalArea` 任一陣地內
 - 觸發後呼叫 `Movement.moveToAmmoHoldingArea` 前往 AHA 與彈藥儲備點交會
@@ -70,8 +70,8 @@ flowchart TD
     A[Cycle.process] --> B[processFiringUnits]
     A --> C[processResupplyUnits]
 
-    B --> B1[handleFiringUnitReloadCycle]
-    B1 --> T[triggerReloadMovement]
+    B --> B1[processFiringUnitReloadCycle]
+    B1 --> T[startReloadMovement]
     B1 --> F[completeFiringUnitReload]
 
     T --> T1{isAuto 且 STATIC?}
@@ -100,8 +100,8 @@ flowchart TD
     F6 --> Fok
     F7 --> Fok
 
-    C --> C1[handleResupplyUnitReloadCycle]
-    C1 --> R[triggerResupplyMovement]
+    C --> C1[processResupplyUnitReloadCycle]
+    C1 --> R[startResupplyMovement]
     C1 --> S[completeResupplyUnitTransload]
 
     R --> R1{isAuto 且 STATIC 且 wpnCurrent=0 且 在作戰區?}

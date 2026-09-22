@@ -22,7 +22,7 @@ if not unit then
   return
 end
 
-MissileSystem.handleMoveToPositionEvent({
+MissileSystem.processMoveToPositionEvent({
   groundCtx = saveData.t.ground,
   unit = unit,
   event = event,

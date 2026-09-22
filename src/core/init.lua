@@ -92,7 +92,7 @@ if saveData ~= nil and #saveData.c.targetlist <= 0 then
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, saveData)
   UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-  StrikePlanner.populateTargetList(constants.SIDES.ENEMY, config.targetScanning, saveData)
+  StrikePlanner.updateTargetList(constants.SIDES.ENEMY, config.targetScanning, saveData)
   RunwayRepairment.initRunways(config, saveData)
 
   if saveData.c.recon.enabled then

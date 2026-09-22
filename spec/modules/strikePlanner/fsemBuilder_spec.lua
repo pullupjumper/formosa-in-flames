@@ -191,7 +191,7 @@ describe("FsemBuilder", function()
         }
       }
 
-      assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+      assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
     end)
 
     -- Negative: no ground operations available
@@ -201,7 +201,7 @@ describe("FsemBuilder", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
       local filterOpsStub = trackStub(stub(DynamicState, "filterOperationsByType").returns({}))
 
-      assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+      assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
       assert.stub(filterOpsStub).was.called(1)
       assert.are.equal("ground", filterOpsStub.calls[1].vals[2])
     end)
@@ -225,9 +225,9 @@ describe("FsemBuilder", function()
       trackStub(stub(DynamicState, "filterOperationsByType").returns({
         { operationBatch = reconEntry, operation = operation }
       }))
-      local markExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+      local markExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
-      assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+      assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
       assert.stub(markExecutedStub).was_not.called()
     end)
 
@@ -243,9 +243,9 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
         trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1" }))
-        trackStub(stub(DynamicState, "generateUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
-        registerGeneratedOperationStub = trackStub(stub(DynamicState, "registerGeneratedOperation"))
+        trackStub(stub(DynamicState, "buildUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
+        markOperationExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
+        registerGeneratedOperationStub = trackStub(stub(DynamicState, "addGeneratedOperation"))
       end)
 
       -- ============================================================================
@@ -264,7 +264,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        local result = FsemBuilder.execute(makeConfig(), saveData, {})
+        local result = FsemBuilder.build(makeConfig(), saveData, {})
 
         assert.is_true(result)
         assert.stub(registerGeneratedOperationStub).was.called(1)
@@ -286,7 +286,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        FsemBuilder.execute(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
 
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.is_true(fsem.isActivated)
@@ -306,7 +306,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        FsemBuilder.execute(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
 
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.are.equal(1000, fsem.createdAt)
@@ -326,7 +326,7 @@ describe("FsemBuilder", function()
           { operationBatch = reconEntry, operation = operation }
         }))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         -- Observation window: insufficient targets keeps operation in schedule for retry
         assert.stub(markOperationExecutedStub).was_not.called()
       end)
@@ -345,7 +345,7 @@ describe("FsemBuilder", function()
           { operationBatch = reconEntry, operation = operation }
         }))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -370,7 +370,7 @@ describe("FsemBuilder", function()
           { operationBatch = reconEntry, operation = operation }
         }))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -385,7 +385,7 @@ describe("FsemBuilder", function()
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -403,7 +403,7 @@ describe("FsemBuilder", function()
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -423,7 +423,7 @@ describe("FsemBuilder", function()
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -439,7 +439,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(true))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(registerGeneratedOperationStub).was_not.called()
       end)
 
@@ -473,7 +473,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        local result = FsemBuilder.execute(makeConfig(), saveData, {})
+        local result = FsemBuilder.build(makeConfig(), saveData, {})
         assert.is_true(result)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
       end)
@@ -512,7 +512,7 @@ describe("FsemBuilder", function()
         end))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        local result = FsemBuilder.execute(makeConfig(), saveData, {})
+        local result = FsemBuilder.build(makeConfig(), saveData, {})
         assert.is_true(result)
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.is_table(fsem)
@@ -549,7 +549,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        local result = FsemBuilder.execute(makeConfig(), saveData, {})
+        local result = FsemBuilder.build(makeConfig(), saveData, {})
         assert.is_true(result)
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.is_table(fsem)
@@ -596,7 +596,7 @@ describe("FsemBuilder", function()
         end))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_true(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.are.equal(2, #getUnitStub.calls)
       end)
 
@@ -628,7 +628,7 @@ describe("FsemBuilder", function()
         end))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_true(FsemBuilder.build(makeConfig(), saveData, {}))
         -- Only the first operation gets Battery-1; the second sees it as already assigned.
         assert.spy(markOperationExecutedStub).was.called(1)
         assert.are.equal(2, #getUnitStub.calls)
@@ -670,7 +670,7 @@ describe("FsemBuilder", function()
         end))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        FsemBuilder.execute(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
 
         local fsem = saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"]
         assert.are.equal(2, #fsem.fireSupportTasks)
@@ -708,7 +708,7 @@ describe("FsemBuilder", function()
         end))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        local result = FsemBuilder.execute(makeConfig(), saveData, {})
+        local result = FsemBuilder.build(makeConfig(), saveData, {})
         assert.is_true(result)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
         -- operation1 (success) marks executed; operation2 (insufficient targets) stays pending
@@ -734,7 +734,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        FsemBuilder.execute(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
 
         assert.stub(logStub).was.called(1)
         assert.stub(errorStub).was_not.called()
@@ -763,9 +763,9 @@ describe("FsemBuilder", function()
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
         }))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        markOperationExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(markOperationExecutedStub).was_not.called()
         assert.stub(logStub).was_not.called()
       end)
@@ -786,9 +786,9 @@ describe("FsemBuilder", function()
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
         }))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        markOperationExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
-        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(FsemBuilder.build(config, saveData, {}))
         assert.stub(markOperationExecutedStub).was_not.called()
         assert.are.equal(0, #reconEntry.operations)
         -- Emptying the batch closes it, so it stops being scanned altogether
@@ -811,9 +811,9 @@ describe("FsemBuilder", function()
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
         }))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        markOperationExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(markOperationExecutedStub).was_not.called()
       end)
 
@@ -835,9 +835,9 @@ describe("FsemBuilder", function()
           { operationBatch = reconEntry, operation = operation }
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
-        markOperationExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        markOperationExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(markOperationExecutedStub).was_not.called()
       end)
 
@@ -853,11 +853,11 @@ describe("FsemBuilder", function()
         trackStub(stub(DynamicState, "filterOperationsByType").returns({
           { operationBatch = reconEntry, operation = operation }
         }))
-        trackStub(stub(DynamicState, "markOperationExecuted"))
+        trackStub(stub(DynamicState, "setOperationExecuted"))
 
-        FsemBuilder.execute(makeConfig(), saveData, {})
-        FsemBuilder.execute(makeConfig(), saveData, {})
-        FsemBuilder.execute(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
+        FsemBuilder.build(makeConfig(), saveData, {})
 
         assert.stub(logStub).was.called(3)
         for i = 1, 3 do
@@ -881,19 +881,19 @@ describe("FsemBuilder", function()
         }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-        trackStub(stub(DynamicState, "generateUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
-        trackStub(stub(DynamicState, "registerGeneratedOperation"))
-        local markExecutedStub = trackStub(stub(DynamicState, "markOperationExecuted"))
+        trackStub(stub(DynamicState, "buildUniqueGroundOperationName").returns("DYNAMIC/SAT/TEST/1"))
+        trackStub(stub(DynamicState, "addGeneratedOperation"))
+        local markExecutedStub = trackStub(stub(DynamicState, "setOperationExecuted"))
 
         -- Tick 1: insufficient targets, stays pending
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(markExecutedStub).was_not.called()
 
         -- Tick 2: targets accumulated, FSEM inserted
         processTargetsStub:revert()
         trackStub(stub(TargetingProcess, "processTargets").returns({ "TGT-1", "TGT-2" }))
 
-        assert.is_true(FsemBuilder.execute(makeConfig(), saveData, {}))
+        assert.is_true(FsemBuilder.build(makeConfig(), saveData, {}))
         assert.stub(markExecutedStub).was.called(1)
         assert.is_table(saveData.c.ground.fireSupportPlan["DYNAMIC/SAT/TEST/1"])
       end)
@@ -960,7 +960,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(FsemBuilder.build(config, saveData, {}))
         assert.is_false(matrix.isFinished)
         -- Battery-1 still assigned: no new FSEM built, operation stays pending for retry
         assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
@@ -990,7 +990,7 @@ describe("FsemBuilder", function()
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
         -- Tick 1: first operation builds an FSEM holding Battery-1
-        assert.is_true(FsemBuilder.execute(config, saveData, {}))
+        assert.is_true(FsemBuilder.build(config, saveData, {}))
         local firstFsem = saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-01"]
         assert.is_table(firstFsem)
         assert.are.equal(1000, firstFsem.createdAt)
@@ -998,13 +998,13 @@ describe("FsemBuilder", function()
 
         -- Tick 2 (not yet stale): competing operation stays blocked on Battery-1
         currentTimeStub.returns(1000 + staleAfterSec)
-        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(FsemBuilder.build(config, saveData, {}))
         assert.is_false(firstFsem.isFinished)
         assert.is_nil(saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"])
 
         -- Tick 3 (stale): FSEM retired, Battery-1 released and re-assigned
         currentTimeStub.returns(1000 + staleAfterSec + 1)
-        assert.is_true(FsemBuilder.execute(config, saveData, {}))
+        assert.is_true(FsemBuilder.build(config, saveData, {}))
         assert.is_true(firstFsem.isFinished)
         assert.is_true(operation2.executed)
         local secondFsem = saveData.c.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"]
@@ -1033,7 +1033,7 @@ describe("FsemBuilder", function()
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(currentTime))
 
-        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(FsemBuilder.build(config, saveData, {}))
         assert.is_true(matrix.isFinished)
         -- Retired, not deleted: the matrix stays in the FSP for name uniqueness checks
         assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
@@ -1064,7 +1064,7 @@ describe("FsemBuilder", function()
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
         trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
 
-        assert.is_false(FsemBuilder.execute(config, saveData, {}))
+        assert.is_false(FsemBuilder.build(config, saveData, {}))
         assert.is_false(matrix.isFinished)
         assert.are.equal(1, countMatrices(saveData.c.ground.fireSupportPlan))
       end)
@@ -1130,7 +1130,7 @@ describe("FsemBuilder", function()
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(currentTime))
         trackStub(stub(TargetingProcess, "processTargets").returns({}))
 
-        FsemBuilder.execute(config, saveData, {})
+        FsemBuilder.build(config, saveData, {})
 
         assert.is_true(matrix.isFinished)
         local srbmUnits = saveData.c.ground.srbm.firingUnits
@@ -1165,7 +1165,7 @@ describe("FsemBuilder", function()
           }
         }
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithEmptyFSP, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveDataWithEmptyFSP, {}))
 
         local operation2 = makeOperation()
         local reconEntry2 = makeReconEntry()
@@ -1180,7 +1180,7 @@ describe("FsemBuilder", function()
           }
         }
 
-        assert.is_false(FsemBuilder.execute(makeConfig(), saveDataWithAnotherEmptyFSP, {}))
+        assert.is_false(FsemBuilder.build(makeConfig(), saveDataWithAnotherEmptyFSP, {}))
       end)
     end)
   end)

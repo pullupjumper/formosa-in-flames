@@ -43,7 +43,9 @@
 | `init` | 一次性初始化 | `setup` |
 | `schedule` | 排未來事件 | |
 
-- **領域動詞**：`move`、`launch`、`attack`、`assign`、`transfer`、`offload`、`reload`、`repair`、`hide`、`stow`、`retire`、`abort`、`deploy`（`deployTaskFiringUnits`）、`drop`（`dropUnitContact`，CMO 的 drop contact）、`collect`（只限 `Sigint.collectSigint`，蒐集情報）這類直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。條件：一個動作只用一個字，不要 `launch` 和 `spawn` 混用。
+- **領域動詞**：`move`、`launch`、`attack`、`assign`、`transfer`、`retransfer`、`offload`、`load`、`reload`、`repair`、`hide`、`stow`、`retire`、`abort`、`abandon`、`deploy`（`deployTaskFiringUnits`）、`drop`（`dropUnitContact`，CMO 的 drop contact）、`collect`（只限 `Sigint.collectSigint`，蒐集情報）、`recover`（通訊恢復）、`activate` / `disable`（雷達、C2 ��點）、`neutralize`、`strike`、`track`、`pair`（RORO 配 barge）、`strip`（拆 cargo proxy mount）、`complete`（reload / transload 收尾）、`settle`（recon mission 結案）這類直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。條件：一個動作只用一個字，不要 `launch` 和 `spawn` 混用。
+- **判斷型動詞**：`evaluate` 給「看狀況算出結論」的函式（`evaluateTarget`、`evaluateObservationWindow`），取代 `assess`、`analyze`。`roll` 給機率擲骰（`rollDetection`、`rollJammingResistance`），取代 `attempt`。
+- **工具類保留**：`Utils.deepCopy`、`roundToNearestMinutes`、`compareFieldKeys`（comparator）、`forEach*`（迭代 helper）、`deg` / `rad` / `atan`（數學）、`LogFormat.line` / `fields` / `merge` / `report`（log DSL）、`Logger.log` / `error` / `warn`。
 - `log` 前綴給寫 log 的函式：`emitScheduleLog` 應是 `logSchedule`。
 - `try` 前綴保留給 `pcall` 包裝：`GameUtils.tryAddUnit`。
 - 私有函式用 `local function name(...)`，不加 `_` 前綴。

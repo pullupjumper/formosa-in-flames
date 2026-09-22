@@ -11,7 +11,7 @@ if saveData == nil then
 end
 
 if saveData.c.commsJamming.enabled then
-  CommsJamming.handleCommsJamming(config.c.commsJamming, saveData)
+  CommsJamming.processCommsJamming(config.c.commsJamming, saveData)
 end
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

@@ -38,7 +38,7 @@ end
 ---@param groupName string Group name
 ---@param sideName string Side name
 ---@return boolean # Whether cleanup was successful
-local function cleanupExistingGroup(groupName, sideName)
+local function removeExistingGroup(groupName, sideName)
   local group = GameApi.ScenEdit_GetUnit(groupName, sideName)
   if group and group.group and group.group.unitlist then
     for _, guid in ipairs(group.group.unitlist) do
@@ -59,7 +59,7 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGUID)
           side = embarkedUnit.side,
           type = embarkedUnit.type,
           dbid = embarkedUnit.dbid,
-          unitname = embarkedUnit.name .. " #" .. Utils.randomTxt(3),
+          unitname = embarkedUnit.name .. " #" .. Utils.buildRandomText(3),
           base = baseGUID,
         }
 
@@ -82,7 +82,7 @@ end
 ---@param unitDescriptor SBJ__UnitDescriptor Unit descriptor
 ---@param embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
 local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
-  local locations = GameUtils.generateLocations(params)
+  local locations = GameUtils.buildLocations(params)
 
   for _, location in ipairs(locations) do
     unitDescriptor.latitude = location.latitude
@@ -368,7 +368,7 @@ end
 ---@return boolean # Whether successful
 local function createShipFormation(formationConfig)
   -- Clean up existing group
-  cleanupExistingGroup(formationConfig.groupName, formationConfig.sideName)
+  removeExistingGroup(formationConfig.groupName, formationConfig.sideName)
 
   local createdUnits = {}
   local leader = nil
@@ -815,7 +815,7 @@ end
 --     if unit and point then
 --       GameApi.ScenEdit_SetEMCON('Unit', unit.guid, 'OECM=Active')
 
---       local area = GameUtils.newArea(point, {
+--       local area = GameUtils.createArea(point, {
 --         side = 'China',
 --         shape = 'circle',
 --         distance = jammer.radius

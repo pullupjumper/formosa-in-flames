@@ -97,7 +97,7 @@ end
 ---Classify unit type based on context name
 ---@param unitCtxName string Unit context name
 ---@return string # UNIT_TYPE enum value
-local function classifyUnitType(unitCtxName)
+local function resolveUnitType(unitCtxName)
   if string.find(unitCtxName, "ROCC") or string.find(unitCtxName, "TAAOC") then
     return UNIT_TYPE.C2
   end
@@ -184,7 +184,7 @@ end
 ---@param isEmitting boolean Whether target unit is currently emitting signals
 ---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
-local function attemptDetection(sigintCtx, enemyGUID, isEmitting, config)
+local function rollDetection(sigintCtx, enemyGUID, isEmitting, config)
   local enemy = GameApi.ScenEdit_GetUnit(enemyGUID)
   if not enemy then
     return buildUndetectedResult()
@@ -236,7 +236,7 @@ end
 ---@param pos { latitude: number, longitude: number } Position for notification
 ---@param notification string Notification message to display
 ---@param config SBJ__SIGINTConfig|nil Detection configuration
-local function showDetectionNotification(pos, notification, config)
+local function createDetectionNotification(pos, notification, config)
   config = config or {}
   local defaultDisplay = config.defaultDisplay or {}
   local displayConfig = {
@@ -292,7 +292,7 @@ local function updateTransmissionData(sigintCtx, unitCtx, result, unit)
   local transmission = sigintCtx.transmissions[unit.guid]
 
   if not transmission then
-    local unitType = classifyUnitType(unitCtx.name)
+    local unitType = resolveUnitType(unitCtx.name)
     transmission = {
       name = unitCtx.name,
       guid = unit.guid,
@@ -341,7 +341,7 @@ end
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context containing transmission records
 ---@param unit CMO__Unit Unit object that was not detected this cycle
 ---@return string # DETECTION_STATUS enum value
-local function handleUndetected(sigintCtx, unit)
+local function processUndetected(sigintCtx, unit)
   local transmission = sigintCtx.transmissions[unit.guid]
   if not transmission then
     return DETECTION_STATUS.NO_CHANGE
@@ -413,7 +413,7 @@ function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig
       local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
 
       -- Perform SIGINT detection
-      local result = attemptDetection(sigintCtx, actualUnit.guid, isEmitting, sigintConfig)
+      local result = rollDetection(sigintCtx, actualUnit.guid, isEmitting, sigintConfig)
       resultMap[actualUnit.guid] = result
 
       -- Update transmission data based on result
@@ -423,10 +423,10 @@ function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig
         report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
-          showDetectionNotification(result, unitCtx.msg, sigintConfig)
+          createDetectionNotification(result, unitCtx.msg, sigintConfig)
         end
       else
-        local status = handleUndetected(sigintCtx, actualUnit)
+        local status = processUndetected(sigintCtx, actualUnit)
         report.add(SIGINT_RESULT_TAGS[status], {
           unit = ctxName,
           result = status,

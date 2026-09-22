@@ -10,7 +10,7 @@
 
 targetingProcess 負責 Kill Chain 的 Find → Fix → Target → Assess 階段。提供三種目標處理路徑：
 
-1. **目標掃描**（`scanTargets`）：全域掃描感測器接觸，依模式匹配分類至 `targetlist`
+1. **目標掃描**（`findTargets`）：全域掃描感測器接觸，依模式匹配分類至 `targetlist`
 2. **動態篩選**（`processDynamicTargets`）：透過可配置的篩選函數即時篩選接觸
 3. **固定目標查詢**（`processFixedTargets`）：從既有 `targetlist` 中依條件查詢並執行 BDA
 
@@ -18,7 +18,7 @@ targetingProcess 負責 Kill Chain 的 Find → Fix → Target → Assess 階段
 
 ---
 
-## 目標掃描（scanTargets）
+## 目標掃描（findTargets）
 
 掃描所有感測器接觸，依據模式匹配將目標分類：
 
@@ -43,7 +43,7 @@ Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在�
 |---|---|---|
 | `findInfantry` / `findMobileTargets` | 搜尋地面目標（步兵/車輛） | 地面接觸 (`typed == 8`) |
 | `findAirborne` | 搜尋空中預警機 | P-3C（SEAVUE）、E-2K（APS-145） |
-| `analyzeEmissions` | 分析雷達輻射特徵辨識 SAM | TK-3、TK-2、PAC-3、TC-2 |
+| `evaluateEmissions` | 分析雷達輻射特徵辨識 SAM | TK-3、TK-2、PAC-3、TC-2 |
 | `findC2` | 搜尋指揮管制設施 | ROCC、TAAOC |
 | `findNavalTargets` | 搜尋海上目標 | 艦艇接觸 (`typed == 2`) |
 | `findRadioDirection` | SIGINT 無線電測向 | 地面 + C2（結合無線電源距離） |
@@ -69,7 +69,7 @@ Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在�
 
 ## 戰損評估（BDA）
 
-`assessTargetsDamage` 對目標清單逐一執行 BDA 過濾：
+`evaluateTargetsDamage` 對目標清單逐一執行 BDA 過濾：
 
 ```mermaid
 flowchart TD
@@ -97,7 +97,7 @@ flowchart TD
 
 ## 偵察追蹤觸發
 
-當動態篩選產生目標時，`triggerReconTracking` 自動嘗試指派附近的 UAV 進行持續追蹤：
+當動態篩選產生目標時，`startReconTracking` 自動嘗試指派附近的 UAV 進行持續追蹤：
 
 | 篩選函數 | 追蹤平台 | 目標取得方式 |
 |---|---|---|
@@ -112,7 +112,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `scanTargets(sideName, scanConfig, saveData)` | 掃描所有接觸並分類至目標清單 |
+| `findTargets(sideName, scanConfig, saveData)` | 掃描所有接觸並分類至目標清單 |
 | `filterTargetsByTypeAndBase(targetlist, queryParams)` | 依基地名稱與子類型查詢目標 |
 | `processTargets(config, saveData, contacts, targetConfig, isFirstWave)` | 統一入口：路由至動態篩選或固定目標查詢 |
 
@@ -120,6 +120,6 @@ flowchart TD
 
 ## 相關模組
 
-- [recon](recon.md) — `triggerReconTracking` 呼叫 `Recon.trackTarget` 指派追蹤
+- [recon](recon.md) — `startReconTracking` 呼叫 `Recon.trackTarget` 指派追蹤
 - [fsemBuilder](fsemBuilder.md) / [atoBuilder](atoBuilder.md) — 呼叫 `processTargets` 評估目標
 - [系統架構](README.md)

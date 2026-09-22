@@ -3,7 +3,7 @@ local Utils = require("src.utils.utils")
 
 ---@class SBJ__GameApi
 local realApi = {}
----@type GameApi
+---@type SBJ__GameApi
 local GameApi = {}
 
 ---Get unit by GUID or name
@@ -691,7 +691,7 @@ setmetatable(GameApi, {
 
     local label = "GameApi." .. key
     local wrapper = function(...)
-      local result, err = Utils.safeCall(label, targetFunc, ...)
+      local result, err = Utils.tryCall(label, targetFunc, ...)
       if err then
         Logger.error(err)
         return nil

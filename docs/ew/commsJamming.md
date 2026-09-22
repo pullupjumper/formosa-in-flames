@@ -82,7 +82,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    START["handleCommsJamming()"]
+    START["processCommsJamming()"]
     FIND_J["findJammers()<br>取得空中電戰機"]
     FIND_T["findSAMAndRadar()<br>從 IADS 蒐集目標"]
     RECOVER["recoverAllComms()<br>批量恢復通訊"]
@@ -90,7 +90,7 @@ flowchart TD
     SORT["依距離排序目標"]
     LIMIT["限制處理數 ≤ config.limit"]
     STRATEGY["jammingStrategies[mode]<br>策略模式選擇干擾函數"]
-    STATE["applyJammingStateTransition()<br>狀態機轉換"]
+    STATE["updateJammingState()<br>狀態機轉換"]
     AIRCRAFT["processAircraftComms()"]
     LEVEL["getCommsLevel()<br>計算飛機通訊等級"]
     RTB{"commsLevel <<br>commsThreshold?"}
@@ -134,7 +134,7 @@ saveData.t.iads
 
 | 函數 | 說明 |
 |---|---|
-| `handleCommsJamming(commsJammingConfig, saveData)` | 主入口：執行干擾循環、通訊恢復、飛機品質監控 |
+| `processCommsJamming(commsJammingConfig, saveData)` | 主入口：執行干擾循環、通訊恢復、飛機品質監控 |
 | `initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)` | 初始化干擾機 Context（掃描 Y-9/J-15D/J-16D） |
 
 ---

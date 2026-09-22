@@ -679,7 +679,7 @@ describe("SecondWaveUnloading", function()
     local stubGenerateLocations, stubAddUnit
 
     before_each(function()
-      stubGenerateLocations = trackStub(stub(GameUtils, "generateLocations"))
+      stubGenerateLocations = trackStub(stub(GameUtils, "buildLocations"))
       stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
     end)
 
@@ -770,8 +770,8 @@ describe("SecondWaveUnloading", function()
       assert.stub(logStub).was.called(1)
     end)
 
-    -- Positive: passes correct parameters to generateLocations
-    it("should pass ship location and spacing parameters to generateLocations", function()
+    -- Positive: passes correct parameters to buildLocations
+    it("should pass ship location and spacing parameters to buildLocations", function()
       local params = makeOffloadParams()
       trackStub(stub(params.ship, "deleteUnitCargo"))
 

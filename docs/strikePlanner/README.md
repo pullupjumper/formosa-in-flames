@@ -82,7 +82,7 @@ flowchart TB
         DATO["atoBuilder<br>.execute()"]
         RECON["recon<br>.processQueue()"]
         RSCHED["operationScheduler<br>.schedule()"]
-        FREDIR["frontlineRedirect<br>.evaluate/applyMappings()"]
+        FREDIR["frontlineRedirect<br>.evaluate/updateMappings()"]
         ATTR["airbaseAttrition<br>.calculate()"]
     end
 
@@ -123,8 +123,8 @@ flowchart LR
     RECON_COMPLETE["偵察完成"]
     SCHED["排程動態作戰<br>OperationScheduler.schedule"]
     RECON_SCHED["reconTriggeredOperationBatches<br>新增偵察觸發作戰批次"]
-    DFSP_EXEC["FsemBuilder.execute()"]
-    DATO_EXEC["AtoBuilder.execute()"]
+    DFSP_EXEC["FsemBuilder.build()"]
+    DATO_EXEC["AtoBuilder.build()"]
     FSP_INSERT["插入新 FSEM<br>至 fireSupportPlan"]
     ATO_INSERT["插入新 Wave<br>至 airTaskingOrder"]
     FSP_EXEC["FSP.strike() 執行"]

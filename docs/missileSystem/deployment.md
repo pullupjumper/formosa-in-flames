@@ -14,7 +14,7 @@
 
 對 firing unit，會依 `isSam` 決定初始生成點（SAM 在 FP、其餘在 HA）。對 resupply/ammo，分別使用 RL 與 AHA 作為初始點。
 
-建立後會執行 `cleanupAndRedistributeWeapons`，去除非目標武器並在單一 weaponDBID 情境下把可轉移彈數補回。
+建立後會執行 `removeAndRedistributeWeapons`，去除非目標武器並在單一 weaponDBID 情境下把可轉移彈數補回。
 
 ---
 
@@ -32,7 +32,7 @@ flowchart TD
     C --> D[addFiringUnit]
     C --> E[addResupplyUnit]
     C --> F[addAmmunition]
-    D --> G[cleanupAndRedistributeWeapons]
+    D --> G[removeAndRedistributeWeapons]
     B --> H[LogFormat.report]
 ```
 

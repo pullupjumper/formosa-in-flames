@@ -63,10 +63,10 @@ describe("MissileSystem Context", function()
   end)
 
   -- ============================================================================
-  -- handleSupplyAssetDestruction
+  -- processSupplyAssetDestruction
   -- ============================================================================
 
-  describe("handleSupplyAssetDestruction", function()
+  describe("processSupplyAssetDestruction", function()
     local mockSystemCtx
 
     before_each(function()
@@ -109,7 +109,7 @@ describe("MissileSystem Context", function()
     it("should set wpnCurrent to 0 when ammo depot with ammo is destroyed", function()
       local unit = { name = "Ammo Depot Alpha" }
 
-      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
@@ -126,7 +126,7 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Alpha" }
       }
 
-      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
@@ -144,7 +144,7 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Beta" }
       }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Beta"].wpnCurrent)
@@ -157,7 +157,7 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Empty" }
       }
 
-      local result, detail = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_false(result)
       assert.is_nil(detail)
@@ -171,7 +171,7 @@ describe("MissileSystem Context", function()
         group = { name = "Unknown Group" }
       }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_false(result)
     end)
@@ -187,8 +187,8 @@ describe("MissileSystem Context", function()
         group = { name = "Resupply Group Alpha" }
       }
 
-      Context.handleSupplyAssetDestruction(unit1, mockSystemCtx)
-      Context.handleSupplyAssetDestruction(unit2, mockSystemCtx)
+      Context.processSupplyAssetDestruction(unit1, mockSystemCtx)
+      Context.processSupplyAssetDestruction(unit2, mockSystemCtx)
 
       assert.are.equal(10, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
     end)
@@ -204,7 +204,7 @@ describe("MissileSystem Context", function()
 
       local unit = { name = "Ammo Depot Alpha" }
 
-      local result = Context.handleSupplyAssetDestruction(unit, mockSystemCtx)
+      local result = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)

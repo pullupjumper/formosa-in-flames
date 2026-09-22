@@ -288,10 +288,10 @@ describe("AmphibiousLogistics", function()
   end)
 
   -- ============================================================================
-  -- deleteCargo
+  -- removeCargo
   -- ============================================================================
 
-  describe("deleteCargo", function()
+  describe("removeCargo", function()
     -- Positive: should delete matching cargo and return count
     it("should delete matching cargo and return count", function()
       local fromUnit = makeUnit()
@@ -299,7 +299,7 @@ describe("AmphibiousLogistics", function()
 
       trackStub(stub(fromUnit, "deleteUnitCargo").returns(true))
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(2, result)
     end)
@@ -315,7 +315,7 @@ describe("AmphibiousLogistics", function()
         return callCount == 1
       end))
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(1, result)
     end)
@@ -324,7 +324,7 @@ describe("AmphibiousLogistics", function()
     it("should return 0 when fromUnit is nil", function()
       local cargoItem = makeCargoItem()
 
-      local result = AmphibiousLogistics.deleteCargo(nil, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(nil, cargoItem)
 
       assert.are.equal(0, result)
     end)
@@ -334,7 +334,7 @@ describe("AmphibiousLogistics", function()
       local fromUnit = makeUnit({ cargo = nil })
       local cargoItem = makeCargoItem()
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(0, result)
     end)
@@ -344,7 +344,7 @@ describe("AmphibiousLogistics", function()
       local fromUnit = makeUnit({ cargo = {} })
       local cargoItem = makeCargoItem()
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(0, result)
     end)
@@ -354,7 +354,7 @@ describe("AmphibiousLogistics", function()
       local fromUnit = makeUnit()
       local cargoItem = makeCargoItem({ num = 0 })
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(0, result)
     end)
@@ -366,7 +366,7 @@ describe("AmphibiousLogistics", function()
 
       trackStub(stub(fromUnit, "deleteUnitCargo").returns(nil))
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(0, result)
     end)
@@ -386,7 +386,7 @@ describe("AmphibiousLogistics", function()
 
       trackStub(stub(fromUnit, "deleteUnitCargo").returns(true))
 
-      local result = AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(1, result)
     end)

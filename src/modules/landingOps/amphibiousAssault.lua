@@ -114,13 +114,13 @@ end
 ---@param ship CMO__Unit Ship to delete cargo from
 ---@param totalNum number Total number of ACVs to deploy
 ---@return {acvType: {name: string, dbid: number}, count: number}[] # Allocation array
-local function deleteCargoByPriority(ship, totalNum)
+local function removeCargoByPriority(ship, totalNum)
   local allocations = {}
   local remaining = totalNum
 
   for _, acvType in ipairs(ACV_TYPES) do
     if remaining <= 0 then break end
-    local deleted = AmphibiousLogistics.deleteCargo(ship, { type = 2, num = remaining, dbid = acvType.dbid })
+    local deleted = AmphibiousLogistics.removeCargo(ship, { type = 2, num = remaining, dbid = acvType.dbid })
     if deleted > 0 then
       table.insert(allocations, { acvType = acvType, count = deleted })
       remaining = remaining - deleted
@@ -135,7 +135,7 @@ end
 ---@param location CMO__Location Spawn coordinates
 ---@param destination CMO__Location[] Course destination waypoints
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function spawnSingleACV(acvType, location, destination)
+local function createSingleACV(acvType, location, destination)
   local addedUnit = GameApi.ScenEdit_AddUnit({
     side = constants.SIDES.ENEMY,
     type = "Vehicle",
@@ -173,14 +173,14 @@ end
 ---@param destination CMO__Location[] Course destination waypoints
 ---@return integer|nil count ACVs launched, nil when a spawn failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function spawnAllocatedACVs(allocations, locations, destination)
+local function createAllocatedACVs(allocations, locations, destination)
   local results = {}
   local index = 0
 
   for _, allocation in ipairs(allocations) do
     for _ = 1, allocation.count do
       index = index + 1
-      local result = spawnSingleACV(allocation.acvType, locations[index], destination)
+      local result = createSingleACV(allocation.acvType, locations[index], destination)
       table.insert(results, result)
 
       if result.tag == "FAIL" then
@@ -350,15 +350,15 @@ function AmphibiousAssault.launchACV(params)
   if ship == nil or ship.IsDestroyed then return end
 
   local destination = params.destination
-  local acvLocations = GameUtils.generateLocations({
+  local acvLocations = GameUtils.buildLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
     distance = params.distance
   })
 
-  local allocations = deleteCargoByPriority(ship, params.num)
-  local count, results = spawnAllocatedACVs(allocations, acvLocations, destination)
+  local allocations = removeCargoByPriority(ship, params.num)
+  local count, results = createAllocatedACVs(allocations, acvLocations, destination)
 
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_ASSAULT, "ship=" .. (ship.name or ship.guid), "Launch ACV")

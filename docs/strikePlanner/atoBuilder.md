@@ -22,7 +22,7 @@
 
 ```mermaid
 flowchart TD
-    ENTRY["AtoBuilder.execute"]
+    ENTRY["AtoBuilder.build"]
     ENABLED{"dynamicOperations enabled?"}
     HAS_TIME{"ScenEdit_CurrentTime 有值?"}
     HAS_BATCH{"reconTriggeredOperationBatches 非空?"}
@@ -33,7 +33,7 @@ flowchart TD
     EXPIRED["observation_window_expired"]
     PROCESS["processAirOperation"]
     DISPATCH{"outcome.success?"}
-    MARK["markOperationExecuted"]
+    MARK["setOperationExecuted"]
     RETRYABLE{"RETRYABLE_REASON 命中?"}
     OBSERVE["state=observing"]
     ABANDON["abandonOperation"]
@@ -77,10 +77,10 @@ flowchart TD
     CREATE["createAndInsertATOWaveFromTemplate"]
     BUILD["buildExecutablePackages"]
     HAS_PKG{"validPackages 非空?"}
-    NAME["generateUniqueAirOperationName"]
+    NAME["buildUniqueAirOperationName"]
     WAVE["buildATOWave"]
     INSERT["寫入 airTaskingOrder"]
-    REGISTER["registerGeneratedOperation"]
+    REGISTER["addGeneratedOperation"]
     TIMING["collectWaveTimingResults"]
     OK["success = true"]
     ERR["missing_wave_template"]
@@ -116,7 +116,7 @@ flowchart TD
 
 移除而非標記 `executed`，是為了讓排程器把同一波重新排一次，而不是把沒打成的波次當成推進基準跳過去。`executed` 因此有嚴格語義：**只代表「Wave 真的插進計畫了」**，不代表飛機起飛。細節見 [operationScheduler](operationScheduler.md) 的排程不變式。
 
-`abandonOperation()` 與 `markOperationExecuted()` 都會接著呼叫 `checkOperationBatchCompleted()`，所以整個 batch 的 `executed` 會在最後一個 operation 離開時自動翻轉。
+`abandonOperation()` 與 `setOperationExecuted()` 都會接著呼叫 `checkOperationBatchCompleted()`，所以整個 batch 的 `executed` 會在最後一個 operation 離開時自動翻轉。
 
 ### 目標評估與 package 篩選
 
@@ -158,11 +158,11 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 ### 為什麼預約帳本要以 (基地, 機型) 為 key
 
-預約 key 由 `reservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。單純以 baseGUID 記帳會出錯：把某基地的戰機全部訂走，不該讓同一基地的加油機或電戰機看起來也沒了。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的其他機型。
+預約 key 由 `buildReservationKey(baseGUID, unitDBID)` 產生，形如 `BASE-1#100`。單純以 baseGUID 記帳會出錯：把某基地的戰機全部訂走，不該讓同一基地的加油機或電戰機看起來也沒了。既有波次同樣以 (基地, 機型) 記帳，所以某基地的戰機被前一波訂滿，不會連帶擋掉這一波的其他機型。
 
 ### 為什麼快取只活一次 execute()
 
-`readBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getFreeAircraftCount()` 把結果存進 `execute()` 建立的 `freeAircraftCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
+`getBaseFreeAircraft()` 對一個基地做**一次掃描**，回傳 `dbid -> 閒置架數`；`getFreeAircraftCount()` 把結果存進 `execute()` 建立的 `freeAircraftCache` 並在整趟共用。這取代了原本按 dbid 分次掃描的作法——同一基地的 5 個角色以前會把掛載機清單各讀一遍，現在讀一次就答完所有機型。
 
 快取的生命週期**剛好是一次 `execute()`**，理由是這段期間基地機隊是恆定的：本模組只讀不寫遊戲狀態，而 CMO 的事件腳本執行期間模擬時間不前進。機場被炸、飛機被指派任務、玩家操作都發生在兩次 `execute()` 之間，每趟重建剛好涵蓋。
 
@@ -176,7 +176,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 ### 結果分類與 log
 
-`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `AtoBuilder.execute()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
+`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `AtoBuilder.build()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
 
 | reason | tag | 條件 | 後續處理 |
 |---|---|---|---|
@@ -188,7 +188,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 `RETRYABLE_REASON` 只收錄 `no_valid_packages`，其餘（含未預期的未知 reason）一律走移除路徑——預設保守，不讓沒對應到的失敗永遠卡在窗內。
 
-tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`AtoBuilder.execute()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`AtoBuilder.build()` 只把 operation 識別欄位與 `outcome.fields` 合併後交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
 
 log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都是 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，歸屬清楚且不計入 header 的 `total`：
 
@@ -211,8 +211,8 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 | 路徑或 API | 行為 |
 |---|---|
 | `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時寫入新的 `SBJ__Wave`。 |
-| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicState.registerGeneratedOperation("air", wave.name, saveData)` 登記。 |
-| `operation.executed` | Wave 成功插入時由 `markOperationExecuted()` 標記。 |
+| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 透過 `DynamicState.addGeneratedOperation("air", wave.name, saveData)` 登記。 |
+| `operation.executed` | Wave 成功插入時由 `setOperationExecuted()` 標記。 |
 | `operationBatch.operations` | 放棄的 operation 由 `abandonOperation()` 從陣列移除。 |
 | `operationBatch.executed` | batch 內所有 operation 都完成或被移除時由 `checkOperationBatchCompleted()` 更新。 |
 | `roleData.baseGUID` | 機隊驗證選定候選基地時，就地改寫拷貝後的 package template。 |
@@ -225,7 +225,7 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `AtoBuilder.execute(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；至少成功插入一個 ATO Wave 時回傳 `true`。 |
+| `AtoBuilder.build(config, saveData, contacts)` | `SBJ__Config`, `SBJ__SaveData`, `CMO__Contact[]` | `boolean` | 處理所有落在觀察窗內的未執行 air operations；至少成功插入一個 ATO Wave 時回傳 `true`。 |
 
 ### 呼叫者與觸發方式
 

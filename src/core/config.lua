@@ -1054,7 +1054,7 @@ config.c.recon.frontlineRedirect = {
   },
 }
 config.c.recon.queue = {
-  -- A UAV may be authored here instead of going through Recon.insertEntry, in which case it
+  -- A UAV may be authored here instead of going through Recon.addEntry, in which case it
   -- must carry its own takeoffTime and endTime. Run-state fields (hasLaunched, isFinished,
   -- unitGUID, trackingTargetGUID) are filled in by initQueue, not listed here.
   -- {
@@ -2896,7 +2896,7 @@ config.c.fireSupportTaskTemplates = {
         list = {},
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_NORTH },
-        filterNames = { "analyzeEmissions", "findRadioDirection" },
+        filterNames = { "evaluateEmissions", "findRadioDirection" },
         contactAge = config.c.ground.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8
@@ -2914,7 +2914,7 @@ config.c.fireSupportTaskTemplates = {
         list = {},
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_CENTER },
-        filterNames = { "analyzeEmissions", "findRadioDirection" },
+        filterNames = { "evaluateEmissions", "findRadioDirection" },
         contactAge = config.c.ground.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8

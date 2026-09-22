@@ -55,7 +55,7 @@
 
 ### Strike Execution
 
-`executeFireSupportTasks()` 只會在 `processActiveMatrix()` 回報 firing units 已就位時執行。每個 FST 需同時滿足以下條件：
+`startFireSupportTasks()` 只會在 `processActiveMatrix()` 回報 firing units 已就位時執行。每個 FST 需同時滿足以下條件：
 
 | 條件 | 說明 |
 |---|---|
@@ -123,7 +123,7 @@ flowchart TD
     MOVE["MissileSystem.moveFromHideArea()<br/>MissileSystem.moveToFiringPoint()"]
     STATIC{"state == STATIC?"}
     ALL_READY{"matrix.allFiringUnitsInPosition?"}
-    EXECUTE["executeFireSupportTasks()"]
+    EXECUTE["startFireSupportTasks()"]
     TASK_READY{"FST 未完成<br/>且已達 startTime?"}
     ATTACK["AttackManager.attackContacts()"]
     FIRED{"fired > 0?"}
@@ -205,9 +205,9 @@ saveData.c.ground
 |---|---|---|
 | `saveData.c.ground.fireSupportPlan` | read | `strike()` 遍歷所有 FSEM。 |
 | `matrix.allFiringUnitsInPosition` | write | `processActiveMatrix()` 寫入部署階段結果。 |
-| `task.isFinished` | write | `executeFireSupportTasks()` 在成功發射後標記完成。 |
+| `task.isFinished` | write | `startFireSupportTasks()` 在成功發射後標記完成。 |
 | `matrix.isFinished` | write | `strike()` 在所有 FST 完成後標記 FSEM 完成。 |
-| `task.target.list` | read | `executeFireSupportTasks()` 交給 `AttackManager.attackContacts()` 作為目標 GUID 清單。 |
+| `task.target.list` | read | `startFireSupportTasks()` 交給 `AttackManager.attackContacts()` 作為目標 GUID 清單。 |
 | `saveData.c.ground.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
 
 ---
@@ -262,7 +262,7 @@ saveData.c.ground
 | `getFiringUnitContext()` | 依 missile system 與 firing unit name 從 saveData 取 context。 | `saveData`, `missileSystem`, `firingUnitName` | `SBJ__FiringUnitContext` |
 | `deploySingleFiringUnit()` | 取得實體單位、必要時呼叫 missileSystem 移動，並回報是否就位。 | `saveData`, `task`, `firingUnit` | `boolean` |
 | `deployTaskFiringUnits()` | 部署一個 FST 的所有 firing units。 | `saveData`, `task` | `allInPosition`, `notReadyNames` |
-| `executeFireSupportTasks()` | 對可執行 FST 發射武器並標記完成。 | `saveData`, `matrix` | `{ taskName, fired }[]` |
+| `startFireSupportTasks()` | 對可執行 FST 發射武器並標記完成。 | `saveData`, `matrix` | `{ taskName, fired }[]` |
 | `isMatrixFinished()` | 判斷 FSEM 內所有 FST 是否完成。 | `matrix` | `boolean` |
 | `processActiveMatrix()` | 執行 FSEM 部署階段並回傳 pending task。 | `saveData`, `matrix` | `allInPosition`, `pendingTasks` |
 

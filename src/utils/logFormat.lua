@@ -129,7 +129,7 @@ end
 ---@param key string Field key
 ---@return integer tier Ordering tier, lower sorts first
 ---@return integer|nil rank Rank inside the tier, nil for unlisted fields
-local function fieldTier(key)
+local function getFieldTier(key)
   if OUTCOME_RANK[key] then
     return 3, OUTCOME_RANK[key]
   end
@@ -144,8 +144,8 @@ end
 ---@param right string Second field key
 ---@return boolean # True when left sorts before right
 local function compareFieldKeys(left, right)
-  local leftTier, leftRank = fieldTier(left)
-  local rightTier, rightRank = fieldTier(right)
+  local leftTier, leftRank = getFieldTier(left)
+  local rightTier, rightRank = getFieldTier(right)
 
   if leftTier ~= rightTier then
     return leftTier < rightTier
@@ -272,7 +272,7 @@ end
 ---@param action string Action description
 ---@param rows SBJ__LogResult[] Parent rows routed to this sink
 ---@return string # Formatted section
-local function renderSection(scope, action, rows)
+local function formatSection(scope, action, rows)
   local lines = { string.format("%s: %s | %s", scope, action, formatRollup(rows)) }
 
   for _, row in ipairs(rows) do
@@ -328,11 +328,11 @@ function LogFormat.report(logTag, scope, action)
     end
 
     if #infoRows > 0 then
-      Logger.log(logTag, renderSection(scope, fullAction, infoRows))
+      Logger.log(logTag, formatSection(scope, fullAction, infoRows))
     end
 
     if #errorRows > 0 then
-      Logger.error(renderSection(scope, fullAction, errorRows))
+      Logger.error(formatSection(scope, fullAction, errorRows))
     end
   end
 

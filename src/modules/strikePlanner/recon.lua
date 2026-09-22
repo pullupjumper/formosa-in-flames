@@ -135,7 +135,7 @@ end
 ---Run phase 1 of an entry: send its aircraft up once takeoff time has passed
 ---@param entry SBJ__ReconUAVEntry Queue entry to process (UAV only)
 ---@return SBJ__LogResult # Launch outcome row
-local function runLaunchPhase(entry)
+local function startLaunchPhase(entry)
   if not GameUtils.isAfterStartTime(entry.takeoffTime) then
     return { tag = "SKIP", fields = { base = entry.baseGUID, reason = "takeoff_time_not_reached" } }
   end
@@ -267,7 +267,7 @@ end
 local function processUAVEntry(processingCtx, entry)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
-    return runLaunchPhase(entry)
+    return startLaunchPhase(entry)
   end
 
   if entry.isFinished then
@@ -591,7 +591,7 @@ end
 ---@param entryTemplate SBJ__ReconUAVTemplate UAV entry template to instantiate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-function Recon.insertEntry(reconCtx, entryTemplate, startTime)
+function Recon.addEntry(reconCtx, entryTemplate, startTime)
   local entry = Utils.deepCopy(entryTemplate)
   ---@cast entry SBJ__ReconUAVEntry
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)

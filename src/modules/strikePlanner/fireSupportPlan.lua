@@ -111,7 +111,7 @@ end
 ---@param saveData SBJ__SaveData Saved game state
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
 ---@return {taskName: string, fired: integer}[] # Strike result records per task
-local function executeFireSupportTasks(saveData, matrix)
+local function startFireSupportTasks(saveData, matrix)
   local strikeResults = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
@@ -220,7 +220,7 @@ function FireSupportPlan.strike(saveData)
 
       local strikeResults = {}
       if allInPosition then
-        strikeResults = executeFireSupportTasks(saveData, matrix)
+        strikeResults = startFireSupportTasks(saveData, matrix)
       end
 
       if isMatrixFinished(matrix) then

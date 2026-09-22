@@ -104,9 +104,9 @@ RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.ls
 flowchart TD
     START["offloadVehicles(params)"]
     CHECK{船艦存在<br>且未被擊毀?}
-    LOCS["generateLocations<br>計算卸載位置<br>（含 firstDistance）"]
-    EXTRACT["extractCargoItems<br>提取貨物項目"]
-    SPAWN["spawnOffloadedVehicle<br>刪除貨物 → 生成單位"]
+    LOCS["buildLocations<br>計算卸載位置<br>（含 firstDistance）"]
+    EXTRACT["resolveCargoItems<br>提取貨物項目"]
+    SPAWN["createOffloadedVehicle<br>刪除貨物 → 生成單位"]
     TYPE{貨物類型?}
     GROUND["生成 Ground unit"]
     FACILITY["生成 Facility"]

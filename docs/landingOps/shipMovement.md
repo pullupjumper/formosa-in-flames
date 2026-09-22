@@ -64,7 +64,7 @@ flowchart TD
     ITER_AREA["遍歷 operation.to.areas"]
     INIT["initOperationResult<br>初始化結果結構"]
     CALC_SP["calculateStartingPoints<br>取得兩基準參考點<br>依 SHIP_ROW_LAYOUT 推算各列起始點"]
-    GEN_LOC["generateAllShipLocations<br>對每列依水平間距生成 N 個位置"]
+    GEN_LOC["buildAllShipLocations<br>對每列依水平間距生成 N 個位置"]
     STORE["儲存至 calculationResult"]
 
     START --> ITER_OP --> ITER_AREA --> INIT --> CALC_SP --> GEN_LOC --> STORE
@@ -75,7 +75,7 @@ flowchart TD
 
 ## 艦船匹配與移動
 
-`moveToStagingArea` 透過 `matchAndMoveShip` 進行艦型匹配：
+`moveToStagingArea` 透過 `moveMatchingShip` 進行艦型匹配：
 
 1. **DBID 匹配**：依 `SHIP_TYPE_DBIDS` 表比對艦船 DBID
 2. **名稱匹配**：若 DBID 未命中，依 `NAME_TO_KEY` 表比對艦名（Ferry/RORO/Barge）
@@ -105,7 +105,7 @@ flowchart TD
 
 ## SAG 護航編隊
 
-`handleSAG` 將 SAG 編隊移動至錨泊區，測試模式下以精確陣位佈置：
+`processSAG` 將 SAG 編隊移動至錨泊區，測試模式下以精確陣位佈置：
 
 | 艦型 | 位置 | 說明 |
 |---|---|---|

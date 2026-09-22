@@ -1217,7 +1217,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hasScheduledOperations boolean Whether follow-on operations were queued; never cleared, unlike isFinished
 
 ---UAV reconnaissance blueprint held in config.c.recon.template
----Carries no timings: insertEntry resolves those when the entry is queued.
+---Carries no timings: addEntry resolves those when the entry is queued.
 ---@class SBJ__ReconUAVTemplate: table
 ---@field type "UAV" Platform discriminator
 ---@field templateId string Unique identifier matching its key in config.c.recon.template; used to detect duplicate queue entries
@@ -1230,7 +1230,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isTracking? boolean Whether this mission may be handed a tracking target
 
 ---UAV blueprint plus resolved timings, as authored directly in config.c.recon.queue
----Recon.insertEntry produces this shape too, by computing the timings from the course.
+---Recon.addEntry produces this shape too, by computing the timings from the course.
 ---@class SBJ__ReconUAVPlan: SBJ__ReconUAVTemplate
 ---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
 ---@field endTime string Scheduled end time in format "YYYY-MM-DD HH:MM:SS"

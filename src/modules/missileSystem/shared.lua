@@ -78,7 +78,7 @@ end
 ---Apply properties to all units in a group
 ---@param firingUnit CMO__Unit Unit or group leader
 ---@param propsBuilder fun(unit: CMO__Unit): SBJ__SetUnitPropertiesOpts Property builder function
-function Shared.applyToGroupUnits(firingUnit, propsBuilder)
+function Shared.setGroupUnitProperties(firingUnit, propsBuilder)
   local units = Shared.getGroupUnits(firingUnit)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)

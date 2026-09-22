@@ -146,7 +146,7 @@ describe("AirTaskingOrder", function()
       local saveData = makeSaveData({ isActivated = false })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubIsAfter).was_not.called()
     end)
@@ -156,7 +156,7 @@ describe("AirTaskingOrder", function()
       local saveData = makeSaveData({ waveHasLaunched = true })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubIsAfter).was_not.called()
     end)
@@ -167,7 +167,7 @@ describe("AirTaskingOrder", function()
       local saveData = makeSaveData({ packages = { pkg } })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubIsAfter).was_not.called()
     end)
@@ -176,7 +176,7 @@ describe("AirTaskingOrder", function()
     it("should handle empty airTaskingOrder without error", function()
       local saveData = { c = { air = { airTaskingOrder = {} } } }
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
     end)
   end)
 
@@ -194,7 +194,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubGetUnit).was_not.called()
       assert.is_false(pkg.hasLaunched)
@@ -211,7 +211,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.are.equal(5000 - 600, pkg.loadoutStatus.loadoutStartTime)
     end)
@@ -229,7 +229,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      AirTaskingOrder.airStrike(config, saveData)
+      AirTaskingOrder.process(config, saveData)
 
       assert.stub(stubIsAfter).was.called_with(4400, 900)
     end)
@@ -244,7 +244,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(5000))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.are.equal(5000 - 540, pkg.loadoutStatus.loadoutStartTime)
     end)
@@ -268,7 +268,7 @@ describe("AirTaskingOrder", function()
       end))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- Earliest = escort 4000, minus timeToReady 600 = 3400
       assert.are.equal(3400, pkg.loadoutStatus.loadoutStartTime)
@@ -286,14 +286,14 @@ describe("AirTaskingOrder", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_nil(pkg.loadoutStatus.loadoutStartTime)
     end)
   end)
 
   -- ============================================================================
-  -- Loadout initiation (initiateLoadoutForPackage)
+  -- Loadout initiation (startLoadoutForPackage)
   -- ============================================================================
 
   describe("loadout initiation", function()
@@ -327,7 +327,7 @@ describe("AirTaskingOrder", function()
       end))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout").returns(true))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was.called(2)
       assert.is_true(pkg.loadoutStatus.isLoadoutInitiated)
@@ -352,7 +352,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(3000))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was_not.called()
     end)
@@ -372,7 +372,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(3000))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- goto continue skips the base lookup
       assert.stub(stubGetUnit).was_not.called()
@@ -410,7 +410,7 @@ describe("AirTaskingOrder", function()
       end))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout").returns(true))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was.called(2)
       assert.are.equal("J-16-1", stubSetLoadout.calls[1].vals[1].unitname)
@@ -446,7 +446,7 @@ describe("AirTaskingOrder", function()
       end))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout").returns(true))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- unitCount = 1, so only 1 loadout despite 3 matching aircraft
       assert.stub(stubSetLoadout).was.called(1)
@@ -492,7 +492,7 @@ describe("AirTaskingOrder", function()
       end))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout").returns(true))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was.called(2)
       assert.are.equal(5001, stubSetLoadout.calls[1].vals[1].LoadoutID)
@@ -518,7 +518,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was_not.called()
       -- Still marks as initiated (function completes normally)
@@ -548,7 +548,7 @@ describe("AirTaskingOrder", function()
       }))
       local stubSetLoadout = trackStub(stub(GameApi, "ScenEdit_SetLoadout"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubSetLoadout).was_not.called()
     end)
@@ -586,7 +586,7 @@ describe("AirTaskingOrder", function()
         return true
       end))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- All 3 aircraft attempted (first fails, second/third succeed -> 2 processed = unitCount)
       assert.stub(stubSetLoadout).was.called(3)
@@ -613,7 +613,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg.hasLaunched)
     end)
@@ -631,7 +631,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
     end)
@@ -656,7 +656,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubCreate).was.called(1)
       assert.are.equal("China", stubCreate.calls[1].vals[1])
@@ -686,7 +686,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubCreate).was.called(3)
       assert.are.equal("AAR-EAST", stubCreate.calls[1].vals[2])
@@ -719,7 +719,7 @@ describe("AirTaskingOrder", function()
       end))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(missionObj.OnDeactivateDelete)
       assert.is_true(missionObj.OnDeactivateRTB)
@@ -751,7 +751,7 @@ describe("AirTaskingOrder", function()
         return { "U1" }
       end))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.are.equal("2026-02-14 06:00:00!yyyy-MM-dd HH:mm:ss", missionObj.TakeOffTime)
       assert.is_nil(missionObj.TimeOnTargetStation)
@@ -768,7 +768,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameUtils, "createMission").returns(nil))
       local stubAssignTarget = trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
       assert.stub(stubAssignTarget).was_not.called()
@@ -797,7 +797,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- Package still launches because only striker failure is critical
       assert.is_true(pkg.hasLaunched)
@@ -822,7 +822,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- Only 1 doctrine call for striker (type "strike"), not for escort (type "patrol")
       assert.stub(stubDoctrine).was.called(1)
@@ -846,7 +846,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       local stubAssignTarget = trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
       assert.stub(stubAssignTarget).was_not.called()
@@ -864,7 +864,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg.hasLaunched)
     end)
@@ -884,7 +884,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.are.same(targets, stubAssignTarget.calls[1].vals[1])
       assert.are.equal("STRIKE-PKG-1", stubAssignTarget.calls[1].vals[2])
@@ -903,7 +903,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(nil))
       local stubAssignUnits = trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
       assert.stub(stubAssignUnits).was_not.called()
@@ -924,7 +924,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg.hasLaunched)
     end)
@@ -943,7 +943,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({}))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
     end)
@@ -962,7 +962,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns(nil))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_false(pkg.hasLaunched)
     end)
@@ -990,7 +990,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(true))
       local stubAssign = trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(stubAssign).was.called(3)
       assert.are.equal(4, stubAssign.calls[1].vals[2])
@@ -1025,7 +1025,7 @@ describe("AirTaskingOrder", function()
 
       local stubFlightPlan = trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- FlightPlan called for escort (non-tanker, non-striker) but NOT for tanker or striker
       assert.stub(stubFlightPlan).was.called(1)
@@ -1070,7 +1070,7 @@ describe("AirTaskingOrder", function()
       -- trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(500, 500))
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
 
-      AirTaskingOrder.airStrike(config, saveData)
+      AirTaskingOrder.process(config, saveData)
 
       assert.is_true(pkg.hasLaunched)
       assert.are.equal(2, #saveData.c.recon.queue)
@@ -1084,7 +1084,7 @@ describe("AirTaskingOrder", function()
       assert.is_string(entry.endTime)
     end)
 
-    -- Negative: insertEntry finds no satellite gap, so nothing is queued but the package still launches
+    -- Negative: addEntry finds no satellite gap, so nothing is queued but the package still launches
     it("should launch without queueing a recon UAV when no satellite gap exists", function()
       local reconUAV = {
         course = { { latitude = 25.0, longitude = 121.0 }, { latitude = 24.0, longitude = 120.0 } },
@@ -1092,7 +1092,7 @@ describe("AirTaskingOrder", function()
         takeoffTime = nil
       }
       local pkg = makePackage({ reconUAV = reconUAV })
-      -- Default recon queue has no satellite pass, so insertEntry has no window to anchor.
+      -- Default recon queue has no satellite pass, so addEntry has no window to anchor.
       local saveData = makeSaveData({ packages = { pkg } })
       local config = { c = { ground = { srbm = { reloadTime = 300 } } } }
 
@@ -1102,7 +1102,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(100))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(config, saveData)
+      AirTaskingOrder.process(config, saveData)
 
       assert.is_true(pkg.hasLaunched)
       assert.are.equal(0, #saveData.c.recon.queue)
@@ -1124,7 +1124,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg2.hasLaunched)
       local wave = saveData.c.air.airTaskingOrder["WAVE-1"]
@@ -1141,7 +1141,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- Only one package launches per tick (break after success)
       assert.is_true(pkg1.hasLaunched)
@@ -1167,7 +1167,7 @@ describe("AirTaskingOrder", function()
       )
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg1.hasLaunched)
       assert.is_false(pkg2.hasLaunched)
@@ -1189,7 +1189,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       -- pkg1 fails at target check, pkg2 succeeds
       assert.is_false(pkg1.hasLaunched)
@@ -1221,7 +1221,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg1.hasLaunched)
       assert.is_false(pkg2.hasLaunched)
@@ -1247,7 +1247,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(logStub).was.called(1)
       assert.stub(errorStub).was_not.called()
@@ -1271,7 +1271,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       trackStub(stub(GameApi, "ScenEdit_AssignUnitAsTarget").returns(nil))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -1319,7 +1319,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1", "U2" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg.hasLaunched)
       assert.is_table(createdMissions["STRIKE-PKG-1"])
@@ -1374,7 +1374,7 @@ describe("AirTaskingOrder", function()
       trackStub(stub(AssignMission, "assignEmbarkedUnitToStrikeMission").returns({ "U1" }))
       trackStub(stub(GameApi, "ScenEdit_CreateMissionFlightPlan"))
 
-      AirTaskingOrder.airStrike(makeConfig(), saveData)
+      AirTaskingOrder.process(makeConfig(), saveData)
 
       assert.is_true(pkg.hasLaunched)
       -- All 5 missions created

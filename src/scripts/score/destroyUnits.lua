@@ -97,9 +97,9 @@ if unit then
       GnssJamming.removeJammingZoneByName(saveData.c.gnssJamming.jammers, constants.SIDES.ENEMY, unit.name)
     elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
       local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
-      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.srbm)
-      MissileSystem.handleSupplyAssetDestruction(unit, saveData.c.ground.glcm)
+      MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
+      MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.srbm)
+      MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.glcm)
       GameApi.ScenEdit_SetScore(
         constants.SIDES.PLAYER,
         (score + config.s.destroyingAmmo),

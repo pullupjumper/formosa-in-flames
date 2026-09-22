@@ -69,7 +69,7 @@ end
 ---@param role string Role name ("escort", "wildWeasel", "jammer", "tanker")
 ---@param timingConfig SBJ__AirTimingConfig Air timing configuration
 ---@return integer|nil # Flight time in seconds, or nil if role/base/zone/distance unavailable
-local function estimateSupportRoleFlightTime(packageData, role, timingConfig)
+local function calculateSupportRoleFlightTime(packageData, role, timingConfig)
   ---@type SBJ__MissionDeploymentDescriptor|nil
   local roleData = packageData[role]
   if not roleData or not roleData.baseGUID then
@@ -101,7 +101,7 @@ end
 ---@param packageData SBJ__PackageTemplate Package data containing striker baseGUID, weaponDBID, and target list
 ---@param timingConfig SBJ__AirTimingConfig Air timing configuration
 ---@return integer|nil # Flight time in seconds, or nil when required range data is unavailable
-local function estimateStrikerFlightTime(packageData, timingConfig)
+local function calculateStrikerFlightTime(packageData, timingConfig)
   if not packageData.striker or not packageData.striker.baseGUID or
       not packageData.striker.weaponDBID or
       not packageData.target or not packageData.target.list or #packageData.target.list == 0 then
@@ -152,10 +152,10 @@ local function resolveRoleFlightTime(packageData, role, timingConfig)
   local estimatedFlightTime
   local fallbackFlightTime
   if role == "striker" then
-    estimatedFlightTime = estimateStrikerFlightTime(packageData, timingConfig)
+    estimatedFlightTime = calculateStrikerFlightTime(packageData, timingConfig)
     fallbackFlightTime = timingConfig.unresolvedFlightTime.striker
   else
-    estimatedFlightTime = estimateSupportRoleFlightTime(packageData, role, timingConfig)
+    estimatedFlightTime = calculateSupportRoleFlightTime(packageData, role, timingConfig)
     fallbackFlightTime = timingConfig.unresolvedFlightTime.support
   end
 
@@ -185,7 +185,7 @@ end
 ---@param currentArrival number|nil Current earliest arrival timestamp
 ---@param candidateArrival number|nil Candidate arrival timestamp
 ---@return number|nil # Earlier arrival timestamp, or nil when both are unavailable
-local function selectEarlierArrival(currentArrival, candidateArrival)
+local function findEarlierArrival(currentArrival, candidateArrival)
   if candidateArrival and (not currentArrival or candidateArrival < currentArrival) then
     return candidateArrival
   end
@@ -248,7 +248,7 @@ local function calculateEarliestRoleReceiverArrival(packageData, roleTimingMap, 
       tankerMissionName,
       timingConfig
     )
-    earliestArrival = selectEarlierArrival(earliestArrival, arrivalTime)
+    earliestArrival = findEarlierArrival(earliestArrival, arrivalTime)
   end
 
   return earliestArrival
@@ -264,7 +264,7 @@ local function calculateEarliestReceiverArrival(packageData, roleTimingMap, timi
 
   for _, role in ipairs(TANKER_RECEIVER_ROLES) do
     local arrivalTime = calculateEarliestRoleReceiverArrival(packageData, roleTimingMap, role, timingConfig)
-    earliestArrival = selectEarlierArrival(earliestArrival, arrivalTime)
+    earliestArrival = findEarlierArrival(earliestArrival, arrivalTime)
   end
 
   return earliestArrival
@@ -345,7 +345,7 @@ end
 ---Shift all calculated package timings by one delta
 ---@param roleTimingMap table<string, SBJ__RoleTiming> Role timings indexed by role name
 ---@param delta number Shift amount in seconds
-local function shiftRoleTimings(roleTimingMap, delta)
+local function updateRoleTimings(roleTimingMap, delta)
   if delta <= 0 then
     return
   end
@@ -377,7 +377,7 @@ end
 ---@param packageData SBJ__PackageTemplate Package configuration
 ---@param timingConfig SBJ__AirTimingConfig Air timing configuration
 ---@return number|nil # Striker TOT timestamp, or nil when no schedule exists
-local function inferStrikerTimeOnTarget(packageData, timingConfig)
+local function calculateStrikerTimeOnTarget(packageData, timingConfig)
   if packageData.striker.timeOnStation then
     return Utils.parseDatetimeToTimestamp(packageData.striker.timeOnStation)
   end
@@ -395,13 +395,13 @@ end
 ---@param timingConfig SBJ__AirTimingConfig Air timing configuration
 ---@return number # Striker TOT anchor timestamp
 local function resolveStrikerTimeOnTargetAnchor(packageData, timingConfig)
-  return inferStrikerTimeOnTarget(packageData, timingConfig) or GameApi.ScenEdit_CurrentTime()
+  return calculateStrikerTimeOnTarget(packageData, timingConfig) or GameApi.ScenEdit_CurrentTime()
 end
 
 ---Format and apply calculated role timing to a package descriptor
 ---@param roleData SBJ__MissionDeploymentDescriptor Mission role to update
 ---@param timing SBJ__RoleTiming Calculated role timing
-local function applyRoleTiming(roleData, timing)
+local function setRoleTiming(roleData, timing)
   roleData.startTime = os.date(constants.DATE_FORMAT, timing.startTime) --[[@as string]]
   if timing.timeOnStation then
     roleData.timeOnStation = os.date(constants.DATE_FORMAT, timing.timeOnStation) --[[@as string]]
@@ -428,19 +428,19 @@ function PackageTiming.createPackageWithTiming(config, packageData, previousPack
   local intervalShift = 0
 
   if previousPackage then
-    local previousTimeOnTarget = inferStrikerTimeOnTarget(previousPackage, timingConfig)
+    local previousTimeOnTarget = calculateStrikerTimeOnTarget(previousPackage, timingConfig)
     if previousTimeOnTarget then
       intervalShift = previousTimeOnTarget + strikeInterval - strikerTimeOnTarget
     end
   end
 
   local scheduleShift = math.max(0, readinessShift, intervalShift)
-  shiftRoleTimings(roleTimingMap, scheduleShift)
+  updateRoleTimings(roleTimingMap, scheduleShift)
 
   for _, role in ipairs(PACKAGE_ROLES) do
     local roleData = packageData[role]
     if roleData and roleTimingMap[role] then
-      applyRoleTiming(roleData, roleTimingMap[role])
+      setRoleTiming(roleData, roleTimingMap[role])
     end
   end
 

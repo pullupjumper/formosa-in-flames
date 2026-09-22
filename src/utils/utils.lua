@@ -3,7 +3,7 @@ local Utils = {}
 ---Generate a random string of uppercase letters
 ---@param numLetters number The number of letters to generate
 ---@return string # A string containing random uppercase letters
-function Utils.randomTxt(numLetters)
+function Utils.buildRandomText(numLetters)
   local totTxt = ""
   for i = 1, numLetters do
     totTxt = totTxt .. string.char(math.random(65, 90))
@@ -29,7 +29,7 @@ end
 ---@param list table The list to insert into
 ---@param insertedList table The list of items to insert
 ---@return table # The updated list with items inserted
-function Utils.insertList(list, insertedList)
+function Utils.addAll(list, insertedList)
   local count = Utils.getCount(insertedList)
 
   for i = 1, count, 1 do
@@ -73,13 +73,13 @@ function Utils.parseDatetimeToTimestamp(datetimeStr)
 end
 
 ---Safely call a function with error handling
----Example usage: local result, err = Utils.safeCall("MyFunction", MyFunction, arg1, arg2)
+---Example usage: local result, err = Utils.tryCall("MyFunction", MyFunction, arg1, arg2)
 ---@param funcName string The name of the function being called
 ---@param func function The function to call
 ---@param ... any The arguments to pass to the function
 ---@return any|nil result The result of the function call, or nil if an error occurred
 ---@return string|nil err An error message if an error occurred, or nil if the call was successful
-function Utils.safeCall(funcName, func, ...)
+function Utils.tryCall(funcName, func, ...)
   local args = { ... }
 
   local function errorHandler(err)

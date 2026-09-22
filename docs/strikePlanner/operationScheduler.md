@@ -29,11 +29,11 @@ flowchart TD
     BUILD["buildOperationsForReconObjective"]
     OBJECTIVE{"reconObjectiveId 存在?"}
     MAPPING{"objective 有 mappings?"}
-    REDIRECT["FrontlineRedirect.applyMappings"]
+    REDIRECT["FrontlineRedirect.updateMappings"]
     LOOP["逐筆處理 strikeMapping"]
     INSERT{"產生了作戰?"}
     BATCH["插入 ReconTriggeredOperationBatch"]
-    LOG["emitScheduleLog"]
+    LOG["logSchedule"]
     SKIP["累積 SKIP 結果"]
 
     START --> SNAPSHOT --> BUILD --> OBJECTIVE
@@ -83,7 +83,7 @@ flowchart TD
 
 ## 為什麼 REUSED_CURRENT 也要去重
 
-推進路徑呼叫 `generateNextOperation` 生成 `/N+1`，接著以 `isOperationPending` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
+推進路徑呼叫 `buildNextOperation` 生成 `/N+1`，接著以 `isOperationPending` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
 
 這道檢查**必須同時涵蓋 `FOUND_NEXT` 與 `REUSED_CURRENT`**。曾經只擋 `FOUND_NEXT`，理由是「`REUSED_CURRENT` 本來就要重跑同一波」——但那讓沒有 `/N+1` 模板的 mapping 在每次偵察完成時各疊一份待執行副本。實測連續三次偵察完成會累積三份。
 
@@ -111,7 +111,7 @@ flowchart TD
 
 ## 為什麼推導不出下一波時不排程
 
-`generateNextOperation` 的 `PARSE_ERROR`（名稱結尾不是 `/N`）與 `UNKNOWN_TYPE`（type 不在 `OPERATION_TYPE_TRAITS` 內）這兩種狀態下，它會回傳**來源 operation 的 deep copy**。
+`buildNextOperation` 的 `PARSE_ERROR`（名稱結尾不是 `/N`）與 `UNKNOWN_TYPE`（type 不在 `OPERATION_TYPE_TRAITS` 內）這兩種狀態下，它會回傳**來源 operation 的 deep copy**。
 
 這是個容易誤用的回傳契約：直接排入就等於重複一個已執行的波次。`buildNextWaveOperation` 因此不排程，改輸出 `[WARN] reason=parse_error` 或 `[WARN] reason=unknown_type`。
 
@@ -139,7 +139,7 @@ flowchart TD
 
 ## 日誌輸出
 
-三個 producer（`buildFirstWaveOperation`、`buildNextWaveOperation`、`buildOperationsForReconObjective`）直接回傳 `SBJ__LogResult`，`emitScheduleLog` 只負責建立 `LogFormat.report`、`addAll` 後 `emit()`，中間沒有轉換層。詳見 [logFormat](../logFormat.md)。
+三個 producer（`buildFirstWaveOperation`、`buildNextWaveOperation`、`buildOperationsForReconObjective`）直接回傳 `SBJ__LogResult`，`logSchedule` 只負責建立 `LogFormat.report`、`addAll` 後 `emit()`，中間沒有轉換層。詳見 [logFormat](../logFormat.md)。
 
 批次層級的排程快照（`endTime`、`scheduled`、`airOps` 等）以 `LogFormat.fields()` 接在 report 的 action 之後，因此不進入 entry rollup —— `total` 恆等於本次處理的 mapping 數。該快照在插入新批次**之前**取得，反映的是這次排程所見的狀態。
 
@@ -149,7 +149,7 @@ flowchart TD
   [SKIP] operation=GND/STRIKE/C2/N/2 type=ground reason=already_pending
 ```
 
-沒有任何 mapping 產生結果時，report 補上一筆 `[SKIP] reason=no_operations_to_schedule`，避免整批靜默。`NEXT_OPERATION_STATUS` 的值是 `generateNextOperation` 公開契約的一部分（大寫），寫進 log 時以 `string.lower()` 轉成 token。
+沒有任何 mapping 產生結果時，report 補上一筆 `[SKIP] reason=no_operations_to_schedule`，避免整批靜默。`NEXT_OPERATION_STATUS` 的值是 `buildNextOperation` 公開契約的一部分（大寫），寫進 log 時以 `string.lower()` 轉成 token。
 
 ---
 
@@ -164,7 +164,7 @@ flowchart TD
 | `isOperationScheduled(operationBatches, templateName, operationType)` | `SBJ__ReconTriggeredOperationBatch[]`, `string`, `string` | `boolean` | 完整名稱比對，**不限執行狀態**。回答「這個 mapping 排過了嗎」 |
 | `isOperationPending(operationBatches, templateName, operationType)` | 同上 | `boolean` | 完整名稱比對，**只收未執行**。回答「同名波次是否已排入但還沒打」 |
 | `findLatestExecutedOperation(operationBatches, seriesPrefix, operationType)` | 同上，第二參數是以 `/` 結尾的系列前綴 | `SBJ__Operation\|nil` | 前綴＋數字後綴，**只收已執行**，取波次號最大者（同號比批次時間）。回答「有沒有可以推進的前導波次」 |
-| `generateNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
+| `buildNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
 
 `processingCtx` 欄位：
 
@@ -183,12 +183,12 @@ flowchart TD
 | 類型 | 路徑 | 用途 |
 |---|---|---|
 | `config` | `config.c.recon.strikeMappingsByReconObjective` | 依 `reconObjectiveId` 取得後續 strike mappings；mapping 可帶 `requiresLACM` 宣告 LACM 前提 |
-| `config` | `config.c.recon.frontlineRedirect` | 交由 `FrontlineRedirect.applyMappings` 判斷是否改寫 mapping 名稱 |
+| `config` | `config.c.recon.frontlineRedirect` | 交由 `FrontlineRedirect.updateMappings` 判斷是否改寫 mapping 名稱 |
 | `config` | `config.c.packageTemplates` | `air` operation 的模板來源，鍵為 mapping 名稱的 `/` 換 `_` |
 | `config` | `config.c.fireSupportTaskTemplates` | `ground` operation 的模板來源，鍵同上 |
 | `config` | `config.strikeInterval` | `air` 作戰的預設 `strikeInterval`；`ground` 固定為 `0` |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
-| `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.applyMappings` 讀取；本模組不直接改寫 |
+| `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.updateMappings` 讀取；本模組不直接改寫 |
 | `saveData` | `saveData.c.surface.lacm` | 以 `lacmCtx` 傳入，讀取 sticky 的 `enabled` |
 | `saveData` | `saveData.c.amphibOps.fireSupportOnHold` | 以 `fireSupportOnHold` 傳入 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 report |

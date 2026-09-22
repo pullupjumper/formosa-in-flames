@@ -117,15 +117,15 @@ flowchart TD
     RESOLVE["resolveUnit()"]
     SKIP{"random() ≤ 30%?"}
     EMIT["isUnitEmitting()<br>判斷是否發射訊號"]
-    DETECT["attemptDetection()"]
+    DETECT["rollDetection()"]
     PROB["calculateDetectionProbability()<br>指數衰減機率"]
     DEV["calculateSignalDeviation()<br>偏差距離"]
     BEARING["World_GetPointFromBearing()<br>偏差座標"]
     UPDATE["updateTransmissionData()<br>更新 transmission 記錄"]
     AUTO{"level ><br>maxCount?"}
     AUTODETECT["autodetectable = true<br>updateAutodetectableState()"]
-    UNDETECTED["handleUndetected()<br>衰減 level"]
-    NOTIFY["showDetectionNotification()<br>地圖通知"]
+    UNDETECTED["processUndetected()<br>衰減 level"]
+    NOTIFY["createDetectionNotification()<br>地圖通知"]
     LOG["report.emit()<br>批次報告"]
 
     START --> ARGS

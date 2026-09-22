@@ -79,7 +79,7 @@ describe("MissileSystem Deployment", function()
     -- Negative: logs AddUnit failure detail for firing units
     it("should log add unit failure details for firing units", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-      trackStub(GameUtils, "extractUnitType").returns("Unit")
+      trackStub(GameUtils, "resolveUnitType").returns("Unit")
       trackStub(GameApi, "ScenEdit_AddUnit").invokes(function(opts)
         if opts.unitname == "Firing Unit Alpha" then
           return nil

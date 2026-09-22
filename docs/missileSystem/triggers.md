@@ -20,13 +20,13 @@
 
 ## 主要機制
 
-- `cleanupExistingTriggersAndZones`：移除舊事件觸發與標準 zone。
+- `removeExistingTriggersAndZones`：移除舊事件觸發與標準 zone。
 - `createPositionTriggers`：逐位置類型與索引建立 `UnitEntersArea` 觸發。
 - `addCustomEnvironmentZone`（實作上使用 STANDARD zone）: 建立 mask 區域並寫入 `operationalArea.mask`。
 
 ```mermaid
 flowchart TD
-    A[initEventTriggers] --> B[cleanupExistingTriggersAndZones]
+    A[initEventTriggers] --> B[removeExistingTriggersAndZones]
     A --> C[for each operationalArea]
     C --> D[createPositionTriggers FP/HA/RL/AHA]
     C --> E[addCustomEnvironmentZone MASK]

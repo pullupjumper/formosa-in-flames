@@ -20,7 +20,7 @@ end
 ---@param startTime string|nil The start time of the entry to insert
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 function StrikePlanner.scheduleReconUAVEntry(reconCtx, entryTemplate, startTime)
-  return Recon.insertEntry(reconCtx, entryTemplate, startTime)
+  return Recon.addEntry(reconCtx, entryTemplate, startTime)
 end
 
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
@@ -41,15 +41,15 @@ end
 ---@param sideName string Side name to get contacts from
 ---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration
 ---@param saveData SBJ__SaveData Persistent save data
-function StrikePlanner.populateTargetList(sideName, scanConfig, saveData)
-  TargetingProcess.scanTargets(sideName, scanConfig, saveData)
+function StrikePlanner.updateTargetList(sideName, scanConfig, saveData)
+  TargetingProcess.findTargets(sideName, scanConfig, saveData)
 end
 
 ---Select target GUIDs by base and subtype criteria
 ---@param targetlist SBJ__TargetEntry[] Target list entries
 ---@param queryParams SBJ__TargetQueryParam[] Filter query parameters
 ---@return string[] # Array of matching target GUIDs
-function StrikePlanner.selectTargetGUIDsByBaseAndSubtype(targetlist, queryParams)
+function StrikePlanner.findTargetGUIDsByBaseAndSubtype(targetlist, queryParams)
   return TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
 end
 
@@ -58,7 +58,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 function StrikePlanner.processDynamicGroundOperations(config, saveData, contacts)
-  FsemBuilder.execute(config, saveData, contacts)
+  FsemBuilder.build(config, saveData, contacts)
 end
 
 ---Process dynamic air operations and generate air tasking order waves
@@ -66,7 +66,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 function StrikePlanner.processDynamicAirOperations(config, saveData, contacts)
-  AtoBuilder.execute(config, saveData, contacts)
+  AtoBuilder.build(config, saveData, contacts)
 end
 
 ---Process active fire support plans, including deployment and strikes
@@ -79,7 +79,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 function StrikePlanner.processActiveATOWaves(config, saveData)
-  AirTaskingOrder.airStrike(config, saveData)
+  AirTaskingOrder.process(config, saveData)
 end
 
 return StrikePlanner

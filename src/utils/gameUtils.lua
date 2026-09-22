@@ -108,7 +108,7 @@ end
 ---@param xLongitude number|string Center point longitude
 ---@param maxRadius number Maximum radius for random positioning (nautical miles)
 ---@return CMO__Location|nil # Random position within the circle, or nil if generation fails
-function GameUtils.circularRandomPosition(xLatitude, xLongitude, maxRadius)
+function GameUtils.calculateCircularRandomPosition(xLatitude, xLongitude, maxRadius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
     latitude = xLatitude,
     longitude = xLongitude,
@@ -127,7 +127,7 @@ end
 ---Generate a list of locations based on parameters
 ---@param params SBJ__LinearPlacementParams
 ---@return table<integer, CMO__Location> # Array of generated locations along the specified bearing
-function GameUtils.generateLocations(params)
+function GameUtils.buildLocations(params)
   local numTemp = params.num
   local bearingTemp = params.bearing
   local distanceTemp = 0
@@ -169,7 +169,7 @@ end
 ---@param position CMO__Location Center position for the area
 ---@param mode SBJ__AreaMode Area configuration (shape, side, distance, etc.)
 ---@return table<integer, CMO__ReferencePoint>|boolean # Array of reference point names forming the area, or false if creation fails
-function GameUtils.newArea(position, mode)
+function GameUtils.createArea(position, mode)
   local side = mode.side
   local shape = mode.shape
   if side == nil or shape == nil then return false end
@@ -298,7 +298,7 @@ end
 ---@param isRepeatable boolean If true, event can trigger multiple times; if false, triggers only once
 ---@param isActive boolean If true, event is immediately active; if false, event is dormant
 ---@return boolean # True if operation succeeded, false if any API call failed
-function GameUtils.unitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
+function GameUtils.setUnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
   -- Set default parameter values
   if isRepeatable == nil then isRepeatable = false end
   if isActive == nil then isActive = true end
@@ -377,7 +377,7 @@ function GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID,
   attempt = attempt or 1
   maxAttempts = maxAttempts or 50
 
-  local point = GameUtils.circularRandomPosition(latitude, longitude, randomRadius)
+  local point = GameUtils.calculateCircularRandomPosition(latitude, longitude, randomRadius)
   local unit
 
   if point then
@@ -433,7 +433,7 @@ function GameUtils.createRandomUnits(descriptor)
 
   for i = 1, descriptor.count do
     local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
-    local point = GameUtils.circularRandomPosition(
+    local point = GameUtils.calculateCircularRandomPosition(
       descriptor.centerPoint.latitude,
       descriptor.centerPoint.longitude,
       descriptor.randomRadius
@@ -443,7 +443,7 @@ function GameUtils.createRandomUnits(descriptor)
     -- Generate unit name with optional random suffix
     local unitname = descriptor.unitname
     if useRandomSuffix then
-      unitname = unitname .. Utils.randomTxt(UNIT_CREATION.RANDOM_TEXT_LENGTH)
+      unitname = unitname .. Utils.buildRandomText(UNIT_CREATION.RANDOM_TEXT_LENGTH)
     end
 
     if point then
@@ -475,7 +475,7 @@ end
 ---Converts to subordinate echelon: Bde->Bn, Bn->Coy, Coy/Sqn->Plt
 ---@param unitName string Unit name
 ---@return string|nil # Converted unit type (Bn/Coy/Plt), or nil if not found
-function GameUtils.extractUnitType(unitName)
+function GameUtils.resolveUnitType(unitName)
   -- Iterate through each comma-separated part
   for part in unitName:gmatch("([^,]+)") do
     local unitType = part:match("Bde") or
@@ -522,7 +522,7 @@ end
 ---Converts a zone to an array of reference points
 ---@param zone CMO__Zone|CMO__TriggerResult Zone table
 ---@return string[] # Array of reference points
-function GameUtils.convertToRPArray(zone)
+function GameUtils.normalizeToRPArray(zone)
   local rps = {}
   local area = zone.area or (zone.Area or {})
 
@@ -568,7 +568,7 @@ end
 ---@param sideName string Side name for deletion context
 ---@return boolean # Whether all reference points were successfully removed
 function GameUtils.removeRPs(zone, sideName)
-  local rps = GameUtils.convertToRPArray(zone)
+  local rps = GameUtils.normalizeToRPArray(zone)
   for _, rp in ipairs(rps) do
     local result = GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp })
     if not result then

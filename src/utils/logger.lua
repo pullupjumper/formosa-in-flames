@@ -9,7 +9,7 @@ Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 ---Print formatted box message to player
 ---@param side string The side the message is visible to (sidename may also be used)
 ---@param ... string Variable number of string arguments to be printed inside the box
-local function printBox(side, ...)
+local function logBox(side, ...)
   -- Collect all string parameters into array
   local strings = { ... }
 
@@ -50,7 +50,7 @@ function Logger.log(moduleName, message)
   if moduleConfig and moduleConfig.verbose then
     local formattedMessage = string.format("[%s] %s", moduleName, message)
     if Logger.inGame then
-      printBox("playerside", "[LOG] " .. formattedMessage)
+      logBox("playerside", "[LOG] " .. formattedMessage)
     else
       print("[LOG] " .. formattedMessage)
     end
@@ -61,7 +61,7 @@ end
 ---@param message string Error message
 function Logger.error(message)
   if Logger.inGame then
-    printBox("playerside", "[ERROR] " .. message)
+    logBox("playerside", "[ERROR] " .. message)
   else
     print("[ERROR] " .. message)
   end
@@ -71,7 +71,7 @@ end
 ---@param message string Warning message
 function Logger.warn(message)
   if Logger.inGame then
-    printBox("playerside", "[WARN] " .. message)
+    logBox("playerside", "[WARN] " .. message)
   else
     print("[WARN] " .. message)
   end

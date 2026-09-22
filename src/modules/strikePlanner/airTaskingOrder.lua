@@ -122,7 +122,7 @@ end
 
 ---Set weapon loadouts for all flight groups and update loadout status
 ---@param packageData SBJ__Package The strike package containing flight group configurations
-local function initiateLoadoutForPackage(packageData)
+local function startLoadoutForPackage(packageData)
   local timeToReady = packageData.timeToReady or (9 * 60)
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
@@ -184,7 +184,7 @@ end
 ---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@param mission CMO__Mission|nil Created mission, if any
-local function storeCreatedMission(createdMissionMap, missionCreationParams, mission)
+local function addCreatedMission(createdMissionMap, missionCreationParams, mission)
   if not mission then
     return
   end
@@ -200,7 +200,7 @@ local function createTankerMissions(roleData, createdMissionMap)
 
   for _, missionCreationParams in ipairs(missionParamsEntries) do
     local mission = createPackageMission(roleData, missionCreationParams)
-    storeCreatedMission(createdMissionMap, missionCreationParams, mission)
+    addCreatedMission(createdMissionMap, missionCreationParams, mission)
   end
 end
 
@@ -212,7 +212,7 @@ end
 local function createNonTankerMission(role, roleData, createdMissionMap)
   local missionCreationParams = roleData.missionCreationParams
   local mission = createPackageMission(roleData, missionCreationParams)
-  storeCreatedMission(createdMissionMap, missionCreationParams, mission)
+  addCreatedMission(createdMissionMap, missionCreationParams, mission)
 
   if role == "striker" and not mission then
     return false
@@ -261,7 +261,7 @@ end
 ---Apply one role schedule after aircraft assignment has completed
 ---@param mission CMO__Mission Mission object to schedule
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
-local function applyMissionSchedule(mission, roleData)
+local function setMissionSchedule(mission, roleData)
   mission.OnDeactivateDelete = true
   mission.OnDeactivateRTB = true
 
@@ -281,7 +281,7 @@ end
 ---Apply schedules to all created missions after unit assignment
 ---@param packageData SBJ__Package Package data
 ---@param createdMissionMap table<string, CMO__Mission> Created missions indexed by mission name
-local function applyPackageMissionSchedules(packageData, createdMissionMap)
+local function setPackageMissionSchedules(packageData, createdMissionMap)
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
@@ -294,7 +294,7 @@ local function applyPackageMissionSchedules(packageData, createdMissionMap)
       for _, missionCreationParams in ipairs(missionParamsEntries) do
         local mission = createdMissionMap[missionCreationParams.name]
         if mission then
-          applyMissionSchedule(mission, roleData)
+          setMissionSchedule(mission, roleData)
         end
       end
     end
@@ -446,7 +446,7 @@ local function scheduleReconUAV(config, saveData, packageData)
   local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
       flightTime
   local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
-  return Recon.insertEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
+  return Recon.addEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
 end
 
 -- ============================================================================
@@ -458,7 +458,7 @@ end
 ---@param assignmentSafetyMargin number Assignment safety margin in seconds
 ---@return boolean isReadyForAssignment Whether mission assignment may begin
 ---@return SBJ__LogResult|nil preparationResult Interim row, or nil while waiting
-local function advancePackagePreparation(packageData, assignmentSafetyMargin)
+local function updatePackagePreparation(packageData, assignmentSafetyMargin)
   ensureLoadoutStartTime(packageData)
 
   if not isTimeToStartLoadout(packageData, assignmentSafetyMargin) then
@@ -466,7 +466,7 @@ local function advancePackagePreparation(packageData, assignmentSafetyMargin)
   end
 
   if not packageData.loadoutStatus.isLoadoutInitiated then
-    initiateLoadoutForPackage(packageData)
+    startLoadoutForPackage(packageData)
     local readyTime = os.date(constants.DATE_FORMAT, packageData.loadoutStatus.expectedReadyTime)
 
     return false, {
@@ -532,8 +532,8 @@ end
 ---@param packageData SBJ__Package Package data
 ---@param createdMissionMap table<string, CMO__Mission> Created missions
 ---@return SBJ__LogResult # Successful launch row
-local function finalizePackageLaunch(config, saveData, packageData, createdMissionMap)
-  applyPackageMissionSchedules(packageData, createdMissionMap)
+local function completePackageLaunch(config, saveData, packageData, createdMissionMap)
+  setPackageMissionSchedules(packageData, createdMissionMap)
   local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
 
   ---@type SBJ__LogResult
@@ -567,7 +567,7 @@ local function processPackage(config, saveData, packageData)
   end
 
   local assignmentSafetyMargin = resolveAssignmentSafetyMargin(config)
-  local isReadyForAssignment, preparationResult = advancePackagePreparation(packageData, assignmentSafetyMargin)
+  local isReadyForAssignment, preparationResult = updatePackagePreparation(packageData, assignmentSafetyMargin)
 
   if not isReadyForAssignment then
     return false, preparationResult
@@ -578,7 +578,7 @@ local function processPackage(config, saveData, packageData)
     return false, failureResult
   end
 
-  local launchResult = finalizePackageLaunch(config, saveData, packageData, createdMissionMap)
+  local launchResult = completePackageLaunch(config, saveData, packageData, createdMissionMap)
   return true, launchResult
 end
 
@@ -639,7 +639,7 @@ end
 ---Iterates through ATO waves and packages, processing each strike package sequentially
 ---@param config SBJ__Config The global configuration table
 ---@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
-function AirTaskingOrder.airStrike(config, saveData)
+function AirTaskingOrder.process(config, saveData)
   local report = LogFormat.report(constants.TAGS.AIR, LOG_SCOPE, LOG_ACTION)
 
   for waveName, waveData in pairs(saveData.c.air.airTaskingOrder) do

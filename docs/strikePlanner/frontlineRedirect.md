@@ -12,7 +12,7 @@
 
 這個旗標是 sticky 狀態，觸發後不會由本模組清回 `false`。後續 tick 若再次呼叫 `evaluate`，會直接回傳 `true, nil`，避免每次都列舉整個 side 的 aircraft。
 
-實際 mapping 改寫由 `applyMappings` 與 `rewriteMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.c.recon.strikeMappingsByReconObjective` 這份全域設定。
+實際 mapping 改寫由 `updateMappings` 與 `buildRewrittenMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.c.recon.strikeMappingsByReconObjective` 這份全域設定。
 
 ---
 
@@ -38,7 +38,7 @@
 
 ### Mapping rewrite
 
-`rewriteMappings(strikeMappings, rules)` 逐筆比對 mapping：
+`buildRewrittenMappings(strikeMappings, rules)` 逐筆比對 mapping：
 
 - `mapping.type == rule.type`
 - `mapping.name` 字首符合 `rule.fromPrefix`
@@ -69,7 +69,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    START["applyMappings(config, reconCtx, strikeMappings)"]
+    START["updateMappings(config, reconCtx, strikeMappings)"]
     ACTIVE{"reconCtx.frontlineRedirected<br>且 mappings 存在?"}
     RETURN_ORIGINAL["回傳原 strikeMappings"]
     COPY["Utils.deepCopy(strikeMappings)"]
@@ -120,8 +120,8 @@ saveData.c.recon
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `evaluate(config, reconCtx)` | `SBJ__Config`, `SBJ__ReconContext` | `boolean, table|nil` | 評估前線基地戰損是否達門檻；首次啟用時寫入 sticky 旗標並回傳 activation 欄位表 |
-| `applyMappings(config, reconCtx, strikeMappings)` | `SBJ__Config`, `SBJ__ReconContext`, `SBJ__ReconStrikeMapping[]` | `SBJ__ReconStrikeMapping[]` | 當 sticky redirect 已啟用且有規則時，回傳改寫後 mapping 副本 |
-| `rewriteMappings(strikeMappings, rules)` | `SBJ__ReconStrikeMapping[]`, `SBJ__StrikeMappingRewriteRule[]` | `SBJ__ReconStrikeMapping[]` | 深拷貝 mappings，依規則改寫符合字首與類型的 mapping 名稱 |
+| `updateMappings(config, reconCtx, strikeMappings)` | `SBJ__Config`, `SBJ__ReconContext`, `SBJ__ReconStrikeMapping[]` | `SBJ__ReconStrikeMapping[]` | 當 sticky redirect 已啟用且有規則時，回傳改寫後 mapping 副本 |
+| `buildRewrittenMappings(strikeMappings, rules)` | `SBJ__ReconStrikeMapping[]`, `SBJ__StrikeMappingRewriteRule[]` | `SBJ__ReconStrikeMapping[]` | 深拷貝 mappings，依規則改寫符合字首與類型的 mapping 名稱 |
 
 ---
 

@@ -1284,9 +1284,9 @@ describe("Recon", function()
 
   describe("initQueue", function()
     -- Positive: a UAV authored straight into config.c.recon.queue carries its own timings and
-    -- must reach processQueue as a fully initialized entry, without going through insertEntry
+    -- must reach processQueue as a fully initialized entry, without going through addEntry
     -- Positive: a UAV authored straight into config.c.recon.queue carries its own timings and
-    -- must reach processQueue fully initialized, without going through insertEntry
+    -- must reach processQueue fully initialized, without going through addEntry
     it("should initialize a UAV authored directly in the config queue", function()
       local reconConfig = {
         queue = {
@@ -1401,10 +1401,10 @@ describe("Recon", function()
   end)
 
   -- ============================================================================
-  -- insertEntry (UAV insertion into satellite reconnaissance gaps)
+  -- addEntry (UAV insertion into satellite reconnaissance gaps)
   -- ============================================================================
 
-  describe("insertEntry", function()
+  describe("addEntry", function()
     -- Fixed timeline (all timestamps are abstract numbers mapped from datetime strings,
     -- keeping tests timezone-independent):
     --   most recent pass end = 4000, current = 5000, next pass end = 8000
@@ -1436,7 +1436,7 @@ describe("Recon", function()
       return template
     end
 
-    ---Stub time helpers so insertEntry sees the fixed timeline above
+    ---Stub time helpers so addEntry sees the fixed timeline above
     ---@param flightTime number Flight time (seconds) returned for the template course
     local function stubTimeline(flightTime)
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(CURRENT_TIMESTAMP))
@@ -1460,7 +1460,7 @@ describe("Recon", function()
       local reconCtx = makeReconContext(queue)
       local template = makeUAVTemplate()
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are.equal(3, #reconCtx.queue)
@@ -1484,7 +1484,7 @@ describe("Recon", function()
       local reconCtx = makeReconContext(queue)
       local template = makeUAVTemplate()
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are_not.equal(template, reconCtx.queue[3])
@@ -1503,7 +1503,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
 
       assert.is_not_nil(result)
       assert.are.equal(os.date(constants.DATE_FORMAT, 5500), result and result.takeoffTime)
@@ -1521,7 +1521,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
 
       assert.is_nil(result)
       assert.are.equal(2, #reconCtx.queue)
@@ -1535,7 +1535,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
 
       assert.is_nil(result)
       assert.are.equal(1, #reconCtx.queue)
@@ -1550,7 +1550,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
 
       assert.is_nil(result)
       assert.are.equal(2, #reconCtx.queue)
@@ -1574,7 +1574,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_nil(result)
       assert.are.equal(3, #reconCtx.queue)
@@ -1597,7 +1597,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are.equal(4, #reconCtx.queue)
@@ -1619,7 +1619,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are.equal(4, #reconCtx.queue)
@@ -1642,7 +1642,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are.equal(4, #reconCtx.queue)
@@ -1662,7 +1662,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
 
       assert.is_not_nil(result)
       assert.are.equal(4, #reconCtx.queue)
@@ -1677,7 +1677,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
 
       assert.is_not_nil(result)
       assert.are.equal(3, #reconCtx.queue)
@@ -1699,7 +1699,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_nil(result)
       assert.are.equal(2, #reconCtx.queue)
@@ -1710,7 +1710,7 @@ describe("Recon", function()
       stubTimeline(3500)
       local reconCtx = makeReconContext({})
 
-      local result = Recon.insertEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
 
       assert.is_nil(result)
       assert.are.equal(0, #reconCtx.queue)
@@ -1752,7 +1752,7 @@ describe("Recon", function()
       }
       local reconCtx = makeReconContext(queue)
 
-      local result = Recon.insertEntry(reconCtx, template)
+      local result = Recon.addEntry(reconCtx, template)
 
       assert.is_not_nil(result)
       assert.are.equal(5, #reconCtx.queue)

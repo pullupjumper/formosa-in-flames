@@ -7,7 +7,7 @@ local Context = {}
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function Context.handleSupplyAssetDestruction(unit, systemCtx)
+function Context.processSupplyAssetDestruction(unit, systemCtx)
   local ammoDepotCtx = systemCtx.ammunitions[unit.name]
 
   if ammoDepotCtx and unit.group == nil and ammoDepotCtx.wpnCurrent > 0 then

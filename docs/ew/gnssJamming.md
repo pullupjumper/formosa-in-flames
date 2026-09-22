@@ -38,9 +38,9 @@ flowchart LR
 
 1. `GameUtils.tryAddUnit()` — 在指定座標（含隨機偏移 `randomRadius`）建立 GPS_JAMMER 設施
 2. `ScenEdit_SetEMCON("OECM=Active")` — 啟動電子反制
-3. `GameUtils.newArea()` — 以設施為中心建立圓形區域（半徑 = `descriptor.radius`）
+3. `GameUtils.createArea()` — 以設施為中心建立圓形區域（半徑 = `descriptor.radius`）
 4. `ScenEdit_AddZone()` — 建立 Standard Zone（type = -925）
-5. `GameUtils.unitEntersAreaEvent()` — 綁定事件觸發器（目標：敵方武器 `TargetType = 6`）
+5. `GameUtils.setUnitEntersAreaEvent()` — 綁定事件觸發器（目標：敵方武器 `TargetType = 6`）
 
 ### 清理階段
 
@@ -59,7 +59,7 @@ flowchart LR
 flowchart TD
     ENTER["武器進入干擾區<br>（Unit Enters Area 事件）"]
     RESOLVE["resolveWeapon()<br>ScenEdit_UnitX()"]
-    MATCH["matchGnssGuidedWeapon()<br>DBID 比對"]
+    MATCH["findGnssGuidedWeapon()<br>DBID 比對"]
     ROLL["rollJammingResistance()<br>random(100) > resistance?"]
     COURSE["取得武器航路"]
     DEVIATE["calculateDeviation()<br>隨機座標偏移"]

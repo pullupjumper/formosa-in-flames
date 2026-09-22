@@ -224,7 +224,7 @@ end
 ---@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context
 ---@param shouldJam boolean Whether the jamming attempt should succeed
 ---@return string # JAMMING_RESULT enum value
-local function applyJammingStateTransition(commsJammingConfig, affectedUnitCtx, shouldJam)
+local function updateJammingState(commsJammingConfig, affectedUnitCtx, shouldJam)
   if affectedUnitCtx.isOutOfComms ~= false then
     return COMMS_JAMMING_RESULT.SKIPPED
   end
@@ -268,7 +268,7 @@ omnidirectionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
   local effectiveness = calculateOmnidirectionalEffectiveness(commsJammingConfig, entry.distance)
   local shouldJam = effectiveness ~= nil and effectiveness > (math.random() / 2)
 
-  return applyJammingStateTransition(commsJammingConfig, entry.unitCtx, shouldJam)
+  return updateJammingState(commsJammingConfig, entry.unitCtx, shouldJam)
 end
 
 
@@ -280,7 +280,7 @@ end
 directionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
   local shouldJam = calculateDirectionalEffectiveness(jammer, entry.unitCtx.guid, entry.distance)
 
-  return applyJammingStateTransition(commsJammingConfig, entry.unitCtx, shouldJam)
+  return updateJammingState(commsJammingConfig, entry.unitCtx, shouldJam)
 end
 
 
@@ -480,7 +480,7 @@ end
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters, thresholds, and effectiveness formulas
 ---@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
-function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+function CommsJamming.processCommsJamming(commsJammingConfig, saveData)
   local jammers = findJammers(saveData.c.commsJamming.jammers)
   local unitCtxMap, targetCount = findSAMAndRadar(saveData.t.iads)
 

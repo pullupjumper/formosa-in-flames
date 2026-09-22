@@ -45,7 +45,7 @@ flowchart TB
     end
 
     subgraph EW 模組
-        CJ["commsJamming<br>.handleCommsJamming()"]
+        CJ["commsJamming<br>.processCommsJamming()"]
         GJ["gnssJamming<br>.jamming()"]
         SI["sigint<br>.collectSigint()"]
     end

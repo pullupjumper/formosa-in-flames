@@ -594,8 +594,8 @@ describe("AmphibiousAssault", function()
     local stubGenerateLocations, stubDeleteCargo, stubAddUnit, stubSetDoctrine
 
     before_each(function()
-      stubGenerateLocations = trackStub(stub(GameUtils, "generateLocations"))
-      stubDeleteCargo = trackStub(stub(AmphibiousLogistics, "deleteCargo"))
+      stubGenerateLocations = trackStub(stub(GameUtils, "buildLocations"))
+      stubDeleteCargo = trackStub(stub(AmphibiousLogistics, "removeCargo"))
       stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
       stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
     end)
@@ -609,7 +609,7 @@ describe("AmphibiousAssault", function()
         { latitude = 25.4, longitude = 121.4 },
       }
       stubGenerateLocations.returns(locations)
-      -- deleteCargo: first call for ZBD (dbid=241), second for ZTD (dbid=240)
+      -- removeCargo: first call for ZBD (dbid=241), second for ZTD (dbid=240)
       stubDeleteCargo.invokes(function(_, cargoItem)
         if cargoItem.dbid == 241 then return 2 end
         if cargoItem.dbid == 240 then return 2 end

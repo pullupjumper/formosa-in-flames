@@ -37,13 +37,13 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param currentTime number Current scenario time in seconds
-local function handleTaoyuanTemporarySetup(config, saveData, zone, currentTime)
+local function processTaoyuanTemporarySetup(config, saveData, zone, currentTime)
   if zone.name ~= "Taoyuan" then
     return
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  Recon.insertEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)
+  Recon.addEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases
@@ -76,7 +76,7 @@ local function processZone(config, saveData, zone, operation, contacts, currentT
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
         zoneState.amphibiousAssaultStartTime = currentTime
-        handleTaoyuanTemporarySetup(config, saveData, zone, currentTime)
+        processTaoyuanTemporarySetup(config, saveData, zone, currentTime)
       end
     end
   end
@@ -154,7 +154,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
-local function allZonesArrived(config, saveData)
+local function hasAllZonesArrived(config, saveData)
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
     if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
@@ -172,7 +172,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 function Coordinator.evaluateFireSupportGate(config, saveData)
   local amphib = saveData.c.amphibOps
-  local arrived = allZonesArrived(config, saveData)
+  local arrived = hasAllZonesArrived(config, saveData)
 
   if amphib.fireSupportOnHold and arrived then
     amphib.fireSupportOnHold = false

@@ -10,9 +10,9 @@
 
 ## 概觀
 
-`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `process`，場景事件腳本呼叫 `handleMoveToPositionEvent`，其餘初始化與重建 API 也都由此轉發。
+`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `process`，場景事件腳本呼叫 `processMoveToPositionEvent`，其餘初始化與重建 API 也都由此轉發。
 
-模組內將觸發流程拆成多個局部 handler：`handleFiringPoint`、`handleHideArea`、`handleReloadPoint`、`handleAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
+模組內將觸發流程拆成多個局部 handler：`processFiringPoint`、`processHideArea`、`processReloadPoint`、`processAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
 
 此外，`resolveBehavior` 允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`（前提為彈藥充足），玩家控制陣營或低彈藥量單位則不做動作，以便接續前往 RL 補給。
 
@@ -20,7 +20,7 @@
 
 ## 主要機制
 
-1. 由 `extractPositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼。
+1. 由 `resolvePositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼。
 2. 非 FP 事件會先 `dropUnitContact`，降低非必要接觸資訊。
 3. 依陣地類型分派至對應 handler。
 4. HA 流程僅在 `behavior.hideOnEnterHA` 啟用 **且** 機動發射車彈藥充足時，才會切換 `HIDE` 並執行 `hideUnit`；低彈單位保持原狀以便觸發後續補給流程。
@@ -28,11 +28,11 @@
 
 ```mermaid
 flowchart TD
-    A[handleMoveToPositionEvent] --> B{extractPositionType}
-    B -->|FP| C[handleFiringPoint]
-    B -->|HA| D[handleHideArea]
-    B -->|RL| E[handleReloadPoint]
-    B -->|AHA| F[handleAmmoHoldingArea]
+    A[processMoveToPositionEvent] --> B{resolvePositionType}
+    B -->|FP| C[processFiringPoint]
+    B -->|HA| D[processHideArea]
+    B -->|RL| E[processReloadPoint]
+    B -->|AHA| F[processAmmoHoldingArea]
 
     D --> M{hideOnEnterHA<br/>且彈藥充足?}
     M -->|Yes| N[setStateToHide + hideUnit]
@@ -58,11 +58,11 @@ flowchart TD
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 轉呼叫 `Ammo.isLowAmmo` |
 | `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryReport` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
 | `process` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
-| `handleSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 轉呼叫 `Context.handleSupplyAssetDestruction` |
+| `processSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 轉呼叫 `Context.processSupplyAssetDestruction` |
 | `initEventTriggers` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | 轉呼叫 `Triggers.initEventTriggers` |
 | `addMissileSystems` | `groundForceCfg, sideName` | `nil` | 轉呼叫 `Deployment.addMissileSystems` |
 | `initMissileSystemContexts` | `groundForceCfg, groundForceCtx` | `nil` | 轉呼叫 `Context.initMissileSystemContexts` |
-| `handleMoveToPositionEvent` | `opts` | `nil` | 處理位置事件主流程 |
+| `processMoveToPositionEvent` | `opts` | `nil` | 處理位置事件主流程 |
 
 ---
 
@@ -81,7 +81,7 @@ flowchart TD
   [FAIL] system=MLRS area=Fujian unit=MLRS-FU-3 action=move_to_hide_area reason=no_ha_defined
 ```
 
-`handleMoveToPositionEvent` 的 `position` 來自 event trigger，整批相同，因此放在 header 而非每一行：
+`processMoveToPositionEvent` 的 `position` 來自 event trigger，整批相同，因此放在 header 而非每一行：
 
 ```
 [missileSystem] side=China: Position event mode=auto position=RL | total=2 ok=1 warn=1
@@ -92,7 +92,7 @@ flowchart TD
 
 **行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後三個 WARN（`concealment_failed`／`resupply_concealment_failed`／`reload_not_started`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
 
-`moveToFiringPoint` 與 `handleSupplyAssetDestruction` 是單筆事件而非批次，走 `LogFormat.line` 並在呼叫端自行選 sink。
+`moveToFiringPoint` 與 `processSupplyAssetDestruction` 是單筆事件而非批次，走 `LogFormat.line` 並在呼叫端自行選 sink。
 
 ---
 

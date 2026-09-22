@@ -209,10 +209,10 @@ describe("CommsJamming", function()
   end
 
   -- ============================================================================
-  -- handleCommsJamming
+  -- processCommsJamming
   -- ============================================================================
 
-  describe("handleCommsJamming", function()
+  describe("processCommsJamming", function()
     local commsJammingConfig
 
     before_each(function()
@@ -249,7 +249,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         -- SAM-001 should have been processed by the jammer
         assert.is_true(saveData.t.iads.rocc["C2-001"].sam["SAM-001"].isOutOfComms)
@@ -277,7 +277,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -305,7 +305,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
       end)
@@ -321,7 +321,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
       end)
     end)
 
@@ -359,7 +359,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         -- Both should be processed (jammed) since jammer is active
         assert.is_true(samCtx.isOutOfComms)
@@ -390,7 +390,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_true(samCtx.isOutOfComms)
       end)
@@ -416,7 +416,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(2) <= 5 -> increment
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(3, samCtx.outofcomms)
@@ -438,7 +438,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(12) > 5 -> recovery
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -464,7 +464,7 @@ describe("CommsJamming", function()
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -489,7 +489,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(0, samCtx.outofcomms)
         assert.is_false(samCtx.isOutOfComms)
@@ -524,7 +524,7 @@ describe("CommsJamming", function()
         -- math.random() -> 0.1, so threshold = 0.05; effectiveness at 20nm ≈ 0.89 > 0.05
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -553,7 +553,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         -- Jamming fails: unit resets to not jammed
         assert.is_false(samCtx.isOutOfComms)
@@ -597,7 +597,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, saveData)
 
         -- Only 2 closest units should be processed (limit = 2)
         local processedCount = 0
@@ -631,7 +631,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -661,7 +661,7 @@ describe("CommsJamming", function()
         -- math.random(min, max) returns min; cooldownTime min = -5
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-5, samCtx.outofcomms)
@@ -690,7 +690,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-2, samCtx.outofcomms)
@@ -718,7 +718,7 @@ describe("CommsJamming", function()
         -- Recovery: math.random(5,10)->5, outofcomms(3) <= 5 -> increment (recovery period)
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         -- recoverComms should have incremented but jamming should be skipped
         -- because isOutOfComms is true (set by recoverComms staying in recovery)
@@ -759,7 +759,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, saveData)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -791,7 +791,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -822,7 +822,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, saveData)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -855,7 +855,7 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- Omnidirectional: should jam (effectiveness > threshold)
-        CommsJamming.handleCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), saveDataOmni)
+        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), saveDataOmni)
         assert.is_true(samCtxOmni.isOutOfComms)
 
         -- Directional with same setup: bearing misaligned -> should NOT jam
@@ -868,7 +868,7 @@ describe("CommsJamming", function()
           },
         })
 
-        CommsJamming.handleCommsJamming(makeCommsJammingConfig({ mode = "directional" }), saveDataDir)
+        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "directional" }), saveDataDir)
         assert.is_false(samCtxDir.isOutOfComms)
       end)
     end)
@@ -895,7 +895,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20), no jammers/AEW/ROCC -> commModifier = -20
         -- commsLevel = commsBase(40) + (-20) = 20 < threshold(30) -> RTB
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(20, aircraftCtx.commsLevel)
         local rtbCalled = false
@@ -925,7 +925,7 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- commsLevel = 100 + (-20) = 80 > 30 -> no RTB
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(80, aircraftCtx.commsLevel)
         for _, call in ipairs(stubSetUnit.calls) do
@@ -951,7 +951,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         -- commsLevel should remain unchanged
         assert.are.equal(100, aircraftCtx.commsLevel)
@@ -967,7 +967,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(100, aircraftCtx.commsLevel)
       end)
@@ -998,7 +998,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1032,7 +1032,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1065,7 +1065,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel with ROCC has break after first valid: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- Only one ROCC should contribute, NOT both
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1092,7 +1092,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
 
         assert.is_true(aircraftCtx.commsLevel < 200)
       end)
@@ -1112,7 +1112,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
       end)
     end)
   end)

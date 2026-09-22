@@ -299,16 +299,16 @@ describe("DynamicState", function()
   end)
 
   -- ============================================================================
-  -- markOperationExecuted
+  -- setOperationExecuted
   -- ============================================================================
 
-  describe("markOperationExecuted", function()
+  describe("setOperationExecuted", function()
     -- Positive: marks the operation as executed
     it("should mark operation as executed", function()
       local op = makeOperation()
       local entry = makeOperationBatch({ operations = { op } })
 
-      DynamicState.markOperationExecuted(entry, op)
+      DynamicState.setOperationExecuted(entry, op)
 
       assert.is_true(op.executed)
     end)
@@ -319,7 +319,7 @@ describe("DynamicState", function()
       local op2 = makeOperation()
       local entry = makeOperationBatch({ operations = { op1, op2 } })
 
-      DynamicState.markOperationExecuted(entry, op2)
+      DynamicState.setOperationExecuted(entry, op2)
 
       assert.is_true(entry.executed)
     end)
@@ -330,7 +330,7 @@ describe("DynamicState", function()
       local op2 = makeOperation()
       local entry = makeOperationBatch({ operations = { op1, op2 } })
 
-      DynamicState.markOperationExecuted(entry, op1)
+      DynamicState.setOperationExecuted(entry, op1)
 
       assert.is_false(entry.executed)
     end)
@@ -493,15 +493,15 @@ describe("DynamicState", function()
   end)
 
   -- ============================================================================
-  -- generateUniqueAirOperationName
+  -- buildUniqueAirOperationName
   -- ============================================================================
 
-  describe("generateUniqueAirOperationName", function()
+  describe("buildUniqueAirOperationName", function()
     -- Positive: first sequence, and the template wave-stage number is preserved (not swallowed)
     it("should generate first sequence name and preserve the template wave-stage number", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
       -- Wave-stage number stays recoverable as the trailing /<digits> of the template segment
@@ -512,7 +512,7 @@ describe("DynamicState", function()
     it("should pass through UAV source as uppercase in name", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "UAV", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "UAV", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-UAV-01", name)
     end)
@@ -526,7 +526,7 @@ describe("DynamicState", function()
         }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", name)
     end)
@@ -537,7 +537,7 @@ describe("DynamicState", function()
         airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", name)
     end)
@@ -552,7 +552,7 @@ describe("DynamicState", function()
         airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-02"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-03", name)
     end)
@@ -562,7 +562,7 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
@@ -575,22 +575,22 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.air.airTaskingOrder = nil
 
-      local name = DynamicState.generateUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
+      local name = DynamicState.buildUniqueAirOperationName("AIR/STRIKE/AB/W/2", "satellite", saveData)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", name)
     end)
   end)
 
   -- ============================================================================
-  -- generateUniqueGroundOperationName
+  -- buildUniqueGroundOperationName
   -- ============================================================================
 
-  describe("generateUniqueGroundOperationName", function()
+  describe("buildUniqueGroundOperationName", function()
     -- Positive: first sequence
     it("should generate first sequence name when nothing exists", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
     end)
@@ -599,7 +599,7 @@ describe("DynamicState", function()
     it("should pass through SIGINT source as uppercase in name", function()
       local saveData = makeSaveData()
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "SIGINT", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "SIGINT", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SIGINT-01", name)
     end)
@@ -613,7 +613,7 @@ describe("DynamicState", function()
         }
       })
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", name)
     end)
@@ -624,7 +624,7 @@ describe("DynamicState", function()
         fireSupportPlan = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = { name = "existing" } }
       })
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", name)
     end)
@@ -634,7 +634,7 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
@@ -645,22 +645,22 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.ground.fireSupportPlan = nil
 
-      local name = DynamicState.generateUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
+      local name = DynamicState.buildUniqueGroundOperationName("GND/STRIKE/INFRA/ALL/1", "satellite", saveData)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", name)
     end)
   end)
 
   -- ============================================================================
-  -- registerGeneratedOperation
+  -- addGeneratedOperation
   -- ============================================================================
 
-  describe("registerGeneratedOperation", function()
+  describe("addGeneratedOperation", function()
     -- Positive: registers air operation
     it("should register air operation name", function()
       local saveData = makeSaveData()
 
-      DynamicState.registerGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
+      DynamicState.addGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
 
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["DYNAMIC/SAT/STRIKE/1"])
     end)
@@ -669,7 +669,7 @@ describe("DynamicState", function()
     it("should register ground operation name", function()
       local saveData = makeSaveData()
 
-      DynamicState.registerGeneratedOperation("ground", "DYNAMIC/SAT/INFRA/1", saveData)
+      DynamicState.addGeneratedOperation("ground", "DYNAMIC/SAT/INFRA/1", saveData)
 
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.ground["DYNAMIC/SAT/INFRA/1"])
     end)
@@ -683,7 +683,7 @@ describe("DynamicState", function()
         }
       })
 
-      DynamicState.registerGeneratedOperation("air", "NEW/1", saveData)
+      DynamicState.addGeneratedOperation("air", "NEW/1", saveData)
 
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["EXISTING/1"])
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["NEW/1"])
@@ -694,7 +694,7 @@ describe("DynamicState", function()
       local saveData = makeSaveData()
       saveData.c.dynamicOperations.generatedOperations = nil
 
-      DynamicState.registerGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
+      DynamicState.addGeneratedOperation("air", "DYNAMIC/SAT/STRIKE/1", saveData)
 
       assert.is_table(saveData.c.dynamicOperations.generatedOperations)
       assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["DYNAMIC/SAT/STRIKE/1"])

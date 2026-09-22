@@ -101,7 +101,7 @@ end
 ---@param contacts CMO__Contact[] Array of contacts
 ---@param locationNames string[] Array of location names to find
 ---@return table<string, CMO__Location> # Map of location names to coordinates
-local function initializeLocationMap(contacts, locationNames)
+local function buildLocationMap(contacts, locationNames)
   local locationMap = {}
 
   for _, name in ipairs(locationNames) do
@@ -127,7 +127,7 @@ end
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__AirfieldPatterns Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function matchAirfieldTarget(description, baseLocationMap, guid, threshold, patterns)
+local function findAirfieldTarget(description, baseLocationMap, guid, threshold, patterns)
   local isAirfieldFacility =
       string.find(description, patterns.runwayPattern) or
       string.find(description, patterns.taxiwayPattern) or
@@ -163,7 +163,7 @@ end
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__PortPatterns Port pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function matchPortTarget(description, portLocationMap, guid, threshold, patterns)
+local function findPortTarget(description, portLocationMap, guid, threshold, patterns)
   if string.find(description, patterns.pierPattern) then
     for portName, location in pairs(portLocationMap) do
       if isNearby(location, guid, threshold) then
@@ -185,7 +185,7 @@ end
 ---@param guid string Contact GUID
 ---@param patterns SBJ__TargetCategoryPatterns Target category patterns configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function matchStandaloneTarget(description, guid, patterns)
+local function findStandaloneTarget(description, guid, patterns)
   for _, rule in ipairs(STANDALONE_TARGET_RULES) do
     if string.find(description, patterns[rule.patternKey][rule.subKey]) then
       return {
@@ -208,7 +208,7 @@ end
 ---@param sideName string Side name to get contacts from (e.g., 'China')
 ---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, taiwanAirBases, taiwanPorts, and targetCategories
 ---@param saveData SBJ__SaveData Persistent save data
-function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
+function TargetingProcess.findTargets(sideName, scanConfig, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
 
   if not contacts then
@@ -220,8 +220,8 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   local threshold = scanConfig.distanceThreshold
 
   -- Initialize location maps for bases and ports
-  local baseLocationMap = initializeLocationMap(contacts, scanConfig.taiwanAirBases)
-  local portLocationMap = initializeLocationMap(contacts, scanConfig.taiwanPorts)
+  local baseLocationMap = buildLocationMap(contacts, scanConfig.taiwanAirBases)
+  local portLocationMap = buildLocationMap(contacts, scanConfig.taiwanPorts)
   local targetlist = {}
   ---@cast targetlist SBJ__TargetEntry[]
 
@@ -230,7 +230,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
     local target = nil
 
     -- Try matching airfield targets
-    target = matchAirfieldTarget(contact.type_description, baseLocationMap, contact.guid, threshold,
+    target = findAirfieldTarget(contact.type_description, baseLocationMap, contact.guid, threshold,
       scanConfig.targetCategories.airfield)
     if target then
       table.insert(targetlist, target)
@@ -238,7 +238,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
     end
 
     -- Try matching port targets
-    target = matchPortTarget(contact.type_description, portLocationMap, contact.guid, threshold,
+    target = findPortTarget(contact.type_description, portLocationMap, contact.guid, threshold,
       scanConfig.targetCategories.port)
     if target then
       table.insert(targetlist, target)
@@ -246,7 +246,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
     end
 
     -- Try matching standalone targets (Radar, SAM, ASM, C2)
-    target = matchStandaloneTarget(contact.type_description, contact.guid, scanConfig.targetCategories)
+    target = findStandaloneTarget(contact.type_description, contact.guid, scanConfig.targetCategories)
     if target then
       table.insert(targetlist, target)
     end
@@ -320,7 +320,7 @@ end
 ---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
 ---@param opts SBJ__FilterOpts Filter parameters with contacts, task, and sensor configuration
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
-local function analyzeEmissions(opts)
+local function evaluateEmissions(opts)
   local contactAge = opts.task.target.contactAge
   return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
     if not contact.emissions or not contact.emissions[1] then
@@ -419,8 +419,8 @@ local function findRadioDirection(opts)
     return {}
   end
 
-  Utils.insertList(targets, mobileTargets)
-  Utils.insertList(targets, c2Targets)
+  Utils.addAll(targets, mobileTargets)
+  Utils.addAll(targets, c2Targets)
   local radioSource = filterTargetsWithinRangeOfRadioSource(config, saveData, targets)
   return radioSource
 end
@@ -468,7 +468,7 @@ end
 ---@param task SBJ__Task Task containing target list and contact age parameters
 ---@param isFirstWave boolean If true, includes all targets; if false, filters by damage status
 ---@return string[] # Array of target GUIDs that passed BDA evaluation
-local function assessTargetsDamage(task, isFirstWave)
+local function evaluateTargetsDamage(task, isFirstWave)
   local evaluatedTargetlist = {}
 
   if type(task.target.list) ~= "table" or #task.target.list == 0 then
@@ -527,7 +527,7 @@ end
 ---@param opts SBJ__FilterOpts Filter options with contacts and saveData
 ---@param filterName string Name of the filter that produced targets
 ---@param targetGUIDs string[] Array of target GUIDs from the filter
-local function triggerReconTracking(opts, filterName, targetGUIDs)
+local function startReconTracking(opts, filterName, targetGUIDs)
   local trackingConfig = RECON_TRACKING_CONFIG[filterName]
   if not trackingConfig or not opts.saveData then
     return
@@ -554,14 +554,14 @@ end
 TargetingProcess._internal = {
   findInfantry = findGroundTargets,
   findAirborne = findAirborne,
-  analyzeEmissions = analyzeEmissions,
+  evaluateEmissions = evaluateEmissions,
   findMobileTargets = findGroundTargets,
   findNavalTargets = findNavalTargets,
   findC2 = findC2,
   findRadioDirection = findRadioDirection,
   evaluateTarget = evaluateTarget,
-  assessTargetsDamage = assessTargetsDamage,
-  triggerReconTracking = triggerReconTracking,
+  evaluateTargetsDamage = evaluateTargetsDamage,
+  startReconTracking = startReconTracking,
 }
 
 ---Build filter options for dynamic target filtering
@@ -610,8 +610,8 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
     if targetingFunction then
       local targets = targetingFunction(filterOpts)
       if targets and #targets > 0 then
-        triggerReconTracking(filterOpts, filterName, targets)
-        Utils.insertList(strikeTargets, targets)
+        startReconTracking(filterOpts, filterName, targets)
+        Utils.addAll(strikeTargets, targets)
       end
     else
       Logger.warn(LogFormat.line("WARN", { filter = filterName, reason = "unknown_target_filter" }))
@@ -647,7 +647,7 @@ local function processFixedTargets(saveData, targetConfig, isFirstWave)
       minTargetCount = targetConfig.minTargetCount
     }
   }
-  return assessTargetsDamage(task, isFirstWave) or {}
+  return evaluateTargetsDamage(task, isFirstWave) or {}
 end
 
 -- ============================================================================

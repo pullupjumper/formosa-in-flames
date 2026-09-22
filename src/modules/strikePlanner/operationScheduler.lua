@@ -23,7 +23,7 @@ local OPERATION_TYPE_TRAITS = {
   }
 }
 
--- Public contract of generateNextOperation, distinct from log tags: the emit
+-- Public contract of buildNextOperation, distinct from log tags: the emit
 -- path lowercases these into the status field.
 local NEXT_OPERATION_STATUS = {
   FOUND_NEXT = "FOUND_NEXT",
@@ -40,7 +40,7 @@ local NEXT_OPERATION_STATUS = {
 ---Convert an operation template name into its config table key
 ---@param templateName string Slash-separated template name, e.g. "AIR/STRIKE/AB/W/1"
 ---@return string # Underscore-separated config key, e.g. "AIR_STRIKE_AB_W_1"
-local function toTemplateKey(templateName)
+local function buildTemplateKey(templateName)
   return (templateName:gsub("/", "_"))
 end
 
@@ -79,7 +79,7 @@ end
 ---@param templateName string Exact template name to match
 ---@param operationType string Operation type to match
 ---@return boolean # True when both the type and the template name match
-local function matchesTemplate(operation, templateName, operationType)
+local function isTemplateMatch(operation, templateName, operationType)
   return operation.type == operationType
       and operation.template ~= nil
       and operation.template.name == templateName
@@ -154,7 +154,7 @@ end
 ---@return boolean # True when the operation has been scheduled at some point
 function OperationScheduler.isOperationScheduled(operationBatches, templateName, operationType)
   return findFirstOperation(operationBatches, function(operation)
-    return matchesTemplate(operation, templateName, operationType)
+    return isTemplateMatch(operation, templateName, operationType)
   end) ~= nil
 end
 
@@ -165,7 +165,7 @@ end
 ---@return boolean # True when a matching unexecuted operation is already queued
 function OperationScheduler.isOperationPending(operationBatches, templateName, operationType)
   return findFirstOperation(operationBatches, function(operation)
-    return not operation.executed and matchesTemplate(operation, templateName, operationType)
+    return not operation.executed and isTemplateMatch(operation, templateName, operationType)
   end) ~= nil
 end
 
@@ -228,7 +228,7 @@ end
 ---@param config SBJ__Config Configuration data
 ---@return SBJ__Operation nextOperation Operation for the next wave
 ---@return string status "FOUND_NEXT"|"REUSED_CURRENT"|"PARSE_ERROR"|"UNKNOWN_TYPE"
-function OperationScheduler.generateNextOperation(operation, config)
+function OperationScheduler.buildNextOperation(operation, config)
   local templateName = operation.template.name
   local baseName, currentWaveNumber = templateName:match("^(.+/)(%d+)$")
 
@@ -244,7 +244,7 @@ function OperationScheduler.generateNextOperation(operation, config)
   local nextName = baseName .. (tonumber(currentWaveNumber) + 1)
 
   ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]|nil
-  local resolvedTemplate = config.c[typeTraits.templateSource][toTemplateKey(nextName)]
+  local resolvedTemplate = config.c[typeTraits.templateSource][buildTemplateKey(nextName)]
   local resolvedName = nextName
   local status = NEXT_OPERATION_STATUS.FOUND_NEXT
 
@@ -294,7 +294,7 @@ local function buildFirstWaveOperation(strikeMapping, processingCtx)
   end
 
   local config = processingCtx.config
-  local template = config.c[typeTraits.templateSource][toTemplateKey(strikeMapping.name)]
+  local template = config.c[typeTraits.templateSource][buildTemplateKey(strikeMapping.name)]
   if not template then
     return nil, {
       tag = "ERROR",
@@ -367,7 +367,7 @@ local function buildNextWaveOperation(strikeMapping, processingCtx)
     }
   end
 
-  local nextOperation, status = OperationScheduler.generateNextOperation(
+  local nextOperation, status = OperationScheduler.buildNextOperation(
     previousOperation,
     processingCtx.config
   )
@@ -450,7 +450,7 @@ local function buildOperationsForReconObjective(processingCtx, reconEntry)
     return operations, results
   end
 
-  strikeMappings = FrontlineRedirect.applyMappings(
+  strikeMappings = FrontlineRedirect.updateMappings(
     processingCtx.config,
     processingCtx.reconCtx,
     strikeMappings
@@ -511,7 +511,7 @@ end
 ---@param batchSnapshot {air: SBJ__Operation[], ground: SBJ__Operation[], nextOperationBatchTime: string|nil, mostRecentTime: string|nil} Scheduler state snapshot taken before insertion
 ---@param operations SBJ__Operation[] Operations added to the batch
 ---@param results SBJ__LogResult[] Per-mapping scheduling results
-local function emitScheduleLog(reconEntry, batchSnapshot, operations, results)
+local function logSchedule(reconEntry, batchSnapshot, operations, results)
   local action = "Schedule dynamic operations " .. LogFormat.fields({
     endTime = reconEntry.endTime,
     scheduled = #operations,
@@ -557,7 +557,7 @@ function OperationScheduler.schedule(processingCtx, reconEntry)
     })
   end
 
-  emitScheduleLog(reconEntry, batchSnapshot, operations, results)
+  logSchedule(reconEntry, batchSnapshot, operations, results)
 end
 
 return OperationScheduler

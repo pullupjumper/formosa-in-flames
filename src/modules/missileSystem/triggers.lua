@@ -66,7 +66,7 @@ end
 local function hasSameArea(candidate, expectedArea)
   return candidate ~= nil
       and expectedArea ~= nil
-      and GameUtils.isSameRPArray(GameUtils.convertToRPArray(candidate), expectedArea)
+      and GameUtils.isSameRPArray(GameUtils.normalizeToRPArray(candidate), expectedArea)
 end
 
 ---Get all positions in an area, including any mask area
@@ -264,7 +264,7 @@ local function addTriggerToEvent(params)
   if zone then
     local eventName = string.format("(%s) Arrive in %s", params.sideName, params.positionType)
     zone.areacolor = getOperationalAreaColor(params.positionType)
-    params.position.area = GameUtils.convertToRPArray(zone)
+    params.position.area = GameUtils.normalizeToRPArray(zone)
     local triggerResult = GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
       Mode = "add",
@@ -335,7 +335,7 @@ end
 ---@return boolean triggerCleanupSuccessful Whether trigger cleanup fully succeeded
 ---@return integer removedZoneCount Number of removed zones
 ---@return boolean zoneCleanupSuccessful Whether zone cleanup fully succeeded
-local function cleanupExistingTriggersAndZones(posTypes, operationalAreasToRemove, sideName)
+local function removeExistingTriggersAndZones(posTypes, operationalAreasToRemove, sideName)
   local eventNames = buildEventAndTriggerNames(sideName, posTypes)
   removeBunkers(operationalAreasToRemove, sideName)
   local removedTriggerCount, triggerCleanupSuccessful =
@@ -358,7 +358,7 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
   })
 
   if zone then
-    local rps = GameUtils.convertToRPArray(zone)
+    local rps = GameUtils.normalizeToRPArray(zone)
     operationalArea.mask = { area = rps }
     zone.areacolor = getOperationalAreaColor(constants.POSITION_TYPES.MASK)
     return true
@@ -441,7 +441,7 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
 
   local removedTriggerCount, triggerCleanupSuccessful, removedZoneCount, zoneCleanupSuccessful =
-      cleanupExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
+      removeExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
 
   local totalCreated, totalFailed, maskCreated, maskFailed, bunkersCreated, bunkersFailed = 0, 0, 0, 0, 0, 0
   local initLogEntries = {}

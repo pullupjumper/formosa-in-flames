@@ -23,7 +23,7 @@ missileSystem 共用工具函式模組。
 ```mermaid
 flowchart LR
     A[normalizeWeaponDBIDs] --> B[ammo/deployment]
-    C[getGroupUnits] --> D[applyToGroupUnits]
+    C[getGroupUnits] --> D[setGroupUnitProperties]
     E[buildModeProperties] --> D
     D --> F[setUnitProperties]
     F --> G[ScenEdit_SetUnit]
@@ -40,7 +40,7 @@ flowchart LR
 | `isSAM` | `dbid` | `boolean` | 判斷平台是否屬於 SAM |
 | `getGroupUnits` | `unit` | `string[]` | 取得group內所有 GUID |
 | `setUnitProperties` | `params` | `nil` | 設定單位速度、移動路徑、Doctrine |
-| `applyToGroupUnits` | `firingUnit, propsBuilder` | `nil` | 對group每個單位套用屬性 |
+| `setGroupUnitProperties` | `firingUnit, propsBuilder` | `nil` | 對group每個單位套用屬性 |
 | `buildModeProperties` | `isAuto, wcs` | `SBJ__SetUnitPropertiesOpts` | 建立 mode 專用屬性 |
 
 ---

@@ -61,12 +61,12 @@ stateDiagram-v2
 
 ## Taoyuan 特例
 
-`handleTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
+`processTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
 
 1. 對運輸機隊執行貨物轉移與任務指派（`AmphibiousLogistics.transferAndAssignTransportAircraft`）
-2. 委派 [`Recon.insertEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)`](../strikePlanner/recon.md) 排入一架 GJ-11 偵察任務
+2. 委派 [`Recon.addEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)`](../strikePlanner/recon.md) 排入一架 GJ-11 偵察任務
 
-由於未傳入 `startTime`，`insertEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
+由於未傳入 `startTime`，`addEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
 
 ---
 
@@ -89,8 +89,8 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> 未暫停
-    未暫停 --> 暫停: SRBM total% < threshold<br>且 !allZonesArrived
-    暫停 --> 未暫停: allZonesArrived
+    未暫停 --> 暫停: SRBM total% < threshold<br>且 !hasAllZonesArrived
+    暫停 --> 未暫停: hasAllZonesArrived
     note right of 暫停: STRIKE/INFRA/* 被 recon 跳過
 ```
 
@@ -99,7 +99,7 @@ stateDiagram-v2
 ```mermaid
 flowchart TD
     START["evaluateFireSupportGate"]
-    ARRIVED{allZonesArrived?<br>所有 zone 已進入<br>WAITING_ASSAULT 或之後?}
+    ARRIVED{hasAllZonesArrived?<br>所有 zone 已進入<br>WAITING_ASSAULT 或之後?}
     HOLDFLAG{當前 fireSupportOnHold?}
 
     RESUME["fireSupportOnHold = false<br>[RESUME] 日誌"]
@@ -151,7 +151,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 | `saveData.c.amphibOps.zoneStates[zoneName].amphibiousAssaultStartTime` | 進入 `WAITING_ASSAULT` |
 | `saveData.c.amphibOps.zoneStates[zoneName].airlandingMissionStartTime` | `setLandingMissionStartTime` 與重轉運後 |
 | `saveData.c.amphibOps.fireSupportOnHold` | 閘門 HOLD / RESUME |
-| `saveData.c.recon.queue` | Taoyuan 特例經 `Recon.insertEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
+| `saveData.c.recon.queue` | Taoyuan 特例經 `Recon.addEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
 
 ---
 
@@ -173,5 +173,5 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 - [amphibiousAssault](amphibiousAssault.md) — Phase 3：突擊
 - [secondWaveUnloading](secondWaveUnloading.md) — Phase 4：第二波卸載
 - [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供火力閘門所需的庫存報告
-- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例呼叫 `Recon.insertEntry` 排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRA/*`
+- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例呼叫 `Recon.addEntry` 排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRA/*`
 - [系統架構](README.md)

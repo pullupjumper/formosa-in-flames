@@ -79,7 +79,7 @@ describe("TargetingProcess", function()
     return entry
   end
 
-  ---Create a scan config for scanTargets
+  ---Create a scan config for findTargets
   ---@param overrides? table
   ---@return table
   local function makeScanConfig(overrides)
@@ -164,10 +164,10 @@ describe("TargetingProcess", function()
   end
 
   -- ============================================================================
-  -- scanTargets
+  -- findTargets
   -- ============================================================================
 
-  describe("scanTargets", function()
+  describe("findTargets", function()
     -- Positive: categorizes runway contact near airbase
     it("should categorize runway contact near known airbase", function()
       local baseContact = makeContact({
@@ -189,7 +189,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(2))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("Airfield", saveData.c.targetlist[1].category)
@@ -217,7 +217,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(1))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("Port", saveData.c.targetlist[1].category)
@@ -236,7 +236,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("ISR", saveData.c.targetlist[1].category)
@@ -254,7 +254,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("SAM", saveData.c.targetlist[1].category)
@@ -272,7 +272,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("ASM", saveData.c.targetlist[1].category)
@@ -290,7 +290,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("C2", saveData.c.targetlist[1].category)
@@ -317,7 +317,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(1))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(1, #saveData.c.targetlist)
       assert.are.equal("Airfield", saveData.c.targetlist[1].category)
@@ -331,7 +331,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(nil))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(0, #saveData.c.targetlist)
       assert.stub(warnStub).was.called(1)
@@ -358,7 +358,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(100))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(0, #saveData.c.targetlist)
     end)
@@ -375,7 +375,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(0, #saveData.c.targetlist)
     end)
@@ -387,7 +387,7 @@ describe("TargetingProcess", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({}))
 
-      TargetingProcess.scanTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, saveData)
 
       assert.are.equal(0, #saveData.c.targetlist)
     end)
@@ -621,10 +621,10 @@ describe("TargetingProcess", function()
   end)
 
   -- ============================================================================
-  -- analyzeEmissions
+  -- evaluateEmissions
   -- ============================================================================
 
-  describe("analyzeEmissions", function()
+  describe("evaluateEmissions", function()
     ---Helper to create a SAM contact with specific sensor
     ---@param sensorDbid number
     ---@param overrides? table
@@ -647,7 +647,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK3_LONG_MOUNTAIN)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("sam-001", result[1])
@@ -658,7 +658,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK3_LONG_WHITE_2)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -668,7 +668,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.PAC3_MPQ65)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -678,7 +678,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TC2_CS_MPQ90)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -688,7 +688,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK2_CS_MPG25)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -700,7 +700,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -712,7 +712,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -722,7 +722,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(99999)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -737,7 +737,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -752,7 +752,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.analyzeEmissions({ contacts = { contact }, task = task })
+      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -1186,10 +1186,10 @@ describe("TargetingProcess", function()
   end)
 
   -- ============================================================================
-  -- triggerReconTracking
+  -- startReconTracking
   -- ============================================================================
 
-  describe("triggerReconTracking", function()
+  describe("startReconTracking", function()
     local mockFilteredUnits
     local vpGetSideStub
     local reconTrackTargetStub
@@ -1215,7 +1215,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
 
       assert.stub(reconTrackTargetStub).was.called(1)
       assert.stub(reconTrackTargetStub).was.called_with(
@@ -1239,7 +1239,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findRadioDirection", { "radio-001" })
+      _internal.startReconTracking(opts, "findRadioDirection", { "radio-001" })
 
       assert.stub(reconTrackTargetStub).was.called(1)
       assert.stub(reconTrackTargetStub).was.called_with(
@@ -1258,7 +1258,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findInfantry", { "inf-001" })
+      _internal.startReconTracking(opts, "findInfantry", { "inf-001" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
@@ -1271,7 +1271,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
@@ -1286,7 +1286,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
@@ -1304,7 +1304,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
@@ -1317,7 +1317,7 @@ describe("TargetingProcess", function()
         task = makeTask(),
       }
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-missing" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-missing" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
     end)
@@ -1343,7 +1343,7 @@ describe("TargetingProcess", function()
       }
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "uav-001" }))
 
-      _internal.triggerReconTracking(opts, "findNavalTargets", { "ship-001" })
+      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
 
       assert.stub(reconTrackTargetStub).was_not.called()
       assert.stub(vpGetSideStub).was_not.called()
@@ -1581,10 +1581,10 @@ describe("TargetingProcess", function()
   end)
 
   -- ============================================================================
-  -- assessTargetsDamage
+  -- evaluateTargetsDamage
   -- ============================================================================
 
-  describe("assessTargetsDamage", function()
+  describe("evaluateTargetsDamage", function()
     -- Positive: returns evaluated targets
     it("should return targets that pass BDA evaluation", function()
       local target = makeContact({
@@ -1602,7 +1602,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "eval-001" }, contactAge = 300 })
 
-      local result = _internal.assessTargetsDamage(task, false)
+      local result = _internal.evaluateTargetsDamage(task, false)
 
       assert.are.equal(1, #result)
       assert.are.equal("eval-001", result[1])
@@ -1625,7 +1625,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "eval-002" }, contactAge = 300 })
 
-      local result = _internal.assessTargetsDamage(task, true)
+      local result = _internal.evaluateTargetsDamage(task, true)
 
       assert.are.equal(1, #result)
     end)
@@ -1636,7 +1636,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "missing-001" }, contactAge = 300 })
 
-      local result = _internal.assessTargetsDamage(task, false)
+      local result = _internal.evaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1645,7 +1645,7 @@ describe("TargetingProcess", function()
     it("should return empty table for empty target list", function()
       local task = makeTask({ list = {}, contactAge = 300 })
 
-      local result = _internal.assessTargetsDamage(task, false)
+      local result = _internal.evaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1654,7 +1654,7 @@ describe("TargetingProcess", function()
     it("should return empty table when target list is nil", function()
       local task = { target = { list = nil, contactAge = 300 } }
 
-      local result = _internal.assessTargetsDamage(task, false)
+      local result = _internal.evaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)

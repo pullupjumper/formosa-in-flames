@@ -82,7 +82,7 @@ flowchart TB
     AA_COURSE --> AA_ACV
     AA_COURSE --> SW_START --> SW_OFFLOAD
     COORD --> GATE
-    COORD -.->|Taoyuan：Recon.insertEntry 排 GJ-11| RECON["strikePlanner/recon"]
+    COORD -.->|Taoyuan：Recon.addEntry 排 GJ-11| RECON["strikePlanner/recon"]
     GATE -.->|fireSupportOnHold：跳過 STRIKE/INFRA/*| RECON
 
     style TRIGGER fill:#137cbd

@@ -115,7 +115,7 @@ end
 ---@param fromUnit CMO__Unit|nil Unit to remove cargo from
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
 ---@return integer # Number of cargo items actually deleted
-function AmphibiousLogistics.deleteCargo(fromUnit, cargoItem)
+function AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
   if fromUnit == nil or
       fromUnit.cargo == nil or
       cargoItem.num == 0 or
@@ -313,7 +313,7 @@ end
 ---@param cargo CMO__Unit Cargo proxy unit
 ---@param sideName string Side name
 ---@param weaponCountMap table<number, number> Actual weapon counts (DBID to count)
-local function syncWeaponReloads(cargo, sideName, weaponCountMap)
+local function updateWeaponReloads(cargo, sideName, weaponCountMap)
   for _, mount in ipairs(cargo.mounts) do
     for _, wpn in ipairs(mount.mount_weapons) do
       if wpn.wpn_default > 0 then
@@ -346,7 +346,7 @@ end
 ---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@param sideName string Side name
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
+local function normalizeGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
   local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
   if not cargo then
     return {
@@ -361,7 +361,7 @@ local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName
 
   stripCargoProxyMounts(cargo, sideName)
   local weaponCountMap = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  syncWeaponReloads(cargo, sideName, weaponCountMap)
+  updateWeaponReloads(cargo, sideName, weaponCountMap)
 
   if sourceUnit.group then
     cargo.group = sourceUnit.group.name
@@ -542,7 +542,7 @@ function AmphibiousLogistics.loadCargo(base, unitCtx, sideName)
     if not unit then
       report.add("SKIP", { guid = guid, index = idx, reason = "unit_not_found" })
     else
-      local result = convertGroupMember(base, unit, idx, weaponDBIDSet, sideName)
+      local result = normalizeGroupMember(base, unit, idx, weaponDBIDSet, sideName)
       report.add(result.tag, result.fields)
     end
   end

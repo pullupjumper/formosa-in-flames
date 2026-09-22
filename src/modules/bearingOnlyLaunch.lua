@@ -24,7 +24,7 @@ local function rad2deg(r) return r * 180 / math.pi end
 ---@param distanceNm number Distance in nautical miles
 ---@return number lat2 Destination latitude
 ---@return number lon2 Destination longitude
-local function destinationPoint(lat, lon, bearingDeg, distanceNm)
+local function calculateDestinationPoint(lat, lon, bearingDeg, distanceNm)
   local bearing = deg2rad(bearingDeg)
   local lat1 = deg2rad(lat)
   local lon1 = deg2rad(lon)
@@ -44,7 +44,7 @@ end
 ---@param lat2 number Second point latitude
 ---@param lon2 number Second point longitude
 ---@return number # Distance in nautical miles
-local function haversineNM(lat1, lon1, lat2, lon2)
+local function calculateHaversineNM(lat1, lon1, lat2, lon2)
   local dLat = deg2rad(lat2 - lat1)
   local dLon = deg2rad(lon2 - lon1)
   local a = math.sin(dLat / 2) ^ 2 +
@@ -62,10 +62,10 @@ end
 ---@param radarLon number Radar longitude
 ---@param radarRangeNm number Radar range in nautical miles
 ---@return boolean # True if path intersects radar circle
-local function intersectsRadarCircle(lat1, lon1, lat2, lon2, radarLat, radarLon, radarRangeNm)
+local function isIntersectingRadarCircle(lat1, lon1, lat2, lon2, radarLat, radarLon, radarRangeNm)
   local midLat = (lat1 + lat2) / 2
   local midLon = (lon1 + lon2) / 2
-  local dist = haversineNM(midLat, midLon, radarLat, radarLon)
+  local dist = calculateHaversineNM(midLat, midLon, radarLat, radarLon)
   return dist < radarRangeNm
 end
 
@@ -73,7 +73,7 @@ end
 ---Generate missile paths that avoid radar detection zones
 ---@param params SBJ__GenerateMissilePathsParams Parameters for generating missile paths
 ---@return table<integer, SBJ__MissilePath> # Missile path list with waypoints and launch times
-function BearingOnlyLaunch.generateMissilePaths(params)
+function BearingOnlyLaunch.buildMissilePaths(params)
   local result = {}
   local now = GameApi.ScenEdit_CurrentTime()
 
@@ -98,12 +98,12 @@ function BearingOnlyLaunch.generateMissilePaths(params)
 
     for attempt = 1, maxAttempts do
       local d = radarRange * distMult
-      wpLat, wpLon = destinationPoint(targetLat, targetLon, angle, d)
+      wpLat, wpLon = calculateDestinationPoint(targetLat, targetLon, angle, d)
 
-      local crossesRadar = intersectsRadarCircle(launcherLat, launcherLon, wpLat, wpLon, targetLat, targetLon,
+      local crossesRadar = isIntersectingRadarCircle(launcherLat, launcherLon, wpLat, wpLon, targetLat, targetLon,
         radarRange)
-      local totalDistance = haversineNM(launcherLat, launcherLon, wpLat, wpLon) +
-          haversineNM(wpLat, wpLon, targetLat, targetLon)
+      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, wpLat, wpLon) +
+          calculateHaversineNM(wpLat, wpLon, targetLat, targetLon)
 
       if not crossesRadar and totalDistance <= maxRange then
         valid = true
@@ -114,8 +114,8 @@ function BearingOnlyLaunch.generateMissilePaths(params)
     end
 
     if valid then
-      local totalDistance = haversineNM(launcherLat, launcherLon, wpLat, wpLon) +
-          haversineNM(wpLat, wpLon, targetLat, targetLon)
+      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, wpLat, wpLon) +
+          calculateHaversineNM(wpLat, wpLon, targetLat, targetLon)
       local flightTime = totalDistance / speed * 3600 -- seconds
       table.insert(result, {
         waypoints = {

@@ -38,7 +38,7 @@ function Movement.moveUnitToPosition(params)
     course = { course[#course] }
   end
 
-  Shared.applyToGroupUnits(params.battery, function(unit)
+  Shared.setGroupUnitProperties(params.battery, function(unit)
     return {
       unit = unit,
       throttle = constants.THROTTLES.FULL,
@@ -150,7 +150,7 @@ end
 function Movement.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.RELOAD
   firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
-  Shared.applyToGroupUnits(firingUnit, function(unit)
+  Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
   end)
 end
@@ -161,7 +161,7 @@ end
 ---@param isAuto boolean Whether in automatic mode
 function Movement.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  Shared.applyToGroupUnits(firingUnit, function(unit)
+  Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.FREE)
   end)
 end
@@ -172,7 +172,7 @@ end
 ---@param isAuto boolean Whether the action is automatic
 function Movement.setStateToHide(firingUnitCtx, firingUnit, isAuto)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.HIDE
-  Shared.applyToGroupUnits(firingUnit, function(unit)
+  Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
   end)
 end
@@ -187,7 +187,7 @@ function Movement.setStateToStatic(systemCtx, firingUnit, isAuto)
   if unitCtx then
     unitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
     unitCtx.reloadStartTime = nil
-    Shared.applyToGroupUnits(firingUnit, function(unit)
+    Shared.setGroupUnitProperties(firingUnit, function(unit)
       return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
     end)
   end

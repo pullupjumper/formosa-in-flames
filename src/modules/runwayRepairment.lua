@@ -16,7 +16,7 @@ function RunwayRepairment.initRunways(config, saveData)
     table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
   end
 
-  local targetlist = StrikePlanner.selectTargetGUIDsByBaseAndSubtype(saveData.c.targetlist, taiwanAirBases)
+  local targetlist = StrikePlanner.findTargetGUIDsByBaseAndSubtype(saveData.c.targetlist, taiwanAirBases)
 
   for _, guid in ipairs(targetlist) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
@@ -48,7 +48,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param sideName string Faction name ("China" or other faction)
 ---@param unit CMO__Unit The damaged runway unit
-function RunwayRepairment.whenRunwayIsDamaged(saveData, sideName, unit)
+function RunwayRepairment.processRunwayDamage(saveData, sideName, unit)
   local sideCfg = GameUtils.getCachedSideConfig(sideName)
 
   if not saveData[sideCfg.field].repairRunway.enabled then

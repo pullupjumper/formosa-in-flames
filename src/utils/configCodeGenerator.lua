@@ -9,11 +9,11 @@ local constants = require("src.core.constants")
 local ConfigCodeGenerator = {}
 
 -- ============================================================================
--- Pipeline (ConfigCodeGenerator.generate):
+-- Pipeline (ConfigCodeGenerator.format):
 --   Phase 1 (collectUniqueAreas)  : scan config -> dedupe operationalArea tables, build opAreaMap
---   Phase 2 (generateAreasCode)   : emit `constants.AREAS = { ... }`, build areaRefMap for Phase 3
---   Phase 3 (generateOpAreasCode) : emit `constants.OPERATIONAL_AREAS = { ... }` via POSITION_EMITTERS
---   Phase 4 (generateConfigCode)  : emit `config.{side}.ground.{sys}.{ammo,resupply,firing}` blocks
+--   Phase 2 (formatAreasCode)   : emit `constants.AREAS = { ... }`, build areaRefMap for Phase 3
+--   Phase 3 (formatOpAreasCode) : emit `constants.OPERATIONAL_AREAS = { ... }` via POSITION_EMITTERS
+--   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.{sys}.{ammo,resupply,firing}` blocks
 -- ============================================================================
 
 local AREA_NAME_PREFIXES = {
@@ -29,14 +29,14 @@ local POSITION_TYPE_ORDER = { "RL", "HA", "FP", "AHA" }
 ---Serialize coordinate value (string or number) to Lua code
 ---@param val string|number Raw coordinate value; strings are quoted verbatim, numbers stringified
 ---@return string # Lua literal ready for source emission
-local function serializeCoord(val)
+local function formatCoord(val)
   return type(val) == "string" and ('"' .. val .. '"') or tostring(val)
 end
 
 ---Serialize string array on single line
 ---@param arr string[] Strings to quote and join in output order
 ---@return string # Inline `{ "a", "b", ... }` Lua literal
-local function serializeStringArray(arr)
+local function formatStringArray(arr)
   local parts = {}
   for _, v in ipairs(arr) do parts[#parts + 1] = '"' .. v .. '"' end
   return "{ " .. table.concat(parts, ", ") .. " }"
@@ -45,8 +45,8 @@ end
 ---Serialize waypoint to inline Lua code
 ---@param wp CMO__Waypoint Waypoint carrying latitude/longitude fields
 ---@return string # Inline `{ latitude = ..., longitude = ..., }` literal
-local function serializeWaypoint(wp)
-  return "{ latitude = " .. serializeCoord(wp.latitude) .. ", longitude = " .. serializeCoord(wp.longitude) .. ", }"
+local function formatWaypoint(wp)
+  return "{ latitude = " .. formatCoord(wp.latitude) .. ", longitude = " .. formatCoord(wp.longitude) .. ", }"
 end
 
 ---Resolve operational area key name from name field or constants reverse-lookup
@@ -70,7 +70,7 @@ end
 ---@param level integer Indentation level
 ---@param opAreaMap table<table, string> Maps operationalArea table refs to constant key names
 ---@return string # Serialized Lua expression with nested tables indented by `level`
-local function serializeValue(value, level, opAreaMap)
+local function formatValue(value, level, opAreaMap)
   local pad = string.rep("  ", level)
   local pad1 = string.rep("  ", level + 1)
 
@@ -91,7 +91,7 @@ local function serializeValue(value, level, opAreaMap)
 
   if isArray then
     for _, v in ipairs(value) do
-      lines[#lines + 1] = pad1 .. serializeValue(v, level + 1, opAreaMap) .. ","
+      lines[#lines + 1] = pad1 .. formatValue(v, level + 1, opAreaMap) .. ","
     end
   else
     local keys = {}
@@ -109,10 +109,10 @@ local function serializeValue(value, level, opAreaMap)
         if opKey then
           lines[#lines + 1] = pad1 .. keyStr .. " = constants.OPERATIONAL_AREAS." .. opKey .. ","
         else
-          lines[#lines + 1] = pad1 .. keyStr .. " = " .. serializeValue(v, level + 1, opAreaMap) .. ","
+          lines[#lines + 1] = pad1 .. keyStr .. " = " .. formatValue(v, level + 1, opAreaMap) .. ","
         end
       else
-        lines[#lines + 1] = pad1 .. keyStr .. " = " .. serializeValue(v, level + 1, opAreaMap) .. ","
+        lines[#lines + 1] = pad1 .. keyStr .. " = " .. formatValue(v, level + 1, opAreaMap) .. ","
       end
     end
   end
@@ -126,7 +126,7 @@ end
 ---@param wpnDefault number System's default weapon count
 ---@param configPath string Config path prefix
 ---@return string # Serialized expression string
-local function serializeWpnRef(value, wpnDefault, configPath)
+local function formatWpnRef(value, wpnDefault, configPath)
   if wpnDefault and wpnDefault > 0 and value > 0 then
     if value == wpnDefault then
       return configPath .. ".wpnDefault"
@@ -197,7 +197,7 @@ end
 ---@param uniqueAreas {key: string, opArea: SBJ__OperationalArea}[] Sorted unique operational areas from Phase 1
 ---@return string areasStr Generated constants.AREAS = { ... } code
 ---@return table<string, table<string, string>> areaRefMap Maps [opKey][posType_index] to AREAS const name
-local function generateAreasCode(uniqueAreas)
+local function formatAreasCode(uniqueAreas)
   local areasLines = {}
   local areaRefMap = {}
 
@@ -212,7 +212,7 @@ local function generateAreasCode(uniqueAreas)
           if pos.area then
             local constName = AREA_NAME_PREFIXES[posType] .. "_" .. key
             if posType == "FP" then constName = constName .. "_" .. i end
-            areasLines[#areasLines + 1] = "  " .. constName .. " = " .. serializeStringArray(pos.area) .. ","
+            areasLines[#areasLines + 1] = "  " .. constName .. " = " .. formatStringArray(pos.area) .. ","
             areaRefMap[key][posType .. "_" .. i] = constName
           end
         end
@@ -221,7 +221,7 @@ local function generateAreasCode(uniqueAreas)
 
     if opArea.mask and opArea.mask.area then
       local constName = "MASK_" .. key
-      areasLines[#areasLines + 1] = "  " .. constName .. " = " .. serializeStringArray(opArea.mask.area) .. ","
+      areasLines[#areasLines + 1] = "  " .. constName .. " = " .. formatStringArray(opArea.mask.area) .. ","
       areaRefMap[key]["mask"] = constName
     end
   end
@@ -263,7 +263,7 @@ end
 ---@param positions SBJ__Position[] Position list from opArea[emitter.field]
 ---@param key string Operational-area key (e.g. "ANW")
 ---@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
-local function emitPositionBlock(opLines, emitter, positions, key, areaRefMap)
+local function formatPositionBlock(opLines, emitter, positions, key, areaRefMap)
   if not resolveAreaRef(emitter, 1, key, areaRefMap) then return end
 
   if #positions == 1 then
@@ -271,7 +271,7 @@ local function emitPositionBlock(opLines, emitter, positions, key, areaRefMap)
     opLines[#opLines + 1] = "    " .. emitter.field .. " = { {"
     opLines[#opLines + 1] = "      course = {"
     for _, wp in ipairs(pos.course) do
-      opLines[#opLines + 1] = "        " .. serializeWaypoint(wp) .. ","
+      opLines[#opLines + 1] = "        " .. formatWaypoint(wp) .. ","
     end
     opLines[#opLines + 1] = "      },"
     opLines[#opLines + 1] = "      area = " .. resolveAreaRef(emitter, 1, key, areaRefMap)
@@ -282,7 +282,7 @@ local function emitPositionBlock(opLines, emitter, positions, key, areaRefMap)
       opLines[#opLines + 1] = "      {"
       opLines[#opLines + 1] = "        course = {"
       for _, wp in ipairs(pos.course) do
-        opLines[#opLines + 1] = "          " .. serializeWaypoint(wp) .. ","
+        opLines[#opLines + 1] = "          " .. formatWaypoint(wp) .. ","
       end
       opLines[#opLines + 1] = "        },"
       opLines[#opLines + 1] = "        area = " .. resolveAreaRef(emitter, i, key, areaRefMap)
@@ -296,7 +296,7 @@ end
 ---@param uniqueAreas {key: string, opArea: SBJ__OperationalArea}[] Sorted unique operational areas from Phase 1
 ---@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
 ---@return string # Generated constants.OPERATIONAL_AREAS = { ... } code
-local function generateOpAreasCode(uniqueAreas, areaRefMap)
+local function formatOpAreasCode(uniqueAreas, areaRefMap)
   local opLines = {}
 
   for _, entry in ipairs(uniqueAreas) do
@@ -306,7 +306,7 @@ local function generateOpAreasCode(uniqueAreas, areaRefMap)
     for _, emitter in ipairs(POSITION_EMITTERS) do
       local positions = opArea[emitter.field]
       if positions then
-        emitPositionBlock(opLines, emitter, positions, key, areaRefMap)
+        formatPositionBlock(opLines, emitter, positions, key, areaRefMap)
       end
     end
 
@@ -342,7 +342,7 @@ local FIELD_ORDER = {
 ---Sort a table's string keys alphabetically (ignores non-string keys)
 ---@param tbl table Any table whose string keys should be enumerated in order
 ---@return string[] # Sorted array of string keys found in tbl
-local function sortedStringKeys(tbl)
+local function getSortedStringKeys(tbl)
   local keys = {}
   for k in pairs(tbl) do
     if type(k) == "string" then keys[#keys + 1] = k end
@@ -366,7 +366,7 @@ end
 ---@param value any Field value (expected number)
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string|nil # Constant reference, or nil to fall through to default
-local function serializeStateField(value, ctx)
+local function formatStateField(value, ctx)
   if type(value) ~= "number" then return nil end
   local key = ctx.reverseState[value]
   return key and ("constants.MISSILE_SYSTEM_STATE." .. key) or tostring(value)
@@ -376,17 +376,17 @@ end
 ---@param value any Field value (expected opArea table)
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string|nil # Constant reference, or nil to fall through to default
-local function serializeOperationalAreaField(value, ctx)
+local function formatOperationalAreaField(value, ctx)
   if type(value) ~= "table" then return nil end
   local key = ctx.opAreaMap[value]
-  return key and ("constants.OPERATIONAL_AREAS." .. key) or serializeValue(value, 2, ctx.opAreaMap)
+  return key and ("constants.OPERATIONAL_AREAS." .. key) or formatValue(value, 2, ctx.opAreaMap)
 end
 
 ---Serialize a weapon DBID (scalar or array) to WEAPONS constant reference(s)
 ---@param value any Field value (expected number or number[])
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string|nil # Constant reference or inline table, or nil to fall through
-local function serializeWeaponDBIDField(value, ctx)
+local function formatWeaponDBIDField(value, ctx)
   if type(value) == "number" then
     local key = ctx.reverseWeapons[value]
     return key and ("constants.WEAPONS." .. key) or tostring(value)
@@ -406,7 +406,7 @@ end
 ---@param _ any Unused; threshold value lives in config, not inlined
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string # `configPath.ammoThreshold` expression
-local function serializeAmmoThresholdField(_, ctx)
+local function formatAmmoThresholdField(_, ctx)
   return ctx.configPath .. ".ammoThreshold"
 end
 
@@ -414,7 +414,7 @@ end
 ---@param value any Field value (expected number)
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string|nil # Constant reference, or nil to fall through to default
-local function serializeDbidField(value, ctx)
+local function formatDbidField(value, ctx)
   if type(value) ~= "number" then return nil end
   local key = ctx.reversePlatforms[value]
   return key and ("constants.PLATFORMS." .. key) or tostring(value)
@@ -424,7 +424,7 @@ end
 ---@param value any Field value (expected {dbid:number, mountCount:integer}[])
 ---@param ctx SBJ__FieldSerializerContext Shared serializer context
 ---@return string|nil # Constant reference if match found, nested table otherwise, or nil if not a table
-local function serializeMountDescriptorsField(value, ctx)
+local function formatMountDescriptorsField(value, ctx)
   if type(value) ~= "table" then return nil end
   -- Structural match against each constants.MOUNT_DESCRIPTORS entry by length
   -- and per-entry dbid/mountCount; first match wins. No built-in deep equality
@@ -440,27 +440,27 @@ local function serializeMountDescriptorsField(value, ctx)
       if match then return "constants.MOUNT_DESCRIPTORS." .. k end
     end
   end
-  return serializeValue(value, 2, ctx.opAreaMap)
+  return formatValue(value, 2, ctx.opAreaMap)
 end
 
 ---@type table<string, SBJ__FieldSerializer>
 local FIELD_SERIALIZERS = {
-  state            = serializeStateField,
-  operationalArea  = serializeOperationalAreaField,
-  weaponDBID       = serializeWeaponDBIDField,
-  ammoThreshold    = serializeAmmoThresholdField,
-  dbid             = serializeDbidField,
-  mountDescriptors = serializeMountDescriptorsField,
+  state            = formatStateField,
+  operationalArea  = formatOperationalAreaField,
+  weaponDBID       = formatWeaponDBIDField,
+  ammoThreshold    = formatAmmoThresholdField,
+  dbid             = formatDbidField,
+  mountDescriptors = formatMountDescriptorsField,
 }
 
 ---Fallback serializer used when no field-specific serializer applies
 ---@param value any Field value of unknown type
 ---@param ctx SBJ__FieldSerializerContext Shared context (used for nested opAreaMap lookups)
 ---@return string # Quoted string, primitive tostring, or fully serialized table
-local function serializeDefaultValue(value, ctx)
+local function formatDefaultValue(value, ctx)
   if type(value) == "string" then return string.format("%q", value) end
   if type(value) == "number" or type(value) == "boolean" then return tostring(value) end
-  return serializeValue(value, 2, ctx.opAreaMap)
+  return formatValue(value, 2, ctx.opAreaMap)
 end
 
 ---Resolve a firingUnit field to its serialized Lua expression
@@ -468,16 +468,16 @@ end
 ---@param value any Field value to serialize
 ---@param ctx SBJ__FieldSerializerContext Shared context forwarded to the chosen serializer
 ---@return string # Serialized Lua expression for the field value
-local function serializeField(field, value, ctx)
+local function formatField(field, value, ctx)
   local serializer = FIELD_SERIALIZERS[field]
   local result = serializer and serializer(value, ctx)
-  return result or serializeDefaultValue(value, ctx)
+  return result or formatDefaultValue(value, ctx)
 end
 
 ---Serialize a firingUnit reference (string or string-array), or nil if unsupported type
 ---@param value string|string[]|any Single unit name, array of unit names, or other
 ---@return string|nil # Quoted string, inline array, or nil when value type is unsupported
-local function serializeFiringUnitRef(value)
+local function formatFiringUnitRef(value)
   if type(value) == "string" then
     return string.format("%q", value)
   end
@@ -494,7 +494,7 @@ end
 ---Compute firingUnit field emission order: FIELD_ORDER first, extras alphabetically
 ---@param unit table FiringUnit descriptor whose fields should be ordered
 ---@return string[] # Ordered field names for serialization
-local function orderFiringUnitFields(unit)
+local function getOrderedFiringUnitFields(unit)
   local ordered, seen = {}, {}
   for _, f in ipairs(FIELD_ORDER) do
     if unit[f] ~= nil then
@@ -516,16 +516,16 @@ end
 ---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
 ---@return string|nil # Serialized block, or nil when ammunitionMap is nil
-local function emitAmmunitionsBlock(configPath, ammunitionMap, wpnDefault)
+local function formatAmmunitionsBlock(configPath, ammunitionMap, wpnDefault)
   if not ammunitionMap then return nil end
   local lines = { configPath .. ".ammunitions = {" }
-  for _, name in ipairs(sortedStringKeys(ammunitionMap)) do
+  for _, name in ipairs(getSortedStringKeys(ammunitionMap)) do
     local ammo = ammunitionMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    guid = " .. string.format("%q", ammo.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
-    lines[#lines + 1] = "    wpnCurrent = " .. serializeWpnRef(ammo.wpnCurrent, wpnDefault, configPath) .. ","
-    lines[#lines + 1] = "    wpnDefault = " .. serializeWpnRef(ammo.wpnDefault, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    wpnCurrent = " .. formatWpnRef(ammo.wpnCurrent, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    wpnDefault = " .. formatWpnRef(ammo.wpnDefault, wpnDefault, configPath) .. ","
     lines[#lines + 1] = "  },"
   end
   lines[#lines + 1] = "}"
@@ -538,22 +538,22 @@ end
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
 ---@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
 ---@return string|nil # Serialized block, or nil when resupplyUnitMap is nil
-local function emitResupplyUnitsBlock(configPath, resupplyUnitMap, wpnDefault, ctx)
+local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, wpnDefault, ctx)
   if not resupplyUnitMap then return nil end
   local lines = { configPath .. ".resupplyUnits = {" }
-  for _, name in ipairs(sortedStringKeys(resupplyUnitMap)) do
+  for _, name in ipairs(getSortedStringKeys(resupplyUnitMap)) do
     local unit = resupplyUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    guid = " .. string.format("%q", unit.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
-    lines[#lines + 1] = "    wpnCurrent = " .. serializeWpnRef(unit.wpnCurrent, wpnDefault, configPath) .. ","
-    lines[#lines + 1] = "    wpnDefault = " .. serializeWpnRef(unit.wpnDefault, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    wpnCurrent = " .. formatWpnRef(unit.wpnCurrent, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    wpnDefault = " .. formatWpnRef(unit.wpnDefault, wpnDefault, configPath) .. ","
     lines[#lines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
-    lines[#lines + 1] = "    operationalArea = " .. serializeField("operationalArea", unit.operationalArea, ctx) .. ","
-    lines[#lines + 1] = "    state = " .. serializeField("state", unit.state, ctx) .. ","
+    lines[#lines + 1] = "    operationalArea = " .. formatField("operationalArea", unit.operationalArea, ctx) .. ","
+    lines[#lines + 1] = "    state = " .. formatField("state", unit.state, ctx) .. ","
     lines[#lines + 1] = "    ammunition = " .. string.format("%q", unit.ammunition) .. ","
 
-    local firingUnitRef = serializeFiringUnitRef(unit.firingUnit)
+    local firingUnitRef = formatFiringUnitRef(unit.firingUnit)
     if firingUnitRef then
       -- Intentionally no trailing comma: firingUnit is the last field emitted and
       -- the original output shape omitted it here. Lua accepts either form.
@@ -571,13 +571,13 @@ end
 ---@param firingUnitMap table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
 ---@param ctx SBJ__FieldSerializerContext Shared context for per-field constant lookup
 ---@return string # Serialized `config.{...}.firingUnits = { ... }` block
-local function emitFiringUnitsBlock(configPath, firingUnitMap, ctx)
+local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
   local lines = { configPath .. ".firingUnits = {" }
-  for _, name in ipairs(sortedStringKeys(firingUnitMap)) do
+  for _, name in ipairs(getSortedStringKeys(firingUnitMap)) do
     local unit = firingUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
-    for _, field in ipairs(orderFiringUnitFields(unit)) do
-      lines[#lines + 1] = "    " .. field .. " = " .. serializeField(field, unit[field], ctx) .. ","
+    for _, field in ipairs(getOrderedFiringUnitFields(unit)) do
+      lines[#lines + 1] = "    " .. field .. " = " .. formatField(field, unit[field], ctx) .. ","
     end
     lines[#lines + 1] = "  },"
   end
@@ -590,7 +590,7 @@ end
 ---@param groundForceConfig SBJ__GroundForceConfig Source ground-force config to serialize
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
 ---@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
-local function generateConfigCode(sideField, groundForceConfig, opAreaMap)
+local function formatConfigCode(sideField, groundForceConfig, opAreaMap)
   local ctx = {
     configPath = "",
     opAreaMap = opAreaMap,
@@ -600,15 +600,15 @@ local function generateConfigCode(sideField, groundForceConfig, opAreaMap)
   }
 
   local blocks = {}
-  for _, sysKey in ipairs(sortedStringKeys(groundForceConfig)) do
+  for _, sysKey in ipairs(getSortedStringKeys(groundForceConfig)) do
     local sysConfig = groundForceConfig[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       ctx.configPath = "config." .. sideField .. ".ground." .. sysKey
-      local ammoBlock = emitAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.wpnDefault)
+      local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.wpnDefault)
       if ammoBlock then blocks[#blocks + 1] = ammoBlock end
-      local resBlock = emitResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.wpnDefault, ctx)
+      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.wpnDefault, ctx)
       if resBlock then blocks[#blocks + 1] = resBlock end
-      blocks[#blocks + 1] = emitFiringUnitsBlock(ctx.configPath, sysConfig.firingUnits, ctx)
+      blocks[#blocks + 1] = formatFiringUnitsBlock(ctx.configPath, sysConfig.firingUnits, ctx)
     end
   end
 
@@ -631,18 +631,18 @@ end
 ---Generate Lua source-code strings from ground-force configuration
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
 ---`config.{side}.ground.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
----Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.generate("China", config.c.ground)
+---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.c.ground)
 ---@param sideName string Side name ("China", "Taiwan")
 ---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@return string areasStr constants.AREAS code
 ---@return string opAreasStr constants.OPERATIONAL_AREAS code
 ---@return string configStr config blocks with constant references
-function ConfigCodeGenerator.generate(sideName, groundForceConfig)
+function ConfigCodeGenerator.format(sideName, groundForceConfig)
   local sideField = resolveSideField(sideName)
   local uniqueAreas, opAreaMap = collectUniqueAreas(groundForceConfig)
-  local areasStr, areaRefMap = generateAreasCode(uniqueAreas)
-  local opAreasStr = generateOpAreasCode(uniqueAreas, areaRefMap)
-  local configStr = generateConfigCode(sideField, groundForceConfig, opAreaMap)
+  local areasStr, areaRefMap = formatAreasCode(uniqueAreas)
+  local opAreasStr = formatOpAreasCode(uniqueAreas, areaRefMap)
+  local configStr = formatConfigCode(sideField, groundForceConfig, opAreaMap)
   return areasStr, opAreasStr, configStr
 end
 

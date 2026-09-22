@@ -168,7 +168,7 @@ describe("GnssJamming", function()
       it("should return false when ScenEdit_UnitX returns nil", function()
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns(nil))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
         assert.stub(errorStub).was.called(1)
@@ -179,7 +179,7 @@ describe("GnssJamming", function()
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns({ guid = "WPN-001" }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
         assert.stub(errorStub).was.called(1)
@@ -197,7 +197,7 @@ describe("GnssJamming", function()
         trackStub(stub(GameApi, "ScenEdit_UnitX").returns({ guid = weapon.guid }))
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(weapon))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
       end)
@@ -221,7 +221,7 @@ describe("GnssJamming", function()
           return 50
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_true(result)
         assert.are.equal("BOL", weapon.target.guid)
@@ -244,7 +244,7 @@ describe("GnssJamming", function()
           return 50
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_true(result)
         assert.are.equal("BOL", weapon.target.guid)
@@ -270,7 +270,7 @@ describe("GnssJamming", function()
           return 50
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_true(result)
         -- First two waypoints should be preserved
@@ -300,7 +300,7 @@ describe("GnssJamming", function()
           return 0
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
         assert.stub(logStub).was.called(1)
@@ -317,7 +317,7 @@ describe("GnssJamming", function()
           return 0
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
       end)
@@ -343,7 +343,7 @@ describe("GnssJamming", function()
           return 0
         end))
 
-        local result = GnssJamming.jamming(makeConfig(), "Taiwan")
+        local result = GnssJamming.processJamming(makeConfig(), "Taiwan")
 
         assert.is_false(result)
         assert.stub(errorStub).was.called(1)
@@ -374,7 +374,7 @@ describe("GnssJamming", function()
         end))
 
         local config = makeConfig("c")
-        local result = GnssJamming.jamming(config, "China")
+        local result = GnssJamming.processJamming(config, "China")
 
         assert.is_true(result)
       end)
@@ -401,7 +401,7 @@ describe("GnssJamming", function()
       local deleteReferencePointStub = trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
       local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
-      local unitEntersAreaEventStub = trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      local unitEntersAreaEventStub = trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local count = GnssJamming.removeJammers(jammerDescriptors, "China")
 
@@ -460,7 +460,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
       trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
       trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local count = GnssJamming.removeJammers(jammerDescriptors, "China")
 
@@ -501,9 +501,9 @@ describe("GnssJamming", function()
 
       local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(createdUnit))
       local setEMCONStub = trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns({ "RP-001", "RP-002" }))
+      trackStub(stub(GameUtils, "createArea").returns({ "RP-001", "RP-002" }))
       local addZoneStub = trackStub(stub(GameApi, "ScenEdit_AddZone"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local success, unit = GnssJamming.addGnssJammer(descriptor, "China")
 
@@ -532,9 +532,9 @@ describe("GnssJamming", function()
         return makeUnit({ guid = "UNIT-NEW" })
       end))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns({ "RP-001" }))
+      trackStub(stub(GameUtils, "createArea").returns({ "RP-001" }))
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       GnssJamming.addGnssJammer(descriptor, "China")
 
@@ -552,11 +552,11 @@ describe("GnssJamming", function()
     end)
 
     -- Negative: returns false when area creation fails
-    it("should return false when newArea returns non-table result", function()
+    it("should return false when createArea returns non-table result", function()
       local createdUnit = makeUnit({ guid = "NEW-JAMMER" })
       trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(createdUnit))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns(false))
+      trackStub(stub(GameUtils, "createArea").returns(false))
 
       local success, unit = GnssJamming.addGnssJammer(makeDescriptor(), "China")
 
@@ -590,9 +590,9 @@ describe("GnssJamming", function()
         return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
       end))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns({ "RP-001" }))
+      trackStub(stub(GameUtils, "createArea").returns({ "RP-001" }))
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local count = GnssJamming.addGnssJammers(descriptors, "China")
 
@@ -613,9 +613,9 @@ describe("GnssJamming", function()
         return nil, nil
       end))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns({ "RP-001" }))
+      trackStub(stub(GameUtils, "createArea").returns({ "RP-001" }))
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local count = GnssJamming.addGnssJammers(descriptors, "China")
 
@@ -632,7 +632,7 @@ describe("GnssJamming", function()
         makeUnit(), { latitude = 25.0, longitude = 121.0 }
       ))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
-      trackStub(stub(GameUtils, "newArea").returns(false))
+      trackStub(stub(GameUtils, "createArea").returns(false))
 
       local count = GnssJamming.addGnssJammers(descriptors, "China")
 
@@ -669,7 +669,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
       local deleteReferencePointStub = trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
       local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       local result = GnssJamming.removeJammingZoneByName(jammerDescriptors, "China", "alpha")
 
@@ -693,7 +693,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_DeleteReferencePoint"))
       trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
-      trackStub(stub(GameUtils, "unitEntersAreaEvent").returns(true))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
       GnssJamming.removeJammingZoneByName({ alpha = descriptor }, "China", "alpha")
 

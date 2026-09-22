@@ -785,8 +785,8 @@ describe("ShipMovement", function()
     before_each(function()
       stubGetRPs = trackStub(stub(GameApi, "ScenEdit_GetReferencePoints"))
       stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
-      stubGenerateLocations = trackStub(stub(GameUtils, "generateLocations"))
-      stubInsertList = trackStub(stub(Utils, "insertList"))
+      stubGenerateLocations = trackStub(stub(GameUtils, "buildLocations"))
+      stubInsertList = trackStub(stub(Utils, "addAll"))
     end)
 
     -- Positive: initializes calculation result structure
@@ -847,8 +847,8 @@ describe("ShipMovement", function()
       assert.are.equal(constants.PLATFORMS.BARGE, result.barge.dbid)
     end)
 
-    -- Positive: calls generateLocations for each ship type
-    it("should call generateLocations for all 10 ship types per area", function()
+    -- Positive: calls buildLocations for each ship type
+    it("should call buildLocations for all 10 ship types per area", function()
       local rp = makeLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
@@ -968,8 +968,8 @@ describe("ShipMovement", function()
       assert.is_not_nil(calculationResult.Penghu)
     end)
 
-    -- Positive: passes horizontal distance and bearing to generateLocations
-    it("should pass correct horizontal distance and bearing to generateLocations", function()
+    -- Positive: passes horizontal distance and bearing to buildLocations
+    it("should pass correct horizontal distance and bearing to buildLocations", function()
       local rp = makeLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
@@ -1025,7 +1025,7 @@ describe("ShipMovement", function()
     end)
 
     -- Boundary: area with zero ships of a type
-    it("should still call generateLocations with num=0 for types not present", function()
+    it("should still call buildLocations with num=0 for types not present", function()
       local rp = makeLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)

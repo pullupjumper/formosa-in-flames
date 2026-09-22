@@ -198,10 +198,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- handleSupplyAssetDestruction
+  -- processSupplyAssetDestruction
   -- ============================================================================
 
-  describe("handleSupplyAssetDestruction", function()
+  describe("processSupplyAssetDestruction", function()
     -- Positive: logs ammunition delta when a tracked ammo depot is destroyed
     it("should log ammunition delta when supply asset destruction is processed", function()
       local systemCtx = {
@@ -216,7 +216,7 @@ describe("MissileSystem", function()
       }
       local unit = { name = "Ammo Depot Alpha" }
 
-      local result, detail = MissileSystem.handleSupplyAssetDestruction(unit, systemCtx)
+      local result, detail = MissileSystem.processSupplyAssetDestruction(unit, systemCtx)
 
       assert.is_true(result)
       assert.are.equal("ammo_depot", detail.role)
@@ -232,10 +232,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- handleMoveToPositionEvent
+  -- processMoveToPositionEvent
   -- ============================================================================
 
-  describe("handleMoveToPositionEvent", function()
+  describe("processMoveToPositionEvent", function()
     local SYSTEM_KEY = constants.MISSILE_SYSTEM_TYPES.SRBM
 
     local function groundCtxWith(systemCtx)
@@ -269,7 +269,7 @@ describe("MissileSystem", function()
       trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
@@ -301,7 +301,7 @@ describe("MissileSystem", function()
       trackStub(Movement, "isRepositioning").returns(false)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
@@ -327,7 +327,7 @@ describe("MissileSystem", function()
       local dropContactStub = trackStub(contact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
@@ -354,7 +354,7 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
@@ -388,7 +388,7 @@ describe("MissileSystem", function()
       local otherDropContactStub = trackStub(otherContact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
@@ -419,7 +419,7 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
@@ -460,7 +460,7 @@ describe("MissileSystem", function()
       trackStub(Concealment, "hideUnit")
           .returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
@@ -496,7 +496,7 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
@@ -530,7 +530,7 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -565,7 +565,7 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -597,7 +597,7 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -643,7 +643,7 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(true)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -678,7 +678,7 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -711,7 +711,7 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -746,7 +746,7 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("AHA"),
@@ -779,7 +779,7 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("AHA"),
@@ -811,7 +811,7 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEventRaw("(China) Arrive in MASK - 1 - AreaA"),
@@ -849,7 +849,7 @@ describe("MissileSystem", function()
       }
 
       for _, description in ipairs(bogus) do
-        MissileSystem.handleMoveToPositionEvent({
+        MissileSystem.processMoveToPositionEvent({
           groundCtx = groundCtxWith(systemCtx),
           unit = unit,
           event = enterEventRaw(description),
@@ -879,7 +879,7 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
 
       -- areaName "HALLWAY-RL-FP" contains HA/RL/FP substrings; pos type must still be FP
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP", "HALLWAY-RL-FP"),
@@ -909,7 +909,7 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
@@ -936,7 +936,7 @@ describe("MissileSystem", function()
       local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.handleMoveToPositionEvent({
+      MissileSystem.processMoveToPositionEvent({
         groundCtx = groundCtxWith(disabledCtx),
         unit = unit,
         event = enterEvent("FP"),

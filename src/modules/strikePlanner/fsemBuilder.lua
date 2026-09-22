@@ -37,7 +37,7 @@ local FIRING_UNIT_STATUS_LOG_FIELD = {
 }
 
 -- Failure reasons written straight into reason=<token>. INSUFFICIENT_TARGETS and
--- NO_AVAILABLE_FIRING_UNITS also drive the retry decision in FsemBuilder.execute.
+-- NO_AVAILABLE_FIRING_UNITS also drive the retry decision in FsemBuilder.build.
 local PROCESS_REASON = {
   INSUFFICIENT_TARGETS = "insufficient_targets",
   NO_AVAILABLE_FIRING_UNITS = "no_available_firing_units",
@@ -76,7 +76,7 @@ end
 ---Increment the count for one firing unit status
 ---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Status counter; mutated
 ---@param status string Firing unit status from FIRING_UNIT_STATUS
-local function incrementFiringUnitStatus(firingUnitStatusCounter, status)
+local function updateFiringUnitStatus(firingUnitStatusCounter, status)
   if firingUnitStatusCounter[status] ~= nil then
     firingUnitStatusCounter[status] = firingUnitStatusCounter[status] + 1
   end
@@ -190,7 +190,7 @@ end
 ---@param firingUnitStatusCounter SBJ__FiringUnitStatusCounter Validation outcome counter; mutated
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FiringUnit[] # Firing units ready for assignment
-local function selectAvailableFiringUnits(saveData, taskTemplate, firingUnitStatusCounter, passCtx)
+local function filterAvailableFiringUnits(saveData, taskTemplate, firingUnitStatusCounter, passCtx)
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
@@ -203,7 +203,7 @@ local function selectAvailableFiringUnits(saveData, taskTemplate, firingUnitStat
       status = validateFiringUnitStatus(firingUnitCtx, passCtx)
     end
 
-    incrementFiringUnitStatus(firingUnitStatusCounter, status)
+    updateFiringUnitStatus(firingUnitStatusCounter, status)
     if status == FIRING_UNIT_STATUS.AVAILABLE then
       table.insert(availableFiringUnits, firingUnit)
     end
@@ -228,7 +228,7 @@ end
 ---Mark newly assigned firing units so a later task in the same pass cannot reuse them
 ---@param assignedFiringUnitNameSet table<string, boolean> Shared assigned unit name map; mutated
 ---@param availableFiringUnits SBJ__FiringUnit[] Firing units assigned to the current task
-local function markFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiringUnits)
+local function setFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiringUnits)
   for _, firingUnit in ipairs(availableFiringUnits) do
     assignedFiringUnitNameSet[firingUnit.name] = true
   end
@@ -285,7 +285,7 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex
 
     if targets then
       slotIndex = slotIndex + 1
-      local availableFiringUnits = selectAvailableFiringUnits(
+      local availableFiringUnits = filterAvailableFiringUnits(
         saveData,
         taskTemplate,
         firingUnitStatusCounter,
@@ -300,7 +300,7 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex
         task.startTime = buildTaskStartTime(matrixStartTime, matrixTemplate.strikeInterval, slotIndex)
         task.isFinished = false
         task.target.list = targets
-        markFiringUnitsAssigned(passCtx.assignedFiringUnitNames, availableFiringUnits)
+        setFiringUnitsAssigned(passCtx.assignedFiringUnitNames, availableFiringUnits)
         table.insert(fireSupportTasks, task)
       end
     end
@@ -371,10 +371,10 @@ local function createAndInsertMatrixFromTemplate(
     }
   end
 
-  local matrixName = DynamicState.generateUniqueGroundOperationName(matrixTemplate.name, reconType, saveData)
+  local matrixName = DynamicState.buildUniqueGroundOperationName(matrixTemplate.name, reconType, saveData)
   local matrix = buildMatrix(matrixTemplate, matrixName, fireSupportTasks, currentTime)
   saveData.c.ground.fireSupportPlan[matrix.name] = matrix
-  DynamicState.registerGeneratedOperation("ground", matrix.name, saveData)
+  DynamicState.addGeneratedOperation("ground", matrix.name, saveData)
   return { success = true, tag = "OK", fields = statusFields }
 end
 
@@ -498,7 +498,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
 ---@return boolean # True if any ground operation was processed and executed, false if disabled or none ready
-function FsemBuilder.execute(config, saveData, contacts)
+function FsemBuilder.build(config, saveData, contacts)
   if not saveData.c.dynamicOperations.enabled then
     return false
   end
@@ -555,7 +555,7 @@ function FsemBuilder.execute(config, saveData, contacts)
       fields.reason = outcome.reason
 
       if outcome.success then
-        DynamicState.markOperationExecuted(operationBatch, operation)
+        DynamicState.setOperationExecuted(operationBatch, operation)
         hasExecutedAny = true
       elseif RETRYABLE_REASON[outcome.reason] then
         -- Retryable operations stay pending inside the window and re-report the
