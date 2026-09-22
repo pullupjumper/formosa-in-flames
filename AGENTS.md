@@ -38,6 +38,7 @@ The project uses a **modular event-driven architecture** centered around `src/co
 
 - **API Abstraction**: All CMO game API calls use `src/utils/gameApi.lua` wrappers. Never call raw `ScenEdit_*` functions directly.
 - **Type Safety**: Use LuaLS annotations (`---@param`, `---@return`) with prefixes `SBJ__*` (project types) and `CMO__*` (game API types).
+- **Naming**: Follow `docs/naming.md` for file, module, function, variable, parameter, type, and config key naming.
 - **Config vs Constants**: Use `config.*` for gameplay values that may need adjustment; use `constants.*` for immutable identifiers (DBIDs, GUIDs, area definitions).
 - **No Hardcoding**: Never hardcode DBIDs, GUIDs, or coordinates directly in logic.
 
