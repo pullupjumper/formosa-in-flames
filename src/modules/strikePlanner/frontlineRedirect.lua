@@ -28,11 +28,11 @@ end
 
 ---Apply configured frontline redirect mappings when sticky redirect is active
 ---@param config SBJ__Config Configuration data
----@param reconContext SBJ__ReconContext Reconnaissance context
+---@param reconCtx SBJ__ReconContext Reconnaissance context
 ---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list
 ---@return SBJ__ReconStrikeMapping[] # Original or rewritten mappings
-function FrontlineRedirect.applyMappings(config, reconContext, strikeMappings)
-  if reconContext.frontlineRedirected and
+function FrontlineRedirect.applyMappings(config, reconCtx, strikeMappings)
+  if reconCtx.frontlineRedirected and
       config.c.recon.frontlineRedirect and
       config.c.recon.frontlineRedirect.mappings then
     return FrontlineRedirect.rewriteMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
@@ -46,13 +46,13 @@ end
 -- ============================================================================
 
 ---Decide whether frontline strike packages should be redirected to rear bases with AAR
----Sticky: mutates reconContext.frontlineRedirected on first trigger; skips recompute thereafter.
+---Sticky: mutates reconCtx.frontlineRedirected on first trigger; skips recompute thereafter.
 ---@param config SBJ__Config Configuration data
----@param reconContext SBJ__ReconContext Reconnaissance context (mutated when redirect triggers)
+---@param reconCtx SBJ__ReconContext Reconnaissance context (mutated when redirect triggers)
 ---@return boolean isRedirected Whether redirect is active after this evaluation
 ---@return table<string, any>|nil activationFields Non-nil only on the tick redirect just activated; caller should log it
-function FrontlineRedirect.evaluate(config, reconContext)
-  if reconContext.frontlineRedirected then
+function FrontlineRedirect.evaluate(config, reconCtx)
+  if reconCtx.frontlineRedirected then
     return true, nil
   end
 
@@ -64,7 +64,7 @@ function FrontlineRedirect.evaluate(config, reconContext)
   local summary = AirbaseAttrition.calculate(config.c.air.landBased.deployedACs, cfg.frontlineBaseNames)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
-    reconContext.frontlineRedirected = true
+    reconCtx.frontlineRedirected = true
 
     return true, {
       action = "activate",

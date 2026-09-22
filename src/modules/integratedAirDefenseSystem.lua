@@ -39,13 +39,13 @@ local TAIWAN_RADAR_DBIDS = {
 }
 
 ---Disable units under C2 node by setting them out of communications
----@param c2Context SBJ__C2Context The C2 context containing the units to disable
+---@param c2Ctx SBJ__C2Context The C2 context containing the units to disable
 ---@param type string Unit type to disable ('radar' or 'sam')
-local function disableUnitsUnderC2Node(c2Context, type)
-  local ctxs = c2Context[type]
+local function disableUnitsUnderC2Node(c2Ctx, type)
+  local ctxMap = c2Ctx[type]
 
-  if ctxs then
-    for _, ctx in pairs(ctxs) do
+  if ctxMap then
+    for _, ctx in pairs(ctxMap) do
       local actualUnit = GameApi.ScenEdit_GetUnit(ctx.guid)
 
       if not actualUnit then
@@ -95,43 +95,43 @@ function IntegratedAirDefenseSystem.isSAM(dbid)
 end
 
 ---Process command and control disruption when C2 node is destroyed
----@param iadsContext SBJ__IADSContext IADS context containing C2 nodes
+---@param iadsCtx SBJ__IADSContext IADS context containing C2 nodes
 ---@param c2 CMO__Unit The destroyed command and control node unit
-function IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
+function IntegratedAirDefenseSystem.processC2Disruption(iadsCtx, c2)
   -- Check China C2 nodes
-  if iadsContext.c2 and iadsContext.c2[c2.guid] then
-    disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsContext.c2[c2.guid], "sam")
-    iadsContext.c2[c2.guid] = nil
+  if iadsCtx.c2 and iadsCtx.c2[c2.guid] then
+    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], "radar")
+    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], "sam")
+    iadsCtx.c2[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s C2 is destroyed")
   end
 
   -- Check Taiwan ROCC nodes
-  if iadsContext.rocc and iadsContext.rocc[c2.guid] then
-    disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsContext.rocc[c2.guid], "sam")
-    iadsContext.rocc[c2.guid] = nil
+  if iadsCtx.rocc and iadsCtx.rocc[c2.guid] then
+    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], "radar")
+    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], "sam")
+    iadsCtx.rocc[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s ROCC is destroyed")
   end
 
   -- Check Taiwan TAAOC nodes
-  if iadsContext.taaoc and iadsContext.taaoc[c2.guid] then
-    disableUnitsUnderC2Node(iadsContext.taaoc[c2.guid], "sam")
-    iadsContext.taaoc[c2.guid] = nil
+  if iadsCtx.taaoc and iadsCtx.taaoc[c2.guid] then
+    disableUnitsUnderC2Node(iadsCtx.taaoc[c2.guid], "sam")
+    iadsCtx.taaoc[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s TAAOC is destroyed")
   end
 end
 
 ---Remove destroyed unit from IADS tracking by clearing its data from C2 context
----@param c2TypeContext table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.c2, IADSContext.rocc, or IADSContext.taaoc)
+---@param c2TypeCtx table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.c2, IADSContext.rocc, or IADSContext.taaoc)
 ---@param type string Unit type ('radar' or 'sam')
 ---@param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
-function IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeContext, type, destroyedUnit)
+function IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeCtx, type, destroyedUnit)
   -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
-  for _, ctx in pairs(c2TypeContext) do
+  for _, ctx in pairs(c2TypeCtx) do
     for _, area in pairs(ctx.areas) do
-      if destroyedUnit:inArea(area) and c2TypeContext[ctx.guid] then
-        c2TypeContext[ctx.guid][type][destroyedUnit.guid] = nil
+      if destroyedUnit:inArea(area) and c2TypeCtx[ctx.guid] then
+        c2TypeCtx[ctx.guid][type][destroyedUnit.guid] = nil
         Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, destroyedUnit.name .. "'s " .. type .. " is destroyed")
       end
     end
@@ -222,11 +222,11 @@ end
 
 ---Initialize C2 facilities context for China's IADS with radar and SAM associations
 ---@param iadsConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
----@param iadsContext SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
+---@param iadsCtx SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 ---@return boolean # True if initialization succeeded, false if no units found
-function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsContext)
+function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCtx)
   local filteredUnits = GameApi.VP_GetSide({ name = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
-  iadsContext.c2 = {}
+  iadsCtx.c2 = {}
 
   if not filteredUnits then
     return false
@@ -253,7 +253,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
       local randomIdx = math.random(#facilities)
       ---@type CMO__Unit
       local randomFacility = facilities[randomIdx]
-      iadsContext.c2[randomFacility.guid] = {
+      iadsCtx.c2[randomFacility.guid] = {
         name = randomFacility.name .. "/" .. setting.name,
         msg = "Radio source, " .. randomFacility.name,
         guid = randomFacility.guid,
@@ -268,12 +268,12 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
   for _, unit in ipairs(filteredUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.guid)
 
-    for c2GUID, c2Ctx in pairs(iadsContext.c2) do
+    for c2GUID, c2Ctx in pairs(iadsCtx.c2) do
       for _, area in ipairs(c2Ctx.areas) do
         if actualUnit and actualUnit:inArea(area) then
           -- SAM systems
           if IntegratedAirDefenseSystem.isPLASAM(actualUnit.dbid) and not string.find(actualUnit.name, "DECOY") then
-            iadsContext.c2[c2GUID].sam[actualUnit.guid] = {
+            iadsCtx.c2[c2GUID].sam[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -286,7 +286,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
 
           -- Radar systems
           if IntegratedAirDefenseSystem.isPLARadar(actualUnit.dbid) then
-            iadsContext.c2[c2GUID].radar[actualUnit.guid] = {
+            iadsCtx.c2[c2GUID].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -306,12 +306,12 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCont
 end
 
 ---Initialize C2 context for a specific C2 facility unit
----@param c2Context table<string, SBJ__C2Context> C2 context mapping to be populated with C2 node data
+---@param c2Ctx table<string, SBJ__C2Context> C2 context mapping to be populated with C2 node data
 ---@param c2Descriptor SBJ__C2Descriptor C2 descriptor containing name and deployment areas
 ---@param c2GUID string GUID of the C2 facility unit being initialized
 ---@param c2Type string C2 type ('c2', 'rocc', or 'taaoc') determining which sub-tables to initialize
-local function initC2Context(c2Context, c2Descriptor, c2GUID, c2Type)
-  c2Context[c2GUID] = {
+local function initC2Context(c2Ctx, c2Descriptor, c2GUID, c2Type)
+  c2Ctx[c2GUID] = {
     name = c2Descriptor.name,
     msg = "Radio source, C2",
     guid = c2GUID,
@@ -320,14 +320,14 @@ local function initC2Context(c2Context, c2Descriptor, c2GUID, c2Type)
   }
 
   if c2Type == "c2" or c2Type == "rocc" then
-    c2Context[c2GUID].radar = {}
+    c2Ctx[c2GUID].radar = {}
   end
 end
 
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
 ---@param iadsConfig SBJ__IADSFactionConfig IADS configuration for faction
----@param iadsContext SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
-function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
+---@param iadsCtx SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
+function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsCtx)
   local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
@@ -343,11 +343,11 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
           if IntegratedAirDefenseSystem.isSAM(actualUnit.dbid) then
-            if not iadsContext.rocc[c2.guid] then
-              initC2Context(iadsContext.rocc, descriptor, c2.guid, "rocc")
+            if not iadsCtx.rocc[c2.guid] then
+              initC2Context(iadsCtx.rocc, descriptor, c2.guid, "rocc")
             end
 
-            iadsContext.rocc[c2.guid].sam[actualUnit.guid] = {
+            iadsCtx.rocc[c2.guid].sam[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -359,11 +359,11 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
           end
 
           if IntegratedAirDefenseSystem.isRadar(actualUnit.dbid) then
-            if not iadsContext.rocc[c2.guid] then
-              initC2Context(iadsContext.rocc, descriptor, c2.guid, "rocc")
+            if not iadsCtx.rocc[c2.guid] then
+              initC2Context(iadsCtx.rocc, descriptor, c2.guid, "rocc")
             end
 
-            iadsContext.rocc[c2.guid].radar[actualUnit.guid] = {
+            iadsCtx.rocc[c2.guid].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,
@@ -383,11 +383,11 @@ function IntegratedAirDefenseSystem.initIADSContexts(iadsConfig, iadsContext)
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
           if IntegratedAirDefenseSystem.isMRADS(actualUnit.dbid) then
-            if not iadsContext.taaoc[c2.guid] then
-              initC2Context(iadsContext.taaoc, descriptor, c2.guid, "taaoc")
+            if not iadsCtx.taaoc[c2.guid] then
+              initC2Context(iadsCtx.taaoc, descriptor, c2.guid, "taaoc")
             end
 
-            iadsContext.taaoc[c2.guid].sam[actualUnit.guid] = {
+            iadsCtx.taaoc[c2.guid].sam[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,
               OODA = actualUnit.OODA,

@@ -214,8 +214,8 @@ function UnitStatusUI.wcsSettingTable()
     return
   end
 
-  local HTMLTemplate = getWCSSettingTemplate()
-  local msg = string.format(HTMLTemplate)
+  local htmlTemplate = getWCSSettingTemplate()
+  local msg = string.format(htmlTemplate)
   local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
 
   if form["pressed"] and form["pressed"] == "Done" then
@@ -629,9 +629,9 @@ function UnitStatusUI.createUI(config, sideName)
     local landingUnitsString = gKH.json.stringify(landingUnitsData)
 
 
-    local HTMLTemplate = getHTMLTemplate()
+    local htmlTemplate = getHTMLTemplate()
     local msg = string.format(
-      HTMLTemplate,
+      htmlTemplate,
       signalDataString,
       batteryDataString,
       c2NodeDataString,
@@ -652,9 +652,9 @@ function UnitStatusUI.createUI(config, sideName)
     local magazineDataString = createMagazineDataString(config, sideName)
     local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 
-    local HTMLTemplate = getHTMLTemplate()
+    local htmlTemplate = getHTMLTemplate()
     local msg = string.format(
-      HTMLTemplate,
+      htmlTemplate,
       signalDataString,
       batteryDataString,
       c2NodeDataString,
@@ -683,9 +683,9 @@ function UnitStatusUI.createSetupMenu(config, sideName)
   local missileSystemDataString = createMissileSystemDataString(config, sideName)
   local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
 
-  local HTMLTemplate = getSetupMenuTemplate()
+  local htmlTemplate = getSetupMenuTemplate()
   local msg = string.format(
-    HTMLTemplate,
+    htmlTemplate,
     gpsJammerDataString,
     deployedAircraftDataString,
     missileSystemDataString,

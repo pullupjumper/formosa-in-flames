@@ -34,7 +34,7 @@ if unit then
     --   end
     -- end
 
-    unit.readytime = config.readytime
+    unit.readytime = config.readyTime
     unit.mission = ""
   end
 

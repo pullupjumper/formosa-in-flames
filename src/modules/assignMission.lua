@@ -129,13 +129,13 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, we
     return
   end
 
-  local m = GameApi.ScenEdit_GetMission(airbase.side, missionName)
+  local mission = GameApi.ScenEdit_GetMission(airbase.side, missionName)
 
-  if not m then
+  if not mission then
     return
   end
 
-  m.isactive = false
+  mission.isactive = false
   local result = {}
   local count = 0
   local platforms = airbase.embarkedUnits.Aircraft
@@ -161,8 +161,8 @@ function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, we
     end
   end
 
-  if not m.isactive then
-    m.isactive = true
+  if not mission.isactive then
+    mission.isactive = true
   end
 
   return result

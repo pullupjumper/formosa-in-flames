@@ -73,13 +73,13 @@ local SHIP_TRANSFER_SPECS = {
 -- ============================================================================
 
 ---Collect GUIDs of cargo elements matching a specific DBID up to requested quantity
----@param cargoList CMO__Cargo[] Cargo element array from unit
+---@param cargos CMO__Cargo[] Cargo element array from unit
 ---@param dbid number Target cargo DBID
 ---@param maxCount number Maximum items to collect
 ---@return string[] # Array of matching cargo GUIDs
-local function collectMatchingCargos(cargoList, dbid, maxCount)
+local function collectMatchingCargos(cargos, dbid, maxCount)
   local guids = {}
-  for _, element in ipairs(cargoList) do
+  for _, element in ipairs(cargos) do
     if element.dbid == dbid then
       table.insert(guids, element.guid)
       if #guids == maxCount then break end
@@ -232,13 +232,13 @@ end
 ---@return table<number, boolean> # Set of weapon DBIDs
 local function normalizeWeaponDBIDs(weaponDBID)
   if not weaponDBID then return {} end
-  local set = {}
+  local weaponDBIDSet = {}
   if type(weaponDBID) == "table" then
-    for _, id in pairs(weaponDBID) do set[id] = true end
+    for _, id in pairs(weaponDBID) do weaponDBIDSet[id] = true end
   else
-    set[weaponDBID] = true
+    weaponDBIDSet[weaponDBID] = true
   end
-  return set
+  return weaponDBIDSet
 end
 
 ---Create a cargo proxy unit on a base ship for a given unit DBID
@@ -286,7 +286,7 @@ end
 ---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@return table<number, number> # Weapon DBID to current count mapping
 local function cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  local weaponCounts = {}
+  local weaponCountMap = {}
 
   for _, mount in ipairs(sourceUnit.mounts) do
     GameApi.ScenEdit_UpdateUnit({
@@ -299,21 +299,21 @@ local function cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
     if #mount.mount_weapons > 0 and next(weaponDBIDSet) then
       for _, wpn in ipairs(mount.mount_weapons) do
         if weaponDBIDSet[wpn.wpn_dbid] then
-          weaponCounts[wpn.wpn_dbid] = (weaponCounts[wpn.wpn_dbid] or 0) + wpn.wpn_current
+          weaponCountMap[wpn.wpn_dbid] = (weaponCountMap[wpn.wpn_dbid] or 0) + wpn.wpn_current
         end
       end
     end
   end
 
-  return weaponCounts
+  return weaponCountMap
 end
 
 ---Synchronize weapon reload counts on a cargo proxy unit
 ---Clears all tracked weapon reloads then sets them to actual counts
 ---@param cargo CMO__Unit Cargo proxy unit
 ---@param sideName string Side name
----@param weaponCounts table<number, number> Actual weapon counts (DBID to count)
-local function syncWeaponReloads(cargo, sideName, weaponCounts)
+---@param weaponCountMap table<number, number> Actual weapon counts (DBID to count)
+local function syncWeaponReloads(cargo, sideName, weaponCountMap)
   for _, mount in ipairs(cargo.mounts) do
     for _, wpn in ipairs(mount.mount_weapons) do
       if wpn.wpn_default > 0 then
@@ -328,7 +328,7 @@ local function syncWeaponReloads(cargo, sideName, weaponCounts)
     end
   end
 
-  for wpnDBID, count in pairs(weaponCounts) do
+  for wpnDBID, count in pairs(weaponCountMap) do
     GameApi.ScenEdit_AddReloadsToUnit({
       side = sideName,
       guid = cargo.guid,
@@ -360,8 +360,8 @@ local function convertGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName
   end
 
   stripCargoProxyMounts(cargo, sideName)
-  local weaponCounts = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  syncWeaponReloads(cargo, sideName, weaponCounts)
+  local weaponCountMap = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
+  syncWeaponReloads(cargo, sideName, weaponCountMap)
 
   if sourceUnit.group then
     cargo.group = sourceUnit.group.name

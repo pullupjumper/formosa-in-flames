@@ -83,13 +83,13 @@ end
 
 ---Calculate jammer impact on communication modifier
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
----@param jammers table<string, SBJ__AircraftContext> Jammer contexts from saveData
+---@param jammerMap table<string, SBJ__AircraftContext> Jammer contexts from saveData
 ---@param affectedUnitGUID string GUID of the affected unit
 ---@return number # Jammer impact on communication modifier
-local function calculateJammerImpact(commsJammingConfig, jammers, affectedUnitGUID)
+local function calculateJammerImpact(commsJammingConfig, jammerMap, affectedUnitGUID)
   local impact = 0
 
-  for _, jammerCtx in pairs(jammers) do
+  for _, jammerCtx in pairs(jammerMap) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammerCtx.guid)
 
     if actualJammer and actualJammer.condition == constants.UNIT_CONDITIONS.AIRBORNE and actualJammer.jammer then
@@ -104,13 +104,13 @@ end
 
 ---Calculate AEW support contribution to communication modifier
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing AEW support parameters
----@param aewContexts table<string, SBJ__AircraftContext> AEW aircraft contexts
+---@param aewContextMap table<string, SBJ__AircraftContext> AEW aircraft contexts
 ---@param affectedUnitGUID string GUID of the affected unit
 ---@return number # AEW support contribution
-local function calculateAEWSupport(commsJammingConfig, aewContexts, affectedUnitGUID)
+local function calculateAEWSupport(commsJammingConfig, aewContextMap, affectedUnitGUID)
   local support = 0
 
-  for _, AEWCtx in pairs(aewContexts) do
+  for _, AEWCtx in pairs(aewContextMap) do
     local actualAEW = GameApi.ScenEdit_GetUnit(AEWCtx.guid)
 
     if actualAEW and actualAEW.condition == constants.UNIT_CONDITIONS.AIRBORNE then
@@ -132,11 +132,11 @@ end
 ---Calculate ROCC support contribution to communication modifier
 ---Only the first valid ROCC is used for calculation
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing ROCC support parameters
----@param roccContexts table<string, SBJ__C2Context> ROCC C2 contexts
+---@param roccContextMap table<string, SBJ__C2Context> ROCC C2 contexts
 ---@param affectedUnitGUID string GUID of the affected unit
 ---@return number # ROCC support contribution
-local function calculateROCCSupport(commsJammingConfig, roccContexts, affectedUnitGUID)
-  for _, C2Ctx in pairs(roccContexts) do
+local function calculateROCCSupport(commsJammingConfig, roccContextMap, affectedUnitGUID)
+  for _, C2Ctx in pairs(roccContextMap) do
     local actualROCC = GameApi.ScenEdit_GetUnit(C2Ctx.guid)
 
     if actualROCC then
@@ -316,13 +316,13 @@ end
 -- Target Collection
 -- ============================================================================
 
----Find all airborne communication jammers from the jammer context table
----@param jammers table<string, SBJ__AircraftContext> Map of jammer GUIDs to aircraft contexts from saveData
+---Find all airborne communication jammerMap from the jammer context table
+---@param jammerMap table<string, SBJ__AircraftContext> Map of jammer GUIDs to aircraft contexts from saveData
 ---@return CMO__Unit[] # List of active airborne jammer units with active jamming capabilities
-local function findJammers(jammers)
+local function findJammers(jammerMap)
   local airborneJammers = {}
 
-  for _, jammer in pairs(jammers) do
+  for _, jammer in pairs(jammerMap) do
     local actualJammer = GameApi.ScenEdit_GetUnit(jammer.guid)
 
     if actualJammer and actualJammer.condition == constants.UNIT_CONDITIONS.AIRBORNE and actualJammer.jammer then
@@ -335,14 +335,14 @@ end
 
 
 ---Collect all SAM and radar units from IADS systems for jamming operations
----@param iadsContext SBJ__IADSContext IADS context containing ROCC and TAAOC command structures with their managed units
+---@param iadsCtx SBJ__IADSContext IADS context containing ROCC and TAAOC command structures with their managed units
 ---@return table<string, SBJ__RadarContext> unitCtxs Map of unit GUIDs to radar/SAM unit contexts for jamming targets
 ---@return integer unitCount Total number of collected units
-local function findSAMAndRadar(iadsContext)
+local function findSAMAndRadar(iadsCtx)
   local unitTemp = {}
   local unitCount = 0
 
-  for _, c2Ctx in pairs(iadsContext.rocc) do
+  for _, c2Ctx in pairs(iadsCtx.rocc) do
     for _, ctx in pairs(c2Ctx.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
@@ -353,7 +353,7 @@ local function findSAMAndRadar(iadsContext)
     end
   end
 
-  for _, c2Ctx in pairs(iadsContext.taaoc) do
+  for _, c2Ctx in pairs(iadsCtx.taaoc) do
     for _, ctx in pairs(c2Ctx.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
@@ -370,9 +370,9 @@ end
 
 ---Recover communications for all tracked units
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing recovery time parameters
----@param unitCtxs table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
-local function recoverAllComms(commsJammingConfig, unitCtxs)
-  for _, ctx in pairs(unitCtxs) do
+---@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
+local function recoverAllComms(commsJammingConfig, unitCtxMap)
+  for _, ctx in pairs(unitCtxMap) do
     recoverComms(commsJammingConfig, ctx)
   end
 end
@@ -381,11 +381,11 @@ end
 ---Process jamming cycle for all jammers against all targets
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
 ---@param jammers CMO__Unit[] List of active jammer units
----@param unitCtxs table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
+---@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
 ---@return integer totalAttempts Total jamming attempts made
 ---@return integer totalJammed Total units processed
 ---@return SBJ__LogResult[] results Per-jammer result rows for batch logging
-local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
+local function processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
   local totalJammedUnits = 0
   local totalAttempts = 0
   local reportLines = {}
@@ -393,7 +393,7 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxs)
 
   for _, jammer in ipairs(jammers) do
     local unitsWithDistance = {}
-    for _, unitCtx in pairs(unitCtxs) do
+    for _, unitCtx in pairs(unitCtxMap) do
       local distance = GameApi.Tool_Range(jammer.guid, unitCtx.guid)
 
       if distance then
@@ -482,10 +482,10 @@ end
 ---@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
 function CommsJamming.handleCommsJamming(commsJammingConfig, saveData)
   local jammers = findJammers(saveData.c.commsJamming.jammers)
-  local unitCtxs, targetCount = findSAMAndRadar(saveData.t.iads)
+  local unitCtxMap, targetCount = findSAMAndRadar(saveData.t.iads)
 
-  recoverAllComms(commsJammingConfig, unitCtxs)
-  local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitCtxs)
+  recoverAllComms(commsJammingConfig, unitCtxMap)
+  local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
   local aircraftProcessed, aircraftRTB, rtbResults = processAircraftComms(commsJammingConfig, saveData)
 
   local report = LogFormat.report(constants.TAGS.COMMS_JAMMING, "commsJamming", "Handle comms jamming")

@@ -61,24 +61,24 @@ end
 function Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
   for system, systemCfg in pairs(groundForceCfg) do
     ---@cast systemCfg SBJ__MissileSystemConfig
-    local firingUnits = Utils.deepCopy(systemCfg.firingUnits)
-    for _, descriptor in pairs(firingUnits) do
+    local firingUnitMap = Utils.deepCopy(systemCfg.firingUnits)
+    for _, descriptor in pairs(firingUnitMap) do
       ---@type SBJ__FiringUnitContext
       local ctx = descriptor
       ctx.reloadStartTime = nil
       groundForceCtx[system].firingUnits[ctx.name] = ctx
     end
 
-    local resupplyUnits = Utils.deepCopy(systemCfg.resupplyUnits)
-    for _, descriptor in pairs(resupplyUnits) do
+    local resupplyUnitMap = Utils.deepCopy(systemCfg.resupplyUnits)
+    for _, descriptor in pairs(resupplyUnitMap) do
       ---@type SBJ__ResupplyUnitContext
       local ctx = descriptor
       ctx.reloadStartTime = nil
       groundForceCtx[system].resupplyUnits[ctx.name] = ctx
     end
 
-    local ammunitions = Utils.deepCopy(systemCfg.ammunitions)
-    for _, descriptor in pairs(ammunitions) do
+    local ammunitionMap = Utils.deepCopy(systemCfg.ammunitions)
+    for _, descriptor in pairs(ammunitionMap) do
       ---@type SBJ__AmmunitionContext
       local ctx = descriptor
       groundForceCtx[system].ammunitions[ctx.name] = ctx

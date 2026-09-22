@@ -39,7 +39,7 @@ flowchart TD
 
     C --> C1["disableUnitsUnderC2Node(radar/sam)"]
     C1 --> C2["ScenEdit_SetUnit(outofcomms=true)"]
-    C --> C3["移除 iadsContext 對應節點"]
+    C --> C3["移除 iadsCtx 對應節點"]
 ```
 
 ---
@@ -48,12 +48,12 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `processC2Disruption` | `iadsContext, c2` | `nil` | C2/ROCC/TAAOC 節點毀傷後，停用轄下單位並移除節點 |
-| `removeDestroyedUnitContextFromIADS` | `c2TypeContext, type, destroyedUnit` | `nil` | 從指定 C2 context 移除被摧毀 radar/sam |
+| `processC2Disruption` | `iadsCtx, c2` | `nil` | C2/ROCC/TAAOC 節點毀傷後，停用轄下單位並移除節點 |
+| `removeDestroyedUnitContextFromIADS` | `c2TypeCtx, type, destroyedUnit` | `nil` | 從指定 C2 context 移除被摧毀 radar/sam |
 | `activateNearestRadar` | `config, sideUnits, destroyedRadar` | `nil` | 啟用距離最近且符合優先級的備援雷達 |
 | `addC2Facilities` | `iadsConfig` | `boolean` | 依部署設定新增中國 C2 設施 |
-| `initC2FacilitiesContext` | `iadsConfig, iadsContext` | `boolean` | 建立中國 `c2` context 並掛接 SAM/雷達 |
-| `initIADSContexts` | `iadsConfig, iadsContext` | `nil` | 建立台灣 `rocc/taaoc` context |
+| `initC2FacilitiesContext` | `iadsConfig, iadsCtx` | `boolean` | 建立中國 `c2` context 並掛接 SAM/雷達 |
+| `initIADSContexts` | `iadsConfig, iadsCtx` | `nil` | 建立台灣 `rocc/taaoc` context |
 | `removeC2Facilities` | `iadsConfig` | `boolean` | 移除中國側既有 C2 設施 |
 
 ---

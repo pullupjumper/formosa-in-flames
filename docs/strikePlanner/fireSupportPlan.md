@@ -81,7 +81,7 @@ AttackManager.attackContacts({
 非 SAM 任務成功發射後，模組會針對該 FST 的每個 firing unit 寫入：
 
 ```lua
-firingUnitContext.stowStartTime = GameApi.ScenEdit_CurrentTime()
+firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
 ```
 
 如果該 firing unit 已有 `stowStartTime`，則不覆寫。SAM 任務不寫入此欄位，因為 SAM firing unit 在此流程中不啟動同樣的打擊後 stow 倒數。
@@ -118,7 +118,7 @@ flowchart TD
     DEPLOY_TASK["遍歷已達 startTime 的 FST"]
     DEPLOY_UNIT["deployTaskFiringUnits()"]
     GET_UNIT["GameApi.ScenEdit_GetUnit()"]
-    GET_CTX["讀取 firingUnitContext"]
+    GET_CTX["讀取 firingUnitCtx"]
     READY{"HIDE 且彈量足夠?"}
     MOVE["MissileSystem.moveFromHideArea()<br/>MissileSystem.moveToFiringPoint()"]
     STATIC{"state == STATIC?"}

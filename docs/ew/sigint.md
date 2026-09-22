@@ -175,8 +175,8 @@ SIGINT 的 `transmissions` 資料被 `targetingProcess.lua` 的 `findRadioDirect
 
 | 函數 | 說明 |
 |---|---|
-| `collectSigint(config, sigintContext, sideName, isShown, sigintConfig, ...)` | 主入口：接收多個 unitContext 群組，執行偵測、更新 transmission |
-| `initReconAircraftContexts(sigintContext, sideName, aircraftDefaults)` | 初始化偵察機 Context（掃描 RC-135V / Y-9DZ） |
+| `collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, ...)` | 主入口：接收多個 unitContext 群組，執行偵測、更新 transmission |
+| `initReconAircraftContexts(sigintCtx, sideName, aircraftDefaults)` | 初始化偵察機 Context（掃描 RC-135V / Y-9DZ） |
 | `calculateDetectionProbability(distance, config)` | 偵測機率計算（@internal，公開供測試使用） |
 
 ---

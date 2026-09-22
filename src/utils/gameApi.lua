@@ -1,7 +1,7 @@
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 
----@class GameApi
+---@class SBJ__GameApi
 local realApi = {}
 ---@type GameApi
 local GameApi = {}
@@ -678,10 +678,10 @@ end
 
 ---Unload cargo from a unit
 ---@param fromUnit CMO__UnitSelector|string The unit with cargo
----@param cargoList string[]|number[][] List of cargo to unload: table of {guids}, or { { number, DBID}}
+---@param cargos string[]|number[][] List of cargo to unload: table of {guids}, or { { number, DBID}}
 ---@return boolean #True if Successful or false if not
-function realApi.ScenEdit_UnloadCargo(fromUnit, cargoList)
-  return ScenEdit_UnloadCargo(fromUnit, cargoList)
+function realApi.ScenEdit_UnloadCargo(fromUnit, cargos)
+  return ScenEdit_UnloadCargo(fromUnit, cargos)
 end
 
 setmetatable(GameApi, {

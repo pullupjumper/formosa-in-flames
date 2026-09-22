@@ -47,25 +47,25 @@ end
 
 ---Accumulate reserved aircraft counts for a single package's roles
 ---@param packageData SBJ__Package The package whose roles are counted
----@param reservedAircraft table<string, integer> Map of reservation key to reserved count; mutated in place
-local function accumulatePackageAircraft(packageData, reservedAircraft)
+---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
+local function accumulatePackageAircraft(packageData, reservedAircraftMap)
   for _, role in ipairs(PACKAGE_ROLES) do
     local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
 
     if roleData then
       local key = reservationKey(roleData.baseGUID, roleData.unitDBID)
-      reservedAircraft[key] = (reservedAircraft[key] or 0) + (roleData.unitCount or 0)
+      reservedAircraftMap[key] = (reservedAircraftMap[key] or 0) + (roleData.unitCount or 0)
     end
   end
 end
 
 ---Accumulate reserved aircraft counts for the not-yet-launched packages of a wave
 ---@param wave SBJ__Wave The active ATO wave to inspect
----@param reservedAircraft table<string, integer> Map of reservation key to reserved count; mutated in place
-local function accumulateWaveAircraft(wave, reservedAircraft)
+---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
+local function accumulateWaveAircraft(wave, reservedAircraftMap)
   for _, packageData in ipairs(wave.packages) do
     if not packageData.hasLaunched then
-      accumulatePackageAircraft(packageData, reservedAircraft)
+      accumulatePackageAircraft(packageData, reservedAircraftMap)
     end
   end
 end
@@ -75,15 +75,15 @@ end
 ---@param saveData SBJ__SaveData The persistent save data containing ATO wave information
 ---@return table<string, integer> # Map of reservation key to reserved aircraft count
 local function collectReservedAircraft(saveData)
-  local reservedAircraft = {}
+  local reservedAircraftMap = {}
 
   for _, wave in pairs(saveData.c.air.airTaskingOrder) do
     if wave.isActivated and not wave.hasLaunched then
-      accumulateWaveAircraft(wave, reservedAircraft)
+      accumulateWaveAircraft(wave, reservedAircraftMap)
     end
   end
 
-  return reservedAircraft
+  return reservedAircraftMap
 end
 
 ---Read one base's mission-free aircraft, counted per unit DBID
@@ -192,12 +192,12 @@ local function validateTankerMissionConfig(tankerData, packageIndex)
     return true, nil
   end
 
-  local missionParamsList, isSingle = TankerMission.normalizeCreationParams(tankerData.missionCreationParams)
+  local missionParamsEntries, isSingle = TankerMission.normalizeCreationParams(tankerData.missionCreationParams)
   if isSingle then
     return true, nil
   end
 
-  local missionCount = #missionParamsList
+  local missionCount = #missionParamsEntries
   local context = { package = packageIndex, role = "tanker" }
 
   if missionCount == 0 then
@@ -214,7 +214,7 @@ local function validateTankerMissionConfig(tankerData, packageIndex)
   end
 
   local missionNames = {}
-  for missionIndex, missionParams in ipairs(missionParamsList) do
+  for missionIndex, missionParams in ipairs(missionParamsEntries) do
     if type(missionParams.name) ~= "string" or missionParams.name == "" then
       return false, LogFormat.merge(context, {
         mission = missionIndex,

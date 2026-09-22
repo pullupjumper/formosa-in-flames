@@ -179,18 +179,18 @@ local function buildUndetectedResult()
 end
 
 ---Attempt SIGINT detection against an enemy unit using all airborne recon aircraft
----@param sigintContext SBJ__SIGINTContext SIGINT context containing reconnaissance aircraft
+---@param sigintCtx SBJ__SIGINTContext SIGINT context containing reconnaissance aircraft
 ---@param enemyGUID string Enemy unit GUID to detect
 ---@param isEmitting boolean Whether target unit is currently emitting signals
 ---@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
-local function attemptDetection(sigintContext, enemyGUID, isEmitting, config)
+local function attemptDetection(sigintCtx, enemyGUID, isEmitting, config)
   local enemy = GameApi.ScenEdit_GetUnit(enemyGUID)
   if not enemy then
     return buildUndetectedResult()
   end
 
-  for _, ctx in pairs(sigintContext.reconAircraft) do
+  for _, ctx in pairs(sigintCtx.reconAircraft) do
     local actualReconAC = GameApi.ScenEdit_GetUnit(ctx.guid)
     if not actualReconAC or actualReconAC.condition ~= constants.UNIT_CONDITIONS.AIRBORNE then
       goto continue
@@ -283,13 +283,13 @@ end
 ---Update or create transmission record after successful SIGINT detection
 ---Creates new transmission record if first detection, otherwise updates existing record
 ---Increments currentDetectionLevel and checks autodetectable threshold
----@param sigintContext SBJ__SIGINTContext SIGINT context to update transmission records
+---@param sigintCtx SBJ__SIGINTContext SIGINT context to update transmission records
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context data with metadata
 ---@param result SBJ__SIGINTResult Detection result with position and confidence
 ---@param unit CMO__Unit Actual unit object for autodetectable state updates
 ---@return string # DETECTION_STATUS enum value
-local function updateTransmissionData(sigintContext, unitCtx, result, unit)
-  local transmission = sigintContext.transmissions[unit.guid]
+local function updateTransmissionData(sigintCtx, unitCtx, result, unit)
+  local transmission = sigintCtx.transmissions[unit.guid]
 
   if not transmission then
     local unitType = classifyUnitType(unitCtx.name)
@@ -308,7 +308,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
       detectionCount = 0,
       confidence = result.confidence
     }
-    sigintContext.transmissions[unit.guid] = transmission
+    sigintCtx.transmissions[unit.guid] = transmission
   end
 
   -- Update transmission data
@@ -325,7 +325,7 @@ local function updateTransmissionData(sigintContext, unitCtx, result, unit)
   end
 
   -- Check if should become autodetectable
-  local maxCount = sigintContext.maxCount
+  local maxCount = sigintCtx.maxCount
   if transmission.currentDetectionLevel > maxCount and not transmission.autodetectable then
     updateAutodetectableState(unit, true)
     transmission.autodetectable = true
@@ -338,16 +338,16 @@ end
 ---Handle undetected case for SIGINT target
 ---Decrements currentDetectionLevel when unit is not detected, simulating signal fade
 ---Resets autodetectable state to false if currently autodetectable
----@param sigintContext SBJ__SIGINTContext SIGINT context containing transmission records
+---@param sigintCtx SBJ__SIGINTContext SIGINT context containing transmission records
 ---@param unit CMO__Unit Unit object that was not detected this cycle
 ---@return string # DETECTION_STATUS enum value
-local function handleUndetected(sigintContext, unit)
-  local transmission = sigintContext.transmissions[unit.guid]
+local function handleUndetected(sigintCtx, unit)
+  local transmission = sigintCtx.transmissions[unit.guid]
   if not transmission then
     return DETECTION_STATUS.NO_CHANGE
   end
 
-  local maxCount = sigintContext.maxCount
+  local maxCount = sigintCtx.maxCount
   if transmission.currentDetectionLevel > maxCount - 1 then
     transmission.currentDetectionLevel = transmission.currentDetectionLevel - 1
   end
@@ -369,29 +369,29 @@ end
 ---Enhanced SIGINT detection handler
 ---Accepts multiple unit context groups via varargs, consolidating results and log output
 ---@param config SBJ__Config Configuration object
----@param sigintContext SBJ__SIGINTContext SIGINT context
+---@param sigintCtx SBJ__SIGINTContext SIGINT context
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param isShown boolean Whether to show detection notifications on map
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
 ---@param ... table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit context groups to monitor
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
-function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintConfig, ...)
+function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
 
   sigintConfig = sigintConfig or {}
   local detectionSkipProbability = sigintConfig.detectionSkipProbability or 0.3
 
-  local results = {}
+  local resultMap = {}
   local report = LogFormat.report(constants.TAGS.SIGINT, "side=" .. sideName, "Collect SIGINT")
   local totalProcessed = 0
   local totalDetected = 0
   local totalUnits = 0
 
-  for _, unitContexts in ipairs({ ... }) do
-    totalUnits = totalUnits + Utils.getCount(unitContexts)
+  for _, unitCtxMap in ipairs({ ... }) do
+    totalUnits = totalUnits + Utils.getCount(unitCtxMap)
 
-    for _, unitCtx in pairs(unitContexts) do
+    for _, unitCtx in pairs(unitCtxMap) do
       local ctxName = unitCtx.name or unitCtx.guid or "?"
 
       -- Resolve actual unit
@@ -413,20 +413,20 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
       local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
 
       -- Perform SIGINT detection
-      local result = attemptDetection(sigintContext, actualUnit.guid, isEmitting, sigintConfig)
-      results[actualUnit.guid] = result
+      local result = attemptDetection(sigintCtx, actualUnit.guid, isEmitting, sigintConfig)
+      resultMap[actualUnit.guid] = result
 
       -- Update transmission data based on result
       if result.isDetected then
         totalDetected = totalDetected + 1
-        local status = updateTransmissionData(sigintContext, unitCtx, result, actualUnit)
+        local status = updateTransmissionData(sigintCtx, unitCtx, result, actualUnit)
         report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
           showDetectionNotification(result, unitCtx.msg, sigintConfig)
         end
       else
-        local status = handleUndetected(sigintContext, actualUnit)
+        local status = handleUndetected(sigintCtx, actualUnit)
         report.add(SIGINT_RESULT_TAGS[status], {
           unit = ctxName,
           result = status,
@@ -439,16 +439,16 @@ function Sigint.collectSigint(config, sigintContext, sideName, isShown, sigintCo
   end
 
   report.emit({ processed = totalProcessed, units = totalUnits, detections = totalDetected })
-  return results
+  return resultMap
 end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param sigintContext SBJ__SIGINTContext SIGINT context to populate with recon aircraft
+---@param sigintCtx SBJ__SIGINTContext SIGINT context to populate with recon aircraft
 ---@param sideName string Side name to scan for reconnaissance aircraft
 ---@param aircraftDefaults SBJ__AircraftCommsDefaults Aircraft communications default values
 ---@return number # Number of reconnaissance aircraft initialized
-function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefaults)
+function Sigint.initReconAircraftContexts(sigintCtx, sideName, aircraftDefaults)
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
@@ -462,7 +462,7 @@ function Sigint.initReconAircraftContexts(sigintContext, sideName, aircraftDefau
 
     if unit and unit.type == "Aircraft" and
         (unit.dbid == constants.PLATFORMS.RC135V or unit.dbid == constants.PLATFORMS.Y9DZ) then
-      sigintContext.reconAircraft[unit.guid] = {
+      sigintCtx.reconAircraft[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
         commsLevel = aircraftDefaults.commsLevel,

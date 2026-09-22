@@ -72,13 +72,13 @@ end
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setMissionStartTime(mission, currentTime)
   local startTime = os.date(constants.DATE_FORMAT, (currentTime + mission.startTime))
-  local m = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, mission.name)
+  local cmoMission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, mission.name)
 
-  if not m then
+  if not cmoMission then
     return { tag = "FAIL", fields = { mission = mission.name, reason = "mission_not_found" } }
   end
 
-  m.starttime = startTime .. constants.TIME_FORMATS
+  cmoMission.starttime = startTime .. constants.TIME_FORMATS
   return { tag = "OK", fields = { mission = mission.name, startTime = startTime } }
 end
 
@@ -264,14 +264,14 @@ end
 
 ---Set courses for every SAG in an operation, stopping at the first failure
 ---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
----@param sagLookup table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function setOperationSAGCourses(operation, sagLookup)
+local function setOperationSAGCourses(operation, sagDescriptorMap)
   local results = {}
 
   for _, sagName in ipairs(operation.sagNames) do
-    local descriptor = sagLookup[sagName]
+    local descriptor = sagDescriptorMap[sagName]
 
     if descriptor then
       local result = setCourseForSAG(descriptor)
@@ -313,9 +313,9 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
----@param sagLookup table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
 ---@return boolean # True if all LST courses were successfully set
-function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagDescriptorMap)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set courses for LSTs")
 
   local success, results = setZoneLSTCourses(zone, units)
@@ -323,7 +323,7 @@ function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
   if success then
     local sagResults
-    success, sagResults = setOperationSAGCourses(operation, sagLookup)
+    success, sagResults = setOperationSAGCourses(operation, sagDescriptorMap)
     report.addAll(sagResults)
   end
 
@@ -350,7 +350,7 @@ function AmphibiousAssault.launchACV(params)
   if ship == nil or ship.IsDestroyed then return end
 
   local destination = params.destination
-  local ACVlocations = GameUtils.generateLocations({
+  local acvLocations = GameUtils.generateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -358,7 +358,7 @@ function AmphibiousAssault.launchACV(params)
   })
 
   local allocations = deleteCargoByPriority(ship, params.num)
-  local count, results = spawnAllocatedACVs(allocations, ACVlocations, destination)
+  local count, results = spawnAllocatedACVs(allocations, acvLocations, destination)
 
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_ASSAULT, "ship=" .. (ship.name or ship.guid), "Launch ACV")

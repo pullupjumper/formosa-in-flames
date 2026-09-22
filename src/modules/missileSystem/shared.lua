@@ -40,11 +40,12 @@ function Shared.getGroupUnits(unit)
   return unit.group and unit.group.unitlist or { unit.guid }
 end
 
----Set unit movement and weapon control status using table parameters
----@param params SBJ__SetUnitPropertiesParams Unit properties configuration table
-function Shared.setUnitProperties(params)
-  local unit = params.unit
+---Set unit movement and weapon control status
+---@param unit CMO__Unit Target unit
+---@param opts SBJ__SetUnitPropertiesOpts|nil Optional property overrides
+function Shared.setUnitProperties(unit, opts)
   if not unit then return end
+  local params = opts or {}
 
   local unitSetParams = {
     guid = unit.guid,
@@ -76,25 +77,23 @@ end
 
 ---Apply properties to all units in a group
 ---@param firingUnit CMO__Unit Unit or group leader
----@param propsBuilder fun(unit: CMO__Unit): SBJ__SetUnitPropertiesParams Property builder function
+---@param propsBuilder fun(unit: CMO__Unit): SBJ__SetUnitPropertiesOpts Property builder function
 function Shared.applyToGroupUnits(firingUnit, propsBuilder)
   local units = Shared.getGroupUnits(firingUnit)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     if unit then
-      Shared.setUnitProperties(propsBuilder(unit))
+      Shared.setUnitProperties(unit, propsBuilder(unit))
     end
   end
 end
 
 ---Build auto/manual mode unit properties
----@param unit CMO__Unit Target unit
 ---@param isAuto boolean Whether in automatic mode
 ---@param wcs integer Weapon control status
----@return SBJ__SetUnitPropertiesParams # Unit properties for the given mode
-function Shared.buildModeProperties(unit, isAuto, wcs)
+---@return SBJ__SetUnitPropertiesOpts # Unit properties for the given mode
+function Shared.buildModeProperties(isAuto, wcs)
   return {
-    unit = unit,
     holdPosition = isAuto and true or false,
     throttle = isAuto and "Stop" or "OFF",
     speed = isAuto and 0 or "OFF",

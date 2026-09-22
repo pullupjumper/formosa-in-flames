@@ -98,7 +98,7 @@ end
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
-function MissileSystem.checkMissileSystemState(groundCtx, isAuto, sideName)
+function MissileSystem.process(groundCtx, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
@@ -385,12 +385,12 @@ local POSITION_HANDLERS = {
 }
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
----@param opts SBJ__MoveToPositionEventOpts Unit-enter-area event handling options
-function MissileSystem.handleMoveToPositionEvent(opts)
-  local unit = opts.unit
-  local isAuto = opts.isAuto
-  local behavior = resolveBehavior(opts.behavior, unit.side)
-  local positionType = extractPositionType(opts.event)
+---@param params SBJ__MoveToPositionEventParams Unit-enter-area event handling options
+function MissileSystem.handleMoveToPositionEvent(params)
+  local unit = params.unit
+  local isAuto = params.isAuto
+  local behavior = resolveBehavior(params.behavior, unit.side)
+  local positionType = extractPositionType(params.event)
   local handler = POSITION_HANDLERS[positionType]
 
   if not handler then
@@ -398,12 +398,12 @@ function MissileSystem.handleMoveToPositionEvent(opts)
   end
 
   if positionType ~= constants.POSITION_TYPES.FIRING_POINT then
-    dropUnitContact(unit, opts.contacts)
+    dropUnitContact(unit, params.contacts)
   end
 
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
-  forEachEnabledSystem(opts.groundCtx, function(systemCtx, systemName)
+  forEachEnabledSystem(params.groundCtx, function(systemCtx, systemName)
     local row = handler(systemName, systemCtx, unit, isAuto, behavior)
     if row then
       report.add(row.tag, row.fields)

@@ -125,10 +125,10 @@ local function executeFireSupportTasks(saveData, matrix)
       if fired > 0 then
         if task.missileSystem ~= "SAM" then
           for _, firingUnit in ipairs(task.firingUnits) do
-            local firingUnitContext = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
+            local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
 
-            if firingUnitContext and not firingUnitContext.stowStartTime then
-              firingUnitContext.stowStartTime = GameApi.ScenEdit_CurrentTime()
+            if firingUnitCtx and not firingUnitCtx.stowStartTime then
+              firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
             end
           end
         end

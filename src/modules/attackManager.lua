@@ -264,16 +264,16 @@ function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, f
 end
 
 ---Attack multiple contacts with weapon allocation from firing units
----@param opts SBJ__AttackContactsOpts Attack parameters
+---@param params SBJ__AttackContactsParams Attack parameters
 ---@return integer # Total number of ammunition launched across all contacts
-function AttackManager.attackContacts(opts)
+function AttackManager.attackContacts(params)
   local result = { firingUnitIdx = 1, shooterIdx = 1, ammoAllocated = 0 }
   local totalAmmoAllocated = 0
-  local contacts = opts.contacts or {}
-  local qty = opts.qty or 1
-  local firingUnits = opts.firingUnits
-  local weaponDBID = opts.weaponDBID
-  local sideName = opts.sideName or constants.SIDES.ENEMY
+  local contacts = params.contacts or {}
+  local qty = params.qty or 1
+  local firingUnits = params.firingUnits
+  local weaponDBID = params.weaponDBID
+  local sideName = params.sideName or constants.SIDES.ENEMY
 
   for _, contact in ipairs(contacts) do
     result = AttackManager.attackContact(contact, qty, firingUnits, result.firingUnitIdx, result.shooterIdx, weaponDBID,

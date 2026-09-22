@@ -101,7 +101,7 @@ describe("FrontlineRedirect", function()
     -- Negative: attrition below threshold keeps the sticky flag false.
     it("should keep redirect inactive when attrition is below threshold", function()
       local cfg = makeConfig({ attritionThresholdPct = 50 })
-      local reconContext = makeReconContext()
+      local reconCtx = makeReconContext()
       trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 4,
@@ -109,17 +109,17 @@ describe("FrontlineRedirect", function()
         attritionPct = 0,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconContext)
+      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconCtx)
 
       assert.is_false(isRedirected)
       assert.is_nil(message)
-      assert.is_false(reconContext.frontlineRedirected)
+      assert.is_false(reconCtx.frontlineRedirected)
     end)
 
     -- Positive: threshold breach activates the sticky flag.
     it("should set sticky flag and return activation message when attrition reaches threshold", function()
       local cfg = makeConfig({ attritionThresholdPct = 50 })
-      local reconContext = makeReconContext()
+      local reconCtx = makeReconContext()
       trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 0,
@@ -127,9 +127,9 @@ describe("FrontlineRedirect", function()
         attritionPct = 100,
       }))
 
-      local isRedirected, activationFields = FrontlineRedirect.evaluate(cfg, reconContext)
+      local isRedirected, activationFields = FrontlineRedirect.evaluate(cfg, reconCtx)
       assert.is_true(isRedirected)
-      assert.is_true(reconContext.frontlineRedirected)
+      assert.is_true(reconCtx.frontlineRedirected)
       assert.are.equal("attrition_threshold_reached", activationFields.reason)
       assert.are.equal("100.0", activationFields.attritionPct)
     end)
@@ -137,7 +137,7 @@ describe("FrontlineRedirect", function()
     -- Positive: sticky flag skips recomputing attrition.
     it("should skip attrition recompute when sticky flag is already true", function()
       local cfg = makeConfig()
-      local reconContext = makeReconContext({ frontlineRedirected = true })
+      local reconCtx = makeReconContext({ frontlineRedirected = true })
       local calculateStub = trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 4,
@@ -145,7 +145,7 @@ describe("FrontlineRedirect", function()
         attritionPct = 0,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconContext)
+      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconCtx)
 
       assert.is_true(isRedirected)
       assert.is_nil(message)

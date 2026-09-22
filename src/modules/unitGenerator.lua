@@ -183,14 +183,14 @@ end
 ---@param areaDescriptor SBJ__OperationAreaDescriptor Area configuration
 ---@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
 ---@param shipSettings SBJ__AmphibiousFormationSettings Amphibious layout configuration
----@param cargoList table<string, SBJ__CargoDescriptor[]> Cargo list
+---@param cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@param shipType SBJ__AmphibiousShipType Ship type
-local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoList, shipType)
+local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoMap, shipType)
   local shipConfigs = {
     type075 = {
       dbid = constants.PLATFORMS.TYPE_075,
       name = "Type 075",
-      cargo = cargoList.type075,
+      cargo = cargoMap.type075,
       embarkedUnits = {
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
@@ -200,7 +200,7 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
     type071 = {
       dbid = constants.PLATFORMS.TYPE_071,
       name = "Type 071",
-      cargo = cargoList.type071,
+      cargo = cargoMap.type071,
       embarkedUnits = {
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
@@ -209,7 +209,7 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
     type076 = {
       dbid = constants.PLATFORMS.TYPE_076,
       name = "Type 076",
-      cargo = cargoList.type075,
+      cargo = cargoMap.type075,
       embarkedUnits = {
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
         { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
@@ -218,11 +218,11 @@ local function createShipsByType(position, areaDescriptor, descriptor, shipSetti
       }
     },
     barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge", cargo = nil, embarkedUnits = nil },
-    roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargo = cargoList.barge, embarkedUnits = nil },
-    type072a = { dbid = constants.PLATFORMS.TYPE_072A, name = "Type 072A", cargo = cargoList.type072a, embarkedUnits = nil },
-    type072iii = { dbid = constants.PLATFORMS.TYPE_072III, name = "Type 072III", cargo = cargoList.type072iii, embarkedUnits = nil },
-    ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = cargoList.ferry, embarkedUnits = nil },
-    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoList.type073a, embarkedUnits = nil }
+    roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargo = cargoMap.barge, embarkedUnits = nil },
+    type072a = { dbid = constants.PLATFORMS.TYPE_072A, name = "Type 072A", cargo = cargoMap.type072a, embarkedUnits = nil },
+    type072iii = { dbid = constants.PLATFORMS.TYPE_072III, name = "Type 072III", cargo = cargoMap.type072iii, embarkedUnits = nil },
+    ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = cargoMap.ferry, embarkedUnits = nil },
+    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoMap.type073a, embarkedUnits = nil }
   }
 
   local shipConfig = shipConfigs[shipType]
@@ -257,28 +257,28 @@ local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == constants.SIDES.ENEMY then
     return {
       {
-        dbid = sagDescriptor.unitList.type052d.dbid,
+        dbid = sagDescriptor.unitMap.type052d.dbid,
         unitname = "052D",
         distance = 0,
         angle = 0,
         embarkedUnits = nil
       },
       {
-        dbid = sagDescriptor.unitList.type054a.dbid,
+        dbid = sagDescriptor.unitMap.type054a.dbid,
         unitname = "054A",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.LEFT,
         embarkedUnits = nil
       },
       {
-        dbid = sagDescriptor.unitList.type054a.dbid,
+        dbid = sagDescriptor.unitMap.type054a.dbid,
         unitname = "054A",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.RIGHT,
         embarkedUnits = nil
       },
       {
-        dbid = sagDescriptor.unitList.type052d.dbid,
+        dbid = sagDescriptor.unitMap.type052d.dbid,
         unitname = "052D",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.REAR,
@@ -288,25 +288,25 @@ local function getSAGShipConfiguration(sagDescriptor, sideName)
   else -- Taiwan
     return {
       {
-        dbid = sagDescriptor.unitList.kidd.dbid,
+        dbid = sagDescriptor.unitMap.kidd.dbid,
         unitname = "Keelung",
         distance = 0,
         angle = 0,
-        embarkedUnits = sagDescriptor.unitList.kidd.embarkedUnits
+        embarkedUnits = sagDescriptor.unitMap.kidd.embarkedUnits
       },
       {
-        dbid = sagDescriptor.unitList.kangDing.dbid,
+        dbid = sagDescriptor.unitMap.kangDing.dbid,
         unitname = "KangDing",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.LEFT,
-        embarkedUnits = sagDescriptor.unitList.kangDing.embarkedUnits
+        embarkedUnits = sagDescriptor.unitMap.kangDing.embarkedUnits
       },
       {
-        dbid = sagDescriptor.unitList.kangDing.dbid,
+        dbid = sagDescriptor.unitMap.kangDing.dbid,
         unitname = "KangDing",
         distance = FORMATION.DISTANCES.CLOSE,
         angle = FORMATION.ANGLES.RIGHT,
-        embarkedUnits = sagDescriptor.unitList.kangDing.embarkedUnits
+        embarkedUnits = sagDescriptor.unitMap.kangDing.embarkedUnits
       }
     }
   end
@@ -318,47 +318,47 @@ end
 local function getCSGShipConfiguration(csgDescriptor)
   return {
     {
-      dbid = csgDescriptor.unitList.type002.dbid,
+      dbid = csgDescriptor.unitMap.type002.dbid,
       unitname = "002",
       distance = 0,
       angle = 0,
-      embarkedUnits = csgDescriptor.unitList.type002.embarkedUnits,
-      loadouts = csgDescriptor.unitList.type002.loadouts
+      embarkedUnits = csgDescriptor.unitMap.type002.embarkedUnits,
+      loadouts = csgDescriptor.unitMap.type002.loadouts
     },
     {
-      dbid = csgDescriptor.unitList.type901.dbid,
+      dbid = csgDescriptor.unitMap.type901.dbid,
       unitname = "901",
       distance = FORMATION.DISTANCES.MEDIUM,
       angle = FORMATION.ANGLES.REAR,
-      embarkedUnits = csgDescriptor.unitList.type901.embarkedUnits
+      embarkedUnits = csgDescriptor.unitMap.type901.embarkedUnits
     },
     {
-      dbid = csgDescriptor.unitList.type055.dbid,
+      dbid = csgDescriptor.unitMap.type055.dbid,
       unitname = "055",
       distance = FORMATION.DISTANCES.FAR,
       angle = FORMATION.ANGLES.LEFT,
-      embarkedUnits = csgDescriptor.unitList.type055.embarkedUnits
+      embarkedUnits = csgDescriptor.unitMap.type055.embarkedUnits
     },
     {
-      dbid = csgDescriptor.unitList.type055.dbid,
+      dbid = csgDescriptor.unitMap.type055.dbid,
       unitname = "055",
       distance = FORMATION.DISTANCES.FAR,
       angle = FORMATION.ANGLES.RIGHT,
-      embarkedUnits = csgDescriptor.unitList.type055.embarkedUnits
+      embarkedUnits = csgDescriptor.unitMap.type055.embarkedUnits
     },
     {
-      dbid = csgDescriptor.unitList.type054a.dbid,
+      dbid = csgDescriptor.unitMap.type054a.dbid,
       unitname = "054",
       distance = FORMATION.DISTANCES.CLOSE,
       angle = FORMATION.ANGLES.LEFT,
-      embarkedUnits = csgDescriptor.unitList.type054a.embarkedUnits
+      embarkedUnits = csgDescriptor.unitMap.type054a.embarkedUnits
     },
     {
-      dbid = csgDescriptor.unitList.type054a.dbid,
+      dbid = csgDescriptor.unitMap.type054a.dbid,
       unitname = "054",
       distance = FORMATION.DISTANCES.CLOSE,
       angle = FORMATION.ANGLES.RIGHT,
-      embarkedUnits = csgDescriptor.unitList.type054a.embarkedUnits
+      embarkedUnits = csgDescriptor.unitMap.type054a.embarkedUnits
     }
   }
 end
@@ -439,11 +439,11 @@ local function createShipFormation(formationConfig)
 end
 
 ---Create SAG formations
----@param sagDescriptors table<string, SBJ__SAGDescriptor> Configuration object
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor> Configuration object
 ---@param sideName string Side name
 ---@return boolean # Whether successful
-function UnitGenerator.createSAGs(sagDescriptors, sideName)
-  for _, sagDescriptor in pairs(sagDescriptors) do
+function UnitGenerator.createSAGs(sagDescriptorMap, sideName)
+  for _, sagDescriptor in pairs(sagDescriptorMap) do
     local formationConfig = {
       centerPoint = sagDescriptor.from.startingPoint,
       heading = sagDescriptor.from.heading,
@@ -667,7 +667,7 @@ end
 function UnitGenerator.addLandingShips(amphibOpsConfig)
   local descriptors = amphibOpsConfig.operations
   local layoutConfig = amphibOpsConfig.formationSettings
-  local cargoList = amphibOpsConfig.cargoList
+  local cargoMap = amphibOpsConfig.cargoMap
 
   for _, descriptor in ipairs(descriptors) do
     for _, areaDescriptor in ipairs(descriptor.from.areas) do
@@ -680,15 +680,15 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         .verticalDistance)
 
       -- Create various ship types
-      createShipsByType(positions.type075, areaDescriptor, descriptor, layoutConfig, cargoList, "type075")
-      createShipsByType(positions.type071, areaDescriptor, descriptor, layoutConfig, cargoList, "type071")
-      createShipsByType(positions.type076, areaDescriptor, descriptor, layoutConfig, cargoList, "type076")
-      createShipsByType(positions.barge, areaDescriptor, descriptor, layoutConfig, cargoList, "barge")
-      createShipsByType(positions.roro, areaDescriptor, descriptor, layoutConfig, cargoList, "roro")
-      createShipsByType(positions.type072a, areaDescriptor, descriptor, layoutConfig, cargoList, "type072a")
-      createShipsByType(positions.type072iii, areaDescriptor, descriptor, layoutConfig, cargoList, "type072iii")
-      createShipsByType(positions.ferry, areaDescriptor, descriptor, layoutConfig, cargoList, "ferry")
-      createShipsByType(positions.type073a, areaDescriptor, descriptor, layoutConfig, cargoList, "type073a")
+      createShipsByType(positions.type075, areaDescriptor, descriptor, layoutConfig, cargoMap, "type075")
+      createShipsByType(positions.type071, areaDescriptor, descriptor, layoutConfig, cargoMap, "type071")
+      createShipsByType(positions.type076, areaDescriptor, descriptor, layoutConfig, cargoMap, "type076")
+      createShipsByType(positions.barge, areaDescriptor, descriptor, layoutConfig, cargoMap, "barge")
+      createShipsByType(positions.roro, areaDescriptor, descriptor, layoutConfig, cargoMap, "roro")
+      createShipsByType(positions.type072a, areaDescriptor, descriptor, layoutConfig, cargoMap, "type072a")
+      createShipsByType(positions.type072iii, areaDescriptor, descriptor, layoutConfig, cargoMap, "type072iii")
+      createShipsByType(positions.ferry, areaDescriptor, descriptor, layoutConfig, cargoMap, "ferry")
+      createShipsByType(positions.type073a, areaDescriptor, descriptor, layoutConfig, cargoMap, "type073a")
     end
   end
 

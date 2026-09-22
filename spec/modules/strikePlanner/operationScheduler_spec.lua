@@ -78,11 +78,11 @@ describe("OperationScheduler", function()
   ---@param overrides? table
   ---@return SBJ__ReconContext
   local function makeReconContext(overrides)
-    local reconContext = { queue = {}, frontlineRedirected = false }
+    local reconCtx = { queue = {}, frontlineRedirected = false }
     if overrides then
-      for k, v in pairs(overrides) do reconContext[k] = v end
+      for k, v in pairs(overrides) do reconCtx[k] = v end
     end
-    return reconContext
+    return reconCtx
   end
 
   ---Create a reconnaissance queue entry.
@@ -110,18 +110,18 @@ describe("OperationScheduler", function()
 
   ---Create a reconnaissance queue processing context.
   ---@param config SBJ__Config Configuration data
-  ---@param reconContext SBJ__ReconContext Reconnaissance runtime context
+  ---@param reconCtx SBJ__ReconContext Reconnaissance runtime context
   ---@param reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
-  ---@param lacmContext SBJ__LACMContext LACM context data
+  ---@param lacmCtx SBJ__LACMContext LACM context data
   ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
   ---@return SBJ__ReconQueueProcessingContext
-  local function makeProcessingContext(config, reconContext, reconTriggeredOperationBatches, lacmContext,
+  local function makeProcessingContext(config, reconCtx, reconTriggeredOperationBatches, lacmCtx,
                                        fireSupportOnHold)
     return {
       config = config,
-      reconContext = reconContext,
+      reconCtx = reconCtx,
       reconTriggeredOperationBatches = reconTriggeredOperationBatches,
-      lacmContext = lacmContext,
+      lacmCtx = lacmCtx,
       fireSupportOnHold = fireSupportOnHold == true
     }
   end

@@ -114,7 +114,7 @@ describe("AirTaskingOrder", function()
     return {
       c = {
         air = { airTaskingOrder = ato },
-        recon = overrides.reconContext or { queue = {} }
+        recon = overrides.reconCtx or { queue = {} }
       }
     }
   end
@@ -1053,7 +1053,7 @@ describe("AirTaskingOrder", function()
       })
       local saveData = makeSaveData({
         packages = { pkg },
-        reconContext = {
+        reconCtx = {
           queue = {
             {
               type = "satellite",

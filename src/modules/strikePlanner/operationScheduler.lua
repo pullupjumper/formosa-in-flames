@@ -277,10 +277,10 @@ end
 ---Build a single first-wave operation from a strike mapping configuration
 ---Rejects an unresolved template: downstream builders iterate the array unconditionally.
 ---@param strikeMapping SBJ__ReconStrikeMapping Strike mapping definition
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@return SBJ__Operation|nil operation Built operation, or nil when it cannot be resolved
 ---@return SBJ__LogResult result Deferred log result describing the outcome
-local function buildFirstWaveOperation(strikeMapping, processingContext)
+local function buildFirstWaveOperation(strikeMapping, processingCtx)
   local typeTraits = OPERATION_TYPE_TRAITS[strikeMapping.type]
   if not typeTraits then
     return nil, {
@@ -293,7 +293,7 @@ local function buildFirstWaveOperation(strikeMapping, processingContext)
     }
   end
 
-  local config = processingContext.config
+  local config = processingCtx.config
   local template = config.c[typeTraits.templateSource][toTemplateKey(strikeMapping.name)]
   if not template then
     return nil, {
@@ -331,10 +331,10 @@ end
 ---Advance an existing strike series to its next wave
 ---Every path reports a result, so the caller never has to infer silence.
 ---@param strikeMapping SBJ__ReconStrikeMapping Strike mapping with template name
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@return SBJ__Operation|nil nextOperation Generated next operation, or nil when none applies
 ---@return SBJ__LogResult result Deferred log result describing the outcome
-local function buildNextWaveOperation(strikeMapping, processingContext)
+local function buildNextWaveOperation(strikeMapping, processingCtx)
   local baseName = strikeMapping.name:match("^(.+/)%d+$")
   if not baseName then
     return nil, {
@@ -349,7 +349,7 @@ local function buildNextWaveOperation(strikeMapping, processingContext)
   end
 
   local previousOperation = OperationScheduler.findLatestExecutedOperation(
-    processingContext.reconTriggeredOperationBatches,
+    processingCtx.reconTriggeredOperationBatches,
     baseName,
     strikeMapping.type
   )
@@ -369,7 +369,7 @@ local function buildNextWaveOperation(strikeMapping, processingContext)
 
   local nextOperation, status = OperationScheduler.generateNextOperation(
     previousOperation,
-    processingContext.config
+    processingCtx.config
   )
 
   -- PARSE_ERROR and UNKNOWN_TYPE hand back a copy of the source operation, which would
@@ -390,7 +390,7 @@ local function buildNextWaveOperation(strikeMapping, processingContext)
   -- package. REUSED_CURRENT reuses the executed source's name, and isOperationPending
   -- ignores executed operations, so the wave still re-queues once the copy has fired.
   if OperationScheduler.isOperationPending(
-        processingContext.reconTriggeredOperationBatches,
+        processingCtx.reconTriggeredOperationBatches,
         nextOperation.template.name,
         strikeMapping.type
       ) then
@@ -418,11 +418,11 @@ end
 
 ---Build follow-on operations unlocked by a completed reconnaissance objective
 ---Each objective maps to zero or more air/ground operations.
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@param reconEntry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
 ---@return SBJ__Operation[] operations Operations to add to the batch
 ---@return SBJ__LogResult[] results Per-mapping scheduling results for batched output
-local function buildOperationsForReconObjective(processingContext, reconEntry)
+local function buildOperationsForReconObjective(processingCtx, reconEntry)
   local operations = {}
   local results = {}
 
@@ -437,7 +437,7 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
     return operations, results
   end
 
-  local strikeMappings = processingContext.config.c.recon.strikeMappingsByReconObjective[reconEntry.reconObjectiveId]
+  local strikeMappings = processingCtx.config.c.recon.strikeMappingsByReconObjective[reconEntry.reconObjectiveId]
   if not strikeMappings then
     table.insert(results, {
       tag = "SKIP",
@@ -451,15 +451,15 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
   end
 
   strikeMappings = FrontlineRedirect.applyMappings(
-    processingContext.config,
-    processingContext.reconContext,
+    processingCtx.config,
+    processingCtx.reconCtx,
     strikeMappings
   )
 
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Sits at mapping level, not inside the builder, so the first wave and every
     -- follow-on wave share one LACM check.
-    if strikeMapping.requiresLACM and not processingContext.lacmContext.enabled then
+    if strikeMapping.requiresLACM and not processingCtx.lacmCtx.enabled then
       table.insert(results, {
         tag = "SKIP",
         fields = {
@@ -469,7 +469,7 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
         }
       })
       -- Conserves SRBM stock while fire support is on hold
-    elseif processingContext.fireSupportOnHold and strikeMapping.name:find("^GND/STRIKE/INFRA/") then
+    elseif processingCtx.fireSupportOnHold and strikeMapping.name:find("^GND/STRIKE/INFRA/") then
       table.insert(results, {
         tag = "HOLD",
         fields = {
@@ -480,17 +480,17 @@ local function buildOperationsForReconObjective(processingContext, reconEntry)
       })
       -- A mapping either opens its first wave or advances an existing series, never both.
     elseif not OperationScheduler.isOperationScheduled(
-          processingContext.reconTriggeredOperationBatches,
+          processingCtx.reconTriggeredOperationBatches,
           strikeMapping.name,
           strikeMapping.type
         ) then
-      local operation, result = buildFirstWaveOperation(strikeMapping, processingContext)
+      local operation, result = buildFirstWaveOperation(strikeMapping, processingCtx)
       table.insert(results, result)
       if operation then
         table.insert(operations, operation)
       end
     else
-      local operation, result = buildNextWaveOperation(strikeMapping, processingContext)
+      local operation, result = buildNextWaveOperation(strikeMapping, processingCtx)
       table.insert(results, result)
       if operation then
         table.insert(operations, operation)
@@ -538,14 +538,14 @@ end
 
 ---Schedule dynamic operations for next wave based on completed reconnaissance
 ---Only called when reconnaissance completes successfully with complete intelligence.
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@param reconEntry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
-function OperationScheduler.schedule(processingContext, reconEntry)
-  local operationBatches = processingContext.reconTriggeredOperationBatches
+function OperationScheduler.schedule(processingCtx, reconEntry)
+  local operationBatches = processingCtx.reconTriggeredOperationBatches
   -- Taken before insertion so the log reports the state this scheduling run saw
   local batchSnapshot = OperationScheduler.getMostRecentOperationsAndNextTime(operationBatches)
 
-  local operations, results = buildOperationsForReconObjective(processingContext, reconEntry)
+  local operations, results = buildOperationsForReconObjective(processingCtx, reconEntry)
 
   if #operations > 0 then
     table.insert(operationBatches, {

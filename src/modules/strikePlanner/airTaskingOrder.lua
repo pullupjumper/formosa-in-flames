@@ -181,38 +181,38 @@ local function createPackageMission(roleData, missionCreationParams)
 end
 
 ---Store a created mission by its configured name
----@param createdMissions table<string, CMO__Mission> Mission registry
+---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@param mission CMO__Mission|nil Created mission, if any
-local function storeCreatedMission(createdMissions, missionCreationParams, mission)
+local function storeCreatedMission(createdMissionMap, missionCreationParams, mission)
   if not mission then
     return
   end
 
-  createdMissions[missionCreationParams.name] = mission
+  createdMissionMap[missionCreationParams.name] = mission
 end
 
 ---Create and register all missions configured for a tanker role
 ---@param roleData SBJ__TankerMissionDeploymentDescriptor Tanker deployment descriptor
----@param createdMissions table<string, CMO__Mission> Mission registry
-local function createTankerMissions(roleData, createdMissions)
-  local missionParamsList = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
+---@param createdMissionMap table<string, CMO__Mission> Mission registry
+local function createTankerMissions(roleData, createdMissionMap)
+  local missionParamsEntries = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
 
-  for _, missionCreationParams in ipairs(missionParamsList) do
+  for _, missionCreationParams in ipairs(missionParamsEntries) do
     local mission = createPackageMission(roleData, missionCreationParams)
-    storeCreatedMission(createdMissions, missionCreationParams, mission)
+    storeCreatedMission(createdMissionMap, missionCreationParams, mission)
   end
 end
 
 ---Create and register one non-tanker role mission
 ---@param role string Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param createdMissions table<string, CMO__Mission> Mission registry
+---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@return boolean # True when mission creation may continue
-local function createNonTankerMission(role, roleData, createdMissions)
+local function createNonTankerMission(role, roleData, createdMissionMap)
   local missionCreationParams = roleData.missionCreationParams
   local mission = createPackageMission(roleData, missionCreationParams)
-  storeCreatedMission(createdMissions, missionCreationParams, mission)
+  storeCreatedMission(createdMissionMap, missionCreationParams, mission)
 
   if role == "striker" and not mission then
     return false
@@ -224,34 +224,34 @@ end
 ---Create missions for one package role
 ---@param role string Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param createdMissions table<string, CMO__Mission> Mission registry
+---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@return boolean # True when critical mission creation succeeded
-local function createMissionsForRole(role, roleData, createdMissions)
+local function createMissionsForRole(role, roleData, createdMissionMap)
   if role == "tanker" then
-    createTankerMissions(roleData --[[@as SBJ__TankerMissionDeploymentDescriptor]], createdMissions)
+    createTankerMissions(roleData --[[@as SBJ__TankerMissionDeploymentDescriptor]], createdMissionMap)
     return true
   end
 
-  return createNonTankerMission(role, roleData, createdMissions)
+  return createNonTankerMission(role, roleData, createdMissionMap)
 end
 
 ---Create all missions for a package, abort if striker creation fails
 ---@param packageData SBJ__Package Package data
 ---@return boolean success True if all critical missions created successfully
----@return table<string, CMO__Mission> createdMissions Created missions indexed by mission name
+---@return table<string, CMO__Mission> createdMissionMap Created missions indexed by mission name
 local function createPackageMissions(packageData)
-  local createdMissions = {}
+  local createdMissionMap = {}
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
-    if roleData and not createMissionsForRole(role, roleData, createdMissions) then
-      return false, createdMissions
+    if roleData and not createMissionsForRole(role, roleData, createdMissionMap) then
+      return false, createdMissionMap
     end
   end
 
-  return true, createdMissions
+  return true, createdMissionMap
 end
 
 -- ============================================================================
@@ -280,19 +280,19 @@ end
 
 ---Apply schedules to all created missions after unit assignment
 ---@param packageData SBJ__Package Package data
----@param createdMissions table<string, CMO__Mission> Created missions indexed by mission name
-local function applyPackageMissionSchedules(packageData, createdMissions)
+---@param createdMissionMap table<string, CMO__Mission> Created missions indexed by mission name
+local function applyPackageMissionSchedules(packageData, createdMissionMap)
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
     ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData then
-      local missionParamsList = role == "tanker" and
+      local missionParamsEntries = role == "tanker" and
           TankerMission.normalizeCreationParams(roleData.missionCreationParams) or
           { roleData.missionCreationParams }
 
-      for _, missionCreationParams in ipairs(missionParamsList) do
-        local mission = createdMissions[missionCreationParams.name]
+      for _, missionCreationParams in ipairs(missionParamsEntries) do
+        local mission = createdMissionMap[missionCreationParams.name]
         if mission then
           applyMissionSchedule(mission, roleData)
         end
@@ -361,8 +361,8 @@ end
 ---Assign tanker units evenly across all configured tanker missions
 ---@param roleData SBJ__TankerMissionDeploymentDescriptor Tanker deployment descriptor
 local function assignTankerUnitsToMissions(roleData)
-  local missionParamsList = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
-  local missionCount = #missionParamsList
+  local missionParamsEntries = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
+  local missionCount = #missionParamsEntries
 
   if missionCount == 0 or roleData.unitCount % missionCount ~= 0 then
     return
@@ -370,7 +370,7 @@ local function assignTankerUnitsToMissions(roleData)
 
   local unitCountPerMission = roleData.unitCount / missionCount
 
-  for _, missionCreationParams in ipairs(missionParamsList) do
+  for _, missionCreationParams in ipairs(missionParamsEntries) do
     assignRoleUnitsToMission(roleData, missionCreationParams.name, unitCountPerMission)
   end
 end
@@ -491,11 +491,11 @@ end
 
 ---Create missions and assign package targets and units
 ---@param packageData SBJ__Package Package data
----@return table<string, CMO__Mission>|nil createdMissions Created missions, or nil on failure
+---@return table<string, CMO__Mission>|nil createdMissionMap Created missions, or nil on failure
 ---@return SBJ__LogResult|nil failureResult Failure row, or nil on success
 local function createAndAssignPackageMissions(packageData)
   local missionName = packageData.striker.missionCreationParams.name
-  local missionsCreated, createdMissions = createPackageMissions(packageData)
+  local missionsCreated, createdMissionMap = createPackageMissions(packageData)
 
   if not missionsCreated then
     return nil, {
@@ -523,17 +523,17 @@ local function createAndAssignPackageMissions(packageData)
     }
   end
 
-  return createdMissions, nil
+  return createdMissionMap, nil
 end
 
 ---Apply schedules and build a successful package launch result
 ---@param config SBJ__Config Global configuration
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param packageData SBJ__Package Package data
----@param createdMissions table<string, CMO__Mission> Created missions
+---@param createdMissionMap table<string, CMO__Mission> Created missions
 ---@return SBJ__LogResult # Successful launch row
-local function finalizePackageLaunch(config, saveData, packageData, createdMissions)
-  applyPackageMissionSchedules(packageData, createdMissions)
+local function finalizePackageLaunch(config, saveData, packageData, createdMissionMap)
+  applyPackageMissionSchedules(packageData, createdMissionMap)
   local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
 
   ---@type SBJ__LogResult
@@ -573,12 +573,12 @@ local function processPackage(config, saveData, packageData)
     return false, preparationResult
   end
 
-  local createdMissions, failureResult = createAndAssignPackageMissions(packageData)
-  if not createdMissions then
+  local createdMissionMap, failureResult = createAndAssignPackageMissions(packageData)
+  if not createdMissionMap then
     return false, failureResult
   end
 
-  local launchResult = finalizePackageLaunch(config, saveData, packageData, createdMissions)
+  local launchResult = finalizePackageLaunch(config, saveData, packageData, createdMissionMap)
   return true, launchResult
 end
 

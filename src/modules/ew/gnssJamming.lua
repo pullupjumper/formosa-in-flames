@@ -317,16 +317,16 @@ end
 
 ---Add all GNSS jammers for a side
 ---Creates multiple GNSS jammer units at randomized positions and sets up their jamming zones
----@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@param sideName string Side name that will own the jammers
 ---@return number # Number of jammers successfully created
-function GnssJamming.addGnssJammers(jammerDescriptors, sideName)
+function GnssJamming.addGnssJammers(jammerDescriptorMap, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySideName = sideConfig.enemySide
   local successCount = 0
   local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Add GNSS jammers")
 
-  for _, descriptor in pairs(jammerDescriptors) do
+  for _, descriptor in pairs(jammerDescriptorMap) do
     local unit, point = GameUtils.tryAddUnit(
       descriptor.name,
       descriptor.point.latitude,
@@ -364,10 +364,10 @@ function GnssJamming.addGnssJammers(jammerDescriptors, sideName)
 end
 
 ---Remove all GNSS jammers for a side
----@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@param sideName string Side name that owns the jammers
 ---@return number # Number of jammers successfully removed
-function GnssJamming.removeJammers(jammerDescriptors, sideName)
+function GnssJamming.removeJammers(jammerDescriptorMap, sideName)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if not sideObj then return 0 end
 
@@ -375,7 +375,7 @@ function GnssJamming.removeJammers(jammerDescriptors, sideName)
   local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Remove GNSS jammers")
 
   for _, zone in ipairs(sideObj.standardzones) do
-    for _, descriptor in pairs(jammerDescriptors) do
+    for _, descriptor in pairs(jammerDescriptorMap) do
       if zone.description == descriptor.zoneName then
         if cleanupZoneResources(sideObj, zone, sideName, descriptor.zoneName) then
           deleteJammerUnit(descriptor.name, sideName)
@@ -399,15 +399,15 @@ end
 
 ---Remove specific GNSS jamming zone by name
 ---Does NOT delete the jammer unit, only the zone and event
----@param jammerDescriptors table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@param sideName string Side name that owns the jammer
 ---@param name string Unique name/key of the jammer descriptor to remove
 ---@return boolean # Whether the zone was successfully removed
-function GnssJamming.removeJammingZoneByName(jammerDescriptors, sideName, name)
+function GnssJamming.removeJammingZoneByName(jammerDescriptorMap, sideName, name)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if not sideObj then return false end
 
-  local descriptor = jammerDescriptors[name]
+  local descriptor = jammerDescriptorMap[name]
   if not descriptor then return false end
 
   for _, zone in ipairs(sideObj.standardzones) do

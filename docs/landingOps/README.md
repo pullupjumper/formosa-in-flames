@@ -123,10 +123,10 @@ saveData.c.amphibOps
 │       ├── phase: string                -- 當前階段（constants.AMPHIBIOUS_PHASES 值）
 │       ├── amphibiousAssaultStartTime: number|nil  -- 突擊開始時間戳
 │       └── airlandingMissionStartTime: number|nil  -- 空/機降任務開始時間
-├── calculationResult: table<string, SBJ__OperationZoneCalculationResult>
+├── calculationResult: table<string, SBJ__OperationZoneCalculationState>
 │   └── OperationZoneCalculationResult
 │       ├── name: string                 -- 作戰名稱
-│       └── result: table<string, SBJ__ShipCalculationResult>
+│       └── result: table<string, SBJ__ShipCalculationState>
 │           └── ShipCalculationResult
 │               ├── locations: CMO__Location[]  -- 預算位置陣列
 │               ├── locationIndex: number       -- 目前分配索引
@@ -184,8 +184,8 @@ flowchart BT
 |---|---|
 | `config.c.amphibOps.periodOfTime` | 突擊等待超時時間（秒） |
 | `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且各 zone 尚未到位即啟動火力支援暫停閘門 |
-| `config.c.amphibOps.cargoList` | 各艦型貨物清單（依艦型索引） |
-| `config.c.amphibOps.cargoListForTransfer` | 轉移用貨物清單（依作戰群組索引） |
+| `config.c.amphibOps.cargoMap` | 各艦型貨物清單（依艦型索引） |
+| `config.c.amphibOps.transferCargoMap` | 轉移用貨物清單（依作戰群組索引） |
 | `config.c.amphibOps.missionStartime` | 各載具類型任務延遲時間 |
 | `config.c.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
 | `config.c.amphibOps.operations` | 作戰區域定義（集結區→錨泊區） |

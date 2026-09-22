@@ -249,28 +249,28 @@ local function removeEventTriggers(eventNames, posTypes, operationalAreasToRemov
 end
 
 ---Add a unit-enters-area trigger to the specified event
----@param opts SBJ__AddTriggerOpts Trigger creation options
+---@param params SBJ__AddTriggerParams Trigger creation options
 ---@return boolean success Whether trigger was successfully added
 ---@return string? reason Failure reason if trigger creation failed
-local function addTriggerToEvent(opts)
-  local triggerName = string.format("(%s) Arrive in %s - %d - %s", opts.sideName, opts.positionType, opts.index,
-    opts.operationalArea.name)
-  local zoneName = opts.positionType .. "/" .. tostring(opts.index) .. "/" .. opts.operationalArea.name
-  local zone = GameApi.ScenEdit_AddZone(opts.sideName, constants.ZONE_TYPES.STANDARD, {
-    area = opts.position.area,
+local function addTriggerToEvent(params)
+  local triggerName = string.format("(%s) Arrive in %s - %d - %s", params.sideName, params.positionType, params.index,
+    params.operationalArea.name)
+  local zoneName = params.positionType .. "/" .. tostring(params.index) .. "/" .. params.operationalArea.name
+  local zone = GameApi.ScenEdit_AddZone(params.sideName, constants.ZONE_TYPES.STANDARD, {
+    area = params.position.area,
     description = zoneName
   })
 
   if zone then
-    local eventName = string.format("(%s) Arrive in %s", opts.sideName, opts.positionType)
-    zone.areacolor = getOperationalAreaColor(opts.positionType)
-    opts.position.area = GameUtils.convertToRPArray(zone)
+    local eventName = string.format("(%s) Arrive in %s", params.sideName, params.positionType)
+    zone.areacolor = getOperationalAreaColor(params.positionType)
+    params.position.area = GameUtils.convertToRPArray(zone)
     local triggerResult = GameApi.ScenEdit_SetTrigger({
       Description = triggerName,
       Mode = "add",
       type = "UnitEntersArea",
-      TargetFilter = { TargetSide = opts.sideName },
-      Area = opts.position.area,
+      TargetFilter = { TargetSide = params.sideName },
+      Area = params.position.area,
       ExitArea = false
     })
     local eventTriggerResult = GameApi.ScenEdit_SetEventTrigger(eventName, { mode = "add", name = triggerName })

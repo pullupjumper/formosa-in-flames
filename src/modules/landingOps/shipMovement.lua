@@ -120,9 +120,9 @@ end
 -- ============================================================================
 
 ---Get pre-calculated movement result for an operation
----@param calculationResult table<string, SBJ__OperationZoneCalculationResult>|nil Calculation result lookup
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState>|nil Calculation result lookup
 ---@param operationName string Operation name
----@return table<string, SBJ__ShipCalculationResult>|nil result Operation movement result
+---@return table<string, SBJ__ShipCalculationState>|nil result Operation movement result
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function getOperationResult(calculationResult, operationName)
   if not calculationResult then
@@ -139,7 +139,7 @@ end
 
 ---Move ship to next pre-calculated location and increment index
 ---@param unit CMO__Unit Ship unit
----@param resultEntry SBJ__ShipCalculationResult|nil Calculation result entry
+---@param resultEntry SBJ__ShipCalculationState|nil Calculation result entry
 ---@param resultKey string Result key used for destination lookup
 ---@param speed number Ship speed in knots
 ---@param isTesting boolean Testing mode flag
@@ -171,7 +171,7 @@ end
 
 ---Handle Type 071 movement with overflow to LST area
 ---@param unit CMO__Unit The Type 071 ship
----@param result table<string, SBJ__ShipCalculationResult> Full result table
+---@param result table<string, SBJ__ShipCalculationState> Full result table
 ---@param speed number Ship speed
 ---@param isTesting boolean Testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
@@ -216,7 +216,7 @@ end
 
 ---Match ship by DBID or name and move to next location
 ---@param unit CMO__Unit Ship unit
----@param result table<string, SBJ__ShipCalculationResult> Calculation results
+---@param result table<string, SBJ__ShipCalculationState> Calculation results
 ---@param speed number Ship speed
 ---@param isTesting boolean Testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
@@ -343,7 +343,7 @@ end
 
 ---Initialize calculation result structure for an operation
 ---@param operationName string Operation name
----@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Target table
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Target table
 local function initOperationResult(operationName, calculationResult)
   if calculationResult[operationName] then return end
   local result = {}
@@ -376,52 +376,52 @@ local function getStartingReferencePoint(area, key)
 end
 
 ---Calculate starting points for all ship types from two reference points
----@param area SBJ__OperationAreaDescriptor Area configuration with startingPoints, heading
+---@param area SBJ__OperationAreaDescriptor Area configuration with startingPointMap, heading
 ---@param formationSettings SBJ__AmphibiousFormationSettings Formation distance settings
----@return table<string, CMO__Location>|nil startingPoints Mapping of key to starting location
+---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function calculateStartingPoints(area, formationSettings)
-  local startingPoints = {}
+  local startingPointMap = {}
   local errorFields
 
-  startingPoints.type075, errorFields = getStartingReferencePoint(area, "type075")
-  if not startingPoints.type075 then return nil, errorFields end
+  startingPointMap.type075, errorFields = getStartingReferencePoint(area, "type075")
+  if not startingPointMap.type075 then return nil, errorFields end
 
-  startingPoints.type071, errorFields = getStartingReferencePoint(area, "type071")
-  if not startingPoints.type071 then return nil, errorFields end
+  startingPointMap.type071, errorFields = getStartingReferencePoint(area, "type071")
+  if not startingPointMap.type071 then return nil, errorFields end
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
-    local fromPoint = startingPoints[row.from]
+    local fromPoint = startingPointMap[row.from]
     if not fromPoint then
       return nil, { point = row.key, from = row.from, reason = "source_point_missing" }
     end
 
-    startingPoints[row.key] = GameApi.World_GetPointFromBearing({
+    startingPointMap[row.key] = GameApi.World_GetPointFromBearing({
       latitude = fromPoint.latitude,
       longitude = fromPoint.longitude,
       bearing = area.heading.vertical,
       distance = formationSettings[row.distanceKey],
     })
 
-    if not startingPoints[row.key] then
+    if not startingPointMap[row.key] then
       return nil, { point = row.key, from = row.from, reason = "derived_point_failed" }
     end
   end
 
-  return startingPoints
+  return startingPointMap
 end
 
 ---Generate and append locations for all ship types in an area
----@param opResult table<string, SBJ__ShipCalculationResult> Operation result to populate
----@param startingPoints table<string, CMO__Location> Starting points per ship type
+---@param opResult table<string, SBJ__ShipCalculationState> Operation result to populate
+---@param startingPointMap table<string, CMO__Location> Starting points per ship type
 ---@param area SBJ__OperationAreaDescriptor Area configuration with heading and shipCounts
 ---@param horizontalDistance number Horizontal spacing
-local function generateAllShipLocations(opResult, startingPoints, area, horizontalDistance)
+local function generateAllShipLocations(opResult, startingPointMap, area, horizontalDistance)
   for _, entry in ipairs(ALL_RESULT_KEYS) do
     Utils.insertList(
       opResult[entry.key].locations,
       GameUtils.generateLocations({
-        initialLocation = startingPoints[entry.key],
+        initialLocation = startingPointMap[entry.key],
         num = area.shipCounts[entry.key],
         bearing = area.heading.horizontal,
         distance = horizontalDistance,
@@ -433,15 +433,15 @@ end
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
----@param calculationResult table<string, SBJ__OperationZoneCalculationResult> Calculation result where calculated positions will be stored
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Calculation result where calculated positions will be stored
 ---@return boolean # True if all destination positions were calculated
 function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
   local formationSettings = amphibOpsConfig.formationSettings
   for _, operation in ipairs(amphibOpsConfig.operations) do
     for areaIndex, area in ipairs(operation.to.areas) do
       initOperationResult(operation.name, calculationResult)
-      local startingPoints, errorFields = calculateStartingPoints(area, formationSettings)
-      if not startingPoints then
+      local startingPointMap, errorFields = calculateStartingPoints(area, formationSettings)
+      if not startingPointMap then
         Logger.error(LogFormat.line("ERROR", LogFormat.merge(
           { operation = operation.name, areaIndex = areaIndex },
           errorFields or { reason = "starting_point_calculation_failed" })))
@@ -450,7 +450,7 @@ function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
 
       generateAllShipLocations(
         calculationResult[operation.name].result,
-        startingPoints, area,
+        startingPointMap, area,
         formationSettings.horizontalDistance
       )
     end

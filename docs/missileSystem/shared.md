@@ -41,7 +41,7 @@ flowchart LR
 | `getGroupUnits` | `unit` | `string[]` | 取得group內所有 GUID |
 | `setUnitProperties` | `params` | `nil` | 設定單位速度、移動路徑、Doctrine |
 | `applyToGroupUnits` | `firingUnit, propsBuilder` | `nil` | 對group每個單位套用屬性 |
-| `buildModeProperties` | `unit, isAuto, wcs` | `SBJ__SetUnitPropertiesParams` | 建立 mode 專用屬性 |
+| `buildModeProperties` | `isAuto, wcs` | `SBJ__SetUnitPropertiesOpts` | 建立 mode 專用屬性 |
 
 ---
 

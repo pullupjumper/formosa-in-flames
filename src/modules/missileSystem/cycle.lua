@@ -334,17 +334,17 @@ local function processFiringUnits(systemCtx, isAuto, sideName)
 end
 
 ---Process all resupply units and collect structured results
----@param msContext SBJ__MissileSystemContext Weapon system context
+---@param msCtx SBJ__MissileSystemContext Weapon system context
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
 ---@return SBJ__LogResult[] results Collected structured results
-local function processResupplyUnits(msContext, isAuto, sideName)
+local function processResupplyUnits(msCtx, isAuto, sideName)
   local results = {}
-  for _, resupplyUnitCtx in pairs(msContext.resupplyUnits) do
+  for _, resupplyUnitCtx in pairs(msCtx.resupplyUnits) do
     local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
 
     if resupplyUnit then
-      Utils.insertList(results, handleResupplyUnitReloadCycle(msContext, resupplyUnitCtx, resupplyUnit, isAuto))
+      Utils.insertList(results, handleResupplyUnitReloadCycle(msCtx, resupplyUnitCtx, resupplyUnit, isAuto))
     end
   end
   return results

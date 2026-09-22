@@ -102,32 +102,32 @@ end
 ---@param locationNames string[] Array of location names to find
 ---@return table<string, CMO__Location> # Map of location names to coordinates
 local function initializeLocationMap(contacts, locationNames)
-  local locations = {}
+  local locationMap = {}
 
   for _, name in ipairs(locationNames) do
-    locations[name] = nil
+    locationMap[name] = nil
   end
 
   for _, contact in ipairs(contacts) do
     for _, name in ipairs(locationNames) do
       if string.find(contact.type_description, name) then
-        locations[name] = { latitude = contact.latitude, longitude = contact.longitude }
+        locationMap[name] = { latitude = contact.latitude, longitude = contact.longitude }
         break
       end
     end
   end
 
-  return locations
+  return locationMap
 end
 
 ---Match contact against airfield-related patterns
 ---@param description string Contact type description
----@param baseLocations table<string, CMO__Location> Map of base locations
+---@param baseLocationMap table<string, CMO__Location> Map of base locations
 ---@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__AirfieldPatterns Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function matchAirfieldTarget(description, baseLocations, guid, threshold, patterns)
+local function matchAirfieldTarget(description, baseLocationMap, guid, threshold, patterns)
   local isAirfieldFacility =
       string.find(description, patterns.runwayPattern) or
       string.find(description, patterns.taxiwayPattern) or
@@ -142,7 +142,7 @@ local function matchAirfieldTarget(description, baseLocations, guid, threshold, 
     return nil
   end
 
-  for baseName, location in pairs(baseLocations) do
+  for baseName, location in pairs(baseLocationMap) do
     if isNearby(location, guid, threshold) then
       return {
         name = baseName .. "/" .. description,
@@ -158,14 +158,14 @@ end
 
 ---Match contact against port-related patterns
 ---@param description string Contact type description
----@param portLocations table<string, CMO__Location> Map of port locations
+---@param portLocationMap table<string, CMO__Location> Map of port locations
 ---@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__PortPatterns Port pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function matchPortTarget(description, portLocations, guid, threshold, patterns)
+local function matchPortTarget(description, portLocationMap, guid, threshold, patterns)
   if string.find(description, patterns.pierPattern) then
-    for portName, location in pairs(portLocations) do
+    for portName, location in pairs(portLocationMap) do
       if isNearby(location, guid, threshold) then
         return {
           name = portName .. "/" .. description,
@@ -220,8 +220,8 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
   local threshold = scanConfig.distanceThreshold
 
   -- Initialize location maps for bases and ports
-  local baseLocations = initializeLocationMap(contacts, scanConfig.taiwanAirBases)
-  local portLocations = initializeLocationMap(contacts, scanConfig.taiwanPorts)
+  local baseLocationMap = initializeLocationMap(contacts, scanConfig.taiwanAirBases)
+  local portLocationMap = initializeLocationMap(contacts, scanConfig.taiwanPorts)
   local targetlist = {}
   ---@cast targetlist SBJ__TargetEntry[]
 
@@ -230,7 +230,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
     local target = nil
 
     -- Try matching airfield targets
-    target = matchAirfieldTarget(contact.type_description, baseLocations, contact.guid, threshold,
+    target = matchAirfieldTarget(contact.type_description, baseLocationMap, contact.guid, threshold,
       scanConfig.targetCategories.airfield)
     if target then
       table.insert(targetlist, target)
@@ -238,7 +238,7 @@ function TargetingProcess.scanTargets(sideName, scanConfig, saveData)
     end
 
     -- Try matching port targets
-    target = matchPortTarget(contact.type_description, portLocations, contact.guid, threshold,
+    target = matchPortTarget(contact.type_description, portLocationMap, contact.guid, threshold,
       scanConfig.targetCategories.port)
     if target then
       table.insert(targetlist, target)
@@ -286,7 +286,7 @@ end
 
 ---Find ground targets (infantry or mobile vehicles) within specified areas
 ---Marks matched contacts with hostile posture; filters out contacts older than contactAge
----@param opts SBJ__FilterParams Filter parameters containing contacts and task information
+---@param opts SBJ__FilterOpts Filter parameters containing contacts and task information
 ---@return string[] # Array of ground unit GUIDs found in target areas
 local function findGroundTargets(opts)
   local contactAge = opts.task.target.contactAge
@@ -301,7 +301,7 @@ local function findGroundTargets(opts)
 end
 
 ---Find airborne early warning aircraft (P-3C, E-2K) within specified areas
----@param opts SBJ__FilterParams Filter parameters with contacts, task, and config
+---@param opts SBJ__FilterOpts Filter parameters with contacts, task, and config
 ---@return string[] # Array of airborne early warning aircraft GUIDs
 local function findAirborne(opts)
   local contactAge = opts.task.target.contactAge
@@ -318,7 +318,7 @@ end
 
 ---Analyze radar emissions to identify SAM systems
 ---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
----@param opts SBJ__FilterParams Filter parameters with contacts, task, and sensor configuration
+---@param opts SBJ__FilterOpts Filter parameters with contacts, task, and sensor configuration
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
 local function analyzeEmissions(opts)
   local contactAge = opts.task.target.contactAge
@@ -334,7 +334,7 @@ end
 
 ---Find Command and Control (C2) facilities
 ---Identifies ROCC and TAAOC command centers within target areas, filtered by contactAge
----@param opts SBJ__FilterParams Filter parameters containing contacts and task information
+---@param opts SBJ__FilterOpts Filter parameters containing contacts and task information
 ---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
 local function findC2(opts)
   local contactAge = opts.task.target.contactAge
@@ -353,7 +353,7 @@ end
 
 ---Find naval targets (ships) within specified areas
 ---Identifies naval contacts within contact age limit
----@param opts SBJ__FilterParams Filter parameters with contacts and task
+---@param opts SBJ__FilterOpts Filter parameters with contacts and task
 ---@return string[] # Array of naval target GUIDs
 local function findNavalTargets(opts)
   local contacts = opts.contacts
@@ -404,7 +404,7 @@ end
 
 ---Find targets by radio direction (SIGINT-based targeting)
 ---Combines mobile targets and C2 units, filters by proximity to radio transmissions
----@param opts SBJ__FilterParams Filter parameters with contacts, task, config, and saveData
+---@param opts SBJ__FilterOpts Filter parameters with contacts, task, config, and saveData
 ---@return string[] # Array of target GUIDs near radio sources
 local function findRadioDirection(opts)
   local contacts = opts.contacts
@@ -524,7 +524,7 @@ end
 
 ---Trigger reconnaissance tracking for a filter's results
 ---Resolves the target before sweeping the side; an already-shadowed one costs nothing.
----@param opts SBJ__FilterParams Filter options with contacts and saveData
+---@param opts SBJ__FilterOpts Filter options with contacts and saveData
 ---@param filterName string Name of the filter that produced targets
 ---@param targetGUIDs string[] Array of target GUIDs from the filter
 local function triggerReconTracking(opts, filterName, targetGUIDs)
@@ -569,9 +569,9 @@ TargetingProcess._internal = {
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
----@return SBJ__FilterParams # Filter options for filter functions
+---@return SBJ__FilterOpts # Filter options for filter functions
 local function buildFilterOptions(config, saveData, contacts, targetConfig)
-  ---@type SBJ__FilterParams
+  ---@type SBJ__FilterOpts
   local opts = {
     contacts = contacts,
     task = {
@@ -605,7 +605,7 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
   local filterOpts = buildFilterOptions(config, saveData, contacts, targetConfig)
 
   for _, filterName in ipairs(filterNames) do
-    ---@type fun(opts: SBJ__FilterParams): string[]|nil
+    ---@type fun(opts: SBJ__FilterOpts): string[]|nil
     local targetingFunction = TargetingProcess._internal[filterName]
     if targetingFunction then
       local targets = targetingFunction(filterOpts)

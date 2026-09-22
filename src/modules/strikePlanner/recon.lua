@@ -197,10 +197,10 @@ end
 
 ---Settle reconnaissance mission and conditionally schedule next operations
 ---Scheduling fires at most once per entry, gated by hasScheduledOperations.
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconQueueEntry Queue entry
 ---@param success boolean Mission success status
-local function settleReconMission(processingContext, entry, success)
+local function settleReconMission(processingCtx, entry, success)
   if entry.isFinished then
     return
   end
@@ -211,7 +211,7 @@ local function settleReconMission(processingContext, entry, success)
   -- re-queue its wave and walk the /N strike counter forward.
   if success and not entry.hasScheduledOperations then
     entry.hasScheduledOperations = true
-    OperationScheduler.schedule(processingContext, entry)
+    OperationScheduler.schedule(processingCtx, entry)
   end
 end
 
@@ -261,10 +261,10 @@ local function resolvePostCourseUAVAction(entry, reconUnit)
 end
 
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconUAVEntry UAV queue entry to process
 ---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
-local function processUAVEntry(processingContext, entry)
+local function processUAVEntry(processingCtx, entry)
   -- Phase 1: Launch reconnaissance units when time comes
   if not entry.hasLaunched then
     return runLaunchPhase(entry)
@@ -281,7 +281,7 @@ local function processUAVEntry(processingContext, entry)
   -- Phase 2a: UAV destroyed or missing
   if not reconUnit then
     local success, result = resolveDestroyedUAVOutcome(entry, isEndTimeReached)
-    settleReconMission(processingContext, entry, success)
+    settleReconMission(processingCtx, entry, success)
     return result
   end
 
@@ -305,17 +305,17 @@ local function processUAVEntry(processingContext, entry)
   local shouldSettle, result = resolvePostCourseUAVAction(entry, reconUnit)
 
   if shouldSettle then
-    settleReconMission(processingContext, entry, true)
+    settleReconMission(processingCtx, entry, true)
   end
 
   return result
 end
 
 ---Process a single satellite or SIGINT queue entry, which settles purely on the clock
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
 ---@param entry SBJ__ReconPassiveEntry Satellite or SIGINT queue entry to process
 ---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
-local function processPassiveEntry(processingContext, entry)
+local function processPassiveEntry(processingCtx, entry)
   if entry.isFinished then
     return nil
   end
@@ -326,7 +326,7 @@ local function processPassiveEntry(processingContext, entry)
     return { tag = "SKIP", fields = { state = "waiting_end_time", endTime = entry.endTime } }
   end
 
-  settleReconMission(processingContext, entry, true)
+  settleReconMission(processingCtx, entry, true)
   return { tag = "OK", fields = { action = "complete_mission", endTime = entry.endTime } }
 end
 
@@ -422,14 +422,14 @@ end
 
 ---Process reconnaissance queue managing UAV launch, flight monitoring, and mission completion
 ---Success requires UAV to complete course and reach endTime; failure if destroyed before endTime
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
-function Recon.processQueue(processingContext)
-  local config = processingContext.config
-  local reconContext = processingContext.reconContext
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
+function Recon.processQueue(processingCtx)
+  local config = processingCtx.config
+  local reconCtx = processingCtx.reconCtx
 
   -- Evaluated every tick so a quiet queue still activates the rewrite in time; the
   -- activation row is emitted here so processQueue owns all log output.
-  local _, activationFields = FrontlineRedirect.evaluate(config, reconContext)
+  local _, activationFields = FrontlineRedirect.evaluate(config, reconCtx)
   if activationFields then
     Logger.log(constants.TAGS.RECON,
       LogFormat.line("RESUME", LogFormat.merge({ scope = "frontlineRedirect" }, activationFields)))
@@ -437,13 +437,13 @@ function Recon.processQueue(processingContext)
 
   local report = LogFormat.report(constants.TAGS.RECON, "reconQueue", "Process queue")
 
-  for _, entry in ipairs(reconContext.queue) do
+  for _, entry in ipairs(reconCtx.queue) do
     local result
 
     if entry.type == ENTRY_TYPE.UAV then
-      result = processUAVEntry(processingContext, entry)
+      result = processUAVEntry(processingCtx, entry)
     elseif entry.type == ENTRY_TYPE.SATELLITE or entry.type == ENTRY_TYPE.SIGINT then
-      result = processPassiveEntry(processingContext, entry)
+      result = processPassiveEntry(processingCtx, entry)
     end
 
     if result then
@@ -457,17 +457,17 @@ end
 
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to shadow the target
----@param reconContext SBJ__ReconContext Reconnaissance context for tracking UAV assignments
+---@param reconCtx SBJ__ReconContext Reconnaissance context for tracking UAV assignments
 ---@param sideUnits CMO__SideUnit[] Side units collection to search for available UAVs
 ---@param uavDBID number UAV platform database ID to filter by
 ---@param target CMO__Contact Target contact to track
 ---@return boolean # True if UAV was assigned to track target, false otherwise
-function Recon.trackTarget(reconContext, sideUnits, uavDBID, target)
-  if Recon.isTargetAlreadyTracked(reconContext.queue, target.guid) then
+function Recon.trackTarget(reconCtx, sideUnits, uavDBID, target)
+  if Recon.isTargetAlreadyTracked(reconCtx.queue, target.guid) then
     return true
   end
 
-  local uav = findClosestUAV(reconContext.queue, sideUnits, uavDBID, target)
+  local uav = findClosestUAV(reconCtx.queue, sideUnits, uavDBID, target)
   if not uav then
     Logger.log(constants.TAGS.RECON, LogFormat.line("SKIP", {
       scope = "targetTracking",
@@ -478,7 +478,7 @@ function Recon.trackTarget(reconContext, sideUnits, uavDBID, target)
     return false
   end
 
-  local queueEntry = findQueueEntryByUnitGUID(reconContext.queue, uav.guid)
+  local queueEntry = findQueueEntryByUnitGUID(reconCtx.queue, uav.guid)
   if not queueEntry then
     Logger.error(LogFormat.line("FAIL", {
       module = constants.TAGS.RECON,
@@ -504,8 +504,8 @@ end
 ---Turn the configured queue plans into runtime entries
 ---Deep-copied so the config table stays pristine across scenario reloads.
 ---@param reconConfig SBJ__ReconConfig Reconnaissance configuration holding the queue plans
----@param reconContext SBJ__ReconContext Reconnaissance context receiving the initialized queue
-function Recon.initQueue(reconConfig, reconContext)
+---@param reconCtx SBJ__ReconContext Reconnaissance context receiving the initialized queue
+function Recon.initQueue(reconConfig, reconCtx)
   local entries = Utils.deepCopy(reconConfig.queue)
 
   for _, entry in ipairs(entries) do
@@ -520,22 +520,22 @@ function Recon.initQueue(reconConfig, reconContext)
     end
   end
 
-  reconContext.queue = entries
+  reconCtx.queue = entries
 end
 
 ---Locate the queue entries bracketing current time by endTime
 ---Scans the reconnaissance queue for the entry whose endTime most recently passed and the next upcoming one.
----@param reconContext SBJ__ReconContext Reconnaissance context containing the queue
+---@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
 ---@return SBJ__ReconQueueEntry|nil mostRecentEntry Entry with the latest endTime at or before current time
 ---@return SBJ__ReconQueueEntry|nil nextEntry Entry with the earliest endTime after current time
-local function findSatellitePassWindow(reconContext)
+local function findSatellitePassWindow(reconCtx)
   local currentTimestamp = GameApi.ScenEdit_CurrentTime()
   local mostRecentEntry = nil
   local mostRecentTimestamp = -1
   local nextEntry = nil
   local nextTimestamp = math.huge
 
-  for _, entry in ipairs(reconContext.queue) do
+  for _, entry in ipairs(reconCtx.queue) do
     -- Only satellite passes anchor the gap window. Dynamically inserted UAVs (and SIGINT
     -- entries) must be excluded, or a prior UAV would skew the boundary and let duplicates in.
     if entry.type == ENTRY_TYPE.SATELLITE then
@@ -557,17 +557,17 @@ end
 
 ---Find an unfinished UAV entry from the same template already covering the time window
 ---The window spans (mostRecentEntry.endTime, nextEntry.endTime]; both takeoffTime and endTime must fall within it.
----@param reconContext SBJ__ReconContext Reconnaissance context containing the queue
+---@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
 ---@param templateId string Template identifier matched against each queued UAV entry
 ---@param mostRecentEntry SBJ__ReconQueueEntry|nil Entry bounding the window start (nil treats start as unbounded)
 ---@param nextEntry SBJ__ReconQueueEntry Entry bounding the window end
 ---@return SBJ__ReconQueueEntry|nil entry Matching UAV entry or nil if none covers the window
-local function findMatchingUAVEntry(reconContext, templateId, mostRecentEntry, nextEntry)
+local function findMatchingUAVEntry(reconCtx, templateId, mostRecentEntry, nextEntry)
   -- Window bounds are loop invariants and parseDatetimeToTimestamp is not cheap.
   local mostRecentTimestamp = mostRecentEntry and Utils.parseDatetimeToTimestamp(mostRecentEntry.endTime) or -1
   local nextTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
 
-  for _, entry in ipairs(reconContext.queue) do
+  for _, entry in ipairs(reconCtx.queue) do
     if not entry.isFinished and entry.type == ENTRY_TYPE.UAV
         and entry.templateId == templateId then
       local takeoffTimestamp = Utils.parseDatetimeToTimestamp(entry.takeoffTime)
@@ -587,23 +587,23 @@ end
 
 ---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
 ---Skips insertion when a matching UAV already exists, or when the flight would end after the next scheduled endTime.
----@param reconContext SBJ__ReconContext Reconnaissance context (queue mutated on success)
+---@param reconCtx SBJ__ReconContext Reconnaissance context (queue mutated on success)
 ---@param entryTemplate SBJ__ReconUAVTemplate UAV entry template to instantiate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-function Recon.insertEntry(reconContext, entryTemplate, startTime)
+function Recon.insertEntry(reconCtx, entryTemplate, startTime)
   local entry = Utils.deepCopy(entryTemplate)
   ---@cast entry SBJ__ReconUAVEntry
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
   local startTimestamp = startTime and Utils.parseDatetimeToTimestamp(startTime) or GameApi.ScenEdit_CurrentTime()
   local endTime = startTimestamp + flightTime
-  local mostRecentEntry, nextEntry = findSatellitePassWindow(reconContext)
+  local mostRecentEntry, nextEntry = findSatellitePassWindow(reconCtx)
 
   if not nextEntry then
     return nil
   end
 
-  local matchingUAVEntry = findMatchingUAVEntry(reconContext, entryTemplate.templateId, mostRecentEntry,
+  local matchingUAVEntry = findMatchingUAVEntry(reconCtx, entryTemplate.templateId, mostRecentEntry,
     nextEntry)
 
   if not matchingUAVEntry then
@@ -616,7 +616,7 @@ function Recon.insertEntry(reconContext, entryTemplate, startTime)
       entry.isFinished = false
       entry.hasScheduledOperations = false
       entry.trackingTargetGUID = nil
-      table.insert(reconContext.queue, entry)
+      table.insert(reconCtx.queue, entry)
       return entry
     end
   end

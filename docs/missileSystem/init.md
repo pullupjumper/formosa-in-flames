@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `checkMissileSystemState`，場景事件腳本呼叫 `handleMoveToPositionEvent`，其餘初始化與重建 API 也都由此轉發。
+`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `process`，場景事件腳本呼叫 `handleMoveToPositionEvent`，其餘初始化與重建 API 也都由此轉發。
 
 模組內將觸發流程拆成多個局部 handler：`handleFiringPoint`、`handleHideArea`、`handleReloadPoint`、`handleAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
 
@@ -57,7 +57,7 @@ flowchart TD
 | `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 轉呼叫 `Concealment.moveFromHideArea` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 轉呼叫 `Ammo.isLowAmmo` |
 | `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryReport` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
-| `checkMissileSystemState` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
+| `process` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
 | `handleSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 轉呼叫 `Context.handleSupplyAssetDestruction` |
 | `initEventTriggers` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | 轉呼叫 `Triggers.initEventTriggers` |
 | `addMissileSystems` | `groundForceCfg, sideName` | `nil` | 轉呼叫 `Deployment.addMissileSystems` |

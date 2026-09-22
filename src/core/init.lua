@@ -38,7 +38,7 @@ local function initEventActions()
     "scripts\\score\\taiwaneseAssetIsDestroy.lua",
     "scripts\\taiwan\\missileSystem\\moveToPosition.lua",
     "scripts\\taiwan\\missileSystem\\scheduledReloadHideCheck.lua",
-    "scripts\\taiwan\\activiateANTISHIPMission.lua",
+    "scripts\\taiwan\\activateAntiShipMission.lua",
     "scripts\\taiwan\\aircraftLanding.lua",
     "scripts\\us\\collectSigint.lua",
     "scripts\\runwayIsDamaged.lua",

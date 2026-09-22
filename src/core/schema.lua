@@ -344,7 +344,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field logging SBJ__LoggingConfig Logging configuration
 ---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
 ---@field radarDistance number Radar detection distance (nautical miles)
----@field readytime number Ready time for missions (seconds)
+---@field readyTime number Ready time for missions (seconds)
 ---@field strikeInterval number Strike interval for strike packages (seconds)
 ---@field missileSystemState table<string, integer> Battery state enumeration
 ---@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
@@ -605,7 +605,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field groupName string Group name
 ---@field from SBJ__DeparturePoint Starting location
 ---@field to? SBJ__DestinationStagingArea Destination staging area
----@field unitList table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
+---@field unitMap table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
 ---@field area? string[] Operational area reference points
 ---@field missionName? string Mission name (optional)
 
@@ -614,7 +614,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field groupName string Group name
 ---@field from SBJ__DeparturePoint Starting location
 ---@field to SBJ__DestinationArea Destination area
----@field unitList table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
+---@field unitMap table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
 
 
 -- ============================================================================
@@ -629,16 +629,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field roros string[] Array of RORO ship GUIDs transported by this barge
 
 ---Ship position calculation result for amphibious operation planning
----@class SBJ__ShipCalculationResult: table
+---@class SBJ__ShipCalculationState: table
 ---@field locations CMO__Location[] Calculated positions for ship formation
 ---@field locationIndex number Current position index in the locations array
 ---@field dbid number Platform database ID for this ship type
 
 ---Operation zone calculation result containing all ship type positions
 ---Stores calculated ship formation positions for each ship type in the operation zone
----@class SBJ__OperationZoneCalculationResult: table
+---@class SBJ__OperationZoneCalculationState: table
 ---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
----@field result table<string, SBJ__ShipCalculationResult> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
+---@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
 
 ---Per-zone state for amphibious operation phase tracking
 ---@class SBJ__ZoneState: table
@@ -650,7 +650,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AmphibOpsContext: table
 ---@field startTime string Operation start time
 ---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
----@field calculationResult table<string, SBJ__OperationZoneCalculationResult> Operation zone calculation results indexed by zone name
+---@field calculationResult table<string, SBJ__OperationZoneCalculationState> Operation zone calculation results indexed by zone name
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
 ---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
@@ -802,8 +802,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodOfTime number Check interval in seconds
 ---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
----@field cargoList table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
----@field cargoListForTransfer table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
+---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
+---@field transferCargoMap table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartime table<string, number[]> Mission start times by type (seconds)
 ---@field formationSettings SBJ__AmphibiousFormationSettings Ship formation layout configuration
 ---@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
@@ -987,9 +987,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__StrikingGroundForceContext: SBJ__GroundForceContext
 ---@field fireSupportPlan table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices (always initialized)
 
----Unit property setting parameters for ground units
----@class SBJ__SetUnitPropertiesParams: table
----@field unit CMO__Unit Unit object (required)
+---Optional unit property overrides for ground units
+---@class SBJ__SetUnitPropertiesOpts: table
 ---@field throttle string? Throttle setting (default: 'Stop')
 ---@field speed number? Speed (default: 0)
 ---@field course CMO__Waypoint[]? Waypoints (optional)
@@ -998,7 +997,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field formation CMO__FormationGroup? Formation settings (optional)
 
 ---Movement options for commanding units to a randomly selected position
----@class SBJ__MoveToPositionOpts: table
+---@class SBJ__MoveToPositionParams: table
 ---@field unitName string Unit name (for messages)
 ---@field battery CMO__Unit Unit group
 ---@field positions SBJ__Position[] Position array
@@ -1014,7 +1013,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
 
 ---Input options for missileSystem UnitEntersArea event handling
----@class SBJ__MoveToPositionEventOpts: table
+---@class SBJ__MoveToPositionEventParams: table
 ---@field groundCtx table<string, SBJ__MissileSystemContext> Missile system runtime contexts by type
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
@@ -1023,7 +1022,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field behavior SBJ__MoveToPositionBehavior|nil Optional behavior switches for side-specific differences
 
 ---Options for adding a unit-enters-area trigger to an event
----@class SBJ__AddTriggerOpts: table
+---@class SBJ__AddTriggerParams: table
 ---@field positionType string Position type (RL/HA/FP)
 ---@field position SBJ__Position Position configuration
 ---@field index integer Position index within operational area
@@ -1138,7 +1137,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field target SBJ__Target Target information
 
 ---Filter parameters for target selection and filtering
----@class SBJ__FilterParams: table
+---@class SBJ__FilterOpts: table
 ---@field config? SBJ__Config Configuration data
 ---@field saveData? SBJ__SaveData Saved data
 ---@field task SBJ__Task Task information
@@ -1178,7 +1177,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportTasks SBJ__FireSupportTask[] Fire support tasks array
 
 ---Attack contacts parameters for coordinating strikes
----@class SBJ__AttackContactsOpts: table
+---@class SBJ__AttackContactsParams: table
 ---@field contacts table<integer, string> A table of contact GUIDs to attack
 ---@field qty integer The number of salvos to launch
 ---@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
@@ -1186,7 +1185,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field sideName? string The side to use for the attack (if not specified, the side of the first firing unit will be used)
 
 ---Parameters for generating missile flight paths
----@class SBJ__GenerateMissilePaths_Params: table
+---@class SBJ__GenerateMissilePathsParams: table
 ---@field targetLat number Target latitude
 ---@field targetLon number Target longitude
 ---@field launcherLat number Launcher latitude
@@ -1267,9 +1266,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Shared runtime inputs for processing reconnaissance queue entries
 ---@class SBJ__ReconQueueProcessingContext: table
 ---@field config SBJ__Config Configuration data
----@field reconContext SBJ__ReconContext Reconnaissance runtime context
+---@field reconCtx SBJ__ReconContext Reconnaissance runtime context
 ---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@field lacmContext SBJ__LACMContext LACM context data
+---@field lacmCtx SBJ__LACMContext LACM context data
 ---@field fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 
 ---Reconnaissance-Strike mapping entry

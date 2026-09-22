@@ -86,7 +86,7 @@ describe("IntegratedAirDefenseSystem", function()
       local radar = makeUnit({ guid = "RAD-1" })
       local sam = makeUnit({ guid = "SAM-1" })
       local c2 = makeUnit({ guid = "C2-1", name = "C2 Node" })
-      local iadsContext = {
+      local iadsCtx = {
         c2 = {
           ["C2-1"] = {
             radar = { ["RAD-1"] = { guid = "RAD-1", isOutOfComms = false } },
@@ -102,9 +102,9 @@ describe("IntegratedAirDefenseSystem", function()
       end))
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit").returns(true))
 
-      IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
+      IntegratedAirDefenseSystem.processC2Disruption(iadsCtx, c2)
 
-      assert.is_nil(iadsContext.c2["C2-1"])
+      assert.is_nil(iadsCtx.c2["C2-1"])
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubSetUnit).was.called_with({ guid = "RAD-1", outofcomms = true })
       assert.stub(stubSetUnit).was.called_with({ guid = "SAM-1", outofcomms = true })
@@ -113,10 +113,10 @@ describe("IntegratedAirDefenseSystem", function()
     -- Negative: no-op when guid not found in any context
     it("should not disable any unit when c2 guid is not tracked", function()
       local c2 = makeUnit({ guid = "C2-MISSING" })
-      local iadsContext = { c2 = {}, rocc = {}, taaoc = {} }
+      local iadsCtx = { c2 = {}, rocc = {}, taaoc = {} }
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
 
-      IntegratedAirDefenseSystem.processC2Disruption(iadsContext, c2)
+      IntegratedAirDefenseSystem.processC2Disruption(iadsCtx, c2)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -130,7 +130,7 @@ describe("IntegratedAirDefenseSystem", function()
     -- Positive: removes destroyed sam from matching c2 context
     it("should remove destroyed unit from matched c2 bucket", function()
       local destroyed = makeUnit({ guid = "SAM-9", name = "SAM-9", inArea = function(_, area) return area == "A-1" end })
-      local c2TypeContext = {
+      local c2TypeCtx = {
         ["C2-A"] = {
           guid = "C2-A",
           areas = { "A-1" },
@@ -139,15 +139,15 @@ describe("IntegratedAirDefenseSystem", function()
         },
       }
 
-      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeContext, "sam", destroyed)
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeCtx, "sam", destroyed)
 
-      assert.is_nil(c2TypeContext["C2-A"].sam["SAM-9"])
+      assert.is_nil(c2TypeCtx["C2-A"].sam["SAM-9"])
     end)
 
     -- Boundary: keeps data when unit is outside all areas
     it("should keep context unchanged when destroyed unit is outside areas", function()
       local destroyed = makeUnit({ guid = "RAD-2", inArea = function() return false end })
-      local c2TypeContext = {
+      local c2TypeCtx = {
         ["C2-A"] = {
           guid = "C2-A",
           areas = { "A-1" },
@@ -156,9 +156,9 @@ describe("IntegratedAirDefenseSystem", function()
         },
       }
 
-      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeContext, "radar", destroyed)
+      IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(c2TypeCtx, "radar", destroyed)
 
-      assert.are.equal("RAD-2", c2TypeContext["C2-A"].radar["RAD-2"].guid)
+      assert.are.equal("RAD-2", c2TypeCtx["C2-A"].radar["RAD-2"].guid)
     end)
   end)
 
@@ -298,24 +298,24 @@ describe("IntegratedAirDefenseSystem", function()
         c2Deployments = { { name = "Sector A", areas = { areaA } } },
         c2FacilityDBIDs = { 9001 },
       }
-      local iadsContext = {}
+      local iadsCtx = {}
 
-      local ok = IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsContext)
+      local ok = IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCtx)
 
       assert.is_true(ok)
-      assert.are.equal("C2 Facility/Sector A", iadsContext.c2["C2-FAC-1"].name)
-      assert.are.equal("SAM-1", iadsContext.c2["C2-FAC-1"].sam["SAM-1"].name)
-      assert.are.equal("RAD-1", iadsContext.c2["C2-FAC-1"].radar["RAD-1"].name)
+      assert.are.equal("C2 Facility/Sector A", iadsCtx.c2["C2-FAC-1"].name)
+      assert.are.equal("SAM-1", iadsCtx.c2["C2-FAC-1"].sam["SAM-1"].name)
+      assert.are.equal("RAD-1", iadsCtx.c2["C2-FAC-1"].radar["RAD-1"].name)
     end)
 
     -- Negative: returns false when side units cannot be loaded
     it("should return false when facility list is unavailable", function()
       local sideObj = { unitsBy = function() return nil end }
       local iadsCfg = { c2Deployments = {}, c2FacilityDBIDs = {} }
-      local iadsContext = {}
+      local iadsCtx = {}
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local ok = IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsCfg, iadsContext)
+      local ok = IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsCfg, iadsCtx)
 
       assert.is_false(ok)
     end)
@@ -369,14 +369,14 @@ describe("IntegratedAirDefenseSystem", function()
         rocc = { makeDescriptor({ name = "ROCC-Node", areas = { areaA } }) },
         taaoc = { makeDescriptor({ name = "TAAOC-Node", areas = { areaA } }) },
       }
-      local iadsContext = { rocc = {}, taaoc = {} }
+      local iadsCtx = { rocc = {}, taaoc = {} }
 
-      IntegratedAirDefenseSystem.initIADSContexts(cfg, iadsContext)
+      IntegratedAirDefenseSystem.initIADSContexts(cfg, iadsCtx)
 
-      assert.are.equal("PAC3", iadsContext.rocc["ROCC-1"].sam["PAC3-1"].name)
-      assert.are.equal("FPS117", iadsContext.rocc["ROCC-1"].radar["FPS-1"].name)
-      assert.are.equal("TC2", iadsContext.taaoc["TAAOC-1"].sam["TC2-1"].name)
-      assert.is_nil(iadsContext.taaoc["TAAOC-1"].radar)
+      assert.are.equal("PAC3", iadsCtx.rocc["ROCC-1"].sam["PAC3-1"].name)
+      assert.are.equal("FPS117", iadsCtx.rocc["ROCC-1"].radar["FPS-1"].name)
+      assert.are.equal("TC2", iadsCtx.taaoc["TAAOC-1"].sam["TC2-1"].name)
+      assert.is_nil(iadsCtx.taaoc["TAAOC-1"].radar)
     end)
 
     -- Negative: returns immediately when player side has no facilities
@@ -385,11 +385,11 @@ describe("IntegratedAirDefenseSystem", function()
       local iadsCfg = { rocc = {}, taaoc = {} }
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local iadsContext = { rocc = {}, taaoc = {} }
-      IntegratedAirDefenseSystem.initIADSContexts(iadsCfg, iadsContext)
+      local iadsCtx = { rocc = {}, taaoc = {} }
+      IntegratedAirDefenseSystem.initIADSContexts(iadsCfg, iadsCtx)
 
-      assert.is_nil(next(iadsContext.rocc))
-      assert.is_nil(next(iadsContext.taaoc))
+      assert.is_nil(next(iadsCtx.rocc))
+      assert.is_nil(next(iadsCtx.taaoc))
     end)
   end)
 

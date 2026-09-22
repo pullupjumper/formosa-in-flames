@@ -25,13 +25,13 @@ end
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
 function LandingOps.process(config, saveData, contacts, currentTime, filteredShips)
-  local start_time = os.clock()
+  local startTime = os.clock()
 
   Coordinator.process(config, saveData, contacts, currentTime, filteredShips)
-  local end_time = os.clock()
+  local endTime = os.clock()
   Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.line("OK", {
     scope = "landingOpsProcess",
-    elapsedSec = string.format("%.4f", end_time - start_time)
+    elapsedSec = string.format("%.4f", endTime - startTime)
   }))
 end
 

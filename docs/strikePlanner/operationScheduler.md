@@ -46,7 +46,7 @@ flowchart TD
     INSERT -->|否| LOG
 ```
 
-兩道早退分別輸出 `[SKIP] reason=recon_objective_not_assigned` 與 `[SKIP] reason=strike_mapping_not_found`。`SNAPSHOT` 在插入批次**之前**取得，反映的是這次排程所見的狀態。若 `reconContext.frontlineRedirected == true`，`REDIRECT` 會改寫 mapping 名稱，使後續空中打擊改用 AAR 編組模板，詳見 [frontlineRedirect](frontlineRedirect.md)。
+兩道早退分別輸出 `[SKIP] reason=recon_objective_not_assigned` 與 `[SKIP] reason=strike_mapping_not_found`。`SNAPSHOT` 在插入批次**之前**取得，反映的是這次排程所見的狀態。若 `reconCtx.frontlineRedirected == true`，`REDIRECT` 會改寫 mapping 名稱，使後續空中打擊改用 AAR 編組模板，詳見 [frontlineRedirect](frontlineRedirect.md)。
 
 `LOOP` 內每一筆 mapping 的決策：
 
@@ -127,11 +127,11 @@ flowchart TD
 
 ## 為什麼 LACM 閘門放在 mapping 迴圈層級
 
-帶 `requiresLACM = true` 的 mapping 只有在 `lacmContext.enabled == true` 時才處理，否則輸出 `[SKIP] reason=lacm_not_committed`。
+帶 `requiresLACM = true` 的 mapping 只有在 `lacmCtx.enabled == true` 時才處理，否則輸出 `[SKIP] reason=lacm_not_committed`。
 
 閘門刻意放在 mapping 迴圈，**不放在建構函式內**。放在建構函式只擋得到首波：一旦首波已存在，流程走的是推進路徑，閘門完全不會被諮詢，後續波就繞過了限制。
 
-`lacmContext.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/scripts/china/scheduledStrikePlanner.lua`），因此齊射後閘門仍然放行。
+`lacmCtx.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/scripts/china/scheduledStrikePlanner.lua`），因此齊射後閘門仍然放行。
 
 另有 `fireSupportOnHold == true` 時跳過所有 `GND/STRIKE/INFRA/*` mapping（`[HOLD] reason=fire_support_on_hold`），避免 SRBM 彈藥被重點基礎設施打擊消耗。
 
@@ -159,21 +159,21 @@ flowchart TD
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `schedule(processingContext, reconEntry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增批次並輸出 log |
+| `schedule(processingCtx, reconEntry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增批次並輸出 log |
 | `getMostRecentOperationsAndNextTime(operationBatches)` | `SBJ__ReconTriggeredOperationBatch[]` | snapshot table | 取時間已過的最近批次，依 type 分類其作戰，並回報下一個批次時間。**只看批次時間，不看執行狀態** |
 | `isOperationScheduled(operationBatches, templateName, operationType)` | `SBJ__ReconTriggeredOperationBatch[]`, `string`, `string` | `boolean` | 完整名稱比對，**不限執行狀態**。回答「這個 mapping 排過了嗎」 |
 | `isOperationPending(operationBatches, templateName, operationType)` | 同上 | `boolean` | 完整名稱比對，**只收未執行**。回答「同名波次是否已排入但還沒打」 |
 | `findLatestExecutedOperation(operationBatches, seriesPrefix, operationType)` | 同上，第二參數是以 `/` 結尾的系列前綴 | `SBJ__Operation\|nil` | 前綴＋數字後綴，**只收已執行**，取波次號最大者（同號比批次時間）。回答「有沒有可以推進的前導波次」 |
 | `generateNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
 
-`processingContext` 欄位：
+`processingCtx` 欄位：
 
 | 欄位 | 用途 |
 |---|---|
 | `config` | 讀取 recon objective mappings 與兩張模板表 |
-| `reconContext` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
+| `reconCtx` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
 | `reconTriggeredOperationBatches` | 查詢既有/待執行作戰，並在有新作戰時追加批次 |
-| `lacmContext` | 讀取 sticky 的 `enabled`，判斷帶 `requiresLACM` 的 mapping 是否可排程 |
+| `lacmCtx` | 讀取 sticky 的 `enabled`，判斷帶 `requiresLACM` 的 mapping 是否可排程 |
 | `fireSupportOnHold` | 暫停 `GND/STRIKE/INFRA/*` mapping |
 
 ---
@@ -189,7 +189,7 @@ flowchart TD
 | `config` | `config.strikeInterval` | `air` 作戰的預設 `strikeInterval`；`ground` 固定為 `0` |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.applyMappings` 讀取；本模組不直接改寫 |
-| `saveData` | `saveData.c.surface.lacm` | 以 `lacmContext` 傳入，讀取 sticky 的 `enabled` |
+| `saveData` | `saveData.c.surface.lacm` | 以 `lacmCtx` 傳入，讀取 sticky 的 `enabled` |
 | `saveData` | `saveData.c.amphibOps.fireSupportOnHold` | 以 `fireSupportOnHold` 傳入 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 輸出排程 report |
 

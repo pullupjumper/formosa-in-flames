@@ -108,13 +108,13 @@ local function calcPercentage(current, max)
 end
 
 ---Sum ammunition across all firing units of a missile system by querying live game state
----@param firingUnits table<string, SBJ__FiringUnitContext> Firing unit contexts keyed by name
+---@param firingUnitMap table<string, SBJ__FiringUnitContext> Firing unit contexts keyed by name
 ---@param sideName string Side name for ScenEdit_GetUnit lookup
 ---@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
-local function sumFiringUnits(firingUnits, sideName)
+local function sumFiringUnits(firingUnitMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, firingCtx in pairs(firingUnits) do
+  for _, firingCtx in pairs(firingUnitMap) do
     local firingUnit = GameApi.ScenEdit_GetUnit(firingCtx.name, sideName)
     if firingUnit then
       local weaponDBIDs = Shared.normalizeWeaponDBIDs(firingCtx.weaponDBID)
@@ -137,12 +137,12 @@ local function sumFiringUnits(firingUnits, sideName)
 end
 
 ---Sum ammunition across context-tracked units (resupply trucks or ammo depots)
----@param contexts table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext> Contexts with wpnCurrent/wpnDefault
+---@param contextMap table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext> Contexts with wpnCurrent/wpnDefault
 ---@return SBJ__AmmoSubtotal # Subtotal with current/max/percentage
-local function sumContextUnits(contexts)
+local function sumContextUnits(contextMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, ctx in pairs(contexts) do
+  for _, ctx in pairs(contextMap) do
     subtotal.current = subtotal.current + ctx.wpnCurrent
     subtotal.max = subtotal.max + ctx.wpnDefault
   end

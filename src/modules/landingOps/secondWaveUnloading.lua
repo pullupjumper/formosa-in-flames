@@ -344,7 +344,7 @@ function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
 
-  local ACVlocations = GameUtils.generateLocations({
+  local acvLocations = GameUtils.generateLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
     num = params.num,
     bearing = params.bearing,
@@ -353,7 +353,7 @@ function SecondWaveUnloading.offloadVehicles(params)
   })
 
   local cargoItems = extractCargoItems(ship, params.num)
-  local count, results = spawnOffloadedVehicles(ship, cargoItems, ACVlocations)
+  local count, results = spawnOffloadedVehicles(ship, cargoItems, acvLocations)
 
   local report = LogFormat.report(
     constants.TAGS.SECOND_WAVE_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")

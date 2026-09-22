@@ -27,7 +27,7 @@ flowchart TD
     OFF(["return false"])
     RETIRE["retireStaleMatrices"]
     HASOP{"有 ground operation?"}
-    SEED["建立 passContext"]
+    SEED["建立 passCtx"]
     LOOP["逐筆 ground operation"]
     WINDOW{"觀察窗狀態"}
     PROCESS["processGroundOperation"]
@@ -72,11 +72,11 @@ flowchart TD
 
 卡住的 FSEM 不會有任何東西幫它解鎖：它的任務永遠不會被標記完成，沒有其他流程會釋放它的發射單元。若把退役綁在「有 operation 等著處理」的前提下，安靜的 tick 就不退役，那些旅會被永久佔用——而 FSEM 卡住的典型情境（目標全滅、沒有新偵察）恰好就是安靜的 tick。
 
-`passContext` 的建立必須排在退役**之後**。被退役 matrix 釋放出來的發射單元要能在同一個 tick 內立刻被新的 operation 重新分配；若先建立 assignment map，那些單元在本 tick 仍會被判定為已分配。
+`passCtx` 的建立必須排在退役**之後**。被退役 matrix 釋放出來的發射單元要能在同一個 tick 內立刻被新的 operation 重新分配；若先建立 assignment map，那些單元在本 tick 仍會被判定為已分配。
 
 ### 為什麼快取只活一次 execute()
 
-`passContext`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `selectAvailableFiringUnits()` → `validateFiringUnitStatus()`，內含兩個只活一趟的快取：
+`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `selectAvailableFiringUnits()` → `validateFiringUnitStatus()`，內含兩個只活一趟的快取：
 
 | 欄位 | 取代的行為 |
 |---|---|

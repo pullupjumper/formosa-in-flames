@@ -71,7 +71,7 @@ end
 
 
 ---Generate missile paths that avoid radar detection zones
----@param params SBJ__GenerateMissilePaths_Params Parameters for generating missile paths
+---@param params SBJ__GenerateMissilePathsParams Parameters for generating missile paths
 ---@return table<integer, SBJ__MissilePath> # Missile path list with waypoints and launch times
 function BearingOnlyLaunch.generateMissilePaths(params)
   local result = {}

@@ -10,6 +10,6 @@ if saveData == nil then
   return
 end
 
-MissileSystem.checkMissileSystemState(saveData.t.ground, false, constants.SIDES.PLAYER)
+MissileSystem.process(saveData.t.ground, false, constants.SIDES.PLAYER)
 
 gKH.State.SaveTableToKey(saveData, "SaveData")

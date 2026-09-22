@@ -2,7 +2,7 @@ local TankerMission = {}
 
 ---Normalize tanker mission creation parameters to an array
 ---@param missionCreationParams SBJ__TankerMissionCreationParams|nil Tanker mission parameters
----@return SBJ__MissionCreationParams[] missionParamsList Normalized mission parameter array
+---@return SBJ__MissionCreationParams[] missionParamsEntries Normalized mission parameter array
 ---@return boolean isSingle Whether the input represented one mission object
 function TankerMission.normalizeCreationParams(missionCreationParams)
   if not missionCreationParams then

@@ -98,8 +98,8 @@ config.targetScanning = {
   }
 }
 config.radarDistance = 70
--- config.readytime = 3600 * 1.5
-config.readytime = 5 * 60
+-- config.readyTime = 3600 * 1.5
+config.readyTime = 5 * 60
 config.strikeInterval = 60 * 60
 
 
@@ -1600,7 +1600,7 @@ config.c.amphibOps = {}
 config.c.amphibOps.isTesting = true
 config.c.amphibOps.periodOfTime = 5 * 60
 config.c.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
-config.c.amphibOps.cargoList = {
+config.c.amphibOps.cargoMap = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
@@ -1646,7 +1646,7 @@ config.c.amphibOps.cargoList = {
     { type = 2, num = 4,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
 }
-config.c.amphibOps.cargoListForTransfer = {
+config.c.amphibOps.transferCargoMap = {
   boat = {
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZBD05 }, -- ZBD-05
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZTD05 }, -- ZTD-05
@@ -1915,9 +1915,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
             }
           },
         },
@@ -1925,10 +1925,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3,
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup3,
             }
           },
         }
@@ -1975,17 +1975,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
         }
       },
@@ -2052,9 +2052,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
             }
           },
         },
@@ -2062,10 +2062,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup3
             }
           },
         }
@@ -2112,17 +2112,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
         }
       },
@@ -2189,9 +2189,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
             }
           },
         },
@@ -2199,10 +2199,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.cargoListForTransfer.assultLandingGroup,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup1,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup2,
-              config.c.amphibOps.cargoListForTransfer.deepAssaultGroup3
+              config.c.amphibOps.transferCargoMap.assultLandingGroup,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargoMap.deepAssaultGroup3
             }
           },
         }
@@ -2249,17 +2249,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
           },
         }
       },
@@ -2307,7 +2307,7 @@ config.c.amphibOps.transportAircraft = {
     cargoItemsForTransfer = {
       {
         loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
-        cargoItems = { config.c.amphibOps.cargoListForTransfer.airAssaultGroup3 }
+        cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup3 }
       },
     }
   },
@@ -2315,7 +2315,7 @@ config.c.amphibOps.transportAircraft = {
 config.c.amphibOps.sag = {
   ["SAG 173"] = {
     groupName = "SAG 173",
-    unitList = {
+    unitMap = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
@@ -2337,7 +2337,7 @@ config.c.amphibOps.sag = {
   },
   ["SAG 155"] = {
     groupName = "SAG 155",
-    unitList = {
+    unitMap = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
@@ -2359,7 +2359,7 @@ config.c.amphibOps.sag = {
   },
   ["SAG 167"] = {
     groupName = "SAG 167",
-    unitList = {
+    unitMap = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
@@ -2380,7 +2380,7 @@ config.c.amphibOps.sag = {
   },
   ["SAG 154"] = {
     groupName = "SAG 154",
-    unitList = {
+    unitMap = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
@@ -2401,7 +2401,7 @@ config.c.amphibOps.sag = {
   },
   ["SAG 175"] = {
     groupName = "SAG 175",
-    unitList = {
+    unitMap = {
       type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
@@ -2432,7 +2432,7 @@ config.c.surface.lacm = {}
 config.c.surface.lacm.weaponDBID = constants.WEAPONS.YJ21
 config.c.surface.lacm.csg = {
   groupName = "CSG",
-  unitList = {
+  unitMap = {
     type002 = {
       dbid = constants.PLATFORMS.TYPE_002,
       embarkedUnits = {
@@ -2955,7 +2955,7 @@ config.c.fireSupportTaskTemplates = {
 config.c.packageTemplates = {
   AIR_STRIKE_AB_W_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3039,7 +3039,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3120,7 +3120,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.HUIAN_AAB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3202,7 +3202,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_2 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.XINGNING_AB,
         weaponDBID = constants.WEAPONS.YJ63,
@@ -3232,7 +3232,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.ANQING_AB,
         weaponDBID = constants.WEAPONS.YJ63,
@@ -3262,7 +3262,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_3 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3344,7 +3344,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3425,7 +3425,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.LONGTIAN_AAB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3507,7 +3507,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_AAR_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3656,7 +3656,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3815,7 +3815,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3976,7 +3976,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_AAR_3 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4125,7 +4125,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4284,7 +4284,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4446,7 +4446,7 @@ config.c.packageTemplates = {
   },
   AIR_INTERCEPT_AIR_E_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.WUHU_AB,
         weaponDBID = constants.WEAPONS.PL15,
@@ -4502,7 +4502,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_E_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
@@ -4583,7 +4583,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
@@ -4666,7 +4666,7 @@ config.c.packageTemplates = {
   },
   AIR_ASUW_SHIP_N_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.SHUIMEN_AAB,
         weaponDBID = constants.WEAPONS.YJ83,
@@ -4713,7 +4713,7 @@ config.c.packageTemplates = {
   },
   AIR_CAS_TROOPS_N_1 = {
     {
-      timeToReady = config.readytime,
+      timeToReady = config.readyTime,
       striker = {
         baseGUID = constants.BASES.SHUIMEN_AAB,
         weaponDBID = constants.WEAPONS.CS_BBC_5,
@@ -5895,7 +5895,7 @@ config.t.surface = {}
 config.t.surface.sag = {
   ["264th Sqn"] = {
     groupName = "264th Sqn",
-    unitList = {
+    unitMap = {
       kidd = {
         dbid = constants.PLATFORMS.KIDD,
         embarkedUnits = {

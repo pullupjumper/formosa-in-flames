@@ -9,18 +9,18 @@ local StrikePlanner = {}
 
 ---Initialize reconnaissance queue from configuration
 ---@param reconConfig SBJ__ReconConfig Reconnaissance configuration
----@param reconContext SBJ__ReconContext Reconnaissance runtime context
-function StrikePlanner.initReconQueue(reconConfig, reconContext)
-  Recon.initQueue(reconConfig, reconContext)
+---@param reconCtx SBJ__ReconContext Reconnaissance runtime context
+function StrikePlanner.initReconQueue(reconConfig, reconCtx)
+  Recon.initQueue(reconConfig, reconCtx)
 end
 
 ---Schedule a UAV entry in the reconnaissance queue
----@param reconContext SBJ__ReconContext Reconnaissance runtime context
+---@param reconCtx SBJ__ReconContext Reconnaissance runtime context
 ---@param entryTemplate SBJ__ReconUAVTemplate The template for the entry to insert
 ---@param startTime string|nil The start time of the entry to insert
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-function StrikePlanner.scheduleReconUAVEntry(reconContext, entryTemplate, startTime)
-  return Recon.insertEntry(reconContext, entryTemplate, startTime)
+function StrikePlanner.scheduleReconUAVEntry(reconCtx, entryTemplate, startTime)
+  return Recon.insertEntry(reconCtx, entryTemplate, startTime)
 end
 
 ---Launch WZ-8 reconnaissance drone from H-6N bomber
@@ -32,9 +32,9 @@ function StrikePlanner.launchWZ8FromH6N(h6n, course)
 end
 
 ---Process reconnaissance queue and dynamic scheduling
----@param processingContext SBJ__ReconQueueProcessingContext Shared processing context
-function StrikePlanner.processReconQueue(processingContext)
-  Recon.processQueue(processingContext)
+---@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
+function StrikePlanner.processReconQueue(processingCtx)
+  Recon.processQueue(processingCtx)
 end
 
 ---Populate the persistent target list from categorized contacts

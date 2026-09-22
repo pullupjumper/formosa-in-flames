@@ -153,19 +153,19 @@ local function buildReverseMap(tbl)
 end
 
 ---Collect unique operational areas from a unit collection into shared accumulators
----@param units table<string, {operationalArea: SBJ__OperationalArea}> Units keyed by name
+---@param unitMap table<string, {operationalArea: SBJ__OperationalArea}> Units keyed by name
 ---@param opAreaMap table<table, string> Maps opArea refs to keys (mutated)
----@param seenKeys table<string, boolean> Already-seen keys (mutated)
+---@param seenKeySet table<string, boolean> Already-seen keys (mutated)
 ---@param uniqueAreas {key: string, opArea: SBJ__OperationalArea}[] Accumulator (mutated)
-local function collectOpAreasFromUnits(units, opAreaMap, seenKeys, uniqueAreas)
-  for _, unit in pairs(units) do
+local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAreas)
+  for _, unit in pairs(unitMap) do
     local opArea = unit.operationalArea
     if opArea then
       local key = resolveOpAreaKey(opArea)
       if key then
         opAreaMap[opArea] = key
-        if not seenKeys[key] then
-          seenKeys[key] = true
+        if not seenKeySet[key] then
+          seenKeySet[key] = true
           uniqueAreas[#uniqueAreas + 1] = { key = key, opArea = opArea }
         end
       end
@@ -179,13 +179,13 @@ end
 ---@return table<table, string> opAreaMap Maps opArea refs to constant key names
 local function collectUniqueAreas(groundForceConfig)
   local uniqueAreas = {}
-  local seenKeys = {}
+  local seenKeySet = {}
   local opAreaMap = {}
   for _, sysConfig in pairs(groundForceConfig) do
     if type(sysConfig) == "table" and sysConfig.firingUnits then
-      collectOpAreasFromUnits(sysConfig.firingUnits, opAreaMap, seenKeys, uniqueAreas)
+      collectOpAreasFromUnits(sysConfig.firingUnits, opAreaMap, seenKeySet, uniqueAreas)
       if sysConfig.resupplyUnits then
-        collectOpAreasFromUnits(sysConfig.resupplyUnits, opAreaMap, seenKeys, uniqueAreas)
+        collectOpAreasFromUnits(sysConfig.resupplyUnits, opAreaMap, seenKeySet, uniqueAreas)
       end
     end
   end
@@ -232,7 +232,7 @@ end
 ---Position emitters driving Phase 3 serialization
 ---Each emitter describes one opArea field and where to find its AREAS const
 ---SHRL reuses RL's area by design (shelter -> reload loop shares the reload area)
----@class OpAreaPositionEmitter
+---@class SBJ__OpAreaPositionEmitter
 ---@field field string opArea field name (RL/HA/FP/AHA/SHRL)
 ---@field keyPrefix string areaRefMap subkey; combined with position index as `keyPrefix .. "_" .. i` when indexed
 ---@field indexed boolean When true, subkey varies per position; when false, keyPrefix is the full subkey
@@ -245,7 +245,7 @@ local POSITION_EMITTERS = {
 }
 
 ---Resolve the AREAS constant reference for the i-th position under emitter
----@param emitter OpAreaPositionEmitter Emitter describing field and subkey lookup
+---@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and subkey lookup
 ---@param i integer Position index (1-based)
 ---@param key string Operational-area key (e.g. "ANW")
 ---@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
@@ -259,7 +259,7 @@ end
 ---Emit one position block (single- or multi-position) into opLines
 ---Skips silently if the first position has no resolvable AREAS reference
 ---@param opLines string[] Output accumulator (mutated)
----@param emitter OpAreaPositionEmitter Emitter describing field and areaRefMap subkey lookup
+---@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and areaRefMap subkey lookup
 ---@param positions SBJ__Position[] Position list from opArea[emitter.field]
 ---@param key string Operational-area key (e.g. "ANW")
 ---@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
@@ -360,7 +360,7 @@ end
 ---@field reversePlatforms table<integer, string> platform DBID -> constant key
 
 ---Per-field serializer signature; return nil to fall through to default
----@alias FieldSerializer fun(value: any, ctx: SBJ__FieldSerializerContext): string|nil
+---@alias SBJ__FieldSerializer fun(value: any, ctx: SBJ__FieldSerializerContext): string|nil
 
 ---Serialize a MissileSystemState enum value to its constant reference
 ---@param value any Field value (expected number)
@@ -443,7 +443,7 @@ local function serializeMountDescriptorsField(value, ctx)
   return serializeValue(value, 2, ctx.opAreaMap)
 end
 
----@type table<string, FieldSerializer>
+---@type table<string, SBJ__FieldSerializer>
 local FIELD_SERIALIZERS = {
   state            = serializeStateField,
   operationalArea  = serializeOperationalAreaField,
@@ -511,16 +511,16 @@ local function orderFiringUnitFields(unit)
   return ordered
 end
 
----Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitions absent
+---Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
 ---@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
----@param ammunitions table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
+---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
----@return string|nil # Serialized block, or nil when ammunitions is nil
-local function emitAmmunitionsBlock(configPath, ammunitions, wpnDefault)
-  if not ammunitions then return nil end
+---@return string|nil # Serialized block, or nil when ammunitionMap is nil
+local function emitAmmunitionsBlock(configPath, ammunitionMap, wpnDefault)
+  if not ammunitionMap then return nil end
   local lines = { configPath .. ".ammunitions = {" }
-  for _, name in ipairs(sortedStringKeys(ammunitions)) do
-    local ammo = ammunitions[name]
+  for _, name in ipairs(sortedStringKeys(ammunitionMap)) do
+    local ammo = ammunitionMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    guid = " .. string.format("%q", ammo.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
@@ -534,15 +534,15 @@ end
 
 ---Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
 ---@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
----@param resupplyUnits table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
+---@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
 ---@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
----@return string|nil # Serialized block, or nil when resupplyUnits is nil
-local function emitResupplyUnitsBlock(configPath, resupplyUnits, wpnDefault, ctx)
-  if not resupplyUnits then return nil end
+---@return string|nil # Serialized block, or nil when resupplyUnitMap is nil
+local function emitResupplyUnitsBlock(configPath, resupplyUnitMap, wpnDefault, ctx)
+  if not resupplyUnitMap then return nil end
   local lines = { configPath .. ".resupplyUnits = {" }
-  for _, name in ipairs(sortedStringKeys(resupplyUnits)) do
-    local unit = resupplyUnits[name]
+  for _, name in ipairs(sortedStringKeys(resupplyUnitMap)) do
+    local unit = resupplyUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    guid = " .. string.format("%q", unit.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
@@ -568,13 +568,13 @@ end
 
 ---Emit the `config.{...}.firingUnits = { ... }` block
 ---@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
----@param firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
+---@param firingUnitMap table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
 ---@param ctx SBJ__FieldSerializerContext Shared context for per-field constant lookup
 ---@return string # Serialized `config.{...}.firingUnits = { ... }` block
-local function emitFiringUnitsBlock(configPath, firingUnits, ctx)
+local function emitFiringUnitsBlock(configPath, firingUnitMap, ctx)
   local lines = { configPath .. ".firingUnits = {" }
-  for _, name in ipairs(sortedStringKeys(firingUnits)) do
-    local unit = firingUnits[name]
+  for _, name in ipairs(sortedStringKeys(firingUnitMap)) do
+    local unit = firingUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     for _, field in ipairs(orderFiringUnitFields(unit)) do
       lines[#lines + 1] = "    " .. field .. " = " .. serializeField(field, unit[field], ctx) .. ","

@@ -149,7 +149,7 @@ flowchart TD
     ACT{"回傳 activation 欄位?"}
     ACTLOG["輸出 RESUME 列"]
     REPORT["建立 LogFormat.report"]
-    LOOP["逐筆 reconContext.queue"]
+    LOOP["逐筆 reconCtx.queue"]
     TYPE{"entry.type"}
     UAV["processUAVEntry"]
     PASSIVE["processPassiveEntry"]
@@ -228,21 +228,21 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `processQueue(processingContext)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
+| `processQueue(processingCtx)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8；建立後的任一步驟失敗會刪除該架無人機並回傳 `nil` |
-| `trackTarget(reconContext, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
+| `trackTarget(reconCtx, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
 | `isTargetAlreadyTracked(queue, targetGUID)` | 該目標是否已有未結算的 UAV entry 在追蹤；供呼叫端在昂貴的側別飛機列舉前先行短路 |
-| `insertEntry(reconContext, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil` |
-| `initQueue(reconConfig, reconContext)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
+| `insertEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil` |
+| `initQueue(reconConfig, reconCtx)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
 
-`processingContext`（`SBJ__ReconQueueProcessingContext`）欄位：
+`processingCtx`（`SBJ__ReconQueueProcessingContext`）欄位：
 
 | 欄位 | 型別 | 用途 |
 |---|---|---|
 | `config` | `SBJ__Config` | 偵察設定、strike mappings 與後續任務模板 |
-| `reconContext` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
+| `reconCtx` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
 | `reconTriggeredOperationBatches` | `SBJ__ReconTriggeredOperationBatch[]` | 已觸發的動態作戰批次，供 scheduler 去重與追加 |
-| `lacmContext` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
+| `lacmCtx` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
 | `fireSupportOnHold` | `boolean` | 為保存彈藥而暫停 SRBM-driven mappings 時設為 `true` |
 
 ---

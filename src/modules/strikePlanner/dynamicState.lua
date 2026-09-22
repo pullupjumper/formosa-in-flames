@@ -37,10 +37,10 @@ end
 ---Example: template "AIR/STRIKE/AB/W/2" + "satellite" -> "AIR/STRIKE/AB/W/2/DYN-SAT-01"
 ---@param templateName string Full operation template name, wave-stage number included (e.g. "AIR/STRIKE/AB/W/2")
 ---@param reconType string Reconnaissance source that triggered the operation (e.g., "satellite", "UAV", "SIGINT")
----@param registry table<string, boolean> Generated operations registry to check
+---@param registrySet table<string, boolean> Generated operations registrySet to check
 ---@param existingPlan table<string, any>|nil Existing plan table to check for conflicts
 ---@return string # Generated unique operation name
-local function generateUniqueOperationName(templateName, reconType, registry, existingPlan)
+local function generateUniqueOperationName(templateName, reconType, registrySet, existingPlan)
   local instancePrefix = templateName .. "/DYN-" .. abbreviateReconSource(reconType) .. "-"
   local sequence = 1
 
@@ -48,7 +48,7 @@ local function generateUniqueOperationName(templateName, reconType, registry, ex
   repeat
     operationName = instancePrefix .. string.format("%02d", sequence)
     sequence = sequence + 1
-  until not registry[operationName] and not (existingPlan and existingPlan[operationName])
+  until not registrySet[operationName] and not (existingPlan and existingPlan[operationName])
 
   return operationName
 end
@@ -59,6 +59,7 @@ end
 
 ---Check if all operations in a reconnaissance-triggered batch are completed
 ---A batch emptied by DynamicState.abandonOperation counts as completed.
+---Side effect: sets operationBatch.executed = true when completed, so the check prefix is kept.
 ---@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch with operations array
 ---@return boolean # Whether all operations are completed
 function DynamicState.checkOperationBatchCompleted(operationBatch)

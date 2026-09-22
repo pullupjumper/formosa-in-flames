@@ -3,4 +3,4 @@ local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
 
-unit.readytime = config.readytime
+unit.readytime = config.readyTime

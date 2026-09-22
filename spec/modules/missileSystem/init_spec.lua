@@ -95,10 +95,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- checkMissileSystemState
+  -- process
   -- ============================================================================
 
-  describe("checkMissileSystemState", function()
+  describe("process", function()
     -- Positive: each enabled system receives the same (isAuto, sideName) pair
     it("should call Cycle.process with the correct arguments for each enabled system", function()
       local srbmCtx = { enabled = true, id = "srbm" }
@@ -110,7 +110,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
+      MissileSystem.process(groundCtx, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, true, "Taiwan")
@@ -137,7 +137,7 @@ describe("MissileSystem", function()
         return {}
       end)
 
-      MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
+      MissileSystem.process(groundCtx, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -170,7 +170,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.checkMissileSystemState(groundCtx, true, "Taiwan")
+      MissileSystem.process(groundCtx, true, "Taiwan")
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -189,7 +189,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.checkMissileSystemState(groundCtx, false, "Taiwan")
+      MissileSystem.process(groundCtx, false, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(1)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, false, "Taiwan")

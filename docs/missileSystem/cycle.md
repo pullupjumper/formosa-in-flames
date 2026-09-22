@@ -59,7 +59,7 @@
 
 ### 結果回傳
 
-每個內部 cycle 函式都會回傳 `SBJ__LogResult[]`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本），供 log 與 UI 使用。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `MissileSystem.checkMissileSystemState` 補上，本模組只負責 unit 層級的欄位。
+每個內部 cycle 函式都會回傳 `SBJ__LogResult[]`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本），供 log 與 UI 使用。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `MissileSystem.process` 補上，本模組只負責 unit 層級的欄位。
 
 ---
 
