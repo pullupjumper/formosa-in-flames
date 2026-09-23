@@ -1,5 +1,6 @@
 local FrontlineRedirect = require("src.modules.strikePlanner.frontlineRedirect")
 local OperationBatch = require("src.modules.strikePlanner.operationBatch")
+local OperationType = require("src.modules.strikePlanner.operationType")
 local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
@@ -7,21 +8,6 @@ local constants = require("src.core.constants")
 local OperationScheduler = {}
 
 local LOG_SCOPE = "dynamicOperationScheduling"
-
----Per-operation-type facts letting the builders stay generic over air and ground
----Air waves stagger by the configured interval, ground FSEMs are TOT-oriented.
-local OPERATION_TYPE_TRAITS = {
-  air = {
-    templateSource = "packageTemplates",
-    templateField = "packages",
-    resolveDefaultInterval = function(config) return config.strikeInterval end,
-  },
-  ground = {
-    templateSource = "fireSupportTaskTemplates",
-    templateField = "fireSupportTasks",
-    resolveDefaultInterval = function() return 0 end,
-  }
-}
 
 -- Public contract of buildNextOperation, distinct from log tags: the emit
 -- path lowercases these into the status field.
@@ -62,7 +48,7 @@ function OperationScheduler.buildNextOperation(operation, config)
     return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.PARSE_ERROR
   end
 
-  local typeTraits = OPERATION_TYPE_TRAITS[operation.type]
+  local typeTraits = OperationType.resolve(operation.type)
   if not typeTraits then
     return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.UNKNOWN_TYPE
   end
@@ -107,7 +93,7 @@ end
 ---@return SBJ__Operation|nil operation Built operation, or nil when it cannot be resolved
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildFirstWaveOperation(strikeMapping, processingCtx)
-  local typeTraits = OPERATION_TYPE_TRAITS[strikeMapping.type]
+  local typeTraits = OperationType.resolve(strikeMapping.type)
   if not typeTraits then
     return nil, {
       tag = "ERROR",

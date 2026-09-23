@@ -388,7 +388,7 @@ describe("OperationScheduler", function()
       assert.is_true(hasErrorCall("%[ERROR%].*operation=AIR/STRIKE/NOPE/1.*reason=template_not_found"))
     end)
 
-    -- Negative: an operation type outside OPERATION_TYPE_TRAITS has no template field to fill.
+    -- Negative: an operation type OperationType cannot resolve has no template field to fill.
     it("should reject a mapping with an unknown operation type", function()
       local config = makeConfig()
       config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
@@ -405,7 +405,7 @@ describe("OperationScheduler", function()
       assert.is_true(hasErrorCall("%[ERROR%].*reason=unknown_operation_type"))
     end)
 
-    -- Positive: strikeInterval defaults come from OPERATION_TYPE_TRAITS, per operation type.
+    -- Positive: strikeInterval defaults come from the OperationType descriptor, per operation type.
     it("should apply the configured strike interval to air waves and zero to ground waves", function()
       local config = makeConfig()
       config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {

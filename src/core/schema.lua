@@ -1288,6 +1288,15 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field air table<string, boolean> Generated air operation names indexed by operation name
 ---@field ground table<string, boolean> Generated ground operation names indexed by operation name
 
+---Per-type facts that let the scheduler and DynamicPlan stay generic over air and ground
+---Owned by OperationType; every air/ground dispatch reads one of these instead of branching on the type string.
+---@class SBJ__OperationTypeDescriptor: table
+---@field templateSource string Key under config.c holding the templates ("packageTemplates" or "fireSupportTaskTemplates")
+---@field templateField string Array field inside an operation template ("packages" or "fireSupportTasks")
+---@field registryKey string Key under generatedOperations that tracks names of this type
+---@field resolvePlan fun(saveData: SBJ__SaveData): table<string, any> The plan table generated operations are inserted into
+---@field resolveDefaultInterval fun(config: SBJ__Config): number Strike interval used when a template carries none
+
 ---Outcome of turning one recon-triggered operation into an inserted ATO wave or FSEM
 ---Deliberately NOT a SBJ__LogResult: fields is a partial contribution that the
 ---caller merges with the operation identity (operation=, batch=) before it
