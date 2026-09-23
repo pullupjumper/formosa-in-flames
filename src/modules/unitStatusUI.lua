@@ -1,11 +1,11 @@
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
-local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local MissileSystem = require("src.modules.missileSystem.init")
 local gKH = require("src.core.gKH_State_Standalone")
+local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
@@ -604,179 +604,165 @@ end
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
-  ---@type SBJ__SaveData|nil
-  local saveData = gKH.State.LoadTableFromKey("SaveData")
-
-  if saveData == nil then
-    Logger.error("saveData is nil")
-    return
-  end
-
-  if sideName == constants.SIDES.ENEMY then
-    local signalDataString = createSignalDataString(saveData, sideName)
-    local batteryDataString = createBatteryDataString(
-      config, saveData, sideName,
-      constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRS,
-      constants.MISSILE_SYSTEM_TYPES.GLCM,
-      constants.MISSILE_SYSTEM_TYPES.ASCM,
-      constants.MISSILE_SYSTEM_TYPES.MRBM,
-      constants.MISSILE_SYSTEM_TYPES.SAM
-    )
-    local magazineDataString = createMagazineDataString(config, sideName)
-    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
-    local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
-    local landingUnitsString = gKH.json.stringify(landingUnitsData)
+  PersistentState.read(function(saveData)
+    if sideName == constants.SIDES.ENEMY then
+      local signalDataString = createSignalDataString(saveData, sideName)
+      local batteryDataString = createBatteryDataString(
+        config, saveData, sideName,
+        constants.MISSILE_SYSTEM_TYPES.SRBM,
+        constants.MISSILE_SYSTEM_TYPES.MLRS,
+        constants.MISSILE_SYSTEM_TYPES.GLCM,
+        constants.MISSILE_SYSTEM_TYPES.ASCM,
+        constants.MISSILE_SYSTEM_TYPES.MRBM,
+        constants.MISSILE_SYSTEM_TYPES.SAM
+      )
+      local magazineDataString = createMagazineDataString(config, sideName)
+      local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
+      local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
+      local landingUnitsString = gKH.json.stringify(landingUnitsData)
 
 
-    local htmlTemplate = getHTMLTemplate()
-    local msg = string.format(
-      htmlTemplate,
-      signalDataString,
-      batteryDataString,
-      c2NodeDataString,
-      magazineDataString,
-      landingUnitsString
-    )
-    local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-  else
-    local signalDataString = createSignalDataString(saveData, "US")
-    local batteryDataString = createBatteryDataString(
-      config, saveData, sideName,
-      constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRS,
-      constants.MISSILE_SYSTEM_TYPES.GLCM,
-      constants.MISSILE_SYSTEM_TYPES.ASCM,
-      constants.MISSILE_SYSTEM_TYPES.SAM
-    )
-    local magazineDataString = createMagazineDataString(config, sideName)
-    local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
+      local htmlTemplate = getHTMLTemplate()
+      local msg = string.format(
+        htmlTemplate,
+        signalDataString,
+        batteryDataString,
+        c2NodeDataString,
+        magazineDataString,
+        landingUnitsString
+      )
+      local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+    else
+      local signalDataString = createSignalDataString(saveData, "US")
+      local batteryDataString = createBatteryDataString(
+        config, saveData, sideName,
+        constants.MISSILE_SYSTEM_TYPES.SRBM,
+        constants.MISSILE_SYSTEM_TYPES.MLRS,
+        constants.MISSILE_SYSTEM_TYPES.GLCM,
+        constants.MISSILE_SYSTEM_TYPES.ASCM,
+        constants.MISSILE_SYSTEM_TYPES.SAM
+      )
+      local magazineDataString = createMagazineDataString(config, sideName)
+      local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 
-    local htmlTemplate = getHTMLTemplate()
-    local msg = string.format(
-      htmlTemplate,
-      signalDataString,
-      batteryDataString,
-      c2NodeDataString,
-      magazineDataString,
-      "{}"
-    )
-    local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-  end
+      local htmlTemplate = getHTMLTemplate()
+      local msg = string.format(
+        htmlTemplate,
+        signalDataString,
+        batteryDataString,
+        c2NodeDataString,
+        magazineDataString,
+        "{}"
+      )
+      local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+    end
+  end)
 end
 
 ---Create interactive setup menu for Taiwan deployment planning
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name (currently only 'Taiwan' is supported)
 function UnitStatusUI.createSetupMenu(config, sideName)
-  ---@type SBJ__SaveData|nil
-  local saveData = gKH.State.LoadTableFromKey("SaveData")
+  PersistentState.update(function(saveData)
+    -- Prepare data for HTML template
+    local gpsJammerDataString = createGnssJammerDataString(config, sideName)
+    local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
+    local missileSystemDataString = createMissileSystemDataString(config, sideName)
+    local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
 
-  if saveData == nil then
-    Logger.error("saveData is nil")
-    return
-  end
+    local htmlTemplate = getSetupMenuTemplate()
+    local msg = string.format(
+      htmlTemplate,
+      gpsJammerDataString,
+      deployedAircraftDataString,
+      missileSystemDataString,
+      sideName,
+      amphibiousLocationsDataString
+    )
 
-  -- Prepare data for HTML template
-  local gpsJammerDataString = createGnssJammerDataString(config, sideName)
-  local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
-  local missileSystemDataString = createMissileSystemDataString(config, sideName)
-  local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
+    -- Display interactive setup dialog
+    local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
 
-  local htmlTemplate = getSetupMenuTemplate()
-  local msg = string.format(
-    htmlTemplate,
-    gpsJammerDataString,
-    deployedAircraftDataString,
-    missileSystemDataString,
-    sideName,
-    amphibiousLocationsDataString
-  )
+    -- Process submitted configuration
+    if form["pressed"] and form["pressed"] == "Done" and form["summaryData"] then
+      -- Parse JSON configuration from form
+      local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
 
-  -- Display interactive setup dialog
-  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-
-  -- Process submitted configuration
-  if form["pressed"] and form["pressed"] == "Done" and form["summaryData"] then
-    -- Parse JSON configuration from form
-    local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
-
-    if jsonStr == nil then
-      return
-    end
-
-    local result = gKH.json.parse(jsonStr)
-    ---@cast result SBJ__SetupResult
-    local jammerDescriptors = result.jammers
-    local airbaseDeploymentDescriptors = result.airbases
-    local missileSystems = result.missileSystems
-
-    -- Apply GPS jamming unit deployments
-    if jammerDescriptors and #jammerDescriptors > 0 then
-      GnssJamming.removeJammers(jammerDescriptors, sideName)
-      for _, descriptor in ipairs(jammerDescriptors) do
-        GnssJamming.addGnssJammer(descriptor, sideName)
+      if jsonStr == nil then
+        return
       end
-    end
 
-    -- Apply aircraft and loadout configurations
-    if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
-      UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
+      local result = gKH.json.parse(jsonStr)
+      ---@cast result SBJ__SetupResult
+      local jammerDescriptors = result.jammers
+      local airbaseDeploymentDescriptors = result.airbases
+      local missileSystems = result.missileSystems
 
-      if sideName == constants.SIDES.PLAYER then
-        UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-      else
-        UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
-      end
-    end
-
-    -- Apply TEL launcher deployments
-    if missileSystems and #missileSystems > 0 then
-      local sideConfig = GameUtils.getCachedSideConfig(sideName)
-      local field = sideConfig.field
-      local operationalAreas = {}
-      ---@cast operationalAreas SBJ__OperationalArea[]
-      local operationalAreasToRemove = {}
-      ---@cast operationalAreasToRemove SBJ__OperationalArea[]
-
-      -- Update missile system configurations in config
-      for _, missileSystem in ipairs(missileSystems) do
-        ---@type SBJ__MissileSystemConfig
-        local systemCfg = config[field].ground[missileSystem.category]
-
-        if systemCfg and systemCfg.firingUnits[missileSystem.unitname] then
-          local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitname])
-          local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
-          local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
-          local operationalArea = normalizeData(missileSystem)
-          table.insert(operationalAreasToRemove, firingUnitdescriptor.operationalArea)
-          firingUnitdescriptor.operationalArea = operationalArea
-          resupplyUnitDescriptor.operationalArea = operationalArea
-          table.insert(operationalAreas, operationalArea)
-          systemCfg.firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
-          systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-          systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
+      -- Apply GPS jamming unit deployments
+      if jammerDescriptors and #jammerDescriptors > 0 then
+        GnssJamming.removeJammers(jammerDescriptors, sideName)
+        for _, descriptor in ipairs(jammerDescriptors) do
+          GnssJamming.addGnssJammer(descriptor, sideName)
         end
       end
 
-      MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, {
-        constants.POSITION_TYPES.RELOAD_POINT,
-        constants.POSITION_TYPES.FIRING_POINT,
-        constants.POSITION_TYPES.HIDE_AREA,
-        constants.POSITION_TYPES.AMMO_HOLDING_AREA
-      }, sideName)
+      -- Apply aircraft and loadout configurations
+      if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
+        UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
-      if sideName == constants.SIDES.PLAYER then
-        MissileSystem.addMissileSystems(config.t.ground, sideName)
-        MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
-      else
-        MissileSystem.addMissileSystems(config.c.ground, sideName)
-        MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+        if sideName == constants.SIDES.PLAYER then
+          UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+        else
+          UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+        end
+      end
+
+      -- Apply TEL launcher deployments
+      if missileSystems and #missileSystems > 0 then
+        local sideConfig = GameUtils.getCachedSideConfig(sideName)
+        local field = sideConfig.field
+        local operationalAreas = {}
+        ---@cast operationalAreas SBJ__OperationalArea[]
+        local operationalAreasToRemove = {}
+        ---@cast operationalAreasToRemove SBJ__OperationalArea[]
+
+        -- Update missile system configurations in config
+        for _, missileSystem in ipairs(missileSystems) do
+          ---@type SBJ__MissileSystemConfig
+          local systemCfg = config[field].ground[missileSystem.category]
+
+          if systemCfg and systemCfg.firingUnits[missileSystem.unitname] then
+            local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitname])
+            local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
+            local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
+            local operationalArea = normalizeData(missileSystem)
+            table.insert(operationalAreasToRemove, firingUnitdescriptor.operationalArea)
+            firingUnitdescriptor.operationalArea = operationalArea
+            resupplyUnitDescriptor.operationalArea = operationalArea
+            table.insert(operationalAreas, operationalArea)
+            systemCfg.firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
+            systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+            systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
+          end
+        end
+
+        MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, {
+          constants.POSITION_TYPES.RELOAD_POINT,
+          constants.POSITION_TYPES.FIRING_POINT,
+          constants.POSITION_TYPES.HIDE_AREA,
+          constants.POSITION_TYPES.AMMO_HOLDING_AREA
+        }, sideName)
+
+        if sideName == constants.SIDES.PLAYER then
+          MissileSystem.addMissileSystems(config.t.ground, sideName)
+          MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+        else
+          MissileSystem.addMissileSystems(config.c.ground, sideName)
+          MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+        end
       end
     end
-  end
-
-  gKH.State.SaveTableToKey(saveData, "SaveData")
+  end)
 end
 
 return UnitStatusUI

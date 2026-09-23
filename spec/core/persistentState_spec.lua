@@ -80,6 +80,22 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
+  -- reset
+  -- ============================================================================
+
+  describe("reset", function()
+    -- Positive: defaults replace whatever is stored, without loading first
+    it("should write defaults to the SaveData key", function()
+      local defaults = { c = { targetlist = {} } }
+
+      PersistentState.reset(defaults)
+
+      assert.stub(saveStub).was.called_with(defaults, "SaveData")
+      assert.stub(loadStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
   -- read
   -- ============================================================================
 

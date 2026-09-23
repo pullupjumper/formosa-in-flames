@@ -1,14 +1,8 @@
-local gKH = require("src.core.gKH_State_Standalone")
+local PersistentState = require("src.core.persistentState")
 local UnitGenerator = require("src.modules.unitGenerator")
-local Logger = require("src.utils.logger")
 local config = require("src.core.config")
----@type SBJ__SaveData|nil
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if not saveData then
-  Logger.error("saveData is nil")
-  return
-end
-
-UnitGenerator.addAircraft(config.c.air.landBased.deployedACs)
--- UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+PersistentState.read(function(saveData)
+  UnitGenerator.addAircraft(config.c.air.landBased.deployedACs)
+  -- UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+end)

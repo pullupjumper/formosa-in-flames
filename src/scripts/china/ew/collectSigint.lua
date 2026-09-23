@@ -1,25 +1,16 @@
-local gKH = require("src.core.gKH_State_Standalone")
+local PersistentState = require("src.core.persistentState")
 local Sigint = require("src.modules.ew.sigint")
 local config = require("src.core.config")
-local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
----@type SBJ__SaveData|nil
-local saveData = gKH.State.LoadTableFromKey("SaveData")
-
-if saveData == nil then
-  Logger.error("saveData is nil")
-  return
-end
-
-if saveData.c.sigint.enabled then
-  Sigint.collectSigint(config, saveData.c.sigint, constants.SIDES.ENEMY, true, config.c.sigint,
-    saveData.t.ground.srbm.firingUnits,
-    saveData.t.ground.glcm.firingUnits,
-    saveData.t.ground.mlrs.firingUnits,
-    saveData.t.ground.ascm.firingUnits,
-    saveData.t.iads.rocc,
-    saveData.t.iads.taaoc)
-end
-
-gKH.State.SaveTableToKey(saveData, "SaveData")
+PersistentState.update(function(saveData)
+  if saveData.c.sigint.enabled then
+    Sigint.collectSigint(config, saveData.c.sigint, constants.SIDES.ENEMY, true, config.c.sigint,
+      saveData.t.ground.srbm.firingUnits,
+      saveData.t.ground.glcm.firingUnits,
+      saveData.t.ground.mlrs.firingUnits,
+      saveData.t.ground.ascm.firingUnits,
+      saveData.t.iads.rocc,
+      saveData.t.iads.taaoc)
+  end
+end)

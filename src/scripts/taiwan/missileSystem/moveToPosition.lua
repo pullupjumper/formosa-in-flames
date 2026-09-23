@@ -1,16 +1,9 @@
-local gKH = require("src.core.gKH_State_Standalone")
+local PersistentState = require("src.core.persistentState")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem.init")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
----@type SBJ__SaveData|nil
-local saveData = gKH.State.LoadTableFromKey("SaveData")
-
-if saveData == nil then
-  Logger.error("saveData is nil")
-  return
-end
 
 if not event then
   Logger.error("event is nil")
@@ -22,17 +15,17 @@ if not unit then
   return
 end
 
-MissileSystem.processMoveToPositionEvent({
-  groundCtx = saveData.t.ground,
-  unit = unit,
-  event = event,
-  isAuto = false,
-  contacts = GameApi.ScenEdit_GetContacts(unit.side),
-  behavior = {
-    hideOnEnterHA = false,
-    hideResupplyOnRLNoMeeting = false,
-    firingUnitLookupSide = unit.side
-  }
-})
-
-gKH.State.SaveTableToKey(saveData, "SaveData")
+PersistentState.update(function(saveData)
+  MissileSystem.processMoveToPositionEvent({
+    groundCtx = saveData.t.ground,
+    unit = unit,
+    event = event,
+    isAuto = false,
+    contacts = GameApi.ScenEdit_GetContacts(unit.side),
+    behavior = {
+      hideOnEnterHA = false,
+      hideResupplyOnRLNoMeeting = false,
+      firingUnitLookupSide = unit.side
+    }
+  })
+end)

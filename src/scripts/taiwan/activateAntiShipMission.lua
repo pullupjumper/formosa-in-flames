@@ -1,12 +1,10 @@
-local gKH = require("src.core.gKH_State_Standalone")
-local Logger = require("src.utils.logger")
+local PersistentState = require("src.core.persistentState")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.PLAYER)
 local event = GameApi.ScenEdit_EventX()
 local temp = {}
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function setAntiShipMissionStartTime()
   local currentTime = GameApi.ScenEdit_CurrentTime()
@@ -20,24 +18,19 @@ local function setAntiShipMissionStartTime()
   GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "RECON/3").starttime = reconStartTime3
 end
 
-if saveData == nil then
-  Logger.error("saveData is nil")
-  return
-end
+PersistentState.update(function(saveData)
+  if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
+    for _, value in ipairs(contacts) do
+      if value:inArea(saveData.t.ground.ascm.test.nai1) and value.typed == 2 then
+        table.insert(temp, value)
+      end
+    end
 
-if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
-  for _, value in ipairs(contacts) do
-    if value:inArea(saveData.t.ground.ascm.test.nai1) and value.typed == 2 then
-      table.insert(temp, value)
+    if Utils.getCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
+      setAntiShipMissionStartTime()
+      saveData.t.ground.ascm.test.isAntishipMissionActivated = true
+      event.isActive = false
+      GameApi.ScenEdit_MsgBox("Launch ANT-SHIP mission", 0)
     end
   end
-
-  if Utils.getCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
-    setAntiShipMissionStartTime()
-    saveData.t.ground.ascm.test.isAntishipMissionActivated = true
-    event.isActive = false
-    GameApi.ScenEdit_MsgBox("Launch ANT-SHIP mission", 0)
-  end
-end
-
-gKH.State.SaveTableToKey(saveData, "SaveData")
+end)

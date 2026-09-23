@@ -30,6 +30,12 @@ function PersistentState.update(fn)
   return true
 end
 
+---Overwrite the stored state with defaults, discarding any saved progress
+---@param defaults SBJ__SaveData
+function PersistentState.reset(defaults)
+  gKH.State.SaveTableToKey(defaults, SAVE_KEY)
+end
+
 ---Load state and run fn against it without saving; mutations are discarded
 ---@param fn fun(state: SBJ__SaveData)
 ---@return boolean ran False when no saved state exists (fn not called)

@@ -1,18 +1,10 @@
-local gKH = require("src.core.gKH_State_Standalone")
+local PersistentState = require("src.core.persistentState")
 local GameApi = require("src.utils.gameApi")
-local Logger = require("src.utils.logger")
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local unit = GameApi.ScenEdit_UnitX()
----@type SBJ__SaveData|nil
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
-if saveData == nil then
-  Logger.error("saveData is nil")
-  return
-end
-
-if unit then
-  RunwayRepairment.processRunwayDamage(saveData, unit.side, unit)
-end
-
-gKH.State.SaveTableToKey(saveData, "SaveData")
+PersistentState.update(function(saveData)
+  if unit then
+    RunwayRepairment.processRunwayDamage(saveData, unit.side, unit)
+  end
+end)

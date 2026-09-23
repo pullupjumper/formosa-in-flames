@@ -11,12 +11,11 @@ local Sigint = require("src.modules.ew.sigint")
 local MissileSystem = require("src.modules.missileSystem.init")
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local GameApi = require("src.utils.gameApi")
+local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
-  gKH.State.SaveTableToKey(saveData, "SaveData")
+  PersistentState.reset(saveData)
 end
----@type SBJ__SaveData|nil
-local saveData = gKH.State.LoadTableFromKey("SaveData")
 
 local function initEventActions()
   local actionNames = {
@@ -87,51 +86,57 @@ local function initSpecialActions()
   end
 end
 
-if saveData ~= nil and #saveData.c.targetlist <= 0 then
+-- isDevMode decides whether the one-time init below is persisted
+local runInit = config.isDevMode and PersistentState.update or PersistentState.read
+
+runInit(function(state)
+  if #state.c.targetlist > 0 then
+    return
+  end
+
   initEventActions()
   initSpecialActions()
-  LandingOps.init(config.c.amphibOps, saveData)
-  UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-  StrikePlanner.updateTargetList(constants.SIDES.ENEMY, config.targetScanning, saveData)
-  RunwayRepairment.initRunways(config, saveData)
+  LandingOps.init(config.c.amphibOps, state)
+  UnitGenerator.initAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+  StrikePlanner.updateTargetList(constants.SIDES.ENEMY, config.targetScanning, state)
+  RunwayRepairment.initRunways(config, state)
 
-  if saveData.c.recon.enabled then
-    StrikePlanner.initReconQueue(config.c.recon, saveData.c.recon)
+  if state.c.recon.enabled then
+    StrikePlanner.initReconQueue(config.c.recon, state.c.recon)
   end
 
-  if saveData.t.iads.enabled then
-    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, saveData.t.iads)
+  if state.t.iads.enabled then
+    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, state.t.iads)
   end
 
-  if saveData.c.iads.enabled then
-    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, saveData.c.iads)
+  if state.c.iads.enabled then
+    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, state.c.iads)
   end
 
-  if saveData.c.commsJamming.enabled then
-    CommsJamming.initCommsJammersContext(saveData.c.commsJamming, constants.SIDES.ENEMY,
+  if state.c.commsJamming.enabled then
+    CommsJamming.initCommsJammersContext(state.c.commsJamming, constants.SIDES.ENEMY,
       config.c.commsJamming.aircraftDefaults)
   end
 
-  if saveData.u.sigint.enabled then
-    Sigint.initReconAircraftContexts(saveData.u.sigint, "US", config.c.commsJamming.aircraftDefaults)
-    Sigint.initReconAircraftContexts(saveData.c.sigint, constants.SIDES.ENEMY, config.c.commsJamming.aircraftDefaults)
+  if state.u.sigint.enabled then
+    Sigint.initReconAircraftContexts(state.u.sigint, "US", config.c.commsJamming.aircraftDefaults)
+    Sigint.initReconAircraftContexts(state.c.sigint, constants.SIDES.ENEMY, config.c.commsJamming.aircraftDefaults)
   end
 
-  if saveData.c.ground.enabled then
-    MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+  if state.c.ground.enabled then
+    MissileSystem.initMissileSystemContexts(config.c.ground, state.c.ground)
   end
 
-  if saveData.t.ground.enabled then
-    MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+  if state.t.ground.enabled then
+    MissileSystem.initMissileSystemContexts(config.t.ground, state.t.ground)
   end
 
   if config.isDevMode then
-    gKH.State.SaveTableToKey(saveData, "SaveData")
     Logger.log(constants.TAGS.INIT, "Init data and save.")
   else
     Logger.log(constants.TAGS.INIT, "Does not init data.")
   end
-end
+end)
 
 -- the following forces have been placed under your command:
 -- 4. Surface Action Group
