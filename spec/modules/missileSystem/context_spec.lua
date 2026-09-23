@@ -217,7 +217,7 @@ describe("MissileSystem Context", function()
   -- ============================================================================
 
   describe("seedGroundForceState", function()
-    -- Positive: every configured system gets its full default state
+    -- Positive: every configured system gets its full default state; timers stay in config
     it("should create default state for each configured system", function()
       local groundForceCtx = {}
 
@@ -226,8 +226,6 @@ describe("MissileSystem Context", function()
       assert.are.same({
         name = "srbm",
         enabled = true,
-        reloadTime = 300,
-        stowTime = 60,
         ammunitions = {},
         resupplyUnits = {},
         firingUnits = {},

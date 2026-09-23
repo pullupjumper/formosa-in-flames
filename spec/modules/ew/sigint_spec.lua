@@ -119,7 +119,6 @@ describe("Sigint", function()
         },
       },
       enabled = true,
-      maxCount = 3,
     }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
@@ -152,6 +151,7 @@ describe("Sigint", function()
       detectionThreshold = 60,
       maxDetectionRange = { 300, 340 },
       detectionSkipProbability = -1,
+      maxCount = 3,
       formulaConstants = {
         decayRate = -1 / 450,
         power = 0.8,

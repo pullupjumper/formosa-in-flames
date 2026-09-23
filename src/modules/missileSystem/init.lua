@@ -96,15 +96,16 @@ end
 
 ---Check status of all missile systems and trigger corresponding actions
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param groundCfg SBJ__GroundForceConfig Ground force configuration (reload/stow timers per system)
 ---@param isAuto boolean Whether in automatic mode
 ---@param sideName string Side name
-function MissileSystem.process(groundCtx, isAuto, sideName)
+function MissileSystem.process(groundCtx, groundCfg, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     local systemCtx = groundCtx[missileSystem]
     if systemCtx and systemCtx.enabled then
-      for _, result in ipairs(Cycle.process(systemCtx, isAuto, sideName)) do
+      for _, result in ipairs(Cycle.process(systemCtx, groundCfg[missileSystem], isAuto, sideName)) do
         result.fields.system = missileSystem
         report.add(result.tag, result.fields)
       end
@@ -154,7 +155,7 @@ function MissileSystem.addMissileSystems(groundForceCfg, sideName)
   Deployment.addMissileSystems(groundForceCfg, sideName)
 end
 
----Seed the default per-system state (name, timers, empty unit maps) from configuration
+---Seed the default per-system state (name, enabled, empty unit maps) from configuration
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
 function MissileSystem.seedGroundForceState(groundForceCfg, groundForceCtx)

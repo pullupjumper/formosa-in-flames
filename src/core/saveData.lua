@@ -1,4 +1,3 @@
-local config = require("src.core.config")
 local constants = require("src.core.constants")
 ---@diagnostic disable: missing-fields
 ---@class SBJ__SaveData
@@ -15,7 +14,6 @@ saveData.u = {}
 
 saveData.c.sigint = {}
 saveData.c.sigint.enabled = true
-saveData.c.sigint.maxCount = config.c.sigint.maxCount
 saveData.c.sigint.reconAircraft = {}
 saveData.c.sigint.transmissions = {}
 
@@ -88,7 +86,6 @@ saveData.c.air.airTaskingOrder = {}
 -- ============================================================================
 
 saveData.c.amphibOps = {}
-saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
 saveData.c.amphibOps.zoneStates = {
   Taoyuan = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
   Sishu   = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
@@ -106,7 +103,6 @@ saveData.c.surface = {}
 saveData.c.surface.lacm = {}
 saveData.c.surface.lacm.enabled = false
 saveData.c.surface.lacm.hasLaunched = false
-saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 
 
 -- ============================================================================
@@ -116,7 +112,6 @@ saveData.c.surface.lacm.startTime = config.c.triggers.launchLACM.startTime
 saveData.c.subSurface = {}
 saveData.c.subSurface.slcm = {}
 saveData.c.subSurface.slcm.enabled = true
-saveData.c.subSurface.slcm.startTime = config.c.triggers.launchSLCM.startTime
 
 
 -- ============================================================================
@@ -189,7 +184,6 @@ saveData.t.gnssJamming.jammers = {}
 
 saveData.u.sigint = {}
 saveData.u.sigint.enabled = true
-saveData.u.sigint.maxCount = config.u.sigint.maxCount
 saveData.u.sigint.reconAircraft = {}
 saveData.u.sigint.transmissions = {}
 

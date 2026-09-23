@@ -20,10 +20,20 @@ describe("MissileSystem Cycle", function()
     return s
   end
 
+  ---Create missile system config carrying the reload/stow timers
+  ---@param overrides? table
+  ---@return table
+  local function makeSystemCfg(overrides)
+    local cfg = { reloadTime = 60, stowTime = 10 }
+    if overrides then
+      for k, v in pairs(overrides) do cfg[k] = v end
+    end
+    return cfg
+  end
+
   local function makeSystemCtx(overrides)
     local ctx = {
       name = "srbm",
-      reloadTime = 60,
       firingUnits = {
         ["Firing Unit Alpha"] = {
           name = "Firing Unit Alpha",
@@ -82,7 +92,6 @@ describe("MissileSystem Cycle", function()
     -- Positive: reloads firing unit when reload conditions are met
     it("should reload firing unit when reload conditions are met", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -135,7 +144,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local results = Cycle.process(systemCtx, false, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.is_nil(systemCtx.firingUnits["Firing Unit Alpha"].reloadStartTime)
@@ -146,7 +155,6 @@ describe("MissileSystem Cycle", function()
     -- Positive: transfers ammo to resupply unit when transfer conditions are met
     it("should transfer ammo to resupply unit when transfer conditions are met", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
         firingUnits = {},
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
@@ -190,7 +198,7 @@ describe("MissileSystem Cycle", function()
         return nil
       end)
 
-      local results = Cycle.process(systemCtx, false, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
 
       assert.are.equal(20, systemCtx.resupplyUnits["Ammo Sec, Alpha"].wpnCurrent)
       assert.are.equal(80, systemCtx.ammunitions["Ammo Depot"].wpnCurrent)
@@ -202,7 +210,6 @@ describe("MissileSystem Cycle", function()
     -- Negative: skips firing unit when game unit cannot be found
     it("should skip firing unit when unit not found in game", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -218,7 +225,7 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local results = Cycle.process(systemCtx, false, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.are.equal(0, #results)
@@ -231,7 +238,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {}
       })
 
-      local results = Cycle.process(systemCtx, false, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
 
       assert.are.equal(0, #results)
     end)
@@ -239,8 +246,6 @@ describe("MissileSystem Cycle", function()
     -- Positive: moves firing unit to reload point when stow elapsed and low ammo in auto mode
     it("should move firing unit to reload point when stow elapsed and low ammo in auto mode", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
-        stowTime = 10,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -283,7 +288,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
@@ -293,8 +298,6 @@ describe("MissileSystem Cycle", function()
     -- Positive: starts stow countdown without moving when low ammo first detected in auto mode
     it("should start stow countdown without moving when low ammo first detected in auto mode", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
-        stowTime = 10,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -336,7 +339,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local results = Cycle.process(systemCtx, true, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
@@ -349,8 +352,6 @@ describe("MissileSystem Cycle", function()
     -- Negative: returns a failure result when movement command cannot be built
     it("should return failure result when hide movement has no available HA", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
-        stowTime = 10,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -390,7 +391,7 @@ describe("MissileSystem Cycle", function()
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
 
-      local results = Cycle.process(systemCtx, true, "Taiwan")
+      local results = Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       assert.are.equal(1, #results)
       assert.are.equal("FAIL", results[1].tag)
@@ -405,8 +406,6 @@ describe("MissileSystem Cycle", function()
         { latitude = "N 25.10.00", longitude = "E 121.10.00" }
       }
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
-        stowTime = 10,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -449,7 +448,7 @@ describe("MissileSystem Cycle", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
@@ -460,8 +459,6 @@ describe("MissileSystem Cycle", function()
     -- Negative: does not move firing unit while stow countdown is still in progress
     it("should not move firing unit while stow countdown still in progress", function()
       local systemCtx = makeSystemCtx({
-        reloadTime = 60,
-        stowTime = 300,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -504,7 +501,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      Cycle.process(systemCtx, makeSystemCfg({ stowTime = 300 }), true, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
@@ -519,7 +516,6 @@ describe("MissileSystem Cycle", function()
       }
       local systemCtx = makeSystemCtx({
         name = "srbm",
-        reloadTime = 60,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -577,7 +573,7 @@ describe("MissileSystem Cycle", function()
       local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
@@ -591,7 +587,6 @@ describe("MissileSystem Cycle", function()
       }
       local systemCtx = makeSystemCtx({
         name = "sam",
-        reloadTime = 60,
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
@@ -650,7 +645,7 @@ describe("MissileSystem Cycle", function()
       local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, true, "Taiwan")
+      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)

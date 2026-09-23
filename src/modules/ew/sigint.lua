@@ -287,8 +287,9 @@ end
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context data with metadata
 ---@param result SBJ__SIGINTResult Detection result with position and confidence
 ---@param unit CMO__Unit Actual unit object for autodetectable state updates
+---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function updateTransmissionData(sigintCtx, unitCtx, result, unit)
+local function updateTransmissionData(sigintCtx, unitCtx, result, unit, maxCount)
   local transmission = sigintCtx.transmissions[unit.guid]
 
   if not transmission then
@@ -325,7 +326,6 @@ local function updateTransmissionData(sigintCtx, unitCtx, result, unit)
   end
 
   -- Check if should become autodetectable
-  local maxCount = sigintCtx.maxCount
   if transmission.currentDetectionLevel > maxCount and not transmission.autodetectable then
     updateAutodetectableState(unit, true)
     transmission.autodetectable = true
@@ -340,14 +340,14 @@ end
 ---Resets autodetectable state to false if currently autodetectable
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context containing transmission records
 ---@param unit CMO__Unit Unit object that was not detected this cycle
+---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function processUndetected(sigintCtx, unit)
+local function processUndetected(sigintCtx, unit, maxCount)
   local transmission = sigintCtx.transmissions[unit.guid]
   if not transmission then
     return DETECTION_STATUS.NO_CHANGE
   end
 
-  local maxCount = sigintCtx.maxCount
   if transmission.currentDetectionLevel > maxCount - 1 then
     transmission.currentDetectionLevel = transmission.currentDetectionLevel - 1
   end
@@ -372,14 +372,14 @@ end
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param isShown boolean Whether to show detection notifications on map
----@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
+---@param sigintConfig SBJ__SIGINTConfig SIGINT-specific configuration
 ---@param emitterGroups table<string, SBJ__FiringUnitContext|SBJ__C2Context>[] Unit context groups to monitor
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, emitterGroups)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
 
-  sigintConfig = sigintConfig or {}
+  local maxCount = sigintConfig.maxCount
   local detectionSkipProbability = sigintConfig.detectionSkipProbability or 0.3
 
   local resultMap = {}
@@ -419,14 +419,14 @@ function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig
       -- Update transmission data based on result
       if result.isDetected then
         totalDetected = totalDetected + 1
-        local status = updateTransmissionData(sigintCtx, unitCtx, result, actualUnit)
+        local status = updateTransmissionData(sigintCtx, unitCtx, result, actualUnit, maxCount)
         report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
           createDetectionNotification(result, unitCtx.msg, sigintConfig)
         end
       else
-        local status = processUndetected(sigintCtx, actualUnit)
+        local status = processUndetected(sigintCtx, actualUnit, maxCount)
         report.add(SIGINT_RESULT_TAGS[status], {
           unit = ctxName,
           result = status,

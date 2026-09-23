@@ -109,6 +109,9 @@ describe("LandingOps Coordinator", function()
           sag = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
           transportAircraft = { { guid = "TA-001", name = "Transport 1" } },
         },
+        triggers = {
+          amphibiousOps = { startTime = "2026-04-03 00:00:00" },
+        },
         recon = {
           template = {
             GJ11_RECON = {
@@ -134,7 +137,6 @@ describe("LandingOps Coordinator", function()
     local saveData = {
       c = {
         amphibOps = {
-          startTime = "2026-04-03 00:00:00",
           zoneStates = {
             Taoyuan = makeZoneState(),
           },
@@ -376,7 +378,6 @@ describe("LandingOps Coordinator", function()
       local saveData = makeSaveData({
         c = {
           amphibOps = {
-            startTime = "2026-04-03 00:00:00",
             zoneStates = {
               Kaohsiung = makeZoneState(),
             },

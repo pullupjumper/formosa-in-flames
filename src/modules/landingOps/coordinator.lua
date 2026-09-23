@@ -58,7 +58,7 @@ local function processZone(config, saveData, zone, operation, contacts, currentT
   local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
-      and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
+      and GameUtils.isAfterStartTime(config.c.triggers.amphibiousOps.startTime) then
     local done = ShipMovement.moveToStagingArea(config.c.amphibOps, saveData, filteredShips, operation)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL

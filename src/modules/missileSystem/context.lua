@@ -67,8 +67,6 @@ function Context.seedGroundForceState(groundForceCfg, groundForceCtx)
     if systemCtx.enabled == nil then
       systemCtx.enabled = true
     end
-    systemCtx.reloadTime = systemCfg.reloadTime
-    systemCtx.stowTime = systemCfg.stowTime
     systemCtx.ammunitions = systemCtx.ammunitions or {}
     systemCtx.resupplyUnits = systemCtx.resupplyUnits or {}
     systemCtx.firingUnits = systemCtx.firingUnits or {}

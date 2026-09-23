@@ -38,7 +38,7 @@ PersistentState.update(function(saveData)
   -- LACM element is committed at all.
   if saveData.c.surface.lacm.enabled
       and not saveData.c.surface.lacm.hasLaunched
-      and GameUtils.isAfterStartTime(saveData.c.surface.lacm.startTime) then
+      and GameUtils.isAfterStartTime(config.c.triggers.launchLACM.startTime) then
     local ships = {}
 
     for _, guid in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
@@ -57,7 +57,7 @@ PersistentState.update(function(saveData)
     saveData.c.surface.lacm.hasLaunched = true
   end
 
-  if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(saveData.c.subSurface.slcm.startTime) then
+  if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(config.c.triggers.launchSLCM.startTime) then
     for _, unit in pairs(config.c.subSurface.slcm.submarines) do
       local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
 

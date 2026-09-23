@@ -362,7 +362,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Submarine-launched cruise missile context managing SLCM operations state
 ---@class SBJ__SLCMContext: table
 ---@field enabled boolean Whether SLCM system is activated
----@field startTime string SLCM operation start time
 
 ---Surface operations context managing surface-launched weapons
 ---@class SBJ__SurfaceOperationsContext: table
@@ -648,7 +647,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
----@field startTime string Operation start time
 ---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
 ---@field calculationResult table<string, SBJ__OperationZoneCalculationState> Operation zone calculation results indexed by zone name
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
@@ -816,7 +814,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__LACMContext: table
 ---@field enabled boolean Sticky flag set true once the CSG reaches its station; never cleared, so it reads as "the LACM element is committed" rather than "the salvo is pending"
 ---@field hasLaunched boolean Whether the salvo has already been fired
----@field startTime string LACM start time
 
 -- ============================================================================
 -- Air Operations & Missions
@@ -952,8 +949,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__MissileSystemContext: table
 ---@field name string Missile system identifier
 ---@field enabled boolean Whether the weapon system is currently active
----@field reloadTime number Reload time for all firing units/resupply units in this system (seconds)
----@field stowTime number Stow time for all firing units in this system (seconds)
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
@@ -1464,7 +1459,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
 ---@field reconAircraft table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
 ---@field enabled boolean Whether SIGINT is activated
----@field maxCount number Maximum detection level
 
 ---Communications jamming context managing electronic warfare jamming operations
 ---@class SBJ__CommsJammingContext: table
