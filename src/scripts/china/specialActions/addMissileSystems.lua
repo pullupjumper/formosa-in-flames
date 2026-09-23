@@ -5,5 +5,5 @@ local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
   MissileSystem.addMissileSystems(config.c.ground, constants.SIDES.ENEMY)
-  MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+  MissileSystem.initMissileSystemContexts(config.c.ground, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
 end)

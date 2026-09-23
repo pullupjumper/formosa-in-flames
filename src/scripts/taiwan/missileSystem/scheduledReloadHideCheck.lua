@@ -3,5 +3,5 @@ local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
-  MissileSystem.process(saveData.t.ground, false, constants.SIDES.PLAYER)
+  MissileSystem.process(PersistentState.groundForces(saveData, constants.SIDES.PLAYER), false, constants.SIDES.PLAYER)
 end)

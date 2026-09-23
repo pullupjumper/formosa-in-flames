@@ -91,9 +91,10 @@ PersistentState.update(function(saveData)
         GnssJamming.removeJammingZoneByName(saveData.c.gnssJamming.jammers, constants.SIDES.ENEMY, unit.name)
       elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-        MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.mlrs)
-        MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.srbm)
-        MissileSystem.processSupplyAssetDestruction(unit, saveData.c.ground.glcm)
+        local groundCtx = PersistentState.groundForces(saveData, constants.SIDES.ENEMY)
+        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.mlrs)
+        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.srbm)
+        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.glcm)
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
           (score + config.s.destroyingAmmo),

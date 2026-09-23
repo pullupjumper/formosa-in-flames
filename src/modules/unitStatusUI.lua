@@ -264,13 +264,13 @@ end
 local function createBatteryDataString(config, saveData, sideName, ...)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
+  local groundCtx = PersistentState.groundForces(saveData, sideName)
   local missileSystems = { ... }
   ---@cast missileSystems SBJ__MissileSystemContext[]
   local rows = {}
 
   for _, missileSystem in pairs(missileSystems) do
-    local resupplyUnitCtxs = saveData[field].ground[missileSystem] and
-        saveData[field].ground[missileSystem].resupplyUnits
+    local resupplyUnitCtxs = groundCtx[missileSystem] and groundCtx[missileSystem].resupplyUnits
 
     if resupplyUnitCtxs then
       for key, _ in pairs(resupplyUnitCtxs) do
@@ -280,7 +280,7 @@ local function createBatteryDataString(config, saveData, sideName, ...)
   end
 
   for _, missileSystem in pairs(missileSystems) do
-    local missileSystemCtx = saveData[field].ground[missileSystem]
+    local missileSystemCtx = groundCtx[missileSystem]
     local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 
     if missileSystemCtx and firingUnitCtxs then
@@ -755,10 +755,10 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
         if sideName == constants.SIDES.PLAYER then
           MissileSystem.addMissileSystems(config.t.ground, sideName)
-          MissileSystem.initMissileSystemContexts(config.t.ground, saveData.t.ground)
+          MissileSystem.initMissileSystemContexts(config.t.ground, PersistentState.groundForces(saveData, sideName))
         else
           MissileSystem.addMissileSystems(config.c.ground, sideName)
-          MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+          MissileSystem.initMissileSystemContexts(config.c.ground, PersistentState.groundForces(saveData, sideName))
         end
       end
     end

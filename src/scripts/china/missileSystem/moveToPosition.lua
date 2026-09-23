@@ -2,6 +2,7 @@ local PersistentState = require("src.core.persistentState")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem.init")
+local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
 
@@ -17,7 +18,7 @@ end
 
 PersistentState.update(function(saveData)
   MissileSystem.processMoveToPositionEvent({
-    groundCtx = saveData.c.ground,
+    groundCtx = PersistentState.groundForces(saveData, constants.SIDES.ENEMY),
     unit = unit,
     event = event,
     isAuto = true,

@@ -2,6 +2,7 @@
 local PersistentState = require("src.core.persistentState")
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
+local constants = require("src.core.constants")
 
 describe("PersistentState", function()
   ---@type luassert.spy[]
@@ -92,6 +93,21 @@ describe("PersistentState", function()
 
       assert.stub(saveStub).was.called_with(defaults, "SaveData")
       assert.stub(loadStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- groundForces
+  -- ============================================================================
+
+  describe("groundForces", function()
+    -- Positive: each side resolves to its own ground slice, not the other side's
+    it("should return the ground slice for the given side", function()
+      local chinaGround, taiwanGround = {}, {}
+      local state = { c = { ground = chinaGround }, t = { ground = taiwanGround } }
+
+      assert.are.equal(chinaGround, PersistentState.groundForces(state, constants.SIDES.ENEMY))
+      assert.are.equal(taiwanGround, PersistentState.groundForces(state, constants.SIDES.PLAYER))
     end)
   end)
 

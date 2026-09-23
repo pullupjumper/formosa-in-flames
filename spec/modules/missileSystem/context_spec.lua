@@ -213,6 +213,51 @@ describe("MissileSystem Context", function()
   end)
 
   -- ============================================================================
+  -- seedGroundForceState
+  -- ============================================================================
+
+  describe("seedGroundForceState", function()
+    -- Positive: every configured system gets its full default state
+    it("should create default state for each configured system", function()
+      local groundForceCtx = {}
+
+      Context.seedGroundForceState({ srbm = { reloadTime = 300, stowTime = 60 } }, groundForceCtx)
+
+      assert.are.same({
+        name = "srbm",
+        enabled = true,
+        reloadTime = 300,
+        stowTime = 60,
+        ammunitions = {},
+        resupplyUnits = {},
+        firingUnits = {},
+      }, groundForceCtx.srbm)
+    end)
+
+    -- Positive: extras seeded elsewhere (Taiwan ascm.test) must survive seeding
+    it("should keep fields already present on the system state", function()
+      local test = { isAntishipMissionActivated = false }
+      local firingUnits = { ["FU-1"] = { name = "FU-1" } }
+      local groundForceCtx = { ascm = { test = test, enabled = false, firingUnits = firingUnits } }
+
+      Context.seedGroundForceState({ ascm = { reloadTime = 1, stowTime = 1 } }, groundForceCtx)
+
+      assert.are.equal(test, groundForceCtx.ascm.test)
+      assert.is_false(groundForceCtx.ascm.enabled)
+      assert.are.equal(firingUnits, groundForceCtx.ascm.firingUnits)
+    end)
+
+    -- Negative: side-level keys that are not systems are left alone
+    it("should not touch ground keys absent from config", function()
+      local groundForceCtx = { enabled = true, fireSupportPlan = {} }
+
+      Context.seedGroundForceState({}, groundForceCtx)
+
+      assert.are.same({ enabled = true, fireSupportPlan = {} }, groundForceCtx)
+    end)
+  end)
+
+  -- ============================================================================
   -- initMissileSystemContexts
   -- ============================================================================
 

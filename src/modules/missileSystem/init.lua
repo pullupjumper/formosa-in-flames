@@ -154,6 +154,13 @@ function MissileSystem.addMissileSystems(groundForceCfg, sideName)
   Deployment.addMissileSystems(groundForceCfg, sideName)
 end
 
+---Seed the default per-system state (name, timers, empty unit maps) from configuration
+---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
+---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
+function MissileSystem.seedGroundForceState(groundForceCfg, groundForceCtx)
+  Context.seedGroundForceState(groundForceCfg, groundForceCtx)
+end
+
 ---Initialize missile system runtime contexts from configuration
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force runtime context

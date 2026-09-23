@@ -14,6 +14,8 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
+  MissileSystem.seedGroundForceState(config.c.ground, saveData.c.ground)
+  MissileSystem.seedGroundForceState(config.t.ground, saveData.t.ground)
   PersistentState.reset(saveData)
 end
 
@@ -123,12 +125,14 @@ runInit(function(state)
     Sigint.initReconAircraftContexts(state.c.sigint, constants.SIDES.ENEMY, config.c.commsJamming.aircraftDefaults)
   end
 
-  if state.c.ground.enabled then
-    MissileSystem.initMissileSystemContexts(config.c.ground, state.c.ground)
+  local chinaGround = PersistentState.groundForces(state, constants.SIDES.ENEMY)
+  if chinaGround.enabled then
+    MissileSystem.initMissileSystemContexts(config.c.ground, chinaGround)
   end
 
-  if state.t.ground.enabled then
-    MissileSystem.initMissileSystemContexts(config.t.ground, state.t.ground)
+  local taiwanGround = PersistentState.groundForces(state, constants.SIDES.PLAYER)
+  if taiwanGround.enabled then
+    MissileSystem.initMissileSystemContexts(config.t.ground, taiwanGround)
   end
 
   if config.isDevMode then

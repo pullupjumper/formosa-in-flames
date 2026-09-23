@@ -1,5 +1,6 @@
 local gKH = require("src.core.gKH_State_Standalone")
 local Logger = require("src.utils.logger")
+local GameUtils = require("src.utils.gameUtils")
 
 ---Sole owner of the SaveData key: every load is paired with its save here,
 ---so event scripts cannot forget to persist what they mutated.
@@ -34,6 +35,14 @@ end
 ---@param defaults SBJ__SaveData
 function PersistentState.reset(defaults)
   gKH.State.SaveTableToKey(defaults, SAVE_KEY)
+end
+
+---Ground force (missile system) slice for a side
+---@param state SBJ__SaveData
+---@param sideName string China or Taiwan
+---@return SBJ__GroundForceContext
+function PersistentState.groundForces(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].ground
 end
 
 ---Load state and run fn against it without saving; mutations are discarded
