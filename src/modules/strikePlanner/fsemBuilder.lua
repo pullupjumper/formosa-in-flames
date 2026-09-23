@@ -4,6 +4,7 @@ local Utils = require("src.utils.utils")
 local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
 local DynamicState = require("src.modules.strikePlanner.dynamicState")
+local OperationBatch = require("src.modules.strikePlanner.operationBatch")
 local constants = require("src.core.constants")
 
 local FsemBuilder = {}
@@ -37,12 +38,11 @@ local FIRING_UNIT_STATUS_LOG_FIELD = {
 }
 
 -- Failure reasons written straight into reason=<token>. INSUFFICIENT_TARGETS and
--- NO_AVAILABLE_FIRING_UNITS also drive the retry decision in FsemBuilder.build.
+-- NO_AVAILABLE_FIRING_UNITS also drive the retry decision OperationBatch makes.
 local PROCESS_REASON = {
   INSUFFICIENT_TARGETS = "insufficient_targets",
   NO_AVAILABLE_FIRING_UNITS = "no_available_firing_units",
-  NO_VALID_TASKS = "no_valid_tasks",
-  OBSERVATION_WINDOW_EXPIRED = "observation_window_expired"
+  NO_VALID_TASKS = "no_valid_tasks"
 }
 
 -- Reasons that keep an operation pending for a later tick inside the window.
@@ -492,8 +492,8 @@ end
 -- ============================================================================
 
 ---Retire stale FSEMs, then process recon-triggered ground operations and insert new FSEMs
----Retirement runs on every enabled tick; retryable operations stay pending inside their
----observation window and are dropped from their batch once it expires.
+---Retirement runs on every enabled tick. OperationBatch drives the observation window;
+---this module only answers whether an FSEM can be inserted right now.
 ---@param config SBJ__Config Global configuration with battery and weapon system parameters
 ---@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
@@ -506,22 +506,11 @@ function FsemBuilder.build(config, saveData, contacts)
   local currentTime = GameApi.ScenEdit_CurrentTime()
   local opReport = LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, LOG_SCOPE, LOG_ACTION)
 
-  -- Retirement deliberately runs before the pending-operation early return. A matrix whose
+  -- Retirement deliberately runs before any pending operation is looked at. A matrix whose
   -- targets are already gone never fires, so no task is ever marked finished and nothing
   -- else releases its firing units; gating retirement on "another operation is waiting"
   -- would leave those brigades deployed indefinitely on every quiet tick.
   retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
-
-  local reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches
-  local groundBatchedOperations = DynamicState.filterOperationsByType(reconTriggeredOperationBatches, "ground")
-  if #groundBatchedOperations == 0 then
-    -- Retirement rows still have to reach the log on a tick with nothing to process.
-    opReport.emit()
-    return false
-  end
-
-  local windowSec = config.c.recon.observationWindowSec
-  local hasExecutedAny = false
 
   -- Must stay a local: both caches only hold still within one pass. Promoting them to
   -- module scope would let them survive across ticks (the module table becomes a global
@@ -533,47 +522,22 @@ function FsemBuilder.build(config, saveData, contacts)
     assignedFiringUnitNames = collectAssignedFiringUnitNames(saveData)
   }
 
-  for _, batchedOp in ipairs(groundBatchedOperations) do
-    local operationBatch = batchedOp.operationBatch
-    local operation = batchedOp.operation
-    local windowState = DynamicState.evaluateObservationWindow(currentTime, operationBatch, windowSec)
-
-    -- PRE_TRIGGER: silent skip, the operation is simply not due yet.
-    if windowState ~= DynamicState.OBSERVATION_STATE.PRE_TRIGGER then
-      ---@type SBJ__OperationProcessResult
-      local outcome
-      if windowState == DynamicState.OBSERVATION_STATE.EXPIRED then
-        outcome = { success = false, tag = "WARN", reason = PROCESS_REASON.OBSERVATION_WINDOW_EXPIRED }
-      else
-        outcome = processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passCtx)
-      end
-
-      local fields = LogFormat.merge({
-        operation = operation.template.name,
-        batch = operationBatch.type .. "@" .. operationBatch.time
-      }, outcome.fields)
-      fields.reason = outcome.reason
-
-      if outcome.success then
-        DynamicState.setOperationExecuted(operationBatch, operation)
-        hasExecutedAny = true
-      elseif RETRYABLE_REASON[outcome.reason] then
-        -- Retryable operations stay pending inside the window and re-report the
-        -- blocking counters every tick, so the log shows what is holding them back.
-        fields.state = "observing"
-      else
-        -- Everything else, including an unknown reason, is dropped from the batch so
-        -- OperationScheduler re-opens the same wave instead of advancing past it.
-        DynamicState.abandonOperation(operationBatch, operation)
-        fields.state = "abandoned"
-      end
-
-      opReport.add(outcome.tag, fields, outcome.details)
+  local result = OperationBatch.run(saveData.c.dynamicOperations.reconTriggeredOperationBatches, "ground", {
+    currentTime = currentTime,
+    windowSec = config.c.recon.observationWindowSec,
+    retryableReasonSet = RETRYABLE_REASON,
+    tryInsert = function(batchedOp)
+      return processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passCtx)
     end
+  })
+
+  for _, entry in ipairs(result.entries) do
+    opReport.add(entry.tag, entry.fields, entry.outcome.details)
   end
 
+  -- Retirement rows still have to reach the log on a tick with nothing to process.
   opReport.emit()
-  return hasExecutedAny
+  return result.hasExecutedAny
 end
 
 return FsemBuilder
