@@ -1337,10 +1337,38 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field operations SBJ__Operation[] Operations to execute
 
 ---Operation paired with the reconnaissance-triggered batch that owns it
----Returned by DynamicState.filterOperationsByType so callers can write execution status back to the parent batch
+---Handed to the builder's tryInsert by OperationBatch.run; execution status is written back by OperationBatch, not the builder
 ---@class SBJ__BatchedOperation: table
 ---@field operationBatch SBJ__ReconTriggeredOperationBatch Parent batch owning the operation
 ---@field operation SBJ__Operation Operation to execute
+
+---Inputs for one OperationBatch.run tick
+---The builder only answers "can this template be inserted right now"; every batch
+---policy (observation window, retry, abandon, expiry) stays inside OperationBatch.
+---@class SBJ__OperationBatchRunParams: table
+---@field currentTime integer Current scenario time in unix timestamp
+---@field windowSec number Observation window duration in seconds
+---@field retryableReasonSet table<string, true> Failure reasons that keep an operation pending inside the window
+---@field tryInsert fun(batchedOp: SBJ__BatchedOperation): SBJ__OperationProcessResult Attempt to build and insert the operation's plan
+
+---One attempted operation from an OperationBatch.run tick
+---fields already carries operation=, batch=, reason= and state=, ready for a report row.
+---@class SBJ__OperationBatchRunEntry: table
+---@field tag string Status tag for the operation row
+---@field fields table<string, any> Merged row fields
+---@field outcome SBJ__OperationProcessResult Raw outcome returned by tryInsert or synthesized on expiry
+
+---Outcome of one OperationBatch.run tick
+---@class SBJ__OperationBatchRunResult: table
+---@field hasExecutedAny boolean True when at least one operation had its plan inserted
+---@field entries SBJ__OperationBatchRunEntry[] One entry per operation that was due this tick
+
+---Most recent batch's operations by type plus the next batch time
+---@class SBJ__OperationBatchSnapshot: table
+---@field air SBJ__Operation[] Air operations of the most recent elapsed batch
+---@field ground SBJ__Operation[] Ground operations of the most recent elapsed batch
+---@field nextOperationBatchTime string|nil Time of the earliest batch still in the future
+---@field mostRecentTime string|nil Time of the most recent elapsed batch
 
 ---Wave template for Dynamic ATO Insertion
 ---@class SBJ__WaveTemplate: table
