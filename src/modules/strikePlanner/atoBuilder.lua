@@ -1,8 +1,7 @@
-local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local LogFormat = require("src.utils.logFormat")
-local DynamicState = require("src.modules.strikePlanner.dynamicState")
+local DynamicPlan = require("src.modules.strikePlanner.dynamicPlan")
 local OperationBatch = require("src.modules.strikePlanner.operationBatch")
 local TankerMission = require("src.modules.strikePlanner.tankerMission")
 local PackageTiming = require("src.modules.strikePlanner.packageTiming")
@@ -269,34 +268,6 @@ local function validateIndividualPackage(packageData, packageIndex, context)
   return true, nil
 end
 
----Evaluate targets for all packages in a wave template
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data containing ATO and target information
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@return table<integer, string[]> # Evaluated targets grouped by package index
-local function evaluateTargetsFromTemplate(config, saveData, contacts, waveTemplate)
-  local targetsByPackageIndex = {}
-
-  for packageIndex, packageData in ipairs(waveTemplate.packages) do
-    local packageTargets = TargetingProcess.processTargets(
-      config,
-      saveData,
-      contacts,
-      packageData.target,
-      waveTemplate.isFirstWave
-    )
-    local targetCount = #packageTargets
-    local requiredCount = packageData.target.minTargetCount
-
-    if targetCount >= requiredCount then
-      targetsByPackageIndex[packageIndex] = packageTargets
-    end
-  end
-
-  return targetsByPackageIndex
-end
-
 -- ============================================================================
 -- Package Assembly
 -- ============================================================================
@@ -437,10 +408,13 @@ local function createAndInsertATOWaveFromTemplate(
     }
   end
 
-  local waveName = DynamicState.buildUniqueAirOperationName(waveTemplate.name, reconType, saveData)
-  local wave = buildATOWave(waveTemplate, waveName, validPackages)
-  saveData.c.air.airTaskingOrder[wave.name] = wave
-  DynamicState.addGeneratedOperation("air", wave.name, saveData)
+  -- Naming, insertion and registration happen in one call, so the generated name can
+  -- never go unregistered.
+  local wave
+  local waveName = DynamicPlan.insert(saveData, "air", waveTemplate.name, reconType, function(planName)
+    wave = buildATOWave(waveTemplate, planName, validPackages)
+    return wave
+  end)
   fields.wave = waveName
   return { success = true, tag = "OK", fields = fields, details = details, timing = collectWaveTimingResults(wave) }
 end
@@ -460,14 +434,15 @@ local function processAirOperation(config, saveData, contacts, batchedOp, freeAi
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
-  local targetsByPackageIndex = evaluateTargetsFromTemplate(
+  local targetsByPackageIndex, qualifiedCount = DynamicPlan.evaluateTargets(
     config,
     saveData,
     contacts,
+    "air",
     operation.template
   )
 
-  if not next(targetsByPackageIndex) then
+  if qualifiedCount == 0 then
     return {
       success = false,
       tag = "SKIP",

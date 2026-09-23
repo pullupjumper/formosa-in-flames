@@ -1,9 +1,8 @@
-local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
-local DynamicState = require("src.modules.strikePlanner.dynamicState")
+local DynamicPlan = require("src.modules.strikePlanner.dynamicPlan")
 local OperationBatch = require("src.modules.strikePlanner.operationBatch")
 local constants = require("src.core.constants")
 
@@ -234,37 +233,6 @@ local function setFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiring
   end
 end
 
----Evaluate targets for every FST in a matrix template and count the qualified ones
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate FSEM template to evaluate
----@return table<integer, string[]> targetsByTaskIndex Evaluated targets keyed by FST index
----@return number targetQualifiedTaskCount Number of task templates with enough targets
-local function evaluateTargetsFromTemplate(config, saveData, contacts, matrixTemplate)
-  local targetsByTaskIndex = {}
-  local targetQualifiedTaskCount = 0
-
-  for taskIndex, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
-    local taskTargets = TargetingProcess.processTargets(
-      config,
-      saveData,
-      contacts,
-      taskTemplate.target,
-      matrixTemplate.isFirstWave
-    )
-    local targetCount = #taskTargets
-    local requiredCount = taskTemplate.target.minTargetCount
-
-    if targetCount >= requiredCount then
-      targetsByTaskIndex[taskIndex] = taskTargets
-      targetQualifiedTaskCount = targetQualifiedTaskCount + 1
-    end
-  end
-
-  return targetsByTaskIndex, targetQualifiedTaskCount
-end
-
 ---Build executable FSTs from evaluated targets and available firing units
 ---@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
@@ -371,10 +339,11 @@ local function createAndInsertMatrixFromTemplate(
     }
   end
 
-  local matrixName = DynamicState.buildUniqueGroundOperationName(matrixTemplate.name, reconType, saveData)
-  local matrix = buildMatrix(matrixTemplate, matrixName, fireSupportTasks, currentTime)
-  saveData.c.ground.fireSupportPlan[matrix.name] = matrix
-  DynamicState.addGeneratedOperation("ground", matrix.name, saveData)
+  -- Naming, insertion and registration happen in one call, so the generated name can
+  -- never go unregistered.
+  DynamicPlan.insert(saveData, "ground", matrixTemplate.name, reconType, function(planName)
+    return buildMatrix(matrixTemplate, planName, fireSupportTasks, currentTime)
+  end)
   return { success = true, tag = "OK", fields = statusFields }
 end
 
@@ -390,10 +359,11 @@ local function processGroundOperation(config, saveData, contacts, batchedOp, cur
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
-  local targetsByTaskIndex, targetQualifiedTaskCount = evaluateTargetsFromTemplate(
+  local targetsByTaskIndex, targetQualifiedTaskCount = DynamicPlan.evaluateTargets(
     config,
     saveData,
     contacts,
+    "ground",
     operation.template
   )
 
