@@ -232,7 +232,7 @@ describe("OperationScheduler", function()
         })
       )
 
-      -- atoBuilder labels rows with type@time; dynamicState skips batches already executed
+      -- Builders label rows with type@time; OperationBatch skips batches already executed
       assert.are.equal("2026-02-14 09:30:00", operationBatches[1].time)
       assert.are.equal("SIGINT", operationBatches[1].type)
       assert.is_false(operationBatches[1].executed)
