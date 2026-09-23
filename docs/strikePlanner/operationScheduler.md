@@ -14,7 +14,7 @@
 
 後續由 [atoBuilder](atoBuilder.md) 取出 `air` operation 生成 ATO Wave，[fsemBuilder](fsemBuilder.md) 取出 `ground` operation 生成 FSEM。批次上的 `time` 與 `type` 直接沿用偵察 entry 的 `endTime` 與 `type`，下游用它們標記日誌並判斷觀測窗。
 
-`OPERATION_TYPE_TRAITS` 是模組保持對 air/ground 泛型的關鍵：它以 operation type 為鍵，供給兩個建構函式所需的每型別事實（模板來源表名、寫入 `operation.template` 的欄位名、模板未帶 `strikeInterval` 時的預設值）。新增 operation type 只需在此表加一列。
+本模組不直接碰 batch 陣列的內部形狀：追加批次與四個查詢都走 [operationBatch](operationBatch.md)。air / ground 的每型別事實（模板來源表名、寫入 `operation.template` 的欄位名、模板未帶 `strikeInterval` 時的預設值）由 [operationType](operationType.md) 的 descriptor 提供，本模組保持對 operation type 泛型；新增 operation type 只需在 descriptor 表加一列。
 
 ---
 
@@ -25,14 +25,14 @@
 ```mermaid
 flowchart TD
     START["OperationScheduler.schedule"]
-    SNAPSHOT["getMostRecentOperationsAndNextTime"]
+    SNAPSHOT["OperationBatch.findMostRecentSnapshot"]
     BUILD["buildOperationsForReconObjective"]
     OBJECTIVE{"reconObjectiveId 存在?"}
     MAPPING{"objective 有 mappings?"}
     REDIRECT["FrontlineRedirect.updateMappings"]
     LOOP["逐筆處理 strikeMapping"]
     INSERT{"產生了作戰?"}
-    BATCH["插入 ReconTriggeredOperationBatch"]
+    BATCH["OperationBatch.add"]
     LOG["logSchedule"]
     SKIP["累積 SKIP 結果"]
 
@@ -55,7 +55,7 @@ flowchart TD
     ENTER["strikeMapping"]
     LACM{"requiresLACM 未滿足?"}
     HOLD{"INFRA 且火力暫停?"}
-    EXISTS{"isOperationScheduled?"}
+    EXISTS{"OperationBatch.isScheduled?"}
     FIRST["buildFirstWaveOperation"]
     NEXTWAVE["buildNextWaveOperation"]
     NEXT["累積結果"]
@@ -83,35 +83,35 @@ flowchart TD
 
 ## 為什麼 REUSED_CURRENT 也要去重
 
-推進路徑呼叫 `buildNextOperation` 生成 `/N+1`，接著以 `isOperationPending` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
+推進路徑呼叫 `buildNextOperation` 生成 `/N+1`，接著以 `OperationBatch.isPending` 檢查同名波次是否已排入但尚未執行，若已存在輸出 `[SKIP] reason=already_pending`。
 
 這道檢查**必須同時涵蓋 `FOUND_NEXT` 與 `REUSED_CURRENT`**。曾經只擋 `FOUND_NEXT`，理由是「`REUSED_CURRENT` 本來就要重跑同一波」——但那讓沒有 `/N+1` 模板的 mapping 在每次偵察完成時各疊一份待執行副本。實測連續三次偵察完成會累積三份。
 
 副本能共存的原因在下游：`fsemBuilder` 對可重試原因（目標不足、發射單位不可用）會**刻意保留 pending**，地面作戰因此可能長時間掛著，期間新的偵察完成就疊上一份，等目標出現時全部一起發射。
 
-去重不會封死重跑：`REUSED_CURRENT` 沿用已執行來源 `/N` 的名稱，而 `isOperationPending` 只比對未執行的作戰，所以只有先前重複排入的待執行副本會被擋，該副本執行完仍會重新排入。
+去重不會封死重跑：`REUSED_CURRENT` 沿用已執行來源 `/N` 的名稱，而 `OperationBatch.isPending` 只比對未執行的作戰，所以只有先前重複排入的待執行副本會被擋，該副本執行完仍會重新排入。
 
 ---
 
 ## 為什麼放棄的作戰是移除而不是標記
 
-`executed` 只有一個意思：**作戰計畫真的被插進去了**（ATO wave 或 FSEM）。兩個建構器在觀察窗逾時、缺模板或插入失敗時，會呼叫 `DynamicState.abandonOperation()` 把該筆作戰從 batch 移除，而不是標記成已執行。
+`executed` 只有一個意思：**作戰計畫真的被插進去了**（ATO wave 或 FSEM）。兩個建構器在觀察窗逾時、缺模板或插入失敗時回報不可重試的 reason，[operationBatch](operationBatch.md) 隨即把該筆作戰從 batch 移除，而不是標記成已執行。
 
-排程器的三個查詢因此不需要任何額外判斷就落在正確行為上：
+排程器的查詢因此不需要任何額外判斷就落在正確行為上：
 
-| 情形 | `isOperationScheduled` | `findLatestExecutedOperation` | 結果 |
+| 情形 | `OperationBatch.isScheduled` | `OperationBatch.findLatestExecuted` | 結果 |
 |---|---|---|---|
 | 首波被移除 | 判定沒排過 | 不影響 | `buildFirstWaveOperation` 重開首波 |
 | 第 N 波被移除（首波仍在） | 判定排過 | 最新仍是 `/N-1` | 重新產生 `/N`，不會跳到 `/N+1` |
 | 作戰仍在觀察窗內重試 | 判定排過 | 找不到已執行前導波 | `[SKIP] reason=no_executed_predecessor`，系列暫停等它打出去 |
 
-反過來說，如果失敗的作戰被標記成已執行留在 batch 裡，`findLatestExecutedOperation` 會把它當成合法的推進基準——第一波根本沒打成，第二波卻照排。這是這個模組最容易被忽略的失效模式，`spec/modules/strikePlanner/operationScheduler_spec.lua` 的「abandoned operations」測試群組就是用來釘住上表三列的。
+反過來說，如果失敗的作戰被標記成已執行留在 batch 裡，`findLatestExecuted` 會把它當成合法的推進基準——第一波根本沒打成，第二波卻照排。這是這個模組最容易被忽略的失效模式，`spec/modules/strikePlanner/operationScheduler_spec.lua` 的「abandoned operations」測試群組用真的 `OperationBatch.run` 移除作戰，釘住上表三列。
 
 ---
 
 ## 為什麼推導不出下一波時不排程
 
-`buildNextOperation` 的 `PARSE_ERROR`（名稱結尾不是 `/N`）與 `UNKNOWN_TYPE`（type 不在 `OPERATION_TYPE_TRAITS` 內）這兩種狀態下，它會回傳**來源 operation 的 deep copy**。
+`buildNextOperation` 的 `PARSE_ERROR`（名稱結尾不是 `/N`）與 `UNKNOWN_TYPE`（`OperationType.resolve` 回 `nil`）這兩種狀態下，它會回傳**來源 operation 的 deep copy**。
 
 這是個容易誤用的回傳契約：直接排入就等於重複一個已執行的波次。`buildNextWaveOperation` 因此不排程，改輸出 `[WARN] reason=parse_error` 或 `[WARN] reason=unknown_type`。
 
@@ -119,7 +119,7 @@ flowchart TD
 
 ## 為什麼作戰一定要有可解析的樣板
 
-模板表以 mapping 名稱轉出的鍵查詢（`/` 換成 `_`），是動態 key 查 map，本來就可能查無。查無時 `buildFirstWaveOperation` 輸出 `[ERROR] reason=template_not_found` 並拒絕排程；type 不在 `OPERATION_TYPE_TRAITS` 內則輸出 `[ERROR] reason=unknown_operation_type`。
+模板表以 mapping 名稱轉出的鍵查詢（`/` 換成 `_`），是動態 key 查 map，本來就可能查無。查無時 `buildFirstWaveOperation` 輸出 `[ERROR] reason=template_not_found` 並拒絕排程；`OperationType.resolve` 回 `nil` 則輸出 `[ERROR] reason=unknown_operation_type`。
 
 不能放行的原因在下游：`atoBuilder` 與 `fsemBuilder` 都會無條件巡訪 `template.packages` / `template.fireSupportTasks`，缺模板的作戰若排入會讓整個 tick 中斷。這是模組的不變量——**進入批次的作戰必定帶著可用的模板**。
 
@@ -155,15 +155,11 @@ flowchart TD
 
 ## Public API
 
-只有 `schedule` 有跨模組呼叫端（`recon.lua`）。其餘四個掛在模組表上，一是供單元測試直接驗證，二是讓內部呼叫點可被 stub。
+只有 `schedule` 有跨模組呼叫端（`recon.lua`）。`buildNextOperation` 掛在模組表上，一是供單元測試直接驗證，二是讓內部呼叫點可被 stub。batch 查詢（`isScheduled`、`isPending`、`findLatestExecuted`、`findMostRecentSnapshot`）住在 [operationBatch](operationBatch.md)。
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `schedule(processingCtx, reconEntry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增批次並輸出 log |
-| `getMostRecentOperationsAndNextTime(operationBatches)` | `SBJ__ReconTriggeredOperationBatch[]` | snapshot table | 取時間已過的最近批次，依 type 分類其作戰，並回報下一個批次時間。**只看批次時間，不看執行狀態** |
-| `isOperationScheduled(operationBatches, templateName, operationType)` | `SBJ__ReconTriggeredOperationBatch[]`, `string`, `string` | `boolean` | 完整名稱比對，**不限執行狀態**。回答「這個 mapping 排過了嗎」 |
-| `isOperationPending(operationBatches, templateName, operationType)` | 同上 | `boolean` | 完整名稱比對，**只收未執行**。回答「同名波次是否已排入但還沒打」 |
-| `findLatestExecutedOperation(operationBatches, seriesPrefix, operationType)` | 同上，第二參數是以 `/` 結尾的系列前綴 | `SBJ__Operation\|nil` | 前綴＋數字後綴，**只收已執行**，取波次號最大者（同號比批次時間）。回答「有沒有可以推進的前導波次」 |
 | `buildNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
 
 `processingCtx` 欄位：
@@ -172,7 +168,7 @@ flowchart TD
 |---|---|
 | `config` | 讀取 recon objective mappings 與兩張模板表 |
 | `reconCtx` | 讀取 `frontlineRedirected` sticky 旗標並套用 mapping rewrite |
-| `reconTriggeredOperationBatches` | 查詢既有/待執行作戰，並在有新作戰時追加批次 |
+| `reconTriggeredOperationBatches` | 交給 operationBatch 查詢既有/待執行作戰，並在有新作戰時追加批次 |
 | `lacmCtx` | 讀取 sticky 的 `enabled`，判斷帶 `requiresLACM` 的 mapping 是否可排程 |
 | `fireSupportOnHold` | 暫停 `GND/STRIKE/INFRA/*` mapping |
 
@@ -199,7 +195,8 @@ flowchart TD
 
 - [recon](recon.md) — 偵察任務完成後呼叫 scheduler
 - [frontlineRedirect](frontlineRedirect.md) — 提供 sticky redirect 後的 mapping 改寫
-- [dynamicState](dynamicState.md) — 提供執行端共用的狀態、命名與 generated operation 登記
+- [operationBatch](operationBatch.md) — 追加批次與 batch 查詢
+- [operationType](operationType.md) — air / ground 的模板來源、欄位名與預設間隔
 - [atoBuilder](atoBuilder.md) — 消費 `air` operation，生成 ATO Wave
 - [fsemBuilder](fsemBuilder.md) — 消費 `ground` operation，生成 FSEM
 - [系統架構](README.md)

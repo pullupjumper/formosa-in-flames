@@ -240,7 +240,7 @@ saveData.c
 ## 相關模組
 
 - [atoBuilder](atoBuilder.md) — 產生並插入動態 ATO Wave。
-- [dynamicState](dynamicState.md) — 動態作戰命名與登記，由插入層使用。
+- [dynamicPlan](dynamicPlan.md) — 動態作戰命名、寫入與登記，由插入層使用。
 - [targetingProcess](targetingProcess.md) — 由插入層先產生 `target.list`，本模組只負責指派。
 - [recon](recon.md) — 本模組呼叫 `Recon.addEntry()` 排入打擊後偵察 UAV；偵察佇列中的任務則由 recon 執行。
 - [系統架構](README.md)

@@ -62,7 +62,7 @@
 | `not task.isFinished` | 任務尚未完成。 |
 | `GameUtils.isAfterStartTime(task.startTime)` | 已達任務啟動時間。 |
 
-`fireSupportPlan` 執行期不再檢查 `task.target.minTargetCount`。目標數量門檻是在上游建立 FSEM 時處理：`TargetingProcess.processTargets()` 產生候選目標，`fsemBuilder.evaluateTargetsFromTemplate()` 以 `taskTemplate.target.minTargetCount` 決定該 FST 是否可被建成 executable task。本模組假設寫入 `saveData.c.ground.fireSupportPlan` 的 FST 已完成目標篩選，只把 `task.target.list` 交給 `AttackManager.attackContacts()`。
+`fireSupportPlan` 執行期不再檢查 `task.target.minTargetCount`。目標數量門檻是在上游建立 FSEM 時處理：`TargetingProcess.processTargets()` 產生候選目標，`DynamicPlan.evaluateTargets()` 以 `taskTemplate.target.minTargetCount` 決定該 FST 是否可被建成 executable task。本模組假設寫入 `saveData.c.ground.fireSupportPlan` 的 FST 已完成目標篩選，只把 `task.target.list` 交給 `AttackManager.attackContacts()`。
 
 符合條件後會呼叫：
 

@@ -123,6 +123,5 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 - `src/core/gKH_State_Standalone.lua` 是第三方程式碼，不套本規範。
 - CMO API 回傳的欄位名（`unit.readytime_v`、`mount.wpn_dbid`）照原樣。
 - `src/utils/gameApi.lua` 的 `realApi.ScenEdit_*` wrapper 與 CMO API 同名。
-- `checkOperationBatchCompleted` 回布林但會寫 `executed` 旗標，符合 `check*` 定義。
 - `config.lua` 與 `saveData` 內的 key 不加 `Map` 後綴，改 key 會動到存檔與 config 形狀。
 - `SBJ__ReconTriggeredOperationBatch`、`SBJ__GeneratedOperationsTracker`、`SBJ__LoadoutStatus`、`SBJ__UnitStatus`、`SBJ__WeaponStatus` 保留原名；新型別才用 `State`。

@@ -225,5 +225,5 @@ scheduleShift = max(0, readinessShift, intervalShift)
 
 - [atoBuilder](atoBuilder.md) — 動態 ATO Wave 生成，機隊驗證後委派本模組計算時序。
 - [airTaskingOrder](airTaskingOrder.md) — 執行帶有本模組所排定時序的 ATO Wave。
-- [dynamicState](dynamicState.md) — recon-triggered operation 狀態、命名與 generated operation 追蹤。
+- [operationBatch](operationBatch.md) — recon-triggered operation batch 的生命週期與查詢。
 - [系統架構](README.md)

@@ -26,49 +26,27 @@ flowchart TD
     ENABLED{"enabled?"}
     OFF(["return false"])
     RETIRE["retireStaleMatrices"]
-    HASOP{"有 ground operation?"}
     SEED["建立 passCtx"]
-    LOOP["逐筆 ground operation"]
-    WINDOW{"觀察窗狀態"}
-    PROCESS["processGroundOperation"]
-    INSERTED{"FSEM 已插入?"}
-    EXEC["setOperationExecuted"]
-    RETRYABLE{"reason 可重試?"}
-    ABANDON["abandonOperation"]
-    NEXT["下一筆"]
+    RUN["OperationBatch.run(batches, ground, params)"]
+    TRY["tryInsert = processGroundOperation"]
+    ENTRIES["逐筆 entry：opReport.add"]
     EMIT["opReport.emit"]
-    DONE(["return hasExecutedAny"])
+    DONE(["return result.hasExecutedAny"])
 
     ENTRY --> ENABLED
     ENABLED -->|否| OFF
-    ENABLED -->|是| RETIRE
-    RETIRE --> HASOP
-    HASOP -->|否| EMIT
-    HASOP -->|是| SEED
-    SEED --> LOOP
-    LOOP --> WINDOW
-    WINDOW -->|pre_trigger| NEXT
-    WINDOW -->|expired| ABANDON
-    WINDOW -->|in_window| PROCESS
-    PROCESS --> INSERTED
-    INSERTED -->|是| EXEC
-    INSERTED -->|否| RETRYABLE
-    RETRYABLE -->|是| NEXT
-    RETRYABLE -->|否| ABANDON
-    EXEC --> NEXT
-    ABANDON --> NEXT
-    NEXT --> LOOP
-    LOOP --> EMIT
-    EMIT --> DONE
+    ENABLED -->|是| RETIRE --> SEED --> RUN
+    RUN -.->|每個到期 operation| TRY -.-> RUN
+    RUN --> ENTRIES --> EMIT --> DONE
 ```
 
-`enabled` 為否是唯一不建立 report 的出口；其餘路徑（包含「沒有任何 ground operation」）都必須走到 `emit()`，否則同一份 report 裡的退役列會被吞掉。`RETRYABLE -->|是| NEXT` 這條路徑不動 batch，operation 留在原處等下一個 tick。
+`enabled` 為否是唯一不建立 report 的出口；其餘路徑（包含「沒有任何 ground operation」）都會走到 `emit()`，退役列因此永遠不會被吞掉。篩選 operation、判定觀察窗、標記 executed、移除放棄的 operation，全在 [operationBatch](operationBatch.md) 內完成；本模組只交出 `RETRYABLE_REASON` 與 `tryInsert`，拿回 entries 後餵 report。
 
-觀察窗狀態由 [dynamicState](dynamicState.md) 的 `evaluateObservationWindow()` 判定，與 atoBuilder 共用同一份實作與同一個 `observationWindowSec`；`pre_trigger` 靜默略過，不產生任何 log 列。
+觀察窗與 atoBuilder 共用同一份 operationBatch 實作與同一個 `observationWindowSec`；`pre_trigger` 靜默略過，`tryInsert` 不會被呼叫，也不產生任何 log 列。
 
-### 為什麼退役排在提前返回之前
+### 為什麼退役排在建立 passCtx 之前
 
-`retireStaleMatrices()` 只在 `enabled` 檢查之後執行，**早於**「沒有 pending operation 就返回」的判斷。
+`retireStaleMatrices()` 只在 `enabled` 檢查之後執行，**早於**任何 pending operation 被看到。
 
 卡住的 FSEM 不會有任何東西幫它解鎖：它的任務永遠不會被標記完成，沒有其他流程會釋放它的發射單元。若把退役綁在「有 operation 等著處理」的前提下，安靜的 tick 就不退役，那些旅會被永久佔用——而 FSEM 卡住的典型情境（目標全滅、沒有新偵察）恰好就是安靜的 tick。
 
@@ -112,11 +90,11 @@ flowchart TD
 
 ### 為什麼目標以 FST 索引為 key
 
-`evaluateTargetsFromTemplate()` 回傳的 `targetsByTaskIndex` 以 FST 的陣列索引為 key，而非 FST 名稱。
+`DynamicPlan.evaluateTargets()` 回傳的 `targetsByTaskIndex` 以 FST 的陣列索引為 key，而非 FST 名稱。
 
-`evaluateTargetsFromTemplate()` 與 `buildExecutableTasks()` 走同一份 `fireSupportTasks` 陣列，索引因此能穩定對齊（`Utils.deepCopy` 逐 key 複製，整數索引原樣保留）。若以名稱為 key，同名 FST 會互相覆蓋。
+`DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 `fireSupportTasks` 陣列，索引因此能穩定對齊（`Utils.deepCopy` 逐 key 複製，整數索引原樣保留）。若以名稱為 key，同名 FST 會互相覆蓋。
 
-只有目標數達到 `taskTemplate.target.minTargetCount` 的 FST 會進入這張表。全部不達標時 `processGroundOperation()` 直接回傳 `insufficient_targets`，不進入發射單元驗證——這也是該分支要帶 `firingUnits=none` 而非完整計數的原因。
+只有目標數達到 `taskTemplate.target.minTargetCount` 的 FST 會進入這張表。`targetQualifiedTaskCount` 為零時 `processGroundOperation()` 直接回傳 `insufficient_targets`，不進入發射單元驗證——這也是該分支要帶 `firingUnits=none` 而非完整計數的原因。
 
 ### 為什麼生成的 FSEM 把 strikeInterval 歸零
 
@@ -130,7 +108,7 @@ flowchart TD
 
 ### 為什麼失敗要移除 operation，而不是標記 executed
 
-終止性失敗走 `DynamicState.abandonOperation()` 把 operation 從 batch 陣列移除，而不是設 `executed = true`。
+終止性失敗由 `OperationBatch.run()` 把 operation 從 batch 陣列移除，而不是設 `executed = true`。本模組只透過 `RETRYABLE_REASON` 告訴它哪些 reason 該留下。
 
 `executed` 的語義是「計畫已插入」。若失敗也標記 executed，[operationScheduler](operationScheduler.md) 會認為這一波已經打完並推進波次計數，同一波再也不會被重開；移除則讓 batch 在下次偵察完成時重新產生同一波。`insufficient_targets` 與 `no_available_firing_units` 屬於可重試原因，兩者都不動 batch。
 
@@ -153,7 +131,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 ### 結果分類與 log
 
-`processGroundOperation()` 回傳 `SBJ__OperationProcessResult`；觀察窗逾時則由 `execute()` 直接組出同型結果，讓兩條路徑共用同一個輸出流程。log tag 由產生分支直接寫進結果，不經過 reason → tag 對照表。`state=observing` 與 `state=abandoned` 由 `execute()` 在決定保留或移除的同一個分支加上，控制流程與 log 欄位共用一組判斷。
+`processGroundOperation()` 回傳 `SBJ__OperationProcessResult`；觀察窗逾時則由 [operationBatch](operationBatch.md) 直接組出同型結果，讓兩條路徑共用同一個輸出流程。log tag 由產生分支直接寫進結果，不經過 reason → tag 對照表。`state=observing` 與 `state=abandoned` 由 `OperationBatch.run()` 在決定保留或移除的同一個分支加上，控制流程與 log 欄位共用一組判斷。
 
 | reason | Tag | operation 去向 | 說明 |
 |---|---|---|---|
@@ -164,11 +142,11 @@ SAM 任務依慣例排除在 stow 之外。
 | `no_valid_tasks` | `[FAIL]` | 移除 | 終止性防禦分支，見下。 |
 | `fsem_stale_timeout` | `[WARN]` | 不適用 | 由 `retireStaleMatrices()` 產生，帶 `matrix=` 與 `ageSec=`，與 operation 無關。 |
 
-`no_valid_tasks` 在目前的控制流下不可達：兩個函式走同一份 FST 陣列，任何目標達標的 FST 若組不出任務，必然是因為缺發射單元而累加 `firingUnitBlockedTaskCount`，因此會落在 `no_available_firing_units`。它作為終止性 fallback 保留，讓「有目標卻完全組不出任務」這類未來的新失敗模式有一個 FAIL 出口，而不會被誤判成可重試。也因為不可達，它沒有測試覆蓋。
+`no_valid_tasks` 在目前的控制流下不可達：`DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 FST 陣列，任何目標達標的 FST 若組不出任務，必然是因為缺發射單元而累加 `firingUnitBlockedTaskCount`，因此會落在 `no_available_firing_units`。它作為終止性 fallback 保留，讓「有目標卻完全組不出任務」這類未來的新失敗模式有一個 FAIL 出口，而不會被誤判成可重試。也因為不可達，它沒有測試覆蓋。
 
 `NO_FIRING_UNITS_FIELDS` 是 `insufficient_targets` 與 `formatFiringUnitStatusCounter()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
 
-`execute()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。退役列與 operation 列共用同一份 report。
+`build()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，退役列先進去，`OperationBatch.run()` 回傳的 entries 逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。
 
 ```text
 [DYNAMIC_OPERATIONS] dynamicGroundOperations: Process operations | total=2 ok=1 skip=1
@@ -184,13 +162,11 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
+| `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.insert()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
 | `saveData.c.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
 | `saveData.c.ground[<missileSystem>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
-| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 透過 `DynamicState.addGeneratedOperation("ground", ...)` 登記。 |
-| `operation.executed` | FSEM 成功插入時由 `setOperationExecuted()` 標記。 |
-| `operationBatch.operations` | 放棄的 operation 由 `abandonOperation()` 從陣列移除。 |
-| `operationBatch.executed` | batch 內所有 operation 都完成或被移除時由 `checkOperationBatchCompleted()` 更新。 |
+| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.insert()` 呼叫內登記。 |
+| `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 
 本模組**不寫任何遊戲狀態**，只透過 `GameApi.ScenEdit_CurrentTime()` 取時間、`GameApi.ScenEdit_GetUnit()` 讀發射單元。
 
@@ -233,12 +209,12 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 模組 | 用途 |
 |---|---|
-| `src.modules.strikePlanner.targetingProcess` | 依 FST target template 與 contacts 產生可打擊目標 GUID 清單。 |
-| `src.modules.strikePlanner.dynamicState` | 篩選 ground operations、判定觀察窗狀態、產生唯一 FSEM 名稱、登記 generated operation、標記或移除 operation。 |
+| `src.modules.strikePlanner.operationBatch` | `run()` 驅動每個 tick：篩選 ground operations、判定觀察窗、依 outcome 標記或移除 operation。 |
+| `src.modules.strikePlanner.dynamicPlan` | `evaluateTargets()` 依 FST target template 取得可打擊目標；`insert()` 命名、寫入 `fireSupportPlan` 並登記 generated operation。 |
 | `src.modules.missileSystem.init` | `isLowAmmo()` 檢查發射單元彈量是否低於門檻。 |
 | `src.utils.gameApi` | `ScenEdit_CurrentTime()` 取目前時間、`ScenEdit_GetUnit()` 驗證發射單元是否仍存在。 |
 | `src.utils.utils` | `deepCopy()`，用於 matrix 與 FST template 拷貝。 |
-| `src.utils.logFormat` | `merge()` 合併欄位、`report()` 收集並輸出處理摘要。 |
+| `src.utils.logFormat` | `report()` 收集並輸出處理摘要。 |
 | `src.core.constants` | 提供飛彈系統狀態、日期格式與 log tag。 |
 
 ---
@@ -246,8 +222,9 @@ SAM 任務依慣例排除在 stow 之外。
 ## 相關模組
 
 - [fireSupportPlan](fireSupportPlan.md) — 執行本模組插入的 FSEM。
-- [dynamicState](dynamicState.md) — recon-triggered operation 狀態、觀察窗判定、命名與 generated operation 追蹤。
-- [targetingProcess](targetingProcess.md) — 依 target template 與 contacts 解析可打擊目標。
+- [operationBatch](operationBatch.md) — recon-triggered operation batch 的生命週期，驅動本模組的 `tryInsert`。
+- [dynamicPlan](dynamicPlan.md) — 目標評估與計畫插入 pipeline。
+- [targetingProcess](targetingProcess.md) — 依 target template 與 contacts 解析可打擊目標（經 dynamicPlan 呼叫）。
 - [operationScheduler](operationScheduler.md) — 偵察完成後建立 ground operation template。
 - [atoBuilder](atoBuilder.md) — 對應的動態空中 Wave 生成流程。
 - [missileSystem](../missileSystem/README.md) — 發射單元狀態、彈量與 stow／隱蔽循環。

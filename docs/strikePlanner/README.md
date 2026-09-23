@@ -47,7 +47,9 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | 靜態/動態 ATO 執行者 | [airTaskingOrder](airTaskingOrder.md) | 執行所有已啟動 Wave，不區分來源。 |
 | 動態地面生成者 | [fsemBuilder](fsemBuilder.md) | 驗證目標與發射單元後插入 FSEM。 |
 | 靜態/動態 FSP 執行者 | [fireSupportPlan](fireSupportPlan.md) | 執行所有已啟動 FSEM，不區分來源。 |
-| 共用狀態工具 | [dynamicState](dynamicState.md) | 管理 recon-triggered operation 狀態、命名與 generated operation 登記。 |
+| 作戰批次擁有者 | [operationBatch](operationBatch.md) | 擁有 recon-triggered operation batch：排程、觀察窗、重試、放棄與查詢。 |
+| 計畫插入 pipeline | [dynamicPlan](dynamicPlan.md) | air / ground 共用的目標評估與「命名 → 寫入 → 登記」。 |
+| 型別 descriptor | [operationType](operationType.md) | 把 air / ground 的差異變成資料。 |
 
 ### 模組摘要
 
@@ -56,6 +58,9 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | [targetingProcess](targetingProcess.md) | `targetingProcess.lua` | 目標掃描、分類、動態篩選與 BDA 評估 |
 | [recon](recon.md) | `recon.lua` | UAV/衛星偵察生命週期管理，並協調動態作戰排程 |
 | [operationScheduler](operationScheduler.md) | `operationScheduler.lua` | 偵察完成後建立 recon-triggered air/ground operations |
+| [operationBatch](operationBatch.md) | `operationBatch.lua` | recon-triggered operation batch 的生命週期與查詢 |
+| [operationType](operationType.md) | `operationType.lua` | air / ground descriptor |
+| [dynamicPlan](dynamicPlan.md) | `dynamicPlan.lua` | 目標評估、命名、寫入計畫、登記 |
 | [frontlineRedirect](frontlineRedirect.md) | `frontlineRedirect.lua` | 依前線基地戰損觸發 sticky 重導向與 strike mapping 改寫 |
 | [airbaseAttrition](airbaseAttrition.md) | `airbaseAttrition.lua` | 彙整多基地駐機戰損與整體 attrition |
 | [airTaskingOrder](airTaskingOrder.md) | `airTaskingOrder.lua` | ATO 執行（掛彈、任務建立、目標指派、單元派遣） |
@@ -63,7 +68,6 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | [fsemBuilder](fsemBuilder.md) | `fsemBuilder.lua` | 動態 FSEM 生成（偵察驅動） |
 | [atoBuilder](atoBuilder.md) | `atoBuilder.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
 | [packageTiming](packageTiming.md) | `packageTiming.lua` | Package 時序計算（飛行時間、加油機受油協調、時程平移） |
-| [dynamicState](dynamicState.md) | `dynamicState.lua` | 動態作戰狀態工具（命名、登記、狀態追蹤） |
 
 ---
 
@@ -78,8 +82,8 @@ flowchart TB
     end
 
     subgraph 動態路徑["動態計畫路徑"]
-        DFSP["fsemBuilder<br>.execute()"]
-        DATO["atoBuilder<br>.execute()"]
+        DFSP["fsemBuilder<br>.build()"]
+        DATO["atoBuilder<br>.build()"]
         RECON["recon<br>.processQueue()"]
         RSCHED["operationScheduler<br>.schedule()"]
         FREDIR["frontlineRedirect<br>.evaluate/updateMappings()"]
@@ -93,7 +97,8 @@ flowchart TB
 
     subgraph 共用模組
         TP["targetingProcess"]
-        DSTATE["dynamicState"]
+        OBATCH["operationBatch"]
+        DPLAN["dynamicPlan"]
     end
 
     TRIGGER --> DFSP
@@ -102,18 +107,21 @@ flowchart TB
     TRIGGER --> FSP
     TRIGGER --> ATO
 
-    DFSP --> TP
-    DFSP --> DSTATE
-    DATO --> TP
-    DATO --> DSTATE
+    DFSP --> OBATCH
+    DFSP --> DPLAN
+    DATO --> OBATCH
+    DATO --> DPLAN
+    DPLAN --> TP
     RECON --> RSCHED
     RECON --> FREDIR
+    RSCHED --> OBATCH
     RSCHED --> FREDIR
     FREDIR --> ATTR
 
     style TRIGGER fill:#137cbd
     style TP fill:#d9822b
-    style DSTATE fill:#0f9960
+    style OBATCH fill:#0f9960
+    style DPLAN fill:#0f9960
 ```
 
 ### 動態作戰循環
@@ -232,7 +240,9 @@ flowchart BT
     subgraph Strike Planner
         TP["targetingProcess"]
         RECON["recon"]
-        DSTATE["dynamicState"]
+        OBATCH["operationBatch"]
+        OTYPE["operationType"]
+        DPLAN["dynamicPlan"]
         RSCHED["operationScheduler"]
         FREDIR["frontlineRedirect"]
         ATTR["airbaseAttrition"]
@@ -245,11 +255,13 @@ flowchart BT
 
     ATO --> UTILS & GAMEAPI & GAMEUTILS & ASSIGN & RECON
     FSP --> GAMEAPI & GAMEUTILS & ATTACK & MISSILE & CONSTANTS
-    DFSP --> TP & DSTATE & GAMEAPI & UTILS & MISSILE & CONSTANTS
-    DATO --> TP & DSTATE & PKGT & GAMEAPI & GAMEUTILS & UTILS & LOGGER & CONSTANTS
+    DFSP --> OBATCH & DPLAN & GAMEAPI & UTILS & MISSILE & CONSTANTS
+    DATO --> OBATCH & DPLAN & PKGT & GAMEAPI & UTILS & CONSTANTS
+    DPLAN --> TP & OTYPE & CONSTANTS
+    OBATCH --> GAMEAPI & UTILS
     PKGT --> GAMEAPI & UTILS & CONSTANTS
     RECON --> RSCHED & FREDIR & GAMEAPI & GAMEUTILS & UTILS & CONSTANTS
-    RSCHED --> FREDIR & GAMEAPI & UTILS & LOGGER & CONSTANTS
+    RSCHED --> OBATCH & OTYPE & FREDIR & UTILS & CONSTANTS
     FREDIR --> ATTR & UTILS
     ATTR --> GAMEAPI & UTILS & CONSTANTS
     TP --> GAMEAPI & UTILS & RECON & CONSTANTS
