@@ -12,7 +12,7 @@ if saveData == nil then
   return
 end
 
-if saveData.u.sigint.enabled then
+if saveData.c.sigint.enabled then
   Sigint.collectSigint(config, saveData.c.sigint, constants.SIDES.ENEMY, true, config.c.sigint,
     saveData.t.ground.srbm.firingUnits,
     saveData.t.ground.glcm.firingUnits,

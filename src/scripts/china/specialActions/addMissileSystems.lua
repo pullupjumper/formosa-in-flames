@@ -13,3 +13,5 @@ end
 
 MissileSystem.addMissileSystems(config.c.ground, constants.SIDES.ENEMY)
 MissileSystem.initMissileSystemContexts(config.c.ground, saveData.c.ground)
+
+gKH.State.SaveTableToKey(saveData, "SaveData")

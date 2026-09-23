@@ -1,3 +1,4 @@
+local gKH = require("src.core.gKH_State_Standalone")
 local UnitGenerator = require("src.modules.unitGenerator")
 local Logger = require("src.utils.logger")
 local config = require("src.core.config")
