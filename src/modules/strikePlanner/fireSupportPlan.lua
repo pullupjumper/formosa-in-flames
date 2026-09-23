@@ -33,16 +33,6 @@ end
 -- Firing Unit Deployment
 -- ============================================================================
 
----Get firing unit context from save data by missile system type and unit name
----@param saveData SBJ__SaveData Saved game state
----@param missileSystem string Missile system name (e.g., "SRBM", "LACM")
----@param firingUnitName string The name of the firing unit
----@return SBJ__FiringUnitContext # Firing unit context
-local function getFiringUnitContext(saveData, missileSystem, firingUnitName)
-  local key = string.lower(missileSystem)
-  return saveData.c.ground[key].firingUnits[firingUnitName]
-end
-
 ---Deploy single firing unit to firing point and check if it is in position
 ---@param saveData SBJ__SaveData Saved game state
 ---@param task SBJ__FireSupportTask Fire Support Task containing missile system info
@@ -55,7 +45,7 @@ local function deploySingleFiringUnit(saveData, task, firingUnit)
     return false, true
   end
 
-  local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
+  local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)
 
   if isFiringUnitReady(firingUnitCtx, actualUnit) then
     MissileSystem.moveFromHideArea(firingUnitCtx, actualUnit)
@@ -123,16 +113,7 @@ local function startFireSupportTasks(saveData, matrix)
       })
 
       if fired > 0 then
-        if task.missileSystem ~= "SAM" then
-          for _, firingUnit in ipairs(task.firingUnits) do
-            local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
-
-            if firingUnitCtx and not firingUnitCtx.stowStartTime then
-              firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
-            end
-          end
-        end
-
+        MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,

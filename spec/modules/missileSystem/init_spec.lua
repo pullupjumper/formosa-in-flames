@@ -208,6 +208,87 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
+  -- markForStow
+  -- ============================================================================
+
+  describe("markForStow", function()
+    local STATE = constants.MISSILE_SYSTEM_STATE
+
+    local function makeGroundCtx()
+      return {
+        srbm = {
+          firingUnits = {
+            ["FU-Static"] = { name = "FU-Static", state = STATE.STATIC },
+            ["FU-Hide"] = { name = "FU-Hide", state = STATE.HIDE },
+            ["FU-Stowing"] = { name = "FU-Stowing", state = STATE.STATIC, stowStartTime = 500 },
+          }
+        },
+        sam = {
+          firingUnits = {
+            ["SAM-1"] = { name = "SAM-1", state = STATE.STATIC },
+          }
+        }
+      }
+    end
+
+    before_each(function()
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(9000)
+    end)
+
+    -- Positive: upper-case system name resolves and every unit without a countdown is stamped
+    it("should stamp stowStartTime on every listed unit regardless of state", function()
+      local groundCtx = makeGroundCtx()
+
+      MissileSystem.markForStow(groundCtx, "SRBM", { { name = "FU-Static" }, { name = "FU-Hide" } })
+
+      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
+    end)
+
+    -- Boundary: a running countdown is preserved
+    it("should keep an existing stowStartTime", function()
+      local groundCtx = makeGroundCtx()
+
+      MissileSystem.markForStow(groundCtx, "srbm", { { name = "FU-Stowing" } })
+
+      assert.are.equal(500, groundCtx.srbm.firingUnits["FU-Stowing"].stowStartTime)
+    end)
+
+    -- Boundary: onlyDeployed leaves units still in their hide area alone
+    it("should skip non-deployed units when onlyDeployed is set", function()
+      local groundCtx = makeGroundCtx()
+
+      MissileSystem.markForStow(groundCtx, "SRBM", { { name = "FU-Static" }, { name = "FU-Hide" } },
+        { onlyDeployed = true })
+
+      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
+    end)
+
+    -- Negative: SAM never stows
+    it("should not stamp SAM firing units", function()
+      local groundCtx = makeGroundCtx()
+
+      MissileSystem.markForStow(groundCtx, "SAM", { { name = "SAM-1" } })
+
+      assert.is_nil(groundCtx.sam.firingUnits["SAM-1"].stowStartTime)
+    end)
+
+    -- Negative: unknown units, unknown systems and missing inputs are ignored
+    it("should ignore missing contexts and nil inputs", function()
+      local groundCtx = makeGroundCtx()
+
+      assert.has_no.errors(function()
+        MissileSystem.markForStow(groundCtx, "SRBM", { { name = "Ghost" } })
+        MissileSystem.markForStow(groundCtx, "GLCM", { { name = "FU-Static" } })
+        MissileSystem.markForStow(groundCtx, nil, { { name = "FU-Static" } })
+        MissileSystem.markForStow(groundCtx, "SRBM", nil)
+      end)
+      assert.is_nil(groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
+    end)
+  end)
+
+  -- ============================================================================
   -- processSupplyAssetDestruction
   -- ============================================================================
 

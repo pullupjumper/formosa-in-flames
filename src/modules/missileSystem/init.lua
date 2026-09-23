@@ -13,6 +13,12 @@ local Context = require("src.modules.missileSystem.context")
 
 local MissileSystem = {}
 
+---Firing unit states in which the unit is out of its hide area and has to be stowed back
+local DEPLOYED_STATES = {
+  [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
+  [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
+}
+
 ---Extract position type token from UnitEntersArea trigger description
 ---@param event CMO__Event|nil Scenario event object
 ---@return string|nil # Position type token (FP/AHA/HA/RL)
@@ -92,6 +98,39 @@ end
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function MissileSystem.getAmmoInventory(systemCtx, sideName)
   return Ammo.getInventory(systemCtx, sideName)
+end
+
+---Resolve a firing unit runtime context by missile system and unit name
+---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param missileSystem string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnitName string Firing unit name used as context key
+---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
+function MissileSystem.getFiringUnitContext(groundCtx, missileSystem, firingUnitName)
+  local systemCtx = groundCtx[string.lower(missileSystem)]
+  return systemCtx and systemCtx.firingUnits and systemCtx.firingUnits[firingUnitName]
+end
+
+---Start the stow countdown so the reload cycle sends the firing units back
+---SAM never stows, and a countdown already running is kept.
+---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param missileSystem string|nil Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnits SBJ__FiringUnit[]|nil Firing units to stow
+---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
+function MissileSystem.markForStow(groundCtx, missileSystem, firingUnits, opts)
+  if not missileSystem or not firingUnits or string.lower(missileSystem) == constants.MISSILE_SYSTEM_TYPES.SAM then
+    return
+  end
+
+  local onlyDeployed = opts and opts.onlyDeployed
+  local currentTime = GameApi.ScenEdit_CurrentTime()
+
+  for _, firingUnit in ipairs(firingUnits) do
+    local firingUnitCtx = MissileSystem.getFiringUnitContext(groundCtx, missileSystem, firingUnit.name)
+
+    if firingUnitCtx and not firingUnitCtx.stowStartTime and (not onlyDeployed or DEPLOYED_STATES[firingUnitCtx.state]) then
+      firingUnitCtx.stowStartTime = currentTime
+    end
+  end
 end
 
 ---Check status of all missile systems and trigger corresponding actions

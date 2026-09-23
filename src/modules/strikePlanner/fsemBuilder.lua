@@ -128,17 +128,6 @@ local function collectAssignedFiringUnitNames(saveData)
   return assignedFiringUnitNameSet
 end
 
----Get firing unit runtime context from save data
----@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
----@param missileSystem string Missile system name (e.g., "SRBM", "LACM")
----@param firingUnitName string Firing unit name used as context key
----@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
-local function getFiringUnitContext(saveData, missileSystem, firingUnitName)
-  local missileSystemKey = string.lower(missileSystem)
-  local missileSystemCtx = saveData.c.ground[missileSystemKey]
-  return missileSystemCtx and missileSystemCtx.firingUnits and missileSystemCtx.firingUnits[firingUnitName]
-end
-
 ---Resolve a firing unit through the pass-scoped cache
 ---ScenEdit_GetUnit costs two CMO round-trips per name and logs a full stack trace when
 ---the unit is gone, so a miss is cached as false to pay that once per pass.
@@ -195,7 +184,7 @@ local function filterAvailableFiringUnits(saveData, taskTemplate, firingUnitStat
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil context and
     -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitCtx = getFiringUnitContext(saveData, taskTemplate.missileSystem, firingUnit.name)
+    local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, taskTemplate.missileSystem, firingUnit.name)
     local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
     if firingUnitCtx then
@@ -392,14 +381,6 @@ end
 -- Stale Matrix Retirement
 -- ============================================================================
 
--- States eligible for the stow countdown when a matrix is retired: units that were
--- deployed toward (or reached) a firing point but never fired. HIDE units are already
--- home, and the RELOAD pipeline already ends with a move back to the hide area.
-local STOW_ON_RETIRE_STATE = {
-  [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
-  [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
-}
-
 ---Check whether an active matrix has exceeded the stale timeout
 ---Matrices without createdAt (legacy saves) never go stale.
 ---@param matrix SBJ__FireSupportExecutionMatrix Matrix to check
@@ -408,26 +389,6 @@ local STOW_ON_RETIRE_STATE = {
 ---@return boolean # True when the matrix age exceeds the timeout
 local function isMatrixStale(matrix, currentTime, staleAfterSec)
   return matrix.createdAt ~= nil and (currentTime - matrix.createdAt) > staleAfterSec
-end
-
----Start the stow countdown for deployed-but-unfired units of a retired task
----SAM tasks are excluded by convention and an existing countdown is preserved, so the
----missileSystem cycle sends the unit back to its hide area unchanged.
----@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
----@param task SBJ__FireSupportTask Unfinished task from a retired matrix
----@param currentTime integer Current unix timestamp
-local function stowRetiredTaskFiringUnits(saveData, task, currentTime)
-  if not task.missileSystem or task.missileSystem == "SAM" or not task.firingUnits then
-    return
-  end
-
-  for _, firingUnit in ipairs(task.firingUnits) do
-    local firingUnitCtx = getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)
-
-    if firingUnitCtx and not firingUnitCtx.stowStartTime and STOW_ON_RETIRE_STATE[firingUnitCtx.state] then
-      firingUnitCtx.stowStartTime = currentTime
-    end
-  end
 end
 
 ---Retire active matrices that exceeded the stale timeout
@@ -444,7 +405,8 @@ local function retireStaleMatrices(saveData, currentTime, staleAfterSec, opRepor
 
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          stowRetiredTaskFiringUnits(saveData, task, currentTime)
+          -- Only units that left their hide area need to go back; RELOAD already ends in HA.
+          MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
         end
       end
 
