@@ -47,7 +47,7 @@ PersistentState.update(function(saveData)
       end
 
       if unit.dbid == constants.PLATFORMS.RC135V then
-        saveData.u.sigint.reconAircraft[unit.guid] = nil
+        PersistentState.sigint(saveData, "US").reconAircraft[unit.guid] = nil
       end
     end
   end

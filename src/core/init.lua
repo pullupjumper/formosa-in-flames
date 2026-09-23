@@ -120,9 +120,11 @@ runInit(function(state)
       config.c.commsJamming.aircraftDefaults)
   end
 
-  if state.u.sigint.enabled then
-    Sigint.initReconAircraftContexts(state.u.sigint, "US", config.c.commsJamming.aircraftDefaults)
-    Sigint.initReconAircraftContexts(state.c.sigint, constants.SIDES.ENEMY, config.c.commsJamming.aircraftDefaults)
+  local usSigint = PersistentState.sigint(state, "US")
+  if usSigint.enabled then
+    Sigint.initReconAircraftContexts(usSigint, "US", config.c.commsJamming.aircraftDefaults)
+    Sigint.initReconAircraftContexts(PersistentState.sigint(state, constants.SIDES.ENEMY), constants.SIDES.ENEMY,
+      config.c.commsJamming.aircraftDefaults)
   end
 
   local chinaGround = PersistentState.groundForces(state, constants.SIDES.ENEMY)

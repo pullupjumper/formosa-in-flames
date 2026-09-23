@@ -1471,6 +1471,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether communications jamming system is activated
 ---@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
 
+---State slices read and mutated by one comms jamming cycle
+---@class SBJ__CommsJammingState: table
+---@field jammers table<string, SBJ__AircraftContext> China jamming aircraft indexed by GUID
+---@field iads SBJ__IADSContext Taiwan IADS whose SAM/radar comms are jammed
+---@field aircraft table<string, SBJ__AircraftContext> Taiwan land-based aircraft indexed by GUID
+---@field aew table<string, SBJ__AircraftContext> Taiwan AEW aircraft indexed by GUID
+
 
 -- ============================================================================
 -- Command & Control (C2) and IADS

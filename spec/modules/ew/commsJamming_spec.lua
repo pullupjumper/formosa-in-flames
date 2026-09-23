@@ -170,29 +170,19 @@ describe("CommsJamming", function()
     return u
   end
 
-  ---Create a full saveData structure with minimal defaults
+  ---Create comms jamming state slices with minimal defaults
   ---@param overrides? table
   ---@return table
-  local function makeSaveData(overrides)
+  local function makeJammingState(overrides)
     overrides = overrides or {}
     return {
-      c = {
-        commsJamming = {
-          jammers = overrides.jammers or {},
-        },
+      jammers = overrides.jammers or {},
+      iads = overrides.iads or {
+        rocc = {},
+        taaoc = {},
       },
-      t = {
-        iads = overrides.iads or {
-          rocc = {},
-          taaoc = {},
-        },
-        air = {
-          landBased = {
-            AC = overrides.aircraft or {},
-            AEW = overrides.aew or {},
-          },
-        },
-      },
+      aircraft = overrides.aircraft or {},
+      aew = overrides.aew or {},
     }
   end
 
@@ -226,7 +216,7 @@ describe("CommsJamming", function()
     describe("jammer discovery", function()
       -- Positive: finds airborne jammers with jammer capability
       it("should process active airborne jammers", function()
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = {
@@ -249,16 +239,16 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         -- SAM-001 should have been processed by the jammer
-        assert.is_true(saveData.t.iads.rocc["C2-001"].sam["SAM-001"].isOutOfComms)
+        assert.is_true(jammingState.iads.rocc["C2-001"].sam["SAM-001"].isOutOfComms)
       end)
 
       -- Negative: non-airborne jammers are skipped
       it("should skip non-airborne jammers", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -277,7 +267,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -286,7 +276,7 @@ describe("CommsJamming", function()
       -- Negative: jammers without jammer capability are skipped
       it("should skip jammers without jammer capability", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -305,14 +295,14 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
       end)
 
       -- Negative: unresolvable jammers are skipped
       it("should skip jammers that cannot be resolved", function()
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-MISSING"] = makeJammerCtx({ guid = "J-MISSING" }) },
         })
 
@@ -321,7 +311,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
       end)
     end)
 
@@ -334,7 +324,7 @@ describe("CommsJamming", function()
       it("should collect SAM and radar from ROCC for jamming", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001" })
         local radarCtx = makeRadarCtx({ guid = "RADAR-001", name = "Radar Bravo" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = {
@@ -359,7 +349,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         -- Both should be processed (jammed) since jammer is active
         assert.is_true(samCtx.isOutOfComms)
@@ -369,7 +359,7 @@ describe("CommsJamming", function()
       -- Positive: collects SAM from TAAOC
       it("should collect SAM from TAAOC for jamming", function()
         local samCtx = makeRadarCtx({ guid = "TAAOC-SAM-001" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = {},
@@ -390,7 +380,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
       end)
@@ -404,7 +394,7 @@ describe("CommsJamming", function()
       -- Positive: increments counter during recovery period
       it("should increment outofcomms counter during recovery period", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = true, outofcomms = 2 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
             taaoc = {},
@@ -416,7 +406,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(2) <= 5 -> increment
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(3, samCtx.outofcomms)
@@ -426,7 +416,7 @@ describe("CommsJamming", function()
       -- Positive: recovers comms when recovery time is exceeded
       it("should recover comms when outofcomms exceeds recovery time", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = true, outofcomms = 12 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
             taaoc = {},
@@ -438,7 +428,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(12) > 5 -> recovery
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -448,7 +438,7 @@ describe("CommsJamming", function()
       -- Positive: clears external outOfComms flag for non-jammed unit
       it("should clear external outOfComms state for non-jammed unit", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
             taaoc = {},
@@ -464,7 +454,7 @@ describe("CommsJamming", function()
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -473,7 +463,7 @@ describe("CommsJamming", function()
       -- Negative: does nothing when actual unit has no outOfComms
       it("should not modify context when actual unit has no outOfComms flag", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
             taaoc = {},
@@ -489,7 +479,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(0, samCtx.outofcomms)
         assert.is_false(samCtx.isOutOfComms)
@@ -504,7 +494,7 @@ describe("CommsJamming", function()
       -- Positive: applies jamming when effectiveness exceeds threshold
       it("should successfully jam a unit when effectiveness is sufficient", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -524,7 +514,7 @@ describe("CommsJamming", function()
         -- math.random() -> 0.1, so threshold = 0.05; effectiveness at 20nm ≈ 0.89 > 0.05
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -533,7 +523,7 @@ describe("CommsJamming", function()
       -- Negative: jamming attempt fails when effectiveness is nil (distance exceeds range)
       it("should fail jamming when distance causes nil effectiveness", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -553,7 +543,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         -- Jamming fails: unit resets to not jammed
         assert.is_false(samCtx.isOutOfComms)
@@ -566,7 +556,7 @@ describe("CommsJamming", function()
         local samCtx2 = makeRadarCtx({ guid = "SAM-002" })
         local samCtx3 = makeRadarCtx({ guid = "SAM-003" })
         local config = makeCommsJammingConfig({ limit = 2 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = {
@@ -597,7 +587,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, jammingState)
 
         -- Only 2 closest units should be processed (limit = 2)
         local processedCount = 0
@@ -612,7 +602,7 @@ describe("CommsJamming", function()
       -- Negative: skips units when Tool_Range returns nil
       it("should skip units when distance cannot be calculated", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -631,7 +621,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -641,7 +631,7 @@ describe("CommsJamming", function()
       it("should transition unit to cooldown when jamming time is exceeded", function()
         -- outofcomms=15 >= jammingTime(min=5) -> cooldown branch
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 15 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -661,7 +651,7 @@ describe("CommsJamming", function()
         -- math.random(min, max) returns min; cooldownTime min = -5
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-5, samCtx.outofcomms)
@@ -671,7 +661,7 @@ describe("CommsJamming", function()
       it("should increment counter during cooldown period", function()
         -- outofcomms=-3 < 0 -> cooldown recovery branch
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = -3 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -690,7 +680,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-2, samCtx.outofcomms)
@@ -699,7 +689,7 @@ describe("CommsJamming", function()
       -- Negative: does not apply jamming to already jammed units
       it("should not apply jamming to units already out of comms", function()
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = true, outofcomms = 3 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -718,7 +708,7 @@ describe("CommsJamming", function()
         -- Recovery: math.random(5,10)->5, outofcomms(3) <= 5 -> increment (recovery period)
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         -- recoverComms should have incremented but jamming should be skipped
         -- because isOutOfComms is true (set by recoverComms staying in recovery)
@@ -736,7 +726,7 @@ describe("CommsJamming", function()
       it("should successfully jam when bearing is aligned and distance is close", function()
         local config = makeCommsJammingConfig({ mode = "directional" })
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -759,7 +749,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -769,7 +759,7 @@ describe("CommsJamming", function()
       it("should fail jamming when bearing is misaligned", function()
         local config = makeCommsJammingConfig({ mode = "directional" })
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -791,7 +781,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -801,7 +791,7 @@ describe("CommsJamming", function()
       it("should fail jamming when distance exceeds directional range", function()
         local config = makeCommsJammingConfig({ mode = "directional" })
         local samCtx = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtx } }) },
@@ -822,7 +812,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, saveData)
+        CommsJamming.processCommsJamming(config, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -834,7 +824,7 @@ describe("CommsJamming", function()
         -- Omnidirectional mode: effectiveness ≈ 0.89 > threshold -> JAMMED
         -- Directional mode: orientation=90 > 12 -> RESISTED
         local samCtxOmni = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveDataOmni = makeSaveData({
+        local jammingStateOmni = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtxOmni } }) },
@@ -855,12 +845,12 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- Omnidirectional: should jam (effectiveness > threshold)
-        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), saveDataOmni)
+        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), jammingStateOmni)
         assert.is_true(samCtxOmni.isOutOfComms)
 
         -- Directional with same setup: bearing misaligned -> should NOT jam
         local samCtxDir = makeRadarCtx({ guid = "SAM-001", isOutOfComms = false, outofcomms = 0 })
-        local saveDataDir = makeSaveData({
+        local jammingStateDir = makeJammingState({
           jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) },
           iads = {
             rocc = { ["C2-001"] = makeC2Ctx({ sam = { ["SAM-001"] = samCtxDir } }) },
@@ -868,7 +858,7 @@ describe("CommsJamming", function()
           },
         })
 
-        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "directional" }), saveDataDir)
+        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "directional" }), jammingStateDir)
         assert.is_false(samCtxDir.isOutOfComms)
       end)
     end)
@@ -881,7 +871,7 @@ describe("CommsJamming", function()
       -- Positive: orders RTB when comms level drops below threshold
       it("should order RTB when comms level drops below threshold", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 40, commsThreshold = 30 })
-        local saveData = makeSaveData({ aircraft = { ["AC-001"] = aircraftCtx } })
+        local jammingState = makeJammingState({ aircraft = { ["AC-001"] = aircraftCtx } })
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
           if guid == "AC-001" then
@@ -895,7 +885,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20), no jammers/AEW/ROCC -> commModifier = -20
         -- commsLevel = commsBase(40) + (-20) = 20 < threshold(30) -> RTB
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(20, aircraftCtx.commsLevel)
         local rtbCalled = false
@@ -912,7 +902,7 @@ describe("CommsJamming", function()
       -- Negative: does not order RTB when comms level is above threshold
       it("should not order RTB when comms level is above threshold", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 100, commsThreshold = 30 })
-        local saveData = makeSaveData({ aircraft = { ["AC-001"] = aircraftCtx } })
+        local jammingState = makeJammingState({ aircraft = { ["AC-001"] = aircraftCtx } })
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
           if guid == "AC-001" then
@@ -925,7 +915,7 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- commsLevel = 100 + (-20) = 80 > 30 -> no RTB
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(80, aircraftCtx.commsLevel)
         for _, call in ipairs(stubSetUnit.calls) do
@@ -939,7 +929,7 @@ describe("CommsJamming", function()
       -- Negative: skips non-airborne aircraft
       it("should skip non-airborne aircraft", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsLevel = 100 })
-        local saveData = makeSaveData({ aircraft = { ["AC-001"] = aircraftCtx } })
+        local jammingState = makeJammingState({ aircraft = { ["AC-001"] = aircraftCtx } })
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
           if guid == "AC-001" then
@@ -951,7 +941,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         -- commsLevel should remain unchanged
         assert.are.equal(100, aircraftCtx.commsLevel)
@@ -960,14 +950,14 @@ describe("CommsJamming", function()
       -- Negative: skips unresolvable aircraft
       it("should skip aircraft that cannot be resolved", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-MISSING", commsLevel = 100 })
-        local saveData = makeSaveData({ aircraft = { ["AC-MISSING"] = aircraftCtx } })
+        local jammingState = makeJammingState({ aircraft = { ["AC-MISSING"] = aircraftCtx } })
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
         trackStub(stub(GameApi, "Tool_Range").returns(50))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(100, aircraftCtx.commsLevel)
       end)
@@ -976,7 +966,7 @@ describe("CommsJamming", function()
       it("should factor AEW support into comms level calculation", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 0, commsThreshold = -9999 })
         local aewCtx = makeAircraftCtx({ guid = "AEW-001" })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           aircraft = { ["AC-001"] = aircraftCtx },
           aew = { ["AEW-001"] = aewCtx },
         })
@@ -998,7 +988,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1006,7 +996,7 @@ describe("CommsJamming", function()
       -- Positive: includes ROCC support in comms level calculation
       it("should factor ROCC support into comms level calculation", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 0, commsThreshold = -9999 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           aircraft = { ["AC-001"] = aircraftCtx },
           iads = {
             rocc = {
@@ -1032,7 +1022,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1040,7 +1030,7 @@ describe("CommsJamming", function()
       -- Boundary: only first valid ROCC is processed
       it("should only use the first valid ROCC for comms calculation", function()
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 0, commsThreshold = -9999 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           aircraft = { ["AC-001"] = aircraftCtx },
           iads = {
             rocc = {
@@ -1065,7 +1055,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel with ROCC has break after first valid: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- Only one ROCC should contribute, NOT both
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1074,7 +1064,7 @@ describe("CommsJamming", function()
       it("should factor active jammers into comms level degradation", function()
         local jammerCtx = makeJammerCtx({ guid = "J-001" })
         local aircraftCtx = makeAircraftCtx({ guid = "AC-001", commsBase = 200, commsThreshold = -9999 })
-        local saveData = makeSaveData({
+        local jammingState = makeJammingState({
           jammers = { ["J-001"] = jammerCtx },
           aircraft = { ["AC-001"] = aircraftCtx },
         })
@@ -1092,7 +1082,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(aircraftCtx.commsLevel < 200)
       end)
@@ -1105,14 +1095,14 @@ describe("CommsJamming", function()
     describe("empty data handling", function()
       -- Boundary: handles completely empty data without errors
       it("should handle empty jammers and empty targets gracefully", function()
-        local saveData = makeSaveData()
+        local jammingState = makeJammingState()
 
         trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
         trackStub(stub(GameApi, "Tool_Range").returns(50))
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, saveData)
+        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
       end)
     end)
   end)

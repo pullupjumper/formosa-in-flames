@@ -31,7 +31,7 @@ PersistentState.update(function(saveData)
           (score + config.s.destroyingAircraftOnTheGround),
           "Destroyed a recon aircraft."
         )
-        saveData.c.sigint.reconAircraft[unit.guid] = nil
+        PersistentState.sigint(saveData, constants.SIDES.ENEMY).reconAircraft[unit.guid] = nil
       elseif unit.dbid == constants.PLATFORMS.Y9 or
           unit.dbid == constants.PLATFORMS.J16D or
           unit.dbid == constants.PLATFORMS.J15D then

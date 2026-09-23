@@ -4,6 +4,6 @@ local CommsJamming = require("src.modules.ew.commsJamming")
 
 PersistentState.update(function(saveData)
   if saveData.c.commsJamming.enabled then
-    CommsJamming.processCommsJamming(config.c.commsJamming, saveData)
+    CommsJamming.processCommsJamming(config.c.commsJamming, PersistentState.commsJamming(saveData))
   end
 end)

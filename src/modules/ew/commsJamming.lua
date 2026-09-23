@@ -158,14 +158,14 @@ end
 
 ---Calculate communication modifier for affected unit based on jammers and support systems
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication jamming parameters
----@param saveData SBJ__SaveData Save data containing jammer, AEW, and C2 unit contexts
+---@param jammingState SBJ__CommsJammingState Jammer, AEW, and IADS contexts
 ---@param affectedUnitGUID string GUID of the unit whose communication level is being calculated
 ---@return integer # The calculated communication modifier
-local function getCommsLevel(commsJammingConfig, saveData, affectedUnitGUID)
+local function getCommsLevel(commsJammingConfig, jammingState, affectedUnitGUID)
   local commModifier = commsJammingConfig.initialComms
-      + calculateJammerImpact(commsJammingConfig, saveData.c.commsJamming.jammers, affectedUnitGUID)
-      + calculateAEWSupport(commsJammingConfig, saveData.t.air.landBased.AEW, affectedUnitGUID)
-      + calculateROCCSupport(commsJammingConfig, saveData.t.iads.rocc, affectedUnitGUID)
+      + calculateJammerImpact(commsJammingConfig, jammingState.jammers, affectedUnitGUID)
+      + calculateAEWSupport(commsJammingConfig, jammingState.aew, affectedUnitGUID)
+      + calculateROCCSupport(commsJammingConfig, jammingState.iads.rocc, affectedUnitGUID)
 
   return math.floor(commModifier)
 end
@@ -434,21 +434,21 @@ end
 
 ---Process aircraft communications quality and trigger RTB for degraded aircraft
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication parameters
----@param saveData SBJ__SaveData Save data containing aircraft contexts
+---@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
 ---@return integer processed Total aircraft processed
 ---@return integer rtbCount Total aircraft ordered RTB
 ---@return SBJ__LogResult[] results RTB detail rows for batch logging
-local function processAircraftComms(commsJammingConfig, saveData)
+local function processAircraftComms(commsJammingConfig, jammingState)
   local aircraftProcessed = 0
   local aircraftRTB = 0
   local reportLines = {}
 
-  for _, aircraftCtx in pairs(saveData.t.air.landBased.AC) do
+  for _, aircraftCtx in pairs(jammingState.aircraft) do
     local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftCtx.guid)
 
     if actualAircraft and actualAircraft.condition == constants.UNIT_CONDITIONS.AIRBORNE then
       aircraftProcessed = aircraftProcessed + 1
-      aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(commsJammingConfig, saveData, actualAircraft.guid)
+      aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(commsJammingConfig, jammingState, actualAircraft.guid)
 
       if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
         GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
@@ -479,14 +479,14 @@ end
 ---Handle communication jamming operations for all active jammers and affected units
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
 ---@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters, thresholds, and effectiveness formulas
----@param saveData SBJ__SaveData Save data containing jammer contexts, target unit contexts, and IADS structure
-function CommsJamming.processCommsJamming(commsJammingConfig, saveData)
-  local jammers = findJammers(saveData.c.commsJamming.jammers)
-  local unitCtxMap, targetCount = findSAMAndRadar(saveData.t.iads)
+---@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
+function CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+  local jammers = findJammers(jammingState.jammers)
+  local unitCtxMap, targetCount = findSAMAndRadar(jammingState.iads)
 
   recoverAllComms(commsJammingConfig, unitCtxMap)
   local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
-  local aircraftProcessed, aircraftRTB, rtbResults = processAircraftComms(commsJammingConfig, saveData)
+  local aircraftProcessed, aircraftRTB, rtbResults = processAircraftComms(commsJammingConfig, jammingState)
 
   local report = LogFormat.report(constants.TAGS.COMMS_JAMMING, "commsJamming", "Handle comms jamming")
 

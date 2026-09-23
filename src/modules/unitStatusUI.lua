@@ -433,10 +433,8 @@ end
 ---@param sideName string Side name ('China' or "US")
 ---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local field = sideConfig.field
   local rows = {}
-  local transmissions = saveData[field].sigint.transmissions
+  local transmissions = PersistentState.sigint(saveData, sideName).transmissions
 
   for _, transmission in pairs(transmissions) do
     local copy = Utils.deepCopy(transmission)

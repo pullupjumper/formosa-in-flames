@@ -112,6 +112,90 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
+  -- sigint / sigintEmitters
+  -- ============================================================================
+
+  describe("sigint", function()
+    -- Shared builder: one distinct table per emitter group so identity checks are meaningful
+    local function makeSigintState()
+      local function ground(...)
+        local g = {}
+        for _, system in ipairs({ ... }) do
+          g[system] = { firingUnits = { name = system } }
+        end
+        return g
+      end
+      return {
+        c = {
+          sigint = { name = "china sigint" },
+          ground = ground("mlrs", "srbm", "glcm", "mrbm", "ascm", "sam"),
+          iads = { c2 = {} },
+        },
+        t = {
+          ground = ground("mlrs", "srbm", "glcm", "ascm", "sam"),
+          iads = { rocc = {}, taaoc = {} },
+        },
+        u = { sigint = { name = "us sigint" } },
+      }
+    end
+
+    -- Positive: China and US collectors resolve to their own SIGINT slices
+    it("should return the SIGINT slice of the collecting side", function()
+      local state = makeSigintState()
+
+      assert.are.equal(state.c.sigint, PersistentState.sigint(state, constants.SIDES.ENEMY))
+      assert.are.equal(state.u.sigint, PersistentState.sigint(state, "US"))
+    end)
+
+    -- Positive: China listens to Taiwan's four TEL systems plus ROCC and TAAOC, in collection order
+    it("should list Taiwan emitters for the China collector", function()
+      local state = makeSigintState()
+
+      assert.are.same({
+        state.t.ground.srbm.firingUnits,
+        state.t.ground.glcm.firingUnits,
+        state.t.ground.mlrs.firingUnits,
+        state.t.ground.ascm.firingUnits,
+        state.t.iads.rocc,
+        state.t.iads.taaoc,
+      }, PersistentState.sigintEmitters(state, constants.SIDES.ENEMY))
+    end)
+
+    -- Positive: US listens to China's MLRS/SRBM/GLCM and C2 only
+    it("should list China emitters for the US collector", function()
+      local state = makeSigintState()
+
+      assert.are.same({
+        state.c.ground.mlrs.firingUnits,
+        state.c.ground.srbm.firingUnits,
+        state.c.ground.glcm.firingUnits,
+        state.c.iads.c2,
+      }, PersistentState.sigintEmitters(state, "US"))
+    end)
+  end)
+
+  -- ============================================================================
+  -- commsJamming
+  -- ============================================================================
+
+  describe("commsJamming", function()
+    -- Positive: slices are the live tables, so jamming mutations land in saved state
+    it("should expose China jammers and Taiwan IADS/aircraft by reference", function()
+      local state = {
+        c = { commsJamming = { jammers = {} } },
+        t = { iads = {}, air = { landBased = { AC = {}, AEW = {} } } },
+      }
+
+      local jammingState = PersistentState.commsJamming(state)
+
+      assert.are.equal(state.c.commsJamming.jammers, jammingState.jammers)
+      assert.are.equal(state.t.iads, jammingState.iads)
+      assert.are.equal(state.t.air.landBased.AC, jammingState.aircraft)
+      assert.are.equal(state.t.air.landBased.AEW, jammingState.aew)
+    end)
+  end)
+
+  -- ============================================================================
   -- read
   -- ============================================================================
 

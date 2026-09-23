@@ -367,15 +367,15 @@ end
 -- ============================================================================
 
 ---Enhanced SIGINT detection handler
----Accepts multiple unit context groups via varargs, consolidating results and log output
+---Monitors several unit context groups, consolidating results and log output
 ---@param config SBJ__Config Configuration object
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param isShown boolean Whether to show detection notifications on map
 ---@param sigintConfig SBJ__SIGINTConfig|nil SIGINT-specific configuration (optional overrides)
----@param ... table<string, SBJ__FiringUnitContext|SBJ__C2Context> Unit context groups to monitor
+---@param emitterGroups table<string, SBJ__FiringUnitContext|SBJ__C2Context>[] Unit context groups to monitor
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
-function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, ...)
+function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, emitterGroups)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
 
@@ -388,7 +388,7 @@ function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig
   local totalDetected = 0
   local totalUnits = 0
 
-  for _, unitCtxMap in ipairs({ ... }) do
+  for _, unitCtxMap in ipairs(emitterGroups) do
     totalUnits = totalUnits + Utils.getCount(unitCtxMap)
 
     for _, unitCtx in pairs(unitCtxMap) do

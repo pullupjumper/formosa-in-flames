@@ -4,13 +4,10 @@ local config = require("src.core.config")
 local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
-  if saveData.c.sigint.enabled then
-    Sigint.collectSigint(config, saveData.c.sigint, constants.SIDES.ENEMY, true, config.c.sigint,
-      saveData.t.ground.srbm.firingUnits,
-      saveData.t.ground.glcm.firingUnits,
-      saveData.t.ground.mlrs.firingUnits,
-      saveData.t.ground.ascm.firingUnits,
-      saveData.t.iads.rocc,
-      saveData.t.iads.taaoc)
+  local sigintCtx = PersistentState.sigint(saveData, constants.SIDES.ENEMY)
+
+  if sigintCtx.enabled then
+    Sigint.collectSigint(config, sigintCtx, constants.SIDES.ENEMY, true, config.c.sigint,
+      PersistentState.sigintEmitters(saveData, constants.SIDES.ENEMY))
   end
 end)

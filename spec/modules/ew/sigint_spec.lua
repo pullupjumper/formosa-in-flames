@@ -297,7 +297,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
       assert.is_true(results["C2-UNIT-001"].isDetected)
       assert.are.equal(25.01, results["C2-UNIT-001"].latitude)
       assert.are.equal(121.01, results["C2-UNIT-001"].longitude)
@@ -335,7 +335,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
       assert.is_true(results["BUNKER-001"].isDetected)
     end)
 
@@ -371,7 +371,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
       assert.is_true(results["C2F-001"].isDetected)
     end)
 
@@ -411,7 +411,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
       assert.is_true(results["TEL-001"].isDetected)
     end)
 
@@ -448,7 +448,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_false(results["TEL-002"].isDetected)
     end)
 
@@ -486,7 +486,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_false(results["TEL-003"].isDetected)
     end)
 
@@ -504,7 +504,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_nil(results["MISSING-001"])
     end)
 
@@ -534,7 +534,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_false(results["C2-UNIT-002"].isDetected)
     end)
 
@@ -571,7 +571,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["C2-REC-001"]
       assert.is_not_nil(transmission)
@@ -630,7 +630,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["C2-INC-001"]
       assert.are.equal(3, transmission.currentDetectionLevel)
@@ -687,7 +687,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["C2-AUTO-001"]
       assert.is_true(transmission.autodetectable)
@@ -747,7 +747,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       assert.stub(setUnitStub).was.called(2)
       assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-A", autodetectable = true })
@@ -799,7 +799,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["C2-DEC-001"]
       assert.are.equal(2, transmission.currentDetectionLevel)
@@ -850,7 +850,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["C2-RESET-001"]
       assert.is_false(transmission.autodetectable)
@@ -894,7 +894,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
     end)
@@ -932,7 +932,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_false(results["TEL-STOP-001"].isDetected)
     end)
 
@@ -975,7 +975,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, unitContexts)
+      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
       assert.is_false(results["TEL-NORL-001"].isDetected)
     end)
 
@@ -1015,7 +1015,7 @@ describe("Sigint", function()
       -- We need to test getSigint with showConfidence. Since getSigint is local,
       -- we test through handleSigint. The data parameter is nil in handleSigint,
       -- so showConfidence defaults to false. We verify the notification doesn't contain confidence.
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       assert.stub(barkStub).was.called()
     end)
@@ -1053,7 +1053,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["TAAOC-001"]
       assert.are.equal("C2", transmission.type)
@@ -1096,7 +1096,7 @@ describe("Sigint", function()
         return 0
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, unitContexts)
+      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
 
       local transmission = sigintCtx.transmissions["MOB-TYPE-001"]
       assert.are.equal("mobile", transmission.type)
