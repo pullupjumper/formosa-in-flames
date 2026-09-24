@@ -216,7 +216,9 @@ describe("Recon", function()
 
   describe("launchWZ8", function()
     local h6n
-    local wz8Course = { { latitude = 24.0, longitude = 120.0 } }
+    local entry
+    local reconCtx
+    local wz8Course = constants.COURSES.WZ8
 
     before_each(function()
       h6n = makeUnit({
@@ -225,6 +227,8 @@ describe("Recon", function()
         latitude = 26.0,
         longitude = 119.0,
       })
+      entry = { type = "UAV", unitGUID = "H6N-001", isFinished = false }
+      reconCtx = { queue = { entry } }
     end)
 
     -- Positive: successful WZ-8 launch
@@ -237,7 +241,7 @@ describe("Recon", function()
       local setEMCONStub = trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(h6n, wz8Course)
+      local result = Recon.launchWZ8(reconCtx, h6n)
 
       assert.is_not_nil(result)
       assert(result ~= nil)
@@ -272,7 +276,7 @@ describe("Recon", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(h6n, wz8Course)
+      local result = Recon.launchWZ8(reconCtx, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was.called_with({ guid = "WZ8-001" })
@@ -291,7 +295,7 @@ describe("Recon", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(h6n, wz8Course)
+      local result = Recon.launchWZ8(reconCtx, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was.called_with({ guid = "WZ8-001" })
@@ -304,10 +308,60 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
 
-      local result = Recon.launchWZ8(h6n, wz8Course)
+      local result = Recon.launchWZ8(reconCtx, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was_not.called()
+    end)
+
+    -- Positive: the entry follows the drone, not the bomber that released it
+    it("should hand the entry over to the launched WZ-8", function()
+      local wz8 = makeUnit({ guid = "WZ8-001" })
+      trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(wz8))
+      trackStub(stub(GameApi, "ScenEdit_UpdateUnit").returns(wz8))
+      trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+      trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
+
+      Recon.launchWZ8(reconCtx, h6n)
+
+      assert.are.equal("WZ8-001", entry.unitGUID)
+    end)
+
+    -- Negative: a failed launch leaves the entry on the H-6N
+    it("should keep the entry on the H-6N when the launch fails", function()
+      trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
+
+      Recon.launchWZ8(reconCtx, h6n)
+
+      assert.are.equal("H6N-001", entry.unitGUID)
+    end)
+
+    -- Boundary: an H-6N not flying any recon entry releases nothing
+    it("should not create a WZ-8 when no entry is flying the H-6N", function()
+      local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
+      entry.unitGUID = "OTHER-001"
+
+      local result = Recon.launchWZ8(reconCtx, h6n)
+
+      assert.is_nil(result)
+      assert.stub(addUnitStub).was_not.called()
+    end)
+
+    -- Boundary: a settled entry still holding the GUID must not be revived or double-launched
+    it("should skip a settled entry and launch only for the active one", function()
+      local wz8 = makeUnit({ guid = "WZ8-001" })
+      local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(wz8))
+      trackStub(stub(GameApi, "ScenEdit_UpdateUnit").returns(wz8))
+      trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+      trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
+      local settledEntry = { type = "UAV", unitGUID = "H6N-001", isFinished = true }
+      reconCtx.queue = { settledEntry, entry }
+
+      Recon.launchWZ8(reconCtx, h6n)
+
+      assert.stub(addUnitStub).was.called(1)
+      assert.are.equal("H6N-001", settledEntry.unitGUID)
+      assert.are.equal("WZ8-001", entry.unitGUID)
     end)
   end)
 

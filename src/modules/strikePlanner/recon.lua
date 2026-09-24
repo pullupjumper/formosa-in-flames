@@ -86,12 +86,12 @@ local function abortWZ8Launch(wz8GUID, reason)
   return nil
 end
 
----Launch WZ-8 reconnaissance drone from H-6N bomber
+---Create a fully configured WZ-8 reconnaissance drone at the H-6N's position
 ---Any failure after the unit exists deletes it; the H-6N only hands off on success.
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@param course CMO__Waypoint[] The reconnaissance course for WZ-8
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
-function Recon.launchWZ8(h6n, course)
+local function createWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
     side = constants.SIDES.ENEMY,
     type = "Aircraft",
@@ -126,6 +126,28 @@ function Recon.launchWZ8(h6n, course)
   wz8.course = course
   h6n:RTB(true)
   return wz8
+end
+
+---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
+---Only the unsettled entry is matched: a settled entry may still hold this airframe's
+---GUID from an earlier sortie whose WZ-8 release failed.
+---@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
+---@param h6n CMO__Unit The H-6N bomber unit to launch from
+---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
+function Recon.launchWZ8(reconCtx, h6n)
+  for _, entry in ipairs(reconCtx.queue) do
+    if entry.type == ENTRY_TYPE.UAV and entry.unitGUID == h6n.guid and not entry.isFinished then
+      local wz8 = createWZ8(h6n, constants.COURSES.WZ8)
+
+      if wz8 then
+        entry.unitGUID = wz8.guid
+      end
+
+      return wz8
+    end
+  end
+
+  return nil
 end
 
 -- ============================================================================

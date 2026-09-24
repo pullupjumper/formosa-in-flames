@@ -128,13 +128,15 @@ flowchart TD
 
 ## WZ-8 發射
 
-`Recon.launchWZ8(h6n, course)` 從 H-6N 發射超高速偵察無人機：生成後掛載雷達感測器、指定歸屬基地、開啟 EMCON，全部成功才寫入 course 並讓 H-6N `RTB(true)`。
+`Recon.launchWZ8(reconCtx, h6n)` 由事件腳本 `src/scripts/china/launchWZ8.lua` 呼叫。它先在佇列裡找「正在由這架 H-6N 執行、尚未結算」的 UAV entry，找不到就什麼都不做。
+
+找到後由私有函式 `createWZ8` 發射超高速偵察無人機：生成後掛載雷達感測器、指定歸屬基地、開啟 EMCON，全部成功才寫入 `constants.COURSES.WZ8` 並讓 H-6N `RTB(true)`。
 
 單位建立後的任一步驟失敗，都會呼叫 `abortWZ8Launch` 刪除該架 WZ-8 —— 沒有清理的話，一架沒有航線的無人機會以生成速度直線飛完整場劇本。
 
 > `ScenEdit_SetUnit` 的回傳值**刻意不檢查**：它是 pass-through wrapper，成功時的回傳值不保證為 truthy，拿它當刪除條件可能誤刪一架正常的無人機。
 
-發射後由事件腳本 `src/scripts/china/launchWZ8.lua` 把 entry 的 `unitGUID` 從 H-6N 換成 WZ-8，後續監控對象隨之改變。
+發射成功後，`Recon.launchWZ8` 把 entry 的 `unitGUID` 從 H-6N 換成 WZ-8，後續監控對象隨之改變；發射失敗時 entry 維持在 H-6N 上。已結算的 entry 即使還留著同一架 H-6N 的 GUID 也會被跳過，避免重複發射。
 
 ---
 
@@ -229,7 +231,7 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `processQueue(processingCtx)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
-| `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8；建立後的任一步驟失敗會刪除該架無人機並回傳 `nil` |
+| `launchWZ8(reconCtx, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機） |
 | `trackTarget(reconCtx, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
 | `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標跳過，側別飛機最多列舉一次 |
 | `isTargetAlreadyTracked(queue, targetGUID)` | 該目標是否已有未結算的 UAV entry 在追蹤；供呼叫端在昂貴的側別飛機列舉前先行短路 |
