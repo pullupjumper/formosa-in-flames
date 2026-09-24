@@ -95,16 +95,16 @@ flowchart TD
 
 ---
 
-## 偵察追蹤觸發
+## 偵察追蹤請求
 
-當動態篩選產生目標時，`startReconTracking` 自動嘗試指派附近的 UAV 進行持續追蹤：
+targetingProcess 只**提出**追蹤請求，不碰 recon queue。動態篩選產生目標時，`buildTrackingRequest` 為該篩選的**第一個**目標組出一筆 `SBJ__TrackingRequestEntry`（`platformDBID` + 已解析的 `target` 接觸），隨 `processTargets` 的第二個回傳值送出：
 
 | 篩選函數 | 追蹤平台 | 目標取得方式 |
 |---|---|---|
 | `findNavalTargets` | WZ-8 | 從 contacts 陣列中查找 |
 | `findRadioDirection` | BZK-005 | 透過 `ScenEdit_GetContact` 取得 |
 
-順序刻意是「先解析目標 → 問 `Recon.isTargetAlreadyTracked` → 才 `VP_GetSide` + `unitsBy`」。目標解析很便宜（查記憶體中的 contacts 或一次 `ScenEdit_GetContact`），側別飛機列舉則要對每一架做一次 `ScenEdit_GetUnit`。[atoBuilder](atoBuilder.md) 的作戰在觀察窗內是**每個 tick** 重新評估目標的，若把已在追蹤的情況留到 `trackTarget` 內部才短路，那趟列舉就白做了。
+[dynamicPlan](dynamicPlan.md) 的 `evaluateTargets` 收齊整個樣板所有 entry 的請求（**未達 `minTargetCount` 的 entry 也算**），最後呼叫一次 `Recon.trackTargets`。「先問 `isTargetAlreadyTracked` → 才 `VP_GetSide` + `unitsBy`」的順序與成本考量現在住在 [recon](recon.md)。
 
 ---
 
@@ -114,12 +114,12 @@ flowchart TD
 |---|---|
 | `findTargets(sideName, scanConfig, saveData)` | 掃描所有接觸並分類至目標清單 |
 | `filterTargetsByTypeAndBase(targetlist, queryParams)` | 依基地名稱與子類型查詢目標 |
-| `processTargets(config, saveData, contacts, targetConfig, isFirstWave)` | 統一入口：路由至動態篩選或固定目標查詢 |
+| `processTargets(config, saveData, contacts, targetConfig, isFirstWave)` | 統一入口：路由至動態篩選或固定目標查詢；回傳 `targets, trackingRequests`（固定目標的請求恆為空） |
 
 ---
 
 ## 相關模組
 
-- [recon](recon.md) — `startReconTracking` 呼叫 `Recon.trackTarget` 指派追蹤
+- [recon](recon.md) — `Recon.trackTargets` 消化這裡提出的追蹤請求
 - [fsemBuilder](fsemBuilder.md) / [atoBuilder](atoBuilder.md) — 呼叫 `processTargets` 評估目標
 - [系統架構](README.md)

@@ -118,7 +118,7 @@ flowchart TD
 
 > `findClosestUAV` 必須排除**正在追蹤其他目標**的 UAV。`assignTrackingMission` 是無條件覆寫 `trackingTargetGUID`，而 `isTargetAlreadyTracked` 只保護「同一個目標不重複派」——保護不了「同一架機被搶走」。少了這道排除，兩個海上目標配一架空中 WZ-8 時，每個 tick 都會把它在兩者之間搶來搶去，先前那個目標被靜默放生，日誌上看起來卻是一連串正常的 `assign_tracking`。
 
-`isTargetAlreadyTracked` 是 public 的，因為 [targetingProcess](targetingProcess.md) 需要在列舉全側飛機之前先問一次——觀察窗內重試的作戰每個 tick 都會走到那裡。
+`Recon.trackTargets` 是 [targetingProcess](targetingProcess.md) 追蹤請求的唯一出口（由 [dynamicPlan](dynamicPlan.md) 的 `evaluateTargets` 呼叫）。每筆請求先問 `isTargetAlreadyTracked`，真的沒人追蹤的目標才 `VP_GetSide` + `unitsBy`，且一次呼叫最多列舉一次——觀察窗內重試的作戰每個 tick 都會走到這裡，已在追蹤的目標不能花掉一趟全側列舉（每架都要一次 `ScenEdit_GetUnit`）。
 
 `updateTrackingCourse` 把航線換成**單一航點**（目標最新已知位置）。因為只有一個航點，UAV 抵達後航線才清空，下個 tick 才會再更新 —— 實際行為是尾隨目標的舊位置，而非連續導引。
 
@@ -231,6 +231,7 @@ flowchart TD
 | `processQueue(processingCtx)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
 | `launchWZ8(h6n, course)` | 從 H-6N 發射 WZ-8；建立後的任一步驟失敗會刪除該架無人機並回傳 `nil` |
 | `trackTarget(reconCtx, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
+| `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標跳過，側別飛機最多列舉一次 |
 | `isTargetAlreadyTracked(queue, targetGUID)` | 該目標是否已有未結算的 UAV entry 在追蹤；供呼叫端在昂貴的側別飛機列舉前先行短路 |
 | `addEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil` |
 | `initQueue(reconConfig, reconCtx)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
@@ -273,5 +274,5 @@ flowchart TD
 - [airbaseAttrition](airbaseAttrition.md) — 多基地駐機戰損統計
 - [atoBuilder](atoBuilder.md) — 從 reconTriggeredOperationBatches 取出 air operations 並插入 ATO
 - [fsemBuilder](fsemBuilder.md) — 從 reconTriggeredOperationBatches 取出 ground operations 並插入 FSEM
-- [targetingProcess](targetingProcess.md) — 呼叫 `trackTarget` 進行偵察追蹤觸發
+- [targetingProcess](targetingProcess.md) — 提出追蹤請求，經 dynamicPlan 交給 `trackTargets`
 - [系統架構](README.md)

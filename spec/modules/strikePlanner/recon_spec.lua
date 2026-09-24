@@ -1233,6 +1233,90 @@ describe("Recon", function()
   end)
 
   -- ============================================================================
+  -- trackTargets
+  -- ============================================================================
+
+  describe("trackTargets", function()
+    local aircraft
+    local vpGetSideStub
+    local trackTargetStub
+
+    before_each(function()
+      aircraft = { { guid = "UAV-001" } }
+      vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide").returns({
+        unitsBy = function() return aircraft end,
+      }))
+      trackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
+    end)
+
+    ---Build a tracking request for a target GUID
+    ---@param guid string
+    ---@param platformDBID? number
+    ---@return SBJ__TrackingRequestEntry
+    local function makeRequest(guid, platformDBID)
+      return { platformDBID = platformDBID or constants.PLATFORMS.WZ8, target = { guid = guid } }
+    end
+
+    -- Positive: an untracked target is handed to trackTarget with the enemy side's aircraft
+    it("should send the requested platform after an untracked target", function()
+      local reconCtx = makeReconContext({})
+      local request = makeRequest("CONTACT-001", constants.PLATFORMS.BZK005)
+
+      Recon.trackTargets(reconCtx, { request })
+
+      assert.stub(trackTargetStub).was.called(1)
+      assert.stub(trackTargetStub).was.called_with(reconCtx, aircraft, constants.PLATFORMS.BZK005, request.target)
+    end)
+
+    -- Positive: several requests share one side sweep
+    it("should sweep the side once for several requests", function()
+      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001"), makeRequest("CONTACT-002") })
+
+      assert.stub(vpGetSideStub).was.called(1)
+      assert.stub(trackTargetStub).was.called(2)
+    end)
+
+    -- Positive: a target already under a UAV's eye short-circuits before the side sweep,
+    -- which is what keeps an operation retrying inside its observation window cheap
+    it("should skip the side sweep when the target is already tracked", function()
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001", trackingTargetGUID = "CONTACT-001" })
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
+
+      Recon.trackTargets(makeReconContext({ entry }), { makeRequest("CONTACT-001") })
+
+      assert.stub(vpGetSideStub).was_not.called()
+      assert.stub(trackTargetStub).was_not.called()
+    end)
+
+    -- Negative: no enemy side
+    it("should not track when VP_GetSide returns nil", function()
+      vpGetSideStub.returns(nil)
+
+      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001") })
+
+      assert.stub(trackTargetStub).was_not.called()
+    end)
+
+    -- Negative: the side has no aircraft
+    it("should not track when the side has no aircraft", function()
+      aircraft = nil
+
+      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001"), makeRequest("CONTACT-002") })
+
+      assert.stub(vpGetSideStub).was.called(1)
+      assert.stub(trackTargetStub).was_not.called()
+    end)
+
+    -- Boundary: nothing requested
+    it("should do nothing for an empty request list", function()
+      Recon.trackTargets(makeReconContext({}), {})
+
+      assert.stub(vpGetSideStub).was_not.called()
+      assert.stub(trackTargetStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
   -- isTargetAlreadyTracked
   -- ============================================================================
 

@@ -501,6 +501,29 @@ function Recon.trackTarget(reconCtx, sideUnits, uavDBID, target)
   return true
 end
 
+---Serve the tracking requests raised by target filters
+---Each target is checked against the queue before the side sweep, and the sweep runs at most
+---once per call: the atoBuilder observation window re-evaluates targets every tick, so an
+---already-shadowed target must cost nothing.
+---@param reconCtx SBJ__ReconContext Reconnaissance context for tracking UAV assignments
+---@param requests SBJ__TrackingRequestEntry[] Tracking requests from TargetingProcess.processTargets
+function Recon.trackTargets(reconCtx, requests)
+  local aircraft
+  for _, request in ipairs(requests) do
+    if not Recon.isTargetAlreadyTracked(reconCtx.queue, request.target.guid) then
+      if aircraft == nil then
+        local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
+        aircraft = side and side:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or false
+      end
+      if not aircraft then
+        return
+      end
+
+      Recon.trackTarget(reconCtx, aircraft, request.platformDBID, request.target)
+    end
+  end
+end
+
 ---Turn the configured queue plans into runtime entries
 ---Deep-copied so the config table stays pristine across scenario reloads.
 ---@param reconConfig SBJ__ReconConfig Reconnaissance configuration holding the queue plans

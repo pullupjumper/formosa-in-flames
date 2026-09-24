@@ -1143,9 +1143,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Built once per pass by buildFilterParams and shared by every filter function
 ---@class SBJ__FilterParams: table
 ---@field config? SBJ__Config Configuration data
----@field saveData? SBJ__SaveData Saved data; recon tracking is skipped when nil
+---@field saveData? SBJ__SaveData Saved data; read by findRadioDirection for SIGINT transmissions
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
+
+---Recon tracking a target filter asks for; produced by TargetingProcess, served by Recon.trackTargets
+---@class SBJ__TrackingRequestEntry: table
+---@field platformDBID number UAV platform database ID to send
+---@field target CMO__Contact Resolved target contact to shadow
 
 ---Firing unit definition for fire support operations
 ---Invariant: name is always present. FsemBuilder rejects an entry whose name does not

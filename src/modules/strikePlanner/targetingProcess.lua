@@ -2,7 +2,6 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
-local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
 
 local TargetingProcess = {}
@@ -522,36 +521,9 @@ end
 -- Dynamic Target Processing
 -- ============================================================================
 
----Trigger reconnaissance tracking for a filter's results
----Resolves the target before sweeping the side; an already-shadowed one costs nothing.
----@param params SBJ__FilterParams Filter parameters with contacts and saveData
----@param filterName string Name of the filter that produced targets
----@param targetGUIDs string[] Array of target GUIDs from the filter
-local function startReconTracking(params, filterName, targetGUIDs)
-  local trackingConfig = RECON_TRACKING_CONFIG[filterName]
-  if not trackingConfig or not params.saveData then
-    return
-  end
-
-  local target = trackingConfig.getTarget(params, targetGUIDs)
-  if not target then return end
-
-  if Recon.isTargetAlreadyTracked(params.saveData.c.recon.queue, target.guid) then
-    return
-  end
-
-  local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
-  if not side then return end
-
-  local filteredUnits = side:unitsBy(constants.UNIT_TYPES.AIRCRAFT)
-  if not filteredUnits then return end
-
-  Recon.trackTarget(params.saveData.c.recon, filteredUnits, trackingConfig.platformDBID, target)
-end
-
----@package
----Internal functions exposed for unit testing and stubbable dispatch
-TargetingProcess._internal = {
+---Dynamic target filters keyed by the names used in targetConfig.filterNames
+---@type table<string, fun(params: SBJ__FilterParams): string[]|nil>
+local FILTERS = {
   findInfantry = findGroundTargets,
   findAirborne = findAirborne,
   evaluateEmissions = evaluateEmissions,
@@ -559,10 +531,27 @@ TargetingProcess._internal = {
   findNavalTargets = findNavalTargets,
   findC2 = findC2,
   findRadioDirection = findRadioDirection,
-  evaluateTarget = evaluateTarget,
-  evaluateTargetsDamage = evaluateTargetsDamage,
-  startReconTracking = startReconTracking,
 }
+
+---Build the recon tracking request a filter's results call for
+---Only resolves the target; whether a UAV is actually sent is up to Recon.trackTargets.
+---@param params SBJ__FilterParams Filter parameters with contacts
+---@param filterName string Name of the filter that produced targets
+---@param targetGUIDs string[] Array of target GUIDs from the filter
+---@return SBJ__TrackingRequestEntry|nil # Request for the lead target, nil when the filter needs no tracking
+local function buildTrackingRequest(params, filterName, targetGUIDs)
+  local trackingConfig = RECON_TRACKING_CONFIG[filterName]
+  if not trackingConfig then
+    return nil
+  end
+
+  local target = trackingConfig.getTarget(params, targetGUIDs)
+  if not target then
+    return nil
+  end
+
+  return { platformDBID = trackingConfig.platformDBID, target = target }
+end
 
 ---Build filter parameters for dynamic target filtering
 ---@param config SBJ__Config Global configuration table
@@ -594,23 +583,27 @@ end
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames
----@return string[] # Array of target GUIDs matching the filter criteria
+---@return string[] strikeTargets Array of target GUIDs matching the filter criteria
+---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the results call for
 local function processDynamicTargets(config, saveData, contacts, targetConfig)
   local filterNames = targetConfig.filterNames
   if not filterNames or #filterNames == 0 then
-    return {}
+    return {}, {}
   end
 
   local strikeTargets = {}
+  local trackingRequests = {}
   local filterParams = buildFilterParams(config, saveData, contacts, targetConfig)
 
   for _, filterName in ipairs(filterNames) do
-    ---@type fun(params: SBJ__FilterParams): string[]|nil
-    local targetingFunction = TargetingProcess._internal[filterName]
+    local targetingFunction = FILTERS[filterName]
     if targetingFunction then
       local targets = targetingFunction(filterParams)
       if targets and #targets > 0 then
-        startReconTracking(filterParams, filterName, targets)
+        local request = buildTrackingRequest(filterParams, filterName, targets)
+        if request then
+          table.insert(trackingRequests, request)
+        end
         Utils.addAll(strikeTargets, targets)
       end
     else
@@ -618,7 +611,7 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
     end
   end
 
-  return strikeTargets
+  return strikeTargets, trackingRequests
 end
 
 ---Process fixed targets using BDA assessment
@@ -655,22 +648,24 @@ end
 -- ============================================================================
 
 ---Process targets by routing to dynamic or fixed target processing
+---Never touches the recon queue; the caller hands trackingRequests to Recon.trackTargets.
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
 ---@param isFirstWave boolean Whether this is the first wave
----@return string[] # Array of target GUIDs
+---@return string[] targets Array of target GUIDs
+---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the targets call for; always empty for fixed targets
 function TargetingProcess.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
   if not targetConfig then
-    return {}
+    return {}, {}
   end
 
   if type(targetConfig.filterNames) == "table" and #targetConfig.filterNames > 0 then
     return processDynamicTargets(config, saveData, contacts, targetConfig)
   end
 
-  return processFixedTargets(saveData, targetConfig, isFirstWave)
+  return processFixedTargets(saveData, targetConfig, isFirstWave), {}
 end
 
 return TargetingProcess

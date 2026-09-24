@@ -1,6 +1,7 @@
 -- DynamicPlan Unit Tests
 local DynamicPlan = require("src.modules.strikePlanner.dynamicPlan")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local Recon = require("src.modules.strikePlanner.recon")
 
 describe("DynamicPlan", function()
   local activeStubs
@@ -33,6 +34,7 @@ describe("DynamicPlan", function()
       c = {
         air = { airTaskingOrder = overrides.airTaskingOrder or {} },
         ground = { fireSupportPlan = overrides.fireSupportPlan or {} },
+        recon = { enabled = true, queue = {} },
         dynamicOperations = {
           generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
         }
@@ -159,6 +161,45 @@ describe("DynamicPlan", function()
       assert.has_error(function()
         DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "naval", template)
       end)
+    end)
+
+    -- Positive: tracking requests from every entry reach Recon in one call, unqualified entries included
+    it("should hand every entry's tracking requests to Recon.trackTargets", function()
+      local template = {
+        name = "AIR/STRIKE/AB/W/1",
+        isFirstWave = false,
+        packages = { { target = makeTarget("SHORT", 5) }, { target = makeTarget("ENOUGH", 1) } }
+      }
+      local saveData = makeSaveData()
+      local requestsByTag = {
+        SHORT = { { platformDBID = 1, target = { guid = "S1" } } },
+        ENOUGH = { { platformDBID = 2, target = { guid = "E1" } } },
+      }
+      trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+        local tag = targetConfig.objs[1].baseName
+        return { tag }, requestsByTag[tag]
+      end))
+      local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
+
+      local _, qualifiedCount = DynamicPlan.evaluateTargets({}, saveData, {}, "air", template)
+
+      assert.are.equal(1, qualifiedCount)
+      assert.stub(trackTargetsStub).was.called(1)
+      local callArgs = trackTargetsStub.calls[1].refs
+      assert(callArgs)
+      assert.are.equal(saveData.c.recon, callArgs[1])
+      assert.are.same({ requestsByTag.SHORT[1], requestsByTag.ENOUGH[1] }, callArgs[2])
+    end)
+
+    -- Boundary: no requests means Recon is left alone
+    it("should not call Recon.trackTargets when no entry requests tracking", function()
+      local template = { name = "AIR/STRIKE/AB/W/1", isFirstWave = false, packages = { { target = makeTarget("ONLY", 1) } } }
+      stubTargets({ ONLY = { "T1" } })
+      local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
+
+      DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "air", template)
+
+      assert.stub(trackTargetsStub).was_not.called()
     end)
   end)
 

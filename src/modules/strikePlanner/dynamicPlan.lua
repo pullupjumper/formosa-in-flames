@@ -1,5 +1,7 @@
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
+local Recon = require("src.modules.strikePlanner.recon")
 local OperationType = require("src.modules.strikePlanner.operationType")
+local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 local DynamicPlan = {}
@@ -64,6 +66,7 @@ end
 
 ---Evaluate targets for every package or task in an operation template
 ---An entry qualifies when it finds at least its minTargetCount targets.
+---Recon tracking is requested for every entry that raised it, qualified or not.
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
@@ -75,20 +78,29 @@ function DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, 
   local descriptor = resolveDescriptor(operationType)
   local targetsByIndex = {}
   local qualifiedCount = 0
+  local trackingRequests = {}
 
   for index, entryTemplate in ipairs(template[descriptor.templateField]) do
-    local targets = TargetingProcess.processTargets(
+    ---@cast entryTemplate SBJ__FireSupportTaskTemplate|SBJ__PackageTemplate
+    local targets, requests = TargetingProcess.processTargets(
       config,
       saveData,
       contacts,
       entryTemplate.target,
       template.isFirstWave
     )
+    if requests then
+      Utils.addAll(trackingRequests, requests)
+    end
 
     if #targets >= entryTemplate.target.minTargetCount then
       targetsByIndex[index] = targets
       qualifiedCount = qualifiedCount + 1
     end
+  end
+
+  if #trackingRequests > 0 then
+    Recon.trackTargets(saveData.c.recon, trackingRequests)
   end
 
   return targetsByIndex, qualifiedCount

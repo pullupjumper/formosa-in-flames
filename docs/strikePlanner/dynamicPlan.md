@@ -25,6 +25,8 @@ flowchart LR
 
 `DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, template)` 依 descriptor 的 `templateField`（`packages` 或 `fireSupportTasks`）走訪 template，對每一筆呼叫 `TargetingProcess.processTargets(config, saveData, contacts, entry.target, template.isFirstWave)`。目標數達到 `entry.target.minTargetCount` 的那筆才進結果。
 
+`processTargets` 的第二個回傳值是追蹤請求。`evaluateTargets` 把**每一筆** entry 的請求收齊（未達門檻的也算），迴圈結束後呼叫一次 `Recon.trackTargets(saveData.c.recon, requests)`。recon queue 的寫入因此只發生在 [recon](recon.md)。
+
 回傳兩個值：
 
 | 回傳 | 內容 |

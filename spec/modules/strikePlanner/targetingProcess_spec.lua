@@ -1,7 +1,5 @@
 -- TargetingProcess Unit Tests
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
----@diagnostic disable-next-line: invisible
-local _internal = TargetingProcess._internal
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local Recon = require("src.modules.strikePlanner.recon")
@@ -161,6 +159,53 @@ describe("TargetingProcess", function()
     config.c.sigint.maxRange = overrides.maxRange or 50
     config.c.sigint.maxCount = overrides.maxCount or 3
     return config
+  end
+
+  ---Run one dynamic filter through processTargets
+  ---@param filterName string Filter name as used in targetConfig.filterNames
+  ---@param params table Filter inputs: contacts, task, and optional config / saveData
+  ---@return string[] targets
+  ---@return SBJ__TrackingRequestEntry[] trackingRequests
+  local function runFilter(filterName, params)
+    local targetConfig = {
+      filterNames = { filterName },
+      areas = params.task.target.areas,
+      contactAge = params.task.target.contactAge,
+      minTargetCount = params.task.target.minTargetCount,
+    }
+    return TargetingProcess.processTargets(params.config, params.saveData, params.contacts, targetConfig, false)
+  end
+
+  ---Run fixed-target BDA over the given contact GUIDs through processTargets
+  ---Every GUID is listed as a Hsinchu runway so the type/base query lets it through.
+  ---@param task table Task whose target.list holds the contact GUIDs and target.contactAge the age limit
+  ---@param isFirstWave boolean
+  ---@return string[] targets
+  ---@return SBJ__TrackingRequestEntry[] trackingRequests
+  local function runEvaluateTargetsDamage(task, isFirstWave)
+    local targetlist = {}
+    for _, guid in ipairs(task.target.list or {}) do
+      table.insert(targetlist, makeTargetEntry({ guid = guid }))
+    end
+    local targetConfig = {
+      objs = { { baseName = "Hsinchu", subTypes = { "Runway" } } },
+      contactAge = task.target.contactAge,
+      minTargetCount = 1,
+    }
+    return TargetingProcess.processTargets(
+      makeConfig(), makeSaveData({ targetlist = targetlist }), {}, targetConfig, isFirstWave
+    )
+  end
+
+  ---Evaluate a single contact through fixed-target BDA
+  ---@param target table Contact the ScenEdit_GetContact stub hands back
+  ---@param contactAge number
+  ---@param isFirstWave boolean
+  ---@return boolean # True if the contact survived BDA
+  local function runEvaluateTarget(target, contactAge, isFirstWave)
+    trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
+    local targets = runEvaluateTargetsDamage(makeTask({ list = { target.guid }, contactAge = contactAge }), isFirstWave)
+    return #targets == 1
   end
 
   -- ============================================================================
@@ -408,7 +453,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+      local result = runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("infantry-001", result[1])
@@ -424,7 +469,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      _internal.findInfantry({ contacts = { contact }, task = task })
+      runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal("H", contact.posture)
     end)
@@ -438,7 +483,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+      local result = runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -452,7 +497,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+      local result = runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -467,7 +512,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+      local result = runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -482,7 +527,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findInfantry({ contacts = { contact }, task = task })
+      local result = runFilter("findInfantry", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -504,7 +549,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("p3c-001", result[1])
@@ -521,7 +566,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("e2k-001", result[1])
@@ -537,7 +582,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -552,7 +597,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -567,7 +612,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -582,7 +627,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -598,7 +643,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -614,7 +659,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findAirborne({ contacts = { contact }, task = task })
+      local result = runFilter("findAirborne", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -647,7 +692,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK3_LONG_MOUNTAIN)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("sam-001", result[1])
@@ -658,7 +703,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK3_LONG_WHITE_2)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -668,7 +713,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.PAC3_MPQ65)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -678,7 +723,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TC2_CS_MPQ90)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -688,7 +733,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(constants.SENSORS.TK2_CS_MPG25)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
     end)
@@ -700,7 +745,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -712,7 +757,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -722,7 +767,7 @@ describe("TargetingProcess", function()
       local contact = makeSAMContact(99999)
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -737,7 +782,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -752,7 +797,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.evaluateEmissions({ contacts = { contact }, task = task })
+      local result = runFilter("evaluateEmissions", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -773,7 +818,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findMobileTargets({ contacts = { contact }, task = task })
+      local result = runFilter("findMobileTargets", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("mobile-001", result[1])
@@ -789,7 +834,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      _internal.findMobileTargets({ contacts = { contact }, task = task })
+      runFilter("findMobileTargets", { contacts = { contact }, task = task })
 
       assert.are.equal("H", contact.posture)
     end)
@@ -803,7 +848,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findMobileTargets({ contacts = { contact }, task = task })
+      local result = runFilter("findMobileTargets", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -817,7 +862,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findMobileTargets({ contacts = { contact }, task = task })
+      local result = runFilter("findMobileTargets", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -832,7 +877,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findMobileTargets({ contacts = { contact }, task = task })
+      local result = runFilter("findMobileTargets", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -853,7 +898,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("rocc-001", result[1])
@@ -869,7 +914,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(1, #result)
       assert.are.equal("taaoc-001", result[1])
@@ -884,7 +929,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -898,7 +943,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -913,7 +958,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -928,7 +973,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findC2({ contacts = { contact }, task = task })
+      local result = runFilter("findC2", { contacts = { contact }, task = task })
 
       assert.are.equal(0, #result)
     end)
@@ -949,7 +994,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findNavalTargets({
+      local result = runFilter("findNavalTargets", {
         contacts = { contact },
         task = task,
       })
@@ -968,7 +1013,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findNavalTargets({
+      local result = runFilter("findNavalTargets", {
         contacts = { contact },
         task = task,
       })
@@ -986,7 +1031,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findNavalTargets({
+      local result = runFilter("findNavalTargets", {
         contacts = { contact },
         task = task,
       })
@@ -1004,7 +1049,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
 
-      local result = _internal.findNavalTargets({
+      local result = runFilter("findNavalTargets", {
         contacts = { contact },
         task = task,
       })
@@ -1042,7 +1087,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = config,
@@ -1058,7 +1103,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({ guid = "c-001", typed = 8, inArea = function() return true end })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = nil,
@@ -1072,7 +1117,7 @@ describe("TargetingProcess", function()
       local contact = makeContact({ guid = "c-002", typed = 8, inArea = function() return true end })
       local task = makeTask({ areas = { { "area-1" } } })
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = makeConfig(),
@@ -1106,7 +1151,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "Tool_Range").returns(100))
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = config,
@@ -1140,7 +1185,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = config,
@@ -1174,7 +1219,7 @@ describe("TargetingProcess", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      local result = _internal.findRadioDirection({
+      local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = config,
@@ -1186,266 +1231,119 @@ describe("TargetingProcess", function()
   end)
 
   -- ============================================================================
-  -- startReconTracking
+  -- processTargets tracking requests
   -- ============================================================================
 
-  describe("startReconTracking", function()
-    local mockFilteredUnits
-    local vpGetSideStub
-    local reconTrackTargetStub
-
-    before_each(function()
-      mockFilteredUnits = { { guid = "uav-001" } }
-      local mockSide = {
-        unitsBy = function() return mockFilteredUnits end,
-      }
-      vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
-      reconTrackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
-    end)
-
-    -- Positive: triggers WZ-8 for findNavalTargets
-    it("should call Recon.trackTarget with WZ8 for findNavalTargets", function()
-      local contact = makeContact({
-        guid = "ship-001",
+  describe("processTargets tracking requests", function()
+    ---Build a naval contact the findNavalTargets filter accepts
+    ---@param guid string
+    ---@return table
+    local function makeShip(guid)
+      return makeContact({
+        guid = guid,
         typed = 2,
+        lastDetections = { { age = 100 } },
+        inArea = function() return true end,
       })
-      local opts = {
-        contacts = { contact },
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
+    end
 
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
+    -- Positive: naval hits ask for a WZ-8 on the resolved contact
+    it("should request WZ-8 tracking for findNavalTargets results", function()
+      local ship = makeShip("ship-001")
 
-      assert.stub(reconTrackTargetStub).was.called(1)
-      assert.stub(reconTrackTargetStub).was.called_with(
-        opts.saveData.c.recon,
-        mockFilteredUnits,
-        constants.PLATFORMS.WZ8,
-        contact
-      )
+      local _, requests = runFilter("findNavalTargets", { contacts = { ship }, task = makeTask() })
+
+      assert.are.equal(1, #requests)
+      assert.are.equal(constants.PLATFORMS.WZ8, requests[1].platformDBID)
+      assert.are.equal(ship, requests[1].target)
     end)
 
-    -- Positive: triggers BZK-005 for findRadioDirection
-    it("should call Recon.trackTarget with BZK005 for findRadioDirection", function()
+    -- Positive: radio direction hits ask for a BZK-005 on the contact from ScenEdit_GetContact
+    it("should request BZK-005 tracking for findRadioDirection results", function()
       local contact = makeContact({
         guid = "radio-001",
         typed = 8,
-      })
-      trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
-      local opts = {
-        contacts = {},
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findRadioDirection", { "radio-001" })
-
-      assert.stub(reconTrackTargetStub).was.called(1)
-      assert.stub(reconTrackTargetStub).was.called_with(
-        opts.saveData.c.recon,
-        mockFilteredUnits,
-        constants.PLATFORMS.BZK005,
-        contact
-      )
-    end)
-
-    -- Negative: no tracking config for filter
-    it("should not call Recon.trackTarget for non-tracking filter", function()
-      local opts = {
-        contacts = {},
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findInfantry", { "inf-001" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-    end)
-
-    -- Negative: saveData is nil
-    it("should not call Recon.trackTarget when saveData is nil", function()
-      local opts = {
-        contacts = {},
-        saveData = nil,
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-    end)
-
-    -- Negative: VP_GetSide returns nil
-    it("should not call Recon.trackTarget when VP_GetSide returns nil", function()
-      vpGetSideStub.returns(nil)
-
-      local opts = {
-        contacts = { makeContact({ guid = "ship-001" }) },
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-    end)
-
-    -- Negative: no aircraft available
-    it("should not call Recon.trackTarget when no aircraft available", function()
-      local mockSide = {
-        unitsBy = function() return nil end,
-      }
-      vpGetSideStub.returns(mockSide)
-
-      local opts = {
-        contacts = { makeContact({ guid = "ship-001" }) },
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-    end)
-
-    -- Negative: target not found in contacts (findNavalTargets)
-    it("should not call Recon.trackTarget when target contact not found", function()
-      local opts = {
-        contacts = { makeContact({ guid = "other-001" }) },
-        saveData = makeSaveData(),
-        task = makeTask(),
-      }
-
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-missing" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-    end)
-
-    -- Positive: a target already under a UAV's eye short-circuits before the side sweep,
-    -- which is what keeps an operation retrying inside its observation window cheap
-    it("should skip the side sweep when the target is already tracked", function()
-      local contact = makeContact({ guid = "ship-001", typed = 2 })
-      local opts = {
-        contacts = { contact },
-        saveData = makeSaveData({
-          recon = {
-            enabled = true,
-            queue = { {
-              type = "UAV",
-              unitGUID = "uav-001",
-              trackingTargetGUID = "ship-001",
-              isFinished = false,
-            } },
-          },
-        }),
-        task = makeTask(),
-      }
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "uav-001" }))
-
-      _internal.startReconTracking(opts, "findNavalTargets", { "ship-001" })
-
-      assert.stub(reconTrackTargetStub).was_not.called()
-      assert.stub(vpGetSideStub).was_not.called()
-    end)
-  end)
-
-  -- ============================================================================
-  -- processDynamicTargets recon integration
-  -- ============================================================================
-
-  describe("processTargets recon integration", function()
-    local mockFilteredUnits
-    local reconTrackTargetStub
-
-    before_each(function()
-      mockFilteredUnits = { { guid = "uav-001" } }
-      local mockSide = {
-        unitsBy = function() return mockFilteredUnits end,
-      }
-      trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
-      reconTrackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
-    end)
-
-    -- Positive: findNavalTargets triggers WZ-8 recon via processDynamicTargets
-    it("should trigger WZ-8 recon when findNavalTargets finds targets", function()
-      local contact = makeContact({
-        guid = "ship-integ-001",
-        typed = 2,
         lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
-      local config = makeConfig()
-      local saveData = makeSaveData()
-      local targetConfig = {
-        filterNames = { "findNavalTargets" },
-        areas = { { "area-1" } },
-        contactAge = 300,
-        minTargetCount = 1,
-      }
-
-      TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
-
-      assert.stub(reconTrackTargetStub).was.called(1)
-      local callArgs = reconTrackTargetStub.calls[1]
-      assert.are.equal(constants.PLATFORMS.WZ8, callArgs.vals[3])
-    end)
-
-    -- Positive: findRadioDirection triggers BZK-005 recon via processDynamicTargets
-    it("should trigger BZK-005 recon when findRadioDirection finds targets", function()
-      local contact = makeContact({
-        guid = "mobile-integ-001",
-        typed = 8,
-        lastDetections = { { age = 100 } },
-        inArea = function() return true end,
-      })
-      local config = makeConfig({ maxRange = 50, maxCount = 3 })
       local saveData = makeSaveData({
         transmissions = {
-          ["tm-integ-001"] = {
-            latitude = 25.0,
-            longitude = 121.0,
-            currentDetectionLevel = 5,
-            type = "mobile",
-          },
+          ["tm-001"] = { latitude = 25.0, longitude = 121.0, currentDetectionLevel = 5, type = "mobile" },
         },
       })
-      local targetConfig = {
-        filterNames = { "findRadioDirection" },
-        areas = { { "area-1" } },
-        contactAge = 300,
-        minTargetCount = 1,
-      }
-
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
+      local _, requests = runFilter("findRadioDirection", {
+        contacts = { contact },
+        task = makeTask(),
+        config = makeConfig(),
+        saveData = saveData,
+      })
 
-      assert.stub(reconTrackTargetStub).was.called(1)
-      local callArgs = reconTrackTargetStub.calls[1]
-      assert.are.equal(constants.PLATFORMS.BZK005, callArgs.vals[3])
+      assert.are.equal(1, #requests)
+      assert.are.equal(constants.PLATFORMS.BZK005, requests[1].platformDBID)
+      assert.are.equal(contact, requests[1].target)
     end)
 
-    -- Negative: non-tracking filter does not trigger recon
-    it("should not trigger recon for non-tracking filter like findInfantry", function()
+    -- Boundary: only the lead target of a filter is requested
+    it("should request tracking for the lead target only", function()
+      local leadShip = makeShip("ship-lead")
+
+      local targets, requests = runFilter("findNavalTargets", {
+        contacts = { leadShip, makeShip("ship-second") },
+        task = makeTask(),
+      })
+
+      assert.are.equal(2, #targets)
+      assert.are.equal(1, #requests)
+      assert.are.equal(leadShip, requests[1].target)
+    end)
+
+    -- Negative: filters without a tracking platform raise no request
+    it("should not request tracking for findInfantry results", function()
       local contact = makeContact({
-        guid = "infantry-integ-001",
+        guid = "infantry-001",
         typed = 8,
+        lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
-      local config = makeConfig()
+
+      local targets, requests = runFilter("findInfantry", { contacts = { contact }, task = makeTask() })
+
+      assert.are.equal(1, #targets)
+      assert.are.equal(0, #requests)
+    end)
+
+    -- Negative: an empty filter result raises no request
+    it("should not request tracking when the filter finds nothing", function()
+      local _, requests = runFilter("findNavalTargets", { contacts = {}, task = makeTask() })
+
+      assert.are.equal(0, #requests)
+    end)
+
+    -- Negative: targeting is a query; the recon queue is left for Recon.trackTargets
+    it("should not touch the recon queue or sweep the side", function()
+      local vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide"))
+      local trackTargetStub = trackStub(stub(Recon, "trackTarget"))
       local saveData = makeSaveData()
-      local targetConfig = {
-        filterNames = { "findInfantry" },
-        areas = { { "area-1" } },
+
+      runFilter("findNavalTargets", { contacts = { makeShip("ship-001") }, task = makeTask(), saveData = saveData })
+
+      assert.stub(vpGetSideStub).was_not.called()
+      assert.stub(trackTargetStub).was_not.called()
+      assert.are.equal(0, #saveData.c.recon.queue)
+    end)
+
+    -- Boundary: fixed targets never ask for tracking
+    it("should return no tracking requests for fixed targets", function()
+      local _, requests = TargetingProcess.processTargets(makeConfig(), makeSaveData(), {}, {
+        objs = { { baseName = "Hsinchu", subTypes = { "Runway" } } },
         contactAge = 300,
         minTargetCount = 1,
-      }
+      }, false)
 
-      TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
-
-      assert.stub(reconTrackTargetStub).was_not.called()
+      assert.are.same({}, requests)
     end)
   end)
 
@@ -1470,7 +1368,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_true(result)
     end)
@@ -1484,7 +1382,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 1000 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, true)
+      local result = runEvaluateTarget(target, 300, true)
 
       assert.is_true(result)
     end)
@@ -1502,7 +1400,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_true(result)
     end)
@@ -1516,7 +1414,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_false(result)
     end)
@@ -1532,7 +1430,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_false(result)
     end)
@@ -1546,7 +1444,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 500 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_false(result)
     end)
@@ -1560,7 +1458,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_false(result)
     end)
@@ -1574,7 +1472,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
       })
 
-      local result = _internal.evaluateTarget(target, 300, false)
+      local result = runEvaluateTarget(target, 300, false)
 
       assert.is_false(result)
     end)
@@ -1602,7 +1500,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "eval-001" }, contactAge = 300 })
 
-      local result = _internal.evaluateTargetsDamage(task, false)
+      local result = runEvaluateTargetsDamage(task, false)
 
       assert.are.equal(1, #result)
       assert.are.equal("eval-001", result[1])
@@ -1625,7 +1523,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "eval-002" }, contactAge = 300 })
 
-      local result = _internal.evaluateTargetsDamage(task, true)
+      local result = runEvaluateTargetsDamage(task, true)
 
       assert.are.equal(1, #result)
     end)
@@ -1636,7 +1534,7 @@ describe("TargetingProcess", function()
 
       local task = makeTask({ list = { "missing-001" }, contactAge = 300 })
 
-      local result = _internal.evaluateTargetsDamage(task, false)
+      local result = runEvaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1645,7 +1543,7 @@ describe("TargetingProcess", function()
     it("should return empty table for empty target list", function()
       local task = makeTask({ list = {}, contactAge = 300 })
 
-      local result = _internal.evaluateTargetsDamage(task, false)
+      local result = runEvaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1654,7 +1552,7 @@ describe("TargetingProcess", function()
     it("should return empty table when target list is nil", function()
       local task = { target = { list = nil, contactAge = 300 } }
 
-      local result = _internal.evaluateTargetsDamage(task, false)
+      local result = runEvaluateTargetsDamage(task, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1768,13 +1666,6 @@ describe("TargetingProcess", function()
   describe("processTargets", function()
     -- Positive: routes to dynamic processing when filterNames present
     it("should use dynamic processing when filterNames are present", function()
-      local mockFilteredUnits = { { guid = "uav-001" } }
-      local mockSide = {
-        unitsBy = function() return mockFilteredUnits end,
-      }
-      trackStub(stub(GameApi, "VP_GetSide").returns(mockSide))
-      trackStub(stub(Recon, "trackTarget").returns(true))
-
       local contact = makeContact({
         guid = "infantry-proc-001",
         typed = 8,
