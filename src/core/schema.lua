@@ -18,10 +18,10 @@ function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID)
 ---@return table<number, any>|nil # Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
 function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
----comment
----@param sideName string
----@param zoneName string
----@param zoneType number
+---Get a zone by name or GUID
+---@param sideName string The side that owns the zone
+---@param zoneName string The zone name or GUID
+---@param zoneType number The zone type (constants.ZONE_TYPES)
 ---@return CMO__Zone|nil
 function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
@@ -65,8 +65,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class CMO__FormationGroup: table
 ---@field name? string The name of the formation
 ---@field spacing number The spacing of the formation
----@field spacing_unit? string Multipler to the spacing if required (Opertional)
----@field bearing? number The type of formationDesired bearing of formation lead (0-360)
+---@field spacing_unit? string Multiplier to the spacing if required
+---@field bearing? number Desired bearing of formation lead (0-360)
 ---@field transpose boolean Units jump to the new stations immediately
 
 ---Weapon load information on a mount
@@ -198,7 +198,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__MissileSystemConfig: table
 ---@field wpnDefault number Default weapon count
 ---@field ammoThreshold number Ammunition threshold for resupply
----@field contactAge? number Contact valid age in seconds (optional)
+---@field contactAge? number Contact valid age in seconds
 ---@field reloadTime number Reload time in seconds
 ---@field stowTime number Stow time in seconds
 ---@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
@@ -414,7 +414,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Side configuration for faction settings
 ---@class SBJ__SideConfig: table
----@field field SBJ__TaiwanConfig|SBJ__ChinaConfig Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
+---@field field "c"|"t"|"u" Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
 ---@field enemySide string Enemy side name
 ---@field displayName string Human-readable side name
 
@@ -425,13 +425,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- Unit placement and deployment parameters for unitGenerator and other modules
 
 ---Linear placement parameters for positioning multiple units in a line
----Temporary parameter pack used for unit placement functions
+---Input table for GameUtils.buildLocations
 ---@class SBJ__LinearPlacementParams: table
 ---@field initialLocation CMO__Location Starting position
 ---@field num number Number of units to place
 ---@field bearing number Direction angle (degrees)
 ---@field distance number Distance between units (nautical miles)
----@field firstDistance? number Special distance for first unit (optional)
+---@field firstDistance? number Distance for the first unit; falls back to distance
 
 ---Random units descriptor for creating multiple units at random positions
 ---@class SBJ__RandomUnitsDescriptor: table
@@ -443,7 +443,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unitType string Unit type (e.g., "Facility", "Ship", "Submarine", "Aircraft")
 ---@field count number Number of units to create
 ---@field dbids number[] Array of database IDs to randomly select from
----@field useRandomSuffix? boolean Optional: Whether to append random text suffix to unit names (defaults to true)
+---@field useRandomSuffix? boolean Whether to append random text suffix to unit names (default: true)
 
 ---Unit descriptor for creating units with specific properties
 ---@class SBJ__UnitDescriptor: CMO__SetUnitDescriptor
@@ -456,8 +456,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unitname string Ship unit name
 ---@field distance number Distance from formation center (nautical miles)
 ---@field angle number Angle offset from formation heading (degrees)
----@field embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked aircraft/boats (optional)
----@field loadouts SBJ__Loadout[]|nil Ammunition stockpile configuration (optional)
+---@field embarkedUnits? SBJ__EmbarkedUnit[] Embarked aircraft/boats
+---@field loadouts? SBJ__Loadout[] Ammunition stockpile configuration
 
 ---Formation configuration for internal ship creation
 ---Used internally by createShipFormation() to configure ship group formations
@@ -489,7 +489,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field loadoutId number Ammunition configuration ID
 ---@field name? string Loadout display name
 ---@field num number Unit count
----@field missionName? string Mission name (optional)
+---@field missionName? string Mission name
 
 ---Cargo descriptor defining parameters for creating cargo units on ships
 ---@class SBJ__CargoDescriptor: table
@@ -522,7 +522,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string Unit name
 ---@field platformName string Display name of aircraft platform
 ---@field dbid number Unit database ID
----@field loadouts? SBJ__Loadout[] Unit ammunition configuration (optional)
+---@field loadouts? SBJ__Loadout[] Unit ammunition configuration
 
 ---Airbase deployment descriptor
 ---Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
@@ -530,11 +530,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AirbaseDeploymentDescriptor: table
 ---@field name? string Airbase name
 ---@field baseGUID? string Airbase unit GUID reference
----@field dbid? number  Database ID if the object is a ship
+---@field dbid? number Database ID if the object is a ship
 ---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft units stationed at this base
 ---@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
----@field latitude? number Airbase latitude coordinate (optional)
----@field longitude? number Airbase longitude coordinate (optional)
+---@field latitude? number Airbase latitude coordinate
+---@field longitude? number Airbase longitude coordinate
 
 ---Per-DBID attrition detail for an airbase
 ---@class SBJ__AirbaseAttritionEntry: table
@@ -606,7 +606,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field to? SBJ__DestinationStagingArea Destination staging area
 ---@field unitMap table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
 ---@field area? string[] Operational area reference points
----@field missionName? string Mission name (optional)
+---@field missionName? string Mission name
 
 ---Carrier Strike Group descriptor
 ---@class SBJ__CSGDescriptor: table
@@ -624,7 +624,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Barge context for tracking barge operations and associated units
 ---@class SBJ__BargeContext: table
 ---@field guid string Barge unit GUID
----@field bridgeGUID? string Bridge unit GUID for barge connection (optional)
+---@field bridgeGUID? string Bridge unit GUID for barge connection
 ---@field roros string[] Array of RORO ship GUIDs transported by this barge
 
 ---Ship position calculation result for amphibious operation planning
@@ -642,8 +642,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Per-zone state for amphibious operation phase tracking
 ---@class SBJ__ZoneState: table
 ---@field phase string Current phase (constants.AMPHIBIOUS_PHASES value)
----@field amphibiousAssaultStartTime? number Amphibious assault start timestamp (optional)
----@field airlandingMissionStartTime? number Air landing mission start timestamp (optional)
+---@field amphibiousAssaultStartTime? number Amphibious assault start timestamp
+---@field airlandingMissionStartTime? number Air landing mission start timestamp
 
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
@@ -653,7 +653,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
 ---ACV deployment parameters for launching air cushion vehicles
----Temporary parameter pack used for ACV deployment functions
+---Input table for AmphibiousAssault.launchACV
 ---@class SBJ__ACVDeploymentParams: table
 ---@field bearing number Deployment direction (degrees)
 ---@field distance number Deployment distance (nautical miles)
@@ -663,13 +663,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field num integer Number of ACVs to deploy
 
 ---Vehicle offload parameters for unloading vehicles from landing ships
----Temporary parameter pack used for vehicle offloading functions
+---Input table for SecondWaveUnloading.offloadVehicles
 ---@class SBJ__VehicleOffloadParams: table
 ---@field ship CMO__Unit Landing ship to offload from
 ---@field num integer Number of vehicles to offload
 ---@field bearing number Offload direction (degrees)
 ---@field distance number Distance between vehicles (nautical miles)
----@field firstDistance number Distance for first vehicle (nautical miles)
+---@field firstDistance? number Distance for first vehicle (nautical miles); falls back to distance
 
 ---Landing mission descriptor for amphibious operations
 ---@class SBJ__LandingMissionDescriptor: table
@@ -761,7 +761,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field type072iii integer Number of Type 072III landing ships
 ---@field type072a integer Number of Type 072A landing ships
 ---@field type073a integer Number of Type 073A landing craft
----@field type071InLSTArea? integer Number of Type 071 ships in LST area (optional)
+---@field type071InLSTArea? integer Number of Type 071 ships in LST area
 ---@field ferry integer Number of ferries
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
@@ -836,15 +836,15 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Complete mission deployment configuration including base, units, weapons, and timing
 ---@class SBJ__MissionDeploymentDescriptor: table
 ---@field baseGUID string The GUID of the base to use for the mission (resolved after validation)
----@field baseGUIDCandidates? string[] Optional fallback bases tried in order when the primary base lacks aircraft of unitDBID; validator narrows to a single resolved baseGUID before persisting
+---@field baseGUIDCandidates? string[] Fallback bases tried in order when the primary base lacks aircraft of unitDBID; validator narrows to a single resolved baseGUID before persisting
 ---@field missionCreationParams SBJ__MissionCreationParams The parameters for the mission
 ---@field unitCount integer The number of units to assign to the mission
 ---@field weaponDBID number The weapon DBID to use for the mission
 ---@field unitDBID number The unit DBID to use for the mission
----@field loadoutID? number The loadout ID to filter by, 0 for any loadout (optional)
+---@field loadoutID? number The loadout ID to filter by, 0 for any loadout
 ---@field startTime? string The start time of the mission
----@field endTime? string The end time of the mission (optional)
----@field timeOnStation? string The time on station (optional)
+---@field endTime? string The end time of the mission
+---@field timeOnStation? string The time on station
 ---@field emcon string The EMCON settings for the mission
 
 ---Calculated timestamps for one air package role
@@ -870,13 +870,13 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 -- ============================================================================
 -- Launcher and Transporter-Erector-Launcher (TEL) systems for launcher module
 
----Area mode parameters for defining operational areas
+---Area creation parameters for GameUtils.createArea
 ---@class SBJ__AreaParams: table
 ---@field side string Side name
----@field shape string Area shape type
----@field distance number Distance parameter
----@field name? string Area name (optional)
----@field bear_offset? number Bearing offset (optional)
+---@field shape string Area shape ("circle" or "square")
+---@field distance number Distance from center to each vertex (nautical miles)
+---@field name? string Area name (default: "RP")
+---@field bearOffset? number Bearing offset in degrees for square areas (default: 0)
 
 ---Position definition with course and area reference points
 ---@class SBJ__Position: table
@@ -890,11 +890,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field HA SBJ__Position[] Hide Areas
 ---@field AHA SBJ__Position[] Ammo Holding Areas
 ---@field RL SBJ__Position[] Reload Points
----@field mask {area: string[]}
----@field name? string Area name (optional)
----@field uShapeVertices? CMO__Location[] U shape vertices (optional)
----@field shelterPoints? CMO__Location[] Shelter points (optional)
----@field SHRL? SBJ__Position[] SHRL Path (optional)
+---@field mask {area: string[]} Mask area reference points
+---@field name? string Area name
+---@field uShapeVertices? CMO__Location[] U shape vertices
+---@field shelterPoints? CMO__Location[] Shelter points
+---@field SHRL? SBJ__Position[] Shelter-hide-reload loop path
 
 ---Player-chosen operational area for one battery, applied by MissileSystem.redeploy
 ---@class SBJ__MissileSystemLayout: table
@@ -933,7 +933,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
 ---@field dbid number The firing unit database ID
----@field mountDescriptors? {dbid:number, mountCount:integer}[]
+---@field mountDescriptors? {dbid:number, mountCount:integer}[] Mount DBIDs and counts on the firing unit
 
 ---Ammunition context data structure
 ---Tracks ammunition unit status and remaining ammunition counts
@@ -958,7 +958,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
 ---@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
----@field test? table Test data structure (optional)
+---@field test? table Test data structure
 
 ---Ammunition subtotal with current/max counts and usage percentage
 ---@class SBJ__AmmoSubtotalEntry: table
@@ -978,10 +978,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether ground force systems are activated
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
----@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system (Optional)
+---@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
----@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system (Optional)
+---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system
 
 ---Ground force context with fire support - for strike operations (China/Taiwan)
 ---Extends base context with dynamic fire support execution matrices
@@ -989,40 +989,42 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportPlan table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices (always initialized)
 
 ---Optional unit property overrides for ground units
+---Passing nil applies every default
 ---@class SBJ__SetUnitPropertiesOpts: table
----@field throttle string? Throttle setting (default: 'Stop')
----@field speed number? Speed (default: 0)
----@field course CMO__Waypoint[]? Waypoints (optional)
----@field holdPosition boolean? Whether to hold position (default: true)
----@field wcs integer? Weapon control status: 1=Free, 2=Hold (optional)
----@field formation CMO__FormationGroup? Formation settings (optional)
+---@field throttle? string Throttle setting (default: 'Stop')
+---@field speed? number Speed (default: 0)
+---@field course? CMO__Waypoint[] Waypoints
+---@field holdPosition? boolean Whether to hold position (default: true)
+---@field wcs? integer Weapon control status: 1=Free, 2=Hold
+---@field formation? CMO__FormationGroup Formation settings
 
----Movement options for commanding units to a randomly selected position
+---Movement parameters for commanding units to a randomly selected position
 ---@class SBJ__MoveToPositionParams: table
 ---@field unitName string Unit name (for messages)
 ---@field battery CMO__Unit Unit group
 ---@field positions SBJ__Position[] Position array
 ---@field positionType string Position type (RL/HA/AHA/FP)
 ---@field areaName string Operational area name (for messages)
----@field wcs integer? Weapon control status (optional)
----@field useLastCourse boolean? Whether to use the last waypoint in course
+---@field wcs? integer Weapon control status
+---@field useLastCourse? boolean Whether to use the last waypoint in course
 
 ---Behavior switches for UnitEntersArea move-to-position flow
+---Passing nil falls back to all switches off, looking up firing units on the unit's own side
 ---@class SBJ__MoveToPositionOpts: table
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
 
----Input options for missileSystem UnitEntersArea event handling
+---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
 ---@field groundCtx table<string, SBJ__MissileSystemContext> Missile system runtime contexts by type
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field isAuto boolean Whether the flow runs in automatic mode
----@field contacts CMO__Contact[]|nil Current side contacts used for drop-contact handling
----@field behavior SBJ__MoveToPositionOpts|nil Optional behavior switches for side-specific differences
+---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
+---@field behavior? SBJ__MoveToPositionOpts Behavior switches for side-specific differences
 
----Options for adding a unit-enters-area trigger to an event
+---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
 ---@field positionType string Position type (RL/HA/FP)
 ---@field position SBJ__Position Position configuration
@@ -1117,14 +1119,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Target query parameter for filtering targets by base name and facility sub-types
 ---@class SBJ__TargetQueryEntry: table
----@field baseName? string Base name pattern for matching (optional, if omitted matches all)
+---@field baseName? string Base name pattern for matching; omit to match all
 ---@field subTypes string[] Array of facility sub-type patterns to match
 
 ---Target template for strike planning
 ---@class SBJ__TargetTemplate: table
----@field objs? SBJ__TargetQueryEntry[] Target query parameters (for fixed targets, optional)
+---@field objs? SBJ__TargetQueryEntry[] Target query entries (for fixed targets)
 ---@field areas? string[][] Operation areas
----@field filterNames? string[] Filter function names (for dynamic targets, optional)
+---@field filterNames? string[] Filter function names (for dynamic targets)
 ---@field contactAge number Contact valid time (seconds)
 ---@field minTargetCount number Minimum target count threshold
 ---@field ammoPerTarget? number Ammunition count per target
@@ -1138,9 +1140,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field target SBJ__Target Target information
 
 ---Filter parameters for target selection and filtering
----@class SBJ__FilterOpts: table
+---Built once per pass by buildFilterParams and shared by every filter function
+---@class SBJ__FilterParams: table
 ---@field config? SBJ__Config Configuration data
----@field saveData? SBJ__SaveData Saved data
+---@field saveData? SBJ__SaveData Saved data; recon tracking is skipped when nil
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
 
@@ -1180,10 +1183,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Attack contacts parameters for coordinating strikes
 ---@class SBJ__AttackContactsParams: table
 ---@field contacts table<integer, string> A table of contact GUIDs to attack
----@field qty integer The number of salvos to launch
+---@field qty? integer The number of salvos to launch (default: 1)
 ---@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
----@field weaponDBID? number The weapon DBID to use for the attack (if not specified, the default weapon will be used)
----@field sideName? string The side to use for the attack (if not specified, the side of the first firing unit will be used)
+---@field weaponDBID? number The weapon DBID to use for the attack; nil uses the firing unit's default weapon
+---@field sideName? string The side to use for the attack (default: constants.SIDES.ENEMY)
 
 ---Parameters for generating missile flight paths
 ---@class SBJ__GenerateMissilePathsParams: table
@@ -1192,9 +1195,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field launcherLat number Launcher latitude
 ---@field launcherLon number Launcher longitude
 ---@field radarRange number Radar range (nautical miles)
----@field missileCount? number Number of missiles (default is 5)
----@field missileSpeedKts? number Missile speed in knots (default is 600)
----@field missileRangeNm? number Maximum missile range in nautical miles (default is 100)
+---@field missileCount? number Number of missiles (default: 5)
+---@field missileSpeedKts? number Missile speed in knots (default: 600)
+---@field missileRangeNm? number Maximum missile range in nautical miles (default: 100)
 
 ---Missile path definition with waypoints and timing
 ---@class SBJ__MissilePath: table
@@ -1389,12 +1392,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Package template for air operation coordination
 ---@class SBJ__PackageTemplate: SBJ__Task
----@field striker? SBJ__MissionDeploymentDescriptor Main striker configuration (optional)
----@field escort? SBJ__MissionDeploymentDescriptor Escort configuration (optional)
----@field wildWeasel? SBJ__MissionDeploymentDescriptor Wild Weasel configuration (optional)
----@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration (optional)
----@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration (optional)
----@field reconUAV? SBJ__ReconUAVTemplate Reconnaissance UAV configuration (optional)
+---@field striker? SBJ__MissionDeploymentDescriptor Main striker configuration
+---@field escort? SBJ__MissionDeploymentDescriptor Escort configuration
+---@field wildWeasel? SBJ__MissionDeploymentDescriptor Wild Weasel configuration
+---@field jammer? SBJ__MissionDeploymentDescriptor Jammer configuration
+---@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration
+---@field reconUAV? SBJ__ReconUAVTemplate Reconnaissance UAV configuration
 ---@field timeToReady number Ready time in seconds
 ---@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
 
@@ -1440,7 +1443,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field latitude number Detected latitude coordinate
 ---@field isDetected boolean Whether signal is detected
 ---@field confidence number Detection confidence level (0-1)
----@field detectorId? string ID of detecting unit (optional)
+---@field detectorId? string ID of detecting unit
 ---@field timestamp number Detection timestamp
 
 ---Radio transmission context data structure
@@ -1501,7 +1504,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field guid string C2 node GUID
 ---@field areas table<number, string[]> Associated operational areas
 ---@field sam table<string, SBJ__RadarContext> Surface-to-Air Missile systems
----@field radar? table<string, SBJ__RadarContext> Radar systems (optional)
+---@field radar? table<string, SBJ__RadarContext> Radar systems
 ---@field [string] table<string, SBJ__RadarContext>
 
 ---C2 node deployment descriptor
@@ -1522,9 +1525,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---IADS context managing air defense system state
 ---Tracks all Command and Control nodes and system activation status
 ---@class SBJ__IADSContext: table
----@field c2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID (optional)
----@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID (optional)
----@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID (optional)
+---@field c2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID
+---@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID
+---@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID
 ---@field enabled boolean Whether IADS is activated
 ---@field [string] table<string, SBJ__C2Context>
 
@@ -1624,6 +1627,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Pass-scoped caches for firing unit lookups within one execution pass
 ---Caches are local to prevent cross-tick stale data while building FSEMs
----@class SBJ__FsemPassContext
+---@class SBJ__FsemPassContext: table
 ---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
 ---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built

@@ -145,10 +145,12 @@ describe("MissileSystem Deployment", function()
     -- Negative: unknown system or firing unit is skipped
     it("should skip layouts naming an unknown system or firing unit", function()
       local groundForceCfg, oldArea = makeLayoutCfg()
+      local operationalArea1 = { name = "#X" }
+      local operationalArea2 = { name = "#Y" }
 
       local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceCfg, {
-        { category = "glcm", unitname = "FU-1", operationalArea = { name = "#X" } },
-        { category = "srbm", unitname = "Ghost", operationalArea = { name = "#Y" } }
+        { category = "glcm", unitname = "FU-1",  operationalArea = operationalArea1 },
+        { category = "srbm", unitname = "Ghost", operationalArea = operationalArea2 }
       })
 
       assert.are.same({}, operationalAreas)

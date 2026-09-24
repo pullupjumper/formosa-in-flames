@@ -99,7 +99,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `Context` | 執行期傳遞的 context 物件 | `SBJ__ReconContext` |
 | `State` | 存進 `saveData`、會被改寫 | `SBJ__ReconRunState` |
 | `Params` | 必填輸入 table | `SBJ__AreaParams` |
-| `Opts` | 選填輸入 table | `SBJ__FilterOpts` |
+| `Opts` | 選填輸入 table | `SBJ__SetUnitPropertiesOpts` |
 | `Result` | 函式回傳結果 | `SBJ__LogResult`、`SBJ__AirbaseAttritionResult` |
 | `Entry` | 清單或結果裡的一筆 | `SBJ__RunwayEntry`、`SBJ__AmmoSubtotalEntry` |
 | `Type` | 字串列舉的 `---@alias` | `SBJ__OperationType` |

@@ -437,6 +437,7 @@ function Deployment.applyLayouts(groundForceCfg, layouts)
   local operationalAreasToRemove = {}
 
   for _, layout in ipairs(layouts) do
+    ---@type SBJ__MissileSystemConfig
     local systemCfg = groundForceCfg[layout.category]
 
     if systemCfg and systemCfg.firingUnits[layout.unitname] then

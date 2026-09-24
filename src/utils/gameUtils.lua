@@ -174,7 +174,7 @@ function GameUtils.createArea(position, params)
   local shape = params.shape
   if side == nil or shape == nil then return false end
   local name = (params.name or "RP")
-  local bear_offset = (params.bear_offset or 0)
+  local bearOffset = (params.bearOffset or 0)
   local rpTable = {}
   local a = 1
   --Circle
@@ -204,7 +204,7 @@ function GameUtils.createArea(position, params)
   elseif shape == "square" then
     local distance = params.distance
     for i = 0, 3 do
-      local b = 45 + (90 * i) + bear_offset
+      local b = 45 + (90 * i) + bearOffset
       local location = GameApi.World_GetPointFromBearing({
         latitude = position.latitude,
         longitude = position.longitude,

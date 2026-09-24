@@ -58,8 +58,8 @@ local STANDALONE_TARGET_RULES = {
 local RECON_TRACKING_CONFIG = {
   findNavalTargets = {
     platformDBID = constants.PLATFORMS.WZ8,
-    getTarget = function(opts, targetGUIDs)
-      for _, contact in ipairs(opts.contacts) do
+    getTarget = function(params, targetGUIDs)
+      for _, contact in ipairs(params.contacts) do
         if contact.guid == targetGUIDs[1] then
           return contact
         end
@@ -69,7 +69,7 @@ local RECON_TRACKING_CONFIG = {
   },
   findRadioDirection = {
     platformDBID = constants.PLATFORMS.BZK005,
-    getTarget = function(opts, targetGUIDs)
+    getTarget = function(params, targetGUIDs)
       return GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, targetGUIDs[1])
     end,
   },
@@ -286,11 +286,11 @@ end
 
 ---Find ground targets (infantry or mobile vehicles) within specified areas
 ---Marks matched contacts with hostile posture; filters out contacts older than contactAge
----@param opts SBJ__FilterOpts Filter parameters containing contacts and task information
+---@param params SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of ground unit GUIDs found in target areas
-local function findGroundTargets(opts)
-  local contactAge = opts.task.target.contactAge
-  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+local function findGroundTargets(params)
+  local contactAge = params.task.target.contactAge
+  return filterContactsInAreas(params.contacts, params.task.target.areas, function(contact)
     if contact.typed ~= constants.CONTACT_TYPES.FACILITY_MOBILE then
       return false
     end
@@ -301,11 +301,11 @@ local function findGroundTargets(opts)
 end
 
 ---Find airborne early warning aircraft (P-3C, E-2K) within specified areas
----@param opts SBJ__FilterOpts Filter parameters with contacts, task, and config
+---@param params SBJ__FilterParams Filter parameters with contacts, task, and config
 ---@return string[] # Array of airborne early warning aircraft GUIDs
-local function findAirborne(opts)
-  local contactAge = opts.task.target.contactAge
-  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+local function findAirborne(params)
+  local contactAge = params.task.target.contactAge
+  return filterContactsInAreas(params.contacts, params.task.target.areas, function(contact)
     if not contact.emissions or not contact.emissions[1] then
       return false
     end
@@ -318,11 +318,11 @@ end
 
 ---Analyze radar emissions to identify SAM systems
 ---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
----@param opts SBJ__FilterOpts Filter parameters with contacts, task, and sensor configuration
+---@param params SBJ__FilterParams Filter parameters with contacts, task, and sensor configuration
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
-local function evaluateEmissions(opts)
-  local contactAge = opts.task.target.contactAge
-  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+local function evaluateEmissions(params)
+  local contactAge = params.task.target.contactAge
+  return filterContactsInAreas(params.contacts, params.task.target.areas, function(contact)
     if not contact.emissions or not contact.emissions[1] then
       return false
     end
@@ -334,11 +334,11 @@ end
 
 ---Find Command and Control (C2) facilities
 ---Identifies ROCC and TAAOC command centers within target areas, filtered by contactAge
----@param opts SBJ__FilterOpts Filter parameters containing contacts and task information
+---@param params SBJ__FilterParams Filter parameters containing contacts and task information
 ---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
-local function findC2(opts)
-  local contactAge = opts.task.target.contactAge
-  return filterContactsInAreas(opts.contacts, opts.task.target.areas, function(contact)
+local function findC2(params)
+  local contactAge = params.task.target.contactAge
+  return filterContactsInAreas(params.contacts, params.task.target.areas, function(contact)
     if not contact.lastDetections or contact.lastDetections[1].age > contactAge then
       return false
     end
@@ -353,11 +353,11 @@ end
 
 ---Find naval targets (ships) within specified areas
 ---Identifies naval contacts within contact age limit
----@param opts SBJ__FilterOpts Filter parameters with contacts and task
+---@param params SBJ__FilterParams Filter parameters with contacts and task
 ---@return string[] # Array of naval target GUIDs
-local function findNavalTargets(opts)
-  local contacts = opts.contacts
-  local task = opts.task
+local function findNavalTargets(params)
+  local contacts = params.contacts
+  local task = params.task
   local contactAge = task.target.contactAge
 
   return filterContactsInAreas(contacts, task.target.areas, function(contact)
@@ -404,13 +404,13 @@ end
 
 ---Find targets by radio direction (SIGINT-based targeting)
 ---Combines mobile targets and C2 units, filters by proximity to radio transmissions
----@param opts SBJ__FilterOpts Filter parameters with contacts, task, config, and saveData
+---@param params SBJ__FilterParams Filter parameters with contacts, task, config, and saveData
 ---@return string[] # Array of target GUIDs near radio sources
-local function findRadioDirection(opts)
-  local contacts = opts.contacts
-  local saveData = opts.saveData
-  local task = opts.task
-  local config = opts.config
+local function findRadioDirection(params)
+  local contacts = params.contacts
+  local saveData = params.saveData
+  local task = params.task
+  local config = params.config
   local targets = {}
   local mobileTargets = findGroundTargets({ contacts = contacts, task = task })
   local c2Targets = findC2({ contacts = contacts, task = task })
@@ -524,19 +524,19 @@ end
 
 ---Trigger reconnaissance tracking for a filter's results
 ---Resolves the target before sweeping the side; an already-shadowed one costs nothing.
----@param opts SBJ__FilterOpts Filter options with contacts and saveData
+---@param params SBJ__FilterParams Filter parameters with contacts and saveData
 ---@param filterName string Name of the filter that produced targets
 ---@param targetGUIDs string[] Array of target GUIDs from the filter
-local function startReconTracking(opts, filterName, targetGUIDs)
+local function startReconTracking(params, filterName, targetGUIDs)
   local trackingConfig = RECON_TRACKING_CONFIG[filterName]
-  if not trackingConfig or not opts.saveData then
+  if not trackingConfig or not params.saveData then
     return
   end
 
-  local target = trackingConfig.getTarget(opts, targetGUIDs)
+  local target = trackingConfig.getTarget(params, targetGUIDs)
   if not target then return end
 
-  if Recon.isTargetAlreadyTracked(opts.saveData.c.recon.queue, target.guid) then
+  if Recon.isTargetAlreadyTracked(params.saveData.c.recon.queue, target.guid) then
     return
   end
 
@@ -546,7 +546,7 @@ local function startReconTracking(opts, filterName, targetGUIDs)
   local filteredUnits = side:unitsBy(constants.UNIT_TYPES.AIRCRAFT)
   if not filteredUnits then return end
 
-  Recon.trackTarget(opts.saveData.c.recon, filteredUnits, trackingConfig.platformDBID, target)
+  Recon.trackTarget(params.saveData.c.recon, filteredUnits, trackingConfig.platformDBID, target)
 end
 
 ---@package
@@ -564,15 +564,15 @@ TargetingProcess._internal = {
   startReconTracking = startReconTracking,
 }
 
----Build filter options for dynamic target filtering
+---Build filter parameters for dynamic target filtering
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
----@return SBJ__FilterOpts # Filter options for filter functions
-local function buildFilterOptions(config, saveData, contacts, targetConfig)
-  ---@type SBJ__FilterOpts
-  local opts = {
+---@return SBJ__FilterParams # Filter parameters for filter functions
+local function buildFilterParams(config, saveData, contacts, targetConfig)
+  ---@type SBJ__FilterParams
+  local params = {
     contacts = contacts,
     task = {
       target = {
@@ -586,7 +586,7 @@ local function buildFilterOptions(config, saveData, contacts, targetConfig)
     saveData = saveData,
   }
 
-  return opts
+  return params
 end
 
 ---Process dynamic targets using filter functions
@@ -602,15 +602,15 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
   end
 
   local strikeTargets = {}
-  local filterOpts = buildFilterOptions(config, saveData, contacts, targetConfig)
+  local filterParams = buildFilterParams(config, saveData, contacts, targetConfig)
 
   for _, filterName in ipairs(filterNames) do
-    ---@type fun(opts: SBJ__FilterOpts): string[]|nil
+    ---@type fun(params: SBJ__FilterParams): string[]|nil
     local targetingFunction = TargetingProcess._internal[filterName]
     if targetingFunction then
-      local targets = targetingFunction(filterOpts)
+      local targets = targetingFunction(filterParams)
       if targets and #targets > 0 then
-        startReconTracking(filterOpts, filterName, targets)
+        startReconTracking(filterParams, filterName, targets)
         Utils.addAll(strikeTargets, targets)
       end
     else
