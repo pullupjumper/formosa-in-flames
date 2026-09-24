@@ -96,10 +96,16 @@ function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
----@param systemCtx SBJ__MissileSystemContext Missile system runtime context
+---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param missileSystem string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string Side name used to resolve firing units in game state
----@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
-function MissileSystem.getAmmoInventory(systemCtx, sideName)
+---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
+function MissileSystem.getAmmoInventory(groundCtx, missileSystem, sideName)
+  local systemCtx = groundCtx[missileSystem]
+  if not systemCtx then
+    return nil
+  end
+
   return Ammo.getInventory(systemCtx, sideName)
 end
 
@@ -157,28 +163,35 @@ function MissileSystem.process(groundCtx, groundCfg, isAuto, sideName)
   report.emit({ mode = isAuto and "auto" or "manual" })
 end
 
----Handle logic when resupply unit is destroyed
+---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
 ---@param unit CMO__Unit Destroyed unit
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@return boolean success Whether unit was found and processed
----@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function MissileSystem.processSupplyAssetDestruction(unit, systemCtx)
-  local success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
+---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted
+function MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
+  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
+    local systemCtx = groundCtx[missileSystem]
+    local success, result
+    if systemCtx then
+      success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
+    end
 
-  if success and result then
-    Logger.log(constants.TAGS.MISSILE_SYSTEM, LogFormat.line(result.tag, {
-      system = result.system,
-      action = "supply_asset_destroyed",
-      role = result.role,
-      unit = result.unitName,
-      context = result.contextName,
-      ammoBefore = result.ammoBefore,
-      ammoAfter = result.ammoAfter,
-      delta = result.delta
-    }))
+    -- A destroyed unit belongs to at most one system, so the first match ends the search.
+    if success and result then
+      Logger.log(constants.TAGS.MISSILE_SYSTEM, LogFormat.line(result.tag, {
+        system = result.system,
+        action = "supply_asset_destroyed",
+        role = result.role,
+        unit = result.unitName,
+        context = result.contextName,
+        ammoBefore = result.ammoBefore,
+        ammoAfter = result.ammoAfter,
+        delta = result.delta
+      }))
+      return true
+    end
   end
 
-  return success, result
+  return false
 end
 
 ---Initialize event triggers and zones for missile system operational areas

@@ -21,10 +21,7 @@ PersistentState.update(function(saveData)
         )
       elseif unit.dbid == constants.PLATFORMS.AMMO_TRUCK or unit.dbid == constants.PLATFORMS.AMMO then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-        local groundCtx = PersistentState.groundForces(saveData, constants.SIDES.ENEMY)
-        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.mlrs)
-        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.srbm)
-        MissileSystem.processSupplyAssetDestruction(unit, groundCtx.glcm)
+        MissileSystem.processSupplyAssetDestruction(unit, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
         Logger.log(constants.TAGS.SCORE, "An " .. text .. " has been destoryed.")
       elseif IntegratedAirDefenseSystem.isRadar(unit.dbid) then
         IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "radar", unit)

@@ -185,10 +185,10 @@ function Coordinator.evaluateFireSupportGate(config, saveData)
     return
   end
 
-  local srbmCtx = saveData.c.ground and saveData.c.ground.srbm
-  if not srbmCtx then return end
+  local report = saveData.c.ground and
+      MissileSystem.getAmmoInventory(saveData.c.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.ENEMY)
+  if not report then return end
 
-  local report = MissileSystem.getAmmoInventory(srbmCtx, constants.SIDES.ENEMY)
   if report.total.percentage < config.c.amphibOps.fireSupportHoldThreshold then
     amphib.fireSupportOnHold = true
     Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("HOLD", {

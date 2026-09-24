@@ -331,24 +331,24 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("processSupplyAssetDestruction", function()
-    -- Positive: logs ammunition delta when a tracked ammo depot is destroyed
-    it("should log ammunition delta when supply asset destruction is processed", function()
-      local systemCtx = {
+    -- Positive: finds the owning system and logs the ammunition delta
+    it("should zero the depot of whichever system owns it and log the delta", function()
+      local srbmCtx = {
         name = "srbm",
         resupplyUnits = {},
         ammunitions = {
-          ["Ammo Depot Alpha"] = {
-            name = "Ammo Depot Alpha",
-            wpnCurrent = 100
-          }
+          ["Ammo Depot Alpha"] = { name = "Ammo Depot Alpha", wpnCurrent = 100 }
         }
       }
-      local unit = { name = "Ammo Depot Alpha" }
+      local groundCtx = {
+        mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
+        srbm = srbmCtx,
+      }
 
-      local result, detail = MissileSystem.processSupplyAssetDestruction(unit, systemCtx)
+      local processed = MissileSystem.processSupplyAssetDestruction({ name = "Ammo Depot Alpha" }, groundCtx)
 
-      assert.is_true(result)
-      assert.are.equal("ammo_depot", detail.role)
+      assert.is_true(processed)
+      assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
@@ -357,6 +357,38 @@ describe("MissileSystem", function()
       assert.is_not_nil(string.find(message, "system=srbm", 1, true))
       assert.is_not_nil(string.find(message, "role=ammo_depot", 1, true))
       assert.is_not_nil(string.find(message, "delta=-100", 1, true))
+    end)
+
+    -- Negative: a unit no system tracks is ignored without logging
+    it("should return false and stay silent for an untracked unit", function()
+      local groundCtx = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } }
+
+      local processed = MissileSystem.processSupplyAssetDestruction({ name = "Random Truck" }, groundCtx)
+
+      assert.is_false(processed)
+      assert.stub(logStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- getAmmoInventory
+  -- ============================================================================
+
+  describe("getAmmoInventory", function()
+    -- Positive: delegates with the system context picked from groundCtx
+    it("should report inventory for the requested system", function()
+      local srbmCtx = { name = "srbm" }
+      local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
+
+      local report = MissileSystem.getAmmoInventory({ srbm = srbmCtx }, "srbm", "China")
+
+      assert.are.equal(80, report.total.percentage)
+      assert.stub(inventoryStub).was.called_with(srbmCtx, "China")
+    end)
+
+    -- Negative: absent system yields nil
+    it("should return nil when the system is absent", function()
+      assert.is_nil(MissileSystem.getAmmoInventory({}, "srbm", "China"))
     end)
   end)
 
