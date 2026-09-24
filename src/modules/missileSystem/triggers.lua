@@ -308,6 +308,7 @@ local function removeBunkers(operationalAreasToRemove, sideName)
       TargetFilter = {
         TargetType = constants.UNIT_TYPES.FACILITY,
         SpecificUnitClass = constants.PLATFORMS.BUILDING,
+        TargetSubType = constants.FIXED_FACILITY_CATEGORIES.BUILDING_SURFACE,
         TargetSide = sideName,
       },
     })
