@@ -170,6 +170,7 @@ describe("DynamicPlan", function()
         isFirstWave = false,
         packages = { { target = makeTarget("SHORT", 5) }, { target = makeTarget("ENOUGH", 1) } }
       }
+      local config = {}
       local saveData = makeSaveData()
       local requestsByTag = {
         SHORT = { { platformDBID = 1, target = { guid = "S1" } } },
@@ -181,7 +182,7 @@ describe("DynamicPlan", function()
       end))
       local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
 
-      local _, qualifiedCount = DynamicPlan.evaluateTargets({}, saveData, {}, "air", template)
+      local _, qualifiedCount = DynamicPlan.evaluateTargets(config, saveData, {}, "air", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.stub(trackTargetsStub).was.called(1)
@@ -194,10 +195,11 @@ describe("DynamicPlan", function()
     -- Boundary: no requests means Recon is left alone
     it("should not call Recon.trackTargets when no entry requests tracking", function()
       local template = { name = "AIR/STRIKE/AB/W/1", isFirstWave = false, packages = { { target = makeTarget("ONLY", 1) } } }
+      local config = {}
       stubTargets({ ONLY = { "T1" } })
       local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
 
-      DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "air", template)
+      DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
 
       assert.stub(trackTargetsStub).was_not.called()
     end)
