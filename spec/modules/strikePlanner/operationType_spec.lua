@@ -17,27 +17,31 @@ describe("OperationType", function()
   it("should describe air operations", function()
     local descriptor = OperationType.resolve("air")
     local saveData = makeSaveData()
+    local config = { strikeInterval = 900 }
 
+    assert(descriptor ~= nil)
     assert.is_table(descriptor)
     assert.are.equal("packageTemplates", descriptor.templateSource)
     assert.are.equal("packages", descriptor.templateField)
     assert.are.equal("air", descriptor.registryKey)
     assert.are.equal(saveData.c.air.airTaskingOrder, descriptor.resolvePlan(saveData))
-    assert.are.equal(900, descriptor.resolveDefaultInterval({ strikeInterval = 900 }))
+    assert.are.equal(900, descriptor.resolveDefaultInterval(config))
   end)
 
   -- Positive: the ground descriptor points at fire support task templates and the FSP
   it("should describe ground operations", function()
     local descriptor = OperationType.resolve("ground")
     local saveData = makeSaveData()
+    local config = { strikeInterval = 900 }
 
+    assert(descriptor ~= nil)
     assert.is_table(descriptor)
     assert.are.equal("fireSupportTaskTemplates", descriptor.templateSource)
     assert.are.equal("fireSupportTasks", descriptor.templateField)
     assert.are.equal("ground", descriptor.registryKey)
     assert.are.equal(saveData.c.ground.fireSupportPlan, descriptor.resolvePlan(saveData))
     -- Ground dynamic FSP is TOT-oriented, so the interval is always zero
-    assert.are.equal(0, descriptor.resolveDefaultInterval({ strikeInterval = 900 }))
+    assert.are.equal(0, descriptor.resolveDefaultInterval(config))
   end)
 
   -- Negative: an unknown type has no descriptor

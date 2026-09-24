@@ -97,9 +97,10 @@ describe("OperationBatch", function()
     -- Positive: the batch carries the recon entry's identity for the builders
     it("should append a batch stamped with the entry's end time and type", function()
       local batches = {}
+      local reconEntry = { type = "SIGINT", endTime = "2026-02-14 09:30:00" }
       local operations = { makeOperation() }
 
-      OperationBatch.add(batches, { type = "SIGINT", endTime = "2026-02-14 09:30:00" }, operations)
+      OperationBatch.add(batches, reconEntry, operations)
 
       assert.are.equal(1, #batches)
       assert.are.equal("2026-02-14 09:30:00", batches[1].time)
@@ -112,9 +113,10 @@ describe("OperationBatch", function()
     -- Positive: batches accumulate in insertion order
     it("should keep earlier batches in place", function()
       local first = makeOperationBatch()
+      local reconEntry = { type = "UAV", endTime = "2026-02-14 10:00:00" }
       local batches = { first }
 
-      OperationBatch.add(batches, { type = "UAV", endTime = "2026-02-14 10:00:00" }, {})
+      OperationBatch.add(batches, reconEntry, {})
 
       assert.are.equal(2, #batches)
       assert.are.equal(first, batches[1])
@@ -638,14 +640,16 @@ describe("OperationBatch", function()
     it("should not match when type differs", function()
       local operation = makeOperation({ type = "ground", template = { name = "AIR/STRIKE/AB/W/1" } })
 
-      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) }, "AIR/STRIKE/AB/W/1", "air"))
+      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) },
+        "AIR/STRIKE/AB/W/1", "air"))
     end)
 
     -- Negative: name mismatch
     it("should not match when name differs", function()
       local operation = makeOperation({ type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
 
-      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) }, "AIR/STRIKE/AB/W/2", "air"))
+      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) },
+        "AIR/STRIKE/AB/W/2", "air"))
     end)
 
     -- Negative: nil template
@@ -653,7 +657,8 @@ describe("OperationBatch", function()
       local operation = makeOperation()
       operation.template = nil
 
-      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) }, "STRIKE/1", "air"))
+      assert.is_false(OperationBatch.isScheduled({ makeOperationBatch({ operations = { operation } }) }, "STRIKE/1",
+        "air"))
     end)
 
     -- Negative: nil operations
@@ -772,7 +777,8 @@ describe("OperationBatch", function()
     it("should skip unexecuted operations in prefix search", function()
       local pendingOperation = makeOperation({ executed = false, type = "air", template = { name = "AIR/STRIKE/AB/W/3" } })
 
-      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { pendingOperation } }) }, "AIR/STRIKE/AB/W/", "air")
+      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { pendingOperation } }) },
+        "AIR/STRIKE/AB/W/", "air")
 
       assert.is_nil(found)
     end)
@@ -782,7 +788,8 @@ describe("OperationBatch", function()
       local executedOp1 = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/1" } })
       local pendingOp3 = makeOperation({ executed = false, type = "air", template = { name = "AIR/STRIKE/AB/W/3" } })
 
-      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { executedOp1, pendingOp3 } }) }, "AIR/STRIKE/AB/W/", "air")
+      local found = OperationBatch.findLatestExecuted(
+        { makeOperationBatch({ operations = { executedOp1, pendingOp3 } }) }, "AIR/STRIKE/AB/W/", "air")
 
       assert.are.equal(executedOp1, found)
     end)
@@ -791,7 +798,8 @@ describe("OperationBatch", function()
     it("should return nil for prefix search with no matches", function()
       local operation = makeOperation({ type = "air", template = { name = "SEAD/1" } })
 
-      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { operation } }) }, "AIR/STRIKE/AB/W/", "air")
+      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { operation } }) },
+        "AIR/STRIKE/AB/W/", "air")
 
       assert.is_nil(found)
     end)
@@ -800,7 +808,8 @@ describe("OperationBatch", function()
     it("should ignore non-numeric suffix in prefix search", function()
       local operation = makeOperation({ executed = true, type = "air", template = { name = "AIR/STRIKE/AB/W/abc" } })
 
-      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { operation } }) }, "AIR/STRIKE/AB/W/", "air")
+      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { operation } }) },
+        "AIR/STRIKE/AB/W/", "air")
 
       assert.is_nil(found)
     end)
@@ -809,7 +818,8 @@ describe("OperationBatch", function()
     it("should filter by type in prefix search", function()
       local groundOperation = makeOperation({ executed = true, type = "ground", template = { name = "AIR/STRIKE/AB/W/5" } })
 
-      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { groundOperation } }) }, "AIR/STRIKE/AB/W/", "air")
+      local found = OperationBatch.findLatestExecuted({ makeOperationBatch({ operations = { groundOperation } }) },
+        "AIR/STRIKE/AB/W/", "air")
 
       assert.is_nil(found)
     end)

@@ -111,6 +111,7 @@ describe("MissileSystem Context", function()
 
       local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
+      assert(detail ~= nil)
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
       assert.are.equal("ammo_depot", detail.role)
@@ -128,6 +129,7 @@ describe("MissileSystem Context", function()
 
       local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
+      assert(detail ~= nil)
       assert.is_true(result)
       assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
       assert.are.equal("resupply_unit", detail.role)
@@ -219,9 +221,10 @@ describe("MissileSystem Context", function()
   describe("seedGroundForceState", function()
     -- Positive: every configured system gets its full default state; timers stay in config
     it("should create default state for each configured system", function()
+      local groundForceCfg = { srbm = { reloadTime = 300, stowTime = 60 } }
       local groundForceCtx = {}
 
-      Context.seedGroundForceState({ srbm = { reloadTime = 300, stowTime = 60 } }, groundForceCtx)
+      Context.seedGroundForceState(groundForceCfg, groundForceCtx)
 
       assert.are.same({
         name = "srbm",
@@ -236,9 +239,10 @@ describe("MissileSystem Context", function()
     it("should keep fields already present on the system state", function()
       local test = { isAntishipMissionActivated = false }
       local firingUnits = { ["FU-1"] = { name = "FU-1" } }
+      local groundForceCfg = { ascm = { reloadTime = 1, stowTime = 1 } }
       local groundForceCtx = { ascm = { test = test, enabled = false, firingUnits = firingUnits } }
 
-      Context.seedGroundForceState({ ascm = { reloadTime = 1, stowTime = 1 } }, groundForceCtx)
+      Context.seedGroundForceState(groundForceCfg, groundForceCtx)
 
       assert.are.equal(test, groundForceCtx.ascm.test)
       assert.is_false(groundForceCtx.ascm.enabled)
@@ -247,9 +251,10 @@ describe("MissileSystem Context", function()
 
     -- Negative: side-level keys that are not systems are left alone
     it("should not touch ground keys absent from config", function()
+      local groundForceCfg = {}
       local groundForceCtx = { enabled = true, fireSupportPlan = {} }
 
-      Context.seedGroundForceState({}, groundForceCtx)
+      Context.seedGroundForceState(groundForceCfg, groundForceCtx)
 
       assert.are.same({ enabled = true, fireSupportPlan = {} }, groundForceCtx)
     end)

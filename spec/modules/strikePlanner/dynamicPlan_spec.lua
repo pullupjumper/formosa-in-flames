@@ -73,9 +73,10 @@ describe("DynamicPlan", function()
           { target = makeTarget("THIRD", 1) },
         }
       }
+      local config = {}
       stubTargets({ FIRST = { "T1" }, SECOND = { "T2", "T3" }, THIRD = { "T4", "T5" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
 
       assert.are.equal(2, qualifiedCount)
       assert.are.same({ "T1" }, targetsByIndex[1])
@@ -93,9 +94,10 @@ describe("DynamicPlan", function()
           { target = makeTarget("SECOND", 1) },
         }
       }
+      local config = {}
       stubTargets({ FIRST = { "T1" }, SECOND = { "T2" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "ground", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "ground", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.is_nil(targetsByIndex[1])
@@ -112,6 +114,7 @@ describe("DynamicPlan", function()
       DynamicPlan.evaluateTargets(config, saveData, contacts, "air", template)
 
       local callArgs = processTargetsStub.calls[1].refs
+      assert(callArgs)
       assert.are.equal(config, callArgs[1])
       assert.are.equal(saveData, callArgs[2])
       assert.are.equal(contacts, callArgs[3])
@@ -126,9 +129,10 @@ describe("DynamicPlan", function()
         isFirstWave = true,
         packages = { { target = makeTarget("EXACT", 2) }, { target = makeTarget("SHORT", 2) } }
       }
+      local config = {}
       stubTargets({ EXACT = { "T1", "T2" }, SHORT = { "T3" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.is_table(targetsByIndex[1])
@@ -138,9 +142,10 @@ describe("DynamicPlan", function()
     -- Boundary: empty template
     it("should return no targets for a template with no entries", function()
       local template = { name = "AIR/STRIKE/AB/W/1", isFirstWave = true, packages = {} }
+      local config = {}
       stubTargets({})
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
 
       assert.are.equal(0, qualifiedCount)
       assert.is_nil(next(targetsByIndex))
@@ -148,8 +153,11 @@ describe("DynamicPlan", function()
 
     -- Negative: unknown type
     it("should error on an unknown operation type", function()
+      local template = { packages = {} }
+      local config = {}
+
       assert.has_error(function()
-        DynamicPlan.evaluateTargets({}, makeSaveData(), {}, "naval", { packages = {} })
+        DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "naval", template)
       end)
     end)
   end)

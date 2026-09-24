@@ -79,9 +79,11 @@ describe("MissileSystem", function()
 
     -- Positive: a unit already at its firing point reports in position without new commands
     it("should report in position for a STATIC unit without moving it", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.STATIC }
+      local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.STATIC }, { name = "FU1" })
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_true(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -90,9 +92,11 @@ describe("MissileSystem", function()
 
     -- Negative: a unit on its way is not commanded again
     it("should not command a REPOSITIONING unit", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.REPOSITIONING }
+      local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.REPOSITIONING }, { name = "FU1" })
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -100,10 +104,13 @@ describe("MissileSystem", function()
 
     -- Negative: low ammo keeps the unit hidden
     it("should keep a hiding unit with low ammo in place", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnit = { name = "FU1" }
+
       trackStub(Ammo, "isLowAmmo").returns(true)
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -112,11 +119,14 @@ describe("MissileSystem", function()
 
     -- Negative: logs when movement fails with structured fields
     it("should log an error when movement fails", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnit = { name = "FU1" }
+
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint")
           .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
 
-      MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
+      MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
@@ -126,10 +136,13 @@ describe("MissileSystem", function()
 
     -- Boundary: failure without error fields should not log (avoid "[FAIL] nil")
     it("should not log when movement fails without error fields", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnit = { name = "FU1" }
+
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint").returns(false)
 
-      MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
+      MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 
       assert.stub(errorStub).was_not.called()
     end)
@@ -279,8 +292,9 @@ describe("MissileSystem", function()
     -- Positive: upper-case system name resolves and every unit without a countdown is stamped
     it("should stamp stowStartTime on every listed unit regardless of state", function()
       local groundCtx = makeGroundCtx()
+      local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.markForStow(groundCtx, "SRBM", { { name = "FU-Static" }, { name = "FU-Hide" } })
+      MissileSystem.markForStow(groundCtx, "SRBM", firingUnits)
 
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
@@ -289,8 +303,9 @@ describe("MissileSystem", function()
     -- Boundary: a running countdown is preserved
     it("should keep an existing stowStartTime", function()
       local groundCtx = makeGroundCtx()
+      local firingUnits = { { name = "FU-Stowing" } }
 
-      MissileSystem.markForStow(groundCtx, "srbm", { { name = "FU-Stowing" } })
+      MissileSystem.markForStow(groundCtx, "srbm", firingUnits)
 
       assert.are.equal(500, groundCtx.srbm.firingUnits["FU-Stowing"].stowStartTime)
     end)
@@ -298,8 +313,9 @@ describe("MissileSystem", function()
     -- Boundary: onlyDeployed leaves units still in their hide area alone
     it("should skip non-deployed units when onlyDeployed is set", function()
       local groundCtx = makeGroundCtx()
+      local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.markForStow(groundCtx, "SRBM", { { name = "FU-Static" }, { name = "FU-Hide" } },
+      MissileSystem.markForStow(groundCtx, "SRBM", firingUnits,
         { onlyDeployed = true })
 
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
@@ -309,8 +325,9 @@ describe("MissileSystem", function()
     -- Negative: SAM never stows
     it("should not stamp SAM firing units", function()
       local groundCtx = makeGroundCtx()
+      local firingUnits = { { name = "SAM-1" } }
 
-      MissileSystem.markForStow(groundCtx, "SAM", { { name = "SAM-1" } })
+      MissileSystem.markForStow(groundCtx, "SAM", firingUnits)
 
       assert.is_nil(groundCtx.sam.firingUnits["SAM-1"].stowStartTime)
     end)
@@ -318,11 +335,14 @@ describe("MissileSystem", function()
     -- Negative: unknown units, unknown systems and missing inputs are ignored
     it("should ignore missing contexts and nil inputs", function()
       local groundCtx = makeGroundCtx()
+      local firingUnits1 = { { name = "Ghost" } }
+      local firingUnits2 = { { name = "FU-Static" } }
 
-      assert.has_no.errors(function()
-        MissileSystem.markForStow(groundCtx, "SRBM", { { name = "Ghost" } })
-        MissileSystem.markForStow(groundCtx, "GLCM", { { name = "FU-Static" } })
-        MissileSystem.markForStow(groundCtx, nil, { { name = "FU-Static" } })
+
+      assert.has_no.Error(function()
+        MissileSystem.markForStow(groundCtx, "SRBM", firingUnits1)
+        MissileSystem.markForStow(groundCtx, "GLCM", firingUnits2)
+        MissileSystem.markForStow(groundCtx, nil, firingUnits2)
         MissileSystem.markForStow(groundCtx, "SRBM", nil)
       end)
       assert.is_nil(groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
@@ -347,8 +367,9 @@ describe("MissileSystem", function()
         mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
         srbm = srbmCtx,
       }
+      local unit = { name = "Ammo Depot Alpha" }
 
-      local processed = MissileSystem.processSupplyAssetDestruction({ name = "Ammo Depot Alpha" }, groundCtx)
+      local processed = MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
 
       assert.is_true(processed)
       assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
@@ -365,8 +386,9 @@ describe("MissileSystem", function()
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
       local groundCtx = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } }
+      local unit = { name = "Random Truck" }
 
-      local processed = MissileSystem.processSupplyAssetDestruction({ name = "Random Truck" }, groundCtx)
+      local processed = MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
 
       assert.is_false(processed)
       assert.stub(logStub).was_not.called()
@@ -381,17 +403,21 @@ describe("MissileSystem", function()
     -- Positive: delegates with the system context picked from groundCtx
     it("should report inventory for the requested system", function()
       local srbmCtx = { name = "srbm" }
+      local groundCtx = { srbm = srbmCtx }
+
       local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
 
-      local report = MissileSystem.getAmmoInventory({ srbm = srbmCtx }, "srbm", "China")
+      local report = MissileSystem.getAmmoInventory(groundCtx, "srbm", "China")
 
+      assert(report ~= nil)
       assert.are.equal(80, report.total.percentage)
       assert.stub(inventoryStub).was.called_with(srbmCtx, "China")
     end)
 
     -- Negative: absent system yields nil
     it("should return nil when the system is absent", function()
-      assert.is_nil(MissileSystem.getAmmoInventory({}, "srbm", "China"))
+      local groundCtx = {}
+      assert.is_nil(MissileSystem.getAmmoInventory(groundCtx, "srbm", "China"))
     end)
   end)
 
