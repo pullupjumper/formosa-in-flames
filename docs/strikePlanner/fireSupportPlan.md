@@ -31,25 +31,13 @@
 
 ## 主要機制
 
-### Firing Unit Readiness
-
-`isFiringUnitReady()` 會同時檢查兩個條件：
-
-| 條件 | 來源 | 說明 |
-|---|---|---|
-| `firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE` | `saveData.c.ground.<system>.firingUnits` | 發射單元必須仍在隱蔽狀態，才會被派往射擊點。 |
-| `not MissileSystem.isLowAmmo(...)` | CMO unit + firing unit context | 彈量不得低於該 firing unit 的 `ammoThreshold`。 |
-
-`isFiringUnitAtFiringPoint()` 只檢查 `state == STATIC`。在此模組中，`STATIC` 代表該 firing unit 已位於可射擊位置；實際狀態轉換由 missileSystem 模組維護。
-
 ### Firing Unit Deployment
 
 `processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 會由 `deploySingleFiringUnit()` 取得實體單位與 runtime context：
 
 1. `GameApi.ScenEdit_GetUnit(firingUnit.name)` 取得 CMO 實體單位。
-2. `getFiringUnitContext(saveData, task.missileSystem, firingUnit.name)` 讀取 `saveData.c.ground.<system>.firingUnits[name]`。
-3. 若 firing unit 在 `HIDE` 且彈量足夠，依序呼叫 `MissileSystem.moveFromHideArea()` 與 `MissileSystem.moveToFiringPoint()`。
-4. 以 `isFiringUnitAtFiringPoint()` 判斷是否已進入射擊位置。
+2. `MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
+3. `MissileSystem.sendToFiringPoint()` 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
 
 若任一 firing unit 尚未就位，該 FST 會被列入 pending 結果，並在日誌中輸出 `reason=firing_units_not_in_position` 與單位名稱。
 
@@ -78,13 +66,13 @@ AttackManager.attackContacts({
 
 ### Stow Window Trigger
 
-非 SAM 任務成功發射後，模組會針對該 FST 的每個 firing unit 寫入：
+成功發射後，模組呼叫：
 
 ```lua
-firingUnitCtx.stowStartTime = GameApi.ScenEdit_CurrentTime()
+MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits)
 ```
 
-如果該 firing unit 已有 `stowStartTime`，則不覆寫。SAM 任務不寫入此欄位，因為 SAM firing unit 在此流程中不啟動同樣的打擊後 stow 倒數。
+由 missileSystem 替每個 firing unit 啟動 stow 倒數。已有倒數的不覆寫；SAM 任務整批略過，因為 SAM firing unit 不走打擊後 stow 流程。
 
 ### Consolidated Logging
 
@@ -119,15 +107,14 @@ flowchart TD
     DEPLOY_UNIT["deployTaskFiringUnits()"]
     GET_UNIT["GameApi.ScenEdit_GetUnit()"]
     GET_CTX["讀取 firingUnitCtx"]
-    READY{"HIDE 且彈量足夠?"}
-    MOVE["MissileSystem.moveFromHideArea()<br/>MissileSystem.moveToFiringPoint()"]
-    STATIC{"state == STATIC?"}
+    SEND["MissileSystem.sendToFiringPoint()"]
+    STATIC{"已在射擊位置?"}
     ALL_READY{"matrix.allFiringUnitsInPosition?"}
     EXECUTE["startFireSupportTasks()"]
     TASK_READY{"FST 未完成<br/>且已達 startTime?"}
     ATTACK["AttackManager.attackContacts()"]
     FIRED{"fired > 0?"}
-    STOW["非 SAM：寫入 stowStartTime"]
+    STOW["MissileSystem.markForStow()"]
     TASK_DONE["task.isFinished = true"]
     MATRIX_DONE{"isMatrixFinished()?"}
     FINISH["matrix.isFinished = true"]
@@ -141,10 +128,8 @@ flowchart TD
     DEPLOY_TASK --> DEPLOY_UNIT
     DEPLOY_UNIT --> GET_UNIT
     GET_UNIT --> GET_CTX
-    GET_CTX --> READY
-    READY -->|是| MOVE
-    READY -->|否| STATIC
-    MOVE --> STATIC
+    GET_CTX --> SEND
+    SEND --> STATIC
     STATIC --> PROCESS
     PROCESS --> ALL_READY
     ALL_READY -->|是| EXECUTE
@@ -257,10 +242,7 @@ saveData.c.ground
 
 | helper | 責任 | 主要輸入 | 主要輸出 |
 |---|---|---|---|
-| `isFiringUnitReady()` | 判斷 firing unit 是否可派往射擊點。 | `SBJ__FiringUnitContext`, `CMO__Unit` | `boolean` |
-| `isFiringUnitAtFiringPoint()` | 判斷 firing unit 是否已就位。 | `SBJ__FiringUnitContext` | `boolean` |
-| `getFiringUnitContext()` | 依 missile system 與 firing unit name 從 saveData 取 context。 | `saveData`, `missileSystem`, `firingUnitName` | `SBJ__FiringUnitContext` |
-| `deploySingleFiringUnit()` | 取得實體單位、必要時呼叫 missileSystem 移動，並回報是否就位。 | `saveData`, `task`, `firingUnit` | `boolean` |
+| `deploySingleFiringUnit()` | 取得實體單位與 context，交給 `MissileSystem.sendToFiringPoint()`，並回報是否就位或已不存在。 | `saveData`, `task`, `firingUnit` | `inPosition`, `unitMissing` |
 | `deployTaskFiringUnits()` | 部署一個 FST 的所有 firing units。 | `saveData`, `task` | `allInPosition`, `notReadyNames` |
 | `startFireSupportTasks()` | 對可執行 FST 發射武器並標記完成。 | `saveData`, `matrix` | `{ taskName, fired }[]` |
 | `isMatrixFinished()` | 判斷 FSEM 內所有 FST 是否完成。 | `matrix` | `boolean` |

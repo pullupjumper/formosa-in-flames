@@ -43,6 +43,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `addMissileSystems` | `groundForceCfg, sideName` | `nil` | 依配置創建所有飛彈系統單位 |
+| `applyLayouts` | `groundForceCfg, layouts` | `SBJ__OperationalArea[], SBJ__OperationalArea[]` | 把 firing／resupply descriptor 換成指向新陣地的副本；回傳新陣地與被取代的舊陣地，供 `MissileSystem.redeploy` 重建 zone／trigger |
 
 ---
 

@@ -53,13 +53,14 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | 轉呼叫 `Movement.moveToFiringPoint` |
-| `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 轉呼叫 `Concealment.moveFromHideArea` |
-| `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 轉呼叫 `Ammo.isLowAmmo` |
-| `getAmmoInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryResult` | 轉呼叫 `Ammo.getInventory`，提供整體彈藥庫存報告供上層（例如 landingOps 火力閘門）判斷 |
-| `process` | `systemCtx, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
-| `processSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 轉呼叫 `Context.processSupplyAssetDestruction` |
-| `initEventTriggers` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | 轉呼叫 `Triggers.initEventTriggers` |
+| `getFiringUnitContext` | `groundCtx, missileSystem, firingUnitName` | `SBJ__FiringUnitContext?` | 依系統（大小寫皆可）與單位名稱取 runtime context |
+| `isLowAmmo` | `firingUnitCtx, firingUnit` | `boolean` | 以 context 內的 `ammoThreshold`／`weaponDBID` 判斷低彈量 |
+| `sendToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`） |
+| `markForStow` | `groundCtx, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
+| `getAmmoInventory` | `groundCtx, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
+| `process` | `groundCtx, groundCfg, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
+| `processSupplyAssetDestruction` | `unit, groundCtx` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
+| `redeploy` | `groundForceCfg, groundForceCtx, layouts, sideName` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
 | `addMissileSystems` | `groundForceCfg, sideName` | `nil` | 轉呼叫 `Deployment.addMissileSystems` |
 | `initMissileSystemContexts` | `groundForceCfg, groundForceCtx` | `nil` | 轉呼叫 `Context.initMissileSystemContexts` |
 | `processMoveToPositionEvent` | `opts` | `nil` | 處理位置事件主流程 |
@@ -92,7 +93,7 @@ flowchart TD
 
 **行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後三個 WARN（`concealment_failed`／`resupply_concealment_failed`／`reload_not_started`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
 
-`moveToFiringPoint` 與 `processSupplyAssetDestruction` 是單筆事件而非批次，走 `LogFormat.line` 並在呼叫端自行選 sink。
+`sendToFiringPoint` 的移動失敗與 `processSupplyAssetDestruction` 是單筆事件而非批次，走 `LogFormat.line` 並在呼叫端自行選 sink。
 
 ---
 

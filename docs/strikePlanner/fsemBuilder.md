@@ -86,7 +86,7 @@ flowchart TD
 | `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
 | `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
-`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`getFiringUnitContext()` 會以 nil key 讀取而回傳 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
+`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.getFiringUnitContext()` 會以 nil key 讀取而回傳 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
 
 ### 為什麼目標以 FST 索引為 key
 
@@ -120,7 +120,7 @@ flowchart TD
 |---|---|
 | 判定條件 | `matrix.isActivated and not matrix.isFinished`，且 `currentTime - matrix.createdAt > config.c.recon.fsemStaleAfterSec`。缺 `createdAt` 的舊存檔永不過期。 |
 | 退役動作 | 設 `matrix.isFinished = true`。matrix 保留在 FSP 內供命名唯一性檢查，不刪除。 |
-| 單元處置 | 掃描未完成的 FST，對非 SAM 且 `state` 落在 `STOW_ON_RETIRE_STATE` 的發射單元蓋上 `stowStartTime`，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
+| 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.markForStow(..., { onlyDeployed = true })`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
 | 日誌 | 每退役一個 matrix 輸出一列 `[WARN] matrix=<name> reason=fsem_stale_timeout ageSec=<age>`。 |
 
 `isFinished = true` 同時達成兩件事：釋放發射單元回可分配池，並讓 `FireSupportPlan.strike` 停止指揮這些單位，避免與 stow 倒數形成重複指令。
