@@ -101,4 +101,59 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
     end)
   end)
+
+  -- ============================================================================
+  -- applyLayouts
+  -- ============================================================================
+
+  describe("applyLayouts", function()
+    local function makeLayoutCfg()
+      local oldArea = { name = "OPAREA-OLD" }
+      return {
+        srbm = {
+          firingUnits = {
+            ["FU-1"] = { name = "FU-1", resupplyUnit = "RU-1", operationalArea = oldArea }
+          },
+          resupplyUnits = {
+            ["RU-1"] = { name = "RU-1", ammunition = "AMMO-1", operationalArea = oldArea }
+          },
+          ammunitions = {
+            ["AMMO-1"] = { name = "AMMO-1" }
+          }
+        }
+      }, oldArea
+    end
+
+    -- Positive: firing and resupply descriptors move to the new area as fresh copies
+    it("should point both descriptors at the new area and report old and new areas", function()
+      local groundForceCfg, oldArea = makeLayoutCfg()
+      local originalFiringUnit = groundForceCfg.srbm.firingUnits["FU-1"]
+      local newArea = { name = "#ABC" }
+
+      local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceCfg, {
+        { category = "srbm", unitname = "FU-1", operationalArea = newArea }
+      })
+
+      assert.are.same({ newArea }, operationalAreas)
+      assert.are.same(oldArea, operationalAreasToRemove[1])
+      assert.are.equal(newArea, groundForceCfg.srbm.firingUnits["FU-1"].operationalArea)
+      assert.are.equal(newArea, groundForceCfg.srbm.resupplyUnits["RU-1"].operationalArea)
+      assert.are_not.equal(originalFiringUnit, groundForceCfg.srbm.firingUnits["FU-1"])
+      assert.are.equal(oldArea, originalFiringUnit.operationalArea)
+    end)
+
+    -- Negative: unknown system or firing unit is skipped
+    it("should skip layouts naming an unknown system or firing unit", function()
+      local groundForceCfg, oldArea = makeLayoutCfg()
+
+      local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceCfg, {
+        { category = "glcm", unitname = "FU-1", operationalArea = { name = "#X" } },
+        { category = "srbm", unitname = "Ghost", operationalArea = { name = "#Y" } }
+      })
+
+      assert.are.same({}, operationalAreas)
+      assert.are.same({}, operationalAreasToRemove)
+      assert.are.equal(oldArea, groundForceCfg.srbm.firingUnits["FU-1"].operationalArea)
+    end)
+  end)
 end)

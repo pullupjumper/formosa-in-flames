@@ -896,6 +896,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field shelterPoints? CMO__Location[] Shelter points (optional)
 ---@field SHRL? SBJ__Position[] SHRL Path (optional)
 
+---Player-chosen operational area for one battery, applied by MissileSystem.redeploy
+---@class SBJ__MissileSystemLayout: table
+---@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field unitname string Firing unit name in the side's ground force config
+---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
+
 ---Weapon status tracking for ammunition count
 ---@class SBJ__WeaponStatus: table
 ---@field wpnCurrent number Current available ammunition count

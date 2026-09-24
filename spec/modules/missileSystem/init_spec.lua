@@ -6,6 +6,9 @@ local Cycle = require("src.modules.missileSystem.cycle")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Ammo = require("src.modules.missileSystem.ammo")
+local Deployment = require("src.modules.missileSystem.deployment")
+local Triggers = require("src.modules.missileSystem.triggers")
+local Context = require("src.modules.missileSystem.context")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
@@ -1107,6 +1110,48 @@ describe("MissileSystem", function()
 
       assert.stub(isRepositioningStub).was_not.called()
       assert.stub(setWCSToFreeStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- redeploy
+  -- ============================================================================
+
+  describe("redeploy", function()
+    -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
+    it("should apply layouts, then rebuild triggers, units and contexts in order", function()
+      local groundForceCfg = {}
+      local groundForceCtx = {}
+      local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
+      local newAreas = { { name = "#NEW" } }
+      local oldAreas = { { name = "OPAREA-OLD" } }
+      local calls = {}
+
+      trackStub(Deployment, "applyLayouts").invokes(function()
+        table.insert(calls, "applyLayouts")
+        return newAreas, oldAreas
+      end)
+      local triggersStub = trackStub(Triggers, "initEventTriggers").invokes(function()
+        table.insert(calls, "initEventTriggers")
+      end)
+      local addStub = trackStub(Deployment, "addMissileSystems").invokes(function()
+        table.insert(calls, "addMissileSystems")
+      end)
+      local contextStub = trackStub(Context, "initMissileSystemContexts").invokes(function()
+        table.insert(calls, "initMissileSystemContexts")
+      end)
+
+      MissileSystem.redeploy(groundForceCfg, groundForceCtx, layouts, "Taiwan")
+
+      assert.are.same({ "applyLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
+      assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
+        constants.POSITION_TYPES.RELOAD_POINT,
+        constants.POSITION_TYPES.FIRING_POINT,
+        constants.POSITION_TYPES.HIDE_AREA,
+        constants.POSITION_TYPES.AMMO_HOLDING_AREA
+      }, "Taiwan")
+      assert.stub(addStub).was.called_with(groundForceCfg, "Taiwan")
+      assert.stub(contextStub).was.called_with(groundForceCfg, groundForceCtx)
     end)
   end)
 end)

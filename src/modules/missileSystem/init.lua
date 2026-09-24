@@ -19,6 +19,14 @@ local DEPLOYED_STATES = {
   [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
 }
 
+---Position types whose zones and triggers are rebuilt when batteries are redeployed
+local REDEPLOY_POSITION_TYPES = {
+  constants.POSITION_TYPES.RELOAD_POINT,
+  constants.POSITION_TYPES.FIRING_POINT,
+  constants.POSITION_TYPES.HIDE_AREA,
+  constants.POSITION_TYPES.AMMO_HOLDING_AREA
+}
+
 ---Extract position type token from UnitEntersArea trigger description
 ---@param event CMO__Event|nil Scenario event object
 ---@return string|nil # Position type token (FP/AHA/HA/RL)
@@ -194,13 +202,17 @@ function MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
   return false
 end
 
----Initialize event triggers and zones for missile system operational areas
----@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
----@param operationalAreasToRemove SBJ__OperationalArea[] Array of operational areas to remove triggers for
----@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
----@param sideName string Side name for zone/trigger ownership
-function MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
-  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
+---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
+---@param groundForceCfg SBJ__GroundForceConfig Side ground force configuration; mutated
+---@param groundForceCtx SBJ__GroundForceContext Side ground force runtime context
+---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
+---@param sideName string Side name for zone/trigger/unit ownership
+function MissileSystem.redeploy(groundForceCfg, groundForceCtx, layouts, sideName)
+  local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceCfg, layouts)
+
+  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
+  Deployment.addMissileSystems(groundForceCfg, sideName)
+  Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
 end
 
 ---Add missile system units to the game

@@ -717,47 +717,18 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
       -- Apply TEL launcher deployments
       if missileSystems and #missileSystems > 0 then
-        local sideConfig = GameUtils.getCachedSideConfig(sideName)
-        local field = sideConfig.field
-        local operationalAreas = {}
-        ---@cast operationalAreas SBJ__OperationalArea[]
-        local operationalAreasToRemove = {}
-        ---@cast operationalAreasToRemove SBJ__OperationalArea[]
-
-        -- Update missile system configurations in config
+        local layouts = {}
+        ---@cast layouts SBJ__MissileSystemLayout[]
         for _, missileSystem in ipairs(missileSystems) do
-          ---@type SBJ__MissileSystemConfig
-          local systemCfg = config[field].ground[missileSystem.category]
-
-          if systemCfg and systemCfg.firingUnits[missileSystem.unitname] then
-            local firingUnitdescriptor = Utils.deepCopy(systemCfg.firingUnits[missileSystem.unitname])
-            local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitdescriptor.resupplyUnit])
-            local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
-            local operationalArea = normalizeData(missileSystem)
-            table.insert(operationalAreasToRemove, firingUnitdescriptor.operationalArea)
-            firingUnitdescriptor.operationalArea = operationalArea
-            resupplyUnitDescriptor.operationalArea = operationalArea
-            table.insert(operationalAreas, operationalArea)
-            systemCfg.firingUnits[firingUnitdescriptor.name] = firingUnitdescriptor
-            systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-            systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
-          end
+          table.insert(layouts, {
+            category = missileSystem.category,
+            unitname = missileSystem.unitname,
+            operationalArea = normalizeData(missileSystem)
+          })
         end
 
-        MissileSystem.initEventTriggers(operationalAreas, operationalAreasToRemove, {
-          constants.POSITION_TYPES.RELOAD_POINT,
-          constants.POSITION_TYPES.FIRING_POINT,
-          constants.POSITION_TYPES.HIDE_AREA,
-          constants.POSITION_TYPES.AMMO_HOLDING_AREA
-        }, sideName)
-
-        if sideName == constants.SIDES.PLAYER then
-          MissileSystem.addMissileSystems(config.t.ground, sideName)
-          MissileSystem.initMissileSystemContexts(config.t.ground, PersistentState.groundForces(saveData, sideName))
-        else
-          MissileSystem.addMissileSystems(config.c.ground, sideName)
-          MissileSystem.initMissileSystemContexts(config.c.ground, PersistentState.groundForces(saveData, sideName))
-        end
+        local field = GameUtils.getCachedSideConfig(sideName).field
+        MissileSystem.redeploy(config[field].ground, PersistentState.groundForces(saveData, sideName), layouts, sideName)
       end
     end
   end)

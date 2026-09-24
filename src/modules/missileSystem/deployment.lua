@@ -3,6 +3,7 @@ local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 local Shared = require("src.modules.missileSystem.shared")
+local Utils = require("src.utils.utils")
 
 local Deployment = {}
 
@@ -419,6 +420,37 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
   end
 
   report.emit()
+end
+
+---Point firing and resupply unit descriptors at their new operational areas
+---Descriptors are replaced with copies rather than edited in place. Layouts naming an
+---unknown system or firing unit are skipped.
+---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration; mutated
+---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
+---@return SBJ__OperationalArea[] operationalAreas New areas that need zones and triggers
+---@return SBJ__OperationalArea[] operationalAreasToRemove Replaced areas whose zones and triggers must go
+function Deployment.applyLayouts(groundForceCfg, layouts)
+  local operationalAreas = {}
+  local operationalAreasToRemove = {}
+
+  for _, layout in ipairs(layouts) do
+    local systemCfg = groundForceCfg[layout.category]
+
+    if systemCfg and systemCfg.firingUnits[layout.unitname] then
+      local firingUnitDescriptor = Utils.deepCopy(systemCfg.firingUnits[layout.unitname])
+      local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitDescriptor.resupplyUnit])
+      local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
+      table.insert(operationalAreasToRemove, firingUnitDescriptor.operationalArea)
+      firingUnitDescriptor.operationalArea = layout.operationalArea
+      resupplyUnitDescriptor.operationalArea = layout.operationalArea
+      table.insert(operationalAreas, layout.operationalArea)
+      systemCfg.firingUnits[firingUnitDescriptor.name] = firingUnitDescriptor
+      systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+      systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
+    end
+  end
+
+  return operationalAreas, operationalAreasToRemove
 end
 
 return Deployment
