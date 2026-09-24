@@ -11,7 +11,7 @@ local GameApi = {}
 ---@param sideName? string Optional side name to narrow down the search
 ---@return CMO__Unit|nil # Returns the unit object, or nil if not found
 function realApi.ScenEdit_GetUnit(guid, sideName)
-  local result
+  local result = nil
 
   if not sideName then
     result = ScenEdit_GetUnit({ guid = guid })
@@ -23,7 +23,7 @@ function realApi.ScenEdit_GetUnit(guid, sideName)
   end
 
   if result == nil then
-    error("Unit not found with guid/name: " .. tostring(guid))
+    error("Unit not found with name: " .. tostring(guid))
   end
 
   return result
