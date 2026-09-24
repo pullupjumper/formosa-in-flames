@@ -52,13 +52,7 @@ end
 local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, systemName, role)
   local entries = {}
   local context = { system = systemName, role = role, unit = addedUnit.name, guid = addedUnit.guid }
-  local cleared = GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
-  if not cleared then
-    table.insert(entries, {
-      tag = "FAIL",
-      fields = LogFormat.merge(context, { reason = "clear_magazines_failed" })
-    })
-  end
+  GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
 
   local weaponDBIDSet = {}
   for _, id in ipairs(weaponDBIDs) do weaponDBIDSet[id] = true end
@@ -252,13 +246,16 @@ end
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
 local function addResupplyUnit(systemName, descriptor, sideName)
   if not descriptor.operationalArea.RL or #descriptor.operationalArea.RL == 0 then
-    return 0, 0, { { tag = "FAIL", fields = {
-      system = systemName,
-      role = "resupply",
-      unit = descriptor.name,
-      area = descriptor.operationalArea.name,
-      reason = "no_rl_defined"
-    } } }
+    return 0, 0, { {
+      tag = "FAIL",
+      fields = {
+        system = systemName,
+        role = "resupply",
+        unit = descriptor.name,
+        area = descriptor.operationalArea.name,
+        reason = "no_rl_defined"
+      }
+    } }
   end
 
   local expected = descriptor.unitCount
@@ -326,10 +323,13 @@ local function addAmmunition(systemName, systemCfg, descriptor, sideName)
 
   if resupplyUnitDescriptor then
     if not resupplyUnitDescriptor.operationalArea.AHA or #resupplyUnitDescriptor.operationalArea.AHA == 0 then
-      return false, { { tag = "FAIL", fields = LogFormat.merge(context, {
-        area = resupplyUnitDescriptor.operationalArea.name,
-        reason = "no_aha_defined"
-      }) } }
+      return false, { {
+        tag = "FAIL",
+        fields = LogFormat.merge(context, {
+          area = resupplyUnitDescriptor.operationalArea.name,
+          reason = "no_aha_defined"
+        })
+      } }
     end
 
     local size = #resupplyUnitDescriptor.operationalArea.AHA[1].course
@@ -346,10 +346,13 @@ local function addAmmunition(systemName, systemCfg, descriptor, sideName)
       return true, {}
     end
 
-    return false, { { tag = "FAIL", fields = LogFormat.merge(context, {
-      area = resupplyUnitDescriptor.operationalArea.name,
-      reason = "add_unit_failed"
-    }) } }
+    return false, { {
+      tag = "FAIL",
+      fields = LogFormat.merge(context, {
+        area = resupplyUnitDescriptor.operationalArea.name,
+        reason = "add_unit_failed"
+      })
+    } }
   end
 
   return false, { { tag = "FAIL", fields = LogFormat.merge(context, { reason = "no_matching_resupply_unit" }) } }
