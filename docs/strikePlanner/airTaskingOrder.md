@@ -203,9 +203,9 @@ saveData.c
 
 | 函數 | 參數 | 回傳 | 呼叫者 | 說明 |
 |---|---|---|---|---|
-| `AirTaskingOrder.process(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | `StrikePlanner.processActiveATOWaves()` → `src/scripts/china/scheduledStrikePlanner.lua` | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派、單元派遣與 report 輸出。 |
+| `AirTaskingOrder.process(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | `StrikePlanner.process()` → `src/scripts/china/scheduledStrikePlanner.lua` | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派、單元派遣與 report 輸出。 |
 
-`scheduledStrikePlanner.lua` 會在 `saveData.c.air.enabled == true` 時呼叫 `StrikePlanner.processActiveATOWaves(config, saveData)`。同一個排程 tick 也會先處理 dynamic ATO insertion，因此動態插入且已啟動的 Wave 可在後續 ATO 執行階段被推進。
+`StrikePlanner.process` 會在 `saveData.c.air.enabled == true` 時呼叫 `AirTaskingOrder.process(config, saveData)`。同一個排程 tick 也會先處理 dynamic ATO insertion，因此動態插入且已啟動的 Wave 可在後續 ATO 執行階段被推進。
 
 ---
 

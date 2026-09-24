@@ -1,10 +1,8 @@
 local PersistentState = require("src.core.persistentState")
-local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.config")
 local StrikePlanner = require("src.modules.strikePlanner.init")
-local AttackManager = require("src.modules.attackManager")
 local constants = require("src.core.constants")
 local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
 
@@ -14,78 +12,5 @@ if not contacts then
 end
 
 PersistentState.update(function(saveData)
-  if saveData.c.dynamicOperations.enabled then
-    StrikePlanner.processDynamicGroundOperations(config, saveData, contacts)
-    StrikePlanner.processDynamicAirOperations(config, saveData, contacts)
-  end
-
-  if saveData.c.recon.enabled then
-    StrikePlanner.processReconQueue({
-      config = config,
-      reconCtx = saveData.c.recon,
-      reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches,
-      lacmCtx = saveData.c.surface.lacm,
-      fireSupportOnHold = saveData.c.amphibOps.fireSupportOnHold == true
-    })
-
-    if math.random() > 0.5 then
-      StrikePlanner.scheduleReconUAVEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)
-    end
-  end
-
-  -- lacm.enabled is sticky once the CSG reaches station, so hasLaunched is what
-  -- keeps the salvo one-shot. Strike scheduling reads enabled to tell whether the
-  -- LACM element is committed at all.
-  if saveData.c.surface.lacm.enabled
-      and not saveData.c.surface.lacm.hasLaunched
-      and GameUtils.isAfterStartTime(config.c.triggers.launchLACM.startTime) then
-    local ships = {}
-
-    for _, guid in ipairs(GameApi.ScenEdit_GetUnit("CSG").group.unitlist) do
-      local unit = GameApi.ScenEdit_GetUnit(guid)
-      if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
-        table.insert(ships, { guid = guid, weaponDBID = config.c.surface.lacm.weaponDBID })
-      end
-    end
-
-    AttackManager.attackContacts({
-      contacts = config.c.surface.lacm.targetlist,
-      qty = 5,
-      firingUnits = ships,
-      weaponDBID = config.c.surface.lacm.weaponDBID
-    })
-    saveData.c.surface.lacm.hasLaunched = true
-  end
-
-  if saveData.c.subSurface.slcm.enabled and GameUtils.isAfterStartTime(config.c.triggers.launchSLCM.startTime) then
-    for _, unit in pairs(config.c.subSurface.slcm.submarines) do
-      local actualUnit = GameApi.ScenEdit_GetUnit(unit.name)
-
-      if actualUnit then
-        local course = { { latitude = actualUnit.latitude, longitude = actualUnit.longitude, presetDepth = 2 } }
-        for _, waypoint in ipairs(actualUnit.course) do
-          table.insert(course, { latitude = waypoint.latitude, longitude = waypoint.longitude, presetDepth = 2 })
-        end
-
-        actualUnit.course = course
-      end
-    end
-
-    AttackManager.attackContacts({
-      contacts = config.c.subSurface.slcm.targetlist,
-      qty = 8,
-      firingUnits = config.c.subSurface.slcm.submarines,
-      weaponDBID = config.c.subSurface.slcm.weaponDBID
-    })
-
-    saveData.c.subSurface.slcm.enabled = false
-  end
-
-  if saveData.c.ground.enabled then
-    StrikePlanner.processActiveFireSupportPlans(saveData)
-  end
-
-  if saveData.c.air.enabled then
-    StrikePlanner.processActiveATOWaves(config, saveData)
-  end
+  StrikePlanner.process(config, saveData, contacts)
 end)

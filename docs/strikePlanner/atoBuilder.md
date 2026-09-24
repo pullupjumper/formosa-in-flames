@@ -201,8 +201,8 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 呼叫者 | 觸發 |
 |---|---|
-| `StrikePlanner.processDynamicAirOperations()` | Strike Planner facade（`src/modules/strikePlanner/init.lua`），轉呼叫本模組 public API。 |
-| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 facade。 |
+| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.c.dynamicOperations.enabled` 時在 `FsemBuilder.build` 之後呼叫本模組。 |
+| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 `StrikePlanner.process`。 |
 | [airTaskingOrder](airTaskingOrder.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active Wave。 |
 
 ---

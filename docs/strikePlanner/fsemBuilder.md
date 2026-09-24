@@ -182,8 +182,8 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 呼叫者 | 觸發 |
 |---|---|
-| `StrikePlanner.processDynamicGroundOperations()` | Strike Planner facade（`src/modules/strikePlanner/init.lua`），轉呼叫本模組 public API，不檢查回傳值。 |
-| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 facade。 |
+| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.c.dynamicOperations.enabled` 時在 `AtoBuilder.build` 之前呼叫本模組，不檢查回傳值。 |
+| `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 `StrikePlanner.process`。 |
 | [fireSupportPlan](fireSupportPlan.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active FSEM。 |
 
 ---

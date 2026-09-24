@@ -140,7 +140,7 @@ flowchart TD
 
 ## 拆分模組協調
 
-`Recon.processQueue` 是偵察 tick 的協調入口，由 `StrikePlanner.processReconQueue` 轉交 `SBJ__ReconQueueProcessingContext`。
+`Recon.processQueue` 是偵察 tick 的協調入口，由 `StrikePlanner.process`（`init.lua`）從 `saveData.c.*` 組出 `SBJ__ReconQueueProcessingContext` 後呼叫。
 
 ```mermaid
 flowchart TD

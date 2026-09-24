@@ -39,6 +39,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 
 | 角色 | 模組 | 說明 |
 |---|---|---|
+| 每輪協調者 | `init.lua`（`StrikePlanner`） | `init` 建目標清單與偵察佇列；`process` 固定 phase 順序：動態 builders → recon → LACM / SLCM 齊射 → FSP / ATO 執行。 |
 | 目標資料來源 | [targetingProcess](targetingProcess.md) | 建立與查詢目標清單，供空中與地面打擊使用。 |
 | 偵察排程者 | [recon](recon.md) / [operationScheduler](operationScheduler.md) | recon 管理偵察生命週期，scheduler 將偵察結果轉為後續 air/ground operations。 |
 | 前線重導向 | [frontlineRedirect](frontlineRedirect.md), [airbaseAttrition](airbaseAttrition.md) | 依前線基地駐機戰損啟用 sticky redirect，將符合規則的 strike mapping 改用 AAR 編組。 |
@@ -55,6 +56,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
+| — | `init.lua` | 開局初始化與每輪 phase 協調（唯一知道哪個 `saveData.c.*` slice 餵哪個 phase） |
 | [targetingProcess](targetingProcess.md) | `targetingProcess.lua` | 目標掃描、分類、動態篩選與 BDA 評估 |
 | [recon](recon.md) | `recon.lua` | UAV/衛星偵察生命週期管理，並協調動態作戰排程 |
 | [operationScheduler](operationScheduler.md) | `operationScheduler.lua` | 偵察完成後建立 recon-triggered air/ground operations |
@@ -78,7 +80,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 ```mermaid
 flowchart TB
     subgraph 觸發器["scheduledStrikePlanner.lua（每 5 分鐘）"]
-        TRIGGER[定時觸發]
+        TRIGGER["StrikePlanner<br>.process()"]
     end
 
     subgraph 動態路徑["動態計畫路徑"]
@@ -312,7 +314,7 @@ flowchart BT
 
 | 檔案 | 說明 |
 |---|---|
-| `src/scripts/china/scheduledStrikePlanner.lua` | 主排程腳本（每 5 分鐘觸發） |
+| `src/scripts/china/scheduledStrikePlanner.lua` | 主排程腳本（每 5 分鐘觸發），只呼叫 `StrikePlanner.process` |
 | `src/modules/attackManager.lua` | 打擊執行（發射武器） |
 | `src/modules/assignMission.lua` | 任務指派（飛機分配） |
 | `src/modules/missileSystem/init.lua` | TEL 飛彈系統入口模組（發射單元狀態機聚合），詳見 [missileSystem 文件](../missileSystem/README.md) |

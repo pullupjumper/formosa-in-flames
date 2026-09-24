@@ -131,7 +131,7 @@ flowchart TD
 
 閘門刻意放在 mapping 迴圈，**不放在建構函式內**。放在建構函式只擋得到首波：一旦首波已存在，流程走的是推進路徑，閘門完全不會被諮詢，後續波就繞過了限制。
 
-`lacmCtx.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/scripts/china/scheduledStrikePlanner.lua`），因此齊射後閘門仍然放行。
+`lacmCtx.enabled` 是 sticky 旗標——CSG 就位時設 true 後不再清除，語義是「LACM 兵力已投入」而非「齊射待發」。齊射與否由 `hasLaunched` 記錄（見 `src/modules/strikePlanner/init.lua` 的 `launchLACMSalvo`），因此齊射後閘門仍然放行。
 
 另有 `fireSupportOnHold == true` 時跳過所有 `GND/STRIKE/INFRA/*` mapping（`[HOLD] reason=fire_support_on_hold`），避免 SRBM 彈藥被重點基礎設施打擊消耗。
 

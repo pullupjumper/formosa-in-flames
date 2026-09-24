@@ -100,12 +100,8 @@ runInit(function(state)
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, state)
   UnitGenerator.initAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-  StrikePlanner.updateTargetList(constants.SIDES.ENEMY, config.targetScanning, state)
+  StrikePlanner.init(config, state)
   RunwayRepairment.initRunways(config, state)
-
-  if state.c.recon.enabled then
-    StrikePlanner.initReconQueue(config.c.recon, state.c.recon)
-  end
 
   if state.t.iads.enabled then
     IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, state.t.iads)

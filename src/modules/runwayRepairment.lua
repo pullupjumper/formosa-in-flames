@@ -1,5 +1,5 @@
 local GameApi = require("src.utils.gameApi")
-local StrikePlanner = require("src.modules.strikePlanner.init")
+local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 
@@ -16,7 +16,7 @@ function RunwayRepairment.initRunways(config, saveData)
     table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
   end
 
-  local targetlist = StrikePlanner.findTargetGUIDsByBaseAndSubtype(saveData.c.targetlist, taiwanAirBases)
+  local targetlist = TargetingProcess.filterTargetsByTypeAndBase(saveData.c.targetlist, taiwanAirBases)
 
   for _, guid in ipairs(targetlist) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
