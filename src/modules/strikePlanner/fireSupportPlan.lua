@@ -8,51 +8,23 @@ local constants = require("src.core.constants")
 local FireSupportPlan = {}
 
 -- ============================================================================
--- Firing Unit Readiness
--- ============================================================================
-
----Check if firing unit is ready to move to firing point
----A firing unit is ready when it's in HIDE state and has sufficient ammunition
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state and ammo info
----@param group CMO__Unit The actual unit group
----@return boolean # Returns true if unit is in HIDE state and not low on ammo
-local function isFiringUnitReady(firingUnitCtx, group)
-  return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
-      not MissileSystem.isLowAmmo(group, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
-end
-
----Check if firing unit is at firing point
----Returns true when unit state is STATIC (firing position)
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context with state info
----@return boolean # Returns true if unit is at STATIC (firing point) state
-local function isFiringUnitAtFiringPoint(firingUnitCtx)
-  return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC
-end
-
--- ============================================================================
 -- Firing Unit Deployment
 -- ============================================================================
 
----Deploy single firing unit to firing point and check if it is in position
+---Send single firing unit to its firing point and check if it is in position
 ---@param saveData SBJ__SaveData Saved game state
 ---@param task SBJ__FireSupportTask Fire Support Task containing missile system info
 ---@param firingUnit SBJ__FiringUnit Firing unit to deploy
 ---@return boolean inPosition Whether the unit is at firing point
----@return boolean unitMissing Whether the actual unit no longer exists in game
+---@return boolean unitMissing Whether the unit no longer exists in game or has no runtime context
 local function deploySingleFiringUnit(saveData, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  if not actualUnit then
+  local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)
+  if not actualUnit or not firingUnitCtx then
     return false, true
   end
 
-  local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)
-
-  if isFiringUnitReady(firingUnitCtx, actualUnit) then
-    MissileSystem.moveFromHideArea(firingUnitCtx, actualUnit)
-    MissileSystem.moveToFiringPoint(firingUnitCtx, actualUnit)
-  end
-
-  return isFiringUnitAtFiringPoint(firingUnitCtx), false
+  return MissileSystem.sendToFiringPoint(firingUnitCtx, actualUnit), false
 end
 
 ---Deploy all firing units in a task and check if all are in position

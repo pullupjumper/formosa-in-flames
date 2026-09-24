@@ -45,51 +45,89 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- moveToFiringPoint
+  -- sendToFiringPoint
   -- ============================================================================
 
-  describe("moveToFiringPoint", function()
-    -- Negative: logs and returns false when movement fails with structured fields
-    it("should forward arguments, log an error and return false when movement fails", function()
-      local firingUnitCtx = { name = "FU1" }
+  describe("sendToFiringPoint", function()
+    local STATE = constants.MISSILE_SYSTEM_STATE
+
+    ---@type luassert.spy
+    local moveFromHideAreaStub
+
+    before_each(function()
+      moveFromHideAreaStub = trackStub(Concealment, "moveFromHideArea").returns(true)
+    end)
+
+    -- Positive: a hiding unit with ammo leaves its hide area and heads to FP
+    it("should unload and move a hiding unit with enough ammo", function()
+      local firingUnitCtx = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
       local firingUnit = { name = "FU1" }
-      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint")
+      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
+      local moveStub = trackStub(Movement, "moveToFiringPoint").returns(true)
+
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+
+      assert.is_false(inPosition)
+      assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 1)
+      assert.stub(moveFromHideAreaStub).was.called_with(firingUnitCtx, firingUnit)
+      assert.stub(moveStub).was.called_with(firingUnitCtx, firingUnit)
+      assert.stub(errorStub).was_not.called()
+    end)
+
+    -- Positive: a unit already at its firing point reports in position without new commands
+    it("should report in position for a STATIC unit without moving it", function()
+      local moveStub = trackStub(Movement, "moveToFiringPoint")
+
+      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.STATIC }, { name = "FU1" })
+
+      assert.is_true(inPosition)
+      assert.stub(moveStub).was_not.called()
+      assert.stub(moveFromHideAreaStub).was_not.called()
+    end)
+
+    -- Negative: a unit on its way is not commanded again
+    it("should not command a REPOSITIONING unit", function()
+      local moveStub = trackStub(Movement, "moveToFiringPoint")
+
+      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.REPOSITIONING }, { name = "FU1" })
+
+      assert.is_false(inPosition)
+      assert.stub(moveStub).was_not.called()
+    end)
+
+    -- Negative: low ammo keeps the unit hidden
+    it("should keep a hiding unit with low ammo in place", function()
+      trackStub(Ammo, "isLowAmmo").returns(true)
+      local moveStub = trackStub(Movement, "moveToFiringPoint")
+
+      local inPosition = MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
+
+      assert.is_false(inPosition)
+      assert.stub(moveStub).was_not.called()
+      assert.stub(moveFromHideAreaStub).was_not.called()
+    end)
+
+    -- Negative: logs when movement fails with structured fields
+    it("should log an error when movement fails", function()
+      trackStub(Ammo, "isLowAmmo").returns(false)
+      trackStub(Movement, "moveToFiringPoint")
           .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
 
-      local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
+      MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
 
-      assert.is_false(result)
-      assert.stub(moveToFiringPointStub).was.called(1)
-      assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
         "[FAIL] module=missileSystem area=OPAREA-1 unit=FU1 action=move_to_firing_point position=FP" ..
         " reason=no_positions_available")
     end)
 
-    -- Positive: forwards arguments and returns true without logging
-    it("should forward arguments and return true when delegated movement succeeds", function()
-      local firingUnitCtx = { name = "FU1" }
-      local firingUnit = { name = "FU1" }
-      local moveToFiringPointStub = trackStub(Movement, "moveToFiringPoint").returns(true)
-
-      local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
-
-      assert.is_true(result)
-      assert.stub(moveToFiringPointStub).was.called(1)
-      assert.stub(moveToFiringPointStub).was.called_with(firingUnitCtx, firingUnit)
-      assert.stub(errorStub).was_not.called()
-    end)
-
     -- Boundary: failure without error fields should not log (avoid "[FAIL] nil")
-    it("should not log when movement fails without an error message", function()
+    it("should not log when movement fails without error fields", function()
+      trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint").returns(false)
-      local firingUnitCtx = { name = "FU1" }
-      local firingUnit = { name = "FU1" }
 
-      local result = MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
+      MissileSystem.sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" })
 
-      assert.is_false(result)
       assert.stub(errorStub).was_not.called()
     end)
   end)

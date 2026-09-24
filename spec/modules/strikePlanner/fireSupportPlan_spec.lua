@@ -157,20 +157,19 @@ describe("FireSupportPlan", function()
   -- ============================================================================
 
   describe("firing unit deployment", function()
-    -- Positive: unit ready triggers move
-    it("should call moveToFiringPoint when unit is in HIDE state and not low ammo", function()
+    -- Positive: each live unit is handed to missileSystem with its runtime context
+    it("should send each firing unit to its firing point through MissileSystem", function()
       local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-      trackStub(stub(MissileSystem, "moveFromHideArea"))
-      local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
       FireSupportPlan.process(saveData)
 
-      assert.stub(stubMove).was.called(1)
+      assert.stub(stubSend).was.called(1)
+      assert.stub(stubSend).was.called_with(saveData.c.ground.srbm.firingUnits["Battery-1"], mockUnit)
     end)
 
     -- Positive: all units at firing point
@@ -206,34 +205,20 @@ describe("FireSupportPlan", function()
       assert.stub(stubAttack).was_not.called()
     end)
 
-    -- Negative: not HIDE state
-    it("should not call moveToFiringPoint when unit state is not HIDE", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
-      local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
-
+    -- Boundary: a unit without runtime context is dropped like a destroyed one
+    it("should remove a firing unit that has no runtime context", function()
+      local saveData = makeSaveData({})
+      saveData.c.ground.srbm.firingUnits["Battery-1"] = nil
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(AttackManager, "attackContacts").returns(0))
-      local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "UNIT-1", name = "Battery-1" }))
+      local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint"))
 
       FireSupportPlan.process(saveData)
 
-      assert.stub(stubMove).was_not.called()
-    end)
-
-    -- Negative: low ammo
-    it("should not call moveToFiringPoint when unit has low ammo", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
-      local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
-
-      trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(true))
-      local stubMove = trackStub(stub(MissileSystem, "moveToFiringPoint"))
-
-      FireSupportPlan.process(saveData)
-
-      assert.stub(stubMove).was_not.called()
+      local task = saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
+      assert.are.equal(0, #task.firingUnits)
+      assert.is_true(task.isFinished)
+      assert.stub(stubSend).was_not.called()
     end)
 
     -- Negative: not at STATIC state
@@ -267,9 +252,7 @@ describe("FireSupportPlan", function()
         if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
         return nil
       end))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-      trackStub(stub(MissileSystem, "moveFromHideArea"))
-      trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
       FireSupportPlan.process(saveData)
 
@@ -441,9 +424,7 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-      trackStub(stub(MissileSystem, "moveFromHideArea"))
-      trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
       FireSupportPlan.process(saveData)
@@ -688,9 +669,7 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-      trackStub(stub(MissileSystem, "moveFromHideArea"))
-      trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
       FireSupportPlan.process(saveData)
 
@@ -797,9 +776,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
         return { guid = "U-" .. name, name = name }
       end))
-      trackStub(stub(MissileSystem, "isLowAmmo").returns(false))
-      trackStub(stub(MissileSystem, "moveFromHideArea"))
-      trackStub(stub(MissileSystem, "moveToFiringPoint"))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
       FireSupportPlan.process(saveData)
 

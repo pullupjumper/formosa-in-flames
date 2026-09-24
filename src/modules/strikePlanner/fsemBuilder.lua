@@ -165,7 +165,7 @@ local function validateFiringUnitStatus(firingUnitCtx, passCtx)
     return FIRING_UNIT_STATUS.BAD_STATE
   end
 
-  if MissileSystem.isLowAmmo(actualUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
+  if MissileSystem.isLowAmmo(firingUnitCtx, actualUnit) then
     return FIRING_UNIT_STATUS.LOW_AMMO
   end
 

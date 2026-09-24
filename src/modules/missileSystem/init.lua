@@ -58,38 +58,41 @@ local function dropUnitContact(unit, contacts)
   end
 end
 
----Command firing unit to move to firing point (FP)
+---Command firing unit to move to firing point (FP), logging any failure
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@return boolean success Whether the move was successful
-function MissileSystem.moveToFiringPoint(firingUnitCtx, firingUnit)
+local function commandMoveToFiringPoint(firingUnitCtx, firingUnit)
   local success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
   if not success and errorFields then
     Logger.error(LogFormat.line("FAIL", LogFormat.merge({
       module = constants.TAGS.MISSILE_SYSTEM,
       action = "move_to_firing_point",
-      unit = firingUnitCtx and firingUnitCtx.name or firingUnit and firingUnit.name
+      unit = firingUnitCtx.name or firingUnit.name
     }, errorFields)))
   end
-  return success
 end
 
----Unload firing unit group from hide area buildings
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
----@param unit CMO__Unit Firing unit to unload
----@return boolean success Whether unload was performed
----@return table<string, any>? errorFields Log fields describing the failure
-function MissileSystem.moveFromHideArea(unitCtx, unit)
-  return Concealment.moveFromHideArea(unitCtx, unit)
-end
-
----Check if unit/group ammunition is below specified percentage
----@param firingUnit CMO__Unit Unit or group object
----@param percentage number|nil Percentage threshold
----@param weaponDBID number|number[]|nil Weapon database ID(s)
+---Check if a firing unit is below its own ammunition threshold
+---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context carrying threshold and weapon DBID
+---@param firingUnit CMO__Unit Firing unit group
 ---@return boolean # Whether it is low ammunition
-function MissileSystem.isLowAmmo(firingUnit, percentage, weaponDBID)
-  return Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
+function MissileSystem.isLowAmmo(firingUnitCtx, firingUnit)
+  return Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
+end
+
+---Send a firing unit from its hide area to its firing point when it is ready
+---A unit is ready when it is hiding with enough ammunition; units already out are left alone.
+---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
+---@param firingUnit CMO__Unit Firing unit group
+---@return boolean inPosition Whether the unit is at its firing point
+function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+  if firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
+      not MissileSystem.isLowAmmo(firingUnitCtx, firingUnit) then
+    Concealment.moveFromHideArea(firingUnitCtx, firingUnit)
+    commandMoveToFiringPoint(firingUnitCtx, firingUnit)
+  end
+
+  return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
