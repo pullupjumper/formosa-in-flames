@@ -41,40 +41,41 @@ local function logBox(side, ...)
   ScenEdit_SpecialMessage(side, boxString)
 end
 
----Log with module name and verbose check
----@param moduleName string Module name to check verbose setting
+--- Helper function to show a log message
 ---@param message string Log message
-function Logger.log(moduleName, message)
-  local moduleConfig = config.logging and config.logging.modules and config.logging.modules[moduleName]
+---@param level string Log level
+local function show(message, level)
+  if Logger.inGame then
+    logBox("playerside", string.format("[%s] %s", level, message))
+  end
+
+  print(string.format("[%s] %s", level, message))
+end
+
+---Log with module name and verbose check
+---@param moduleNameOrMessage string Module name or message to log
+---@param message? string Log message
+function Logger.log(moduleNameOrMessage, message)
+  local moduleConfig = config.logging and config.logging.modules and config.logging.modules[moduleNameOrMessage]
 
   if moduleConfig and moduleConfig.verbose then
-    local formattedMessage = string.format("[%s] %s", moduleName, message)
-    if Logger.inGame then
-      logBox("playerside", "[LOG] " .. formattedMessage)
-    else
-      print("[LOG] " .. formattedMessage)
-    end
+    local formattedMessage = string.format("[%s] %s", moduleNameOrMessage, message)
+    show(formattedMessage, "LOG")
+  elseif moduleNameOrMessage and not message then
+    show(moduleNameOrMessage, "LOG")
   end
 end
 
 ---Error logging (always output, no verbose check)
 ---@param message string Error message
 function Logger.error(message)
-  if Logger.inGame then
-    logBox("playerside", "[ERROR] " .. message)
-  else
-    print("[ERROR] " .. message)
-  end
+  show(message, "ERROR")
 end
 
 ---Warning logging (similar to error, always output)
 ---@param message string Warning message
 function Logger.warn(message)
-  if Logger.inGame then
-    logBox("playerside", "[WARN] " .. message)
-  else
-    print("[WARN] " .. message)
-  end
+  show(message, "WARN")
 end
 
 return Logger
