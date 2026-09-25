@@ -1257,4 +1257,53 @@ describe("CommsJamming", function()
       assert.is_nil(commsJammingCtx.jammers["F16-001"])
     end)
   end)
+
+  -- ============================================================================
+  -- initTargetAircraftContexts
+  -- ============================================================================
+
+  describe("initTargetAircraftContexts", function()
+    local function makeSideMock(units)
+      return {
+        unitsBy = function()
+          return units
+        end,
+      }
+    end
+
+    -- Positive: E-2K goes to AEW, other aircraft go to AC, both with comms defaults
+    it("should split AEW from other aircraft and apply comms defaults", function()
+      local landBasedCtx = { AEW = {}, AC = {} }
+      local defaults = config.c.commsJamming.aircraftDefaults
+      local units = {
+        ["E2K-1"] = makeUnit({ guid = "E2K-1", type = constants.UNIT_TYPES.AIRCRAFT, dbid = constants.PLATFORMS.E2K }),
+        ["F16-1"] = makeUnit({ guid = "F16-1", type = constants.UNIT_TYPES.AIRCRAFT, dbid = 1 }),
+      }
+      local getSideStub = trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "E2K-1" }, { guid = "F16-1" } })))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        return units[guid]
+      end))
+
+      CommsJamming.initTargetAircraftContexts(landBasedCtx, defaults)
+
+      assert.stub(getSideStub).was.called_with({ side = constants.SIDES.PLAYER })
+      assert.are.equal(1, Utils.getCount(landBasedCtx.AEW))
+      assert.are.equal(1, Utils.getCount(landBasedCtx.AC))
+      assert.is_not_nil(landBasedCtx.AEW["E2K-1"])
+      assert.is_not_nil(landBasedCtx.AC["F16-1"])
+      assert.are.equal(defaults.commsLevel, landBasedCtx.AC["F16-1"].commsLevel)
+      assert.are.equal(defaults.outOfComms, landBasedCtx.AEW["E2K-1"].outofcomms)
+    end)
+
+    -- Edge: stale entries are cleared even when the side has no aircraft
+    it("should clear stale entries when no aircraft are found", function()
+      local landBasedCtx = { AEW = { old = {} }, AC = { old = {} } }
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock(nil)))
+
+      CommsJamming.initTargetAircraftContexts(landBasedCtx, config.c.commsJamming.aircraftDefaults)
+
+      assert.are.same({}, landBasedCtx.AEW)
+      assert.are.same({}, landBasedCtx.AC)
+    end)
+  end)
 end)

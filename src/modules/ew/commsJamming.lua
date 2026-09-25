@@ -1,4 +1,5 @@
 local GameApi = require("src.utils.gameApi")
+local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
@@ -528,6 +529,52 @@ function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraf
       }
     end
   end
+end
+
+
+---Register Taiwan land-based aircraft as comms jamming targets, splitting AEW from other aircraft
+---Existing entries are discarded so the registry matches the aircraft currently in play.
+---@param landBasedCtx SBJ__LandBasedPlatformContext Taiwan land-based platform context; AC/AEW are replaced
+---@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
+function CommsJamming.initTargetAircraftContexts(landBasedCtx, aircraftDefaults)
+  landBasedCtx.AEW = {}
+  landBasedCtx.AC = {}
+
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  if not filteredUnits then
+    return
+  end
+
+  local aewCount = 0
+  local acCount = 0
+
+  for _, u in ipairs(filteredUnits) do
+    local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
+
+    if actualUnit and actualUnit.type == constants.UNIT_TYPES.AIRCRAFT then
+      local isAEW = actualUnit.dbid == constants.PLATFORMS.E2K
+      local group = isAEW and landBasedCtx.AEW or landBasedCtx.AC
+      group[actualUnit.guid] = {
+        guid = actualUnit.guid,
+        OODA = actualUnit.OODA,
+        commsLevel = aircraftDefaults.commsLevel,
+        commsBase = aircraftDefaults.commsBase,
+        commsThreshold = aircraftDefaults.commsThreshold,
+        outofcomms = aircraftDefaults.outOfComms,
+      }
+      if isAEW then
+        aewCount = aewCount + 1
+      else
+        acCount = acCount + 1
+      end
+    end
+  end
+
+  Logger.log(constants.TAGS.COMMS_JAMMING, LogFormat.line("OK", {
+    action = "init_target_aircraft",
+    aew = aewCount,
+    ac = acCount
+  }))
 end
 
 return CommsJamming

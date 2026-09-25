@@ -60,8 +60,8 @@ end
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
 function Context.seedGroundForceState(groundForceCfg, groundForceCtx)
-  for system, systemCfg in pairs(groundForceCfg) do
-    ---@cast systemCfg SBJ__MissileSystemConfig
+  for system, _ in pairs(groundForceCfg) do
+    ---@type SBJ__MissileSystemContext
     local systemCtx = groundForceCtx[system] or {}
     systemCtx.name = system
     if systemCtx.enabled == nil then

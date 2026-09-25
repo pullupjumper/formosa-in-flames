@@ -99,7 +99,7 @@ runInit(function(state)
   initEventActions()
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, state)
-  UnitGenerator.initAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+  CommsJamming.initTargetAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
   StrikePlanner.init(config, state)
   RunwayRepairment.initRunways(config, state)
 

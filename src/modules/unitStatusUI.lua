@@ -3,6 +3,7 @@ local GameUtils = require("src.utils.gameUtils")
 local Utils = require("src.utils.utils")
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
+local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
 local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
@@ -709,9 +710,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
         if sideName == constants.SIDES.PLAYER then
-          UnitGenerator.initAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-        else
-          UnitGenerator.initAircraftContexts(saveData.c.air.landBased, config.c.commsJamming.aircraftDefaults)
+          CommsJamming.initTargetAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
         end
       end
 
