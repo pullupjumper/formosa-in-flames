@@ -4,6 +4,7 @@ local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
+local PersistentState = require("src.core.persistentState")
 
 local Sigint = {}
 
@@ -272,8 +273,8 @@ end
 ---@param isAutodetectable boolean Target autodetectable state (true = can be auto-detected by enemy)
 local function updateAutodetectableState(unit, isAutodetectable)
   if unit.group then
-    for _, v in ipairs(unit.group.unitlist) do
-      GameApi.ScenEdit_SetUnit({ guid = v, autodetectable = isAutodetectable })
+    for _, guid in ipairs(unit.group.unitlist) do
+      GameApi.ScenEdit_SetUnit({ guid = guid, autodetectable = isAutodetectable })
     end
   else
     GameApi.ScenEdit_SetUnit({ guid = unit.guid, autodetectable = isAutodetectable })
@@ -440,6 +441,21 @@ function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig
 
   report.emit({ processed = totalProcessed, units = totalUnits, detections = totalDetected })
   return resultMap
+end
+
+---Collect SIGINT for a collecting side when its SIGINT is enabled
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's SIGINT slice is mutated
+---@param sideName string Collecting side name (China or US)
+function Sigint.processSide(config, saveData, sideName)
+  local sigintCtx = PersistentState.sigint(saveData, sideName)
+  if not sigintCtx.enabled then
+    return
+  end
+
+  local sigintConfig = config[GameUtils.getCachedSideConfig(sideName).field].sigint
+  Sigint.collectSigint(config, sigintCtx, sideName, true, sigintConfig,
+    PersistentState.sigintEmitters(saveData, sideName))
 end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations

@@ -1112,6 +1112,41 @@ describe("Sigint", function()
   end)
 
   -- ============================================================================
+  -- Sigint.processSide
+  -- ============================================================================
+
+  describe("processSide", function()
+    local PersistentState = require("src.core.persistentState")
+
+    ---@return table saveData
+    local function makeSaveData(enabled)
+      return { u = { sigint = { enabled = enabled } }, c = { sigint = { enabled = enabled } } }
+    end
+
+    -- Positive: an enabled side collects with its own SIGINT slice, config and emitters
+    it("should collect with the side's slice, config and emitters", function()
+      local saveData = makeSaveData(true)
+      local emitters = { { id = "emitters" } }
+      local sideConfig = { u = { sigint = { id = "u-sigint" } } }
+      trackStub(stub(PersistentState, "sigintEmitters")).returns(emitters)
+      local collectStub = trackStub(stub(Sigint, "collectSigint"))
+
+      Sigint.processSide(sideConfig, saveData, "US")
+
+      assert.stub(collectStub).was.called_with(sideConfig, saveData.u.sigint, "US", true, sideConfig.u.sigint, emitters)
+    end)
+
+    -- Negative: a disabled side does nothing
+    it("should skip collection when SIGINT is disabled", function()
+      local collectStub = trackStub(stub(Sigint, "collectSigint"))
+
+      Sigint.processSide({}, makeSaveData(false), constants.SIDES.ENEMY)
+
+      assert.stub(collectStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
   -- Sigint.initReconAircraftContexts
   -- ============================================================================
 

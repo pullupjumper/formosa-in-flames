@@ -297,6 +297,20 @@ describe("MissileSystem", function()
     end)
   end)
 
+  describe("deploySide", function()
+    -- Positive: units and contexts are built from the side's ground config into the side's slice
+    it("should add units and init contexts from the side's ground config", function()
+      local config, saveData = makeSides()
+      local addStub = trackStub(Deployment, "addMissileSystems")
+      local contextStub = trackStub(Context, "initMissileSystemContexts")
+
+      MissileSystem.deploySide(config, saveData, constants.SIDES.PLAYER)
+
+      assert.stub(addStub).was.called_with(config.t.ground, constants.SIDES.PLAYER)
+      assert.stub(contextStub).was.called_with(config.t.ground, saveData.t.ground)
+    end)
+  end)
+
   describe("processUnitEntersArea", function()
     -- Positive: side comes from the triggering unit, switches come from that side's policy
     it("should build move-to-position params from the unit side's policy", function()

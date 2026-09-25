@@ -234,6 +234,17 @@ function MissileSystem.addMissileSystems(groundForceCfg, sideName)
   Deployment.addMissileSystems(groundForceCfg, sideName)
 end
 
+---Add a side's missile system units and build their runtime contexts from config
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
+---@param sideName string Side name (China or Taiwan)
+function MissileSystem.deploySide(config, saveData, sideName)
+  local groundForceCfg = config[GameUtils.getCachedSideConfig(sideName).field].ground
+
+  Deployment.addMissileSystems(groundForceCfg, sideName)
+  Context.initMissileSystemContexts(groundForceCfg, PersistentState.groundForces(saveData, sideName))
+end
+
 ---Seed the default per-system state (name, enabled, empty unit maps) from configuration
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
