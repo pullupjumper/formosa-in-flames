@@ -102,12 +102,12 @@ flowchart TB
 
 電腦控制陣營的補給流程不只依賴`UnitEntersArea`事件觸發更新狀態，而是由定時檢查主動驅動：
 
-- `scheduledReloadHideCheck.lua` 週期呼叫 `process(saveData.c.ground, true, constants.SIDES.ENEMY)`
+- `scheduledReloadHideCheck.lua` 週期呼叫 `processSide(config, saveData, constants.SIDES.ENEMY)`；auto / manual 由 `config.c.missileSystemPolicy.isAuto` 決定
 - 機動發射車低彈量或剛完成 FSP 射擊時，先進入 `stowTime` 等待視窗（由 `firingUnitCtx.stowStartTime` 記錄起點），倒數結束才實際機動，避免射擊後立即撤收
 - stow 結束時若彈量已充足（典型 FSP 收車情境），直接回 HA；若仍低彈量，則自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
 - 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 AHA 補給
 - 機動發射車裝填完畢後，防空飛彈車自動回 FP；TEL 類自動回 HA
-- 電腦控制陣營 `moveToPosition` 機制設定包含 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
+- 電腦控制陣營 `moveToPosition` 呼叫 `processUnitEntersArea`，依 `config.c.missileSystemPolicy` 開啟 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
 - 電腦控制陣營亦可在 RL 未交會時，依 `hideResupplyOnRLNoMeeting=true` 讓彈藥補給車回到掩蔽狀態（不是機動發射車）
 
 ---

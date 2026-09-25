@@ -205,6 +205,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
 ---@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
 
+---Per-side missile system control policy; the only differences between the China and Taiwan event scripts
+---@class SBJ__MissileSystemPolicyConfig: table
+---@field isAuto boolean Whether the reload/hide cycle and position events run in automatic mode
+---@field hideOnEnterHA boolean Whether entering HA should force hide flow
+---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
+
 ---Ground force configuration
 ---@class SBJ__GroundForceConfig: table
 ---@field mlrs SBJ__MissileSystemConfig MLRS configuration
@@ -297,6 +303,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
 ---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
+---@field missileSystemPolicy SBJ__MissileSystemPolicyConfig Missile system control policy
 ---@field recon SBJ__ReconConfig Reconnaissance configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field amphibOps SBJ__AmphibOpsConfig Amphibious operations configuration
@@ -309,6 +316,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__TaiwanConfig: table
 ---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundForceConfig Ground force configuration
+---@field missileSystemPolicy SBJ__MissileSystemPolicyConfig Missile system control policy
 ---@field iads SBJ__IADSFactionConfig IADS configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration

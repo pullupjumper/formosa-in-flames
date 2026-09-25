@@ -262,6 +262,88 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
+  -- side-aware entries
+  -- ============================================================================
+
+  ---Minimal config/saveData pair whose China and Taiwan sides differ only by policy
+  ---@return table config, table saveData
+  local function makeSides()
+    local config = {
+      c = {
+        ground = { id = "c-cfg" },
+        missileSystemPolicy = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
+      },
+      t = {
+        ground = { id = "t-cfg" },
+        missileSystemPolicy = { isAuto = false, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
+      }
+    }
+    local saveData = { c = { ground = { id = "c-ctx" } }, t = { ground = { id = "t-ctx" } } }
+    return config, saveData
+  end
+
+  describe("processSide", function()
+    -- Positive: each side runs with its own ground slice, ground config and isAuto from policy
+    it("should pass the side's slice, config and policy mode to process", function()
+      local config, saveData = makeSides()
+      local processStub = trackStub(MissileSystem, "process")
+
+      MissileSystem.processSide(config, saveData, constants.SIDES.ENEMY)
+      MissileSystem.processSide(config, saveData, constants.SIDES.PLAYER)
+
+      assert.stub(processStub).was.called(2)
+      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground, true, constants.SIDES.ENEMY)
+      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground, false, constants.SIDES.PLAYER)
+    end)
+  end)
+
+  describe("processUnitEntersArea", function()
+    -- Positive: side comes from the triggering unit, switches come from that side's policy
+    it("should build move-to-position params from the unit side's policy", function()
+      local config, saveData = makeSides()
+      local contacts = { { actualunitid = "x" } }
+      local event = { triggers = {} }
+      local unit = { name = "FU1", side = constants.SIDES.ENEMY }
+      local getContactsStub = trackStub(GameApi, "ScenEdit_GetContacts").returns(contacts)
+      local handleStub = trackStub(MissileSystem, "processMoveToPositionEvent")
+
+      MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+
+      assert.stub(getContactsStub).was.called_with(constants.SIDES.ENEMY)
+      assert.stub(handleStub).was.called_with({
+        groundCtx = saveData.c.ground,
+        unit = unit,
+        event = event,
+        isAuto = true,
+        contacts = contacts,
+        behavior = {
+          hideOnEnterHA = true,
+          hideResupplyOnRLNoMeeting = true,
+          firingUnitLookupSide = constants.SIDES.ENEMY
+        }
+      })
+    end)
+
+    -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
+    it("should use the Taiwan slice and manual policy for a Taiwan unit", function()
+      local config, saveData = makeSides()
+      local unit = { name = "FU1", side = constants.SIDES.PLAYER }
+      local event = {}
+      trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
+      local handleStub = trackStub(MissileSystem, "processMoveToPositionEvent")
+
+      MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+
+      local params = handleStub.calls[1].vals[1]
+      assert.are.same(saveData.t.ground, params.groundCtx)
+      assert.is_false(params.isAuto)
+      assert.is_false(params.behavior.hideOnEnterHA)
+      assert.is_false(params.behavior.hideResupplyOnRLNoMeeting)
+      assert.are.equal(constants.SIDES.PLAYER, params.behavior.firingUnitLookupSide)
+    end)
+  end)
+
+  -- ============================================================================
   -- markForStow
   -- ============================================================================
 

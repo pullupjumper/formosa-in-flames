@@ -1,7 +1,9 @@
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
+local PersistentState = require("src.core.persistentState")
 local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
@@ -169,6 +171,16 @@ function MissileSystem.process(groundCtx, groundCfg, isAuto, sideName)
   end
 
   report.emit({ mode = isAuto and "auto" or "manual" })
+end
+
+---Run one reload/hide cycle for a side, with its policy taken from config
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
+---@param sideName string Side name (China or Taiwan)
+function MissileSystem.processSide(config, saveData, sideName)
+  local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
+
+  MissileSystem.process(PersistentState.groundForces(saveData, sideName), sideConfig.ground, sideConfig.missileSystemPolicy.isAuto, sideName)
 end
 
 ---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
@@ -488,6 +500,28 @@ function MissileSystem.processMoveToPositionEvent(params)
   -- position is derived from the event trigger, so it describes the whole batch
   -- rather than any single row.
   report.emit({ mode = isAuto and "auto" or "manual", position = positionType })
+end
+
+---Handle a UnitEntersArea event for the triggering unit's side, with its policy taken from config
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the unit side's ground slice is mutated
+---@param unit CMO__Unit Unit that triggered UnitEntersArea
+---@param event CMO__Event Event payload from CMO
+function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+  local policy = config[GameUtils.getCachedSideConfig(unit.side).field].missileSystemPolicy
+
+  MissileSystem.processMoveToPositionEvent({
+    groundCtx = PersistentState.groundForces(saveData, unit.side),
+    unit = unit,
+    event = event,
+    isAuto = policy.isAuto,
+    contacts = GameApi.ScenEdit_GetContacts(unit.side),
+    behavior = {
+      hideOnEnterHA = policy.hideOnEnterHA,
+      hideResupplyOnRLNoMeeting = policy.hideResupplyOnRLNoMeeting,
+      firingUnitLookupSide = unit.side
+    }
+  })
 end
 
 return MissileSystem

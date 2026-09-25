@@ -2,7 +2,7 @@ local PersistentState = require("src.core.persistentState")
 local Logger = require("src.utils.logger")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem.init")
-local constants = require("src.core.constants")
+local config = require("src.core.config")
 local unit = GameApi.ScenEdit_UnitX()
 local event = GameApi.ScenEdit_EventX()
 
@@ -17,16 +17,5 @@ if not unit then
 end
 
 PersistentState.update(function(saveData)
-  MissileSystem.processMoveToPositionEvent({
-    groundCtx = PersistentState.groundForces(saveData, constants.SIDES.PLAYER),
-    unit = unit,
-    event = event,
-    isAuto = false,
-    contacts = GameApi.ScenEdit_GetContacts(unit.side),
-    behavior = {
-      hideOnEnterHA = false,
-      hideResupplyOnRLNoMeeting = false,
-      firingUnitLookupSide = unit.side
-    }
-  })
+  MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 end)

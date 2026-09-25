@@ -289,6 +289,16 @@ config.c.gnssJamming.jammers = {
 
 
 -- ============================================================================
+-- Missile system policy (China)
+-- ============================================================================
+
+config.c.missileSystemPolicy = {
+  isAuto = true,
+  hideOnEnterHA = true,
+  hideResupplyOnRLNoMeeting = true
+}
+
+-- ============================================================================
 -- MLRS (China)
 -- ============================================================================
 
@@ -4774,6 +4784,16 @@ config.t.gnssJamming.jammers = {
   },
 }
 
+
+-- ============================================================================
+-- Missile system policy (Taiwan)
+-- ============================================================================
+
+config.t.missileSystemPolicy = {
+  isAuto = false,
+  hideOnEnterHA = false,
+  hideResupplyOnRLNoMeeting = false
+}
 
 -- ============================================================================
 -- MLRS (Taiwan)
