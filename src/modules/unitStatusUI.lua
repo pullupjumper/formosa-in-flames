@@ -23,92 +23,6 @@ local function getSAMDBID(name)
   return map[name] or 0
 end
 
----Transform deployed missile system configuration into operational area data structure
----@param missileSystem {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__TacticalAreas, paths: SBJ__MovementPaths} Deployed missile system configuration with tactical areas and movement paths
----@return SBJ__OperationalArea # Operational area data structure
-local function normalizeData(missileSystem)
-  local operationalArea = {
-    RL = {},
-    FP = {},
-    AHA = {},
-    HA = {},
-    SHRL = {},
-    uShapeVertices = missileSystem.tacticalAreas.uShapeVertices,
-    shelterPoints = missileSystem.tacticalAreas.shelterPoints,
-    name = "#" .. Utils.buildRandomText(3)
-  }
-
-  for index, firePoint in ipairs(missileSystem.paths.FP) do
-    local course = {}
-    for _, waypoint in ipairs(firePoint.waypoints) do
-      table.insert(course, {
-        latitude = waypoint.latitude,
-        longitude = waypoint.longitude,
-        desiredSpeed = constants.SPEEDS.FAST,
-        presetThrottle = constants.THROTTLES.FLANK
-      })
-    end
-    table.insert(operationalArea.FP, {
-      course = course,
-      area = missileSystem.tacticalAreas.firePoints[index]
-    })
-  end
-
-  local reloadPoint = missileSystem.paths.RL[1]
-  local course = {}
-  for _, waypoint in ipairs(reloadPoint.waypoints) do
-    table.insert(course, {
-      latitude = waypoint.latitude,
-      longitude = waypoint.longitude,
-      desiredSpeed = constants.SPEEDS.FAST,
-      presetThrottle = constants.THROTTLES.FLANK
-    })
-  end
-  -- table.remove(course, 1)
-  table.insert(operationalArea.RL, {
-    course = course,
-    area = missileSystem.tacticalAreas.reloadArea
-  })
-
-  local ahaCourse = {}
-  for _, waypoint in ipairs(missileSystem.paths.AHA.waypoints) do
-    table.insert(ahaCourse, {
-      latitude = waypoint.latitude,
-      longitude = waypoint.longitude,
-      desiredSpeed = constants.SPEEDS.FAST,
-      presetThrottle = constants.THROTTLES.FLANK
-    })
-  end
-  table.insert(operationalArea.AHA, {
-    course = ahaCourse,
-    area = missileSystem.tacticalAreas.ammoArea
-  })
-
-  local haCourse = {}
-  for _, waypoint in ipairs(missileSystem.paths.HA.waypoints) do
-    table.insert(haCourse, {
-      latitude = waypoint.latitude,
-      longitude = waypoint.longitude,
-      desiredSpeed = constants.SPEEDS.FAST,
-      presetThrottle = constants.THROTTLES.FLANK
-    })
-  end
-  table.insert(operationalArea.HA, { course = haCourse, area = missileSystem.tacticalAreas.hideArea })
-
-  local shrlCourse = {}
-  for _, waypoint in ipairs(missileSystem.paths.SHRL.waypoints) do
-    table.insert(shrlCourse, {
-      latitude = waypoint.latitude,
-      longitude = waypoint.longitude,
-      desiredSpeed = constants.SPEEDS.FAST,
-      presetThrottle = constants.THROTTLES.FLANK
-    })
-  end
-  table.insert(operationalArea.SHRL, { course = shrlCourse, area = missileSystem.tacticalAreas.reloadArea })
-
-  return operationalArea
-end
-
 ---Count military units by type within operational zones
 ---@param config SBJ__Config Configuration table
 ---@return table<string, table<string, number>> # Table with area names as keys and unit type counts as values
@@ -372,69 +286,6 @@ local function createGnssJammerDataString(config, sideName)
   return gKH.json.stringify(rows)
 end
 
----Create JSON string for missile system data
----@param config SBJ__Config Saved game data containing missile system state
----@param sideName string Side name ('China' or 'Taiwan')
----@return string # JSON formatted missile system data
-local function createMissileSystemDataString(config, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local field = sideConfig.field
-  local rows = {}
-
-  for key, system in pairs(config[field].ground) do
-    ---@cast system SBJ__MissileSystemConfig
-    local copy = Utils.deepCopy(system)
-    copy.resupplyUnits = nil
-    copy.ammunitions = nil
-
-    for _, descriptor in pairs(copy.firingUnits) do
-      local uShapeVertices = {}
-
-      for _, attr in ipairs({ "HA", "FP", "RL", "AHA", "SHRL" }) do
-        ---@type SBJ__Position[]
-        local positions = descriptor.operationalArea[attr]
-
-        if positions then
-          for _, position in ipairs(positions) do
-            if position.area then
-              local vertices = {}
-              local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = position.area })
-
-              if points then
-                for _, point in ipairs(points) do
-                  table.insert(vertices, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
-                end
-              end
-
-              if #vertices > 0 then
-                position.area = vertices
-              end
-            end
-          end
-        end
-      end
-
-      local points = GameApi.ScenEdit_GetReferencePoints({
-        side = sideName, area = descriptor.operationalArea.mask.area
-      })
-
-      if points then
-        for _, point in ipairs(points) do
-          table.insert(uShapeVertices, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
-        end
-      end
-
-      if #uShapeVertices > 0 then
-        descriptor.operationalArea.uShapeVertices = uShapeVertices
-      end
-    end
-
-    rows[key] = copy
-  end
-
-  return gKH.json.stringify(rows)
-end
-
 ---Create JSON string for deployed aircraft data with base coordinates
 ---@param config SBJ__Config Configuration table containing aircraft deployment data
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -561,7 +412,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
     -- Prepare data for HTML template
     local gpsJammerDataString = createGnssJammerDataString(config, sideName)
     local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
-    local missileSystemDataString = createMissileSystemDataString(config, sideName)
+    local missileSystemDataString = gKH.json.stringify(MissileSystem.buildSetupMenuRows(config, sideName))
     local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
 
     local htmlTemplate = getSetupMenuTemplate()
@@ -611,18 +462,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
       -- Apply TEL launcher deployments
       if missileSystems and #missileSystems > 0 then
-        local layouts = {}
-        ---@cast layouts SBJ__MissileSystemLayout[]
-        for _, missileSystem in ipairs(missileSystems) do
-          table.insert(layouts, {
-            category = missileSystem.category,
-            unitname = missileSystem.unitname,
-            operationalArea = normalizeData(missileSystem)
-          })
-        end
-
-        local field = GameUtils.getCachedSideConfig(sideName).field
-        MissileSystem.redeploy(config[field].ground, PersistentState.groundForces(saveData, sideName), layouts, sideName)
+        MissileSystem.redeployFromSetup(config, saveData, sideName, missileSystems)
       end
     end
   end)

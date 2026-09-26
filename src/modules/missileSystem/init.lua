@@ -13,6 +13,7 @@ local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
 local Context = require("src.modules.missileSystem.context")
 local StatusView = require("src.modules.missileSystem.statusView")
+local SetupLayout = require("src.modules.missileSystem.setupLayout")
 
 local MissileSystem = {}
 
@@ -226,6 +227,28 @@ function MissileSystem.redeploy(groundForceCfg, groundForceCtx, layouts, sideNam
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.addMissileSystems(groundForceCfg, sideName)
   Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
+end
+
+---Redeploy a side's batteries to the placements submitted by the setup menu
+---@param config SBJ__Config Global configuration table; the side's ground config is mutated
+---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
+---@param sideName string Side name (China or Taiwan)
+---@param entries SBJ__MissileSystemSetupEntry[] Battery placements submitted by the setup menu
+function MissileSystem.redeployFromSetup(config, saveData, sideName, entries)
+  MissileSystem.redeploy(
+    config[GameUtils.getCachedSideConfig(sideName).field].ground,
+    PersistentState.groundForces(saveData, sideName),
+    SetupLayout.buildLayouts(entries),
+    sideName
+  )
+end
+
+---Build a side's missile system rows for the setup menu
+---@param config SBJ__Config Global configuration table
+---@param sideName string Side name (China or Taiwan)
+---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
+function MissileSystem.buildSetupMenuRows(config, sideName)
+  return SetupLayout.buildSetupMenuRows(config[GameUtils.getCachedSideConfig(sideName).field].ground, sideName)
 end
 
 ---Add missile system units to the game

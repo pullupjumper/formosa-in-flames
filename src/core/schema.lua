@@ -1651,11 +1651,21 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
+---Battery placement submitted by the setup menu
+---@class SBJ__MissileSystemSetupEntry: table
+---@field key string Setup menu row key
+---@field unitname string Firing unit name in the side's ground force config
+---@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field center CMO__Location Center of the drawn layout
+---@field openingAngle number U-shape opening angle in degrees
+---@field tacticalAreas SBJ__TacticalAreas Drawn zones
+---@field paths SBJ__MovementPaths Drawn movement paths
+
 ---Setup menu configuration result containing user selections
 ---@class SBJ__SetupResult: table
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
----@field missileSystems {key: string, unitname: string, category: string, center: CMO__Location, openingAngle: number, tacticalAreas: SBJ__TacticalAreas, paths: SBJ__MovementPaths}[] TEL missile system deployment configurations with tactical areas and paths
+---@field missileSystems SBJ__MissileSystemSetupEntry[] TEL missile system deployment configurations with tactical areas and paths
 
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
