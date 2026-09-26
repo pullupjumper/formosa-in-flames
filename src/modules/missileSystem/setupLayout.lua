@@ -29,7 +29,7 @@ end
 ---@param entry SBJ__MissileSystemSetupEntry Battery placement submitted by the setup menu
 ---@param areaName string Name for the new operational area
 ---@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeploy
-function SetupLayout.buildLayout(entry, areaName)
+local function buildLayout(entry, areaName)
   local tacticalAreas = entry.tacticalAreas
   local paths = entry.paths
   local operationalArea = {
@@ -61,7 +61,7 @@ function SetupLayout.buildLayouts(entries)
   local layouts = {}
 
   for _, entry in ipairs(entries) do
-    table.insert(layouts, SetupLayout.buildLayout(entry, "#" .. Utils.buildRandomText(3)))
+    table.insert(layouts, buildLayout(entry, "#" .. Utils.buildRandomText(3)))
   end
 
   return layouts

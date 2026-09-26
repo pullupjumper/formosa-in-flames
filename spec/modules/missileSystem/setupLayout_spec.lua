@@ -2,6 +2,7 @@
 local stub = require("luassert.stub")
 local SetupLayout = require("src.modules.missileSystem.setupLayout")
 local GameApi = require("src.utils.gameApi")
+local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 describe("MissileSystem SetupLayout", function()
@@ -60,36 +61,43 @@ describe("MissileSystem SetupLayout", function()
     }
   end
 
-  describe("buildLayout", function()
+  describe("buildLayouts", function()
     it("should turn every path into a fast course paired with its zone", function()
-      local layout = SetupLayout.buildLayout(makeEntry(), "#ABC")
+      trackStub(Utils, "buildRandomText").returns("ABC")
+
+      local layouts = SetupLayout.buildLayouts({ makeEntry() })
 
       assert.are.same({
-        category = "srbm",
-        unitname = "FU-1",
-        operationalArea = {
-          FP = {
-            { course = fastCourse(1), area = { "FP1" } },
-            { course = fastCourse(2), area = { "FP2" } }
-          },
-          RL = { { course = fastCourse(3), area = { "RL" } } },
-          AHA = { { course = fastCourse(4), area = { "AHA" } } },
-          HA = { { course = fastCourse(5), area = { "HA" } } },
-          SHRL = { { course = fastCourse(6), area = { "RL" } } },
-          uShapeVertices = { "U" },
-          shelterPoints = { "S" },
-          name = "#ABC"
+        {
+          category = "srbm",
+          unitname = "FU-1",
+          operationalArea = {
+            FP = {
+              { course = fastCourse(1), area = { "FP1" } },
+              { course = fastCourse(2), area = { "FP2" } }
+            },
+            RL = { { course = fastCourse(3), area = { "RL" } } },
+            AHA = { { course = fastCourse(4), area = { "AHA" } } },
+            HA = { { course = fastCourse(5), area = { "HA" } } },
+            SHRL = { { course = fastCourse(6), area = { "RL" } } },
+            uShapeVertices = { "U" },
+            shelterPoints = { "S" },
+            name = "#ABC"
+          }
         }
-      }, layout)
+      }, layouts)
     end)
-  end)
 
-  describe("buildLayouts", function()
-    it("should name each area with a # prefixed random tag", function()
+    it("should give each layout its own 3-letter area name", function()
+      local buildRandomTextStub = trackStub(Utils, "buildRandomText")
+      buildRandomTextStub.on_call_with(3).returns("AAA")
+
       local layouts = SetupLayout.buildLayouts({ makeEntry(), makeEntry() })
 
       assert.are.equal(2, #layouts)
-      assert.is_truthy(layouts[1].operationalArea.name:match("^#%u%u%u$"))
+      assert.stub(buildRandomTextStub).was.called(2)
+      assert.stub(buildRandomTextStub).was.called_with(3)
+      assert.are.equal("#AAA", layouts[2].operationalArea.name)
     end)
   end)
 

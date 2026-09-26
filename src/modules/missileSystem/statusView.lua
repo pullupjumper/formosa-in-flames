@@ -13,7 +13,7 @@ local STATE_LABELS = {
 ---Convert a missile system state enum to its display label
 ---@param state missileSystemState Missile system state enum value
 ---@return string # STATIC/REPOSITIONING/HIDE/RELOAD, or UNKNOWN
-function StatusView.formatState(state)
+local function formatState(state)
   return STATE_LABELS[state] or "UNKNOWN"
 end
 
@@ -21,7 +21,7 @@ end
 ---@param reloadStartTime number|nil Reload start time in seconds, nil when not reloading
 ---@param now number Current scenario time in seconds
 ---@return number # Elapsed minutes rounded to 2 decimal places, never negative; 0 when not reloading
-function StatusView.calculateReloadMinutes(reloadStartTime, now)
+local function calculateReloadMinutes(reloadStartTime, now)
   if reloadStartTime == nil then
     return 0
   end
@@ -64,12 +64,12 @@ function StatusView.buildBatteryStatusRows(groundCtx, groundCfg, systemTypes, no
         table.insert(rows[firingUnitCtx.resupplyUnit], {
           name = firingUnitCtx.name,
           missileSystem = missileSystem,
-          firingUnitState = StatusView.formatState(firingUnitCtx.state),
-          resupplyUnitState = StatusView.formatState(resupplyUnitCtx.state),
+          firingUnitState = formatState(firingUnitCtx.state),
+          resupplyUnitState = formatState(resupplyUnitCtx.state),
           missilesInAmmoVehicles = resupplyUnitCtx.wpnCurrent,
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent,
-          firingUnitReloadTime = StatusView.calculateReloadMinutes(firingUnitCtx.reloadStartTime, now),
-          resupplyUnitReloadTime = StatusView.calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, now),
+          firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, now),
+          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, now),
           defaultReloadTime = groundCfg[missileSystem].reloadTime / 60
         })
       end

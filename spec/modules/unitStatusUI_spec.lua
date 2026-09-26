@@ -34,52 +34,97 @@ describe("UnitStatusUI", function()
     end
   end)
 
-  describe("applySetupResult", function()
+  describe("createSetupMenu", function()
     local removeJammersStub
     local addGnssJammerStub
     local addAircraftStub
     local initTargetAircraftStub
     local redeployStub
-    local config = { c = { commsJamming = { aircraftDefaults = { "defaults" } } } }
+    local dialogStub
+    local saveData
+
+    local function makeConfig()
+      local sideCfg = { gnssJamming = { jammers = {} }, air = { landBased = { deployedACs = {} } } }
+      return {
+        c = {
+          gnssJamming = sideCfg.gnssJamming,
+          air = sideCfg.air,
+          amphibOps = { operations = {}, operationalZones = {} },
+          commsJamming = { aircraftDefaults = { "defaults" } }
+        },
+        t = sideCfg
+      }
+    end
+
+    ---Make the dialog return a submitted setup form
+    ---@param summaryJson string|nil JSON body of summaryData, nil to omit it
+    ---@param pressed? string Button pressed, defaults to Done
+    local function submit(summaryJson, pressed)
+      dialogStub.returns({
+        pressed = pressed or "Done",
+        summaryData = summaryJson and ("'" .. summaryJson .. "'") or nil
+      })
+    end
 
     before_each(function()
+      saveData = {}
+      trackStub(PersistentState, "update").invokes(function(fn) fn(saveData) end)
+      trackStub(PersistentState, "landBasedAircraft").returns({ "aircraft slice" })
+      trackStub(MissileSystem, "buildSetupMenuRows").returns({})
+      dialogStub = trackStub(GameApi, "UI_CallAdvancedHTMLDialog")
       removeJammersStub = trackStub(GnssJamming, "removeJammers")
       addGnssJammerStub = trackStub(GnssJamming, "addGnssJammer")
       addAircraftStub = trackStub(UnitGenerator, "addAircraft")
       initTargetAircraftStub = trackStub(CommsJamming, "initTargetAircraftContexts")
       redeployStub = trackStub(MissileSystem, "redeployFromSetup")
-      trackStub(PersistentState, "landBasedAircraft").returns({ "aircraft slice" })
     end)
 
     it("should apply jammers, aircraft and batteries from a full submission", function()
-      local jammers = { { name = "J-1" }, { name = "J-2" } }
-      local airbases = { { name = "AB-1" } }
-      local missileSystems = { { unitname = "FU-1" } }
-      local saveData = {}
+      local config = makeConfig()
+      submit([[{"jammers":[{"name":"J-1"},{"name":"J-2"}],"airbases":[{"name":"AB-1"}],"missileSystems":[{"unitname":"FU-1"}]}]])
 
-      UnitStatusUI.applySetupResult(config, saveData, constants.SIDES.PLAYER,
-        { jammers = jammers, airbases = airbases, missileSystems = missileSystems })
+      UnitStatusUI.createSetupMenu(config, constants.SIDES.PLAYER)
 
-      assert.stub(removeJammersStub).was.called_with(jammers, constants.SIDES.PLAYER)
+      assert.stub(removeJammersStub).was.called_with({ { name = "J-1" }, { name = "J-2" } }, constants.SIDES.PLAYER)
       assert.stub(addGnssJammerStub).was.called(2)
-      assert.stub(addAircraftStub).was.called_with(airbases)
+      assert.stub(addAircraftStub).was.called_with({ { name = "AB-1" } })
       assert.stub(initTargetAircraftStub).was.called_with({ "aircraft slice" }, { "defaults" })
-      assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.PLAYER, missileSystems)
+      assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.PLAYER, { { unitname = "FU-1" } })
     end)
 
     it("should skip comms jamming target registration for China", function()
-      UnitStatusUI.applySetupResult(config, {}, constants.SIDES.ENEMY, { airbases = { { name = "AB-1" } } })
+      submit([[{"airbases":[{"name":"AB-1"}]}]])
+
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.ENEMY)
 
       assert.stub(addAircraftStub).was.called(1)
       assert.stub(initTargetAircraftStub).was_not.called()
     end)
 
     it("should do nothing for an empty submission", function()
-      UnitStatusUI.applySetupResult(config, {}, constants.SIDES.PLAYER, { jammers = {}, airbases = {}, missileSystems = {} })
+      submit([[{"jammers":[],"airbases":[],"missileSystems":[]}]])
+
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
 
       assert.stub(removeJammersStub).was_not.called()
       assert.stub(addAircraftStub).was_not.called()
       assert.stub(redeployStub).was_not.called()
+    end)
+
+    it("should apply nothing when the form is closed without Done", function()
+      submit([[{"airbases":[{"name":"AB-1"}]}]], "Cancel")
+
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
+
+      assert.stub(addAircraftStub).was_not.called()
+    end)
+
+    it("should apply nothing when the form has no summary", function()
+      submit(nil)
+
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
+
+      assert.stub(addAircraftStub).was_not.called()
     end)
   end)
 
