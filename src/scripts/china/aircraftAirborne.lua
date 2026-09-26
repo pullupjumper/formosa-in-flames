@@ -6,7 +6,7 @@ local unit = GameApi.ScenEdit_UnitX()
 
 PersistentState.read(function(saveData)
   if unit and config.c.recon.isTesting then
-    for _, entity in ipairs(saveData.c.recon.queue) do
+    for _, entity in ipairs(PersistentState.recon(saveData).queue) do
       if entity.unitGUID == unit.guid then
         local course = Utils.deepCopy(entity.course)
         table.remove(course, 1)

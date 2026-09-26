@@ -51,13 +51,6 @@ PersistentState.update(function(saveData)
           (score + config.s.uav),
           "Destroyed a recon UAV."
         )
-
-        -- Remove from reconnaissance queue
-        -- for index, entry in ipairs(saveData.c.recon.queue) do
-        --   if entry.unitGUID == unit.guid then
-        --     saveData.c.recon.queue[index] = nil
-        --   end
-        -- end
       end
     end
 
@@ -90,8 +83,8 @@ PersistentState.update(function(saveData)
         GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a TEL.")
       elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
         GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a GPS jammer.")
-        -- GPSJamming.turnOffGPSEffectByUnit(config, unit)
-        GnssJamming.removeJammingZoneByName(PersistentState.gnssJammers(saveData, constants.SIDES.ENEMY), constants.SIDES.ENEMY, unit.name)
+        GnssJamming.removeJammingZoneByName(PersistentState.gnssJammers(saveData, constants.SIDES.ENEMY),
+          constants.SIDES.ENEMY, unit.name)
       elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
         MissileSystem.processSupplyAssetDestruction(unit, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))

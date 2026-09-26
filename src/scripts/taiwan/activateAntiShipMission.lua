@@ -19,16 +19,18 @@ local function setAntiShipMissionStartTime()
 end
 
 PersistentState.update(function(saveData)
-  if saveData.t.ground.ascm.test.isAntishipMissionActivated == false and contacts ~= nil then
+  local trigger = PersistentState.groundForces(saveData, constants.SIDES.PLAYER).ascm.test
+
+  if trigger.isAntishipMissionActivated == false and contacts ~= nil then
     for _, value in ipairs(contacts) do
-      if value:inArea(saveData.t.ground.ascm.test.nai1) and value.typed == 2 then
+      if value:inArea(trigger.nai1) and value.typed == 2 then
         table.insert(temp, value)
       end
     end
 
-    if Utils.getCount(temp) > saveData.t.ground.ascm.test.shipNumInNai1 then
+    if Utils.getCount(temp) > trigger.shipNumInNai1 then
       setAntiShipMissionStartTime()
-      saveData.t.ground.ascm.test.isAntishipMissionActivated = true
+      trigger.isAntishipMissionActivated = true
       event.isActive = false
       GameApi.ScenEdit_MsgBox("Launch ANT-SHIP mission", 0)
     end

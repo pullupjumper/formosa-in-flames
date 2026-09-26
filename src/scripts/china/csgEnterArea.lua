@@ -6,5 +6,5 @@ PersistentState.update(function(saveData)
   GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, "CAP/E").isactive = true
   GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, "ASW/CSG").isactive = false
   GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, "ASW/PATROL AC").isactive = false
-  saveData.c.surface.lacm.enabled = true
+  PersistentState.lacm(saveData).enabled = true
 end)

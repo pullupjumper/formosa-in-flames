@@ -175,6 +175,45 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
+  -- targetlist / recon / lacm
+  -- ============================================================================
+
+  describe("China-only slices", function()
+    -- Positive: each accessor returns the live China table, not a copy
+    it("should return China targetlist, recon, and LACM by reference", function()
+      local state = { c = { targetlist = {}, recon = {}, surface = { lacm = {} } } }
+
+      assert.are.equal(state.c.targetlist, PersistentState.targetlist(state))
+      assert.are.equal(state.c.recon, PersistentState.recon(state))
+      assert.are.equal(state.c.surface.lacm, PersistentState.lacm(state))
+    end)
+  end)
+
+  -- ============================================================================
+  -- runwayRepair / landBasedAircraft
+  -- ============================================================================
+
+  describe("runwayRepair", function()
+    -- Positive: each side resolves to its own runway repair slice
+    it("should return the runway repair slice for the given side", function()
+      local state = { c = { repairRunway = { runways = {} } }, t = { repairRunway = { runways = {} } } }
+
+      assert.are.equal(state.c.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.ENEMY))
+      assert.are.equal(state.t.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.PLAYER))
+    end)
+  end)
+
+  describe("landBasedAircraft", function()
+    -- Positive: each side resolves to its own land-based aircraft slice
+    it("should return the land-based aircraft slice for the given side", function()
+      local state = { c = { air = { landBased = {} } }, t = { air = { landBased = { AC = {}, AEW = {} } } } }
+
+      assert.are.equal(state.c.air.landBased, PersistentState.landBasedAircraft(state, constants.SIDES.ENEMY))
+      assert.are.equal(state.t.air.landBased, PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER))
+    end)
+  end)
+
+  -- ============================================================================
   -- iads / gnssJammers
   -- ============================================================================
 
@@ -211,7 +250,7 @@ describe("PersistentState", function()
     -- Positive: slices are the live tables, so jamming mutations land in saved state
     it("should expose China jammers and Taiwan IADS/aircraft by reference", function()
       local state = {
-        c = { commsJamming = { jammers = {} } },
+        c = { commsJamming = { enabled = true, jammers = {} } },
         t = { iads = {}, air = { landBased = { AC = {}, AEW = {} } } },
       }
 
@@ -221,6 +260,7 @@ describe("PersistentState", function()
       assert.are.equal(state.t.iads, jammingState.iads)
       assert.are.equal(state.t.air.landBased.AC, jammingState.aircraft)
       assert.are.equal(state.t.air.landBased.AEW, jammingState.aew)
+      assert.is_true(jammingState.enabled)
     end)
   end)
 

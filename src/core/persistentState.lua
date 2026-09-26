@@ -54,6 +54,43 @@ function PersistentState.reset(defaults)
   gKH.State.SaveTableToKey(defaults, SAVE_KEY)
 end
 
+---China fixed-target list built at init by the strike planner
+---@param state SBJ__SaveData
+---@return SBJ__TargetEntry[]
+function PersistentState.targetlist(state)
+  return state.c.targetlist
+end
+
+---China recon slice
+---@param state SBJ__SaveData
+---@return SBJ__ReconContext
+function PersistentState.recon(state)
+  return state.c.recon
+end
+
+---China CSG land-attack cruise missile slice
+---@param state SBJ__SaveData
+---@return SBJ__LACMContext
+function PersistentState.lacm(state)
+  return state.c.surface.lacm
+end
+
+---Runway repair slice for a side
+---@param state SBJ__SaveData
+---@param sideName string China or Taiwan
+---@return SBJ__RunwayRepairmentContext
+function PersistentState.runwayRepair(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].repairRunway
+end
+
+---Land-based aircraft slice for a side
+---@param state SBJ__SaveData
+---@param sideName string China or Taiwan
+---@return SBJ__LandBasedPlatformContext
+function PersistentState.landBasedAircraft(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].air.landBased
+end
+
 ---Ground force (missile system) slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string China or Taiwan
@@ -109,11 +146,13 @@ end
 ---@param state SBJ__SaveData
 ---@return SBJ__CommsJammingState
 function PersistentState.commsJamming(state)
+  local taiwanAircraft = PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER)
   return {
+    enabled = state.c.commsJamming.enabled,
     jammers = state.c.commsJamming.jammers,
-    iads = state.t.iads,
-    aircraft = state.t.air.landBased.AC,
-    aew = state.t.air.landBased.AEW,
+    iads = PersistentState.iads(state, constants.SIDES.PLAYER),
+    aircraft = taiwanAircraft.AC,
+    aew = taiwanAircraft.AEW,
   }
 end
 
@@ -123,7 +162,7 @@ end
 function PersistentState.landingOps(state)
   return {
     amphibOps = state.c.amphibOps,
-    recon = state.c.recon,
+    recon = PersistentState.recon(state),
     ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
   }
 end
@@ -135,13 +174,13 @@ end
 function PersistentState.strikePlanner(state)
   local china = state.c
   return {
-    targetlist = china.targetlist,
+    targetlist = PersistentState.targetlist(state),
     transmissions = PersistentState.sigint(state, constants.SIDES.ENEMY).transmissions,
-    recon = china.recon,
+    recon = PersistentState.recon(state),
     dynamicOperations = china.dynamicOperations,
     air = china.air,
     ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
-    lacm = china.surface.lacm,
+    lacm = PersistentState.lacm(state),
     slcm = china.subSurface.slcm,
     fireSupportOnHold = china.amphibOps.fireSupportOnHold == true,
   }

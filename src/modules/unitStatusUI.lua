@@ -709,7 +709,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
         UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
         if sideName == constants.SIDES.PLAYER then
-          CommsJamming.initTargetAircraftContexts(saveData.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+          CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(saveData, sideName), config.c.commsJamming.aircraftDefaults)
         end
       end
 

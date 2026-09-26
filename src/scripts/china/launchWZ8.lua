@@ -10,5 +10,5 @@ if not unit then
 end
 
 PersistentState.update(function(saveData)
-  Recon.launchWZ8(saveData.c.recon, unit)
+  Recon.launchWZ8(PersistentState.recon(saveData), unit)
 end)

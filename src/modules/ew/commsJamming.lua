@@ -505,7 +505,7 @@ end
 
 ---Initialize communications jammer contexts for the specified side
 ---Scans all aircraft on the side and creates contexts for electronic warfare aircraft
----@param commsJammingCtx SBJ__CommsJammingContext Jamming context where jammer contexts will be stored
+---@param commsJammingCtx SBJ__CommsJammingContext|SBJ__CommsJammingState Jamming state whose jammers map receives the contexts
 ---@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
 ---@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
 function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)

@@ -14,8 +14,8 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
-  MissileSystem.seedGroundForceState(config.c.ground, saveData.c.ground)
-  MissileSystem.seedGroundForceState(config.t.ground, saveData.t.ground)
+  MissileSystem.seedGroundForceState(config.c.ground, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
+  MissileSystem.seedGroundForceState(config.t.ground, PersistentState.groundForces(saveData, constants.SIDES.PLAYER))
   PersistentState.reset(saveData)
 end
 
@@ -89,16 +89,18 @@ end
 local runInit = config.isDevMode and PersistentState.update or PersistentState.read
 
 runInit(function(state)
-  if #state.c.targetlist > 0 then
+  if #PersistentState.targetlist(state) > 0 then
     return
   end
 
   initEventActions()
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, PersistentState.landingOps(state))
-  CommsJamming.initTargetAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
+  CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER), config.c.commsJamming.aircraftDefaults)
   StrikePlanner.init(config, PersistentState.strikePlanner(state))
-  RunwayRepairment.initRunways(config, state)
+  RunwayRepairment.initRunways(config, PersistentState.targetlist(state),
+    PersistentState.runwayRepair(state, constants.SIDES.PLAYER).runways,
+    PersistentState.runwayRepair(state, constants.SIDES.ENEMY).runways)
 
   local taiwanIads = PersistentState.iads(state, constants.SIDES.PLAYER)
   if taiwanIads.enabled then
@@ -110,8 +112,9 @@ runInit(function(state)
     IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, chinaIads)
   end
 
-  if state.c.commsJamming.enabled then
-    CommsJamming.initCommsJammersContext(state.c.commsJamming, constants.SIDES.ENEMY,
+  local jammingState = PersistentState.commsJamming(state)
+  if jammingState.enabled then
+    CommsJamming.initCommsJammersContext(jammingState, constants.SIDES.ENEMY,
       config.c.commsJamming.aircraftDefaults)
   end
 
