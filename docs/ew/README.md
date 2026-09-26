@@ -250,8 +250,7 @@ flowchart BT
 | 檔案 | 說明 |
 |---|---|
 | `src/scripts/china/ew/commsJamming.lua` | 通訊干擾排程腳本（每 1 分鐘觸發） |
-| `src/scripts/china/ew/collectSigint.lua` | 中國 SIGINT 蒐集腳本（每 5 分鐘觸發） |
-| `src/scripts/us/collectSigint.lua` | 美國 SIGINT 蒐集腳本（每 5 分鐘觸發） |
+| `src/scripts/collectSigint.lua` | 中國與美國 SIGINT 蒐集腳本（每 5 分鐘觸發） |
 | `src/scripts/score/taiwaneseAssetIsDestroy.lua` | 台灣資產被摧毀時清理 GNSS Zone |
 | `src/scripts/score/destroyUnits.lua` | 單元被摧毀時清理 GNSS Zone |
 | `src/modules/integratedAirDefenseSystem.lua` | IADS 系統（commsJamming 的目標來源） |
