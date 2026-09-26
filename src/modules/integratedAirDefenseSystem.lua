@@ -38,6 +38,13 @@ local TAIWAN_RADAR_DBIDS = {
   [constants.PLATFORMS.GE592] = true,
 }
 
+---Taiwan SAM platforms keyed by their WCS setting menu id
+local TAIWAN_SAM_DBIDS_BY_MENU_ID = {
+  pac23 = constants.PLATFORMS.PAC3,
+  skybow3 = constants.PLATFORMS.CUSTOMED_TK3,
+  tc2 = constants.PLATFORMS.TC2,
+}
+
 ---Disable units under C2 node by setting them out of communications
 ---@param c2Ctx SBJ__C2Context The C2 context containing the units to disable
 ---@param type string Unit type to disable ('radar' or 'sam')
@@ -92,6 +99,29 @@ end
 ---@return boolean Whether the DBID corresponds to a SAM unit
 function IntegratedAirDefenseSystem.isSAM(dbid)
   return TAIWAN_SAM_DBIDS[dbid]
+end
+
+---Apply the WCS setting menu's per-SAM-type doctrine to matching units
+---Weapons free sets WCS tight and wakes emissions on threat; otherwise WCS hold and emissions stay asleep.
+---@param doctrineItems {id: string, weaponsFree: boolean}[] Per-SAM-type choices from the WCS setting menu
+---@param units {guid: string}[] Candidate units; only those matching an item's platform are changed
+function IntegratedAirDefenseSystem.setSamDoctrine(doctrineItems, units)
+  for _, item in ipairs(doctrineItems) do
+    local dbid = TAIWAN_SAM_DBIDS_BY_MENU_ID[item.id] or 0
+    local wcs = item.weaponsFree and constants.WCS.TIGHT or constants.WCS.HOLD
+    local emissionFlag = item.weaponsFree and 1 or 0
+
+    for _, u in ipairs(units) do
+      local unit = GameApi.ScenEdit_GetUnit(u.guid)
+
+      if unit and unit.dbid == dbid then
+        GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
+        GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
+          { WakeWhenDetectingThreat = emissionFlag, UseEmissionInterval = emissionFlag }
+        )
+      end
+    end
+  end
 end
 
 ---Process command and control disruption when C2 node is destroyed

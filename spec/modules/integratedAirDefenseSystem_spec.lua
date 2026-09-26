@@ -80,6 +80,52 @@ describe("IntegratedAirDefenseSystem", function()
   -- processC2Disruption
   -- ============================================================================
 
+  describe("setSamDoctrine", function()
+    local setDoctrineStub
+    local setEmissionStub
+
+    before_each(function()
+      local units = {
+        ["PAC-1"] = { guid = "PAC-1", dbid = constants.PLATFORMS.PAC3 },
+        ["TC2-1"] = { guid = "TC2-1", dbid = constants.PLATFORMS.TC2 },
+      }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
+      setDoctrineStub = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
+      setEmissionStub = trackStub(stub(GameApi, "ScenEdit_SetUnitIntermittentEmissionConfig"))
+    end)
+
+    local candidates = { { guid = "PAC-1" }, { guid = "TC2-1" }, { guid = "GONE" } }
+
+    -- Positive: weapons free tightens WCS and wakes emissions on threat
+    it("should set WCS tight and wake emissions for weapons-free SAM types", function()
+      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "pac23", weaponsFree = true } }, candidates)
+
+      assert.stub(setDoctrineStub).was.called(1)
+      assert.stub(setDoctrineStub).was.called_with({ guid = "PAC-1" },
+        { weapon_control_status_air = constants.WCS.TIGHT })
+      assert.stub(setEmissionStub).was.called_with("PAC-1", "Green",
+        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 })
+    end)
+
+    -- Positive: weapons hold keeps emissions asleep
+    it("should set WCS hold and keep emissions asleep otherwise", function()
+      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "tc2", weaponsFree = false } }, candidates)
+
+      assert.stub(setDoctrineStub).was.called_with({ guid = "TC2-1" },
+        { weapon_control_status_air = constants.WCS.HOLD })
+      assert.stub(setEmissionStub).was.called_with("TC2-1", "Green",
+        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 })
+    end)
+
+    -- Negative: unknown menu ids touch nothing
+    it("should ignore unknown SAM menu ids", function()
+      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "nope", weaponsFree = true } }, candidates)
+
+      assert.stub(setDoctrineStub).was_not.called()
+      assert.stub(setEmissionStub).was_not.called()
+    end)
+  end)
+
   describe("processC2Disruption", function()
     -- Positive: disables radar and sam units under destroyed c2
     it("should disable linked units and remove c2 context", function()
