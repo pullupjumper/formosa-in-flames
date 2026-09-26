@@ -525,6 +525,38 @@ describe("AmphibiousAssault", function()
   -- countContactsInArea
   -- ============================================================================
 
+  describe("countUnitsInEachArea", function()
+    local function makeUnit(guid, dbid, inZone)
+      return {
+        guid = guid,
+        dbid = dbid,
+        inArea = function(_, area) return inZone == area end
+      }
+    end
+
+    -- Positive: counts landed units per type, per zone
+    it("should count each unit type inside each zone's CAS area", function()
+      local units = {
+        ["U-1"] = makeUnit("U-1", constants.PLATFORMS.ZBD05, "CAS-A"),
+        ["U-2"] = makeUnit("U-2", constants.PLATFORMS.ZBD05, "CAS-A"),
+        ["U-3"] = makeUnit("U-3", constants.PLATFORMS.MC, "CAS-B"),
+      }
+      trackStub(stub(GameApi, "VP_GetSide").returns({ units = { { guid = "U-1" }, { guid = "U-2" }, { guid = "U-3" }, { guid = "GONE" } } }))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
+      local config = {
+        c = { amphibOps = { operationalZones = { { name = "A", casArea = "CAS-A" }, { name = "B", casArea = "CAS-B" } } } }
+      }
+
+      local result = AmphibiousAssault.countUnitsInEachArea(config)
+
+      assert.are.equal(2, result.A["ZBD-05"])
+      assert.are.equal(0, result.A["AirborneCorps"])
+      assert.are.equal(1, result.B["AirborneCorps"])
+      assert.are.equal(0, result.B["ZBD-05"])
+      assert.are.equal(0, result.B["HMMWV"])
+    end)
+  end)
+
   describe("countContactsInArea", function()
     local area = { "RP-ZONE-1", "RP-ZONE-2" }
 

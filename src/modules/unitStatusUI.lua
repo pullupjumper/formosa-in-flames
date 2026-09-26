@@ -5,6 +5,7 @@ local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
@@ -21,78 +22,6 @@ local function getSAMDBID(name)
     ["tc2"] = constants.PLATFORMS.TC2
   }
   return map[name] or 0
-end
-
----Count military units by type within operational zones
----@param config SBJ__Config Configuration table
----@return table<string, table<string, number>> # Table with area names as keys and unit type counts as values
-function UnitStatusUI.countUnitsInEachArea(config)
-  local unitsFromChina = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }).units
-  local result = {}
-
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-    local item = {
-      ["ZBD-05"] = 0,
-      ["ZTD-05"] = 0,
-      ["PLL-05"] = 0,
-      ["PLZ-96"] = 0,
-      ["PGZ-09"] = 0,
-      ["PGZ-95"] = 0,
-      ["SA-15"] = 0,
-      ["AirborneCorps"] = 0,
-      ["HMMWV"] = 0,
-      ["ZBD-03"] = 0
-    }
-    for _, u in ipairs(unitsFromChina) do
-      local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-      if unit and unit:inArea(zone.casArea) then
-        if unit.dbid == constants.PLATFORMS.ZBD05 then
-          item["ZBD-05"] = item["ZBD-05"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.ZTD05 then
-          item["ZTD-05"] = item["ZTD-05"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.PLL05 then
-          item["PLL-05"] = item["PLL-05"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.PLZ96 then
-          item["PLZ-96"] = item["PLZ-96"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.PGZ09 then
-          item["PGZ-09"] = item["PGZ-09"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.PGZ95 then
-          item["PGZ-95"] = item["PGZ-95"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.SA15 then
-          item["SA-15"] = item["SA-15"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.MC then
-          item["AirborneCorps"] = item["AirborneCorps"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.HMMWV then
-          item["HMMWV"] = item["HMMWV"] + 1
-        end
-
-        if unit.dbid == constants.PLATFORMS.ZBD03 then
-          item["ZBD-03"] = item["ZBD-03"] + 1
-        end
-      end
-    end
-
-    result[zone.name] = item
-  end
-
-  return result
 end
 
 ---Generate HTML template for WCS settings UI
@@ -364,7 +293,7 @@ function UnitStatusUI.createUI(config, sideName)
       }))
       local magazineDataString = createMagazineDataString(config, sideName)
       local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
-      local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
+      local landingUnitsData = AmphibiousAssault.countUnitsInEachArea(config)
       local landingUnitsString = gKH.json.stringify(landingUnitsData)
 
 

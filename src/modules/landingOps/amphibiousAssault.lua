@@ -32,6 +32,21 @@ local ACV_TYPES = {
   { name = "ZTD-05", dbid = constants.PLATFORMS.ZTD05 },
 }
 
+---Unit types counted in each operational zone once landed
+---@type {name: string, dbid: number}[]
+local LANDED_UNIT_TYPES = {
+  { name = "ZBD-05",        dbid = constants.PLATFORMS.ZBD05 },
+  { name = "ZTD-05",        dbid = constants.PLATFORMS.ZTD05 },
+  { name = "PLL-05",        dbid = constants.PLATFORMS.PLL05 },
+  { name = "PLZ-96",        dbid = constants.PLATFORMS.PLZ96 },
+  { name = "PGZ-09",        dbid = constants.PLATFORMS.PGZ09 },
+  { name = "PGZ-95",        dbid = constants.PLATFORMS.PGZ95 },
+  { name = "SA-15",         dbid = constants.PLATFORMS.SA15 },
+  { name = "AirborneCorps", dbid = constants.PLATFORMS.MC },
+  { name = "HMMWV",         dbid = constants.PLATFORMS.HMMWV },
+  { name = "ZBD-03",        dbid = constants.PLATFORMS.ZBD03 },
+}
+
 ---@type string[]
 local MISSION_CATEGORIES = { "transportHelicopter", "boat", "attackHelicopter" }
 
@@ -339,6 +354,37 @@ end
 ---@return integer # Number of enemy ground units in the area
 function AmphibiousAssault.countContactsInArea(contacts, area)
   return countGroundContacts(contacts, area)
+end
+
+---Count landed China units by type in each operational zone's CAS area
+---@param config SBJ__Config Configuration table
+---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
+function AmphibiousAssault.countUnitsInEachArea(config)
+  local unitsFromChina = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }).units
+  local result = {}
+
+  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+    local item = {}
+    for _, unitType in ipairs(LANDED_UNIT_TYPES) do
+      item[unitType.name] = 0
+    end
+
+    for _, u in ipairs(unitsFromChina) do
+      local unit = GameApi.ScenEdit_GetUnit(u.guid)
+
+      if unit and unit:inArea(zone.casArea) then
+        for _, unitType in ipairs(LANDED_UNIT_TYPES) do
+          if unit.dbid == unitType.dbid then
+            item[unitType.name] = item[unitType.name] + 1
+          end
+        end
+      end
+    end
+
+    result[zone.name] = item
+  end
+
+  return result
 end
 
 ---Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship

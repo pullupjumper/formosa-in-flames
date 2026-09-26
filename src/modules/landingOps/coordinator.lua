@@ -6,7 +6,6 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
-local UnitStatusUI = require("src.modules.unitStatusUI")
 local MissileSystem = require("src.modules.missileSystem.init")
 local Recon = require("src.modules.strikePlanner.recon")
 local constants = require("src.core.constants")
@@ -98,7 +97,7 @@ local function processZone(config, landingState, zone, operation, contacts, curr
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE then
-    local result = UnitStatusUI.countUnitsInEachArea(config)
+    local result = AmphibiousAssault.countUnitsInEachArea(config)
     local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
 
     if hasBeachhead then
