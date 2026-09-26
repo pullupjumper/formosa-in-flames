@@ -6,23 +6,12 @@ local UnitGenerator = require("src.modules.unitGenerator")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
-
----Resolve a SAM system config key to its platform DBID
----@param name string SAM system config key ('pac23', 'skybow3', 'tc2')
----@return integer # Platform DBID, or 0 when the key is unknown
-local function getSAMDBID(name)
-  local map = {
-    ["pac23"] = constants.PLATFORMS.PAC3,
-    ["skybow3"] = constants.PLATFORMS.CUSTOMED_TK3,
-    ["tc2"] = constants.PLATFORMS.TC2
-  }
-  return map[name] or 0
-end
 
 ---Generate HTML template for WCS settings UI
 ---@return string # HTML string representing the WCS settings page
@@ -48,33 +37,7 @@ function UnitStatusUI.buildWcsSettingTable()
     ---@cast result SBJ__EmconResult
 
     if result.doctrine and #result.doctrine > 0 then
-      for _, item in ipairs(result.doctrine) do
-        local dbid = getSAMDBID(item.id)
-
-        if item.weaponsFree then
-          for _, u in ipairs(filteredUnits) do
-            local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-            if unit and unit.dbid == dbid then
-              GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.TIGHT })
-              GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
-                { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 }
-              )
-            end
-          end
-        elseif not item.weaponsFree then
-          for _, u in ipairs(filteredUnits) do
-            local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-            if unit and unit.dbid == dbid then
-              GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = constants.WCS.HOLD })
-              GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
-                { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 }
-              )
-            end
-          end
-        end
-      end
+      IntegratedAirDefenseSystem.setSamDoctrine(result.doctrine, filteredUnits)
     end
   end
 end
@@ -111,12 +74,11 @@ end
 ---Create JSON string for C2 system status data
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
----@param ... string System type list
+---@param types string[] C2 node types to include
 ---@return string # JSON formatted C2 status data
-local function createC2NodeDataString(saveData, sideName, ...)
+local function createC2NodeDataString(saveData, sideName, types)
   local iads = PersistentState.iads(saveData, sideName)
   local rows = {}
-  local types = { ... }
 
   for _, type in pairs(types) do
     local C2Ctxs = iads[type]
@@ -276,61 +238,88 @@ local function createAmphibiousTaskForceLocationDataString(config)
   return gKH.json.stringify(data)
 end
 
+---Per-side content of the status dashboard
+---@type table<string, {signalSide: string, systemTypes: string[], c2Types: string[], showsLandedUnits: boolean}>
+local STATUS_UI_SIDES = {
+  [constants.SIDES.ENEMY] = {
+    signalSide = constants.SIDES.ENEMY,
+    systemTypes = {
+      constants.MISSILE_SYSTEM_TYPES.SRBM,
+      constants.MISSILE_SYSTEM_TYPES.MLRS,
+      constants.MISSILE_SYSTEM_TYPES.GLCM,
+      constants.MISSILE_SYSTEM_TYPES.ASCM,
+      constants.MISSILE_SYSTEM_TYPES.MRBM,
+      constants.MISSILE_SYSTEM_TYPES.SAM
+    },
+    c2Types = { "c2" },
+    showsLandedUnits = true
+  },
+  [constants.SIDES.PLAYER] = {
+    signalSide = "US",
+    systemTypes = {
+      constants.MISSILE_SYSTEM_TYPES.SRBM,
+      constants.MISSILE_SYSTEM_TYPES.MLRS,
+      constants.MISSILE_SYSTEM_TYPES.GLCM,
+      constants.MISSILE_SYSTEM_TYPES.ASCM,
+      constants.MISSILE_SYSTEM_TYPES.SAM
+    },
+    c2Types = { "rocc", "taaoc" },
+    showsLandedUnits = false
+  }
+}
+
 ---Create comprehensive status UI with multi-tab military dashboard
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
+  local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.PLAYER]
+
   PersistentState.read(function(saveData)
-    if sideName == constants.SIDES.ENEMY then
-      local signalDataString = createSignalDataString(saveData, sideName)
-      local batteryDataString = gKH.json.stringify(MissileSystem.buildBatteryStatusRows(config, saveData, sideName, {
-        constants.MISSILE_SYSTEM_TYPES.SRBM,
-        constants.MISSILE_SYSTEM_TYPES.MLRS,
-        constants.MISSILE_SYSTEM_TYPES.GLCM,
-        constants.MISSILE_SYSTEM_TYPES.ASCM,
-        constants.MISSILE_SYSTEM_TYPES.MRBM,
-        constants.MISSILE_SYSTEM_TYPES.SAM
-      }))
-      local magazineDataString = createMagazineDataString(config, sideName)
-      local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
-      local landingUnitsData = AmphibiousAssault.countUnitsInEachArea(config)
-      local landingUnitsString = gKH.json.stringify(landingUnitsData)
+    local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName, view.systemTypes)
+    local landingUnitsString = view.showsLandedUnits
+        and gKH.json.stringify(AmphibiousAssault.countUnitsInEachArea(config))
+        or "{}"
 
-
-      local htmlTemplate = getHTMLTemplate()
-      local msg = string.format(
-        htmlTemplate,
-        signalDataString,
-        batteryDataString,
-        c2NodeDataString,
-        magazineDataString,
-        landingUnitsString
-      )
-      local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-    else
-      local signalDataString = createSignalDataString(saveData, "US")
-      local batteryDataString = gKH.json.stringify(MissileSystem.buildBatteryStatusRows(config, saveData, sideName, {
-        constants.MISSILE_SYSTEM_TYPES.SRBM,
-        constants.MISSILE_SYSTEM_TYPES.MLRS,
-        constants.MISSILE_SYSTEM_TYPES.GLCM,
-        constants.MISSILE_SYSTEM_TYPES.ASCM,
-        constants.MISSILE_SYSTEM_TYPES.SAM
-      }))
-      local magazineDataString = createMagazineDataString(config, sideName)
-      local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
-
-      local htmlTemplate = getHTMLTemplate()
-      local msg = string.format(
-        htmlTemplate,
-        signalDataString,
-        batteryDataString,
-        c2NodeDataString,
-        magazineDataString,
-        "{}"
-      )
-      local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-    end
+    local msg = string.format(
+      getHTMLTemplate(),
+      createSignalDataString(saveData, view.signalSide),
+      gKH.json.stringify(batteryRows),
+      createC2NodeDataString(saveData, sideName, view.c2Types),
+      createMagazineDataString(config, sideName),
+      landingUnitsString
+    )
+    GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
   end)
+end
+
+---Apply the setup menu's submitted deployments: GNSS jammers, then aircraft, then missile batteries
+---@param config SBJ__Config Configuration table; the side's ground config is mutated by battery redeploys
+---@param saveData SBJ__SaveData Persistent save data; mutated
+---@param sideName string Side name ('China' or 'Taiwan')
+---@param result SBJ__SetupResult Parsed setup menu submission
+function UnitStatusUI.applySetupResult(config, saveData, sideName, result)
+  local jammerDescriptors = result.jammers
+  local airbaseDeploymentDescriptors = result.airbases
+  local missileSystems = result.missileSystems
+
+  if jammerDescriptors and #jammerDescriptors > 0 then
+    GnssJamming.removeJammers(jammerDescriptors, sideName)
+    for _, descriptor in ipairs(jammerDescriptors) do
+      GnssJamming.addGnssJammer(descriptor, sideName)
+    end
+  end
+
+  if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
+    UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
+
+    if sideName == constants.SIDES.PLAYER then
+      CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(saveData, sideName), config.c.commsJamming.aircraftDefaults)
+    end
+  end
+
+  if missileSystems and #missileSystems > 0 then
+    MissileSystem.redeployFromSetup(config, saveData, sideName, missileSystems)
+  end
 end
 
 ---Create interactive setup menu for Taiwan deployment planning
@@ -368,31 +357,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
       local result = gKH.json.parse(jsonStr)
       ---@cast result SBJ__SetupResult
-      local jammerDescriptors = result.jammers
-      local airbaseDeploymentDescriptors = result.airbases
-      local missileSystems = result.missileSystems
-
-      -- Apply GPS jamming unit deployments
-      if jammerDescriptors and #jammerDescriptors > 0 then
-        GnssJamming.removeJammers(jammerDescriptors, sideName)
-        for _, descriptor in ipairs(jammerDescriptors) do
-          GnssJamming.addGnssJammer(descriptor, sideName)
-        end
-      end
-
-      -- Apply aircraft and loadout configurations
-      if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
-        UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
-
-        if sideName == constants.SIDES.PLAYER then
-          CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(saveData, sideName), config.c.commsJamming.aircraftDefaults)
-        end
-      end
-
-      -- Apply TEL launcher deployments
-      if missileSystems and #missileSystems > 0 then
-        MissileSystem.redeployFromSetup(config, saveData, sideName, missileSystems)
-      end
+      UnitStatusUI.applySetupResult(config, saveData, sideName, result)
     end
   end)
 end
