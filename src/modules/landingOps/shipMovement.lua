@@ -466,13 +466,12 @@ end
 ---Move amphibious assault ships from staging area to designated anchorage positions for a single operation
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@param saveData SBJ__SaveData Save data containing pre-calculated destination positions
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Pre-calculated destination positions indexed by zone name
 ---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the target zone
 ---@return boolean # True when all movement orders have been issued
-function ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)
+function ShipMovement.moveToStagingArea(amphibOpsConfig, calculationResult, filteredUnits, operation)
   local formationSettings = amphibOpsConfig.formationSettings
-  local calculationResult = saveData and saveData.c and saveData.c.amphibOps and saveData.c.amphibOps.calculationResult
   local isTesting = amphibOpsConfig.isTesting
   local result, errorFields = getOperationResult(calculationResult, operation.name)
 

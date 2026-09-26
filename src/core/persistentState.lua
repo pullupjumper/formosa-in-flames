@@ -117,6 +117,17 @@ function PersistentState.commsJamming(state)
   }
 end
 
+---Slices landing operations read and mutate: China amphibious state, recon, and ground forces
+---@param state SBJ__SaveData
+---@return SBJ__LandingOpsState
+function PersistentState.landingOps(state)
+  return {
+    amphibOps = state.c.amphibOps,
+    recon = state.c.recon,
+    ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
+  }
+end
+
 ---Load state and run fn against it without saving; mutations are discarded
 ---@param fn fun(state: SBJ__SaveData)
 ---@return boolean ran False when no saved state exists (fn not called)

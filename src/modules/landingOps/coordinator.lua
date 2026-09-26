@@ -34,32 +34,33 @@ end
 
 ---Handle temporary Taoyuan-only loading and reconnaissance setup
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param currentTime number Current scenario time in seconds
-local function processTaoyuanTemporarySetup(config, saveData, zone, currentTime)
+local function processTaoyuanTemporarySetup(config, landingState, zone, currentTime)
   if zone.name ~= "Taoyuan" then
     return
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  Recon.addEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)
+  Recon.addEntry(landingState.recon, config.c.recon.template.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the zone
 ---@param contacts CMO__Contact[] Contact list from the game
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-local function processZone(config, saveData, zone, operation, contacts, currentTime, filteredShips)
-  local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+local function processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
+  local zoneState = landingState.amphibOps.zoneStates[zone.name]
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
       and GameUtils.isAfterStartTime(config.c.triggers.amphibiousOps.startTime) then
-    local done = ShipMovement.moveToStagingArea(config.c.amphibOps, saveData, filteredShips, operation)
+    local done = ShipMovement.moveToStagingArea(config.c.amphibOps, landingState.amphibOps.calculationResult,
+      filteredShips, operation)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
     end
@@ -76,7 +77,7 @@ local function processZone(config, saveData, zone, operation, contacts, currentT
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
         zoneState.amphibiousAssaultStartTime = currentTime
-        processTaoyuanTemporarySetup(config, saveData, zone, currentTime)
+        processTaoyuanTemporarySetup(config, landingState, zone, currentTime)
       end
     end
   end
@@ -101,7 +102,7 @@ local function processZone(config, saveData, zone, operation, contacts, currentT
     local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
 
     if hasBeachhead then
-      local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredShips)
+      local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, landingState.amphibOps.barges, filteredShips)
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
       end
@@ -111,12 +112,12 @@ end
 
 ---Handle periodic cargo retransfer for zones with active airlanding missions
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-local function processCargoRetransfer(config, saveData, currentTime, filteredShips)
+local function processCargoRetransfer(config, landingState, currentTime, filteredShips)
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-    local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+    local zoneState = landingState.amphibOps.zoneStates[zone.name]
     if zoneState.airlandingMissionStartTime ~= nil then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
       if elapsed >= (3600 * 2) then
@@ -131,32 +132,32 @@ end
 
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param contacts CMO__Contact[] Contact list from the game
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-function Coordinator.process(config, saveData, contacts, currentTime, filteredShips)
+function Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
 
     if operation then
-      processZone(config, saveData, zone, operation, contacts, currentTime, filteredShips)
+      processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
     else
       Logger.error(LogFormat.line("ERROR", { zone = zone.name, reason = "operation_not_found" }))
     end
   end
 
-  processCargoRetransfer(config, saveData, currentTime, filteredShips)
-  Coordinator.evaluateFireSupportGate(config, saveData)
+  processCargoRetransfer(config, landingState, currentTime, filteredShips)
+  Coordinator.evaluateFireSupportGate(config, landingState)
 end
 
 ---Check whether all configured operational zones have reached staging waters
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param amphibOps SBJ__AmphibOpsContext Amphibious operations context
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
-local function hasAllZonesArrived(config, saveData)
+local function hasAllZonesArrived(config, amphibOps)
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-    local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+    local zoneState = amphibOps.zoneStates[zone.name]
     if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
       return false
     end
@@ -169,10 +170,10 @@ end
 ---hold releases unconditionally once every zone reaches WAITING_ASSAULT or later (phase machine
 ---is monotonic, so the release latches naturally).
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-function Coordinator.evaluateFireSupportGate(config, saveData)
-  local amphib = saveData.c.amphibOps
-  local arrived = hasAllZonesArrived(config, saveData)
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+function Coordinator.evaluateFireSupportGate(config, landingState)
+  local amphib = landingState.amphibOps
+  local arrived = hasAllZonesArrived(config, amphib)
 
   if amphib.fireSupportOnHold and arrived then
     amphib.fireSupportOnHold = false
@@ -185,8 +186,8 @@ function Coordinator.evaluateFireSupportGate(config, saveData)
     return
   end
 
-  local report = saveData.c.ground and
-      MissileSystem.getAmmoInventory(saveData.c.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.ENEMY)
+  local report = landingState.ground and
+      MissileSystem.getAmmoInventory(landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.ENEMY)
   if not report then return end
 
   if report.total.percentage < config.c.amphibOps.fireSupportHoldThreshold then

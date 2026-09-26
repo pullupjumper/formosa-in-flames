@@ -225,6 +225,26 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
+  -- landingOps
+  -- ============================================================================
+
+  describe("landingOps", function()
+    -- Positive: slices are the live China tables, so landing mutations land in saved state
+    it("should expose China amphibious, recon, and ground slices by reference", function()
+      local state = {
+        c = { amphibOps = {}, recon = {}, ground = {} },
+        t = { ground = {} },
+      }
+
+      local landingState = PersistentState.landingOps(state)
+
+      assert.are.equal(state.c.amphibOps, landingState.amphibOps)
+      assert.are.equal(state.c.recon, landingState.recon)
+      assert.are.equal(state.c.ground, landingState.ground)
+    end)
+  end)
+
+  -- ============================================================================
   -- read
   -- ============================================================================
 

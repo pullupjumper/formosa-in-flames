@@ -99,13 +99,13 @@ end
 -- ============================================================================
 
 ---Process a barge unit for second wave unloading
----Creates course, sets speed, and registers barge in saveData
+---Creates course, sets speed, and registers barge in the barge registry
 ---@param unit CMO__Unit Barge unit to process
 ---@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
----@param saveData SBJ__SaveData Save data to track barge
+---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing, nil when the course failed
 ---@return SBJ__LogResult result Deferred log result describing the outcome
-local function processBarge(unit, zone, saveData)
+local function processBarge(unit, zone, barges)
   local destination = createCourseForBarge(zone, unit)
 
   if not destination then
@@ -117,7 +117,7 @@ local function processBarge(unit, zone, saveData)
 
   unit.course = { destination }
   unit.manualSpeed = zone.lstSettings.speed
-  saveData.c.amphibOps.barges[unit.guid] = { guid = unit.guid, roros = {} }
+  barges[unit.guid] = { guid = unit.guid, roros = {} }
   return destination, {
     tag = "OK",
     fields = { ship = unit.name, guid = unit.guid, action = "course_set" }
@@ -128,10 +128,10 @@ end
 ---Registers RORO under barge's roros list and sets RORO course
 ---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor } RORO entry
 ---@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] } Barge entry
----@param saveData SBJ__SaveData Save data to track RORO-barge relationship
+---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function pairROROWithBarge(roroEntry, bargeEntry, saveData)
-  table.insert(saveData.c.amphibOps.barges[bargeEntry.unit.guid].roros, roroEntry.unit.guid)
+local function pairROROWithBarge(roroEntry, bargeEntry, barges)
+  table.insert(barges[bargeEntry.unit.guid].roros, roroEntry.unit.guid)
   local course = createCourseForRORO(roroEntry.zone, roroEntry.unit, bargeEntry.dest)
 
   if not course then
@@ -242,12 +242,12 @@ end
 
 ---Check if a barge's logistics bridge has been destroyed
 ---Returns true if bridge GUID exists but unit is destroyed
----@param saveData SBJ__SaveData Save data containing barge bridge tracking
+---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit Barge ship to check
 ---@return boolean # True if bridge was created but is now destroyed
-function SecondWaveUnloading.isBridgeDestroyed(saveData, ship)
-  if saveData.c.amphibOps.barges[ship.guid] and saveData.c.amphibOps.barges[ship.guid].bridgeGUID then
-    local bridge = GameApi.ScenEdit_GetUnit(saveData.c.amphibOps.barges[ship.guid].bridgeGUID)
+function SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+  if barges[ship.guid] and barges[ship.guid].bridgeGUID then
+    local bridge = GameApi.ScenEdit_GetUnit(barges[ship.guid].bridgeGUID)
 
     if not bridge then
       return true
@@ -261,11 +261,11 @@ end
 
 ---Check if a barge has an extended logistics bridge
 ---Bridge is created when barge reaches offload position for vehicle transfer operations
----@param saveData SBJ__SaveData Save data containing barge bridge tracking
+---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit Barge ship to check
 ---@return boolean # True if barge has an active bridge GUID
-function SecondWaveUnloading.hasExtendedBridge(saveData, ship)
-  return saveData.c.amphibOps.barges[ship.guid].bridgeGUID ~= nil
+function SecondWaveUnloading.hasExtendedBridge(barges, ship)
+  return barges[ship.guid].bridgeGUID ~= nil
 end
 
 ---Get the operational zone for a barge-RORO pair
@@ -293,14 +293,14 @@ end
 ---Initiate second wave unloading operations for a single zone
 ---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param saveData SBJ__SaveData Save data to track barge-RORO relationships
+---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
 ---@return boolean # True if second wave unloading successfully started
-function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUnits)
+function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
-  local barges = {}
+  local bargeEntries = {}
   local report = LogFormat.report(
     constants.TAGS.SECOND_WAVE_UNLOADING, "zone=" .. zone.name, "Second wave unloading")
 
@@ -309,10 +309,10 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
 
     if unit then
       if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
-        local dest, result = processBarge(unit, zone, saveData)
+        local dest, result = processBarge(unit, zone, barges)
         report.add(result.tag, result.fields)
         if dest then
-          table.insert(barges, { unit = unit, zone = zone, dest = dest })
+          table.insert(bargeEntries, { unit = unit, zone = zone, dest = dest })
         end
       end
 
@@ -323,9 +323,9 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, saveData, filteredUn
   end
 
   for _, roro in ipairs(roros) do
-    for _, barge in ipairs(barges) do
+    for _, barge in ipairs(bargeEntries) do
       if barge.unit:inArea(roro.zone.lstAnchorageArea) then
-        local result = pairROROWithBarge(roro, barge, saveData)
+        local result = pairROROWithBarge(roro, barge, barges)
         report.add(result.tag, result.fields)
       end
     end

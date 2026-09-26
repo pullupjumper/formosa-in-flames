@@ -19,5 +19,5 @@ if not contacts then
 end
 
 PersistentState.update(function(saveData)
-  LandingOps.process(config, saveData, contacts, currentTime, filteredShips)
+  LandingOps.process(config, PersistentState.landingOps(saveData), contacts, currentTime, filteredShips)
 end)

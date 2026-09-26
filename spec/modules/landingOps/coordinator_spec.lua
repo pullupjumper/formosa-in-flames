@@ -130,34 +130,32 @@ describe("LandingOps Coordinator", function()
     return config
   end
 
-  ---Create a saveData structure
+  ---Create a landing operations state slice (amphibOps, recon, ground)
   ---@param overrides? table
   ---@return table
-  local function makeSaveData(overrides)
-    local saveData = {
-      c = {
-        amphibOps = {
-          zoneStates = {
-            Taoyuan = makeZoneState(),
-          },
+  local function makeLandingState(overrides)
+    local landingState = {
+      amphibOps = {
+        zoneStates = {
+          Taoyuan = makeZoneState(),
         },
-        recon = {
-          queue = {
-            {
-              type = "satellite",
-              reconObjectiveId = "FIXED_SITE_TARGETING",
-              endTime = "1970-01-03 15:03:20",
-            },
+      },
+      recon = {
+        queue = {
+          {
+            type = "satellite",
+            reconObjectiveId = "FIXED_SITE_TARGETING",
+            endTime = "1970-01-03 15:03:20",
           },
         },
       },
     }
     if overrides then
       for k, v in pairs(overrides) do
-        saveData[k] = v
+        landingState[k] = v
       end
     end
-    return saveData
+    return landingState
   end
 
   ---Create an anchorage query result
@@ -248,33 +246,35 @@ describe("LandingOps Coordinator", function()
     -- Positive: advances moving zones into arrival waiting state
     it("should move a zone from MOVING to WAITING_ARRIVAL when staging movement completes", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
+      landingState.amphibOps.calculationResult = { Taoyuan = { name = "Taoyuan", result = {} } }
 
-      saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.MOVING
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.MOVING
       stubIsAfterStartTime.returns(true)
       stubMoveToStagingArea.returns(true)
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubMoveToStagingArea).was.called(1)
+      assert.are.same(landingState.amphibOps.calculationResult, stubMoveToStagingArea.calls[1].vals[2])
     end)
 
     -- Positive: performs arrival logistics and Taoyuan temporary setup
     it("should enqueue Taoyuan temporary tasks after arrival logistics succeeds", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
       local deepCopySpy = trackStub(spy.on(Utils, "deepCopy"))
 
-      saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetCount.returns(2)
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
-      assert.are.equal(1000, saveData.c.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
-      assert.are.equal(2, #saveData.c.recon.queue)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
+      assert.are.equal(2, #landingState.recon.queue)
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
@@ -286,52 +286,52 @@ describe("LandingOps Coordinator", function()
       local config = makeConfig()
       config.c.amphibOps.operationalZones = { makeZone({ name = "Tainan" }) }
       config.c.amphibOps.operations = { makeOperation({ name = "Tainan" }) }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.zoneStates = {
+      local landingState = makeLandingState()
+      landingState.amphibOps.zoneStates = {
         Tainan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
       }
       stubGetCount.returns(2)
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Tainan.phase)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Tainan.phase)
       assert.stub(stubTransferTransportAircraft).was_not.called()
       -- Only the pre-existing satellite remains; no recon UAV inserted
-      assert.are.equal(1, #saveData.c.recon.queue)
+      assert.are.equal(1, #landingState.recon.queue)
     end)
 
     -- Boundary: Taoyuan arrives but the recon queue has no satellite gap, so no UAV is queued
     it("should advance Taoyuan without queueing a recon UAV when no satellite gap exists", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
       -- Drop the satellite pass so Recon.addEntry has no window to anchor.
-      saveData.c.recon.queue = {}
+      landingState.recon.queue = {}
 
-      saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetCount.returns(2)
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.are.equal(0, #saveData.c.recon.queue)
+      assert.are.equal(0, #landingState.recon.queue)
     end)
 
     -- Positive: advances assault phase when launch conditions are met
     it("should move a zone from WAITING_ASSAULT to WAITING_SECOND_WAVE when assault launches", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
 
-      saveData.c.amphibOps.zoneStates.Taoyuan = makeZoneState({
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({
         phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT,
         amphibiousAssaultStartTime = 900,
       })
       stubCountContactsInArea.returns(1)
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubSetLandingMissionStartTime).was.called(1)
       assert.stub(stubSetCoursesForLSTs).was.called(1)
     end)
@@ -339,19 +339,21 @@ describe("LandingOps Coordinator", function()
     -- Positive: completes second wave when beachhead exists
     it("should move a zone from WAITING_SECOND_WAVE to COMPLETED when beachhead exists", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
+      landingState.amphibOps.barges = { ["BARGE-001"] = { guid = "BARGE-001", roros = {} } }
 
-      saveData.c.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
       stubCountUnitsInEachArea.returns({
         Taoyuan = {
           ["ZBD-05"] = 1,
         },
       })
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, saveData.c.amphibOps.zoneStates.Taoyuan.phase)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartSecondWaveUnloading).was.called(1)
+      assert.are.same(landingState.amphibOps.barges, stubStartSecondWaveUnloading.calls[1].vals[2])
     end)
 
     -- Negative: logs an error when zone operation mapping is missing
@@ -375,20 +377,18 @@ describe("LandingOps Coordinator", function()
           },
         },
       })
-      local saveData = makeSaveData({
-        c = {
-          amphibOps = {
-            zoneStates = {
-              Kaohsiung = makeZoneState(),
-            },
+      local landingState = makeLandingState({
+        amphibOps = {
+          zoneStates = {
+            Kaohsiung = makeZoneState(),
           },
-          recon = {
-            queue = {},
-          },
+        },
+        recon = {
+          queue = {},
         },
       })
 
-      Coordinator.process(config, saveData, makeContacts(), 1000, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
       assert.stub(errorStub).was.called(1)
       assert.stub(stubMoveToStagingArea).was_not.called()
@@ -397,16 +397,16 @@ describe("LandingOps Coordinator", function()
     -- Boundary: triggers cargo retransfer exactly at the two-hour threshold
     it("should retransfer cargos when airlanding mission has reached the two-hour threshold", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local landingState = makeLandingState()
 
-      saveData.c.amphibOps.zoneStates.Taoyuan = makeZoneState({
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({
         phase = constants.AMPHIBIOUS_PHASES.COMPLETED,
         airlandingMissionStartTime = 100,
       })
 
-      Coordinator.process(config, saveData, makeContacts(), 7300, makeFilteredShips())
+      Coordinator.process(config, landingState, makeContacts(), 7300, makeFilteredShips())
 
-      assert.are.equal(7300, saveData.c.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
+      assert.are.equal(7300, landingState.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
       assert.stub(stubRetransferCargos).was.called(1)
     end)
   end)
@@ -440,96 +440,96 @@ describe("LandingOps Coordinator", function()
     end
 
     ---@param overrides? table
-    local function makeGateSaveData(overrides)
-      local sd = makeSaveData()
-      sd.c.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
+    local function makeGateLandingState(overrides)
+      local landingState = makeLandingState()
+      landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
       if overrides then
-        for k, v in pairs(overrides) do sd.c.amphibOps[k] = v end
+        for k, v in pairs(overrides) do landingState.amphibOps[k] = v end
       end
-      return sd
+      return landingState
     end
 
     -- Positive: HOLD activates when ammo low and at least one zone has not arrived
     it("should set fireSupportOnHold true when ammo below threshold and zones not all arrived", function()
       local cfg = makeGateConfig()
-      local sd = makeGateSaveData()
-      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      local landingState = makeGateLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
       trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
 
-      Coordinator.evaluateFireSupportGate(cfg, sd)
+      Coordinator.evaluateFireSupportGate(cfg, landingState)
 
-      assert.is_true(sd.c.amphibOps.fireSupportOnHold)
+      assert.is_true(landingState.amphibOps.fireSupportOnHold)
     end)
 
     -- Negative: HOLD does not activate when ammo above threshold
     it("should not set fireSupportOnHold when ammo at or above threshold", function()
       local cfg = makeGateConfig()
-      local sd = makeGateSaveData()
-      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      local landingState = makeGateLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
       trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(50)))
 
-      Coordinator.evaluateFireSupportGate(cfg, sd)
+      Coordinator.evaluateFireSupportGate(cfg, landingState)
 
-      assert.is_not_true(sd.c.amphibOps.fireSupportOnHold)
+      assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
     end)
 
     -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
     it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
       local cfg = makeGateConfig()
       cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-      local sd = makeGateSaveData()
-      sd.c.amphibOps.fireSupportOnHold = true
-      sd.c.amphibOps.zoneStates = {
+      local landingState = makeGateLandingState()
+      landingState.amphibOps.fireSupportOnHold = true
+      landingState.amphibOps.zoneStates = {
         Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
         Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE }),
       }
 
-      Coordinator.evaluateFireSupportGate(cfg, sd)
+      Coordinator.evaluateFireSupportGate(cfg, landingState)
 
-      assert.is_false(sd.c.amphibOps.fireSupportOnHold)
+      assert.is_false(landingState.amphibOps.fireSupportOnHold)
     end)
 
     -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
     it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
       local cfg = makeGateConfig()
       cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-      local sd = makeGateSaveData()
-      sd.c.amphibOps.fireSupportOnHold = true
-      sd.c.amphibOps.zoneStates = {
+      local landingState = makeGateLandingState()
+      landingState.amphibOps.fireSupportOnHold = true
+      landingState.amphibOps.zoneStates = {
         Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
         Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
       }
       trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
 
-      Coordinator.evaluateFireSupportGate(cfg, sd)
+      Coordinator.evaluateFireSupportGate(cfg, landingState)
 
-      assert.is_true(sd.c.amphibOps.fireSupportOnHold)
+      assert.is_true(landingState.amphibOps.fireSupportOnHold)
     end)
 
     -- Boundary: gate must not query SRBM ammo while already on hold (saves a game-state read)
     it("should not call getAmmoInventory when already on hold", function()
       local cfg = makeGateConfig()
-      local sd = makeGateSaveData()
-      sd.c.amphibOps.fireSupportOnHold = true
-      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      local landingState = makeGateLandingState()
+      landingState.amphibOps.fireSupportOnHold = true
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
       local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
 
-      Coordinator.evaluateFireSupportGate(cfg, sd)
+      Coordinator.evaluateFireSupportGate(cfg, landingState)
 
       assert.stub(invStub).was_not.called()
     end)
 
-    -- Boundary: defensive guard when SRBM context is absent (e.g., partial saveData)
+    -- Boundary: defensive guard when SRBM context is absent (e.g., a landing state without ground forces)
     it("should not error when ground.srbm context is missing", function()
       local cfg = makeGateConfig()
-      local sd = makeGateSaveData()
-      sd.c.ground = nil
-      sd.c.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+      local landingState = makeGateLandingState()
+      landingState.ground = nil
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
 
       assert.has_no.errors(function()
-        Coordinator.evaluateFireSupportGate(cfg, sd)
+        Coordinator.evaluateFireSupportGate(cfg, landingState)
       end)
-      assert.is_not_true(sd.c.amphibOps.fireSupportOnHold)
+      assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
     end)
   end)
 end)

@@ -1487,6 +1487,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field enabled boolean Whether communications jamming system is activated
 ---@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
 
+---State slices landing operations read and mutate: own amphibious state, recon queue, SRBM inventory
+---@class SBJ__LandingOpsState: table
+---@field amphibOps SBJ__AmphibOpsContext China amphibious operations context
+---@field recon SBJ__ReconContext China recon context the Taoyuan setup queues GJ-11 recon into
+---@field ground SBJ__GroundForceContext China ground forces the fire support gate reads SRBM ammo from
+
 ---State slices read and mutated by one comms jamming cycle
 ---@class SBJ__CommsJammingState: table
 ---@field jammers table<string, SBJ__AircraftContext> China jamming aircraft indexed by GUID

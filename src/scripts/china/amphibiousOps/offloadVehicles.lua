@@ -11,5 +11,5 @@ if not ship then
 end
 
 PersistentState.update(function(saveData)
-  LandingOps.offloadVehicles(config.c.amphibOps, saveData, ship)
+  LandingOps.offloadVehicles(config.c.amphibOps, PersistentState.landingOps(saveData), ship)
 end)

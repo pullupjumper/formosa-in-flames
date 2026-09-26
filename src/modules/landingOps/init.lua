@@ -13,21 +13,21 @@ local LandingOps = {}
 
 ---Initialize landing operations runtime data
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
----@param saveData SBJ__SaveData Persistent save data
-function LandingOps.init(amphibOpsConfig, saveData)
-  ShipMovement.calculateDestination(amphibOpsConfig, saveData.c.amphibOps.calculationResult)
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+function LandingOps.init(amphibOpsConfig, landingState)
+  ShipMovement.calculateDestination(amphibOpsConfig, landingState.amphibOps.calculationResult)
 end
 
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param contacts CMO__Contact[] Contact list from the game
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-function LandingOps.process(config, saveData, contacts, currentTime, filteredShips)
+function LandingOps.process(config, landingState, contacts, currentTime, filteredShips)
   local startTime = os.clock()
 
-  Coordinator.process(config, saveData, contacts, currentTime, filteredShips)
+  Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
   local endTime = os.clock()
   Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.line("OK", {
     scope = "landingOpsProcess",
@@ -76,11 +76,13 @@ end
 
 ---Handle vehicle offloading workflow for barge and RORO event units
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
----@param saveData SBJ__SaveData Persistent save data
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
 ---@param ship CMO__Unit Ship unit from the event context
 ---@return boolean # Whether the offload workflow was handled successfully
-function LandingOps.offloadVehicles(amphibOpsConfig, saveData, ship)
-  if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(saveData, ship) then
+function LandingOps.offloadVehicles(amphibOpsConfig, landingState, ship)
+  local barges = landingState.amphibOps.barges
+
+  if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(barges, ship) then
     ship.course = nil
     ship.manualSpeed = 0
     ship.holdposition = true
@@ -98,11 +100,11 @@ function LandingOps.offloadVehicles(amphibOpsConfig, saveData, ship)
       return false
     end
 
-    saveData.c.amphibOps.barges[ship.guid].bridgeGUID = bridge.guid
+    barges[ship.guid].bridgeGUID = bridge.guid
   end
 
-  if ship.name == "Barge" and not SecondWaveUnloading.isBridgeDestroyed(saveData, ship) then
-    for _, guid in ipairs(saveData.c.amphibOps.barges[ship.guid].roros) do
+  if ship.name == "Barge" and not SecondWaveUnloading.isBridgeDestroyed(barges, ship) then
+    for _, guid in ipairs(barges[ship.guid].roros) do
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then

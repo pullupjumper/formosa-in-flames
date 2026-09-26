@@ -196,27 +196,16 @@ describe("ShipMovement", function()
     return cfg
   end
 
-  ---Create a saveData structure
-  ---@param overrides? table
+  ---Create a calculationResult map indexed by zone name
+  ---@param result? table Taoyuan ship calculation table (defaults to makeResultTable())
   ---@return table
-  local function makeSaveData(overrides)
-    local sd = {
-      c = {
-        amphibOps = {
-          isTesting = false,
-          calculationResult = {
-            Taoyuan = {
-              name = "Taoyuan",
-              result = makeResultTable(),
-            },
-          },
-        },
+  local function makeCalculationResult(result)
+    return {
+      Taoyuan = {
+        name = "Taoyuan",
+        result = result or makeResultTable(),
       },
     }
-    if overrides then
-      for k, v in pairs(overrides) do sd[k] = v end
-    end
-    return sd
   end
 
   -- ============================================================================
@@ -233,14 +222,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_true(result)
       assert.are.equal(targetLocation, unit.course[1])
@@ -257,14 +245,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -288,14 +275,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(lstLocation, unit.course[1])
     end)
@@ -310,14 +296,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -332,14 +317,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -354,14 +338,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -374,14 +357,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" }, { guid = "SHIP-002" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(3, resultTable.type075.locationIndex)
     end)
@@ -395,15 +377,14 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig({ isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.stub(stubSetUnit).was.called_with({
@@ -422,13 +403,13 @@ describe("ShipMovement", function()
         group = { unitlist = {} },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
     end)
@@ -445,7 +426,7 @@ describe("ShipMovement", function()
         group = { unitlist = { "DDG-001" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
@@ -455,7 +436,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(1)
       local callArgs = stubSetUnit.calls[1].vals[1]
@@ -475,7 +456,7 @@ describe("ShipMovement", function()
         group = { unitlist = { "DDG-001", "DDG-002" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
       local behindPoint = makeLocation({ latitude = 24.5, longitude = 120.5 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(behindPoint))
@@ -488,7 +469,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(2)
       local secondCall = stubSetUnit.calls[2].vals[1]
@@ -507,7 +488,7 @@ describe("ShipMovement", function()
         group = { unitlist = { "FFG-001", "FFG-002" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
       local flankPoint = makeLocation({ latitude = 24.3, longitude = 120.3 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(flankPoint))
@@ -520,7 +501,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubGetPoint).was.called(2)
@@ -534,13 +515,13 @@ describe("ShipMovement", function()
     -- Negative: unit not found by GetUnit returns nil
     it("should skip units that cannot be retrieved", function()
       local filteredUnits = { { guid = "MISSING-001" } }
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_true(result)
     end)
@@ -553,14 +534,13 @@ describe("ShipMovement", function()
         inArea = function() return false end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.equal(1, resultTable.type075.locationIndex)
     end)
@@ -569,13 +549,13 @@ describe("ShipMovement", function()
     it("should fail and log SAG group when group unit is not found", function()
       local sagDesc = makeSAGDescriptor()
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -589,14 +569,29 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult = {}
+      local calculationResult = {}
 
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+
+      assert.is_false(result)
+      assert.stub(stubGetUnit).was_not.called()
+      assert.stub(errorStub).was.called(1)
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_result_missing"))
+    end)
+
+    -- Boundary: absent calculationResult map must fail the same way as a missing zone entry
+    it("should fail and log when calculationResult is nil", function()
+      local filteredUnits = { { guid = "SHIP-001" } }
+
+      local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
+
+      local config = makeAmphibOpsConfig()
+      local operation = config.operations[1]
+      local result = ShipMovement.moveToStagingArea(config, nil, filteredUnits, operation)
 
       assert.is_false(result)
       assert.stub(stubGetUnit).was_not.called()
@@ -613,14 +608,13 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -635,13 +629,13 @@ describe("ShipMovement", function()
         group = nil,
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -652,13 +646,13 @@ describe("ShipMovement", function()
     it("should fail and log when SAG anchorage area is missing", function()
       local sagDesc = makeSAGDescriptor({ to = { heading = 180 } })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -673,7 +667,7 @@ describe("ShipMovement", function()
         group = { unitlist = { "MISSING-DDG" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -683,7 +677,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -699,7 +693,7 @@ describe("ShipMovement", function()
         group = { unitlist = { "FFG-001" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "World_GetPointFromBearing").returns(nil))
@@ -711,7 +705,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -726,28 +720,26 @@ describe("ShipMovement", function()
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = false
-      saveData.c.amphibOps.calculationResult.Taoyuan.result = resultTable
+      local calculationResult = makeCalculationResult(resultTable)
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
 
     -- Boundary: empty filteredUnits
     it("should return true when filteredUnits is empty", function()
-      local saveData = makeSaveData()
+      local calculationResult = makeCalculationResult()
       local config = makeAmphibOpsConfig()
       local operation = config.operations[1]
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local result = ShipMovement.moveToStagingArea(config, saveData, {}, operation)
+      local result = ShipMovement.moveToStagingArea(config, calculationResult, {}, operation)
 
       assert.is_true(result)
     end)
@@ -760,15 +752,14 @@ describe("ShipMovement", function()
         group = { unitlist = { "DDG-001" } },
       })
       local filteredUnits = {}
-      local saveData = makeSaveData()
-      saveData.c.amphibOps.isTesting = false
+      local calculationResult = makeCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
       local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, saveData, filteredUnits, operation)
+      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
       assert.stub(stubSetUnit).was_not.called()

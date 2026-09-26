@@ -112,19 +112,17 @@ describe("LandingOps", function()
   describe("init", function()
     -- Positive: delegates destination pre-calculation to ShipMovement
     it("should initialize landing operations by calculating destinations", function()
-      local saveData = {
-        c = {
-          amphibOps = {
-            calculationResult = {},
-          },
+      local landingState = {
+        amphibOps = {
+          calculationResult = {},
         },
       }
       local cfg = { operations = {} }
       local stubCalc = trackStub(stub(ShipMovement, "calculateDestination"))
 
-      LandingOps.init(cfg, saveData)
+      LandingOps.init(cfg, landingState)
 
-      assert.stub(stubCalc).was.called_with(cfg, saveData.c.amphibOps.calculationResult)
+      assert.stub(stubCalc).was.called_with(cfg, landingState.amphibOps.calculationResult)
     end)
   end)
 
@@ -137,14 +135,14 @@ describe("LandingOps", function()
     it("should forward process calls to coordinator", function()
       local stubProcess = trackStub(stub(Coordinator, "process"))
       local config = {}
-      local saveData = {}
+      local landingState = {}
       local contacts = {}
       local currentTime = 100
       local filteredShips = {}
 
-      LandingOps.process(config, saveData, contacts, currentTime, filteredShips)
+      LandingOps.process(config, landingState, contacts, currentTime, filteredShips)
 
-      assert.stub(stubProcess).was.called_with(config, saveData, contacts, currentTime, filteredShips)
+      assert.stub(stubProcess).was.called_with(config, landingState, contacts, currentTime, filteredShips)
     end)
   end)
 
@@ -228,13 +226,11 @@ describe("LandingOps", function()
     -- Positive: creates a bridge for barges without one
     it("should create a bridge and stop the barge when no bridge exists", function()
       local ship = makeShip({ name = "Barge" })
-      local saveData = {
-        c = {
-          amphibOps = {
-            barges = {
-              [ship.guid] = {
-                roros = {},
-              },
+      local landingState = {
+        amphibOps = {
+          barges = {
+            [ship.guid] = {
+              roros = {},
             },
           },
         },
@@ -244,13 +240,13 @@ describe("LandingOps", function()
       local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(true))
       local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
 
-      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, landingState, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
       assert.are.equal(0, ship.manualSpeed)
       assert.is_true(ship.holdposition)
-      assert.are.equal("BRIDGE-001", saveData.c.amphibOps.barges[ship.guid].bridgeGUID)
+      assert.are.equal("BRIDGE-001", landingState.amphibOps.barges[ship.guid].bridgeGUID)
       assert.stub(stubHasBridge).was.called(1)
       assert.stub(stubIsBridgeDestroyed).was.called(1)
       assert.stub(stubAddUnit).was.called(1)
@@ -261,14 +257,12 @@ describe("LandingOps", function()
       local ship = makeShip({ name = "Barge", guid = "BARGE-001" })
       local roro = makeShip({ name = "RORO", guid = "RORO-001" })
       local zone = makeZone()
-      local saveData = {
-        c = {
-          amphibOps = {
-            barges = {
-              [ship.guid] = {
-                bridgeGUID = "BRIDGE-001",
-                roros = { roro.guid },
-              },
+      local landingState = {
+        amphibOps = {
+          barges = {
+            [ship.guid] = {
+              bridgeGUID = "BRIDGE-001",
+              roros = { roro.guid },
             },
           },
         },
@@ -280,11 +274,11 @@ describe("LandingOps", function()
       local stubGetZone = trackStub(stub(SecondWaveUnloading, "getBargeROROZone").returns(zone))
       local stubOffload = trackStub(stub(SecondWaveUnloading, "offloadVehicles").returns(20))
 
-      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, landingState, ship)
 
       assert.is_true(result)
-      assert.stub(stubHasBridge).was.called_with(saveData, ship)
-      assert.stub(stubIsBridgeDestroyed).was.called_with(saveData, ship)
+      assert.stub(stubHasBridge).was.called_with(landingState.amphibOps.barges, ship)
+      assert.stub(stubIsBridgeDestroyed).was.called_with(landingState.amphibOps.barges, ship)
       assert.stub(stubGetUnit).was.called_with(roro.guid)
       assert.stub(stubGetZone).was.called_with({ operationalZones = { zone } }, ship, roro)
       assert.stub(stubOffload).was.called_with({
@@ -299,16 +293,14 @@ describe("LandingOps", function()
     -- Boundary: stops a RORO ship in place without extra offload work
     it("should stop a RORO ship in place", function()
       local ship = makeShip({ name = "RORO" })
-      local saveData = {
-        c = {
-          amphibOps = {
-            barges = {},
-          },
+      local landingState = {
+        amphibOps = {
+          barges = {},
         },
       }
       local cfg = {}
 
-      local result = LandingOps.offloadVehicles(cfg, saveData, ship)
+      local result = LandingOps.offloadVehicles(cfg, landingState, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
