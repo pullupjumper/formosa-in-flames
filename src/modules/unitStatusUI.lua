@@ -373,13 +373,12 @@ end
 ---@param ... string System type list
 ---@return string # JSON formatted C2 status data
 local function createC2NodeDataString(saveData, sideName, ...)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local field = sideConfig.field
+  local iads = PersistentState.iads(saveData, sideName)
   local rows = {}
   local types = { ... }
 
   for _, type in pairs(types) do
-    local C2Ctxs = saveData[field].iads[type]
+    local C2Ctxs = iads[type]
 
     if C2Ctxs then
       for _, C2Ctx in pairs(C2Ctxs) do

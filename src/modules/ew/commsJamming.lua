@@ -577,4 +577,13 @@ function CommsJamming.initTargetAircraftContexts(landBasedCtx, aircraftDefaults)
   }))
 end
 
+---Forget a destroyed unit wherever comms jamming tracks it: China jammers, Taiwan aircraft or AEW
+---@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
+---@param guid string Destroyed unit GUID
+function CommsJamming.removeDestroyedUnit(jammingState, guid)
+  jammingState.jammers[guid] = nil
+  jammingState.aircraft[guid] = nil
+  jammingState.aew[guid] = nil
+end
+
 return CommsJamming

@@ -100,12 +100,14 @@ runInit(function(state)
   StrikePlanner.init(config, state)
   RunwayRepairment.initRunways(config, state)
 
-  if state.t.iads.enabled then
-    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, state.t.iads)
+  local taiwanIads = PersistentState.iads(state, constants.SIDES.PLAYER)
+  if taiwanIads.enabled then
+    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, taiwanIads)
   end
 
-  if state.c.iads.enabled then
-    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, state.c.iads)
+  local chinaIads = PersistentState.iads(state, constants.SIDES.ENEMY)
+  if chinaIads.enabled then
+    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, chinaIads)
   end
 
   if state.c.commsJamming.enabled then

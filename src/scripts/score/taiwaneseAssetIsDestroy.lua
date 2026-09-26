@@ -5,6 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem.init")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local GnssJamming = require("src.modules.ew.gnssJamming")
+local CommsJamming = require("src.modules.ew.commsJamming")
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 
@@ -13,6 +14,8 @@ PersistentState.update(function(saveData)
     local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
 
     if unit.type == constants.UNIT_TYPES.FACILITY then
+      local iads = PersistentState.iads(saveData, constants.SIDES.PLAYER)
+
       if unit.dbid == constants.PLATFORMS.UNDERGROUND_SHELTER then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
@@ -24,24 +27,20 @@ PersistentState.update(function(saveData)
         MissileSystem.processSupplyAssetDestruction(unit, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
         Logger.log(constants.TAGS.SCORE, "An " .. text .. " has been destoryed.")
       elseif IntegratedAirDefenseSystem.isRadar(unit.dbid) then
-        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "radar", unit)
+        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(iads.rocc, "radar", unit)
       elseif IntegratedAirDefenseSystem.isSAM(unit.dbid) then
-        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.rocc, "sam", unit)
+        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(iads.rocc, "sam", unit)
       elseif IntegratedAirDefenseSystem.isMRADS(unit.dbid) then
-        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(saveData.t.iads.taaoc, "sam", unit)
+        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(iads.taaoc, "sam", unit)
       elseif unit.dbid == constants.PLATFORMS.C2 or unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
-        IntegratedAirDefenseSystem.processC2Disruption(saveData.t.iads, unit)
+        IntegratedAirDefenseSystem.processC2Disruption(iads, unit)
       elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
-        GnssJamming.removeJammingZoneByName(saveData.t.gnssJamming.jammers, constants.SIDES.PLAYER, unit.name)
+        GnssJamming.removeJammingZoneByName(PersistentState.gnssJammers(saveData, constants.SIDES.PLAYER), constants.SIDES.PLAYER, unit.name)
       end
     end
 
     if unit.type == constants.UNIT_TYPES.AIRCRAFT then
-      if unit.dbid == constants.PLATFORMS.E2K then
-        saveData.t.air.landBased.AEW[unit.guid] = nil
-      else
-        saveData.t.air.landBased.AC[unit.guid] = nil
-      end
+      CommsJamming.removeDestroyedUnit(PersistentState.commsJamming(saveData), unit.guid)
 
       if unit.dbid == constants.PLATFORMS.RC135V then
         PersistentState.sigint(saveData, "US").reconAircraft[unit.guid] = nil

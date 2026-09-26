@@ -1306,4 +1306,52 @@ describe("CommsJamming", function()
       assert.are.same({}, landBasedCtx.AC)
     end)
   end)
+
+  -- ============================================================================
+  -- removeDestroyedUnit
+  -- ============================================================================
+
+  describe("removeDestroyedUnit", function()
+    local function makeJammingState()
+      return {
+        jammers = { ["Y9-1"] = {}, ["J16D-1"] = {} },
+        iads = {},
+        aircraft = { ["F16-1"] = {} },
+        aew = { ["E2K-1"] = {} },
+      }
+    end
+
+    -- Positive: a destroyed jammer stops jamming; other entries stay
+    it("should remove a destroyed China jammer only", function()
+      local jammingState = makeJammingState()
+
+      CommsJamming.removeDestroyedUnit(jammingState, "Y9-1")
+
+      assert.is_nil(jammingState.jammers["Y9-1"])
+      assert.is_not_nil(jammingState.jammers["J16D-1"])
+      assert.is_not_nil(jammingState.aircraft["F16-1"])
+      assert.is_not_nil(jammingState.aew["E2K-1"])
+    end)
+
+    -- Positive: destroyed Taiwan aircraft and AEW both stop being jamming targets
+    it("should remove destroyed Taiwan aircraft and AEW", function()
+      local jammingState = makeJammingState()
+
+      CommsJamming.removeDestroyedUnit(jammingState, "F16-1")
+      CommsJamming.removeDestroyedUnit(jammingState, "E2K-1")
+
+      assert.are.same({}, jammingState.aircraft)
+      assert.are.same({}, jammingState.aew)
+      assert.are.equal(2, Utils.getCount(jammingState.jammers))
+    end)
+
+    -- Edge: an untracked GUID is a no-op
+    it("should leave all maps unchanged for an untracked unit", function()
+      local jammingState = makeJammingState()
+
+      CommsJamming.removeDestroyedUnit(jammingState, "unknown")
+
+      assert.are.same(makeJammingState(), jammingState)
+    end)
+  end)
 end)
